@@ -1,5 +1,5 @@
 <?php
-// endresultate.php - Vereinheitlichte Version
+// endresultate.php
 try {
     include 'dbconnect.inc.php';
 } catch (Exception $e) {
