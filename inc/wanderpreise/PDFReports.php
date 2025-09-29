@@ -252,7 +252,7 @@ class WanderpreiseJahresReport extends PDFGenerator {
                 
                 -- Aktueller Gewinner des angegebenen Jahres
                 wg_aktuell.gewinner_id as aktueller_gewinner_id,
-                CONCAT(m_aktuell.Vorname, ' ', m_aktuell.Name) as aktueller_gewinner_name,
+                CONCAT(TRIM(m_aktuell.Vorname), ' ', TRIM(m_aktuell.Name)) as aktueller_gewinner_name,
                 wg_aktuell.rang as aktueller_rang,
                 wg_aktuell.resultat as aktuelles_resultat,
                 wg_aktuell.ist_definitiv,
@@ -1096,6 +1096,282 @@ class AkuraGravurReport extends PDFGenerator {
         // PDF generieren
         $pdfPath = $this->generatePDF($html, 'Akura_Gravur_' . $this->selectedYear);
         $this->outputDownloadLink($pdfPath);
+    }
+}
+
+/**
+ * Mitglieder-Info Report
+ * Schlanke Version des Jahresreports nur mit den wichtigsten Infos für Mitglieder
+ */
+class MitgliederInfoReport extends PDFGenerator {
+    
+    public function __construct($conn, $year = null) {
+        parent::__construct($conn, $year);
+    }
+    
+    /**
+     * Generiert den Mitglieder-Info Report
+     */
+    public function generate() {
+        $title = 'MSV Wilen - Wanderpreisgewinner '. $this->selectedYear;
+        
+        // Custom CSS für einen sauberen, übersichtlichen Stil
+        $customStyles = $this->getCustomStyles();
+        
+        $html = $this->createHTMLHeader($title, $customStyles, 11);
+        $html .= '<h1>' . $title . '</h1>';
+        $html .= '<h2> </h2>';
+        
+        // Alle Wanderpreise mit Gewinnerdaten holen
+        $wanderpreiseData = $this->getWanderpreiseOverview();
+        
+        if (empty($wanderpreiseData)) {
+            $html .= '<p>Keine Wanderpreise für das Jahr ' . $this->selectedYear . ' gefunden.</p>';
+        } else {
+            $html .= $this->createWanderpreiseTable($wanderpreiseData);
+        }
+        
+        // Hinweis für Mitglieder mit Endstich-Datum
+        $html .= $this->createMitgliederInfoBox();
+        
+        $html .= $this->createHTMLFooter();
+        
+        // PDF generieren
+        $filename = 'Wanderpreise_Info_' . $this->selectedYear;
+        $pdfPath = $this->generatePDF($html, $filename);
+        $this->outputDownloadLink($pdfPath);
+    }
+    
+    /**
+     * Holt alle Wanderpreise mit Gewinner-Informationen (vereinfacht)
+     */
+    private function getWanderpreiseOverview() {
+        $sql = "
+            SELECT 
+                w.id,
+                w.bezeichnung,
+                w.beschreibung,
+                w.beschaffung_datum,
+                
+                -- Aktueller Gewinner des angegebenen Jahres
+                wg_aktuell.gewinner_id as aktueller_gewinner_id,
+                CONCAT(TRIM(m_aktuell.Vorname), ' ', TRIM(m_aktuell.Name)) as aktueller_gewinner_name,
+                wg_aktuell.rang as aktueller_rang,
+                wg_aktuell.resultat as aktuelles_resultat,
+                wg_aktuell.ist_definitiv
+                
+            FROM wanderpreise w
+            LEFT JOIN wanderpreise_gewinner wg_aktuell ON (
+                w.id = wg_aktuell.wanderpreis_id 
+                AND wg_aktuell.jahr = ?
+            )
+            LEFT JOIN mitglieder m_aktuell ON wg_aktuell.gewinner_id = m_aktuell.ID
+            ORDER BY w.bezeichnung ASC
+        ";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $this->selectedYear);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return $data;
+    }
+    
+    /**
+     * Erstellt die Info-Box mit dem Endstich-Datum aus der JMDefinition
+     */
+    private function createMitgliederInfoBox() {
+        $html = '<div class="info-box">';
+        $html .= '<p><strong>Information für Mitglieder:</strong></p>';
+        
+        try {
+            // Hole das Endstich-Datum aus JMDefinition
+            // Da year ein YEAR-Typ ist, verwenden wir direkte Query
+            $year = date('Y');
+            $sql = "SELECT Schiesstage FROM JMDefinition WHERE Bezeichnung = 'Endstich' AND year = '" . $year . "' LIMIT 1";
+            
+            $result = $this->conn->query($sql);
+            
+            if (!$result) {
+                // Fallback wenn Query fehlschlägt
+                $html .= '<p>Diese Übersicht zeigt alle Wanderpreise mit den aktuellen Gewinnern des Jahres ' . $this->selectedYear . '.</p>';
+                $html .= '<p>Bei Fragen wenden Sie sich bitte an den Vorstand.</p>';
+                $html .= '</div>';
+                return $html;
+            }
+            
+            $endstich_data = $result->fetch_assoc();
+            
+            if ($endstich_data && !empty($endstich_data['Schiesstage'])) {
+                // Parse das Datum aus dem Schiesstage-Feld
+                $schiesstage = $endstich_data['Schiesstage'];
+                $endstich_datum = "";
+                
+                // Versuche das Datum zu extrahieren
+                if (preg_match('/(\d{1,2})\. (\w+)/', $schiesstage, $matches)) {
+                    $endstich_datum = $matches[1] . '. ' . $matches[2] . ' ' .$year;
+                } else {
+                    $endstich_datum = "zum Endstich";
+                }
+                
+                $html .= '<p><strong>Bitte gebt die Wanderpreise bis spätestens am ' . htmlspecialchars($endstich_datum) . ' an Roger Cavelti oder Renato Linggi für das Gravieren zurück.</strong></p>';
+            } else {
+                // Fallback falls kein Endstich gefunden wurde
+                $html .= '<p>Diese Übersicht zeigt alle Wanderpreise mit den aktuellen Gewinnern des Jahres ' . $this->selectedYear . '.</p>';
+                $html .= '<p>Bei Fragen wenden Sie sich bitte an den Vorstand.</p>';
+            }
+        } catch (Exception $e) {
+            // Bei Fehler zeige Standard-Text
+            $html .= '<p>Diese Übersicht zeigt alle Wanderpreise mit den aktuellen Gewinnern des Jahres ' . $this->selectedYear . '.</p>';
+            $html .= '<p>Bei Fragen wenden Sie sich bitte an den Vorstand.</p>';
+        }
+        
+        $html .= '</div>';
+        return $html;
+    }
+    
+    /**
+     * Erstellt die HTML-Tabelle für die Wanderpreise-Übersicht (vereinfacht)
+     */
+    private function createWanderpreiseTable($data) {
+        $html = '<table class="table">';
+        $html .= '<thead>
+                    <tr>
+                        <th style="width: 35%;">Wanderpreis</th>
+                        <th style="width: 35%;">Beschreibung</th>
+                        <th style="width: 30%;">Gewinner ' . $this->selectedYear . '</th>
+                    </tr>
+                  </thead>
+                  <tbody>';
+        
+        foreach ($data as $row) {
+            $html .= '<tr>';
+            
+            // Wanderpreis Name
+            $html .= '<td class="wanderpreis-name">';
+            $html .= '<strong>' . htmlspecialchars($row['bezeichnung']) . '</strong>';
+            if ($row['ist_definitiv']) {
+                $html .= '<br><span class="badge-definitiv">✓ Definitiv gewonnen</span>';
+            }
+            $html .= '</td>';
+            
+            // Beschreibung
+            $html .= '<td>';
+            if (!empty($row['beschreibung'])) {
+                $beschreibung = trim($row['beschreibung']);
+                // Wenn die Beschreibung nur aus einer Zahl besteht, zeige stattdessen einen Strich
+                if (preg_match('/^\d+$/', $beschreibung)) {
+                    $html .= '<em>-</em>';
+                } else {
+                    $html .= htmlspecialchars($beschreibung, ENT_QUOTES, 'UTF-8');
+                }
+            } else {
+                $html .= '<em>-</em>';
+            }
+            $html .= '</td>';
+            
+            // Aktueller Gewinner - NUR NAME, kein Rang/Resultat
+            $html .= '<td>';
+            if (!empty($row['aktueller_gewinner_name'])) {
+                // Name korrekt formatieren und HTML-Entities vermeiden
+                $gewinner_name = html_entity_decode($row['aktueller_gewinner_name'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $html .= '<strong>' . htmlspecialchars($gewinner_name, ENT_QUOTES, 'UTF-8') . '</strong>';
+                // Rang und Resultat NICHT mehr anzeigen
+            } else {
+                $html .= '<em>Kein Gewinner eingetragen</em>';
+            }
+            $html .= '</td>';
+            
+            $html .= '</tr>';
+        }
+        
+        $html .= '</tbody></table>';
+        
+        return $html;
+    }
+    
+    /**
+     * Gibt das benutzerdefinierte CSS für den Mitglieder-Info Stil zurück
+     */
+    private function getCustomStyles() {
+        return '
+            body {
+                font-family: Arial, sans-serif;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #003366;
+                padding-bottom: 15px;
+            }
+            h1 {
+                color: #003366;
+                font-size: 20pt;
+                margin: 10px 0;
+                font-weight: bold;
+            }
+            h2 {
+                color: #666;
+                font-size: 14pt;
+                margin: 5px 0;
+                text-align: center;
+                font-weight: normal;
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .table th {
+                background-color: #003366;
+                color: white;
+                padding: 12px;
+                text-align: left;
+                font-weight: bold;
+                font-size: 11pt;
+            }
+            .table td {
+                padding: 10px 12px;
+                border-bottom: 1px solid #ddd;
+                vertical-align: top;
+            }
+            .table tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .wanderpreis-name {
+                font-weight: bold;
+                color: #003366;
+            }
+            .badge-definitiv {
+                display: inline-block;
+                background-color: #28a745;
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 9pt;
+                font-weight: normal;
+                margin-top: 3px;
+            }
+            .info-box {
+                margin-top: 30px;
+                padding: 15px;
+                background-color: #e7f3ff;
+                border-left: 4px solid #2196F3;
+                font-size: 10pt;
+            }
+            .info-box p {
+                margin: 5px 0;
+            }
+            em {
+                color: #999;
+                font-style: italic;
+            }
+        ';
     }
 }
 

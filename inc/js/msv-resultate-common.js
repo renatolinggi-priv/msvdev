@@ -699,3 +699,28 @@
     };
 
 })(window, jQuery);
+// action-buttons-normalizer.js
+function normalizeActionButtons(scope){
+  const $scope = scope ? $(scope) : $(document);
+  $scope.find('td').filter(function(){
+    // Heuristik: Zellen mit Edit/Delete-Buttons erkennen
+    return $(this).find('.edit-btn, .delete-btn, .btn-action-edit, .btn-action-delete').length >= 1
+           && !$(this).find('.action-group').length;
+  }).each(function(){
+    const $cell = $(this);
+    const id = $cell.find('[data-id]').first().data('id')
+             || $cell.closest('tr').data('id') || 0;
+
+    $cell.html(`
+      <div class="btn-group btn-group-sm action-group" role="group" aria-label="Aktionen">
+        <button type="button" class="btn btn-outline-secondary btn-action-edit" data-id="${id}" title="Bearbeiten">
+          <i class="bi bi-pencil-square"></i>
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-action-delete" data-id="${id}" title="Löschen">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `);
+  });
+}
+// nach jedem AJAX-Load: normalizeActionButtons('#deineTabelle tbody');

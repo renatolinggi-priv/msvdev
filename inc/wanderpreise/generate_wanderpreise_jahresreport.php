@@ -64,6 +64,12 @@ try {
             $report->generate();
             break;
             
+        case 'mitglieder-info':
+            // Mitglieder-Info Report (schlanke Version)
+            $report = new MitgliederInfoReport($conn, $year);
+            $report->generate();
+            break;
+            
         default:
             throw new Exception('Unbekannter Report-Typ: ' . $reportType);
     }

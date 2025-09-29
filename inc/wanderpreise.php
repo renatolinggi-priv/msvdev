@@ -124,6 +124,13 @@ if (WANDERPREISE_DEBUG) {
                                 <span>JM Preise</span>
                             </button>
                         </div>
+                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                            <button type="button" class="btn btn-compact btn-secondary w-100 export-btn"
+                                data-export-type="pdf-mitglieder-info">
+                                <i class="bi bi-people-fill me-1"></i>
+                                <span>PDF Mitglieder-Info</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Wanderpreise Liste -->
@@ -837,6 +844,9 @@ if (WANDERPREISE_DEBUG) {
                 case 'pdf-jm':
                     exportTitle = 'PDF Export - JM Preise';
                     break;
+                case 'pdf-mitglieder-info':
+                    exportTitle = 'PDF Export - Mitglieder-Info';
+                    break;
             }
 
             $('#exportModalLabel').html('<i class="bi bi-download"></i> ' + exportTitle);
@@ -882,6 +892,9 @@ $('#startExport').on('click', function () {
                 break;
             case 'pdf-jm':
                 params.type = 'top3';
+                break;
+            case 'pdf-mitglieder-info':
+                params.type = 'mitglieder-info';
                 break;
             // pdf-all: keine zusätzlichen Parameter
         }

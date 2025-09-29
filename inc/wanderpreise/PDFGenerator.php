@@ -79,13 +79,9 @@ class PDFGenerator {
             height: 40px;
             text-align: center;
             font-size: 10px;
-            border-top: 1px;
-            background-color: #ffffff;
-        }
-        .footer hr {
-            border: none;
             border-top: 1px solid #000;
-            margin: 0;
+            background-color: #ffffff;
+            padding-top: 10px;
         }
     ';
     
@@ -170,8 +166,8 @@ class PDFGenerator {
      */
     protected function createHTMLFooter() {
         return '</div>
+        <!-- Footer mit Datum -->
         <div class="footer">
-            <hr>
             <p>' . getactdate() . '</p>
         </div>
         </body>

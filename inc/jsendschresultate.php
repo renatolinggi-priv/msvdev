@@ -1,5 +1,5 @@
 <?php
-// jsendschresultate.php - Modernisierte Version nach endresultate.php Vorbild
+// jsendschresultate.php – Resultate erfassen (modernisiert)
 try {
     include 'dbconnect.inc.php';
 } catch (Exception $e) {
@@ -19,6 +19,153 @@ if (empty($_SESSION['csrf_token'])) {
 <link rel="stylesheet" href="../css/fixes/resultate-unified.css">
 <link rel="stylesheet" href="../css/fixes/endresultate-firstcol-override.css">
 
+<style>
+/* ===== Schönere Tabelle – JS-Endschiessen ===== */
+.table-modern {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+  border-radius: 12px;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+.table-modern thead th {
+  background: linear-gradient(180deg, #f8f9fb 0%, #eef1f5 100%);
+  color: #2b3035;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 10px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.table-modern tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f3f5;
+}
+.table-modern tbody tr:hover { background: #f8fafc; }
+
+/* Erste Spalte links + optional sticky auf Desktop */
+.table-modern tbody td:first-child,
+.table-modern thead th.th-name { text-align: left !important; }
+@media (min-width: 992px) {
+  .table-modern thead th.th-name,
+  .table-modern tbody td:first-child {
+    position: sticky; left: 0; background: #fff; z-index: 2;
+  }
+  .table-modern thead th.th-name { background: linear-gradient(180deg, #f8f9fb 0%, #eef1f5 100%); z-index: 4; }
+}
+
+/* Numerische Spalten mittig und markiert */
+.table-modern td.num { text-align: center !important; font-weight: 600; }
+
+/* Zeilen klickbar (für Modal) */
+.table-clickable tbody tr { cursor: pointer; }
+/* Buttons in erster Spalte: Row-Klick nicht auslösen */
+.table-clickable .btn { cursor: pointer; }
+
+/* Einheitliche Aktionsbuttons wie in jsendschloesen.php */
+.btn-group.btn-group-sm .btn { border-radius: 8px !important; line-height: 1 !important; }
+.btn-edit-js   { /* Bootstrap outline-secondary stilistisch ok */ }
+.btn-delete-js { /* Bootstrap outline-danger stilistisch ok */ }
+
+/* Kleinere Anpassungen für sehr kleine Screens */
+@media (max-width: 400px) {
+  .table-modern tbody td { padding: 8px 10px; }
+}
+
+/* ===== JS-Endschiessen Resultate: Tabelle im Stil von "Jungschützen erfassen" ===== */
+
+/* Keine Karte/Box-Optik: kein Schatten, kein fetter Radius */
+.table-modern {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  background: #fff;
+  box-shadow: none !important;       /* << Schatten weg */
+  border: 1px solid #e5e7eb;         /* dezenter Rand wie im Screenshot */
+  border-radius: 8px;                /* kleiner Radius statt großer Card-Look */
+}
+
+/* Header: flach, hellgrau, ohne Gradient, ohne Schatten */
+.table-modern thead th {
+  background: #f2f4f7 !important;    /* flacher Header */
+  color: #2b3035;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 10px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* Zellen: kompakt, fein abgesetzt */
+.table-modern tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f3f5;
+}
+.table-modern tbody tr:hover { background: #f8fafc; }
+
+/* Erste Spalte linksbündig (wie gehabt); sticky darf bleiben */
+.table-modern thead th.th-name,
+.table-modern tbody td:first-child { text-align: left !important; }
+
+/* Numerische Spalten mittig */
+.table-modern td.num { text-align: center !important; font-weight: 600; }
+
+/* Aktionszelle: zentriert */
+.table-modern td:last-child { text-align: center; }
+
+/* Button-Gruppe klein und clean – wie im Erfassen-Screen */
+.btn-group.btn-group-sm .btn {
+  border-radius: 8px !important;
+  line-height: 1 !important;
+  padding: .25rem .45rem; /* kompakter */
+}
+
+/* Icon-only Buttons (optional, falls du reine Icons nutzt) */
+.btn-icon-compact {
+  width: 28px;
+  height: 28px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Gruppierte Aktionsbuttons */
+.action-group .btn { 
+  line-height: 1 !important;
+  padding: .25rem .45rem !important;
+  border-radius: 8px !important;
+}
+
+.action-group .btn + .btn { margin-left: -1px; }
+
+.action-group .btn:first-child {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.action-group .btn:last-child {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+/* Edit-Button neutral mit blauem Icon */
+.btn-action-edit {
+  border-color: #dee2e6 !important;
+  color: #0d6efd !important;
+  background-color: #fff !important;
+}
+
+/* Delete-Button klassisch rot */
+.btn-action-delete {
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
+  background-color: #fff !important;
+}
+
+</style>
+
 <div class="container-fluid">
   <div class="row">
     <div class="col-xl-8 col-lg-12 col-12 ps-0">
@@ -27,7 +174,7 @@ if (empty($_SESSION['csrf_token'])) {
           <div class="col-md-12">
             <h2 class="h4 mb-0" style="color: var(--secondary-color);">
               <i class="bi bi-target me-2"></i>
-              Endschiessen Resultaterfassung für Jungschützen
+              JS-Endschiessen – Resultate erfassen
             </h2>
           </div>
         </div>
@@ -36,7 +183,7 @@ if (empty($_SESSION['csrf_token'])) {
           <form id="jungschuetzenEndresultateForm">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-            <!-- Jahr (einheitlich) -->
+            <!-- Jahr -->
             <div class="year-selection-card mb-3">
               <div class="row align-items-center">
                 <div class="col-md-5">
@@ -48,7 +195,7 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
 
-            <!-- Toolbar (einheitlich) -->
+            <!-- Toolbar -->
             <div class="button-toolbar mb-3">
               <div class="button-group d-flex gap-2 flex-wrap">
                 <button id="redirect-btn" type="button" class="btn btn-compact-standard btn-outline-success">
@@ -63,19 +210,24 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
 
-            <!-- Messages -->
+            <!-- Messages / PDF Link -->
             <div id="message" class="mb-2"></div>
-            
-            <!-- PDF Link -->
             <div id="pdf-link" class="mb-3"></div>
 
-            <!-- Tabelle (einheitlich) -->
+            <!-- Tabelle -->
             <div class="table-wrapper">
               <div class="table-responsive">
-                <table class="table table-hover mb-0" id="jungschuetzenTabelle">
+                <table class="table table-sm mb-0 table-modern table-clickable align-middle" id="jungschuetzenTabelle">
+                  <colgroup>
+                    <col style="width: 42%">
+                    <col style="width: 16%">
+                    <col style="width: 16%">
+                    <col style="width: 16%">
+                    <col style="width: 10%">
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th scope="col"><i class="bi bi-person me-1"></i>Jungschütze</th>
+                      <th scope="col" class="th-name text-start"><i class="bi bi-person me-1"></i>Jungschütze</th>
                       <th scope="col" class="text-center">Endstich</th>
                       <th scope="col" class="text-center">Schwini</th>
                       <th scope="col" class="text-center">Zabig</th>
@@ -101,11 +253,9 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-
-
-<!-- Schuss-Modal für Jungschützen -->
+<!-- Schuss-Modal -->
 <div class="modal fade" id="schussModal" tabindex="-1" aria-labelledby="schussModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header border-0">
         <h5 class="modal-title" id="schussModalLabel">
@@ -135,36 +285,34 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-12">
               <div id="schwiniSchuesse" class="shooting-category mb-2">
                 <h6 class="mb-2"><i class="bi bi-piggy-bank me-2"></i> Schwini</h6>
-                <div class="d-flex align-items-center gap-1">
+                <div class="d-flex align-items-center gap-1 flex-wrap">
                   <?php for ($i=1; $i<=6; $i++): ?>
-                    <input type="number" class="small-input schwini-schuss" id="P1Schuss<?= $i ?>" name="P1Schuss<?= $i ?>" min="0" max="10">
+                    <input type="number" class="small-input schwini-schuss" id="SchwiniSchuss<?= $i ?>" name="SchwiniSchuss<?= $i ?>" min="0" max="10">
                   <?php endfor; ?>
-                  <span id="schwiniSumme" class="total-display ms-1">0</span>
+                  <span id="schwiniSumme" class="total-display ms-auto">0</span>
                 </div>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-12">
               <div id="zabigSchuesse" class="shooting-category mb-2">
                 <h6 class="mb-2"><i class="bi bi-moon-stars me-2"></i> Zabig</h6>
                 <div class="d-flex align-items-center gap-1 flex-wrap">
                   <?php for ($i=1; $i<=6; $i++): ?>
                     <input type="number" class="small-input zabig" id="ZSchuss<?= $i ?>" name="ZSchuss<?= $i ?>" min="0" max="100">
                   <?php endfor; ?>
-                  <span id="zabigsum" class="total-display ms-1">0</span>
+                  <span id="zabigsum" class="total-display ms-auto">0</span>
                 </div>
               </div>
+            </div>
 
-              <div class="row g-2">
-                <div class="col-12">
-                  <div id="Absendenanmeldung" class="shooting-category">
-                    <h6 class="mb-2"><i class="bi bi-calendar-check me-2"></i> Absenden</h6>
-                    <input type="text" class="form-control form-control-sm" id="AbsendenAnmeldung" name="AbsendenAnmeldung" placeholder="Anmeldung">
-                  </div>
-                </div>
+            <div class="col-md-12">
+              <div id="Absendenanmeldung" class="shooting-category">
+                <h6 class="mb-2"><i class="bi bi-calendar-check me-2"></i> Absenden</h6>
+                <input type="text" class="form-control form-control-sm" id="AbsendenAnmeldung" name="AbsendenAnmeldung" placeholder="Anmeldung">
               </div>
             </div>
 
@@ -183,7 +331,7 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Einheitliches Bestätigungsmodal -->
+<!-- Bestätigungsmodal -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -207,424 +355,410 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Gemeinsame Bibliothek einbinden -->
+<!-- Gemeinsame Bibliothek -->
 <script src="js/msv-resultate-common.js"></script>
 
 <script>
-// Globale Fehlerbehandlung für besseres Debugging
+// Globale Fehlerbehandlung
 window.onerror = function(msg, url, line, col, error) {
-    console.error('Global error:', msg, 'at', url, 'line', line);
-    return false;
+  console.error('Global error:', msg, 'at', url, 'line', line);
+  return false;
 };
 
 $(document).ready(function() {
-    // === GLOBALE VARIABLEN ===
-    let deleteType = '';
-    let jungschuetzeIDToDelete = null;
+  let deleteType = '';
+  let jungschuetzeIDToDelete = null;
 
-    // === INITIALISIERUNG ===
-    initializeToastSystem();
-    initializeYearSelect();
-    loadJungschuetzen();
-    setupEventHandlers();
+  initializeToastSystem();
+  initializeYearSelect();
+  loadJungschuetzen();
+  setupEventHandlers();
 
-    // === TOAST SYSTEM ===
-    function initializeToastSystem() {
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
+  function initializeToastSystem() {
+    if ($('#toast-container').length === 0) {
+      $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
+    }
+  }
+
+  function showToast(message, type = 'info') {
+    const toast = $('<div>')
+      .addClass(`toast-message toast-${type}`)
+      .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}`)
+      .css({
+        'background-color': type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#6c757d',
+        'color': 'white', 'padding': '12px 20px', 'margin-bottom': '10px', 'border-radius': '8px',
+        'box-shadow': '0 4px 15px rgba(0,0,0,0.15)', 'opacity': '0', 'transform': 'translateX(100%)',
+        'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)', 'font-weight': '500',
+        'display': 'flex', 'align-items': 'center', 'min-width': '280px', 'font-size': '0.9rem'
+      });
+
+    $('#toast-container').append(toast);
+    setTimeout(() => { toast.css({'opacity': '1','transform': 'translateX(0)'}); }, 100);
+    setTimeout(() => {
+      toast.css({'opacity': '0','transform': 'translateX(100%)'});
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  function initializeYearSelect() {
+    const currentYear = new Date().getFullYear();
+    const startYear = 2020;
+    let options = '';
+    for (let year = currentYear; year >= startYear; year--) {
+      const selected = year === currentYear ? 'selected' : '';
+      options += `<option value="${year}" ${selected}>${year}</option>`;
+    }
+    $('#yearSelect').html(options);
+  }
+
+  // Vereinheitliche Aktions-Buttons wie in jsendschloesen.php
+  function unifyRowActionButtons($scope) {
+    $scope.find('tr').each(function(){
+      const $row = $(this);
+      const $cells = $row.find('td');
+      if ($cells.length < 5) return;
+
+      const $actionsCell = $cells.eq(4);
+      // Sammle evtl. vorhandene Buttons (versch. Klassen)
+      const $edit = $actionsCell.find('.edit-btn, .btn-edit-js').first();
+      const $del  = $actionsCell.find('.delete-btn, .btn-delete-js').first();
+
+      // Falls die Zelle bereits eine btn-group hat, nix tun
+      if ($actionsCell.find('.btn-group.btn-group-sm').length) return;
+
+      // IDs/Namen aus existierenden Buttons oder Zeile
+      const id = ($edit.data('id')) || ($del.data('id')) || null;
+      const name = ($del.data('name')) || ($row.find('td:first').text().trim()) || '';
+
+      // Neue Gruppe bauen
+      const $group = $(`
+        <div class="btn-group btn-group-sm" role="group">
+          <button class="btn btn-outline-secondary btn-edit-js" title="Bearbeiten">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <button class="btn btn-outline-danger btn-delete-js" title="Löschen">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `);
+      if (id) {
+        $group.find('.btn-edit-js').attr('data-id', id);
+        $group.find('.btn-delete-js').attr({'data-id': id, 'data-name': name});
+      }
+      $actionsCell.empty().append($group);
+    });
+  }
+
+  function setupEventHandlers() {
+    // Jahr-Wechsel
+    $('#yearSelect').on('change', function() {
+      const selectedYear = $(this).val();
+      showToast(`Lade Daten für Jahr ${selectedYear}...`, 'info');
+      loadJungschuetzen();
+    });
+
+    // Zeilenklick öffnet Modal (nicht bei Buttonklick)
+    $(document).on('click', '#jungschuetzenTabelle tbody tr', function(e) {
+      if ($(e.target).closest('.btn').length === 0) {
+        const $row = $(this);
+        const $editBtn = $row.find('.btn-edit-js, .edit-btn').first();
+        if ($editBtn.length > 0) {
+          const jungschuetzeID = $editBtn.data('id');
+          const name = $row.find('td:first').text().trim();
+          openEditModal(jungschuetzeID, name);
         }
-    }
+      }
+    });
 
-    // Moderne Toast-Funktion
-    function showToast(message, type = 'info') {
-        const toast = $('<div>')
-            .addClass(`toast-message toast-${type}`)
-            .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}`)
-            .css({
-                'background-color': type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#6c757d',
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '8px',
-                'box-shadow': '0 4px 15px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                'font-weight': '500',
-                'display': 'flex',
-                'align-items': 'center',
-                'min-width': '280px',
-                'font-size': '0.9rem'
-            });
+    // PDF Gesamtrangliste direkt herunterladen
+    $('.ges-btn').on('click', function (e) {
+      e.preventDefault();
+      const $btn = $(this);
+      const originalText = $btn.html();
 
-        $('#toast-container').append(toast);
+      $btn.prop('disabled', true)
+          .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
 
-        setTimeout(() => {
-            toast.css({
-                'opacity': '1',
-                'transform': 'translateX(0)'
-            });
-        }, 100);
+      $.ajax({
+        url: 'jsendsch/generate_pdf_gesamt.php',
+        type: 'GET',
+        dataType: 'json',
+        data: { year: $('#yearSelect').val() || new Date().getFullYear() },
+        success: function (data) {
+          try {
+            if (typeof data === 'string') data = JSON.parse(data);
+            let href = data && data.pdf_link ? String(data.pdf_link) : '';
+            if (!href) { showToast('Keine PDF-URL erhalten.', 'error'); return; }
+            if (!/^https?:\/\//i.test(href) && !href.startsWith('/')) {
+              href = 'jsendsch/' + href.replace(/^\.?\//, '');
+            }
+            const a = document.createElement('a');
+            a.href = encodeURI(href);
+            a.download = href.split('/').pop();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
 
-        setTimeout(() => {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
-
-    // Nachricht anzeigen (wrapper für Toast)
-    function showMessage(message, type) {
-        const typeMap = {
-            'danger': 'error',
-            'success': 'success',
-            'warning': 'warning',
-            'info': 'info'
-        };
-        showToast(message, typeMap[type] || 'info');
-    }
-
-    // === JAHRESAUSWAHL ===
-    function initializeYearSelect() {
-        const currentYear = new Date().getFullYear();
-        const startYear = 2020; // Oder ein anderes Startjahr
-        
-        let options = '';
-        for (let year = currentYear; year >= startYear; year--) {
-            const selected = year === currentYear ? 'selected' : '';
-            options += `<option value="${year}" ${selected}>${year}</option>`;
+            showToast('PDF erfolgreich generiert und heruntergeladen', 'success');
+            $('#pdf-link').empty();
+          } catch (err) {
+            console.error('PDF parse/render error:', err);
+            showToast('Fehler beim Verarbeiten der PDF-Antwort', 'error');
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error('PDF AJAX error:', status, error, xhr.responseText);
+          showToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+        },
+        complete: function () {
+          $btn.prop('disabled', false).html(originalText);
         }
-        
-        $('#yearSelect').html(options);
-    }
+      });
+    });
 
-    // === EVENT HANDLERS ===
-    function setupEventHandlers() {
-        // Jahr-Auswahl
-        $('#yearSelect').on('change', function() {
-            const selectedYear = $(this).val();
-            showToast(`Lade Daten für Jahr ${selectedYear}...`, 'info');
-            loadJungschuetzen();
-        });
-        // PDF Gesamtrangliste generieren
-        $('.ges-btn').on('click', function(e) {
-            e.preventDefault();
-            const $btn = $(this);
-            const originalText = $btn.html();
-            
-            $btn.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
-            
-            $.ajax({
-                url: 'jsendsch/generate_pdf_gesamt.php',
-                type: 'GET',
-                data: {
-                    year: $('#yearSelect').val() || new Date().getFullYear()
-                },
-                success: function(response) {
-                    try {
-                        const data = JSON.parse(response);
-                        const pdfLink = data.pdf_link;
-                        $('#pdf-link').html(`
-                            <div class="alert alert-info">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>
-                                <a href="jsendsch/${pdfLink}" target="_blank" class="alert-link">
-                                    PDF herunterladen
-                                </a>
-                            </div>
-                        `);
-                        showToast('PDF erfolgreich generiert', 'success');
-                    } catch (e) {
-                        showToast('Fehler beim Verarbeiten der PDF-Antwort', 'error');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    showToast('Fehler beim Generieren des PDFs: ' + error, 'error');
-                },
-                complete: function() {
-                    $btn.prop('disabled', false).html(originalText);
-                }
-            });
-        });
+    // Delete-Buttons (Zeilen-Event nicht propagieren)
+    $(document).on('click', '.delete-btn, .btn-delete-js, .btn-action-delete', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      deleteType = 'single';
+      jungschuetzeIDToDelete = $(this).data('id');
+      const name = $(this).data('name') || $(this).closest('tr').find('td:first').text();
+      $('#confirmModal .modal-body').text(`Sind Sie sicher, dass Sie die Daten von "${name}" löschen möchten?`);
+      $('#confirmModal').modal('show');
+    });
 
-        // Button "Alle Daten löschen"
-        $('#delall-btn').on('click', function() {
-            deleteType = 'all';
-            $('#confirmModal .modal-body').text('Sind Sie sicher, dass Sie ALLE Jungschützen-Daten löschen möchten?');
-            $('#confirmModal').modal('show');
-        });
+    // Edit-Buttons (Zeilen-Event nicht propagieren)
+    $(document).on('click', '.edit-btn, .btn-edit-js, .btn-action-edit', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      const jungschuetzeID = $(this).data('id');
+      const name = $(this).closest('tr').find('td:first').text().trim();
+      openEditModal(jungschuetzeID, name);
+    });
 
-        // Delete-Buttons der einzelnen Jungschützen
-        $(document).on('click', '.delete-btn', function() {
-            deleteType = 'single';
-            jungschuetzeIDToDelete = $(this).data('id');
-            const name = $(this).closest('tr').find('td:first').text();
-            $('#confirmModal .modal-body').text(`Sind Sie sicher, dass Sie die Daten von "${name}" löschen möchten?`);
-            $('#confirmModal').modal('show');
-        });
+    // Bestätigung im Modal (alle / single)
+    $('#confirmAction').on('click', function() {
+      const $btn = $(this);
+      const originalText = $btn.html();
+      $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Löschen...');
 
-        // Bestätigungs-Button im Modal
-        $('#confirmAction').on('click', function() {
-            const $btn = $(this);
-            const originalText = $btn.html();
-            
-            $btn.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm me-2"></span>Löschen...');
-
-            if (deleteType === 'all') {
-                $.ajax({
-                    url: 'jsendsch/delete_endschresultate.php',
-                    method: 'POST',
-                    data: {
-                        csrf_token: $('input[name="csrf_token"]').val(),
-                        year: $('#yearSelect').val() || new Date().getFullYear()
-                    },
-                    success: function(response) {
-                        showToast('Alle Daten erfolgreich gelöscht', 'success');
-                        $('#confirmModal').modal('hide');
-                        setTimeout(() => loadJungschuetzen(), 1000);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Delete all error:', error, 'Response:', xhr.responseText);
-                        showToast('Fehler beim Löschen aller Daten', 'error');
-                    },
-                    complete: function() {
-                        $btn.prop('disabled', false).html(originalText);
-                    }
-                });
-            } else if (deleteType === 'single' && jungschuetzeIDToDelete !== null) {
-                $.ajax({
-                    url: 'jsendsch/delete_endschresultat.php',
-                    method: 'POST',
-                    data: {
-                        jungschuetzeID: jungschuetzeIDToDelete,
-                        csrf_token: $('input[name="csrf_token"]').val(),
-                        year: $('#yearSelect').val() || new Date().getFullYear()
-                    },
-                    success: function(response) {
-                        showToast('Jungschütze erfolgreich gelöscht', 'success');
-                        $('#confirmModal').modal('hide');
-                        setTimeout(() => loadJungschuetzen(), 1000);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Delete single error:', error, 'Response:', xhr.responseText);
-                        showToast('Fehler beim Löschen des Jungschützen', 'error');
-                    },
-                    complete: function() {
-                        $btn.prop('disabled', false).html(originalText);
-                    }
-                });
-            }
-        });
-
-        // Button "Rangliste"
-        $('#redirect-btn').on('click', function() {
-            window.location.href = 'jungschuetzen_rangliste.php';
-        });
-
-        // WICHTIG: Edit-Button Event Handler korrekt binden
-        $(document).on('click', '.edit-btn', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const jungschuetzeID = $(this).data('id');
-            const name = $(this).closest('tr').find('td:first').text().trim();
-            
-            console.log('Edit button clicked for ID:', jungschuetzeID, 'Name:', name);
-            
-            // Modal-Titel setzen
-            $('#schussModalLabel').html(`<i class="bi bi-target me-2"></i> Erfassen - ${name}`);
-            
-            // ID im versteckten Feld setzen
-            $('#jungschuetzeID').val(jungschuetzeID);
-            
-            // Form zurücksetzen
-            $('#schussForm')[0].reset();
-            $('.total-display').text('0');
-            
-            // Daten laden
-            $.ajax({
-                url: 'jsendsch/load_schussdaten.php',
-                type: 'GET',
-                data: {
-                    jungschuetzeID: jungschuetzeID,
-                    year: $('#yearSelect').val() || new Date().getFullYear()
-                },
-                success: function(response) {
-                    console.log('Loaded data:', response);
-                    try {
-                        const data = typeof response === 'string' ? JSON.parse(response) : response;
-                        
-                        // Daten in die Felder eintragen
-                        for (const key in data) {
-                            if (data.hasOwnProperty(key) && data[key] !== null) {
-                                const $field = $('#' + key);
-                                if ($field.length) {
-                                    $field.val(data[key]);
-                                    console.log('Setting field', key, 'to', data[key]);
-                                }
-                            }
-                        }
-                        
-                        // Summen berechnen
-                        calculateSum();
-                        
-                        // Modal anzeigen
-                        $('#schussModal').modal('show');
-                        
-                    } catch (e) {
-                        console.error('Parse error:', e);
-                        showToast('Fehler beim Verarbeiten der Schussdaten', 'error');
-                        // Modal trotzdem anzeigen für neue Eingabe
-                        $('#schussModal').modal('show');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Load error:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
-                    showToast('Fehler beim Laden der Schussdaten', 'error');
-                    // Modal trotzdem anzeigen für neue Eingabe
-                    $('#schussModal').modal('show');
-                }
-            });
-        });
-
-        // Schussdaten speichern
-        $('#schussForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            const $submitBtn = $('button[form="schussForm"]');
-            const originalText = $submitBtn.html();
-            
-            // Validierung
-            const jungschuetzeID = $('#jungschuetzeID').val();
-            if (!jungschuetzeID) {
-                showToast('Fehler: Keine Jungschützen-ID gefunden', 'error');
-                return;
-            }
-            
-            console.log('Saving data for Jungschütze ID:', jungschuetzeID);
-            
-            $submitBtn.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
-            
-            // Formulardaten sammeln
-            const formData = $(this).serialize() + '&year=' + ($('#yearSelect').val() || new Date().getFullYear());
-            
-            console.log('Form data being sent:', formData);
-            
-            $.ajax({
-                url: 'jsendsch/save_schuss.php',
-                type: 'POST',
-                data: formData,
-                success: function(response) {
-                    console.log('Save response:', response);
-                    showToast('Resultate erfolgreich gespeichert', 'success');
-                    $('#schussModal').modal('hide');
-                    setTimeout(() => loadJungschuetzen(), 1000);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Save error:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
-                    showToast('Fehler beim Speichern der Schussdaten: ' + error, 'error');
-                },
-                complete: function() {
-                    $submitBtn.prop('disabled', false).html(originalText);
-                }
-            });
-        });
-
-        // Summe berechnen bei Eingabe
-        $(document).on('input change', '.endschuss, .schwini-schuss, .zabig', function() {
-            calculateSum();
-        });
-    }
-
-    // === DATEN LADEN ===
-    function loadJungschuetzen() {
-        $('#jungschuetzenTabelle tbody').html(`
-            <tr>
-                <td colspan="8" class="text-center py-4">
-                    <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                    Lade Jungschützen...
-                </td>
-            </tr>
-        `);
-
+      if (deleteType === 'all') {
         $.ajax({
-            url: 'jsendsch/load_endschresultate.php',
-            type: 'GET',
-            data: {
-                year: $('#yearSelect').val() || new Date().getFullYear()
-            },
-            timeout: 10000,
-            success: function(response) {
-                $('#jungschuetzenTabelle tbody').html(response);
-                console.log('Jungschützen loaded successfully');
-                // Toast nur bei manueller Aktualisierung zeigen, nicht beim initialen Laden
-                if ($('#jungschuetzenTabelle').data('loaded')) {
-                    showToast('Jungschützen erfolgreich geladen', 'success');
-                }
-                $('#jungschuetzenTabelle').data('loaded', true);
-            },
-            error: function(xhr, status, error) {
-                console.error('Load error:', status, error, 'Response:', xhr.responseText);
-                let errorMessage = 'Fehler beim Laden der Jungschützen';
-                
-                if (status === 'timeout') {
-                    errorMessage = 'Zeitüberschreitung beim Laden der Daten';
-                } else if (xhr.status === 404) {
-                    errorMessage = 'Datei nicht gefunden (jsendsch/load_endschresultate.php)';
-                } else if (xhr.status === 500) {
-                    errorMessage = 'Server-Fehler - Bitte Logs prüfen';
-                }
-                
-                $('#jungschuetzenTabelle tbody').html(`
-                    <tr>
-                        <td colspan="5" class="text-center text-danger py-4">
-                            <i class="bi bi-exclamation-triangle me-2"></i> ${errorMessage}
-                            <br><small>Status: ${xhr.status} - ${error}</small>
-                        </td>
-                    </tr>
-                `);
-                showToast(errorMessage, 'error');
+          url: 'jsendsch/delete_endschresultate.php',
+          method: 'POST',
+          data: {
+            csrf_token: $('input[name="csrf_token"]').val(),
+            year: $('#yearSelect').val() || new Date().getFullYear()
+          },
+          success: function() {
+            showToast('Alle Daten erfolgreich gelöscht', 'success');
+            $('#confirmModal').modal('hide');
+            setTimeout(() => loadJungschuetzen(), 600);
+          },
+          error: function(xhr, status, error) {
+            console.error('Delete all error:', error, 'Response:', xhr.responseText);
+            showToast('Fehler beim Löschen aller Daten', 'error');
+          },
+          complete: function() {
+            $btn.prop('disabled', false).html(originalText);
+          }
+        });
+      } else if (deleteType === 'single' && jungschuetzeIDToDelete !== null) {
+        $.ajax({
+          url: 'jsendsch/delete_endschresultat.php',
+          method: 'POST',
+          data: {
+            jungschuetzeID: jungschuetzeIDToDelete,
+            csrf_token: $('input[name="csrf_token"]').val(),
+            year: $('#yearSelect').val() || new Date().getFullYear()
+          },
+          success: function() {
+            showToast('Jungschütze erfolgreich gelöscht', 'success');
+            $('#confirmModal').modal('hide');
+            setTimeout(() => loadJungschuetzen(), 600);
+          },
+          error: function(xhr, status, error) {
+            console.error('Delete single error:', error, 'Response:', xhr.responseText);
+            showToast('Fehler beim Löschen des Jungschützen', 'error');
+          },
+          complete: function() {
+            $btn.prop('disabled', false).html(originalText);
+          }
+        });
+      }
+    });
+
+    // Button "Alle Daten löschen"
+    $('#delall-btn').on('click', function() {
+      deleteType = 'all';
+      $('#confirmModal .modal-body').text('Sind Sie sicher, dass Sie ALLE Jungschützen-Daten löschen möchten?');
+      $('#confirmModal').modal('show');
+    });
+
+    // Button "Rangliste"
+    $('#redirect-btn').on('click', function() {
+      window.location.href = 'jungschuetzen_rangliste.php';
+    });
+
+    // Summen im Modal neu berechnen
+    $(document).on('input change', '.endschuss, .schwini-schuss, .zabig', function() {
+      calculateSum();
+    });
+  }
+
+  // Daten laden
+  function loadJungschuetzen() {
+    $('#jungschuetzenTabelle tbody').html(`
+      <tr>
+        <td colspan="5" class="text-center py-4">
+          <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
+          Lade Jungschützen...
+        </td>
+      </tr>
+    `);
+
+    $.ajax({
+      url: 'jsendsch/load_endschresultate.php',
+      type: 'GET',
+      data: { year: $('#yearSelect').val() || new Date().getFullYear() },
+      timeout: 10000,
+      success: function(response) {
+        const $tbody = $('#jungschuetzenTabelle tbody');
+        $tbody.html(response);
+
+        // numerische Spalten kennzeichnen (2,3,4)
+        $tbody.find('tr').each(function(){
+          $(this).find('td:nth-child(2), td:nth-child(3), td:nth-child(4)').addClass('num');
+        });
+
+        // Buttons vereinheitlichen wie in jsendschloesen.php
+        unifyRowActionButtons($tbody);
+
+        console.log('Jungschützen loaded successfully');
+        if ($('#jungschuetzenTabelle').data('loaded')) {
+          showToast('Jungschützen erfolgreich geladen', 'success');
+        }
+        $('#jungschuetzenTabelle').data('loaded', true);
+      },
+      error: function(xhr, status, error) {
+        console.error('Load error:', status, error, 'Response:', xhr.responseText);
+        let errorMessage = 'Fehler beim Laden der Jungschützen';
+        if (status === 'timeout')       errorMessage = 'Zeitüberschreitung beim Laden der Daten';
+        else if (xhr.status === 404)    errorMessage = 'Datei nicht gefunden (jsendsch/load_endschresultate.php)';
+        else if (xhr.status === 500)    errorMessage = 'Server-Fehler – Bitte Logs prüfen';
+
+        $('#jungschuetzenTabelle tbody').html(`
+          <tr>
+            <td colspan="5" class="text-center text-danger py-4">
+              <i class="bi bi-exclamation-triangle me-2"></i> ${errorMessage}
+              <br><small>Status: ${xhr.status} - ${error}</small>
+            </td>
+          </tr>
+        `);
+        showToast(errorMessage, 'error');
+      }
+    });
+  }
+
+  // Edit-Modal laden
+  function openEditModal(jungschuetzeID, name) {
+    if (!jungschuetzeID) { showToast('Fehler: Keine Jungschützen-ID gefunden', 'error'); return; }
+    $('#schussModalLabel').html(`<i class="bi bi-target me-2"></i> Erfassen – ${name}`);
+    $('#jungschuetzeID').val(jungschuetzeID);
+    $('#schussForm')[0].reset();
+    $('.total-display').text('0');
+
+    $.ajax({
+      url: 'jsendsch/load_schussdaten.php',
+      type: 'GET',
+      data: { jungschuetzeID, year: $('#yearSelect').val() || new Date().getFullYear() },
+      success: function(response) {
+        try {
+          const data = typeof response === 'string' ? JSON.parse(response) : response;
+          for (const key in data) {
+            if (Object.hasOwn(data, key) && data[key] !== null) {
+              const $f = $('#' + key);
+              if ($f.length) $f.val(data[key]);
             }
-        });
-    }
+          }
+          calculateSum();
+          $('#schussModal').modal('show');
+        } catch (e) {
+          console.error('Parse error:', e);
+          showToast('Fehler beim Verarbeiten der Schussdaten', 'error');
+          $('#schussModal').modal('show');
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Load error:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
+        showToast('Fehler beim Laden der Schussdaten', 'error');
+        $('#schussModal').modal('show');
+      }
+    });
+  }
 
-    // === BERECHNUNG DER SUMMEN ===
-    function calculateSum() {
-        // Endstich
-        let endstichSum = 0;
-        $('.endschuss').each(function() {
-            const val = parseFloat($(this).val()) || 0;
-            endstichSum += val;
-        });
-        $('#endstichSumme').text(endstichSum);
+  // Speichern
+  $('#schussForm').on('submit', function(e) {
+    e.preventDefault();
+    const $submitBtn = $('button[form="schussForm"]');
+    const originalText = $submitBtn.html();
 
-        // Schwini
-        let schwiniSum = 0;
-        $('.schwini-schuss').each(function() {
-            const val = parseFloat($(this).val()) || 0;
-            schwiniSum += val;
-        });
-        $('#schwiniSumme').text(schwiniSum);
+    const jungschuetzeID = $('#jungschuetzeID').val();
+    if (!jungschuetzeID) { showToast('Fehler: Keine Jungschützen-ID gefunden', 'error'); return; }
 
-        // Zabig (spezielle Berechnung)
-        let zabigSum = 0;
-        $('.zabig').each(function() {
-            let val = parseFloat($(this).val()) || 0;
-            if (val > 0) {
-                // Wert zwischen 0 und 100 begrenzen
-                val = Math.max(0, Math.min(100, val));
-                // Punkte basierend auf dem Bereich berechnen
-                const score = Math.ceil(val / 10);
-                // Punkte auf Skala von 0 bis 10 anpassen
-                zabigSum += Math.max(0, Math.min(10, score));
-            }
-        });
-        $('#zabigsum').text(zabigSum);
-    }
+    $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
+
+    const formData = $(this).serialize() + '&year=' + ($('#yearSelect').val() || new Date().getFullYear());
+
+    $.ajax({
+      url: 'jsendsch/save_schuss_v2.php',
+      type: 'POST',
+      data: formData,
+      dataType: 'json',
+      success: function(response) {
+        if (response.debug) console.log('Debug info:', response.debug);
+        if (response.success) {
+          showToast(response.message || 'Resultate erfolgreich gespeichert', 'success');
+          $('#schussModal').modal('hide');
+          setTimeout(() => loadJungschuetzen(), 600);
+        } else {
+          showToast('Fehler: ' + (response.message || 'Unbekannt'), 'error');
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Save error:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
+        try {
+          const resp = JSON.parse(xhr.responseText);
+          showToast('Fehler: ' + (resp.message || error), 'error');
+        } catch(e2) {
+          showToast('Fehler beim Speichern: ' + error, 'error');
+        }
+      },
+      complete: function() {
+        $submitBtn.prop('disabled', false).html(originalText);
+      }
+    });
+  });
+
+  // Summenberechnung im Modal
+  function calculateSum() {
+    let endstichSum = 0;
+    $('.endschuss').each(function() { endstichSum += (parseFloat($(this).val()) || 0); });
+    $('#endstichSumme').text(endstichSum);
+
+    let schwiniSum = 0;
+    $('.schwini-schuss').each(function() { schwiniSum += (parseFloat($(this).val()) || 0); });
+    $('#schwiniSumme').text(schwiniSum);
+
+    let zabigSum = 0;
+    $('.zabig').each(function() {
+      let val = parseFloat($(this).val()) || 0;
+      if (val > 0) {
+        val = Math.max(0, Math.min(100, val));
+        const score = Math.ceil(val / 10);
+        zabigSum += Math.max(0, Math.min(10, score));
+      }
+    });
+    $('#zabigsum').text(zabigSum);
+  }
 });
 </script>
 

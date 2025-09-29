@@ -42,7 +42,8 @@ html, body {
 /* *** WICHTIG: Formulare in der Kette ebenfalls flex! *** */
 #heimresultateForm,
 #kantiresultateForm,
-#endresultateForm {
+#endresultateForm,
+#rankingForm {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;

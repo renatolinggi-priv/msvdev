@@ -7,11 +7,11 @@ include 'header.inc.php';
 /* Home-Page spezifische Styles */
 .hero-section {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 1.5rem;
-    padding: 2.5rem 2rem; /* Reduziert von 4rem */
-    margin-bottom: 2rem; /* Reduziert von 3rem */
+    border-radius: 1rem;
+    padding: 1.5rem; /* Weiter reduziert */
+    margin-bottom: 1.5rem; /* Weiter reduziert */
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     position: relative;
     overflow: hidden;
 }
@@ -38,13 +38,13 @@ include 'header.inc.php';
 }
 
 .hero-logo {
-    width: 80px; /* Reduziert von 120px */
-    height: 80px; /* Reduziert von 120px */
+    width: 60px; /* Weiter reduziert */
+    height: 60px; /* Weiter reduziert */
     border-radius: 50%;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    margin-bottom: 1.5rem; /* Reduziert von 2rem */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem; /* Weiter reduziert */
     transition: transform 0.3s ease;
-    border: 4px solid #ffffff;
+    border: 3px solid #ffffff;
 }
 
 .hero-logo:hover {
@@ -52,10 +52,10 @@ include 'header.inc.php';
 }
 
 .hero-title {
-    font-size: 2rem; /* Reduziert von 2.5rem */
+    font-size: 1.5rem; /* Weiter reduziert */
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 0.5rem; /* Reduziert von 1rem */
+    margin-bottom: 0.3rem; /* Weiter reduziert */
     background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -63,17 +63,17 @@ include 'header.inc.php';
 }
 
 .hero-subtitle {
-    font-size: 1rem; /* Reduziert von 1.2rem */
+    font-size: 0.85rem; /* Weiter reduziert */
     color: #718096;
-    margin-bottom: 0; /* Reduziert von 2rem */
+    margin-bottom: 0;
     font-weight: 400;
 }
 
 .quick-access-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
 }
 
 .quick-access-card {
@@ -91,7 +91,7 @@ include 'header.inc.php';
 
 .quick-access-card-link {
     display: block;
-    padding: 2rem;
+    padding: 1.5rem;
     text-decoration: none;
     color: inherit;
     height: 100%;
@@ -119,15 +119,15 @@ include 'header.inc.php';
 }
 
 .quick-access-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 1.5rem;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1rem;
     background: linear-gradient(135deg, #e6f2ff, #cce7ff);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     color: #3b5998;
     transition: all 0.3s ease;
 }
@@ -139,17 +139,17 @@ include 'header.inc.php';
 }
 
 .quick-access-title {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #2d3748;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.5rem;
 }
 
 .quick-access-description {
     color: #718096;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
 }
 
 .quick-access-link {
@@ -196,28 +196,28 @@ include 'header.inc.php';
 }
 
 .info-section {
-    background: #ffffff; /* Geändert von blauem Gradient zu weiß */
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Gleicher Schatten wie Quick Access Cards */
-    border: 1px solid #f7fafc; /* Gleicher Border wie Quick Access Cards */
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f7fafc;
 }
 
 .info-title {
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #2d3748;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.5rem;
 }
 
 .info-content {
     color: #4a5568;
-    line-height: 1.6;
-    font-size: 1rem;
+    line-height: 1.5;
+    font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
@@ -363,6 +363,22 @@ include 'header.inc.php';
 
     <!-- Quick Access Grid -->
     <div class="quick-access-grid">
+        <!-- Munitionskauf als erste Kachel -->
+        <div class="quick-access-card">
+            <a href="munitionskauf.php" class="quick-access-card-link">
+                <div class="quick-access-icon" style="background: linear-gradient(135deg, #ffe6e6, #ffcccc); color: #dc3545;">
+                    <i class="bi bi-cart-check"></i>
+                </div>
+                <h3 class="quick-access-title">Munitionskauf</h3>
+                <p class="quick-access-description">
+                    Munitionsbestellungen erfassen
+                </p>
+                <div class="quick-access-link" style="color: #dc3545;">
+                    Zur Erfassung <i class="bi bi-arrow-right"></i>
+                </div>
+            </a>
+        </div>
+
         <div class="quick-access-card">
             <a href="jmresultate.php" class="quick-access-card-link">
                 <div class="quick-access-icon">

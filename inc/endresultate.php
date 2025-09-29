@@ -409,6 +409,7 @@ $(document).ready(function() {
         updateSieErUniqueVisualization();
     });
 });
+
 </script>
 
 <?php include 'footer.inc.php'; ?>

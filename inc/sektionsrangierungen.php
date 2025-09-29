@@ -1,165 +1,6 @@
 <?php
 // sektionsrangierungen.php
 include 'dbconnect.inc.php';
-
-// Seitenspezifische Styles
-$page_specific_css = "
-/* === SEKTIONSRANGIERUNGEN STYLES === */
-/* Das Form muss in der Flex-Kette sein */
-#rankingForm {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-}
-
-#rankingsContainer {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: hidden;
-}
-/* Flex-Layout für scrollbare Tabelle - überschreibt die table-wrapper defaults */
-.table-wrapper {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    margin-bottom: 0 !important;
-}
-
-.ranking-card {
-    background: #ffffff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    padding: 1.5rem;
-    margin-bottom: 0;
-    border: 1px solid #f1f5f9;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-}
-
-.ranking-table {
-    font-size: 0.9rem;
-}
-
-.ranking-table th {
-    background-color: var(--light-color);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    padding: 1rem 0.75rem;
-    color: var(--secondary-color);
-    border-bottom: 2px solid #dee2e6;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-/* Spaltenbreiten für Sektionsrangierungen */
-.ranking-table .anlass-col { width: 50%; text-align: left; }
-.ranking-table .rang-col { width: 10%; }
-.ranking-table .preis-col { width: 20%; }
-.ranking-table .aktionen-col { width: 20%; }
-
-/* Explizite Linksbündigkeit für erste Spalte - KEINE sticky spalte hier */
-.ranking-table td:first-child,
-.ranking-table th:first-child {
-    text-align: left !important;
-}
-
-/* NUR Header-Zeile sticky machen, nicht die erste Spalte */
-.ranking-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background-color: var(--light-color);
-}
-
-.ranking-table thead th {
-    background-color: var(--light-color) !important;
-    position: sticky;
-    top: 0;
-}
-
-/* Body-Zellen normale Hintergründe */
-.ranking-table tbody td {
-    background-color: #ffffff;
-    position: static !important; /* Keine sticky Spalten im Body */
-}
-
-.ranking-table tbody tr.table-secondary td {
-    background-color: #e9ecef !important;
-}
-
-.add-ranking-card {
-    background: #f8f9fa;
-    border: 2px dashed #dee2e6;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    transition: all 0.2s ease;
-}
-
-.add-ranking-card:hover {
-    border-color: #007bff;
-    background: #f0f8ff;
-}
-
-/* Mobile Anpassungen - Verbessert */
-.table-responsive {
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Erst bei sehr kleinen Bildschirmen responsiv werden */
-@media (max-width: 576px) {
-    .ranking-card {
-        padding: 1rem;
-        margin-left: -15px;
-        margin-right: -15px;
-        border-radius: 0;
-    }
-    
-    .ranking-table {
-        font-size: 0.8rem;
-        min-width: 600px; /* Verhindert vorzeitiges Umbrechen */
-    }
-    
-    .ranking-table th,
-    .ranking-table td {
-        padding: 0.5rem 0.25rem;
-        white-space: nowrap;
-    }
-}
-
-/* Mittlere Bildschirme - mehr Platz nutzen */
-@media (min-width: 769px) and (max-width: 1200px) {
-    .ranking-table .anlass-col { width: 45%; }
-    .ranking-table .rang-col { width: 12%; }
-    .ranking-table .preis-col { width: 18%; }
-    .ranking-table .aktionen-col { width: 25%; }
-}
-
-/* Action Buttons Styling - gleiche Größe wie in Endresultate */
-.ranking-table td:last-child .btn {
-    margin: 1px !important;
-    padding: 0.25rem 0.4rem !important;
-    font-size: 0.8rem !important;
-}
-
-.ranking-table td:last-child {
-    white-space: nowrap !important;
-}
-";
-
 include 'header.inc.php';
 
 // CSRF Token generieren
@@ -167,10 +8,205 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 ?>
+<style>
+/* ==========================================
+   SEKTIONSRANGIERUNGEN.PHP SPEZIFISCHE FIXES
+   ========================================== */
+
+/* 1. Das #addRankingCard Element soll keinen Flex-Raum wegnehmen */
+#addRankingCard {
+  flex-shrink: 0 !important;
+}
+
+/* 2. Margin-Probleme lösen - fixe Höhen für alle Margin-Elemente */
+.year-selection-card.mb-3,
+.add-ranking-card.mb-3,
+.button-toolbar.mb-3,
+#message.mb-2 {
+  flex-shrink: 0 !important;
+  margin-bottom: 1rem !important; /* Einheitlich statt mb-3/mb-2 Mix */
+}
+
+/* 3. Die table-wrapper muss alle verfügbare Höhe nutzen */
+.table-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 4. table-responsive als Scroll-Container */
+.table-wrapper .table-responsive {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  overflow: auto !important;
+  height: auto !important;
+}
+
+/* 5. Das dynamische #rankingsList Element */
+#rankingsList {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0 !important;
+}
+
+/* 6. Tabelle in rankingsList soll nicht überlaufen */
+#rankingsList table {
+  width: auto !important;
+  min-width: 100%;
+  margin-bottom: 0 !important;
+}
+
+/* 7. Debug: Falls immer noch Probleme bestehen */
+#rankingForm {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+/* 8. Stelle sicher, dass Padding/Margins die Höhenberechnung nicht stören */
+.content-background {
+  padding: 1.5rem !important;
+  box-sizing: border-box !important;
+}   
+
+/* ==========================================
+   STICKY HEADER FIX für sektionsrangierungen.php
+   ========================================== */
+
+/* 1. Sticky Header für alle Tabellen in #rankingsList */
+#rankingsList table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background-color: #f8f9fa !important; /* Bootstrap's table-light background */
+  border-bottom: 2px solid #dee2e6 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 2. Erste Spalte (Anlass) - Links sticky + höherer z-index */
+#rankingsList table thead th:first-child,
+#rankingsList table tbody td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 11 !important; /* Höher als normale Header */
+  background-color: #f8f9fa !important;
+  border-right: 2px solid #dee2e6 !important;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 3. Erste Spalte Header bekommt höchsten z-index (beide sticky) */
+#rankingsList table thead th:first-child {
+  z-index: 12 !important; /* Höchster Wert für Ecke links-oben */
+  background-color: #e9ecef !important; /* Leicht dunklerer Ton */
+}
+
+/* 4. Hover-Effekte respektieren z-index */
+#rankingsList table tbody tr:hover td {
+  z-index: 5 !important;
+}
+
+#rankingsList table tbody tr:hover td:first-child {
+  z-index: 11 !important; /* Erste Spalte bleibt über hover */
+}
+
+/* 5. Sicherstellen dass Tabelle die richtige Struktur hat */
+#rankingsList table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+/* 6. Fix für Bootstrap Tabellen-Borders */
+#rankingsList table th,
+#rankingsList table td {
+  border-left: 1px solid #dee2e6 !important;
+  border-right: 1px solid #dee2e6 !important;
+}
+
+#rankingsList table thead th {
+  border-top: 1px solid #dee2e6 !important;
+}
+
+/* 7. Smooth Scrolling für bessere UX */
+#rankingsList .table-responsive {
+  scroll-behavior: smooth;
+}
+
+/* 8. Mobile/Responsive Anpassungen */
+@media (max-width: 768px) {
+  #rankingsList table thead th:first-child,
+  #rankingsList table tbody td:first-child {
+    min-width: 150px !important; /* Mindestbreite für erste Spalte */
+  }
+}
+
+/* 9. Alternative: Falls sticky nicht funktioniert - Fallback */
+.table-fixed-header {
+  position: relative;
+}
+
+.table-fixed-header thead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: #f8f9fa;
+}
+
+/* 10. Debug Styles (entferne nach dem Testen) */
+/*
+#rankingsList table thead th {
+  border: 2px solid red !important;
+}
+#rankingsList table thead th:first-child {
+  border: 2px solid blue !important;
+}
+*/
+
+#rankingsList table {
+  border-collapse: collapse !important; /* Zurück zu collapse */
+  border-spacing: 0 !important;
+}
+
+#rankingsList table th,
+#rankingsList table td {
+  border: 1px solid #dee2e6 !important;
+}
+
+/* Sticky Header Borders */
+#rankingsList table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background-color: #f8f9fa !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Erste Spalte - ohne doppelte Borders */
+#rankingsList table thead th:first-child,
+#rankingsList table tbody td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 11 !important;
+  background-color: #f8f9fa !important;
+  border-right: 2px solid #dee2e6 !important;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+#rankingsList table thead th:first-child {
+  z-index: 12 !important;
+  background-color: #e9ecef !important;
+</style>
 <link rel="stylesheet" href="../css/fixes/no-page-scroll-override.css">
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xxl-6 col-xl-8 col-lg-10 col-md-12 col-12 ps-0">
+        <div class="col-xl-7 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
@@ -183,28 +219,28 @@ if (empty($_SESSION['csrf_token'])) {
                         <p class="text-muted mb-0">Verwaltung der Rangierungen für JM-Anlässe</p>
                     </div>
                 </div>
-                
+
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
                     <form id="rankingForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-                        
-                        <!-- Jahr-Auswahl -->
-                        <div class="year-selection-card">
+
+                        <!-- Jahr-Auswahl (einheitlich) -->
+                        <div class="year-selection-card mb-3">
                             <div class="row align-items-center">
                                 <div class="col-md-5">
                                     <label for="yearSelect" class="form-label fw-bold">
-                                        <i class="bi bi-calendar3 me-1"></i>Jahr auswählen:
+                                        <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
                                     </label>
                                     <select id="yearSelect" class="form-select">
-                                        <!-- Optionen werden per JavaScript eingefügt -->
+                                        <!-- Optionen via JS -->
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Neue Rangierung hinzufügen -->
-                        <div class="add-ranking-card" id="addRankingCard" style="display: none;">
+                        <!-- Neue Rangierung hinzufügen (versteckt) -->
+                        <div class="add-ranking-card mb-3" id="addRankingCard" style="display: none;">
                             <h6 class="mb-3">
                                 <i class="bi bi-plus-circle me-2"></i>
                                 Neue Rangierung hinzufügen
@@ -215,7 +251,6 @@ if (empty($_SESSION['csrf_token'])) {
                                     <label for="anlassSelect" class="form-label">Anlass:</label>
                                     <select id="anlassSelect" class="form-select">
                                         <option value="">-- Anlass auswählen --</option>
-                                        <!-- Optionen werden per JavaScript eingefügt -->
                                     </select>
                                 </div>
                                 <div class="col-md-3">
@@ -234,9 +269,9 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
                         </div>
 
-                        <!-- Button Toolbar -->
-                        <div class="button-toolbar">
-                            <div class="button-group">
+                        <!-- Button Toolbar (einheitlich) -->
+                        <div class="button-toolbar mb-3">
+                            <div class="button-group d-flex gap-2 flex-wrap">
                                 <button type="button" id="addNewBtn" class="btn btn-compact-standard btn-outline-primary" disabled>
                                     <i class="bi bi-plus-circle me-2"></i>
                                     Neue Rangierung
@@ -248,22 +283,13 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
                         </div>
 
-                        <!-- Vorhandene Rangierungen -->
-                        <div id="rankingsContainer" style="display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden;">
-                            <div class="ranking-card">
-                                <h5 class="mb-3">
-                                    <i class="bi bi-list-ul me-2"></i>
-                                    Vorhandene Rangierungen
-                                </h5>
-                                <div class="table-wrapper" style="display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden;">
-                                    <div class="table-responsive" id="rankingsList" style="flex: 1 1 auto; min-height: 0; overflow: auto;">
-                                        <!-- Wird per JavaScript geladen -->
-                                        <div class="text-center py-4">
-                                            <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                                            Lade Rangierungen...
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Message Container -->
+                        <div id="message" class="mb-2"></div>
+
+                        <!-- Tabelle (einheitlich wie heimresultate.php) -->
+                        <div class="table-wrapper">
+                            <div class="table-responsive">
+                                <div id="rankingsList"></div>
                             </div>
                         </div>
                     </form>
@@ -301,9 +327,6 @@ if (empty($_SESSION['csrf_token'])) {
                                 </label>
                                 <input type="number" class="form-control" id="editRangInput"
                                        min="1" max="999" placeholder="z.B. 1" required>
-                                <div class="invalid-feedback">
-                                    Bitte geben Sie einen gültigen Rang ein.
-                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -313,16 +336,8 @@ if (empty($_SESSION['csrf_token'])) {
                                 </label>
                                 <input type="number" class="form-control" id="editPreisInput"
                                        min="0" step="0.05" placeholder="z.B. 100.00" required>
-                                <div class="invalid-feedback">
-                                    Bitte geben Sie einen gültigen Preis ein.
-                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="alert alert-info d-none" id="editModalAlert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <span id="editModalAlertText"></span>
                     </div>
                 </form>
             </div>
@@ -338,47 +353,42 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
+<!-- Gemeinsame Bibliothek einbinden -->
+<script src="js/msv-resultate-common.js"></script>
+
+<script>
+// Initialisierung mit der gemeinsamen Bibliothek
+$(document).ready(function() {
+    // Initialisiere den Manager für Heim (verwende bekannten Typ)
+    const heimManager = MSV.init('heim');
+    
+    // Global Scroll aktivieren
+    MSV.enableGlobalScroll();
+});
+</script>
+
 <script>
 $(document).ready(function () {
     var currentYear = new Date().getFullYear();
     var selectedYear = currentYear;
-    
-    // Viewport-Variablen setzen (wie bei heimresultate.php)
-    function applyViewportVars() {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', vh + 'px');
-        
-        const headerEl = document.querySelector('.navbar, header, .site-header');
-        const footerEl = document.querySelector('footer, .site-footer');
-        
-        const headerH = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 0;
-        const footerH = footerEl ? Math.round(footerEl.getBoundingClientRect().height) : 0;
-        
-        document.documentElement.style.setProperty('--app-header', headerH + 'px');
-        document.documentElement.style.setProperty('--app-footer', footerH + 'px');
-    }
-    
-    // Initial und bei Resize
-    applyViewportVars();
-    window.addEventListener('resize', applyViewportVars);
-    window.addEventListener('load', applyViewportVars);
 
     // Toast-Funktion
     function showToast(message, type = 'info') {
         if ($('#toast-container').length === 0) {
             $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
         }
-        
+
+        const icon = (type === 'success') ? 'check-circle' :
+                     (type === 'error')   ? 'exclamation-circle' :
+                     (type === 'warning') ? 'exclamation-triangle' : 'info-circle';
+
         const toast = $('<div>')
             .addClass(`toast-message toast-${type}`)
-            .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>${message}`);
+            .html(`<i class="bi bi-${icon} me-2"></i>${message}`);
 
         $('#toast-container').append(toast);
 
-        setTimeout(() => {
-            toast.addClass('show');
-        }, 100);
-
+        setTimeout(() => { toast.addClass('show'); }, 100);
         setTimeout(() => {
             toast.removeClass('show');
             setTimeout(() => toast.remove(), 300);
@@ -390,14 +400,12 @@ $(document).ready(function () {
         const yearSelect = $('#yearSelect').empty();
         for (let year = 2024; year <= currentYear; year++) {
             const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) {
-                option.prop('selected', true);
-            }
+            if (year === currentYear) option.prop('selected', true);
             yearSelect.append(option);
         }
     }
 
-    // Verfügbare Anlässe laden (noch keine Rangierung vorhanden)
+    // Verfügbare Anlässe laden
     function loadAvailableDefinitions(year) {
         $('#anlassSelect').html('<option value="">Lade Anlässe...</option>');
 
@@ -408,7 +416,7 @@ $(document).ready(function () {
             dataType: 'json',
             success: function (response) {
                 $('#anlassSelect').html('<option value="">-- Anlass auswählen --</option>');
-                
+
                 if (response.success && response.definitions.length > 0) {
                     response.definitions.forEach(function(def) {
                         const option = $('<option></option>')
@@ -419,8 +427,7 @@ $(document).ready(function () {
                 } else {
                     $('#anlassSelect').append('<option value="" disabled>Alle Anlässe bereits bewertet</option>');
                 }
-                
-                // Button aktivieren wenn Anlässe verfügbar
+
                 $('#addNewBtn').prop('disabled', response.definitions.length === 0);
             },
             error: function () {
@@ -447,12 +454,6 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success && response.rankings.length > 0) {
                     displayRankings(response.rankings);
-                    // Tabellenhöhe nach dem Laden neu berechnen
-                    setTimeout(() => {
-                        const event = new Event('resize');
-                        window.dispatchEvent(event);
-                    }, 100);
-                    // PDF Export Button anzeigen
                     $('#exportPdfBtn').show();
                 } else {
                     $('#rankingsList').html(`
@@ -461,7 +462,6 @@ $(document).ready(function () {
                             Noch keine Rangierungen für das Jahr ${year} erfasst.
                         </div>
                     `);
-                    // PDF Export Button verstecken
                     $('#exportPdfBtn').hide();
                 }
             },
@@ -477,57 +477,65 @@ $(document).ready(function () {
         });
     }
 
-    // Rangierungen anzeigen
+    // Rangierungen anzeigen - EXAKT wie heimresultate.php
     function displayRankings(rankings) {
         let totalPrize = 0;
-        
+
         let html = `
-                <table class="table table-hover ranking-table">
-                    <thead>
-                        <tr>
-                            <th class="anlass-col">Anlass</th>
-                            <th class="rang-col text-center">Rang</th>
-                            <th class="preis-col text-end">Preis (CHF)</th>
-                            <th class="aktionen-col text-center">Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <table class="table table-hover mb-0" style="width:auto;">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 200px;">
+                            <i class="bi bi-calendar-event me-1"></i>Anlass
+                        </th>
+                        <th scope="col" class="text-center">Rang</th>
+                        <th scope="col" class="text-center">Preis (CHF)</th>
+                        <th scope="col" class="text-center">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
-        
+
         rankings.forEach(function(ranking) {
-            totalPrize += parseFloat(ranking.preis);
+            const preisNum = Number(ranking.preis) || 0;
+            totalPrize += preisNum;
             html += `
                 <tr>
-                    <td class="fw-medium">${ranking.bezeichnung}</td>
+                    <td>${ranking.bezeichnung}</td>
                     <td class="text-center">
                         <span class="badge bg-primary">${ranking.rang}</span>
                     </td>
-                    <td class="text-end fw-bold">CHF ${parseFloat(ranking.preis).toFixed(2)}</td>
+                    <td class="text-center">CHF ${preisNum.toFixed(2)}</td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-primary me-1 edit-ranking"
-                                data-id="${ranking.id}" data-rang="${ranking.rang}" data-preis="${ranking.preis}">
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-ranking"
+                                data-id="${ranking.id}" 
+                                data-rang="${ranking.rang}" 
+                                data-preis="${preisNum}"
+                                data-anlass="${ranking.bezeichnung}">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger delete-ranking"
-                                data-id="${ranking.id}" data-anlass="${ranking.bezeichnung}">
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-ranking"
+                                data-id="${ranking.id}" 
+                                data-anlass="${ranking.bezeichnung}">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
             `;
         });
-        
-        // Total-Zeile hinzufügen
+
+        // Total-Zeile
         html += `
                 <tr class="table-secondary fw-bold">
-                    <td class="fw-bold">TOTAL</td>
+                    <td>TOTAL</td>
                     <td class="text-center">-</td>
-                    <td class="text-end fw-bold">CHF ${totalPrize.toFixed(2)}</td>
+                    <td class="text-center">CHF ${totalPrize.toFixed(2)}</td>
                     <td class="text-center">-</td>
                 </tr>
+            </tbody>
+        </table>
         `;
-        
-        html += '</tbody></table>';
+
         $('#rankingsList').html(html);
     }
 
@@ -566,15 +574,13 @@ $(document).ready(function () {
             success: function(response) {
                 if (response.success) {
                     showToast('Rangierung erfolgreich gespeichert', 'success');
-                    
-                    // Formular zurücksetzen
+
                     $('#anlassSelect').val('');
                     $('#rangInput').val('');
                     $('#preisInput').val('');
                     $('#addRankingCard').slideUp();
                     $('#addNewBtn').prop('disabled', false);
-                    
-                    // Listen neu laden
+
                     loadAvailableDefinitions(selectedYear);
                     loadExistingRankings(selectedYear);
                 } else {
@@ -590,57 +596,37 @@ $(document).ready(function () {
         });
     });
 
-    // Edit-Button Event Handler - Modal öffnen
+    // Edit-Button Event Handler
     $(document).on('click', '.edit-ranking', function() {
         const id = $(this).data('id');
         const currentRang = $(this).data('rang');
         const currentPreis = $(this).data('preis');
-        const anlassName = $(this).closest('tr').find('td:first').text();
-        
-        // Modal mit aktuellen Werten füllen
+        const anlassName = $(this).data('anlass');
+
         $('#editRankingId').val(id);
         $('#editAnlassName').val(anlassName);
         $('#editRangInput').val(currentRang);
         $('#editPreisInput').val(currentPreis);
-        
-        // Validation-Klassen zurücksetzen
-        $('#editRankingForm')[0].classList.remove('was-validated');
-        $('#editRangInput, #editPreisInput').removeClass('is-invalid');
-        $('#editModalAlert').addClass('d-none');
-        
-        // Modal öffnen
+
         $('#editRankingModal').modal('show');
     });
 
-    // Modal Save Button Event Handler
+    // Modal Save Button
     $('#saveEditRankingBtn').on('click', function() {
-        const form = $('#editRankingForm')[0];
         const id = $('#editRankingId').val();
         const newRang = $('#editRangInput').val();
         const newPreis = $('#editPreisInput').val();
-        
-        // Form validieren
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
+
+        if (!newRang || !newPreis) {
+            showToast('Bitte alle Felder ausfüllen', 'warning');
             return;
         }
-        
-        // Zusätzliche Validierung
-        if (!newRang || !newPreis || isNaN(newRang) || isNaN(newPreis)) {
-            $('#editModalAlert')
-                .removeClass('d-none alert-info')
-                .addClass('alert-danger')
-                .find('#editModalAlertText')
-                .text('Bitte geben Sie gültige Werte für Rang und Preis ein.');
-            return;
-        }
-        
+
         const $btn = $(this);
         const originalText = $btn.html();
         $btn.prop('disabled', true)
             .html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
-        
-        // Update durchführen
+
         $.ajax({
             url: 'sektionsrangierungen/update_ranking.php',
             type: 'POST',
@@ -657,19 +643,11 @@ $(document).ready(function () {
                     $('#editRankingModal').modal('hide');
                     loadExistingRankings(selectedYear);
                 } else {
-                    $('#editModalAlert')
-                        .removeClass('d-none alert-info')
-                        .addClass('alert-danger')
-                        .find('#editModalAlertText')
-                        .text('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'));
+                    showToast('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                $('#editModalAlert')
-                    .removeClass('d-none alert-info')
-                    .addClass('alert-danger')
-                    .find('#editModalAlertText')
-                    .text('Fehler beim Aktualisieren der Rangierung');
+                showToast('Fehler beim Aktualisieren der Rangierung', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -677,22 +655,15 @@ $(document).ready(function () {
         });
     });
 
-    // Modal Reset beim Schließen
-    $('#editRankingModal').on('hidden.bs.modal', function() {
-        $('#editRankingForm')[0].classList.remove('was-validated');
-        $('#editRangInput, #editPreisInput').removeClass('is-invalid');
-        $('#editModalAlert').addClass('d-none');
-    });
-
     // Delete-Button Event Handler
     $(document).on('click', '.delete-ranking', function() {
         const id = $(this).data('id');
         const anlassName = $(this).data('anlass');
-        
+
         if (!confirm(`Möchten Sie die Rangierung für "${anlassName}" wirklich löschen?`)) {
             return;
         }
-        
+
         $.ajax({
             url: 'sektionsrangierungen/delete_ranking.php',
             type: 'POST',
@@ -716,7 +687,7 @@ $(document).ready(function () {
         });
     });
 
-    // PDF Export Button Event Handler
+    // PDF Export Button
     $('#exportPdfBtn').on('click', function() {
         if (!selectedYear) {
             showToast('Bitte Jahr auswählen', 'warning');
@@ -739,8 +710,7 @@ $(document).ready(function () {
             success: function(response) {
                 if (response.success && response.pdf_url) {
                     showToast('PDF erfolgreich erstellt', 'success');
-                    
-                    // PDF in neuem Tab öffnen
+
                     const link = document.createElement('a');
                     link.href = response.pdf_url;
                     link.target = '_blank';
@@ -774,31 +744,8 @@ $(document).ready(function () {
     initializeYearDropdown();
     loadAvailableDefinitions(currentYear);
     loadExistingRankings(currentYear);
-    
-    // Global Scroll aktivieren (wie bei heimresultate.php)
-    if (window.MSV && window.MSV.enableGlobalScroll) {
-        window.MSV.enableGlobalScroll();
-    } else {
-        // Fallback: Eigene Scroll-Implementation wenn MSV nicht verfügbar
-        document.addEventListener('wheel', function(e) {
-            const tableContainer = document.querySelector('.table-responsive');
-            
-            if (tableContainer) {
-                const deltaY = e.deltaY;
-                
-                // Prüfe ob die Tabelle scrollbar ist
-                if (tableContainer.scrollHeight > tableContainer.clientHeight) {
-                    tableContainer.scrollTop += deltaY;
-                    e.preventDefault();
-                }
-            }
-        }, { passive: false });
-    }
 });
 </script>
-
-<!-- Gemeinsame Bibliothek einbinden -->
-<script src="js/msv-resultate-common.js"></script>
 
 <?php
 include 'footer.inc.php';

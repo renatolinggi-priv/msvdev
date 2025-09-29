@@ -1,6 +1,5 @@
 <?php
-// navigation.inc.php – Verbesserte mehrstufige Navigation mit anwählbaren Parent-Links
-
+// navigation.inc.php - Kompakte Version mit allen Funktionen
 
 class NavigationManager {
     private static $navigationCache = null;
@@ -12,12 +11,12 @@ class NavigationManager {
     }
 
     private function loadNavigationData() {
-        global $conn; // Globale Datenbankverbindung aus config.php
+        global $conn;
         
         if (self::$navigationCache !== null) return self::$navigationCache;
 
         $sql = "SELECT ID, Text, Link, ParentID, SortOrder FROM navigation ORDER BY ParentID, SortOrder, ID";
-        $result = $conn->query($sql); // Verwende die globale $conn direkt
+        $result = $conn->query($sql);
         
         if (!$result) {
             error_log("Navigation Query Error: " . $conn->error);
@@ -51,8 +50,8 @@ class NavigationManager {
         $this->renderUserDropdown($byParent);
         echo '</ul>';
 
-        // Verbessertes JavaScript für mehrstufige Navigation
-        $this->printImprovedSubmenuScript();
+        $this->printCompactStyles();
+        $this->printCompactScript();
     }
 
     private function renderItemRecursive($item, &$byParent, $currentPage, $depth = 0) {
@@ -66,10 +65,10 @@ class NavigationManager {
             // ROOT-EBENE
             if ($hasChildren) {
                 echo '<li class="nav-item dropdown">';
-                echo '<a class="nav-link dropdown-toggle '.($isActive?'active':'').'" href="#" id="nav_'.$id.'" role="button" data-bs-toggle="dropdown" aria-expanded="false">';
+                echo '<a class="nav-link dropdown-toggle '.($isActive?'active':'').'" href="#" id="nav_'.$id.'" role="button" data-bs-toggle="dropdown">';
                 echo $text;
                 echo '</a>';
-                echo '<ul class="dropdown-menu" aria-labelledby="nav_'.$id.'">';
+                echo '<ul class="dropdown-menu">';
                 foreach ($byParent[$id] as $child) {
                     $this->renderItemRecursive($child, $byParent, $currentPage, 1);
                 }
@@ -83,24 +82,20 @@ class NavigationManager {
         } else {
             // UNTERMENÜ-EBENEN
             if ($hasChildren) {
-                // Parent mit Kindern - Link UND Submenu-Toggle getrennt
-                echo '<li class="dropdown-submenu dropdown-hover">';
+                echo '<li class="dropdown-submenu">';
                 echo '<div class="dropdown-item-wrapper">';
                 
-                // Anklickbarer Link
                 if (!empty($link) && $link !== '#') {
                     echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'">'.$text.'</a>';
                 } else {
                     echo '<span class="dropdown-item dropdown-text '.($isActive?'active':'').'">'.$text.'</span>';
                 }
                 
-                // Separater Toggle-Button für Submenu
-                echo '<button class="dropdown-submenu-toggle" type="button" aria-label="Untermenü öffnen">';
+                echo '<button class="dropdown-submenu-toggle" type="button">';
                 echo '<i class="bi bi-chevron-right"></i>';
                 echo '</button>';
                 echo '</div>';
                 
-                // Submenu
                 echo '<ul class="dropdown-menu dropdown-submenu-menu">';
                 foreach ($byParent[$id] as $child) {
                     $this->renderItemRecursive($child, $byParent, $currentPage, $depth + 1);
@@ -108,78 +103,98 @@ class NavigationManager {
                 echo '</ul>';
                 echo '</li>';
             } else {
-                // Normales Item ohne Kinder
                 echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'">'.$text.'</a></li>';
             }
         }
     }
 
     private function isActiveDeep($itemId, $itemLink, $currentPage, &$byParent) {
-        if ($currentPage === basename((string)$itemLink)) return true;
+        // Normalisiere beide Pfade für den Vergleich
+        $itemLinkNorm = $this->normalizePath($itemLink);
+        $currentPageNorm = $this->normalizePath($currentPage);
+        
+        // Direkter Vergleich (entweder vollständiger Pfad oder Dateiname)
+        if ($currentPageNorm === $itemLinkNorm) return true;
+        
+        // Fallback: Vergleiche nur Dateinamen
+        if (basename($currentPageNorm) === basename($itemLinkNorm)) {
+            // Prüfe ob es sich um denselben Ordner handelt oder keine Ordner angegeben sind
+            $currentDir = dirname($currentPageNorm);
+            $itemDir = dirname($itemLinkNorm);
+            if ($currentDir === $itemDir || $currentDir === '.' || $itemDir === '.') {
+                return true;
+            }
+        }
+        
+        // Rekursiv Kinder prüfen
         if (!isset($byParent[$itemId])) return false;
         foreach ($byParent[$itemId] as $child) {
-            if ($currentPage === basename((string)$child['Link'])) return true;
-            if ($this->isActiveDeep((int)$child['ID'], $child['Link'], $currentPage, $byParent)) return true;
+            if ($this->isActiveDeep((int)$child['ID'], $child['Link'], $currentPage, $byParent)) {
+                return true;
+            }
         }
         return false;
+    }
+    
+    // Hilfsfunktion zum Normalisieren von Pfaden
+    private function normalizePath($path) {
+        // Entferne führende/abschließende Slashes und normalisiere
+        $path = trim((string)$path);
+        $path = str_replace('\\', '/', $path);
+        
+        // Wenn es nur ein Dateiname ist, gib ihn zurück
+        if (strpos($path, '/') === false) {
+            return $path;
+        }
+        
+        // Für relative Pfade: normalisiere sie
+        // z.B. "./admin/file.php" -> "admin/file.php"
+        $path = preg_replace('#^\\./+#', '', $path);
+        
+        return $path;
     }
 
     private function renderUserDropdown(&$byParent) {
         $username = $_SESSION['username'] ?? 'Benutzer';
 
         echo '<li class="nav-item dropdown ms-auto">';
-        echo '<a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">';
-        echo '<i class="bi bi-person-circle me-1"></i>'.$this->escape($username).'</a>';
-        echo '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">';
+        echo '<a class="nav-link dropdown-toggle user-menu" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">';
+        echo '<i class="bi bi-person-circle me-1"></i><span class="d-none d-lg-inline">'.$this->escape($username).'</span></a>';
+        echo '<ul class="dropdown-menu dropdown-menu-end">';
 
         // Standard-Einträge aus Navigation (ParentID=101)
-        $hasUserItems = false;
         if (isset($byParent[101])) {
             $icons = ['Passwort ändern'=>'bi-key','Profil'=>'bi-person','Einstellungen'=>'bi-gear'];
             foreach ($byParent[101] as $item) {
-                if ($item['Text'] !== 'User anlegen') {
-                    if( $item['Link'] !== 'backup_restore.php'){
-                        $icon = $icons[$item['Text']] ?? 'bi-circle';
-                        echo '<li><a class="dropdown-item" href="'.$this->escape($item['Link']).'"><i class="bi '.$icon.' me-2"></i>'.$this->escape($item['Text']).'</a></li>';
-                        $hasUserItems = true;
-                    }
+                if ($item['Text'] !== 'User anlegen' && $item['Link'] !== 'backup_restore.php') {
+                    $icon = $icons[$item['Text']] ?? 'bi-circle';
+                    echo '<li><a class="dropdown-item" href="'.$this->escape($item['Link']).'"><i class="bi '.$icon.' me-2"></i>'.$this->escape($item['Text']).'</a></li>';
                 }
             }
-            if ($hasUserItems) {
-                echo '<li><hr class="dropdown-divider"></li>';
-            }
+            echo '<li><hr class="dropdown-divider"></li>';
         }
 
-        // >>> HIER: Admin-Link "Navigation verwalten" integrieren (nur für Admins) <<<
-        $canManage = function_exists('user_can_manage_navigation')
-            ? user_can_manage_navigation()
-            : (!empty($_SESSION['is_admin']));
-
-        if ($canManage) {
+        // Admin-Link "Navigation verwalten" (nur für Admins)
+        if (function_exists('user_can_manage_navigation') ? user_can_manage_navigation() : !empty($_SESSION['is_admin'])) {
             $adminHref = file_exists('admin/nav_admin.php') ? 'admin/nav_admin.php' : '../admin/nav_admin.php';
             echo '<li><a class="dropdown-item" href="'.$this->escape($adminHref).'"><i class="bi bi-menu-button-wide me-2"></i>Navigation verwalten</a></li>';
             echo '<li><hr class="dropdown-divider"></li>';
-            
-            // Backup option that opens the modal
-            //echo '<li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#backupModal"><i class="bi bi-hdd-network me-2"></i>Backup</a></li>';
-            //echo '<li><hr class="dropdown-divider"></li>';
         }
 
-        // Abmelden
         echo '<li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="bi bi-box-arrow-right me-2"></i>Abmelden</a></li>';
         echo '</ul></li>';
     }
 
     public function generateBreadcrumb() {
         $data = $this->loadNavigationData();
-        $byParent = $data['byParent'] ?? [];
         $flat = $data['flat'] ?? [];
         $currentPage = basename($_SERVER['PHP_SELF']);
 
         $currentItem = null;
         foreach ($flat as $item) {
             if (basename((string)$item['Link']) === $currentPage) {
-                $currentItem = $item; break;
+                $currentItem = $item; 
+                break;
             }
         }
         if (!$currentItem) return;
@@ -193,10 +208,10 @@ class NavigationManager {
 
         if (count($breadcrumbs) > 1) {
             echo '<nav aria-label="breadcrumb" class="mt-2"><ol class="breadcrumb">';
-            echo '<li class="breadcrumb-item"><a href="home.php"><i class="bi bi-house"></i> Home</a></li>';
+            echo '<li class="breadcrumb-item"><a href="home.php"><i class="bi bi-house"></i></a></li>';
             foreach ($breadcrumbs as $i => $crumb) {
                 if ($i === count($breadcrumbs) - 1) {
-                    echo '<li class="breadcrumb-item active" aria-current="page">'.$this->escape($crumb['Text']).'</li>';
+                    echo '<li class="breadcrumb-item active">'.$this->escape($crumb['Text']).'</li>';
                 } else {
                     echo '<li class="breadcrumb-item"><a href="'.$this->escape($crumb['Link']).'">'.$this->escape($crumb['Text']).'</a></li>';
                 }
@@ -209,390 +224,345 @@ class NavigationManager {
         return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); 
     }
 
-    private function printImprovedSubmenuScript() {
-        echo <<<'SCRIPT'
-<script>
+    private function printCompactStyles() {
+        echo '<style>
+/* Kompakte Navigation Styles - Spezifisch für Navigation */
+:root {
+    --nav-height: 56px;
+    --nav-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    --nav-shadow-scrolled: 0 4px 12px rgba(0,0,0,0.12);
+    --nav-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --nav-active-color: #2563eb;
+    --nav-active-bg: rgba(52, 152, 219, 0.12);
+}
+
+.navbar {
+    height: var(--nav-height);
+    padding: 0.5rem 1rem !important;
+    transition: var(--nav-transition);
+}
+
+.navbar.scrolled {
+    box-shadow: var(--nav-shadow-scrolled);
+}
+
+.navbar-brand {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.25rem 0;
+}
+
+.navbar-nav .nav-link {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem !important;
+    margin: 0 0.2rem;
+    border-radius: 6px;
+    transition: var(--nav-transition);
+    position: relative;
+}
+
+.navbar-nav .nav-link:hover {
+    background: rgba(52, 152, 219, 0.08);
+    transform: translateY(-1px);
+}
+
+/* Subtilerer Active-Style */
+.navbar-nav .nav-link.active {
+    background: rgba(52, 152, 219, 0.12);
+    color: #2563eb !important;
+    font-weight: 600;
+    position: relative;
+}
+
+/* Unterstrich für aktives Element */
+.navbar-nav .nav-link.active::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: linear-gradient(90deg, #3498db, #2563eb);
+    border-radius: 3px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { width: 0; left: 50%; right: 50%; }
+    to { left: 20%; right: 20%; }
+}
+
+.navbar-nav .nav-link.user-menu {
+    background: rgba(52, 152, 219, 0.1);
+    padding: 0.3rem 0.6rem !important;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+/* Navigation Dropdown spezifisch */
+.navbar .dropdown-menu {
+    margin-top: 0.25rem !important;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    min-width: 180px;
+    animation: dropdownFade 0.2s ease;
+}
+
+/* Hover-Indikator für Dropdown-Toggle */
+@media (min-width: 992px) {
+    .navbar .nav-item.dropdown:hover .nav-link {
+        background: rgba(52, 152, 219, 0.08);
+    }
+}
+
+@keyframes dropdownFade {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.navbar .dropdown-item {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    margin: 0.1rem 0;
+    transition: var(--nav-transition);
+    position: relative;
+}
+
+.navbar .dropdown-item:hover {
+    background: rgba(52, 152, 219, 0.1);
+    transform: translateX(2px);
+}
+
+/* Subtilerer Active-Style für Dropdown Items */
+.navbar .dropdown-item.active {
+    background: rgba(52, 152, 219, 0.15);
+    color: #2563eb;
+    font-weight: 600;
+    border-left: 3px solid #3498db;
+    padding-left: calc(0.75rem - 3px);
+}
+
+/* Alternativer Style: Punkt statt voller Hintergrund */
+.navbar .dropdown-item.active::before {
+    content: "\2022";
+    position: absolute;
+    left: 0.3rem;
+    color: #3498db;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: none; /* Deaktiviert, da wir Border-Left verwenden */
+}
+
+.navbar .dropdown-item i {
+    width: 1.2rem;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+/* Kompakte Submenus - Navigation spezifisch */
+.navbar .dropdown-item-wrapper {
+    display: flex;
+    align-items: center;
+    margin: 0.1rem 0;
+    border-radius: 6px;
+}
+
+.navbar .dropdown-submenu .dropdown-item,
+.navbar .dropdown-submenu .dropdown-text {
+    flex: 1;
+    margin: 0;
+    border-radius: 6px 0 0 6px;
+}
+
+.navbar .dropdown-submenu-toggle {
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(0,0,0,0.08);
+    cursor: pointer;
+    min-width: 32px;
+    transition: var(--nav-transition);
+}
+
+.navbar .dropdown-submenu-toggle:hover {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.navbar .dropdown-submenu-toggle i {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.navbar .dropdown-submenu-menu {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-left: 0.25rem;
+    display: none;
+    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    padding: 0.4rem;
+}
+
+.navbar .dropdown-submenu-menu.show {
+    display: block;
+    animation: submenuSlide 0.15s ease;
+}
+
+@keyframes submenuSlide {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.navbar .dropdown-divider {
+    margin: 0.3rem 0;
+    opacity: 0.2;
+}
+
+/* Mobile */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background: white;
+        margin-top: 0.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: var(--nav-shadow-scrolled);
+    }
+    
+    .navbar .dropdown-submenu-menu {
+        position: static;
+        margin: 0.25rem 0 0.25rem 1rem;
+        box-shadow: none;
+        background: rgba(248,249,250,0.5);
+    }
+}
+
+/* Breadcrumb kompakt */
+.breadcrumb {
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "\203A";
+}
+</style>';
+    }
+
+    private function printCompactScript() {
+        echo '<script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Desktop: Hover-Verhalten für Submenus
+    // Scroll-Effekt
+    window.addEventListener("scroll", function() {
+        const navbar = document.querySelector(".navbar");
+        if (window.pageYOffset > 50) {
+            navbar?.classList.add("scrolled");
+        } else {
+            navbar?.classList.remove("scrolled");
+        }
+    });
+    
+    // Hover-Funktionalität für Hauptnavigation (Desktop)
     if (window.innerWidth >= 992) {
-        document.querySelectorAll('.dropdown-submenu.dropdown-hover').forEach(function(elem) {
+        // Hauptmenü-Dropdowns bei Hover
+        document.querySelectorAll(".navbar .nav-item.dropdown").forEach(dropdown => {
             let timeout;
+            const toggle = dropdown.querySelector(".dropdown-toggle");
+            const menu = dropdown.querySelector(".dropdown-menu");
             
-            elem.addEventListener('mouseenter', function() {
+            // Mouseenter auf dem gesamten Dropdown-Bereich
+            dropdown.addEventListener("mouseenter", function() {
                 clearTimeout(timeout);
-                const submenu = this.querySelector('.dropdown-submenu-menu');
-                if (submenu) {
-                    // Schließe andere Submenus auf gleicher Ebene
-                    const siblings = this.parentElement.querySelectorAll('.dropdown-submenu-menu.show');
-                    siblings.forEach(s => {
-                        if (s !== submenu) s.classList.remove('show');
-                    });
-                    
-                    // Positionierung prüfen
-                    submenu.classList.add('show');
-                    const rect = submenu.getBoundingClientRect();
-                    if (rect.right > window.innerWidth - 10) {
-                        submenu.classList.add('dropdown-submenu-left');
-                    } else {
-                        submenu.classList.remove('dropdown-submenu-left');
+                // Bootstrap Dropdown programmatisch öffnen
+                const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(toggle);
+                bsDropdown.show();
+            });
+            
+            // Mouseleave mit kleiner Verzögerung
+            dropdown.addEventListener("mouseleave", function() {
+                timeout = setTimeout(() => {
+                    const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
+                    if (bsDropdown) {
+                        bsDropdown.hide();
+                    }
+                }, 100); // 100ms Verzögerung für bessere Usability
+            });
+            
+            // Click-Toggle bleibt für Touch-Geräte erhalten
+            toggle.addEventListener("click", function(e) {
+                if (window.innerWidth >= 992) {
+                    e.preventDefault();
+                    // Bei Click navigieren wenn Link vorhanden
+                    if (this.href && this.href !== "#") {
+                        window.location.href = this.href;
                     }
                 }
             });
+        });
+        
+        // Submenu-Hover (bleibt wie es war)
+        document.querySelectorAll(".navbar .dropdown-submenu").forEach(elem => {
+            let timeout;
+            elem.addEventListener("mouseenter", function() {
+                clearTimeout(timeout);
+                const submenu = this.querySelector(".dropdown-submenu-menu");
+                if (submenu) {
+                    submenu.classList.add("show");
+                    const icon = this.querySelector(".dropdown-submenu-toggle i");
+                    if (icon) icon.style.transform = "rotate(90deg)";
+                }
+            });
             
-            elem.addEventListener('mouseleave', function() {
-                const submenu = this.querySelector('.dropdown-submenu-menu');
+            elem.addEventListener("mouseleave", function() {
+                const submenu = this.querySelector(".dropdown-submenu-menu");
                 if (submenu) {
                     timeout = setTimeout(() => {
-                        submenu.classList.remove('show');
+                        submenu.classList.remove("show");
+                        const icon = this.querySelector(".dropdown-submenu-toggle i");
+                        if (icon) icon.style.transform = "";
                     }, 200);
                 }
             });
         });
     }
     
-    // Toggle-Button für mobile und Desktop-Klick
-    document.querySelectorAll('.dropdown-submenu-toggle').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
+    // Submenu-Toggle für Click (Mobile und als Fallback)
+    document.querySelectorAll(".navbar .dropdown-submenu-toggle").forEach(btn => {
+        btn.addEventListener("click", function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            const submenu = this.closest('.dropdown-submenu').querySelector('.dropdown-submenu-menu');
-            if (submenu) {
-                // Schließe andere Submenus
-                const parent = this.closest('.dropdown-menu');
-                parent.querySelectorAll('.dropdown-submenu-menu.show').forEach(s => {
-                    if (s !== submenu) s.classList.remove('show');
-                });
-                
-                submenu.classList.toggle('show');
-                
-                // Positionierung für Desktop
-                if (window.innerWidth >= 992) {
-                    const rect = submenu.getBoundingClientRect();
-                    if (rect.right > window.innerWidth - 10) {
-                        submenu.classList.add('dropdown-submenu-left');
-                    } else {
-                        submenu.classList.remove('dropdown-submenu-left');
-                    }
-                }
-            }
+            const submenu = this.closest(".dropdown-submenu").querySelector(".dropdown-submenu-menu");
+            const parent = this.closest(".dropdown-menu");
+            
+            parent.querySelectorAll(".dropdown-submenu-menu.show").forEach(s => {
+                if (s !== submenu) s.classList.remove("show");
+            });
+            
+            submenu.classList.toggle("show");
+            this.querySelector("i").style.transform = submenu.classList.contains("show") ? "rotate(90deg)" : "";
         });
     });
     
-    // Schließe alle Submenus wenn Hauptmenü schließt
-    document.querySelectorAll('.nav-item.dropdown').forEach(function(dropdown) {
-        dropdown.addEventListener('hide.bs.dropdown', function() {
-            this.querySelectorAll('.dropdown-submenu-menu.show').forEach(menu => {
-                menu.classList.remove('show');
+    // Cleanup bei Dropdown-Close
+    document.querySelectorAll(".navbar .dropdown").forEach(dropdown => {
+        dropdown.addEventListener("hide.bs.dropdown", function() {
+            this.querySelectorAll(".dropdown-submenu-menu.show").forEach(menu => {
+                menu.classList.remove("show");
+            });
+            this.querySelectorAll(".dropdown-submenu-toggle i").forEach(icon => {
+                icon.style.transform = "";
             });
         });
     });
-    
-    // Verhindere dass Klick auf Parent-Link das Dropdown schließt
-    document.querySelectorAll('.dropdown-submenu .dropdown-item').forEach(function(item) {
-        item.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    });
 });
-</script>
-
-<style>
-/* ==========================================
-   VERBESSERTE MEHRSTUFIGE NAVIGATION
-   ========================================== */
-
-/* Basis Dropdown-Submenu Struktur */
-.dropdown-submenu {
-    position: relative;
-}
-
-/* Wrapper für Parent-Item mit Toggle */
-.dropdown-item-wrapper {
-    display: flex;
-    align-items: center;
-    position: relative;
-    padding: 0;
-    margin: 2px 0;  /* Nur vertikaler Abstand, kein horizontaler */
-    border-radius: 0.5rem;
-    transition: background-color 0.15s ease;
-}
-
-.dropdown-item-wrapper:hover {
-    background-color: rgba(108, 117, 125, 0.08);
-}
-
-/* Parent-Link Style */
-.dropdown-submenu .dropdown-item,
-.dropdown-submenu .dropdown-text {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    margin: 0;
-    border-radius: 0.5rem 0 0 0.5rem;
-    border: none;
-    background: transparent;
-    transition: none;
-}
-
-.dropdown-submenu .dropdown-text {
-    display: inline-block;
-    color: #212529;
-    cursor: default;
-    font-weight: 500;
-}
-
-/* Toggle-Button für Submenu */
-.dropdown-submenu-toggle {
-    padding: 0.75rem 1rem;
-    background: transparent;
-    border: none;
-    border-left: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 0 0.5rem 0.5rem 0;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-}
-
-.dropdown-submenu-toggle:hover {
-    background-color: rgba(108, 117, 125, 0.1);
-}
-
-.dropdown-submenu-toggle:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 2px rgba(108, 117, 125, 0.3);
-}
-
-.dropdown-submenu-toggle i {
-    font-size: 0.75rem;
-    transition: transform 0.2s ease;
-    color: #6c757d;
-}
-
-/* Wenn Submenu offen ist, rotiere den Pfeil */
-.dropdown-submenu:has(.dropdown-submenu-menu.show) .dropdown-submenu-toggle i {
-    transform: rotate(90deg);
-}
-
-/* Submenu Positionierung */
-.dropdown-submenu-menu {
-    position: absolute;
-    top: 0;
-    left: 100%;
-    margin-left: 0.5rem;
-    min-width: 220px;
-    display: none;
-    z-index: 1050;
-    
-    /* Übernehme Hauptmenü-Styles */
-    border: none;
-    border-radius: 1rem;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.98);
-    padding: 0.75rem 0;
-}
-
-/* Sichtbares Submenu */
-.dropdown-submenu-menu.show {
-    display: block;
-    animation: submenuFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Links ausgerichtetes Submenu (wenn rechts kein Platz) */
-.dropdown-submenu-menu.dropdown-submenu-left {
-    left: auto;
-    right: 100%;
-    margin-left: 0;
-    margin-right: 0.5rem;
-}
-
-/* Animation für Submenus */
-@keyframes submenuFadeIn {
-    from { 
-        opacity: 0; 
-        transform: translateX(-10px);
-    }
-    to { 
-        opacity: 1; 
-        transform: translateX(0);
-    }
-}
-
-/* Verbindungslinie zwischen Parent und Submenu */
-.dropdown-submenu-menu::before {
-    content: "";
-    position: absolute;
-    top: 15px;
-    left: -8px;
-    width: 8px;
-    height: 2px;
-    background: rgba(108, 117, 125, 0.2);
-}
-
-.dropdown-submenu-menu.dropdown-submenu-left::before {
-    left: auto;
-    right: -8px;
-}
-
-/* Desktop Hover-Effekte */
-@media (min-width: 992px) {
-    /* Automatisches Öffnen bei Hover */
-    .dropdown-submenu.dropdown-hover:hover > .dropdown-submenu-menu {
-        display: block;
-        animation: submenuFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Hover-Effekt verstärken */
-    .dropdown-submenu:hover > .dropdown-item-wrapper {
-        background-color: rgba(108, 117, 125, 0.1);
-    }
-    
-    /* Toggle-Button dezenter bei Hover */
-    .dropdown-submenu.dropdown-hover .dropdown-submenu-toggle {
-        opacity: 0.6;
-        min-width: 32px;
-        padding: 0.75rem 0.5rem;
-    }
-    
-    .dropdown-submenu.dropdown-hover:hover .dropdown-submenu-toggle {
-        opacity: 1;
-    }
-}
-
-/* Mobile Anpassungen */
-@media (max-width: 991.98px) {
-    /* Submenus untereinander stapeln */
-    .dropdown-submenu-menu {
-        position: static;
-        margin: 0.5rem 0 0.5rem 1.5rem;
-        box-shadow: none;
-        background: rgba(248, 249, 250, 0.5);
-        border-left: 2px solid rgba(108, 117, 125, 0.2);
-        border-radius: 0.5rem;
-    }
-    
-    .dropdown-submenu-menu::before {
-        display: none;
-    }
-    
-    /* Toggle-Button prominenter auf Mobile */
-    .dropdown-submenu-toggle {
-        min-width: 48px;
-        background-color: rgba(108, 117, 125, 0.05);
-    }
-    
-    /* Parent-Links auf Mobile */
-    .dropdown-item-wrapper {
-        margin: 0.25rem 0;  /* Kein horizontaler Abstand */
-    }
-}
-
-/* Aktive Zustände */
-.dropdown-submenu .dropdown-item.active,
-.dropdown-submenu .dropdown-text.active {
-    background-color: rgba(108, 117, 125, 0.12);
-    color: var(--dark-color);
-    font-weight: 600;
-}
-
-/* Disabled Zustände */
-.dropdown-submenu .dropdown-item:disabled,
-.dropdown-submenu .dropdown-text.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/* Verschachtelung Level 3+ */
-.dropdown-submenu .dropdown-submenu .dropdown-submenu-menu {
-    font-size: 0.875rem;
-}
-
-.dropdown-submenu .dropdown-submenu .dropdown-item-wrapper {
-    padding-left: 0.5rem;
-}
-
-/* Icon in Parent-Items */
-.dropdown-submenu .dropdown-item i,
-.dropdown-submenu .dropdown-text i {
-    margin-right: 0.5rem;
-    opacity: 0.7;
-}
-
-/* Smooth Scrolling für lange Menüs */
-.dropdown-submenu-menu {
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.dropdown-submenu-menu::-webkit-scrollbar {
-    width: 6px;
-}
-
-.dropdown-submenu-menu::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.dropdown-submenu-menu::-webkit-scrollbar-thumb {
-    background: rgba(108, 117, 125, 0.3);
-    border-radius: 3px;
-}
-
-.dropdown-submenu-menu::-webkit-scrollbar-thumb:hover {
-    background: rgba(108, 117, 125, 0.5);
-}
-
-/* Spezielle Styles für dreistufige Navigation */
-.dropdown-menu .dropdown-menu .dropdown-menu {
-    font-size: 0.85rem;
-}
-
-/* Visueller Indikator für Parent-Items mit Link */
-.dropdown-submenu .dropdown-item:not([href="#"])::after {
-    content: "→";
-    position: absolute;
-    right: 3.5rem;
-    opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.dropdown-submenu .dropdown-item:not([href="#"]):hover::after {
-    opacity: 0.5;
-    transform: translateX(2px);
-}
-
-/* Breadcrumb-artige Anzeige in Submenus */
-.dropdown-submenu-menu .dropdown-header {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: #6c757d;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    margin-bottom: 0.5rem;
-}
-
-/* Fade-Out Effekt für zu tiefe Verschachtelung */
-.dropdown-menu .dropdown-menu .dropdown-menu .dropdown-menu {
-    opacity: 0.9;
-}
-
-/* Accessibility Improvements */
-.dropdown-submenu-toggle:focus-visible {
-    outline: 2px solid #0d6efd;
-    outline-offset: -2px;
-}
-
-.dropdown-submenu .dropdown-item:focus-visible {
-    outline: 2px solid #0d6efd;
-    outline-offset: -2px;
-    background-color: rgba(13, 110, 253, 0.1);
-}
-</style>
-SCRIPT;
+</script>';
     }
 }
 
