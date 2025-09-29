@@ -1,0 +1,327 @@
+body {
+    font-size: 0.9em; /* Kleinere Schriftgröße */
+}
+
+.container-fluid {
+    padding: 10px; /* Weniger Padding */
+}
+
+.container {
+    padding: 20px;
+    width: 1800px; /* Volle Breite */
+    text-align: left !important; /* Erzwingt Linksorientierung */
+}
+
+.drag-container {
+    display: flex;
+    justify-content: flex-start; /* Linksorientierung */
+    padding: 20px 0;
+    gap: 30px;
+    width: 100%; /* Volle Breite */
+}
+
+.participant {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 200px; /* Volle Breite */
+    text-align: left !important; /* Linksorientierung erzwingen */
+}
+
+#winner-list,
+.pair,
+#pair-list-round2 {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 650px; /* Volle Breite */
+    text-align: left !important; /* Linksorientierung erzwingen */
+}
+
+#final-section, #standcupfinal-container {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 400px; /* Volle Breite */
+    text-align: left !important; /* Linksorientierung erzwingen */
+}
+
+.participant h4,
+.pair h5 {
+    font-size: 0.9em;
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 4px 8px; /* Weniger Padding in den Buttons */
+    font-size: 0.8em; /* Kleinere Schriftgröße in den Buttons */
+}
+
+.participant-item,
+.pair-partner {
+    cursor: move;
+    padding: 10px;
+    font-size: 0.9em;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    border-radius: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left !important; /* Linksorientierung erzwingen */
+    height: 40px; /* Beispielhöhe */
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    vertical-align: middle; /* Fügt eine mittige Ausrichtung hinzu */
+}
+
+.final-partner {
+    cursor: move;
+    padding: 10px;
+    font-size: 0.9em;
+    border: 1px solid #ddd; /* Rand hinzufügen */
+    background-color: #fff;
+    border-radius: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left !important; /* Linksorientierung erzwingen */
+    height: 40px; /* Beispielhöhe */
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    vertical-align: middle; /* Fügt eine mittige Ausrichtung hinzu */
+    flex: none; /* Verhindert, dass Flexbox die Breite dynamisch anpasst */
+    width: 150px; /* Feste Breite für die Namensfelder */
+    margin-right: 5px;
+    position: relative;
+    z-index: 1;
+}
+
+.pair-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    padding-right: 60px; /* Platz für den Button schaffen */
+}
+
+.pair-row, .pair-row-third {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px; /* Abstand zur nächsten Zeile */
+    width: 100%;
+}
+
+.pair-partner {
+    flex: none;
+    width: 150px; /* Feste Breite für die Namensfelder */
+    margin-right: 5px;
+    text-align: left !important;
+    position: relative;
+    z-index: 1;
+}
+
+.result-input,
+.low-shot-input {
+    width: 50px;
+    font-size: 0.9em;
+    text-align: center;
+    height: 40px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    margin-right: 5px;
+    margin-left: 2px;
+}
+
+.remove-pair,
+.remove-final-result {
+    position: absolute;
+    right: 10px; /* Abstand von der rechten Seite des .pair-item Containers */
+    top: 50%;
+    transform: translateY(-50%); /* Zentriert den Button vertikal */
+    background-color: #dc3545;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.remove-pair:hover,
+.remove-final-result:hover {
+    background-color: #c82333;
+}
+
+.pair-divider {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 10px 0;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.final-round-item {
+    display: flex;
+    justify-content: flex-start; /* Linksorientierung */
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+    padding-right: 40px;
+    width: 100%; /* Volle Breite */
+    background-color: #f9f9f9; /* Gleicher Hintergrund wie andere Boxen */
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.final-round-partner {
+    flex: none;
+    width: 180px; /* Feste Breite für die Namensfelder */
+    margin-right: 5px;
+    padding: 10px;
+    text-align: left !important;
+    background-color: #fff;
+    border-radius: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    vertical-align: middle;
+    border: 1px solid #ddd; /* Rand hinzufügen */
+}
+/* Zielt auf alle Dropdown-Menüelemente in der Navigation ab */
+.navbar .nav-item .dropdown-menu .dropdown-item {
+    font-size: 0.8em; /* Ändere dies nach Bedarf */
+}
+
+/* Optional: Zielt auf den Text des Dropdown-Toggles (das Hauptmenüelement) ab */
+.navbar .nav-item .dropdown-toggle {
+    font-size: 0.8em; /* Ändere dies nach Bedarf */
+}
+
+.final-round-result,
+.final-round-low-shot {
+    width: 50px;
+    font-size: 0.9em;
+    text-align: center;
+    height: 40px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    margin-right: 5px;
+    margin-left: 2px;
+}
+
+.remove-final-round {
+    position: absolute;
+    right: 10px; /* Abstand von der rechten Seite des Containers */
+    top: 50%;
+    transform: translateY(-50%); /* Zentriert den Button vertikal */
+    background-color: #dc3545;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.remove-final-round:hover {
+    background-color: #c82333;
+}
+/* Finalrunde und Standcup Final Container */
+.final-round-container, .standcup-final-container {
+    width: 48%; /* Beide Container nehmen jeweils 48% der Breite ein */
+    margin-right: 2%; /* Abstand von 2% zwischen den Containern */
+    display: inline-block; /* Container nebeneinander anzeigen */
+    vertical-align: top; /* Vertikale Ausrichtung */
+}
+
+/* Verhindern, dass Label in zwei Zeilen bricht */
+.standcup-final-container label {
+    white-space: nowrap; /* Verhindert Zeilenumbruch */
+}
+
+
+
+/* Festlegen einer festen Breite für die Labels */
+.standcup-final-container label {
+    display: inline-block;
+    width: 120px; /* Feste Breite für die Labels */
+    white-space: nowrap; /* Verhindert Zeilenumbruch */
+    text-align: left; /* Optional: Text im Label linksbündig */
+    margin-right: 10px; /* Abstand zwischen Label und Eingabefeld */
+}
+
+/* Gleiche Größe für die Namensfelder im Standcup und Finalrunde */
+.final-round-partner, .standcup-final-container .final-partner {
+    width: 180px; /* Gleiche Breite für alle Namensfelder */
+    text-align: right; /* Text im Eingabefeld rechtsbündig */
+    margin-right: 0; /* Kein zusätzlicher Abstand mehr */
+}
+
+/* Resultat-Input soll wie bei der Finalrunde aussehen */
+.standcup-final-container .result-input {
+    width: 50px; /* Gleiche Größe wie in der Finalrunde */
+    text-align: center; /* Zentrierter Text für die Eingabe */
+    height: 40px; /* Gleiche Höhe wie in der Finalrunde */
+    box-sizing: border-box;
+    vertical-align: middle;
+    margin-right: 5px;
+    margin-left: 10px; /* Abstand zwischen Name und Resultat */
+}
+
+/* Anpassung des Containers für Namens- und Resultat-Eingabefelder */
+.standcup-final-container .form-group {
+    display: flex;
+    justify-content: space-between; /* Platz zwischen Name und Resultat */
+    align-items: center; /* Zentrierung der Felder */
+    margin-bottom: 10px; /* Abstand zwischen den Eingabefeldern */
+    flex-wrap: nowrap; /* Keine Zeilenumbrüche */
+    width: 100%;
+}
+
+/* Zusätzlicher Abstand für die Namensfelder nach rechts */
+.standcup-final-container .form-control {
+    margin-left: auto; /* Rechtsbündig platzieren */
+    margin-right: 10px; /* Etwas Abstand nach rechts */
+}
+
+/* Speichern-Button zentriert */
+.standcup-final-container .text-center {
+    text-align: center;
+    margin-top: 20px;
+}
+

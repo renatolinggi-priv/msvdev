@@ -1,0 +1,45 @@
+/* ==========================================
+   Table Title + erste Spalte Header (valign bottom)
+   - Größerer Tabellentitel
+   - Erste Spalte im THEAD: linksbündig + vertikal unten
+   - Greift für JM / Heim / Kanti / End (Mitglieder)
+   ========================================== */
+
+/* 1) Tabellentitel sichtbar & größer */
+.table-wrapper .table-title {
+  display: flex !important;           /* überschreibt evtl. display:none */
+  align-items: flex-end;              /* Text am unteren Rand ausrichten */
+  gap: .5rem;
+  font-size: 1.35rem;                 /* ggf. 1.5rem, wenn du's noch größer willst */
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--secondary-color, #6c757d);
+  margin: .25rem 0 .75rem 0 !important;
+}
+
+/* Optional: kleine Linie unter dem Titel */
+.table-wrapper .table-title::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: #e9ecef;
+  margin-left: .75rem;
+}
+
+/* 2) Erste Spalte im THEAD: unten & linksbündig */
+#jmresultateTabelle thead th:first-child,
+#heimresultateTabelle thead th:first-child,
+#kantiresultateTabelle thead th:first-child,
+#mitgliederTabelle thead th:first-child {
+  vertical-align: bottom !important;
+  text-align: left !important;
+  padding-bottom: .35rem !important;
+}
+
+/* Falls Icons/Links im Header sind, ebenfalls linksbündig */
+#jmresultateTabelle thead th:first-child *,
+#heimresultateTabelle thead th:first-child *,
+#kantiresultateTabelle thead th:first-child *,
+#mitgliederTabelle thead th:first-child * {
+  text-align: left !important;
+}

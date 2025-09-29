@@ -1,0 +1,319 @@
+/* ==========================================
+   VERBESSERTE MEHRSTUFIGE NAVIGATION
+   ========================================== */
+
+/* Basis Dropdown-Submenu Struktur */
+.dropdown-submenu {
+    position: relative;
+}
+
+/* Wrapper für Parent-Item mit Toggle */
+.dropdown-item-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 0;
+    margin: 2px 0;  /* Nur vertikaler Abstand, kein horizontaler */
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease;
+}
+
+.dropdown-item-wrapper:hover {
+    background-color: rgba(108, 117, 125, 0.08);
+}
+
+/* Parent-Link Style */
+.dropdown-submenu .dropdown-item,
+.dropdown-submenu .dropdown-text {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border-radius: 0.5rem 0 0 0.5rem;
+    border: none;
+    background: transparent;
+    transition: none;
+}
+
+.dropdown-submenu .dropdown-text {
+    display: inline-block;
+    color: #212529;
+    cursor: default;
+    font-weight: 500;
+}
+
+/* Toggle-Button für Submenu */
+.dropdown-submenu-toggle {
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0 0.5rem 0.5rem 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+}
+
+.dropdown-submenu-toggle:hover {
+    background-color: rgba(108, 117, 125, 0.1);
+}
+
+.dropdown-submenu-toggle:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px rgba(108, 117, 125, 0.3);
+}
+
+.dropdown-submenu-toggle i {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    color: #6c757d;
+}
+
+/* Wenn Submenu offen ist, rotiere den Pfeil */
+.dropdown-submenu-menu.show ~ .dropdown-item-wrapper .dropdown-submenu-toggle i,
+.dropdown-item-wrapper:has(+ .dropdown-submenu-menu.show) .dropdown-submenu-toggle i {
+    transform: rotate(90deg);
+}
+
+/* Submenu Positionierung */
+.dropdown-submenu-menu {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-left: 0.5rem;
+    min-width: 220px;
+    display: none;
+    z-index: 1050;
+    
+    /* Übernehme Hauptmenü-Styles */
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+    padding: 0.75rem 0;
+}
+
+/* Sichtbares Submenu */
+.dropdown-submenu-menu.show {
+    display: block;
+    animation: submenuFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Links ausgerichtetes Submenu (wenn rechts kein Platz) */
+.dropdown-submenu-menu.dropdown-submenu-left {
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: 0.5rem;
+}
+
+/* Animation für Submenus */
+@keyframes submenuFadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateX(-10px);
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0);
+    }
+}
+
+/* Verbindungslinie zwischen Parent und Submenu */
+.dropdown-submenu-menu::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: -8px;
+    width: 8px;
+    height: 2px;
+    background: rgba(108, 117, 125, 0.2);
+}
+
+.dropdown-submenu-menu.dropdown-submenu-left::before {
+    left: auto;
+    right: -8px;
+}
+
+/* Desktop Hover-Effekte */
+@media (min-width: 992px) {
+    /* Automatisches Öffnen bei Hover */
+    .dropdown-submenu.dropdown-hover:hover > .dropdown-submenu-menu {
+        display: block;
+        animation: submenuFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Hover-Effekt verstärken */
+    .dropdown-submenu:hover > .dropdown-item-wrapper {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+    
+    /* Toggle-Button dezenter bei Hover */
+    .dropdown-submenu.dropdown-hover .dropdown-submenu-toggle {
+        opacity: 0.6;
+        min-width: 32px;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .dropdown-submenu.dropdown-hover:hover .dropdown-submenu-toggle {
+        opacity: 1;
+    }
+}
+
+/* Mobile Anpassungen */
+@media (max-width: 991.98px) {
+    /* Submenus untereinander stapeln */
+    .dropdown-submenu-menu {
+        position: static;
+        margin: 0.5rem 0 0.5rem 1.5rem;
+        box-shadow: none;
+        background: rgba(248, 249, 250, 0.5);
+        border-left: 2px solid rgba(108, 117, 125, 0.2);
+        border-radius: 0.5rem;
+    }
+    
+    .dropdown-submenu-menu::before {
+        display: none;
+    }
+    
+    /* Toggle-Button prominenter auf Mobile */
+    .dropdown-submenu-toggle {
+        min-width: 48px;
+        background-color: rgba(108, 117, 125, 0.05);
+    }
+    
+    /* Parent-Links auf Mobile */
+    .dropdown-item-wrapper {
+        margin: 0.25rem 0;  /* Kein horizontaler Abstand */
+    }
+}
+
+/* Aktive Zustände */
+.dropdown-submenu .dropdown-item.active,
+.dropdown-submenu .dropdown-text.active {
+    background-color: rgba(108, 117, 125, 0.12);
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+/* Disabled Zustände */
+.dropdown-submenu .dropdown-item:disabled,
+.dropdown-submenu .dropdown-text.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Verschachtelung Level 3+ */
+.dropdown-submenu .dropdown-submenu .dropdown-submenu-menu {
+    font-size: 0.875rem;
+}
+
+.dropdown-submenu .dropdown-submenu .dropdown-item-wrapper {
+    padding-left: 0.5rem;
+}
+
+/* Icon in Parent-Items */
+.dropdown-submenu .dropdown-item i,
+.dropdown-submenu .dropdown-text i {
+    margin-right: 0.5rem;
+    opacity: 0.7;
+}
+
+/* Smooth Scrolling für lange Menüs */
+.dropdown-submenu-menu {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dropdown-submenu-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-submenu-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dropdown-submenu-menu::-webkit-scrollbar-thumb {
+    background: rgba(108, 117, 125, 0.3);
+    border-radius: 3px;
+}
+
+.dropdown-submenu-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(108, 117, 125, 0.5);
+}
+
+/* Spezielle Styles für dreistufige Navigation */
+.dropdown-menu .dropdown-menu .dropdown-menu {
+    font-size: 0.85rem;
+}
+
+/* Visueller Indikator für Parent-Items mit Link */
+.dropdown-submenu .dropdown-item:not([href="#"])::after {
+    content: "→";
+    position: absolute;
+    right: 3.5rem;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-submenu .dropdown-item:not([href="#"]):hover::after {
+    opacity: 0.5;
+    transform: translateX(2px);
+}
+
+/* Breadcrumb-artige Anzeige in Submenus */
+.dropdown-submenu-menu .dropdown-header {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.5rem;
+}
+
+/* Fade-Out Effekt für zu tiefe Verschachtelung */
+.dropdown-menu .dropdown-menu .dropdown-menu .dropdown-menu {
+    opacity: 0.9;
+}
+
+/* Accessibility Improvements */
+.dropdown-submenu-toggle:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: -2px;
+}
+
+.dropdown-submenu .dropdown-item:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: -2px;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Dark Mode Support (optional) */
+@media (prefers-color-scheme: dark) {
+    .dropdown-submenu-menu {
+        background: rgba(33, 37, 41, 0.98);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dropdown-submenu .dropdown-item,
+    .dropdown-submenu .dropdown-text {
+        color: #f8f9fa;
+    }
+    
+    .dropdown-submenu-toggle {
+        border-left-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .dropdown-submenu-toggle i {
+        color: #adb5bd;
+    }
+    
+    .dropdown-item-wrapper:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+}

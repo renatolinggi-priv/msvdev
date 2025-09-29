@@ -1,0 +1,20 @@
+/* ==========================================
+   Endresultate: breitere erste Spalte + linksbündig
+   Gilt nur für die Tabelle mit id="mitgliederTabelle"
+   ========================================== */
+
+#mitgliederTabelle thead th:first-child,
+#mitgliederTabelle tbody td:first-child {
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important; /* fix, damit sticky sauber ausgerichtet bleibt */
+  text-align: left !important;
+  /* optional: etwas mehr Abstand rechts */
+  padding-right: 1rem !important;
+}
+
+/* Falls irgendwo global center gesetzt ist */
+#mitgliederTabelle thead th:first-child *,
+#mitgliederTabelle tbody td:first-child * {
+  text-align: left !important;
+}

@@ -1,0 +1,206 @@
+/* styles.css - Styling für CSV Viewer */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+.program-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.program-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.program-header {
+    position: relative;
+}
+
+.program-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, transparent 100%);
+}
+
+.shots-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.shot-value {
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+}
+
+.progress {
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+    border-radius: 0.25rem;
+}
+
+.total-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.file-info {
+    animation: slideInFromTop 0.5s ease;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Filter Options Card */
+#filterOptions {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#filterOptions .form-label {
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Statistics Summary */
+#statisticsSummary {
+    border-top: 3px solid var(--primary-color);
+}
+
+#statisticsSummary h3 {
+    margin-bottom: 0.25rem;
+    font-weight: 700;
+}
+
+#statisticsSummary .text-muted {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .program-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .total-badge {
+        font-size: 1rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .shots-table {
+        font-size: 0.8rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .upload-area,
+    #filterOptions {
+        display: none !important;
+    }
+    
+    .program-card {
+        page-break-inside: avoid;
+        border: 1px solid #dee2e6;
+    }
+    
+    .progress {
+        border: 1px solid #dee2e6;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .program-card {
+        background-color: #2b3035;
+        border-color: #495057;
+    }
+    
+    .program-header {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+    
+    .shots-table {
+        color: #f8f9fa;
+    }
+    
+    .shots-table thead th {
+        background-color: #495057;
+        color: #f8f9fa;
+    }
+    
+    .file-info {
+        background-color: #343a40;
+        border-color: var(--primary-color);
+        color: #f8f9fa;
+    }
+}
+
+/* Loading animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0,0,0,.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Export button styles */
+.export-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}

@@ -1,0 +1,41 @@
+/* ==========================================
+   JM: höhere THEAD-Zeile + Bottom-Ausrichtung
+   - Höhe über Variable steuerbar: --jm-head-h
+   - Erste Spalte links & unten ausrichten
+   - Sticky-Offset berücksichtigt (Top-Scrollbar)
+   ========================================== */
+
+:root { --jm-head-h: 140px; } /* Wunschhöhe hier anpassen (z.B. 160px) */
+
+#jmresultateTabelle thead th {
+  height: var(--jm-head-h) !important;
+  min-height: var(--jm-head-h) !important;
+  max-height: var(--jm-head-h) !important;
+  padding-top: .5rem !important;
+  padding-bottom: .5rem !important;
+  line-height: 1.1 !important;
+  overflow: visible !important;                 /* Platz für rotierten Text */
+  position: sticky;                             /* falls irgendwo überschrieben */
+  top: var(--top-hscroll, 0px) !important;      /* berücksichtigt Top-Scrollbar */
+  display: flex;                                /* für vertikale Ausrichtung */
+  align-items: flex-end;                        /* -> unten ausrichten */
+  justify-content: center;                      /* zentriert (außer first-child) */
+}
+
+/* Erste Spalte: linksbündig + unten */
+#jmresultateTabelle thead th:first-child {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  padding-left: .75rem !important;
+}
+
+/* Falls in den Headern Wrapper vorhanden sind (z.B. <div> oder <span>), begrenzen wir deren Breite */
+#jmresultateTabelle thead th > * {
+  max-width: 100%;
+}
+
+/* Optional: gleiche Logik auch auf Heim/Kanti/End anwenden
+#heimresultateTabelle thead th,
+#kantiresultateTabelle thead th,
+#mitgliederTabelle thead th { ... }
+*/

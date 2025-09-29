@@ -1,0 +1,380 @@
+/* ==========================================
+   MSV RESULTATE - EINHEITLICHE STYLES
+   Zusätzliche Styles für Heim-, Kanti- und Endresultate
+   ========================================== */
+
+/* Überschreibt inkonsistente inline-styles */
+.main-content-wrapper {
+    background-color: #ffffff !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.08) !important;
+    padding: 1.5rem !important;
+    margin-bottom: 2rem !important;
+}
+
+.content-background {
+    background: #ffffff !important;
+    padding: 2rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Einheitliche Jahr-Auswahl */
+.year-selection-card {
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    margin-bottom: 1.5rem !important;
+    padding: 1.5rem !important;
+    border-radius: 0.5rem !important;
+}
+
+/* Einheitliche Button Toolbar */
+.button-toolbar {
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    margin-bottom: 1.5rem !important;
+    padding: 1.25rem !important;
+    border-radius: 0.5rem !important;
+}
+
+.button-group {
+    display: flex !important;
+    gap: 0.75rem !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+}
+
+/* Einheitliche Tabellen-Wrapper */
+.table-wrapper {
+    background: #ffffff !important;
+    border-radius: 0.5rem !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    overflow: hidden !important;
+    margin-bottom: 0 !important;
+}
+
+/* Einheitliche Responsive-Tabelle */
+.table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-height: calc(100vh - 350px) !important;
+    min-height: 300px !important;
+}
+
+/* Sticky Headers für alle drei Tabellen */
+#heimresultateTabelle thead th,
+#kantiresultateTabelle thead th,
+#mitgliederTabelle thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: var(--light-color) !important;
+}
+
+/* Sticky erste Spalte für alle drei Tabellen - nur tbody */
+#heimresultateTabelle tbody td:first-child,
+#kantiresultateTabelle tbody td:first-child,
+#mitgliederTabelle tbody td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 5 !important;
+    background-color: #ffffff !important;
+    border-right: 2px solid #dee2e6 !important;
+}
+
+/* Header erste Spalte - höherer z-index damit sie über tbody liegt */
+#heimresultateTabelle thead th:first-child,
+#kantiresultateTabelle thead th:first-child,
+#mitgliederTabelle thead th:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    top: 0 !important;
+    z-index: 11 !important; /* Höher als andere Header */
+    background: var(--light-color) !important;
+    border-right: 2px solid #dee2e6 !important;
+}
+
+/* Letzte Spalte sticky mit gleichem Hintergrund wie erste */
+#heimresultateTabelle tbody td:last-child,
+#kantiresultateTabelle tbody td:last-child,
+#mitgliederTabelle tbody td:last-child {
+    position: sticky !important;
+    right: 0 !important;
+    z-index: 5 !important;
+    background-color: #ffffff !important; /* Gleich wie erste Spalte */
+    border-left: 2px solid #dee2e6 !important;
+    font-weight: 600 !important;
+    min-width: 100px !important;
+    text-align: center !important;
+}
+
+/* Header letzte Spalte */
+#heimresultateTabelle thead th:last-child,
+#kantiresultateTabelle thead th:last-child,
+#mitgliederTabelle thead th:last-child {
+    position: sticky !important;
+    right: 0 !important;
+    top: 0 !important;
+    z-index: 11 !important; /* Gleich hoch wie erste Header-Spalte */
+    background: var(--light-color) !important;
+    border-left: 2px solid #dee2e6 !important;
+}
+
+/* Einheitliche Input-Styles in Tabellen */
+#heimresultateTabelle input[type="number"],
+#kantiresultateTabelle input[type="number"],
+#mitgliederTabelle input[type="number"] {
+    width: 60px !important;
+    max-width: 60px !important;
+    text-align: center !important;
+    padding: 0.25rem 0.1rem !important;
+    font-size: 0.9rem !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.25rem !important;
+    transition: all 0.2s ease !important;
+}
+
+#heimresultateTabelle input[type="number"]:focus,
+#kantiresultateTabelle input[type="number"]:focus,
+#mitgliederTabelle input[type="number"]:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+    outline: none !important;
+}
+
+/* Einheitliche Spaltenbreiten */
+#heimresultateTabelle th:not(:first-child),
+#heimresultateTabelle td:not(:first-child),
+#kantiresultateTabelle th:not(:first-child),
+#kantiresultateTabelle td:not(:first-child) {
+    width: 90px !important;
+    min-width: 90px !important;
+    max-width: 90px !important;
+    text-align: center !important;
+}
+
+/* End-Resultate spezielle Styles für Modal */
+.shooting-category {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.small-input {
+    width: 45px !important;
+    height: 32px !important;
+    text-align: center !important;
+    padding: 0.25rem !important;
+    font-size: 0.875rem !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.25rem !important;
+}
+
+.total-display {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--success-color);
+    min-width: 40px;
+    text-align: center;
+    padding: 0.25rem 0.5rem;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 0.25rem;
+}
+
+/* Mobile Responsive Anpassungen */
+@media (max-width: 768px) {
+    .content-background {
+        padding: 1rem !important;
+    }
+    
+    .year-selection-card,
+    .button-toolbar {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .button-group {
+        flex-direction: column !important;
+    }
+    
+    .button-group .btn {
+        width: 100% !important;
+    }
+    
+    .table-responsive {
+        max-height: calc(100vh - 250px) !important;
+        min-height: 200px !important;
+    }
+    
+    /* Mobile: keine sticky Spalten */
+    #heimresultateTabelle tbody td:first-child,
+    #heimresultateTabelle tbody td:last-child,
+    #kantiresultateTabelle tbody td:first-child,
+    #kantiresultateTabelle tbody td:last-child,
+    #mitgliederTabelle tbody td:first-child,
+    #mitgliederTabelle tbody td:last-child {
+        position: static !important;
+    }
+    
+    /* Kanti Mobile Enhancement */
+    .kanti-row-more {
+        background: #f8f9fa;
+    }
+    
+    .kanti-more-btn {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Loading States einheitlich */
+.spinner-border-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+    border-width: 0.2em !important;
+}
+
+/* Hover-Effekte für alle Tabellen */
+#heimresultateTabelle tbody tr:hover,
+#kantiresultateTabelle tbody tr:hover,
+#mitgliederTabelle tbody tr:hover {
+    background-color: rgba(108, 117, 125, 0.05) !important;
+    transition: background-color 0.2s ease !important;
+}
+
+/* Delete/Edit Buttons einheitlich */
+.delete-btn,
+.edit-btn {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    border-radius: 0.25rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.delete-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.25);
+}
+
+.edit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.25);
+}
+
+/* Modal einheitlich */
+.modal-content {
+    border: none !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%) !important;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    padding: 1.25rem !important;
+}
+
+.modal-footer {
+    background: #f8f9fa !important;
+    border-radius: 0 0 0.75rem 0.75rem !important;
+    padding: 1rem 1.25rem !important;
+}
+
+/* Toast Nachrichten einheitlich */
+.toast-message {
+    min-width: 300px !important;
+    max-width: 500px !important;
+    padding: 1rem 1.25rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+/* Scrollbar einheitlich */
+.table-responsive::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
+    border-radius: 4px !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e0 !important;
+    border-radius: 4px !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0 !important;
+}
+
+/* Z-Index Hierarchie sicherstellen */
+.navbar {
+    z-index: 1030 !important;
+}
+
+.dropdown-menu {
+    z-index: 1040 !important;
+}
+
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
+.modal {
+    z-index: 1060 !important;
+}
+
+#toast-container {
+    z-index: 9999 !important;
+}
+
+.table thead th:last-child,
+.table tbody td:last-child {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+.table thead th:nth-last-child(2),
+.table tbody td:nth-last-child(2) {
+  border-right: 0 !important;
+}
+
+/* 1) Innen-Trenner für ALLE Spalten (außer der ersten) */
+#heimresultateTabelle thead th + th,
+#heimresultateTabelle tbody td + td,
+#kantiresultateTabelle thead th + th,
+#kantiresultateTabelle tbody td + td,
+#mitgliederTabelle thead th + th,
+#mitgliederTabelle tbody td + td {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* 2) Letzte Spalte nicht fetter machen – nur 1px */
+#heimresultateTabelle thead th:last-child,
+#heimresultateTabelle tbody td:last-child,
+#kantiresultateTabelle thead th:last-child,
+#kantiresultateTabelle tbody td:last-child,
+#mitgliederTabelle thead th:last-child,
+#mitgliederTabelle tbody td:last-child {
+  border-left: 1px solid #dee2e6 !important;
+}
+
+/* 3) Erste Spalte (links, sticky) angleichen: 1px statt 2px */
+#heimresultateTabelle thead th:first-child,
+#heimresultateTabelle tbody td:first-child,
+#kantiresultateTabelle thead th:first-child,
+#kantiresultateTabelle tbody td:first-child,
+#mitgliederTabelle thead th:first-child,
+#mitgliederTabelle tbody td:first-child {
+  border-right: 1px solid #dee2e6 !important;
+}
