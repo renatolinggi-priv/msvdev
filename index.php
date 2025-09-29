@@ -5,4 +5,5 @@ error_reporting(E_ALL);
 
 header("Location: inc/home.php");
 exit();
+
 ?>
