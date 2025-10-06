@@ -369,9 +369,9 @@ include 'header.inc.php';
                 <div class="quick-access-icon" style="background: linear-gradient(135deg, #ffe6e6, #ffcccc); color: #dc3545;">
                     <i class="bi bi-cart-check"></i>
                 </div>
-                <h3 class="quick-access-title">Munitionskauf</h3>
+                <h3 class="quick-access-title">Munitionverkauf</h3>
                 <p class="quick-access-description">
-                    Munitionsbestellungen erfassen
+                    Munitionskäufe erfassen
                 </p>
                 <div class="quick-access-link" style="color: #dc3545;">
                     Zur Erfassung <i class="bi bi-arrow-right"></i>
@@ -379,6 +379,21 @@ include 'header.inc.php';
             </a>
         </div>
 
+        
+        <div class="quick-access-card">
+            <a href="endschloesen.php" class="quick-access-card-link">
+                <div class="quick-access-icon" style="background: linear-gradient(135deg, #ffe6e6, #ffcccc); color: #dc3545;">
+                    <i class="bi bi-cart-check"></i>
+                </div>
+                <h3 class="quick-access-title">Endschiessen Stichausgabe</h3>
+                <p class="quick-access-description">
+                    
+                </p>
+                <div class="quick-access-link" style="color: #dc3545;">
+                    Zur Erfassung <i class="bi bi-arrow-right"></i>
+                </div>
+            </a>
+        </div>
         <div class="quick-access-card">
             <a href="jmresultate.php" class="quick-access-card-link">
                 <div class="quick-access-icon">

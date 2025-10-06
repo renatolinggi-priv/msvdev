@@ -174,6 +174,11 @@ class NavigationManager {
             echo '<li><hr class="dropdown-divider"></li>';
         }
 
+        // Benutzerverwaltung - nur für User "renato"
+        if (strtolower($username) === 'renato') {
+            echo '<li><a class="dropdown-item" href="benutzerverwaltung.php"><i class="bi bi-people-fill me-2 text-warning"></i>Benutzerverwaltung</a></li>';
+        }
+
         // Admin-Link "Navigation verwalten" (nur für Admins)
         if (function_exists('user_can_manage_navigation') ? user_can_manage_navigation() : !empty($_SESSION['is_admin'])) {
             $adminHref = file_exists('admin/nav_admin.php') ? 'admin/nav_admin.php' : '../admin/nav_admin.php';

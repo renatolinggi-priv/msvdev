@@ -1,0 +1,512 @@
+﻿<?php
+declare(strict_types=1);
+
+/**
+ * ZielscheibeGenerator - erzeugt Visualisierungen von Schiessergebnissen auf einer Zielscheibe.
+ *
+ * Diese Klasse generiert PNG-Bilder einer Scheibe-A mit eingezeichneten Treffer-Koordinaten.
+ * Die Scheibe folgt dem Schweizer Standard mit schwarzen Ringen (10-6) und hellen Ringen (5-1).
+ */
+class ZielscheibeGenerator
+{
+    /**
+     * Ringradien in Millimetern fuer Scheibe-A (300m Sturmgewehr).
+     *
+     * @var array<int|string,float>
+     */
+    private $ringRadien = [
+        'mouche' => 25.0,
+        10 => 50.0,
+        9 => 100.0,
+        8 => 150.0,
+        7 => 200.0,
+        6 => 250.0,
+        5 => 300.0,
+        4 => 350.0,
+        3 => 400.0,
+        2 => 450.0,
+        1 => 500.0,
+        0 => 1000.0,
+    ];
+
+    /** @var int */
+    private $bildBreite;
+
+    /** @var int */
+    private $bildHoehe;
+
+    /** @var float */
+    private $mittelpunktX;
+
+    /** @var float */
+    private $mittelpunktY;
+
+    /** @var float */
+    private $skalierungsFaktor;
+
+    /**
+     * Faktor fuer die Umrechnung von Rohkoordinaten in Millimeter.
+     *
+     * @var float
+     */
+    private $koordinatenFaktor = 2.5;
+
+    private const RAND_SKALIERUNG = 0.85;
+
+    public function __construct(int $bildBreite = 800, int $bildHoehe = 800)
+    {
+        $this->bildBreite = $bildBreite;
+        $this->bildHoehe = $bildHoehe;
+        $this->mittelpunktX = $bildBreite / 2;
+        $this->mittelpunktY = $bildHoehe / 2;
+
+        $maxRadius = $this->ringRadien[1];
+        $verfuegbarerRadius = min($bildBreite, $bildHoehe) / 2 * self::RAND_SKALIERUNG;
+        $this->skalierungsFaktor = $verfuegbarerRadius / $maxRadius;
+    }
+
+    /**
+     * Generiert eine Zielscheibe mit den uebergebenen Treffern.
+     *
+     * @param array<int,array<string,int|float>> $treffer
+     */
+    public function generiereZielscheibe(array $treffer, ?string $ausgabeDatei = null): bool
+    {
+        if (!function_exists('imagecreatetruecolor')) {
+            return false;
+        }
+
+        $bild = imagecreatetruecolor($this->bildBreite, $this->bildHoehe);
+        if ($bild === false) {
+            return false;
+        }
+
+        $farben = $this->erstelleFarbpalette($bild);
+
+        imagefill($bild, 0, 0, $farben['beige']);
+
+        $this->zeichneRinge($bild, $farben);
+        $this->zeichneFadenkreuz($bild, $farben['grauHell']);
+        $this->zeichneTreffer($bild, $treffer, $farben);
+        $this->zeichneLegende($bild, $treffer, $farben);
+
+        if ($ausgabeDatei !== null) {
+            $erfolg = imagepng($bild, $ausgabeDatei);
+            imagedestroy($bild);
+
+            return $erfolg;
+        }
+
+        header('Content-Type: image/png');
+        $erfolg = imagepng($bild);
+        imagedestroy($bild);
+
+        return $erfolg;
+    }
+
+    /**
+     * Erstellt die benoetigte Farbpalette fuer den aktuellen Durchlauf.
+     *
+     * @param resource|\GdImage $bild
+     * @return array<string,int>
+     */
+    private function erstelleFarbpalette($bild): array
+    {
+        return [
+            'beige' => imagecolorallocate($bild, 245, 240, 220),
+            'weiss' => imagecolorallocate($bild, 255, 255, 255),
+            'schwarz' => imagecolorallocate($bild, 0, 0, 0),
+            'grauHell' => imagecolorallocate($bild, 200, 200, 200),
+            'grauDunkel' => imagecolorallocate($bild, 100, 100, 100),
+            'rot' => imagecolorallocate($bild, 255, 0, 0),
+            'rotDunkel' => imagecolorallocate($bild, 150, 0, 0),
+            'blau' => imagecolorallocate($bild, 0, 0, 255),
+            'blauDunkel' => imagecolorallocate($bild, 0, 0, 150),
+            'orange' => imagecolorallocate($bild, 255, 100, 0),
+            'orangeDunkel' => imagecolorallocate($bild, 180, 70, 0),
+        ];
+    }
+
+    /**
+     * Zeichnet die Ringe der Zielscheibe (Scheibe-A Design).
+     *
+     * @param resource|\GdImage $bild
+     * @param array<string,int> $farben
+     */
+    private function zeichneRinge($bild, array $farben): void
+    {
+        $ringe = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+        foreach ($ringe as $ring) {
+            $radius = $this->ringRadien[$ring] * $this->skalierungsFaktor;
+            $fuellFarbe = $ring >= 6 ? $farben['schwarz'] : $farben['beige'];
+            $linienFarbe = $ring >= 6 ? $farben['grauDunkel'] : $farben['schwarz'];
+
+            imagefilledellipse(
+                $bild,
+                $this->roundToInt($this->mittelpunktX),
+                $this->roundToInt($this->mittelpunktY),
+                $this->roundToInt($radius * 2),
+                $this->roundToInt($radius * 2),
+                $fuellFarbe
+            );
+
+            imagesetthickness($bild, 1);
+            imageellipse(
+                $bild,
+                $this->roundToInt($this->mittelpunktX),
+                $this->roundToInt($this->mittelpunktY),
+                $this->roundToInt($radius * 2),
+                $this->roundToInt($radius * 2),
+                $linienFarbe
+            );
+        }
+
+        $moucheRadius = $this->ringRadien['mouche'] * $this->skalierungsFaktor;
+        imagefilledellipse(
+            $bild,
+            $this->roundToInt($this->mittelpunktX),
+            $this->roundToInt($this->mittelpunktY),
+            $this->roundToInt($moucheRadius * 2),
+            $this->roundToInt($moucheRadius * 2),
+            $farben['schwarz']
+        );
+        imageellipse(
+            $bild,
+            $this->roundToInt($this->mittelpunktX),
+            $this->roundToInt($this->mittelpunktY),
+            $this->roundToInt($moucheRadius * 2),
+            $this->roundToInt($moucheRadius * 2),
+            $farben['grauDunkel']
+        );
+
+        $this->zeichneBeschriftungen($bild, $farben);
+        $this->zeichneKreuze($bild, $farben['schwarz']);
+    }
+
+    /**
+     * Zeichnet die Ringbeschriftungen wie auf Scheibe-A.
+     *
+     * @param resource|\GdImage $bild
+     * @param array<string,int> $farben
+     */
+    private function zeichneBeschriftungen($bild, array $farben): void
+    {
+        $ringe = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+        foreach ($ringe as $ring) {
+            $radius = $this->ringRadien[$ring] * $this->skalierungsFaktor;
+            $textFarbe = $ring >= 6 ? $farben['weiss'] : $farben['schwarz'];
+            $ringText = (string) $ring;
+            $textRadius = $radius - 15;
+
+            $textX = $this->roundToInt($this->mittelpunktX - 4);
+            $textY = $this->roundToInt($this->mittelpunktY - $textRadius - 5);
+            imagestring($bild, 3, $textX, $textY, $ringText, $textFarbe);
+
+            $textX = $this->roundToInt($this->mittelpunktX - 4);
+            $textY = $this->roundToInt($this->mittelpunktY + $textRadius - 5);
+            imagestring($bild, 3, $textX, $textY, $ringText, $textFarbe);
+
+            $textX = $this->roundToInt($this->mittelpunktX - $textRadius - 12);
+            $textY = $this->roundToInt($this->mittelpunktY - 5);
+            imagestring($bild, 3, $textX, $textY, $ringText, $textFarbe);
+
+            $textX = $this->roundToInt($this->mittelpunktX + $textRadius + 3);
+            $textY = $this->roundToInt($this->mittelpunktY - 5);
+            imagestring($bild, 3, $textX, $textY, $ringText, $textFarbe);
+        }
+    }
+
+    /**
+     * Zeichnet Kreuze an den Seiten wie auf der echten Scheibe-A.
+     *
+     * @param resource|\GdImage $bild
+     */
+    private function zeichneKreuze($bild, int $farbe): void
+    {
+        $kreuzGroesse = 15;
+        $abstand = $this->ringRadien[1] * $this->skalierungsFaktor * 1.15;
+
+        $positionen = [
+            ['x' => $this->mittelpunktX, 'y' => $this->mittelpunktY - $abstand],
+            ['x' => $this->mittelpunktX, 'y' => $this->mittelpunktY + $abstand],
+            ['x' => $this->mittelpunktX - $abstand, 'y' => $this->mittelpunktY],
+            ['x' => $this->mittelpunktX + $abstand, 'y' => $this->mittelpunktY],
+        ];
+
+        foreach ($positionen as $pos) {
+            imageline(
+                $bild,
+                $this->roundToInt($pos['x'] - $kreuzGroesse),
+                $this->roundToInt($pos['y']),
+                $this->roundToInt($pos['x'] + $kreuzGroesse),
+                $this->roundToInt($pos['y']),
+                $farbe
+            );
+
+            imageline(
+                $bild,
+                $this->roundToInt($pos['x']),
+                $this->roundToInt($pos['y'] - $kreuzGroesse),
+                $this->roundToInt($pos['x']),
+                $this->roundToInt($pos['y'] + $kreuzGroesse),
+                $farbe
+            );
+        }
+    }
+
+    /**
+     * Zeichnet ein Fadenkreuz in der Mitte.
+     *
+     * @param resource|\GdImage $bild
+     */
+    private function zeichneFadenkreuz($bild, int $farbe): void
+    {
+        $laenge = 20;
+
+        imageline(
+            $bild,
+            $this->roundToInt($this->mittelpunktX - $laenge),
+            $this->roundToInt($this->mittelpunktY),
+            $this->roundToInt($this->mittelpunktX + $laenge),
+            $this->roundToInt($this->mittelpunktY),
+            $farbe
+        );
+
+        imageline(
+            $bild,
+            $this->roundToInt($this->mittelpunktX),
+            $this->roundToInt($this->mittelpunktY - $laenge),
+            $this->roundToInt($this->mittelpunktX),
+            $this->roundToInt($this->mittelpunktY + $laenge),
+            $farbe
+        );
+    }
+
+    /**
+     * Zeichnet die Treffer auf der Scheibe.
+     *
+     * @param resource|\GdImage $bild
+     * @param array<int,array<string,int|float>> $treffer
+     * @param array<string,int> $farben
+     */
+    private function zeichneTreffer($bild, array $treffer, array $farben): void
+    {
+        foreach ($treffer as $index => $trefferDaten) {
+            if (!isset($trefferDaten['x'], $trefferDaten['y'])) {
+                continue;
+            }
+
+            $xMm = $this->transformiereKoordinate((float) $trefferDaten['x']);
+            $yMm = $this->transformiereKoordinate((float) $trefferDaten['y']);
+
+            $pixelX = $this->roundToInt($this->mittelpunktX + ($xMm * $this->skalierungsFaktor));
+            $pixelY = $this->roundToInt($this->mittelpunktY - ($yMm * $this->skalierungsFaktor));
+
+            $punktRadius = 6;
+            $ringRadius = 8;
+
+            $wert = isset($trefferDaten['wert']) ? (int) $trefferDaten['wert'] : 0;
+
+            if ($wert >= 9) {
+                $punktFarbe = $farben['rot'];
+                $ringFarbe = $farben['rotDunkel'];
+            } elseif ($wert >= 7) {
+                $punktFarbe = $farben['blau'];
+                $ringFarbe = $farben['blauDunkel'];
+            } else {
+                $punktFarbe = $farben['orange'];
+                $ringFarbe = $farben['orangeDunkel'];
+            }
+
+            imagefilledellipse($bild, $pixelX, $pixelY, $ringRadius * 2, $ringRadius * 2, $ringFarbe);
+            imagefilledellipse($bild, $pixelX, $pixelY, $punktRadius * 2, $punktRadius * 2, $punktFarbe);
+
+            $schussNr = isset($trefferDaten['schuss_nr']) ? (int) $trefferDaten['schuss_nr'] : $index + 1;
+            $textX = $pixelX + 10;
+            $textY = $pixelY - 10;
+
+            imagefilledrectangle($bild, $textX - 2, $textY - 2, $textX + 12, $textY + 10, $farben['weiss']);
+            imagerectangle($bild, $textX - 2, $textY - 2, $textX + 12, $textY + 10, $farben['schwarz']);
+            imagestring($bild, 2, $textX, $textY, (string) $schussNr, $farben['schwarz']);
+        }
+    }
+
+    /**
+     * Zeichnet eine Legende mit Statistiken.
+     *
+     * @param resource|\GdImage $bild
+     * @param array<int,array<string,int|float>> $treffer
+     * @param array<string,int> $farben
+     */
+    private function zeichneLegende($bild, array $treffer, array $farben): void
+    {
+        if (empty($treffer)) {
+            return;
+        }
+
+        $anzahlSchuesse = count($treffer);
+        $summe = 0;
+        $werteArray = [];
+
+        foreach ($treffer as $trefferDaten) {
+            if (isset($trefferDaten['wert'])) {
+                $wert = (int) $trefferDaten['wert'];
+                $summe += $wert;
+                $werteArray[] = $wert;
+            }
+        }
+
+        $durchschnitt = $anzahlSchuesse > 0 ? round($summe / $anzahlSchuesse, 2) : 0;
+        $maximum = !empty($werteArray) ? max($werteArray) : 0;
+        $minimum = !empty($werteArray) ? min($werteArray) : 0;
+
+        $startY = 10;
+        $zeilenAbstand = 15;
+        $textFarbe = $farben['schwarz'];
+
+        imagestring($bild, 3, 10, $startY, 'Statistik:', $textFarbe);
+        imagestring($bild, 2, 10, $startY + $zeilenAbstand, 'Anzahl Schuesse: ' . $anzahlSchuesse, $textFarbe);
+        imagestring($bild, 2, 10, $startY + $zeilenAbstand * 2, 'Total: ' . $summe . ' Punkte', $textFarbe);
+        imagestring($bild, 2, 10, $startY + $zeilenAbstand * 3, 'Durchschnitt: ' . $durchschnitt, $textFarbe);
+        imagestring($bild, 2, 10, $startY + $zeilenAbstand * 4, 'Maximum: ' . $maximum, $textFarbe);
+        imagestring($bild, 2, 10, $startY + $zeilenAbstand * 5, 'Minimum: ' . $minimum, $textFarbe);
+    }
+
+    /**
+     * Berechnet den Ringwert basierend auf den Koordinaten.
+     */
+    public function berechneRingwert(float $x, float $y): int
+    {
+        $xMm = $this->transformiereKoordinate($x);
+        $yMm = $this->transformiereKoordinate($y);
+        $distanz = sqrt($xMm * $xMm + $yMm * $yMm);
+
+        if ($distanz <= $this->ringRadien['mouche']) {
+            return 10;
+        }
+
+        for ($ring = 10; $ring >= 1; $ring--) {
+            if ($distanz <= $this->ringRadien[$ring]) {
+                return $ring;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Setzt den Koordinaten-Faktor (Umrechnung von Koordinaten-Einheiten zu Millimeter).
+     */
+    public function setzeKoordinatenFaktor(float $faktor): void
+    {
+        $this->koordinatenFaktor = $faktor;
+    }
+
+    /**
+     * Kalibriert den Koordinaten-Faktor automatisch basierend auf bekannten Werten.
+     *
+     * @param array<int,array<string,int|float>> $treffer
+     */
+    public function kalibriereKoordinatenFaktor(array $treffer): float
+    {
+        if (empty($treffer)) {
+            return $this->koordinatenFaktor;
+        }
+
+        $besterFaktor = $this->koordinatenFaktor;
+        $besterFehler = null;
+
+        for ($faktor = 0.5; $faktor <= 5.0; $faktor += 0.05) {
+            $faktor = round($faktor, 2);
+            $fehlerQuadratisch = 0.0;
+
+            foreach ($treffer as $trefferDaten) {
+                if (!isset($trefferDaten['x'], $trefferDaten['y'], $trefferDaten['wert'])) {
+                    continue;
+                }
+
+                $x = (float) $trefferDaten['x'] * $faktor;
+                $y = (float) $trefferDaten['y'] * $faktor;
+                $distanz = sqrt($x * $x + $y * $y);
+
+                $ring = (int) $trefferDaten['wert'];
+                $erwarteteDistanz = $this->getErwarteteDistanzFuerRing($ring);
+
+                $diff = abs($distanz - $erwarteteDistanz);
+                $fehlerQuadratisch += $diff * $diff;
+            }
+
+            if ($besterFehler === null || $fehlerQuadratisch < $besterFehler) {
+                $besterFehler = $fehlerQuadratisch;
+                $besterFaktor = $faktor;
+            }
+        }
+
+        $this->koordinatenFaktor = $besterFaktor;
+
+        return $besterFaktor;
+    }
+
+    /**
+     * Gibt die erwartete Distanz (Mittelpunkt) fuer einen Ring zurueck.
+     */
+    private function getErwarteteDistanzFuerRing(int $ring): float
+    {
+        if ($ring === 10) {
+            return ($this->ringRadien['mouche'] + $this->ringRadien[10]) / 2;
+        }
+
+        if ($ring >= 1 && $ring <= 9) {
+            $innerRing = $ring + 1;
+
+            return ($this->ringRadien[$ring] + $this->ringRadien[$innerRing]) / 2;
+        }
+
+        return 1200.0;
+    }
+
+    /**
+     * Hilfsfunktion: Berechnet Ringwert aus Distanz.
+     */
+    private function berechneRingwertAusDistanz(float $distanz): int
+    {
+        if ($distanz <= $this->ringRadien['mouche']) {
+            return 10;
+        }
+
+        for ($ring = 10; $ring >= 1; $ring--) {
+            if ($distanz <= $this->ringRadien[$ring]) {
+                return $ring;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Setzt benutzerdefinierte Ringradien.
+     *
+     * @param array<int|string,float> $radien
+     */
+    public function setzeRingRadien(array $radien): void
+    {
+        $this->ringRadien = $radien;
+
+        $maxRadius = max($radien);
+        $verfuegbarerRadius = min($this->bildBreite, $this->bildHoehe) / 2 * 0.9;
+        $this->skalierungsFaktor = $verfuegbarerRadius / $maxRadius;
+    }
+
+    private function transformiereKoordinate(float $wert): float
+    {
+        return $wert * $this->koordinatenFaktor;
+    }
+
+    private function roundToInt(float $wert): int
+    {
+        return (int) round($wert);
+    }
+}
+
