@@ -14,64 +14,7 @@ $page_specific_css = "
 }
 
 .sidebar-card,
-.table-card,
-.export-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-}
-
-.sidebar-card { border-left: 4px solid var(--info-color); }
-.table-card { border-left: 4px solid var(--primary-color); }
-.export-card { border-left: 4px solid var(--success-color); }
-
-.card-title {
-    color: var(--secondary-color);
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-}
-
-/* Tabellen Styling */
-.table-card table {
-    margin-bottom: 0;
-}
-
-.table thead th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: var(--secondary-color);
-    border-bottom: 2px solid #dee2e6;
-    white-space: nowrap;
-}
-
-.table tbody tr:hover {
-    background-color: #f8f9fa;
-    transition: background-color 0.15s ease;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-/* Rang-Spalte hervorheben */
-.table tbody td:first-child {
-    font-weight: 600;
-    color: var(--primary-color);
-}
-
-/* Total-Spalte hervorheben */
-.table tbody td:last-child {
-    font-weight: 600;
-    background-color: #f8f9fa;
-}
-
-/* Medaillen-Ränge */
-.table tbody tr:nth-child(1) td:first-child { color: #FFD700; } /* Gold */
+...
 .table tbody tr:nth-child(2) td:first-child { color: #C0C0C0; } /* Silber */
 .table tbody tr:nth-child(3) td:first-child { color: #CD7F32; } /* Bronze */
 
@@ -86,206 +29,123 @@ $page_specific_css = "
     display: inline-block;
     margin-top: 1rem;
     padding: .5rem 1rem;
-    background: var(--success-color);
-    color: white;
-    text-decoration: none;
-    border-radius: var(--border-radius);
-    transition: all .2s ease;
-}
-
-#pdf-link a:hover {
-    background: var(--success-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,.1);
-}
-
-/* Animation */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.sidebar-card, .table-card, .export-card {
-    animation: fadeIn .3s ease-out;
-}
-
-/* Loading State */
-.loading-spinner {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Responsive Tables */
-@media (max-width: 768px) {
-    .table-card {
-        overflow-x: auto;
-    }
-    
-    .table {
-        font-size: 0.875rem;
-    }
-}
+    background
 ";
-
-// Header einbinden
-include 'header.inc.php';
 ?>
+<?php include 'header.inc.php'; ?>
+
+<style>
+<?= $page_specific_css ?>
+</style>
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-10 col-lg-11 col-12 ps-0">
-      <!-- Außen-Container -->
-      <div class="main-content-wrapper">
-        <!-- Header-Zeile -->
-        <div class="row mb-4">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-trophy me-2"></i> Kantonalstich Ranglisten
-            </h2>
-            <p class="text-muted mb-0">Übersicht der Kantonalstich-Resultate und SKSG Abrechnung</p>
+    <div class="col-xl-9 col-lg-8">
+      <div class="main-card">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="h4 mb-0"><i class="bi bi-clipboard-data me-2"></i>Kantonalstich – Ranglisten</h2>
+          <div class="d-flex gap-2">
+            <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
+            <button id="reload-btn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Neu laden</button>
+            <button id="redirect-btn" class="btn btn-outline-primary btn-sm"><i class="bi bi-list-ol me-1"></i>Zur Erfassung</button>
           </div>
         </div>
 
-        <!-- Weißer Hintergrund-Container -->
-        <div class="content-background">
-          <!-- Steuerung -->
-          <div class="row g-3 mb-4">
-            <div class="col-lg-8">
-              <div class="sidebar-card">
-                <h5 class="card-title">
-                  <i class="bi bi-calendar3"></i>
-                  Jahr-Auswahl & Aktionen
-                </h5>
-                <div class="d-flex flex-wrap align-items-center gap-3">
-                  <div class="d-flex align-items-center gap-2">
-                    <label for="yearSelect" class="form-label mb-0">
-                      <strong>Jahr:</strong>
-                    </label>
-                    <select id="yearSelect" class="form-select form-select-sm" style="width: auto;">
-                      <!-- Optionen werden per JavaScript eingefügt -->
-                    </select>
-                  </div>
-                  <button id="redirect-btn" class="btn btn-compact-standard btn-outline-success">
-                    <i class="bi bi-pencil-square me-1"></i> Bearbeiten
-                  </button>
-                  <button id="reload-btn" class="btn btn-compact-standard btn-outline-secondary">
-                    <i class="bi bi-arrow-clockwise me-1"></i> Aktualisieren
-                  </button>
+        <div class="row g-3">
+          <div class="col-12 col-lg-6">
+            <div class="card">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-trophy me-2"></i>Kategorie A</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadKantonala()"><i class="bi bi-arrow-repeat"></i></button>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table id="KantonalA" class="table table-sm mb-0">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Hauptdoppel</th>
+                        <th>1. ND</th>
+                        <th>2. ND</th>
+                        <th>3. ND</th>
+                        <th>4. ND</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- wird via AJAX gefüllt -->
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="col-lg-4">
-              <div class="export-card">
-            <h5 class="card-title">
-              <i class="bi bi-file-earmark-text"></i>
-              SKSG Abrechnung
-            </h5>
-            <div class="row">
-              <div class="col-12 mb-3">
-                <a href="https://www.sksg.ch/spezialstich/" target="_blank" class="text-decoration-none">
-                  <i class="bi bi-box-arrow-up-right me-1"></i> SKSG Spezialstich Website
-                </a>
+          <div class="col-12 col-lg-6">
+            <div class="card">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-trophy-fill me-2"></i>Kategorie B</span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadKantonalb()"><i class="bi bi-arrow-repeat"></i></button>
               </div>
-              <div class="col-md-6 col-lg-4 mb-3">
-                <button class="btn btn-outline-danger  pdf-btn">
-                  <i class="bi bi-file-pdf me-2"></i>PDF
-                </button>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table id="KantonalB" class="table table-sm mb-0">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Hauptdoppel</th>
+                        <th>1. ND</th>
+                        <th>2. ND</th>
+                        <th>3. ND</th>
+                        <th>4. ND</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- wird via AJAX gefüllt -->
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div class="col-md-6 col-lg-4 mb-3">
-                <button class="btn btn-outline-success  word-btn">
-                  <i class="bi bi-file-earmark-excel me-2"></i>Export
-                </button>
-              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="d-flex gap-2 mt-3">
+              <button class="btn btn-outline-danger pdf-btn">
+                <i class="bi bi-file-pdf me-2"></i>PDF generieren
+              </button>
+              <button class="btn btn-outline-success word-btn">
+                <i class="bi bi-file-earmark-excel me-2"></i>Excel generieren
+              </button>
             </div>
             <div id="pdf-link" class="mt-3"></div>
           </div>
-            </div>
-          </div>
-
-          <!-- Kategorie A Tabelle -->
-          <div class="table-card">
-            <h5 class="card-title">
-              <i class="bi bi-award"></i>
-              Kantonalstich Kategorie A
-            </h5>
-            <div class="table-responsive">
-              <table class="table table-hover" id="KantonalA">
-                <thead>
-                  <tr>
-                    <th scope="col" style="width: 60px;">Rang</th>
-                    <th scope="col" style="min-width: 150px;">Name</th>
-                    <th scope="col" class="text-center">Passe 1</th>
-                    <th scope="col" class="text-center">Passe 2</th>
-                    <th scope="col" class="text-center">Passe 3</th>
-                    <th scope="col" class="text-center">Passe 4</th>
-                    <th scope="col" class="text-center">Passe 5</th>
-                    <th scope="col" class="text-center">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td colspan="8" class="text-center text-muted py-3">
-                      <div class="loading-spinner me-2"></div> Lade Daten...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Kategorie B Tabelle -->
-          <div class="table-card">
-            <h5 class="card-title">
-              <i class="bi bi-award-fill"></i>
-              Kantonalstich Kategorie B
-            </h5>
-            <div class="table-responsive">
-              <table class="table table-hover" id="KantonalB">
-                <thead>
-                  <tr>
-                    <th scope="col" style="width: 60px;">Rang</th>
-                    <th scope="col" style="min-width: 150px;">Name</th>
-                    <th scope="col" class="text-center">Passe 1</th>
-                    <th scope="col" class="text-center">Passe 2</th>
-                    <th scope="col" class="text-center">Passe 3</th>
-                    <th scope="col" class="text-center">Passe 4</th>
-                    <th scope="col" class="text-center">Passe 5</th>
-                    <th scope="col" class="text-center">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td colspan="8" class="text-center text-muted py-3">
-                      <div class="loading-spinner me-2"></div> Lade Daten...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
         </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-lg-4">
+      <div class="sidebar-card">
+        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Hinweise</h5>
+        <ul class="small mb-0">
+          <li>Jahr oben wählen, um Ranglisten neu zu laden.</li>
+          <li>PDF/Excel generiert jeweils eine Datei zum Download.</li>
+          <li>Bei Problemen erscheint unten eine Fehlermeldung.</li>
+        </ul>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Nachricht Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-  <div id="messageToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11; margin-top: 70px;">
+  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="toast-header">
-      <strong class="me-auto">System</strong>
+      <i class="bi bi-info-circle-fill text-primary me-2"></i>
+      <strong class="me-auto">Hinweis</strong>
       <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
     <div class="toast-body"></div>
@@ -295,8 +155,8 @@ include 'header.inc.php';
 <script>
 $(document).ready(function() {
     var basePath = '';
-    let toastElement = document.getElementById('messageToast');
-    let toast = new bootstrap.Toast(toastElement);
+    const toastEl = document.getElementById('liveToast');
+    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
 
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
@@ -311,32 +171,48 @@ $(document).ready(function() {
         }
     }
 
-    // Status-Nachricht anzeigen
-    function setStatus(message, type = 'info') {
-        const icons = {
-            'success': 'bi-check-circle text-success',
-            'error': 'bi-x-circle text-danger',
-            'warning': 'bi-exclamation-triangle text-warning',
-            'info': 'bi-info-circle text-info',
-            'loading': 'loading-spinner'
-        };
-        
-        const icon = type === 'loading' ? 
-            '<div class="loading-spinner me-2"></div>' : 
-            `<i class="bi ${icons[type]} me-2"></i>`;
-        
-        $('#status-message').html(icon + message);
+    function setStatus(message, type) {
+        $('#pdf-link').html(
+            '<div class="alert alert-' + (type === 'loading' ? 'info' : type) + ' d-flex align-items-center">' +
+            (type === 'success' ? '<i class="bi bi-check-circle-fill me-2"></i>' :
+             type === 'danger'  ? '<i class="bi bi-x-circle-fill me-2"></i>' :
+                                  '<span class="spinner-border spinner-border-sm me-2"></span>') +
+            '<div>' + message + '</div></div>'
+        );
     }
 
-    // Toast-Nachricht anzeigen
     function showToast(message, type = 'info') {
-        const toastBody = $('#messageToast .toast-body');
-        const toastHeader = $('#messageToast .toast-header');
-        
-        // Farbe basierend auf Typ
-        toastHeader.removeClass('bg-success bg-danger bg-warning bg-info').addClass(`bg-${type} text-white`);
-        toastBody.text(message);
+        const toastBody = toastEl.querySelector('.toast-body');
+        const toastHeader = toastEl.querySelector('.toast-header');
+        const icon = toastHeader.querySelector('i');
+        const title = toastHeader.querySelector('strong');
+
+        toastBody.textContent = message;
+
+        // Icon und Farbe je nach Typ anpassen
+        icon.className = 'me-2 bi bi-' + 
+            (type === 'success' ? 'check-circle-fill text-success' :
+             type === 'error' || type === 'danger' ? 'exclamation-triangle-fill text-danger' :
+             type === 'warning' ? 'exclamation-circle-fill text-warning' :
+             'info-circle-fill text-primary');
+
+        title.textContent = 
+            type === 'success' ? 'Erfolg' :
+            type === 'error' || type === 'danger' ? 'Fehler' :
+            type === 'warning' ? 'Warnung' :
+            'Hinweis';
+
         toast.show();
+    }
+
+    // Automatischer Download einer Datei
+    function downloadFile(url, filename) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename || url.split('/').pop();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // Kantiresultate A laden
@@ -351,15 +227,16 @@ $(document).ready(function() {
             success: function(response) {
                 $('#KantonalA tbody').html(response);
                 // Zentriere numerische Werte
-                $('#KantonalA tbody td:not(:nth-child(1)):not(:nth-child(2))').addClass('text-center');
+                $('#KantonalA tbody tr').each(function() {
+                    $(this).find('td').each(function(index) {
+                        if (index >= 3) $(this).addClass('text-center');
+                    });
+                });
+                setStatus('Kategorie A geladen', 'success');
             },
             error: function(xhr, status, error) {
-                console.error('Error loading Kantonal A:', error);
-                $('#KantonalA tbody').html(
-                    '<tr><td colspan="8" class="text-center text-danger py-3">' +
-                    '<i class="bi bi-x-circle me-2"></i>Fehler beim Laden der Daten</td></tr>'
-                );
-                setStatus('Fehler beim Laden', 'error');
+                setStatus('Fehler beim Laden Kategorie A: ' + error, 'danger');
+                showToast('Fehler beim Laden Kategorie A', 'error');
             }
         });
     }
@@ -367,6 +244,7 @@ $(document).ready(function() {
     // Kantiresultate B laden
     function loadKantonalb() {
         var selectedYear = $('#yearSelect').val();
+        setStatus('Lade Kategorie B...', 'loading');
         
         $.ajax({
             url: basePath + 'kantirang/load_kantonal.php',
@@ -374,26 +252,24 @@ $(document).ready(function() {
             data: { year: selectedYear, kat: 'B' },
             success: function(response) {
                 $('#KantonalB tbody').html(response);
-                // Zentriere numerische Werte
-                $('#KantonalB tbody td:not(:nth-child(1)):not(:nth-child(2))').addClass('text-center');
-                setStatus('Daten erfolgreich geladen', 'success');
+                $('#KantonalB tbody tr').each(function() {
+                    $(this).find('td').each(function(index) {
+                        if (index >= 3) $(this).addClass('text-center');
+                    });
+                });
+                setStatus('Kategorie B geladen', 'success');
             },
             error: function(xhr, status, error) {
-                console.error('Error loading Kantonal B:', error);
-                $('#KantonalB tbody').html(
-                    '<tr><td colspan="8" class="text-center text-danger py-3">' +
-                    '<i class="bi bi-x-circle me-2"></i>Fehler beim Laden der Daten</td></tr>'
-                );
-                setStatus('Fehler beim Laden', 'error');
+                setStatus('Fehler beim Laden Kategorie B: ' + error, 'danger');
+                showToast('Fehler beim Laden Kategorie B', 'error');
             }
         });
     }
 
-    // PDF-Button Handler
-    $(document).on('click', '.pdf-btn', function(e) {
-        e.preventDefault();
-        const btn = $(this);
-        const originalHtml = btn.html();
+    // PDF Erstellung Button Handler
+    $('.pdf-btn').on('click', function() {
+        var btn = $(this);
+        var originalHtml = btn.html();
         btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
         
         var selectedYear = $('#yearSelect').val();
@@ -404,19 +280,22 @@ $(document).ready(function() {
             data: { year: selectedYear },
             success: function(response) {
                 if (response && response.pdf_link) {
+                    // Automatischer Download
+                    downloadFile(response.pdf_link, 'Kantonalstich_' + selectedYear + '.pdf');
+                    
                     $('#pdf-link').html(
                         '<div class="alert alert-success d-flex align-items-center">' +
                         '<i class="bi bi-check-circle-fill me-2"></i>' +
-                        '<div>PDF erstellt: <a href="' + response.pdf_link + '" target="_blank" class="alert-link">' +
-                        '<i class="bi bi-download me-1"></i>Herunterladen</a></div></div>'
+                        '<div>PDF wurde heruntergeladen. <a href="' + response.pdf_link + '" target="_blank" class="alert-link">' +
+                        '<i class="bi bi-arrow-clockwise me-1"></i>Erneut herunterladen</a></div></div>'
                     );
-                    showToast('PDF erfolgreich generiert', 'success');
+                    showToast('PDF erfolgreich generiert und heruntergeladen', 'success');
                 } else {
                     $('#pdf-link').html(
                         '<div class="alert alert-danger">' +
                         '<i class="bi bi-x-circle-fill me-2"></i>Fehler beim Generieren der PDF-Datei</div>'
                     );
-                    showToast('PDF-Generierung fehlgeschlagen', 'danger');
+                    showToast('PDF-Generierung fehlgeschlagen', 'error');
                 }
             },
             error: function(xhr, status, error) {
@@ -424,7 +303,7 @@ $(document).ready(function() {
                     '<div class="alert alert-danger">' +
                     '<i class="bi bi-x-circle-fill me-2"></i>Fehler: ' + error + '</div>'
                 );
-                showToast('Fehler: ' + error, 'danger');
+                showToast('Fehler beim Generieren der PDF: ' + error, 'error');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalHtml);
@@ -432,35 +311,52 @@ $(document).ready(function() {
         });
     });
 
-    // Word/Excel-Button Handler
-    $(document).on('click', '.word-btn', function(e) {
-        e.preventDefault();
-        const btn = $(this);
-        const originalHtml = btn.html();
+    // Word/Excel-Button Handler mit automatischem Download
+    $('.word-btn').on('click', function() {
+        var btn = $(this);
+        var originalHtml = btn.html();
         btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
         
         var selectedYear = $('#yearSelect').val();
         $.ajax({
-            url: 'kantirang/generate_word.php',
+            url: 'kantiabr/generate_kantiabr_xls.php',
             type: 'GET',
+            dataType: 'json',
             data: { year: selectedYear },
             success: function(response) {
-                var data = JSON.parse(response);
-                var wordLink = data.pdf_link;
-                $('#pdf-link').html(
-                    '<div class="alert alert-success d-flex align-items-center">' +
-                    '<i class="bi bi-check-circle-fill me-2"></i>' +
-                    '<div>Excel erstellt: <a href="' + wordLink + '" target="_blank" class="alert-link">' +
-                    '<i class="bi bi-download me-1"></i>Herunterladen</a></div></div>'
-                );
-                showToast('Excel erfolgreich generiert', 'success');
+                var wordLink = (function(p){
+                    if(!p) return null;
+                    var idx = p.indexOf('/inc/');
+                    if(idx !== -1) return p.substring(idx);
+                    var fn = p.split('/').pop();
+                    return '/inc/kantiabr/dat/' + fn;
+                })(response && (response.xls_link || response.pdf_link));
+
+                if (wordLink) {
+                    // Automatischer Download
+                    downloadFile(wordLink, 'Kantonalstich_' + selectedYear + '.xlsx');
+                    
+                    $('#pdf-link').html(
+                        '<div class="alert alert-success d-flex align-items-center">' +
+                        '<i class="bi bi-check-circle-fill me-2"></i>' +
+                        '<div>Excel wurde heruntergeladen. <a href="' + wordLink + '" target="_blank" class="alert-link">' +
+                        '<i class="bi bi-arrow-clockwise me-1"></i>Erneut herunterladen</a></div></div>'
+                    );
+                    showToast('Excel erfolgreich generiert und heruntergeladen', 'success');
+                } else {
+                    $('#pdf-link').html(
+                        '<div class="alert alert-danger">' +
+                        '<i class="bi bi-x-circle-fill me-2"></i>Fehler: Kein Download-Link erhalten</div>'
+                    );
+                    showToast('Excel-Generierung fehlgeschlagen', 'error');
+                }
             },
             error: function(xhr, status, error) {
                 $('#pdf-link').html(
                     '<div class="alert alert-danger">' +
                     '<i class="bi bi-x-circle-fill me-2"></i>Fehler: ' + error + '</div>'
                 );
-                showToast('Fehler: ' + error, 'danger');
+                showToast('Fehler beim Generieren der Excel-Datei: ' + error, 'error');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalHtml);

@@ -126,94 +126,134 @@ while ($row = $result->fetch_assoc()) {
 ?>
 
 <style>
-    .user-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .user-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .user-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
-        font-weight: bold;
-    }
-    
-    .badge-admin {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-    
-    .btn-action {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .stats-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .stats-card h2 {
-        font-size: 2.5rem;
-        margin: 0;
-    }
-    
-    .table-actions {
-        white-space: nowrap;
-    }
+/* Schlichte Tabellen-Styles passend zu anderen MSV-Seiten */
+.table > thead > tr > th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.table > tbody > tr:hover {
+    background-color: #f8f9fa;
+}
+
+.user-initial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--secondary-color);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.badge-admin {
+    background-color: var(--secondary-color);
+    font-size: 0.75rem;
+}
+
+/* Kompakte Action-Buttons */
+.btn-action-group {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Info-Card oben */
+.info-card {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--secondary-color);
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.25rem;
+}
+
+.info-card .count {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+/* Toast Container */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast-message {
+    min-width: 300px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    background: white;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+}
+
+.toast-message.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-message.toast-success {
+    border-left: 4px solid #28a745;
+}
+
+.toast-message.toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast-message.toast-warning {
+    border-left: 4px solid #ffc107;
+}
 </style>
 
 <!-- Benutzerverwaltung -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-9 col-lg-10 col-md-12 col-12">
+        <div class="col-xl-9 col-lg-10 col-md-12 col-12 ps-0">
             <div class="main-content-wrapper">
+                
                 <!-- Header -->
-                <div class="row mb-3">
-                    <div class="col-md-8">
+                <div class="row mb-4">
+                    <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-people-fill me-2"></i>
                             Benutzerverwaltung
                         </h2>
-                        <p class="text-muted mt-1">Verwalte Systembenutzer und Zugriffsrechte</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
-                            <i class="bi bi-person-plus-fill me-2"></i>Neuer Benutzer
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Statistik Card -->
-                <div class="stats-card">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="mb-2"><?php echo count($users); ?></h2>
-                            <p class="mb-0 opacity-75">Registrierte Benutzer im System</p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <i class="bi bi-people" style="font-size: 4rem; opacity: 0.3;"></i>
-                        </div>
                     </div>
                 </div>
                 
                 <div class="content-background">
+                    
+                    <!-- Info Card mit Anzahl -->
+                    <div class="info-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="count"><?php echo count($users); ?></div>
+                                <small class="text-muted">Registrierte Benutzer</small>
+                            </div>
+                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
+                                <i class="bi bi-person-plus me-2"></i>Neuer Benutzer
+                            </button>
+                        </div>
+                    </div>
                     
                     <?php if ($message): ?>
                         <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
@@ -225,33 +265,31 @@ while ($row = $result->fetch_assoc()) {
                     
                     <!-- Benutzertabelle -->
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th style="width: 80px;">ID</th>
+                                    <th style="width: 60px;">ID</th>
                                     <th>Benutzer</th>
                                     <th>E-Mail</th>
-                                    <th style="width: 150px;" class="text-end">Aktionen</th>
+                                    <th style="width: 120px;" class="text-center">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($users as $user): ?>
                                 <tr>
                                     <td>
-                                        <span class="badge bg-secondary">#<?php echo $user['id']; ?></span>
+                                        <span class="text-muted"><?php echo $user['id']; ?></span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="user-avatar me-3">
+                                            <span class="user-initial me-2">
                                                 <?php echo strtoupper(substr($user['username'], 0, 1)); ?>
-                                            </div>
+                                            </span>
                                             <div>
-                                                <div class="fw-bold">
-                                                    <?php echo htmlspecialchars($user['username']); ?>
+                                                <div>
+                                                    <strong><?php echo htmlspecialchars($user['username']); ?></strong>
                                                     <?php if ($user['id'] == 1): ?>
-                                                        <span class="badge badge-admin ms-2">
-                                                            <i class="bi bi-shield-check"></i> Admin
-                                                        </span>
+                                                        <span class="badge badge-admin ms-1">Admin</span>
                                                     <?php endif; ?>
                                                 </div>
                                                 <?php if (!empty($user['full_name'])): ?>
@@ -261,29 +299,33 @@ while ($row = $result->fetch_assoc()) {
                                         </div>
                                     </td>
                                     <td>
-                                        <i class="bi bi-envelope me-1 text-muted"></i>
-                                        <?php echo htmlspecialchars($user['email']); ?>
+                                        <small class="text-muted">
+                                            <i class="bi bi-envelope me-1"></i>
+                                            <?php echo htmlspecialchars($user['email']); ?>
+                                        </small>
                                     </td>
-                                    <td class="text-end table-actions">
-                                        <button class="btn btn-sm btn-primary btn-action" 
-                                                onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)"
-                                                title="Bearbeiten">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        
-                                        <?php if ($user['id'] != 1): ?>
-                                        <form method="POST" style="display: inline;" onsubmit="return confirm('Benutzer <?php echo htmlspecialchars($user['username']); ?> wirklich löschen?');">
-                                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                            <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
-                                            <button type="submit" name="delete_user" class="btn btn-sm btn-danger btn-action" title="Löschen">
-                                                <i class="bi bi-trash"></i>
+                                    <td class="text-center">
+                                        <div class="btn-action-group">
+                                            <button class="btn btn-sm btn-outline-secondary btn-action" 
+                                                    onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)"
+                                                    title="Bearbeiten">
+                                                <i class="bi bi-pencil"></i>
                                             </button>
-                                        </form>
-                                        <?php else: ?>
-                                        <button class="btn btn-sm btn-secondary btn-action" disabled title="Admin kann nicht gelöscht werden">
-                                            <i class="bi bi-shield-lock"></i>
-                                        </button>
-                                        <?php endif; ?>
+                                            
+                                            <?php if ($user['id'] != 1): ?>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Benutzer <?php echo htmlspecialchars($user['username']); ?> wirklich löschen?');">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                                <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                                                <button type="submit" name="delete_user" class="btn btn-sm btn-outline-danger btn-action" title="Löschen">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                            <?php else: ?>
+                                            <button class="btn btn-sm btn-outline-secondary btn-action" disabled title="Admin kann nicht gelöscht werden">
+                                                <i class="bi bi-shield-lock"></i>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -293,7 +335,7 @@ while ($row = $result->fetch_assoc()) {
                     
                     <?php if (empty($users)): ?>
                     <div class="text-center py-5">
-                        <i class="bi bi-people" style="font-size: 4rem; color: #dee2e6;"></i>
+                        <i class="bi bi-people" style="font-size: 3rem; color: #dee2e6;"></i>
                         <p class="text-muted mt-3">Keine Benutzer vorhanden</p>
                     </div>
                     <?php endif; ?>
@@ -309,7 +351,7 @@ while ($row = $result->fetch_assoc()) {
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST">
-                <div class="modal-header">
+                <div class="modal-header border-0">
                     <h5 class="modal-title" id="userModalTitle">
                         <i class="bi bi-person-plus me-2"></i>
                         Neuer Benutzer
@@ -323,7 +365,7 @@ while ($row = $result->fetch_assoc()) {
                     <div class="mb-3">
                         <label for="username" class="form-label">
                             <i class="bi bi-person me-1"></i>
-                            Benutzername *
+                            Benutzername
                         </label>
                         <input type="text" class="form-control" id="username" name="username" required>
                     </div>
@@ -334,13 +376,13 @@ while ($row = $result->fetch_assoc()) {
                             Vollständiger Name
                         </label>
                         <input type="text" class="form-control" id="full_name" name="full_name">
-                        <small class="text-muted">Optional - wird in der Übersicht angezeigt</small>
+                        <small class="text-muted">Optional</small>
                     </div>
                     
                     <div class="mb-3">
                         <label for="email" class="form-label">
                             <i class="bi bi-envelope me-1"></i>
-                            E-Mail *
+                            E-Mail
                         </label>
                         <input type="email" class="form-control" id="email" name="email" required>
                     </div>
@@ -348,7 +390,7 @@ while ($row = $result->fetch_assoc()) {
                     <div class="mb-3">
                         <label for="password" class="form-label">
                             <i class="bi bi-key me-1"></i>
-                            <span id="passwordLabel">Passwort *</span>
+                            <span id="passwordLabel">Passwort</span>
                         </label>
                         <input type="password" class="form-control" id="password" name="password">
                         <small class="text-muted" id="passwordHelp" style="display: none;">
@@ -356,11 +398,11 @@ while ($row = $result->fetch_assoc()) {
                         </small>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-2"></i>Abbrechen
                     </button>
-                    <button type="submit" name="save_user" class="btn btn-primary">
+                    <button type="submit" name="save_user" class="btn btn-outline-success">
                         <i class="bi bi-check-circle me-2"></i>Speichern
                     </button>
                 </div>
@@ -369,7 +411,9 @@ while ($row = $result->fetch_assoc()) {
     </div>
 </div>
 
-<!-- CSRF Token für JavaScript -->
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
 
@@ -381,7 +425,7 @@ function resetUserForm() {
     document.getElementById('email').value = '';
     document.getElementById('password').value = '';
     document.getElementById('password').required = true;
-    document.getElementById('passwordLabel').innerText = 'Passwort *';
+    document.getElementById('passwordLabel').innerText = 'Passwort';
     document.getElementById('passwordHelp').style.display = 'none';
 }
 
@@ -399,6 +443,15 @@ function editUser(user) {
     var modal = new bootstrap.Modal(document.getElementById('userModal'));
     modal.show();
 }
+
+// Auto-hide Alerts nach 5 Sekunden
+$(document).ready(function() {
+    setTimeout(function() {
+        $('.alert').fadeOut('slow', function() {
+            $(this).remove();
+        });
+    }, 5000);
+});
 </script>
 
 <?php

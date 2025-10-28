@@ -4,8 +4,8 @@
  * Speichert Partner-Schuss-Daten für Endresultate
  * 
  * @author System
- * @version 1.0
- * @description Speichert Partner-Daten mit Mitglied-Verknüpfung
+ * @version 1.1
+ * @description Speichert Partner-Daten mit Mitglied-Verknüpfung (inkl. 2. Passe Schwini)
  */
 
 include '../config.php';
@@ -66,8 +66,12 @@ try {
     $endstichFields = ['EndstichSchuss1', 'EndstichSchuss2', 'EndstichSchuss3', 'EndstichSchuss4', 'EndstichSchuss5',
                        'EndstichSchuss6', 'EndstichSchuss7', 'EndstichSchuss8', 'EndstichSchuss9', 'EndstichSchuss10'];
     $sieErFields = ['SieErSchuss1', 'SieErSchuss2', 'SieErSchuss3', 'SieErSchuss4', 'SieErSchuss5'];
+    
+    // ERWEITERT: Partner Schwini jetzt mit 12 Schüssen (2 Passen à 6 Schüsse)
     $schwiniFields = ['PartnerSchwiniSchuss1', 'PartnerSchwiniSchuss2', 'PartnerSchwiniSchuss3',
-                      'PartnerSchwiniSchuss4', 'PartnerSchwiniSchuss5', 'PartnerSchwiniSchuss6'];
+                      'PartnerSchwiniSchuss4', 'PartnerSchwiniSchuss5', 'PartnerSchwiniSchuss6',
+                      'PartnerSchwiniSchuss7', 'PartnerSchwiniSchuss8', 'PartnerSchwiniSchuss9',
+                      'PartnerSchwiniSchuss10', 'PartnerSchwiniSchuss11', 'PartnerSchwiniSchuss12'];
     
     // Validate and sanitize shot values
     $shotData = [];

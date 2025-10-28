@@ -14,6 +14,10 @@ $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 // HILFSFUNKTIONEN
 // ========================================
 
+function fmt1($v) {
+    if ($v === null || $v === '') return '';
+    return number_format((float)$v, 1, '.', '');
+}
 // Hilfsfunktion für Fettschrift
 function formatBold($text) {
     return '<w:r><w:rPr><w:b/></w:rPr><w:t>' . htmlspecialchars($text) . '</w:t></w:r>';
@@ -34,198 +38,326 @@ function getEndstich($templateProcessor, $conn)
     logDebug("Starte getEndstich für Jahr: " . $selectedYear);
 
     $sql = "
+    SELECT
+        u.ID,
+        u.Name,
+        u.Vorname,
+        u.Geburtsdatum,
+        u.Schuss1, u.Schuss2, u.Schuss3, u.Schuss4, u.Schuss5,
+        u.Schuss6, u.Schuss7, u.Schuss8, u.Schuss9, u.Schuss10,
+        u.Tiefschuss,
+        u.Kranz_Endstich,
+        u.Endstich_Summe,
+        u.Anzahl_10
+    FROM (
+        /* Mitglieder */
         SELECT
             m.ID,
-            m.Name,
-            m.Vorname,
-            e.Schuss1,
-            e.Schuss2,
-            e.Schuss3,
-            e.Schuss4,
-            e.Schuss5,
-            e.Schuss6,
-            e.Schuss7,
-            e.Schuss8,
-            e.Schuss9,
-            e.Schuss10,
+            CONVERT(m.Name    USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Name,
+            CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Vorname,
+            m.Geburtsdatum,
+            e.Schuss1, e.Schuss2, e.Schuss3, e.Schuss4, e.Schuss5,
+            e.Schuss6, e.Schuss7, e.Schuss8, e.Schuss9, e.Schuss10,
             e.Tiefschuss,
             w.Kranz_Endstich,
-            COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS Endstich_Summe,
-            SUM(CASE WHEN e.Schuss1 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss2 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss3 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss4 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss5 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss6 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss7 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss8 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss9 = 10 THEN 1 ELSE 0 END) +
-            SUM(CASE WHEN e.Schuss10 = 10 THEN 1 ELSE 0 END) AS Anzahl_10
-        FROM
-            mitglieder m
-        LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
-        LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        GROUP BY
-            m.ID, m.Vorname, m.Name
-        ORDER BY
-            Endstich_Summe DESC,
-            e.Tiefschuss DESC,
-            Anzahl_10 DESC
+            COALESCE(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5
+                   + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10, 0) AS Endstich_Summe,
+            ((e.Schuss1 = 10) + (e.Schuss2 = 10) + (e.Schuss3 = 10) + (e.Schuss4 = 10) + (e.Schuss5 = 10)
+           + (e.Schuss6 = 10) + (e.Schuss7 = 10) + (e.Schuss8 = 10) + (e.Schuss9 = 10) + (e.Schuss10 = 10)) AS Anzahl_10
+        FROM mitglieder m
+        LEFT JOIN endstich e
+          ON m.ID = e.MitgliedID AND e.Jahr = ?
+        LEFT JOIN Waffen w
+          ON w.ID = m.WaffenID
+        WHERE COALESCE(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5
+                     + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10, 0) != 0
+
+        UNION ALL
+
+        /* JS-Gäste (Stammdaten aus endstich_gaeste, Resultate aus endstich_jung) */
+        SELECT
+            g.id AS ID,
+            CONVERT(COALESCE(g.Nachname, g.Name) USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+            CONVERT(COALESCE(g.Vorname, '')      USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
+            COALESCE(g.Geburtsdatum, DATE('2100-01-01')) AS Geburtsdatum,
+            ej.Schuss1, ej.Schuss2, ej.Schuss3, ej.Schuss4, ej.Schuss5,
+            ej.Schuss6, ej.Schuss7, ej.Schuss8, ej.Schuss9, ej.Schuss10,
+            ej.Tiefschuss,
+            NULL AS Kranz_Endstich,
+            COALESCE(ej.Schuss1 + ej.Schuss2 + ej.Schuss3 + ej.Schuss4 + ej.Schuss5
+                   + ej.Schuss6 + ej.Schuss7 + ej.Schuss8 + ej.Schuss9 + ej.Schuss10, 0) AS Endstich_Summe,
+            ((ej.Schuss1 = 10) + (ej.Schuss2 = 10) + (ej.Schuss3 = 10) + (ej.Schuss4 = 10) + (ej.Schuss5 = 10)
+           + (ej.Schuss6 = 10) + (ej.Schuss7 = 10) + (ej.Schuss8 = 10) + (ej.Schuss9 = 10) + (ej.Schuss10 = 10)) AS Anzahl_10
+        FROM endstich_gaeste g
+        INNER JOIN endstich_jung ej
+          ON g.id = ej.JungschuetzeID AND ej.Jahr = ?
+        WHERE (g.Jahr = ? OR g.Jahr IS NULL)
+          AND COALESCE(ej.Schuss1 + ej.Schuss2 + ej.Schuss3 + ej.Schuss4 + ej.Schuss5
+                     + ej.Schuss6 + ej.Schuss7 + ej.Schuss8 + ej.Schuss9 + ej.Schuss10, 0) != 0
+
+        UNION ALL
+
+        /* Normale Gäste (Partner) – Endstich aus endresultate_partner */
+        SELECT
+            ep.ID AS ID,
+            CONVERT(ep.PartnerName USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+            CAST('' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
+            DATE('2100-01-01') AS Geburtsdatum, -- kein Datum -> nach hinten
+            ep.EndstichSchuss1  AS Schuss1,
+            ep.EndstichSchuss2  AS Schuss2,
+            ep.EndstichSchuss3  AS Schuss3,
+            ep.EndstichSchuss4  AS Schuss4,
+            ep.EndstichSchuss5  AS Schuss5,
+            ep.EndstichSchuss6  AS Schuss6,
+            ep.EndstichSchuss7  AS Schuss7,
+            ep.EndstichSchuss8  AS Schuss8,
+            ep.EndstichSchuss9  AS Schuss9,
+            ep.EndstichSchuss10 AS Schuss10,
+            LEAST(
+                ep.EndstichSchuss1, ep.EndstichSchuss2, ep.EndstichSchuss3, ep.EndstichSchuss4, ep.EndstichSchuss5,
+                ep.EndstichSchuss6, ep.EndstichSchuss7, ep.EndstichSchuss8, ep.EndstichSchuss9, ep.EndstichSchuss10
+            ) AS Tiefschuss,
+            NULL AS Kranz_Endstich,
+            COALESCE(
+                ep.EndstichSchuss1 + ep.EndstichSchuss2 + ep.EndstichSchuss3 + ep.EndstichSchuss4 + ep.EndstichSchuss5 +
+                ep.EndstichSchuss6 + ep.EndstichSchuss7 + ep.EndstichSchuss8 + ep.EndstichSchuss9 + ep.EndstichSchuss10
+            , 0) AS Endstich_Summe,
+            ((ep.EndstichSchuss1 = 10) + (ep.EndstichSchuss2 = 10) + (ep.EndstichSchuss3 = 10) + (ep.EndstichSchuss4 = 10) + (ep.EndstichSchuss5 = 10) +
+             (ep.EndstichSchuss6 = 10) + (ep.EndstichSchuss7 = 10) + (ep.EndstichSchuss8 = 10) + (ep.EndstichSchuss9 = 10) + (ep.EndstichSchuss10 = 10)) AS Anzahl_10
+        FROM endresultate_partner ep
+        WHERE ep.Jahr = ?
+          AND COALESCE(
+                ep.EndstichSchuss1 + ep.EndstichSchuss2 + ep.EndstichSchuss3 + ep.EndstichSchuss4 + ep.EndstichSchuss5 +
+                ep.EndstichSchuss6 + ep.EndstichSchuss7 + ep.EndstichSchuss8 + ep.EndstichSchuss9 + ep.EndstichSchuss10
+              , 0) != 0
+    ) u
+    ORDER BY
+        u.Endstich_Summe DESC,
+        u.Tiefschuss DESC,
+        u.Anzahl_10 DESC,
+        u.Geburtsdatum ASC
+
+
     ";
-    
+
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         logDebug("SQL-Fehler in getEndstich prepare: " . $conn->error);
         $templateProcessor->cloneRow('ESRang', 0);
         return;
     }
-    
-    $stmt->bind_param("i", $selectedYear);
+
+    // 3× Jahr: Mitglieder.endstich, Gäste.endstich_jung, Gäste.endstich_gaeste (optional via OR IS NULL abgefangen)
+$stmt->bind_param("iiii", $selectedYear, $selectedYear, $selectedYear, $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Zähle die Zeilen
-    $rowCount = 0;
-    $data = array();
-    
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            if (!empty($row['Endstich_Summe'])) {
-                $data[] = $row;
-                $rowCount++;
-            }
+    // Daten einsammeln
+    $rows = [];
+    if ($result && $result->num_rows > 0) {
+        while ($r = $result->fetch_assoc()) {
+            if (!empty($r['Endstich_Summe'])) $rows[] = $r;
         }
     }
-    
-    if ($rowCount == 0) {
+    $rowCount = count($rows);
+    if ($rowCount === 0) {
         logDebug("Keine Endstich-Daten gefunden");
         $templateProcessor->cloneRow('ESRang', 0);
         return;
     }
-    
-    // Klone die Platzhalter-Zeile
+
     $templateProcessor->cloneRow('ESRang', $rowCount);
-    
-    // Daten in die Tabelle einfügen
-    $currentRow = 1;
-    foreach ($data as $row) {
-        $keys = array_keys($row);
-        $schussKeys = preg_grep('/^Schuss\d+$/', $keys);
-        $scount = count($schussKeys);
 
-        if ($currentRow <= 3) {
-            $templateProcessor->setValue("ESRang#{$currentRow}", formatBold($currentRow . '.'));
-            $templateProcessor->setValue("ESName#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
-            
-            for ($i = 1; $i <= $scount; $i++) {
-                $schuss = "Schuss" . $i;
-                $value = isset($row[$schuss]) ? $row[$schuss] : '';
-                $templateProcessor->setValue("ESS$i#{$currentRow}", formatBold($value));
-            }
-            
-            $templateProcessor->setValue("ESTO#{$currentRow}", formatBold($row['Endstich_Summe']));
-            $templateProcessor->setValue("ESKK#{$currentRow}", formatBold('KK'));
-        } else {
-            $templateProcessor->setValue("ESRang#{$currentRow}", $currentRow . ".");
-            $templateProcessor->setValue("ESName#{$currentRow}", $row['Name'] . " " . $row['Vorname']);
-            
-            for ($i = 1; $i <= $scount; $i++) {
-                $schuss = "Schuss" . $i;
-                $value = isset($row[$schuss]) ? $row[$schuss] : '';
-                $templateProcessor->setValue("ESS$i#{$currentRow}", $value);
-            }
-            
-            $templateProcessor->setValue("ESTO#{$currentRow}", $row['Endstich_Summe']);
+    // Ausgabe
+    $iRow = 1;
+    foreach ($rows as $r) {
+        $isTop3 = ($iRow <= 3);
+        $rang   = $iRow . '.';
+        $name   = trim($r['Name'] . ' ' . $r['Vorname']);
 
-            if ($row['Endstich_Summe'] >= $row['Kranz_Endstich']) {
-                $templateProcessor->setValue("ESKK#{$currentRow}", "KK");
-            } else {
-                $templateProcessor->setValue("ESKK#{$currentRow}", "");
-            }
+        $templateProcessor->setValue("ESRang#{$iRow}", $isTop3 ? formatBold($rang) : $rang);
+        $templateProcessor->setValue("ESName#{$iRow}", $isTop3 ? formatBold($name) : $name);
+
+        // 10 Schüsse
+        for ($k = 1; $k <= 10; $k++) {
+            $key = "Schuss{$k}";
+            $val = isset($r[$key]) ? $r[$key] : '';
+            // schöne Anzeige ohne .0
+            $out = (is_numeric($val) && floor($val) == $val) ? (string)intval($val) : (string)$val;
+            $templateProcessor->setValue("ESS{$k}#{$iRow}", $isTop3 ? formatBold($out) : $out);
         }
 
-        $currentRow++;
+        $sum = (is_numeric($r['Endstich_Summe']) && floor($r['Endstich_Summe']) == $r['Endstich_Summe'])
+             ? (string)intval($r['Endstich_Summe']) : (string)$r['Endstich_Summe'];
+        $ts  = (is_numeric($r['Tiefschuss']) && floor($r['Tiefschuss']) == $r['Tiefschuss'])
+             ? (string)intval($r['Tiefschuss']) : (string)$r['Tiefschuss'];
+
+        $templateProcessor->setValue("ESTO#{$iRow}", $isTop3 ? formatBold($sum) : $sum);
+        // Falls du im Template ein Feld für Tiefschuss hast:
+        if (method_exists($templateProcessor, 'setValue')) {
+            $templateProcessor->setValue("ESTS#{$iRow}", $isTop3 ? formatBold($ts) : $ts);
+        }
+
+        $kk = (!is_null($r['Kranz_Endstich']) && $r['Endstich_Summe'] >= $r['Kranz_Endstich']) ? 'KK' : '';
+        $templateProcessor->setValue("ESKK#{$iRow}", $isTop3 ? formatBold($kk) : $kk);
+
+        $iRow++;
     }
-    
+
     $stmt->close();
     logDebug("getEndstich erfolgreich abgeschlossen");
 }
+
+
+
+function formatNumber($value) {
+    if (empty($value) || $value == 0) {
+        return $value;
+    }
+    
+    // Wenn es eine Ganzzahl ist (keine Nachkommastellen), ohne .0 anzeigen
+    if (floor($value) == $value) {
+        return intval($value);
+    }
+    
+    // Sonst als Dezimalzahl mit max 2 Stellen, trailing zeros entfernen
+    return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+}
+
+
+
+/**
+ * Hilfsfunktion: entfernt nur reine .0/.00... am Ende (10.0 -> 10, 10.50 bleibt 10.50)
+ */
+if (!function_exists('fmtNoTrailingZero')) {
+    function fmtNoTrailingZero($v) {
+        if ($v === null || $v === '') return '';
+        if (!is_numeric($v)) {
+            return preg_replace('/\.0+$/', '', (string)$v);
+        }
+
+        $f = (float)$v;
+        // echte 0 -> "0" + Zero-Width Non-Joiner (unsichtbar, verhindert Wegputzen)
+        if (abs($f) < 1e-12) {
+            return "0" . "\u{200C}"; // U+200C ZWNJ
+        }
+
+        if (floor($f) == $f) {
+            return (string)intval($f);
+        }
+        $s = sprintf('%.10f', $f);
+        $s = rtrim(rtrim($s, '0'), '.');
+        return $s !== '' ? $s : "0\u{200C}";
+    }
+}
+
+
+
 
 function getSchwini($templateProcessor, $conn)
 {
     global $selectedYear;
     logDebug("Starte getSchwini für Jahr: " . $selectedYear);
-    
+
     $sql = "
+    SELECT
+        u.ID,
+        u.Name,
+        u.Vorname,
+        u.Geburtsdatum,
+        u.P1Schuss1, u.P1Schuss2, u.P1Schuss3, u.P1Schuss4, u.P1Schuss5, u.P1Schuss6,
+        u.P2Schuss1, u.P2Schuss2, u.P2Schuss3, u.P2Schuss4, u.P2Schuss5, u.P2Schuss6,
+        u.Schwini1_Summe,
+        u.Schwini2_Summe,
+        GREATEST(u.Schwini1_Summe, u.Schwini2_Summe) AS Hoechste_Summe,
+        LEAST(u.Schwini1_Summe,  u.Schwini2_Summe) AS Tiefste_Summe,
+        CASE WHEN u.Schwini1_Summe > u.Schwini2_Summe THEN 'Passe 1' ELSE 'Passe 2' END AS Hoehere_Passe,
+        CASE WHEN u.Schwini1_Summe < u.Schwini2_Summe THEN 'Passe 1' ELSE 'Passe 2' END AS Kleinere_Passe
+    FROM (
+        /* Mitglieder */
         SELECT
             m.ID,
-            m.Name,
-            m.Vorname,
+            CONVERT(m.Name    USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Name,
+            CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Vorname,
             m.Geburtsdatum,
-            s.P1Schuss1,
-            s.P1Schuss2,
-            s.P1Schuss3,
-            s.P1Schuss4,
-            s.P1Schuss5,
-            s.P1Schuss6,
-            s.P2Schuss1,
-            s.P2Schuss2,
-            s.P2Schuss3,
-            s.P2Schuss4,
-            s.P2Schuss5,
-            s.P2Schuss6,
-            COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0) AS Schwini1_Summe,
-            COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0) AS Schwini2_Summe,
-            GREATEST(
-                COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0),
-                COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0)
-            ) AS Hoechste_Summe,
-            LEAST(
-                COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0),
-                COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0)
-            ) AS Tiefste_Summe,
-            CASE
-                WHEN COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0) >
-                     COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0)
-                THEN 'Passe 1'
-                ELSE 'Passe 2'
-            END AS Hoehere_Passe,
-            CASE
-                WHEN COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0) <
-                     COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0)
-                THEN 'Passe 1'
-                ELSE 'Passe 2'
-            END AS Kleinere_Passe
-        FROM
-            mitglieder m
+            s.P1Schuss1, s.P1Schuss2, s.P1Schuss3, s.P1Schuss4, s.P1Schuss5, s.P1Schuss6,
+            s.P2Schuss1, s.P2Schuss2, s.P2Schuss3, s.P2Schuss4, s.P2Schuss5, s.P2Schuss6,
+            COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0) AS Schwini1_Summe,
+            COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0) AS Schwini2_Summe
+        FROM mitglieder m
         LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
-        LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        GROUP BY
-            m.ID, m.Vorname, m.Name, m.Geburtsdatum
-        HAVING
-            Hoechste_Summe != 0
-        ORDER BY
-            Hoechste_Summe DESC,
-            Tiefste_Summe ASC,
-            m.Geburtsdatum ASC
+        WHERE COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0) != 0
+           OR COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0) != 0
+
+        UNION ALL
+
+        /* Jungschützen/Gäste aus endstich_gaeste + schwini_jung */
+        SELECT
+            g.id AS ID,
+            CONVERT(g.Name    USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Name,
+            CONVERT(g.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Vorname,
+            g.Geburtsdatum,
+            sj.P1Schuss1, sj.P1Schuss2, sj.P1Schuss3, sj.P1Schuss4, sj.P1Schuss5, sj.P1Schuss6,
+            sj.P2Schuss1, sj.P2Schuss2, sj.P2Schuss3, sj.P2Schuss4, sj.P2Schuss5, sj.P2Schuss6,
+            COALESCE(sj.P1Schuss1 + sj.P1Schuss2 + sj.P1Schuss3 + sj.P1Schuss4 + sj.P1Schuss5 + sj.P1Schuss6, 0) AS Schwini1_Summe,
+            COALESCE(sj.P2Schuss1 + sj.P2Schuss2 + sj.P2Schuss3 + sj.P2Schuss4 + sj.P2Schuss5 + sj.P2Schuss6, 0) AS Schwini2_Summe
+        FROM endstich_gaeste g
+        INNER JOIN schwini_jung sj ON g.id = sj.JungschuetzeID AND sj.Jahr = ?
+        WHERE COALESCE(sj.P1Schuss1 + sj.P1Schuss2 + sj.P1Schuss3 + sj.P1Schuss4 + sj.P1Schuss5 + sj.P1Schuss6, 0) != 0
+           OR COALESCE(sj.P2Schuss1 + sj.P2Schuss2 + sj.P2Schuss3 + sj.P2Schuss4 + sj.P2Schuss5 + sj.P2Schuss6, 0) != 0
+
+        UNION ALL
+
+        /* Partner (12 Schüsse = 2 Passen à 6) */
+        SELECT
+            ep.ID AS ID,
+            CONVERT(ep.PartnerName USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+            CAST('' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
+            '2100-01-01' AS Geburtsdatum, /* kein Geburtsdatum -> hinten einsortieren */
+            ep.PartnerSchwiniSchuss1  AS P1Schuss1,
+            ep.PartnerSchwiniSchuss2  AS P1Schuss2,
+            ep.PartnerSchwiniSchuss3  AS P1Schuss3,
+            ep.PartnerSchwiniSchuss4  AS P1Schuss4,
+            ep.PartnerSchwiniSchuss5  AS P1Schuss5,
+            ep.PartnerSchwiniSchuss6  AS P1Schuss6,
+            ep.PartnerSchwiniSchuss7  AS P2Schuss1,
+            ep.PartnerSchwiniSchuss8  AS P2Schuss2,
+            ep.PartnerSchwiniSchuss9  AS P2Schuss3,
+            ep.PartnerSchwiniSchuss10 AS P2Schuss4,
+            ep.PartnerSchwiniSchuss11 AS P2Schuss5,
+            ep.PartnerSchwiniSchuss12 AS P2Schuss6,
+            COALESCE(ep.PartnerSchwiniSchuss1 + ep.PartnerSchwiniSchuss2 + ep.PartnerSchwiniSchuss3 + ep.PartnerSchwiniSchuss4 + ep.PartnerSchwiniSchuss5 + ep.PartnerSchwiniSchuss6, 0) AS Schwini1_Summe,
+            COALESCE(ep.PartnerSchwiniSchuss7 + ep.PartnerSchwiniSchuss8 + ep.PartnerSchwiniSchuss9 + ep.PartnerSchwiniSchuss10 + ep.PartnerSchwiniSchuss11 + ep.PartnerSchwiniSchuss12, 0) AS Schwini2_Summe
+        FROM endresultate_partner ep
+        WHERE ep.Jahr = ?
+          AND (
+                COALESCE(ep.PartnerSchwiniSchuss1 + ep.PartnerSchwiniSchuss2 + ep.PartnerSchwiniSchuss3 + ep.PartnerSchwiniSchuss4 + ep.PartnerSchwiniSchuss5 + ep.PartnerSchwiniSchuss6, 0) != 0
+             OR COALESCE(ep.PartnerSchwiniSchuss7 + ep.PartnerSchwiniSchuss8 + ep.PartnerSchwiniSchuss9 + ep.PartnerSchwiniSchuss10 + ep.PartnerSchwiniSchuss11 + ep.PartnerSchwiniSchuss12, 0) != 0
+          )
+    ) u
+    ORDER BY
+        Hoechste_Summe DESC,
+        Tiefste_Summe ASC,
+        u.Geburtsdatum ASC
     ";
-    
+
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         logDebug("SQL-Fehler in getSchwini prepare: " . $conn->error);
         $templateProcessor->cloneRow('SRang', 0);
         return;
     }
-    
-    $stmt->bind_param("i", $selectedYear);
+
+    // drei Jahres-Parameter: Mitglieder, Gäste/Jungschützen, Partner
+    $stmt->bind_param("iii", $selectedYear, $selectedYear, $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
 
     // Daten sammeln
     $rowCount = 0;
-    $data = array();
-    
-    if ($result->num_rows > 0) {
+    $data = [];
+
+    if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             if (!empty($row['Hoechste_Summe'])) {
                 $data[] = $row;
@@ -233,55 +365,53 @@ function getSchwini($templateProcessor, $conn)
             }
         }
     }
-    
+
     if ($rowCount == 0) {
         logDebug("Keine Schwini-Daten gefunden");
         $templateProcessor->cloneRow('SRang', 0);
         return;
     }
-    
+
     $templateProcessor->cloneRow('SRang', $rowCount);
-    
+
     $currentRow = 1;
     foreach ($data as $row) {
         $keys = array_keys($row);
-        $schussKeys = preg_grep('/^P1Schuss\d+$/', $keys);
-        $scount = count($schussKeys);
+        $schussKeys = preg_grep('/^P1Schuss\\d+$/', $keys);
+        $scount = count($schussKeys); // i.d.R. 6
 
-        if ($currentRow <= 3) {
-            $templateProcessor->setValue("SRang#{$currentRow}", formatBold($currentRow . '.'));
-            $templateProcessor->setValue("SName#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
-            
-            for ($i = 1; $i <= $scount; $i++) {
-                $pschuss = ($row['Hoehere_Passe'] == "Passe 1") ? 1 : 2;
-                $schuss = "P" . $pschuss . "Schuss" . $i;
-                $value = isset($row[$schuss]) ? $row[$schuss] : '0';
-                $templateProcessor->setValue("SS$i#{$currentRow}", formatBold($value));
-            }
-            
-            $templateProcessor->setValue("ST1#{$currentRow}", formatBold($row['Hoechste_Summe']));
-            $templateProcessor->setValue("ST2#{$currentRow}", formatBold($row['Tiefste_Summe']));
-        } else {
-            $templateProcessor->setValue("SRang#{$currentRow}", $currentRow . ".");
-            $templateProcessor->setValue("SName#{$currentRow}", $row['Name'] . " " . $row['Vorname']);
-            
-            for ($i = 1; $i <= $scount; $i++) {
-                $pschuss = ($row['Hoehere_Passe'] == "Passe 1") ? 1 : 2;
-                $schuss = "P" . $pschuss . "Schuss" . $i;
-                $value = isset($row[$schuss]) ? $row[$schuss] : "0";
-                $templateProcessor->setValue("SS$i#{$currentRow}", $value);
-            }
-            
-            $templateProcessor->setValue("ST1#{$currentRow}", $row['Hoechste_Summe']);
-            $templateProcessor->setValue("ST2#{$currentRow}", $row['Tiefste_Summe']);
+        $isTop3   = ($currentRow <= 3);
+        $rangText = $currentRow . '.';
+        $nameText = trim($row['Name'] . ' ' . $row['Vorname']);
+
+        // Rang & Name
+        $templateProcessor->setValue("SRang#{$currentRow}", $isTop3 ? formatBold($rangText) : $rangText);
+        $templateProcessor->setValue("SName#{$currentRow}", $isTop3 ? formatBold($nameText) : $nameText);
+
+        // Welche Passe ausgeben?
+        $pschuss = ($row['Hoehere_Passe'] === "Passe 1") ? 1 : 2;
+
+        // Schüsse SS1..SS6 (Anzeige ohne überflüssige .0 – nutzt deine fmtNoTrailingZero)
+        for ($i = 1; $i <= $scount; $i++) {
+            $schussKey = "P{$pschuss}Schuss{$i}";
+            $raw   = isset($row[$schussKey]) ? $row[$schussKey] : '0';
+            $value = (string) fmtNoTrailingZero($raw);
+            $templateProcessor->setValue("SS{$i}#{$currentRow}", $isTop3 ? formatBold($value) : $value);
         }
+
+        $st1 = (string) fmtNoTrailingZero($row['Hoechste_Summe']);
+        $st2 = (string) fmtNoTrailingZero($row['Tiefste_Summe']);
+        $templateProcessor->setValue("ST1#{$currentRow}", $isTop3 ? formatBold($st1) : $st1);
+        $templateProcessor->setValue("ST2#{$currentRow}", $isTop3 ? formatBold($st2) : $st2);
 
         $currentRow++;
     }
-    
+
     $stmt->close();
     logDebug("getSchwini erfolgreich abgeschlossen");
 }
+
+
 
 function getZabig($templateProcessor, $conn)
 {
@@ -720,7 +850,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
             $templateProcessor->setValue($kategorie . "S#{$currentRow}", formatBold($row['MaxSchwini']));
             $templateProcessor->setValue($kategorie . "G#{$currentRow}", formatBold($row['GlueckTotal']));
             $templateProcessor->setValue($kategorie . "K#{$currentRow}", formatBold($row['KunstTotal']));
-            $templateProcessor->setValue($kategorie . "T#{$currentRow}", formatBold($row['GesamtTotal']));
+            $templateProcessor->setValue($kategorie . "T#{$currentRow}", formatBold(fmt1($row['GesamtTotal'])));
             
             if ($currentRow == 1) {
                 $templateProcessor->setValue($kategorie . "KK#{$currentRow}", formatBold('WP + KK'));
@@ -735,7 +865,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
             $templateProcessor->setValue($kategorie . "S#{$currentRow}", $row['MaxSchwini']);
             $templateProcessor->setValue($kategorie . "G#{$currentRow}", $row['GlueckTotal']);
             $templateProcessor->setValue($kategorie . "K#{$currentRow}", $row['KunstTotal']);
-            $templateProcessor->setValue($kategorie . "T#{$currentRow}", $row['GesamtTotal']);
+            $templateProcessor->setValue($kategorie . "T#{$currentRow}", fmt1($row['GesamtTotal']));
             $templateProcessor->setValue($kategorie . "KK#{$currentRow}", '');
         }
 
@@ -754,14 +884,16 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     // Erst prüfen ob überhaupt Jungschützen-Daten vorhanden sind
     $checkSql = "
         SELECT COUNT(*) as count
-        FROM jungschuetzen j
-        LEFT JOIN endstich_jung e ON j.id = e.JungschuetzeID AND e.Jahr = ?
-        WHERE e.Schuss1 != 0 AND e.Schuss1 IS NOT NULL
+        FROM endstich_gaeste g
+        LEFT JOIN endstich_jung e ON g.id = e.JungschuetzeID AND e.Jahr = ?
+        WHERE g.geburtsdatum IS NOT NULL
+          AND g.jahr = ?
+          AND e.Schuss1 != 0 AND e.Schuss1 IS NOT NULL
     ";
     
     $checkStmt = $conn->prepare($checkSql);
     if ($checkStmt) {
-        $checkStmt->bind_param("i", $selectedYear);
+        $checkStmt->bind_param("ii", $selectedYear, $selectedYear);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
         $checkRow = $checkResult->fetch_assoc();
@@ -798,7 +930,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
             $templateProcessor->cloneRow('JRang', 0);
             
             // Weitere mögliche Platzhalter
-            $placeholders = ['JName', 'JE', 'JZ', 'JS', 'JG', 'JK', 'JT', 'JKK'];
+            $placeholders = ['JName', 'JE', 'JZ', 'JS', 'JT'];
             foreach ($placeholders as $ph) {
                 $templateProcessor->setValue($ph, '');
             }
@@ -811,32 +943,32 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     // Ab hier der normale Code wenn Daten vorhanden sind
     $sql = "
         SELECT
-            j.Name,
-            j.Vorname,
-            j.Geburtsdatum,
-            COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10, 1), 0) AS GlueckTotal,
-            COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS EndstichTotal,
+            g.name,
+            g.vorname,
+            g.nachname,
+            g.geburtsdatum,
+            COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + 
+                         e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS EndstichTotal,
             COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0) AS Schwini_Summe1,
             COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0) AS Schwini_Summe2,
-            COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal, 
-            GREATEST(COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0),
-                     COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0)) AS MaxSchwini,
-            LEAST(COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0),
-                  COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0)) AS MinSchwini,
+            GREATEST(
+                COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0),
+                COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0)
+            ) AS MaxSchwini,
             z.ZSchuss1, z.ZSchuss2, z.ZSchuss3, z.ZSchuss4, z.ZSchuss5, z.ZSchuss6
         FROM
-            jungschuetzen j
-        LEFT JOIN endstich_jung e ON j.id = e.JungschuetzeID AND e.Jahr = ?
-        LEFT JOIN schwini_jung s ON j.id = s.JungschuetzeID AND s.Jahr = ?
-        LEFT JOIN kunst_jung k ON j.id = k.JungschuetzeID AND k.Jahr = ?
-        LEFT JOIN glueck_jung g ON j.id = g.JungschuetzeID AND g.Jahr = ?
-        LEFT JOIN zabig_jung z ON j.id = z.JungschuetzeID AND z.Jahr = ?
+            endstich_gaeste g
+        LEFT JOIN endstich_jung e ON g.id = e.JungschuetzeID AND e.Jahr = ?
+        LEFT JOIN schwini_jung s ON g.id = s.JungschuetzeID AND s.Jahr = ?
+        LEFT JOIN zabig_jung z ON g.id = z.JungschuetzeID AND z.Jahr = ?
         WHERE
-            e.Schuss1 != 0 OR e.Schuss1 IS NOT NULL
+            g.geburtsdatum IS NOT NULL
+            AND g.jahr = ?
+            AND (e.Schuss1 != 0 OR e.Schuss1 IS NOT NULL)
         GROUP BY
-            j.id, j.Vorname, j.Name
+            g.id, g.name, g.vorname, g.nachname, g.geburtsdatum
         ORDER BY
-            j.Geburtsdatum ASC
+            g.geburtsdatum ASC
     ";
 
     $stmt = $conn->prepare($sql);
@@ -846,15 +978,16 @@ function getJungschuetzenResultate($templateProcessor, $conn)
         return;
     }
     
-    $stmt->bind_param("iiiii", $selectedYear, $selectedYear, $selectedYear, $selectedYear, $selectedYear);
+    $stmt->bind_param("iiii", $selectedYear, $selectedYear, $selectedYear, $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Rest des Codes bleibt gleich...
+    // Daten sammeln
     $data = array();
     
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            // Zabig-Punkte berechnen
             $zabigTotal = 0;
             for ($i = 1; $i <= 6; $i++) {
                 $schuss = "ZSchuss" . $i;
@@ -863,8 +996,9 @@ function getJungschuetzenResultate($templateProcessor, $conn)
                 }
             }
             $row['ZabigTotal'] = $zabigTotal;
-            $row['GesamtTotal'] = $row['EndstichTotal'] + $row['GlueckTotal'] + 
-                                  $zabigTotal + $row['KunstTotal'] + $row['MaxSchwini'];
+            
+            // GesamtTotal: Nur noch Endstich + Zabig + Schwini (kein Kunst/Glück mehr)
+            $row['GesamtTotal'] = $row['EndstichTotal'] + $zabigTotal + $row['MaxSchwini'];
             
             if (!empty($row['EndstichTotal'])) {
                 $data[] = $row;
@@ -872,6 +1006,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
         }
     }
     
+    // Sortierung
     usort($data, function($a, $b) {
         if ($a['GesamtTotal'] != $b['GesamtTotal']) {
             return $b['GesamtTotal'] - $a['GesamtTotal'];
@@ -879,34 +1014,49 @@ function getJungschuetzenResultate($templateProcessor, $conn)
         if ($a['EndstichTotal'] != $b['EndstichTotal']) {
             return $b['EndstichTotal'] - $a['EndstichTotal'];
         }
-        return strcmp($a['Geburtsdatum'], $b['Geburtsdatum']);
+        return strcmp($a['geburtsdatum'], $b['geburtsdatum']);
     });
     
     $rowCount = count($data);
+    
+    if ($rowCount == 0) {
+        logDebug("Keine Jungschützen-Daten mit Resultaten gefunden");
+        $templateProcessor->cloneRow('JRang', 0);
+        $stmt->close();
+        return;
+    }
+    
     $templateProcessor->cloneRow('JRang', $rowCount);
     
     $currentRow = 1;
     foreach ($data as $row) {
+        // Name zusammensetzen - falls vorname/nachname leer sind, nutze name
+        $displayName = !empty($row['vorname']) && !empty($row['nachname']) 
+            ? $row['nachname'] . " " . $row['vorname']
+            : $row['name'];
+        
         if ($currentRow <= 3) {
+            // Top 3 fett formatiert
             $templateProcessor->setValue("JRang#{$currentRow}", formatBold($currentRow . '.'));
-            $templateProcessor->setValue("JName#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
+            $templateProcessor->setValue("JName#{$currentRow}", formatBold($displayName));
             $templateProcessor->setValue("JE#{$currentRow}", formatBold($row['EndstichTotal']));
             $templateProcessor->setValue("JZ#{$currentRow}", formatBold($row['ZabigTotal']));
             $templateProcessor->setValue("JS#{$currentRow}", formatBold($row['MaxSchwini']));
-            $templateProcessor->setValue("JG#{$currentRow}", formatBold($row['GlueckTotal']));
-            $templateProcessor->setValue("JK#{$currentRow}", formatBold($row['KunstTotal']));
             $templateProcessor->setValue("JT#{$currentRow}", formatBold($row['GesamtTotal']));
+            
+            // Kunst und Glück sind nicht mehr vorhanden - leer lassen falls im Template
+            $templateProcessor->setValue("JG#{$currentRow}", formatBold(''));
+            $templateProcessor->setValue("JK#{$currentRow}", formatBold(''));
             $templateProcessor->setValue("JKK#{$currentRow}", formatBold(''));
         } else {
+            // Rest normal formatiert
             $templateProcessor->setValue("JRang#{$currentRow}", $currentRow . ".");
-            $templateProcessor->setValue("JName#{$currentRow}", $row['Name'] . " " . $row['Vorname']);
+            $templateProcessor->setValue("JName#{$currentRow}", $displayName);
             $templateProcessor->setValue("JE#{$currentRow}", $row['EndstichTotal']);
             $templateProcessor->setValue("JZ#{$currentRow}", $row['ZabigTotal']);
             $templateProcessor->setValue("JS#{$currentRow}", $row['MaxSchwini']);
-            $templateProcessor->setValue("JG#{$currentRow}", $row['GlueckTotal']);
-            $templateProcessor->setValue("JK#{$currentRow}", $row['KunstTotal']);
             $templateProcessor->setValue("JT#{$currentRow}", $row['GesamtTotal']);
-            $templateProcessor->setValue("JKK#{$currentRow}", '');
+            
         }
         $currentRow++;
     }
@@ -922,7 +1072,6 @@ function getJungschuetzenResultate($templateProcessor, $conn)
         logDebug("Block-Marker entfernt");
     } catch (Exception $e) {
         // Falls die Marker nicht als Variablen erkannt werden, ist das OK
-        // Sie könnten bereits durch cloneBlock entfernt worden sein
         logDebug("Block-Marker konnten nicht entfernt werden (vermutlich schon weg): " . $e->getMessage());
     }
     
@@ -944,9 +1093,14 @@ function getPartnerResultate($templateProcessor, $conn)
                 COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
                 COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
                 COALESCE(ep.EndstichSchuss10, 0)) > 0
-               OR (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-                   COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-                   COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)) > 0)
+               OR GREATEST(
+                   (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
+                   (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
+               ) > 0)
     ";
     
     $checkStmt = $conn->prepare($checkSql);
@@ -999,20 +1153,32 @@ function getPartnerResultate($templateProcessor, $conn)
             ep.EndstichSchuss6, ep.EndstichSchuss7, ep.EndstichSchuss8, ep.EndstichSchuss9, ep.EndstichSchuss10,
             ep.PartnerSchwiniSchuss1, ep.PartnerSchwiniSchuss2, ep.PartnerSchwiniSchuss3,
             ep.PartnerSchwiniSchuss4, ep.PartnerSchwiniSchuss5, ep.PartnerSchwiniSchuss6,
+            ep.PartnerSchwiniSchuss7, ep.PartnerSchwiniSchuss8, ep.PartnerSchwiniSchuss9,
+            ep.PartnerSchwiniSchuss10, ep.PartnerSchwiniSchuss11, ep.PartnerSchwiniSchuss12,
             (COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
              COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
              COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
              COALESCE(ep.EndstichSchuss10, 0)) AS Endstich_Summe,
-            (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-             COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-             COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)) AS PartnerSchwini_Summe,
+            GREATEST(
+                (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
+                 COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
+                 COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
+                (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
+                 COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
+                 COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
+            ) AS PartnerSchwini_Summe,
             ((COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
               COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
               COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
               COALESCE(ep.EndstichSchuss10, 0)) +
-             (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-              COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-              COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0))) AS Total_Summe
+             GREATEST(
+                 (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
+                  COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
+                  COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
+                 (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
+                  COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
+                  COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
+             )) AS Total_Summe
         FROM mitglieder m
         INNER JOIN endresultate_partner ep ON m.ID = ep.MitgliedID
         WHERE ep.Jahr = ?
@@ -1020,9 +1186,14 @@ function getPartnerResultate($templateProcessor, $conn)
                 COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
                 COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
                 COALESCE(ep.EndstichSchuss10, 0)) > 0
-               OR (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-                   COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-                   COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)) > 0)
+               OR GREATEST(
+                   (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
+                   (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
+                    COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
+               ) > 0)
         ORDER BY Total_Summe DESC, Endstich_Summe DESC, m.Name ASC, m.Vorname ASC
     ";
 
@@ -1061,21 +1232,26 @@ function getPartnerResultate($templateProcessor, $conn)
     
     $currentRow = 1;
     foreach ($data as $row) {
+        // Werte formatieren
+        $endstich = formatNumber($row['Endstich_Summe']);
+        $schwini = formatNumber($row['PartnerSchwini_Summe']);
+        $total = formatNumber($row['Total_Summe']);
+        
         if ($currentRow <= 3) {
             // Top 3 fett formatiert
             $templateProcessor->setValue("PRang#{$currentRow}", formatBold($currentRow . '.'));
             $templateProcessor->setValue("PName#{$currentRow}", formatBold($row['PartnerName']));
-            $templateProcessor->setValue("PE#{$currentRow}", formatBold($row['Endstich_Summe']));
-            $templateProcessor->setValue("PS#{$currentRow}", formatBold($row['PartnerSchwini_Summe']));
-            $templateProcessor->setValue("PT#{$currentRow}", formatBold($row['Total_Summe']));
+            $templateProcessor->setValue("PE#{$currentRow}", formatBold($endstich));
+            $templateProcessor->setValue("PS#{$currentRow}", formatBold($schwini));
+            $templateProcessor->setValue("PT#{$currentRow}", formatBold($total));
             
         } else {
             // Rest normal formatiert
             $templateProcessor->setValue("PRang#{$currentRow}", $currentRow . ".");
             $templateProcessor->setValue("PName#{$currentRow}", $row['PartnerName']);
-            $templateProcessor->setValue("PE#{$currentRow}", $row['Endstich_Summe']);
-            $templateProcessor->setValue("PS#{$currentRow}", $row['PartnerSchwini_Summe']);
-            $templateProcessor->setValue("PTotal#{$currentRow}", $row['Total_Summe']);
+            $templateProcessor->setValue("PE#{$currentRow}", $endstich);
+            $templateProcessor->setValue("PS#{$currentRow}", $schwini);
+            $templateProcessor->setValue("PT#{$currentRow}", $total);
         }
         $currentRow++;
     }
@@ -1104,13 +1280,15 @@ function getHeim($templateProcessor, $conn, $kat)
     
     $sql = "
         SELECT m.Name, m.Vorname, h.Passe1, h.Passe2, h.Passe3, h.Passe4, h.Passe5, h.Passe6, h.Passe7, h.Passe8,
-               (COALESCE(h.Passe1, 0) + COALESCE(h.Passe2, 0) + COALESCE(h.Passe3, 0) + COALESCE(h.Passe4, 0) + 
-                COALESCE(h.Passe5, 0) + COALESCE(h.Passe6, 0) + COALESCE(h.Passe7, 0) + COALESCE(h.Passe8, 0)) AS HeimSumme
-        FROM heimresultate h
-        INNER JOIN mitglieder m ON m.ID = h.MitgliedID AND h.Jahr = ?
-        INNER JOIN Waffen w ON w.ID = m.WaffenID 
-        WHERE w.Kategorie = ? and h.Passe1 > 0
-        ORDER BY HeimSumme DESC
+           (COALESCE(h.Passe1, 0) + COALESCE(h.Passe2, 0) + COALESCE(h.Passe3, 0) + COALESCE(h.Passe4, 0) + 
+            COALESCE(h.Passe5, 0) + COALESCE(h.Passe6, 0) + COALESCE(h.Passe7, 0) + COALESCE(h.Passe8, 0)) AS HeimSumme
+    FROM heimresultate h
+    INNER JOIN mitglieder m ON m.ID = h.MitgliedID AND h.Jahr = ?
+    INNER JOIN Waffen w ON w.ID = m.WaffenID 
+    WHERE w.Kategorie = ? 
+    AND (h.Passe1 > 0 OR h.Passe2 > 0 OR h.Passe3 > 0 OR h.Passe4 > 0 OR 
+         h.Passe5 > 0 OR h.Passe6 > 0 OR h.Passe7 > 0 OR h.Passe8 > 0)
+    ORDER BY HeimSumme DESC
     ";
     
     $stmt = $conn->prepare($sql);
@@ -1753,27 +1931,27 @@ function getCup($templateProcessor, $conn)
     logDebug("getCup erfolgreich abgeschlossen");
 }
 
-function GetJMA($templateProcessor, $conn)
+
+function getJMA($templateProcessor, $conn)
 {
     global $selectedYear;
     logDebug("Starte GetJMA für Jahr: " . $selectedYear);
 
-    // Tabellenstile
-    $tableStyle = array(
-        'borderSize' => 6,
-        'borderColor' => '000000',
-        'cellMargin' => 50,
-    );
+    // Styles
+    $tableStyle      = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 50];
+    $cellStyle       = ['valign' => 'center', 'alignment' => Jc::CENTER];
+    $textStyle       = ['alignment' => Jc::CENTER];
+    $boldFontStyle   = ['size' => 6, 'bold' => true, 'alignment' => Jc::CENTER];
+    $cellHeaderStyle = ['valign' => 'center', 'alignment' => Jc::CENTER];
+    if (defined('PhpOffice\\PhpWord\\Style\\Cell::TEXT_DIR_BTLR')) {
+        $cellHeaderStyle['textDirection'] = \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR;
+    }
 
-    $cellStyle = array('valign' => 'center', 'alignment' => Jc::CENTER);
-    $textStyle = array('alignment' => Jc::CENTER);
-    $boldFontStyle = array('size' => 6, 'bold' => true, 'alignment' => Jc::CENTER);
-    $fontStyle = array('size' => 6);
-    $cellHeaderStyle = array('valign' => 'center', 'textDirection' => Cell::TEXT_DIR_BTLR, 'alignment' => Jc::CENTER);
-
+    // JM-Definitionen
     $jmQuery = "
-        SELECT * FROM JMDefinition 
-        WHERE year = ? AND Erweitert=0 AND Info=0
+        SELECT *
+        FROM JMDefinition 
+        WHERE year = ? AND Erweitert = 0 AND Info = 0 AND Gruppe = 0
         ORDER BY 
             CASE 
                 WHEN Bezeichnung = 'Obligatorisch' THEN 1
@@ -1784,269 +1962,482 @@ function GetJMA($templateProcessor, $conn)
             END,
             Reihenfolge
     ";
-
     $stmt = $conn->prepare($jmQuery);
-    if (!$stmt) {
-        logDebug("SQL-Fehler in GetJMA prepare: " . $conn->error);
-        return;
-    }
-    
+    if (!$stmt) { logDebug("SQL-Fehler in GetJMA prepare: ".$conn->error); return; }
     $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $jmResult = $stmt->get_result();
 
-    // Daten in Array sammeln
-    $jmData = [];
-    while ($jmRow = $jmResult->fetch_assoc()) {
-        $jmData[] = $jmRow;
+    $jmDefs = [];
+    $defById = [];
+    $endstichDef = null;
+    $kantiDef    = null;
+    while ($r = $jmResult->fetch_assoc()) {
+        $jmDefs[] = $r;
+        $defById[(int)$r['ID']] = $r;
+        if ($r['Bezeichnung'] === 'Endstich')             $endstichDef = $r;
+        if ($r['Bezeichnung'] === 'Bester Kantonalstich') $kantiDef    = $r;
     }
     $stmt->close();
 
-    // Anzahl der Definitionen
-    $totalDefinitions = count($jmData);
-    $midPoint = ceil($totalDefinitions / 2) - 1;
-    
-    // Arrays aufteilen
-    $firstHalf = array_slice($jmData, 0, $midPoint);
-    $secondHalf = array_slice($jmData, $midPoint);
+    if (empty($jmDefs)) {
+        logDebug("GetJMA: keine JMDefinition-Zeilen gefunden");
+        $templateProcessor->setValue('JMA1', '');
+        $templateProcessor->setValue('JMA2', '');
+        return;
+    }
 
-    // Tabellen erstellen
+    // Split
+    $midPoint   = (int)ceil(count($jmDefs) / 2);
+    $firstHalf  = array_slice($jmDefs, 0, $midPoint);
+    $secondHalf = array_slice($jmDefs, $midPoint);
+
+    // Tabellen
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
 
-    // Erste Tabelle
     $table1 = new \PhpOffice\PhpWord\Element\Table('myTable');
     $table1->addRow(3000);
-    $table1->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-    $table1->addCell(3000, ['valign' => 'bottom', 'noWrap' => true])->addText("Name", $boldFontStyle);
-
-    foreach ($firstHalf as $jmRow) {
-        $cell = $table1->addCell(1.5 * 567, $cellHeaderStyle);
-        $cell->addText($jmRow['Bezeichnung'], $boldFontStyle);
+    $table1->addCell(700,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table1->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
+    foreach ($firstHalf as $d) {
+        $c = $table1->addCell(1.5 * 567, $cellHeaderStyle);
+        $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-    
     $table1->addRow(200);
-    $table1->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-    
-    // Zweite Tabelle
+    $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+
     $table2 = new \PhpOffice\PhpWord\Element\Table('myTable');
     $table2->addRow(3000);
-
-    foreach ($secondHalf as $jmRow) {
-        $cell = $table2->addCell(1.5 * 567, $cellHeaderStyle);
-        $cell->addText($jmRow['Bezeichnung'], $boldFontStyle);
+    foreach ($secondHalf as $d) {
+        $c = $table2->addCell(1.5 * 567, $cellHeaderStyle);
+        $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-
-    $table2->addCell(3000, ['valign' => 'bottom', 'noWrap' => true])->addText("Total", $boldFontStyle);
+    $table2->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
     $table2->addRow(200);
-    $table2->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-    
-    // Mitglieder abrufen
+    $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+
+    // Teilnehmer Kat. A
     $mitglieder = getParticipantData('Kat. A', $conn);
-    $rang = 1;
+
+    // Helper: Spezialwerte & Skalierung
+    $calcEndstich = function(int $mid) use ($conn, $selectedYear) {
+        $sql = "SELECT
+                    COALESCE(Schuss1,0)+COALESCE(Schuss2,0)+COALESCE(Schuss3,0)+COALESCE(Schuss4,0)+COALESCE(Schuss5,0)
+                  + COALESCE(Schuss6,0)+COALESCE(Schuss7,0)+COALESCE(Schuss8,0)+COALESCE(Schuss9,0)+COALESCE(Schuss10,0) AS P
+                FROM endstich WHERE MitgliedID=? AND Jahr=?";
+        if (!$st = $conn->prepare($sql)) return null;
+        $st->bind_param("ii", $mid, $selectedYear);
+        $st->execute(); $res = $st->get_result(); $row = $res->fetch_assoc(); $st->close();
+        return $row ? (float)$row['P'] : null;
+    };
+    $calcBestKanti = function(int $mid) use ($conn, $selectedYear) {
+        $sql = "SELECT GREATEST(
+                    COALESCE(Passe1,0),COALESCE(Passe2,0),COALESCE(Passe3,0),COALESCE(Passe4,0),COALESCE(Passe5,0)
+                ) AS P FROM kantiresultate WHERE MitgliedID=? AND Jahr=?";
+        if (!$st = $conn->prepare($sql)) return null;
+        $st->bind_param("ii", $mid, $selectedYear);
+        $st->execute(); $res = $st->get_result(); $row = $res->fetch_assoc(); $st->close();
+        return $row ? (float)$row['P'] : null;
+    };
+    $applyScale = function($raw, array $defRow) {
+        if ($raw === null) return null;
+        $p = (float)$raw + (float)$defRow['Zuschlag'];
+        $max = (int)$defRow['Maxpunkte'];
+        if ($max > 0 && $p > $max) $p = $max;
+        return $p;
+    };
+    $indexByDefId = function(array $defs) {
+        $map = [];
+        foreach ($defs as $idx => $d) $map[(int)$d['ID']] = $idx;
+        return $map;
+    };
+    $idxFirst  = $indexByDefId($firstHalf);
+    $idxSecond = $indexByDefId($secondHalf);
+
+    // Wir sammeln erstmal alle Zeilen und sortieren dann
+    $rows = [];
 
     foreach ($mitglieder as $mitglied) {
+        $mid = (int)$mitglied['ID'];
+
+        // Resultate laut Deiner Logik (inkl. Streicher/Umrechnungen)
+        $resFirst  = getResultateForMember($mid, $firstHalf,  $mitglied['Streicher'], $conn);
+        $resSecond = getResultateForMember($mid, $secondHalf, $mitglied['Streicher'], $conn);
+
+        // Spezialwerte überschreiben (nur Anzeige + Totalsumme)
+        if ($endstichDef) {
+            $endID = (int)$endstichDef['ID'];
+            $endVal = $applyScale($calcEndstich($mid), $endstichDef);
+            if ($endVal !== null) {
+                $show = function_exists('fmtNoTrailingZero') ? (string)fmtNoTrailingZero($endVal) : (string)$endVal;
+                    // Wenn 0, als Bindestrich darstellen
+                    if ($endVal == 0 || $endVal === 0.0) $show = '-';
+                if (isset($idxFirst[$endID]) && isset($resFirst[$idxFirst[$endID]])) {
+                    $resFirst[$idxFirst[$endID]]['wert'] = $show;
+                    $resFirst[$idxFirst[$endID]]['isStreicher'] = false;
+                } elseif (isset($idxSecond[$endID]) && isset($resSecond[$idxSecond[$endID]])) {
+                    $resSecond[$idxSecond[$endID]]['wert'] = $show;
+                    $resSecond[$idxSecond[$endID]]['isStreicher'] = false;
+                }
+            }
+        }
+        if ($kantiDef) {
+            $kID = (int)$kantiDef['ID'];
+            $kVal = $applyScale($calcBestKanti($mid), $kantiDef);
+            if ($kVal !== null) {
+                $show = function_exists('fmtNoTrailingZero') ? (string)fmtNoTrailingZero($kVal) : (string)$kVal;
+                    // Wenn 0, als Bindestrich darstellen
+                    if ($kVal == 0 || $kVal === 0.0) $show = '-';
+                if (isset($idxFirst[$kID]) && isset($resFirst[$idxFirst[$kID]])) {
+                    $resFirst[$idxFirst[$kID]]['wert'] = $show;
+                    $resFirst[$idxFirst[$kID]]['isStreicher'] = false;
+                } elseif (isset($idxSecond[$kID]) && isset($resSecond[$idxSecond[$kID]])) {
+                    $resSecond[$idxSecond[$kID]]['wert'] = $show;
+                    $resSecond[$idxSecond[$kID]]['isStreicher'] = false;
+                }
+            }
+        }
+
+        // Total **neu** aus angezeigten Werten berechnen (Streicher NICHT zählen)
+        $toNumber = function($v) {
+            if ($v === null || $v === '') return 0.0;
+            if (is_numeric($v)) return (float)$v;
+            // Strings defensiv in Zahl verwandeln
+            $v = str_replace([' ', ' '], '', (string)$v);      // NBSP/Spaces
+            $v = str_replace(',', '.', $v);
+            return is_numeric($v) ? (float)$v : 0.0;
+        };
+        $calcTotal = function(array $cells) use ($toNumber) {
+            $sum = 0.0;
+            foreach ($cells as $c) {
+                if (!empty($c['isStreicher'])) continue;           // Streicher ignorieren
+                $sum += $toNumber($c['wert']);
+            }
+            return $sum;
+        };
+
+        $totalA = $calcTotal($resFirst);
+        $totalB = $calcTotal($resSecond);
+        $computedTotal = $totalA + $totalB;
+
+        $rows[] = [
+            'id'        => $mid,
+            'name'      => $mitglied['Name'],
+            'vorname'   => $mitglied['Vorname'],
+            'resFirst'  => $resFirst,
+            'resSecond' => $resSecond,
+            'total'     => $computedTotal,
+        ];
+    }
+
+    // Sortierung nach Total DESC, dann Name/Vorname
+    usort($rows, function($a, $b) {
+        if ($a['total'] < $b['total']) return 1;
+        if ($a['total'] > $b['total']) return -1;
+        $n1 = $a['name'].' '.$a['vorname'];
+        $n2 = $b['name'].' '.$b['vorname'];
+        return strcasecmp($n1, $n2);
+    });
+
+    // Ausgabe
+    $rang = 1;
+    foreach ($rows as $row) {
         if ($rang == 4) {
             $table1->addRow(100);
-            $table1->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-        }
-        
-        // Erste Tabelle
-        $table1->addRow(200);
-        $fontStyleRow = $rang <= 3 ? array('size' => 6, 'bold' => true) : array('size' => 6);
-
-        $table1->addCell(700, ['valign' => 'center', 'noWrap' => true])->addText($rang . ".", $fontStyleRow);
-        $table1->addCell(3500, ['valign' => 'center', 'noWrap' => true])->addText($mitglied['Name'] . " " . $mitglied['Vorname'], $fontStyleRow);
-
-        // Resultate für erste Hälfte
-        $resultate = getResultateForMember($mitglied['ID'], $firstHalf, $mitglied['Streicher'], $conn);
-        foreach ($resultate as $punkte) {
-            $cellStyleFont = $punkte['isStreicher'] ? array_merge($fontStyleRow, ['strikethrough' => true]) : $fontStyleRow;
-            $bgColor = $punkte['isStreicher'] ? ['bgColor' => 'D3D3D3'] : [];
-            $table1->addCell(2 * 567, array_merge(['valign' => 'center', 'alignment' => Jc::CENTER], $bgColor))->addText($punkte['wert'], $cellStyleFont, $textStyle);
-        }
-
-        // Zweite Tabelle
-        if ($rang == 4) {
+            $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
             $table2->addRow(100);
-            $table2->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
+            $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
         }
 
+        $isTop3 = ($rang <= 3);
+        $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
+
+        // Tabelle 1
+        $table1->addRow(200);
+        $table1->addCell(700,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
+        $table1->addCell(3500, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
+
+        foreach ($row['resFirst'] as $punkte) {
+            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $table1->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
+        }
+
+        // Tabelle 2
         $table2->addRow(200);
-        
-        // Resultate für zweite Hälfte
-        $resultate = getResultateForMember($mitglied['ID'], $secondHalf, $mitglied['Streicher'], $conn);
-        foreach ($resultate as $punkte) {
-            $cellStyleFont = $punkte['isStreicher'] ? array_merge($fontStyleRow, ['strikethrough' => true]) : $fontStyleRow;
-            $bgColor = $punkte['isStreicher'] ? ['bgColor' => 'D3D3D3'] : [];
-            $table2->addCell(2 * 567, array_merge(['valign' => 'center', 'alignment' => Jc::CENTER], $bgColor))->addText($punkte['wert'], $cellStyleFont, $textStyle);
+        foreach ($row['resSecond'] as $punkte) {
+            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $table2->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
 
-        // Total
-        $table2->addCell(2 * 567, ['valign' => 'center'])->addText(number_format($mitglied['Total'], 2, '.', ''), $fontStyleRow);
+        $totalOut = number_format($row['total'], 2, '.', '');
+        $table2->addCell(2 * 567, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
 
         $rang++;
     }
 
     $templateProcessor->setComplexBlock('JMA1', $table1);
     $templateProcessor->setComplexBlock('JMA2', $table2);
-    
+
     logDebug("GetJMA erfolgreich abgeschlossen");
 }
 
-function GetJMB($templateProcessor, $conn)
+
+function getJMB($templateProcessor, $conn)
 {
     global $selectedYear;
     logDebug("Starte GetJMB für Jahr: " . $selectedYear);
 
-    // Prüfe ob SSM existiert
-    $ssmExists = checkIfSSMExists($conn);
-
-    // Tabellenstile
-    $tableStyle = array(
-        'borderSize' => 6,
-        'borderColor' => '000000',
-        'cellMarginTop' => 50,
-        'cellMarginRight' => 50,
-        'cellMarginBottom' => 50,
-        'cellMarginLeft' => 50,
-    );
-
-    $cellStyle = array('valign' => 'center', 'alignment' => Jc::CENTER);
-    $textStyle = array('alignment' => Jc::CENTER);
-    $boldFontStyle = array('size' => 6, 'bold' => true, 'alignment' => Jc::CENTER);
-    $fontStyle = array('size' => 6);
-    $cellHeaderStyle = array('valign' => 'center', 'textDirection' => Cell::TEXT_DIR_BTLR, 'alignment' => Jc::CENTER);
-
-    // SQL-Query abhängig von SSM
-    if ($ssmExists) {
-        $jmQuery = "
-            SELECT * FROM JMDefinition 
-            WHERE year = ? 
-            AND Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'
-            ORDER BY 
-                CASE 
-                    WHEN Bezeichnung = 'Bester Kantonalstich' THEN 3
-                    WHEN Bezeichnung = 'SSM 2024' THEN 4
-                    ELSE Reihenfolge
-                END
-        ";
-    } else {
-        $jmQuery = "
-            SELECT * FROM JMDefinition 
-            WHERE year = ? 
-            ORDER BY 
-                CASE 
-                    WHEN Bezeichnung = 'Bester Kantonalstich' THEN 3
-                    ELSE Reihenfolge
-                END
-        ";
+    // Styles
+    $tableStyle      = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 50];
+    $cellStyle       = ['valign' => 'center', 'alignment' => Jc::CENTER];
+    $textStyle       = ['alignment' => Jc::CENTER];
+    $boldFontStyle   = ['size' => 6, 'bold' => true, 'alignment' => Jc::CENTER];
+    $cellHeaderStyle = ['valign' => 'center', 'alignment' => Jc::CENTER];
+    if (defined('PhpOffice\\PhpWord\\Style\\Cell::TEXT_DIR_BTLR')) {
+        $cellHeaderStyle['textDirection'] = \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR;
     }
 
+    // JM-Definitionen
+    $jmQuery = "
+        SELECT *
+        FROM JMDefinition 
+        WHERE year = ? AND Erweitert = 0 AND Info = 0 AND Gruppe = 0
+        ORDER BY 
+            CASE 
+                WHEN Bezeichnung = 'Obligatorisch' THEN 1
+                WHEN Bezeichnung = 'Feldschiessen' THEN 2
+                WHEN Bezeichnung LIKE '%Kantonalstich%' THEN 3
+                WHEN Bezeichnung LIKE '%Sektionsmeisterschaft%' THEN 4
+                ELSE 5
+            END,
+            Reihenfolge
+    ";
     $stmt = $conn->prepare($jmQuery);
-    if (!$stmt) {
-        logDebug("SQL-Fehler in GetJMB prepare: " . $conn->error);
-        return;
-    }
-    
+    if (!$stmt) { logDebug("SQL-Fehler in GetJMB prepare: ".$conn->error); return; }
     $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $jmResult = $stmt->get_result();
 
-    // Daten sammeln
-    $jmData = [];
-    while ($jmRow = $jmResult->fetch_assoc()) {
-        $jmData[] = $jmRow;
+    $jmDefs = [];
+    $defById = [];
+    $endstichDef = null;
+    $kantiDef    = null;
+    while ($r = $jmResult->fetch_assoc()) {
+        $jmDefs[] = $r;
+        $defById[(int)$r['ID']] = $r;
+        if ($r['Bezeichnung'] === 'Endstich')             $endstichDef = $r;
+        if ($r['Bezeichnung'] === 'Bester Kantonalstich') $kantiDef    = $r;
     }
     $stmt->close();
 
-    // Arrays aufteilen
-    $totalDefinitions = count($jmData);
-    $midPoint = ceil($totalDefinitions / 2) - 1;
-    $firstHalf = array_slice($jmData, 0, $midPoint);
-    $secondHalf = array_slice($jmData, $midPoint);
+    if (empty($jmDefs)) {
+        logDebug("GetJMB: keine JMDefinition-Zeilen gefunden");
+        $templateProcessor->setValue('JMB1', '');
+        $templateProcessor->setValue('JMB2', '');
+        return;
+    }
 
-    // Tabellen erstellen
+    // Split
+    $midPoint   = (int)ceil(count($jmDefs) / 2);
+    $firstHalf  = array_slice($jmDefs, 0, $midPoint);
+    $secondHalf = array_slice($jmDefs, $midPoint);
+
+    // Tabellen
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
 
-    // Erste Tabelle
     $table1 = new \PhpOffice\PhpWord\Element\Table('myTable');
     $table1->addRow(3000);
-    $table1->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-    $table1->addCell(3000, ['valign' => 'bottom', 'noWrap' => true])->addText("Name", $boldFontStyle);
-
-    foreach ($firstHalf as $jmRow) {
-        $cell = $table1->addCell(1.5 * 567, $cellHeaderStyle);
-        $cell->addText($jmRow['Bezeichnung'], $boldFontStyle);
+    $table1->addCell(700,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table1->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
+    foreach ($firstHalf as $d) {
+        $c = $table1->addCell(1.5 * 567, $cellHeaderStyle);
+        $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-    
     $table1->addRow(200);
-    $table1->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-    
-    // Zweite Tabelle
+    $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+
     $table2 = new \PhpOffice\PhpWord\Element\Table('myTable');
     $table2->addRow(3000);
-
-    foreach ($secondHalf as $jmRow) {
-        $cell = $table2->addCell(1.5 * 567, $cellHeaderStyle);
-        $cell->addText($jmRow['Bezeichnung'], $boldFontStyle);
+    foreach ($secondHalf as $d) {
+        $c = $table2->addCell(1.5 * 567, $cellHeaderStyle);
+        $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-
-    $table2->addCell(3000, ['valign' => 'bottom', 'noWrap' => true])->addText("Total", $boldFontStyle);
+    $table2->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
     $table2->addRow(200);
-    $table2->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-    
-    // Mitglieder abrufen
+    $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+
+    // Teilnehmer Kat. A
     $mitglieder = getParticipantData('Kat. B', $conn);
-    $rang = 1;
+
+    // Helper: Spezialwerte & Skalierung
+    $calcEndstich = function(int $mid) use ($conn, $selectedYear) {
+        $sql = "SELECT
+                    COALESCE(Schuss1,0)+COALESCE(Schuss2,0)+COALESCE(Schuss3,0)+COALESCE(Schuss4,0)+COALESCE(Schuss5,0)
+                  + COALESCE(Schuss6,0)+COALESCE(Schuss7,0)+COALESCE(Schuss8,0)+COALESCE(Schuss9,0)+COALESCE(Schuss10,0) AS P
+                FROM endstich WHERE MitgliedID=? AND Jahr=?";
+        if (!$st = $conn->prepare($sql)) return null;
+        $st->bind_param("ii", $mid, $selectedYear);
+        $st->execute(); $res = $st->get_result(); $row = $res->fetch_assoc(); $st->close();
+        return $row ? (float)$row['P'] : null;
+    };
+    $calcBestKanti = function(int $mid) use ($conn, $selectedYear) {
+        $sql = "SELECT GREATEST(
+                    COALESCE(Passe1,0),COALESCE(Passe2,0),COALESCE(Passe3,0),COALESCE(Passe4,0),COALESCE(Passe5,0)
+                ) AS P FROM kantiresultate WHERE MitgliedID=? AND Jahr=?";
+        if (!$st = $conn->prepare($sql)) return null;
+        $st->bind_param("ii", $mid, $selectedYear);
+        $st->execute(); $res = $st->get_result(); $row = $res->fetch_assoc(); $st->close();
+        return $row ? (float)$row['P'] : null;
+    };
+    $applyScale = function($raw, array $defRow) {
+        if ($raw === null) return null;
+        $p = (float)$raw + (float)$defRow['Zuschlag'];
+        $max = (int)$defRow['Maxpunkte'];
+        if ($max > 0 && $p > $max) $p = $max;
+        return $p;
+    };
+    $indexByDefId = function(array $defs) {
+        $map = [];
+        foreach ($defs as $idx => $d) $map[(int)$d['ID']] = $idx;
+        return $map;
+    };
+    $idxFirst  = $indexByDefId($firstHalf);
+    $idxSecond = $indexByDefId($secondHalf);
+
+    // Wir sammeln erstmal alle Zeilen und sortieren dann
+    $rows = [];
 
     foreach ($mitglieder as $mitglied) {
+        $mid = (int)$mitglied['ID'];
+
+        // Resultate laut Deiner Logik (inkl. Streicher/Umrechnungen)
+        $resFirst  = getResultateForMember($mid, $firstHalf,  $mitglied['Streicher'], $conn);
+        $resSecond = getResultateForMember($mid, $secondHalf, $mitglied['Streicher'], $conn);
+
+        // Spezialwerte überschreiben (nur Anzeige + Totalsumme)
+        if ($endstichDef) {
+            $endID = (int)$endstichDef['ID'];
+            $endVal = $applyScale($calcEndstich($mid), $endstichDef);
+            if ($endVal !== null) {
+                $show = function_exists('fmtNoTrailingZero') ? (string)fmtNoTrailingZero($endVal) : (string)$endVal;
+                    // Wenn 0, als Bindestrich darstellen
+                    if ($endVal == 0 || $endVal === 0.0) $show = '-';
+                if (isset($idxFirst[$endID]) && isset($resFirst[$idxFirst[$endID]])) {
+                    $resFirst[$idxFirst[$endID]]['wert'] = $show;
+                    $resFirst[$idxFirst[$endID]]['isStreicher'] = false;
+                } elseif (isset($idxSecond[$endID]) && isset($resSecond[$idxSecond[$endID]])) {
+                    $resSecond[$idxSecond[$endID]]['wert'] = $show;
+                    $resSecond[$idxSecond[$endID]]['isStreicher'] = false;
+                }
+            }
+        }
+        if ($kantiDef) {
+            $kID = (int)$kantiDef['ID'];
+            $kVal = $applyScale($calcBestKanti($mid), $kantiDef);
+            if ($kVal !== null) {
+                $show = function_exists('fmtNoTrailingZero') ? (string)fmtNoTrailingZero($kVal) : (string)$kVal;
+                    // Wenn 0, als Bindestrich darstellen
+                    if ($kVal == 0 || $kVal === 0.0) $show = '-';
+                if (isset($idxFirst[$kID]) && isset($resFirst[$idxFirst[$kID]])) {
+                    $resFirst[$idxFirst[$kID]]['wert'] = $show;
+                    $resFirst[$idxFirst[$kID]]['isStreicher'] = false;
+                } elseif (isset($idxSecond[$kID]) && isset($resSecond[$idxSecond[$kID]])) {
+                    $resSecond[$idxSecond[$kID]]['wert'] = $show;
+                    $resSecond[$idxSecond[$kID]]['isStreicher'] = false;
+                }
+            }
+        }
+
+        // Total **neu** aus angezeigten Werten berechnen (Streicher NICHT zählen)
+        $toNumber = function($v) {
+            if ($v === null || $v === '') return 0.0;
+            if (is_numeric($v)) return (float)$v;
+            // Strings defensiv in Zahl verwandeln
+            $v = str_replace([' ', ' '], '', (string)$v);      // NBSP/Spaces
+            $v = str_replace(',', '.', $v);
+            return is_numeric($v) ? (float)$v : 0.0;
+        };
+        $calcTotal = function(array $cells) use ($toNumber) {
+            $sum = 0.0;
+            foreach ($cells as $c) {
+                if (!empty($c['isStreicher'])) continue;           // Streicher ignorieren
+                $sum += $toNumber($c['wert']);
+            }
+            return $sum;
+        };
+
+        $totalA = $calcTotal($resFirst);
+        $totalB = $calcTotal($resSecond);
+        $computedTotal = $totalA + $totalB;
+
+        $rows[] = [
+            'id'        => $mid,
+            'name'      => $mitglied['Name'],
+            'vorname'   => $mitglied['Vorname'],
+            'resFirst'  => $resFirst,
+            'resSecond' => $resSecond,
+            'total'     => $computedTotal,
+        ];
+    }
+
+    // Sortierung nach Total DESC, dann Name/Vorname
+    usort($rows, function($a, $b) {
+        if ($a['total'] < $b['total']) return 1;
+        if ($a['total'] > $b['total']) return -1;
+        $n1 = $a['name'].' '.$a['vorname'];
+        $n2 = $b['name'].' '.$b['vorname'];
+        return strcasecmp($n1, $n2);
+    });
+
+    // Ausgabe
+    $rang = 1;
+    foreach ($rows as $row) {
         if ($rang == 4) {
             $table1->addRow(100);
-            $table1->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
-        }
-        
-        // Erste Tabelle
-        $table1->addRow(200);
-        $fontStyleRow = $rang <= 3 ? array('size' => 6, 'bold' => true) : array('size' => 6);
-
-        $table1->addCell(700, ['valign' => 'center', 'noWrap' => true])->addText($rang . ".", $fontStyleRow);
-        $table1->addCell(3500, ['valign' => 'center', 'noWrap' => true])->addText($mitglied['Name'] . " " . $mitglied['Vorname'], $fontStyleRow);
-
-        // Resultate für erste Hälfte
-        $resultate = getResultateForMember($mitglied['ID'], $firstHalf, $mitglied['Streicher'], $conn);
-        foreach ($resultate as $punkte) {
-            $cellStyleFont = $punkte['isStreicher'] ? array_merge($fontStyleRow, ['strikethrough' => true]) : $fontStyleRow;
-            $bgColor = $punkte['isStreicher'] ? ['bgColor' => 'D3D3D3'] : [];
-            $table1->addCell(2 * 567, array_merge(['valign' => 'center', 'alignment' => Jc::CENTER], $bgColor))->addText($punkte['wert'], $cellStyleFont, $textStyle);
-        }
-
-        // Zweite Tabelle
-        if ($rang == 4) {
+            $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
             $table2->addRow(100);
-            $table2->addCell(700, ['valign' => 'bottom', 'noWrap' => true])->addText("", $boldFontStyle);
+            $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
         }
 
+        $isTop3 = ($rang <= 3);
+        $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
+
+        // Tabelle 1
+        $table1->addRow(200);
+        $table1->addCell(700,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
+        $table1->addCell(3500, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
+
+        foreach ($row['resFirst'] as $punkte) {
+            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $table1->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
+        }
+
+        // Tabelle 2
         $table2->addRow(200);
-        
-        // Resultate für zweite Hälfte
-        $resultate = getResultateForMember($mitglied['ID'], $secondHalf, $mitglied['Streicher'], $conn);
-        foreach ($resultate as $punkte) {
-            $cellStyleFont = $punkte['isStreicher'] ? array_merge($fontStyleRow, ['strikethrough' => true]) : $fontStyleRow;
-            $bgColor = $punkte['isStreicher'] ? ['bgColor' => 'D3D3D3'] : [];
-            $table2->addCell(2 * 567, array_merge(['valign' => 'center', 'alignment' => Jc::CENTER], $bgColor))->addText($punkte['wert'], $cellStyleFont, $textStyle);
+        foreach ($row['resSecond'] as $punkte) {
+            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $table2->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
 
-        // Total
-        $table2->addCell(2 * 567, ['valign' => 'center'])->addText(number_format($mitglied['Total'], 2, '.', ''), $fontStyleRow);
+        $totalOut = number_format($row['total'], 2, '.', '');
+        $table2->addCell(2 * 567, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
 
         $rang++;
     }
 
     $templateProcessor->setComplexBlock('JMB1', $table1);
     $templateProcessor->setComplexBlock('JMB2', $table2);
-    
+
     logDebug("GetJMB erfolgreich abgeschlossen");
 }
 
@@ -2193,6 +2584,10 @@ function getResultateForMember($mitgliedID, $jmData, $streicher, $conn) {
             if ($punkteRow['Streicher'] == 1 && $punkteRow['Maxpunkte'] != 100) {
                 $punkte = round(($punkte * 100.0 / $punkteRow['Maxpunkte']), 2);
             }
+            // Wenn Punkte 0 sind, als Bindestrich darstellen
+            if ($punkte == 0 || $punkte === 0.0) {
+                $punkte = '-';
+            }
         } else {
             $punkte = '-';
         }
@@ -2210,12 +2605,73 @@ function getResultateForMember($mitgliedID, $jmData, $streicher, $conn) {
     return $resultate;
 }
 
+// ========================================================================
+// ERSETZE DIE KOMPLETTE getTotal() FUNKTION (ab Zeile 2477)
+// ========================================================================
+
 function getTotal($kategorie, $conn) {
     global $selectedYear;
     $resultatetotal = array();
 
     // Überprüfen ob SSM existiert
     $ssmExists = checkIfSSMExists($conn);
+
+    // Erst alle Wettkämpfe mit Streicher=1 holen
+    $sqlWettkaempfe = "SELECT ID, Maxpunkte FROM JMDefinition 
+                       WHERE year = ? AND Streicher = 1 AND Info = 0 AND Erweitert = 0
+                       ORDER BY Reihenfolge";
+    
+    $stmt = $conn->prepare($sqlWettkaempfe);
+    if (!$stmt) {
+        logDebug("SQL-Fehler in getTotal (Wettkämpfe): " . $conn->error);
+        return array();
+    }
+    
+    $stmt->bind_param("i", $selectedYear);
+    $stmt->execute();
+    $wettkaempfeResult = $stmt->get_result();
+    
+    $wettkaempfe = array();
+    while ($row = $wettkaempfeResult->fetch_assoc()) {
+        $wettkaempfe[] = array(
+            'ID' => $row['ID'],
+            'Maxpunkte' => $row['Maxpunkte']
+        );
+    }
+    $stmt->close();
+
+    // ==========================================
+    // ÄNDERUNG: Nur aktive Wettbewerbe berücksichtigen
+    // ==========================================
+    $activeStreicherIDs = array();
+    foreach ($wettkaempfe as $wettkampf) {
+        $wettbewerbID = $wettkampf['ID'];
+        $sqlCheck = "SELECT COUNT(*) as count FROM jmresultate WHERE jmdefinitionID = ?";
+        $stmtCheck = $conn->prepare($sqlCheck);
+        if ($stmtCheck) {
+            $stmtCheck->bind_param("i", $wettbewerbID);
+            $stmtCheck->execute();
+            $resCheck = $stmtCheck->get_result();
+            $rowCheck = $resCheck->fetch_assoc();
+            $stmtCheck->close();
+            
+            // Nur wenn mindestens 1 Resultat vorhanden
+            if ($rowCheck['count'] > 0) {
+                $activeStreicherIDs[] = $wettbewerbID;
+            }
+        }
+    }
+    
+    // Filtere: Nur aktive Wettbewerbe verwenden
+    $wettkaempfe = array_filter($wettkaempfe, function($w) use ($activeStreicherIDs) {
+        return in_array($w['ID'], $activeStreicherIDs);
+    });
+    
+    // Re-index nach dem Filter
+    $wettkaempfe = array_values($wettkaempfe);
+    
+    logDebug("getTotal - Aktive Streicher-Wettbewerbe: " . count($wettkaempfe));
+    // ==========================================
 
     // Mitglieder abrufen
     $sqlMitgliederA = "SELECT m.id FROM mitglieder m
@@ -2263,47 +2719,73 @@ function getTotal($kategorie, $conn) {
                 $stmt->close();
             }
 
-            // Resultate mit Streicher = 1
-            $sqlResultateStreicher = "
-                SELECT
-                    jr.jmdefinitionID AS WettbewerbID,
-                    CASE 
-                        WHEN jd.Maxpunkte != 100 THEN ROUND(MAX(jr.Punkte) / jd.Maxpunkte * 100, 2)
-                        ELSE MAX(jr.Punkte)
-                    END AS NormalizedPoints
-                FROM 
-                    jmresultate jr
-                INNER JOIN 
-                    JMDefinition jd ON jr.jmdefinitionID = jd.ID AND jd.year = ?
-                WHERE 
-                    jr.mitgliederID = ?
-                    AND jd.Streicher = 1
-                GROUP BY jr.jmdefinitionID
-            ";
+            // Resultate mit Streicher = 1 - NUR MIT AKTIVEN WETTKÄMPFEN
+            $streicherArray = array();
             
-            $stmt = $conn->prepare($sqlResultateStreicher);
-            if ($stmt) {
-                $stmt->bind_param("ii", $selectedYear, $mitgliedID);
-                $stmt->execute();
-                $punkteStreicher = $stmt->get_result();
+            foreach ($wettkaempfe as $wettkampf) {
+                $wettbewerbID = $wettkampf['ID'];
+                $maxPunkte = $wettkampf['Maxpunkte'];
+
+                // Resultat für diesen Wettkampf holen
+                $sqlPunkte = "SELECT MAX(Punkte) AS Punkte 
+                             FROM jmresultate 
+                             WHERE mitgliederID = ? AND jmdefinitionID = ?";
                 
-                $streicherArray = array();
-                while ($row = $punkteStreicher->fetch_assoc()) {
+                $stmt = $conn->prepare($sqlPunkte);
+                if ($stmt) {
+                    $stmt->bind_param("ii", $mitgliedID, $wettbewerbID);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    $punkte = 0; // Default: nicht teilgenommen = 0
+                    if ($row = $result->fetch_assoc()) {
+                        if ($row['Punkte'] !== null) {
+                            $punkte = $row['Punkte'];
+                            // Normalisieren auf 100 wenn nötig
+                            if ($maxPunkte != 100) {
+                                $punkte = round(($punkte / $maxPunkte) * 100, 2);
+                            }
+                        }
+                    }
+                    $stmt->close();
+                    
                     $streicherArray[] = array(
-                        'WettbewerbID' => $row['WettbewerbID'],
-                        'NormalizedPoints' => $row['NormalizedPoints']
+                        'WettbewerbID' => $wettbewerbID,
+                        'NormalizedPoints' => $punkte
                     );
                 }
-                $stmt->close();
             }
 
-            // Die drei niedrigsten Resultate streichen
-            usort($streicherArray, function ($a, $b) {
-                return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
+            // Zähle fehlende Resultate (0-Werte)
+            $fehlendeResultate = array_filter($streicherArray, function($r) {
+                return $r['NormalizedPoints'] == 0 || $r['NormalizedPoints'] === 0.0;
             });
             
             $excludeCount = 3;
-            $verbleibendeResultate = array_slice($streicherArray, $excludeCount);
+            
+            // Wenn mehr als 3 fehlen: Nimm die ersten 3 nach Reihenfolge (sind bereits sortiert)
+            if (count($fehlendeResultate) > 3) {
+                // Streiche die ersten 3 fehlenden Wettbewerbe
+                $gestricheneIDs = array();
+                $count = 0;
+                foreach ($streicherArray as $result) {
+                    if ($result['NormalizedPoints'] == 0 || $result['NormalizedPoints'] === 0.0) {
+                        $gestricheneIDs[] = $result['WettbewerbID'];
+                        $count++;
+                        if ($count >= 3) break;
+                    }
+                }
+                // Filtere die verbleibenden Resultate
+                $verbleibendeResultate = array_filter($streicherArray, function($r) use ($gestricheneIDs) {
+                    return !in_array($r['WettbewerbID'], $gestricheneIDs);
+                });
+            } else {
+                // Normale Logik: Die 3 niedrigsten Resultate streichen
+                usort($streicherArray, function ($a, $b) {
+                    return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
+                });
+                $verbleibendeResultate = array_slice($streicherArray, $excludeCount);
+            }
 
             $totalStreicher = 0;
             foreach ($verbleibendeResultate as $result) {
@@ -2313,12 +2795,21 @@ function getTotal($kategorie, $conn) {
             // Gesamtpunktzahl
             $total = $totalFix + $totalStreicher;
             $resultatetotal[$mitgliedID] = round($total, 2);
+            
+            // Debug-Ausgabe
+            $fehlendCount = count($fehlendeResultate);
+            $logikType = ($fehlendCount > 3) ? "REIHENFOLGE (>3 fehlend)" : "NIEDRIGSTE WERTE";
+            logDebug("getTotal - Mitglied $mitgliedID: Fix=$totalFix, Streicher=$totalStreicher, Total=$total (" . count($streicherArray) . " Wettkämpfe, " . count($verbleibendeResultate) . " gewertet, $fehlendCount fehlend, Logik: $logikType)");
         }
     }
     
     arsort($resultatetotal);
     return $resultatetotal;
 }
+
+// ========================================================================
+// ERSETZE DIE KOMPLETTE GetStreicher() FUNKTION (ab Zeile 2616)
+// ========================================================================
 
 function GetStreicher($kategorie, $conn) {
     global $selectedYear;
@@ -2327,13 +2818,74 @@ function GetStreicher($kategorie, $conn) {
     // Überprüfen ob SSM existiert
     $ssmExists = checkIfSSMExists($conn);
 
-    $sqlMitgliederA = "SELECT m.id FROM mitglieder m
-                       INNER JOIN Waffen w ON w.ID = m.WaffenID
-                       WHERE w.Kategorie = ? AND m.Status = 1";
+    // Erst alle Wettkämpfe mit Streicher=1 holen
+    $sqlWettkaempfe = "SELECT ID, Maxpunkte FROM JMDefinition 
+                       WHERE year = ? AND Streicher = 1 AND Info = 0 AND Erweitert = 0";
+    if ($ssmExists) {
+        $sqlWettkaempfe .= " AND Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
+    }
+    $sqlWettkaempfe .= " ORDER BY Reihenfolge";
     
-    $stmt = $conn->prepare($sqlMitgliederA);
+    $stmt = $conn->prepare($sqlWettkaempfe);
     if (!$stmt) {
-        logDebug("SQL-Fehler in GetStreicher: " . $conn->error);
+        logDebug("SQL-Fehler in GetStreicher (Wettkämpfe): " . $conn->error);
+        return array();
+    }
+    
+    $stmt->bind_param("i", $selectedYear);
+    $stmt->execute();
+    $wettkaempfeResult = $stmt->get_result();
+    
+    $wettkaempfe = array();
+    while ($row = $wettkaempfeResult->fetch_assoc()) {
+        $wettkaempfe[] = array(
+            'ID' => $row['ID'],
+            'Maxpunkte' => $row['Maxpunkte']
+        );
+    }
+    $stmt->close();
+
+    // ==========================================
+    // ÄNDERUNG: Nur aktive Wettbewerbe berücksichtigen
+    // ==========================================
+    $activeStreicherIDs = array();
+    foreach ($wettkaempfe as $wettkampf) {
+        $wettbewerbID = $wettkampf['ID'];
+        $sqlCheck = "SELECT COUNT(*) as count FROM jmresultate WHERE jmdefinitionID = ?";
+        $stmtCheck = $conn->prepare($sqlCheck);
+        if ($stmtCheck) {
+            $stmtCheck->bind_param("i", $wettbewerbID);
+            $stmtCheck->execute();
+            $resCheck = $stmtCheck->get_result();
+            $rowCheck = $resCheck->fetch_assoc();
+            $stmtCheck->close();
+            
+            // Nur wenn mindestens 1 Resultat vorhanden
+            if ($rowCheck['count'] > 0) {
+                $activeStreicherIDs[] = $wettbewerbID;
+            }
+        }
+    }
+    
+    // Filtere: Nur aktive Wettbewerbe verwenden
+    $wettkaempfe = array_filter($wettkaempfe, function($w) use ($activeStreicherIDs) {
+        return in_array($w['ID'], $activeStreicherIDs);
+    });
+    
+    // Re-index nach dem Filter
+    $wettkaempfe = array_values($wettkaempfe);
+    
+    logDebug("GetStreicher - Aktive Streicher-Wettbewerbe: " . count($wettkaempfe));
+    // ==========================================
+
+    // Mitglieder holen
+    $sqlMitglieder = "SELECT m.id FROM mitglieder m
+                      INNER JOIN Waffen w ON w.ID = m.WaffenID
+                      WHERE w.Kategorie = ? AND m.Status = 1";
+    
+    $stmt = $conn->prepare($sqlMitglieder);
+    if (!$stmt) {
+        logDebug("SQL-Fehler in GetStreicher (Mitglieder): " . $conn->error);
         return array();
     }
     
@@ -2345,55 +2897,78 @@ function GetStreicher($kategorie, $conn) {
     if ($mitglieder->num_rows > 0) {
         while ($mitglied = $mitglieder->fetch_assoc()) {
             $mitgliedID = $mitglied['id'];
+            $streicherArray = array();
 
-            // Resultate mit Streicher = 1
-            $sqlResultateStreicher = "
-                SELECT
-                    jr.jmdefinitionID AS WettbewerbID,
-                    CASE 
-                        WHEN jd.Maxpunkte != 100 THEN ROUND((jr.Punkte / jd.Maxpunkte) * 100, 2)
-                        ELSE jr.Punkte
-                    END AS NormalizedPoints
-                FROM 
-                    jmresultate jr
-                INNER JOIN 
-                    JMDefinition jd ON jr.jmdefinitionID = jd.ID AND jd.year = ?
-                WHERE 
-                    jr.mitgliederID = ?
-                    AND jd.Streicher = 1
-            ";
-            
-            if ($ssmExists) {
-                $sqlResultateStreicher .= " AND jd.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
-            }
-            
-            $stmt = $conn->prepare($sqlResultateStreicher);
-            if ($stmt) {
-                $stmt->bind_param("ii", $selectedYear, $mitgliedID);
-                $stmt->execute();
-                $punkteStreicher = $stmt->get_result();
+            // Für jeden AKTIVEN Wettkampf mit Streicher=1 das Resultat holen (oder 0 wenn nicht vorhanden)
+            foreach ($wettkaempfe as $wettkampf) {
+                $wettbewerbID = $wettkampf['ID'];
+                $maxPunkte = $wettkampf['Maxpunkte'];
 
-                $streicherArray = array();
-                while ($row = $punkteStreicher->fetch_assoc()) {
+                // Resultat für diesen Wettkampf holen
+                $sqlPunkte = "SELECT MAX(Punkte) AS Punkte 
+                             FROM jmresultate 
+                             WHERE mitgliederID = ? AND jmdefinitionID = ?";
+                
+                $stmt = $conn->prepare($sqlPunkte);
+                if ($stmt) {
+                    $stmt->bind_param("ii", $mitgliedID, $wettbewerbID);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    $punkte = 0; // Default: nicht teilgenommen = 0
+                    if ($row = $result->fetch_assoc()) {
+                        if ($row['Punkte'] !== null) {
+                            $punkte = $row['Punkte'];
+                            // Normalisieren auf 100 wenn nötig
+                            if ($maxPunkte != 100) {
+                                $punkte = round(($punkte / $maxPunkte) * 100, 2);
+                            }
+                        }
+                    }
+                    $stmt->close();
+                    
                     $streicherArray[] = array(
-                        'WettbewerbID' => $row['WettbewerbID'],
-                        'NormalizedPoints' => $row['NormalizedPoints']
+                        'WettbewerbID' => $wettbewerbID,
+                        'NormalizedPoints' => $punkte
                     );
                 }
-                $stmt->close();
+            }
 
-                // Die drei niedrigsten Resultate ermitteln
+            // Zähle fehlende Resultate (0-Werte)
+            $fehlendeResultate = array_filter($streicherArray, function($r) {
+                return $r['NormalizedPoints'] == 0 || $r['NormalizedPoints'] === 0.0;
+            });
+            
+            $excludeCount = 3;
+            $gestricheneResultate = array();
+            
+            // Wenn mehr als 3 fehlen: Nimm die ersten 3 nach Reihenfolge (sind bereits sortiert)
+            if (count($fehlendeResultate) > 3) {
+                // Streiche die ersten 3 fehlenden Wettbewerbe
+                $count = 0;
+                foreach ($streicherArray as $result) {
+                    if ($result['NormalizedPoints'] == 0 || $result['NormalizedPoints'] === 0.0) {
+                        $gestricheneResultate[] = $result;
+                        $count++;
+                        if ($count >= 3) break;
+                    }
+                }
+            } else {
+                // Normale Logik: Die 3 niedrigsten Resultate streichen
                 usort($streicherArray, function ($a, $b) {
                     return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
                 });
-
-                $excludeCount = 3;
                 $gestricheneResultate = array_slice($streicherArray, 0, $excludeCount);
-
-                foreach ($gestricheneResultate as $gestrichen) {
-                    $MitgliedStreicher[$mitgliedID][] = $gestrichen['WettbewerbID'];
-                }
             }
+
+            foreach ($gestricheneResultate as $gestrichen) {
+                $MitgliedStreicher[$mitgliedID][] = $gestrichen['WettbewerbID'];
+            }
+            
+            // Debug-Ausgabe für Streicher
+            $fehlendCount = count($fehlendeResultate);
+            $logikType = ($fehlendCount > 3) ? "REIHENFOLGE (>3 fehlend)" : "NIEDRIGSTE WERTE";
+            logDebug("GetStreicher - Mitglied $mitgliedID: " . count($gestricheneResultate) . " Streicher von " . count($streicherArray) . " Wettkämpfen ($fehlendCount fehlend, Logik: $logikType)");
         }
     }
     
@@ -2416,6 +2991,126 @@ function checkIfSSMExists($conn) {
     $stmt->close();
     
     return $exists;
+}
+
+
+function jmDebugMemberTotals($conn, $selectedYear, $mitgliedId, $defsLeft, $defsRight) {
+    // Hilfsfunktionen wie in GetJMA
+    $calcEndstich = function(int $mid) use ($conn, $selectedYear) {
+        $sql = "SELECT
+                    COALESCE(Schuss1,0)+COALESCE(Schuss2,0)+COALESCE(Schuss3,0)+COALESCE(Schuss4,0)+COALESCE(Schuss5,0)
+                  + COALESCE(Schuss6,0)+COALESCE(Schuss7,0)+COALESCE(Schuss8,0)+COALESCE(Schuss9,0)+COALESCE(Schuss10,0) AS P
+                FROM endstich WHERE MitgliedID=? AND Jahr=?";
+        if (!$st = $conn->prepare($sql)) return null;
+        $st->bind_param("ii", $mid, $selectedYear);
+        $st->execute(); $res = $st->get_result(); $row = $res->fetch_assoc(); $st->close();
+        return $row ? (float)$row['P'] : null;
+    };
+    $calcBestKanti = function(int $mid) use ($conn, $selectedYear) {
+        $sql = "SELECT GREATEST(
+                    COALESCE(Passe1,0),COALESCE(Passe2,0),COALESCE(Passe3,0),COALESCE(Passe4,0),COALESCE(Passe5,0)
+                ) AS P FROM kantiresultate WHERE MitgliedID=? AND Jahr=?";
+        if (!$st = $conn->prepare($sql)) return null;
+        $st->bind_param("ii", $mid, $selectedYear);
+        $st->execute(); $res = $st->get_result(); $row = $res->fetch_assoc(); $st->close();
+        return $row ? (float)$row['P'] : null;
+    };
+    $applyScale = function($raw, array $defRow) {
+        if ($raw === null) return null;
+        $p = (float)$raw + (float)$defRow['Zuschlag'];
+        $max = (int)$defRow['Maxpunkte'];
+        if ($max > 0 && $p > $max) $p = $max;
+        return $p;
+    };
+    $toNumber = function($v) {
+        if ($v === null) return 0.0;
+        if (is_float($v) || is_int($v)) return (float)$v;
+        $s = (string)$v;
+        $s = preg_replace('/[\x{200C}\x{200B}\x{A0}\s]+/u', '', $s);
+        if (preg_match('/-?\d+(?:[.,]\d+)?/', $s, $m)) {
+            return (float)str_replace(',', '.', $m[0]);
+        }
+        return 0.0;
+    };
+    $calcTotal = function(array $cells) use ($toNumber) {
+        $sum = 0.0;
+        foreach ($cells as $c) {
+            if (!empty($c['isStreicher'])) continue;
+            $sum += array_key_exists('num', $c) ? (float)$c['num'] : $toNumber($c['wert']);
+        }
+        return $sum;
+    };
+
+    // Definitions-Mapping
+    $defById = [];
+    foreach (array_merge($defsLeft, $defsRight) as $d) { $defById[(int)$d['ID']] = $d; }
+
+    // Deine normale Logik holen (liefert 'wert' + 'isStreicher')
+    $left  = getResultateForMember($mitgliedId, $defsLeft,  /*Streicher*/0, $conn);
+    $right = getResultateForMember($mitgliedId, $defsRight, /*Streicher*/0, $conn);
+
+    // Endstich/Kanti finden (nach Bezeichnung)
+    $endDef = null; $kantiDef = null;
+    foreach ($defById as $d) {
+        if ($d['Bezeichnung'] === 'Endstich')             $endDef = $d;
+        if ($d['Bezeichnung'] === 'Bester Kantonalstich') $kantiDef = $d;
+    }
+
+    // Overrides anwenden (auch 'num' setzen)
+    if ($endDef) {
+        $raw  = $calcEndstich($mitgliedId);
+        $scal = $applyScale($raw, $endDef);
+        foreach ([$left, $right] as &$side) {
+            foreach ($side as &$cell) {
+                if (!isset($cell['defId'])) continue;
+                if ((int)$cell['defId'] === (int)$endDef['ID']) {
+                    $cell['wert'] = function_exists('fmtNoTrailingZero') ? (string)fmtNoTrailingZero($scal) : (string)$scal;
+                    $cell['num']  = $scal;
+                    $cell['isStreicher'] = false;
+                }
+            }
+        }
+        unset($side, $cell);
+        error_log("[JM Debug] DBG Endstich raw=$raw scaled=$scal");
+    }
+    if ($kantiDef) {
+        $raw  = $calcBestKanti($mitgliedId);
+        $scal = $applyScale($raw, $kantiDef);
+        foreach ([$left, $right] as &$side) {
+            foreach ($side as &$cell) {
+                if (!isset($cell['defId'])) continue;
+                if ((int)$cell['defId'] === (int)$kantiDef['ID']) {
+                    $cell['wert'] = function_exists('fmtNoTrailingZero') ? (string)fmtNoTrailingZero($scal) : (string)$scal;
+                    $cell['num']  = $scal;
+                    $cell['isStreicher'] = false;
+                }
+            }
+        }
+        unset($side, $cell);
+        error_log("[JM Debug] DBG Kanti raw=$raw scaled=$scal");
+    }
+
+    // Ausgeben
+    $dumpSide = function($label, $defs, $cells) {
+        error_log("[JM Debug] ---- $label ----");
+        foreach ($cells as $idx => $c) {
+            $defId = $c['defId'] ?? null;
+            $bez   = '';
+            foreach ($defs as $d) { if ((int)$d['ID'] === (int)$defId) { $bez = $d['Bezeichnung']; break; } }
+            $w = $c['wert'] ?? '';
+            $n = array_key_exists('num',$c) ? $c['num'] : null;
+            $s = !empty($c['isStreicher']) ? ' (Streicher)' : '';
+            error_log("[JM Debug] ".sprintf("#%02d %-25s ID=%s  wert=%s  num=%s%s",
+                $idx+1, $bez, $defId, var_export($w,true), var_export($n,true), $s));
+        }
+    };
+
+    $dumpSide('LEFT',  $defsLeft,  $left);
+    $dumpSide('RIGHT', $defsRight, $right);
+
+    $tA = $calcTotal($left);
+    $tB = $calcTotal($right);
+    error_log("[JM Debug] TOTAL_A=$tA TOTAL_B=$tB TOTAL=".($tA+$tB));
 }
 
 // Ende der Datei

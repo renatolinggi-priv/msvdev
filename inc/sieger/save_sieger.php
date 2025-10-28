@@ -17,7 +17,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
-    $name = $row['Vorname'] . ' ' . $row['Name'];
+    $name = $row['Name'] . ' ' . $row['Vorname'];
 
     // Daten in die Tabelle `sieger` einfügen
     $sql = "INSERT INTO sieger (Name, Wert, siegerdef, year) VALUES (?, ?, ?, ?)";

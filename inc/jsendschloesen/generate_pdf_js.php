@@ -23,7 +23,24 @@ if ($action !== 'generate_pdf') {
 }
 
 try {
-    // Hole JS-Daten
+    // Hole JS-Paketpreis aus Spezialpreise-Tabelle
+    $js_paket_preis = 7500; // Default CHF 75.00 in cents
+    $munition_pro_schuss = 50; // Default CHF 0.50 in cents (gemäss DB)
+    
+    $sql_preis = "SELECT price_cents FROM endstich_spezialpreise WHERE typ = 'js_paket_preis' LIMIT 1";
+    $result_preis = $conn->query($sql_preis);
+    if ($result_preis && $row_preis = $result_preis->fetch_assoc()) {
+        $js_paket_preis = intval($row_preis['price_cents']);
+    }
+    
+    // Hole auch den Munitionspreis
+    $sql_munition = "SELECT price_cents FROM endstich_spezialpreise WHERE typ = 'munition_pro_schuss' LIMIT 1";
+    $result_munition = $conn->query($sql_munition);
+    if ($result_munition && $row_munition = $result_munition->fetch_assoc()) {
+        $munition_pro_schuss = intval($row_munition['price_cents']);
+    }
+    
+    // Hole JS-Daten - NUR Gäste MIT Geburtsdatum (echte Jungschützen)
     $sql = "SELECT 
             g.name,
             g.geburtsdatum,
@@ -32,6 +49,9 @@ try {
             (SELECT zahlungsmethode FROM endstich_selection WHERE gast_id = g.id AND jahr = ? LIMIT 1) as zahlungsmethode
         FROM endstich_gaeste g
         WHERE g.jahr = ?
+        AND g.geburtsdatum IS NOT NULL
+        AND g.geburtsdatum != ''
+        AND g.geburtsdatum != '0000-00-00'
         AND g.id IN (
             SELECT DISTINCT gast_id FROM endstich_selection WHERE jahr = ? AND gast_id IS NOT NULL
         )
@@ -46,6 +66,7 @@ try {
     $total_sum = 0;
     $total_gp11 = 0;
     $total_gp90 = 0;
+    $anzahl_pakete = 0;
     
     while ($row = $result->fetch_assoc()) {
         // Hole Munition
@@ -56,7 +77,7 @@ try {
         
         $gp11 = 0;
         $gp90 = 0;
-        $munition_preis = 0;
+        $munition_preis_cents = 0;
         
         while ($zusatz = $result2->fetch_assoc()) {
             if ($zusatz['typ'] === 'GP11_60' || $zusatz['typ'] === 'GP11_CUSTOM') {
@@ -64,18 +85,24 @@ try {
             } else if ($zusatz['typ'] === 'GP90_50' || $zusatz['typ'] === 'GP90_CUSTOM') {
                 $gp90 += $zusatz['anzahl'];
             }
-            $munition_preis += $zusatz['preis_cents'];
+            $munition_preis_cents += $zusatz['preis_cents'];
         }
         
         $row['gp11'] = $gp11;
         $row['gp90'] = $gp90;
-        $row['total_preis'] = 75 + ($munition_preis / 100);
+        // Berechne Preis: JS-Paketpreis + Munitionskosten
+        $row['total_preis'] = ($js_paket_preis + $munition_preis_cents) / 100;
         
         $js_liste[] = $row;
         $total_sum += $row['total_preis'];
         $total_gp11 += $gp11;
         $total_gp90 += $gp90;
+        $anzahl_pakete++;
     }
+    
+    // Formatiere Preise für Anzeige
+    $js_paket_preis_chf = number_format($js_paket_preis / 100, 2, '.', '');
+    $munition_pro_schuss_chf = number_format($munition_pro_schuss / 100, 2, '.', '');
     
     // HTML für PDF generieren
     $html = '
@@ -163,8 +190,8 @@ try {
     
     <div class="header-info">
         <strong>MSV Jegenstorf</strong><br>
-        Festes JS-Paket: Endstich, Schwini Passe 1+2, Zabigstich<br>
-        Paketpreis: CHF 75.00 | Munition: CHF 0.60 pro Schuss
+        Festes JS-Paket: Endstich, Schwini Passe 1+2, Zabigstich + 5 Probeschüsse<br>
+        Paketpreis: CHF ' . $js_paket_preis_chf . ' | Zusätzliche Munition: CHF ' . $munition_pro_schuss_chf . ' pro Schuss
     </div>';
     
     if (count($js_liste) == 0) {
@@ -216,6 +243,8 @@ try {
             </tr>';
         }
         
+        $pakete_total = $anzahl_pakete * ($js_paket_preis / 100);
+        
         $html .= '
         </tbody>
     </table>
@@ -225,11 +254,11 @@ try {
         <table style="width: auto;">
             <tr>
                 <td style="padding-right: 30px;"><strong>Anzahl Jungschützen:</strong></td>
-                <td>' . count($js_liste) . '</td>
+                <td>' . $anzahl_pakete . '</td>
             </tr>
             <tr>
                 <td><strong>Pakete Total:</strong></td>
-                <td>' . count($js_liste) . ' x CHF 75.00 = CHF ' . number_format(count($js_liste) * 75, 2, '.', '') . '</td>
+                <td>' . $anzahl_pakete . ' x CHF ' . $js_paket_preis_chf . ' = CHF ' . number_format($pakete_total, 2, '.', '') . '</td>
             </tr>
             <tr>
                 <td><strong>Munition GP11 Total:</strong></td>

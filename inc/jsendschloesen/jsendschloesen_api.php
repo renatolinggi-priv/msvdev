@@ -74,11 +74,12 @@ try {
     switch($action) {
         
         case 'get_js_stiche':
-            // Hole die 4 Stiche für das JS-Paket
+            // Hole die 4 Stiche für das JS-Paket (Endstich, Probe, Schwini, Zabig)
             $sql = "SELECT id, code, name, shots, price_cents 
                     FROM endstich_definition 
-                    WHERE code IN ('END', 'SCHWINI_P1', 'SCHWINI_P2', 'ZABIG')
-                    AND active = 1";
+                    WHERE code IN ('END', 'PROBE', 'SCHWINI_P1', 'ZABIG')
+                    AND active = 1
+                    ORDER BY sort_order";
             
             $result = $conn->query($sql);
             
@@ -480,7 +481,7 @@ try {
             // Hole JS-Stiche
             $sql = "SELECT id, code, name, shots, price_cents 
                     FROM endstich_definition 
-                    WHERE code IN ('END', 'SCHWINI_P1', 'SCHWINI_P2', 'ZABIG')
+                    WHERE code IN ('END', 'PROBE', 'SCHWINI_P1', 'ZABIG')
                     AND active = 1
                     ORDER BY sort_order";
             
@@ -552,7 +553,7 @@ try {
             }
             
             // Update Schussanzahl
-            $stmt = $conn->prepare("UPDATE endstich_definition SET shots = ? WHERE id = ? AND code IN ('END', 'SCHWINI_P1', 'SCHWINI_P2', 'ZABIG')");
+            $stmt = $conn->prepare("UPDATE endstich_definition SET shots = ? WHERE id = ? AND code IN ('END', 'PROBE', 'SCHWINI_P1', 'ZABIG')");
             $stmt->bind_param("ii", $shots, $stich_id);
             
             if ($stmt->execute() && $stmt->affected_rows > 0) {

@@ -1,182 +1,263 @@
 <?php
-// inc/cuprang/generate_cup_pdf.php
-// PDF im Karten-Look (mit Logo-Header, ohne Tiefschuss)
-
+// generate_pdf.php
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-declare(strict_types=1);
+// Ausgabepufferung starten
 ob_start();
 
-$resp = ['success' => false, 'pdf_link' => '', 'error' => null];
+// Fehlerbehandlung
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
 
 try {
-    // === Dompdf laden ===
-    $dompdfAuto = dirname(__DIR__) . '/dompdf/autoload.php';
-    if (file_exists($dompdfAuto)) require_once $dompdfAuto;
+    require '../dompdf/autoload.php';
+    include '../config.php';
 
-    require_once dirname(__DIR__) . '/dbconnect.inc.php';
-    require_once __DIR__ . '/cup_repository.php';
-    require_once __DIR__ . '/cup_table_renderer.php';
-
-    $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
-
-    $conn = get_db_connection();
-    if (!$conn) throw new RuntimeException('DB-Verbindung fehlgeschlagen.');
-
-    $pairs = cup_fetch_pairs($conn, $year);
-    $finalRaw = cup_fetch_final_results($conn, $year);
-    $standRaw = function_exists('cup_fetch_standcup_final') ? cup_fetch_standcup_final($conn, $year) : [];
-
-    // Runden bestimmen
-    $rounds = array_values(array_unique(array_map(fn($r) => (int)$r['Round'], $pairs)));
-    sort($rounds, SORT_ASC);
-
-    // Finaldaten vorbereiten (ohne Tiefschuss)
-    $final = [];
-    foreach ($finalRaw as $r) {
-        if (empty($r['Teilnehmer']) && !empty($r['ParticipantID'])) {
-            $r['Teilnehmer'] = get_member_name($conn, (int)$r['ParticipantID']);
-        }
-        unset($r['LowShot'], $r['Tiefschuss']);
-        $final[] = $r;
+    // Verbindung prüfen
+    if ($conn->connect_error) {
+        throw new Exception("Verbindung fehlgeschlagen: " . $conn->connect_error);
     }
 
-    // Standcup-Namen sicherstellen
-    $stand = [];
-    foreach ($standRaw as $r) {
-        if (empty($r['ParticipantName']) && !empty($r['ParticipantID'])) {
-            $r['ParticipantName'] = get_member_name($conn, (int)$r['ParticipantID']);
-        }
-        $stand[] = $r;
+    // Parameter validieren
+    $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+    $currentYear = date('Y');
+    if ($selectedYear < 2000 || $selectedYear > $currentYear + 1) {
+        $selectedYear = $currentYear;
     }
 
-    // === HTML aufbauen ===
-    ob_start(); ?>
-<!DOCTYPE html>
+    // Funktion zum Erstellen einer Tabelle
+    function createTable($data, $title) {
+        if (empty($data)) {
+            return '<div class="container"><h2>' . htmlspecialchars($title) . '</h2><p>Keine Ergebnisse gefunden.</p></div>';
+        }
+        $html = '<div class="container">
+                    <h2>' . htmlspecialchars($title) . '</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="rang">Rang</th>
+                                <th class="name">Name</th>';
+        
+        for ($i = 1; $i <= 8; $i++) {
+            $html .= '<th class="passe">Passe ' . $i . '</th>';
+        }
+        $html .= '<th class="total">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+        
+        $rang = 1;
+        $previousTotal = null;
+        $sameRankCount = 0;
+        
+        foreach ($data as $row) {
+            // Rangbehandlung bei gleichen Totals
+            if ($previousTotal !== null && $row['HeimSumme'] < $previousTotal) {
+                $rang += $sameRankCount;
+                $sameRankCount = 1;
+            } elseif ($previousTotal === $row['HeimSumme']) {
+                $sameRankCount++;
+            } else {
+                $sameRankCount = 1;
+            }
+            
+            $html .= '<tr>
+                        <td class="rang">' . $rang . '.</td>
+                        <td class="name">' . htmlspecialchars($row['Name'] . ' ' . $row['Vorname']) . '</td>';
+            
+            for ($i = 1; $i <= 8; $i++) {
+                $value = $row["Passe$i"];
+                $html .= '<td class="passe">' . ($value > 0 ? $value : '-') . '</td>';
+            }
+            
+            $html .= '<td class="total">' . $row['HeimSumme'] . '</td>
+                    </tr>';
+            
+            $previousTotal = $row['HeimSumme'];
+        }
+        
+        $html .= '</tbody></table></div>';
+        return $html;
+    }
+
+    // Alle Daten in einer Abfrage holen
+    $sql = "SELECT 
+        w.Kategorie,
+        m.Name, 
+        m.Vorname, 
+        h.Passe1, h.Passe2, h.Passe3, h.Passe4, h.Passe5, h.Passe6, h.Passe7, h.Passe8,
+        (COALESCE(h.Passe1, 0) + COALESCE(h.Passe2, 0) + COALESCE(h.Passe3, 0) + COALESCE(h.Passe4, 0) + 
+         COALESCE(h.Passe5, 0) + COALESCE(h.Passe6, 0) + COALESCE(h.Passe7, 0) + COALESCE(h.Passe8, 0)) AS HeimSumme
+    FROM heimresultate h
+    INNER JOIN mitglieder m ON m.ID = h.MitgliedID
+    INNER JOIN Waffen w ON w.ID = m.WaffenID 
+    WHERE w.Kategorie IN ('Kat. A', 'Kat. B')
+      AND h.Jahr = ?
+      AND (h.Passe1 > 0 OR h.Passe2 > 0 OR h.Passe3 > 0 OR h.Passe4 > 0 OR 
+           h.Passe5 > 0 OR h.Passe6 > 0 OR h.Passe7 > 0 OR h.Passe8 > 0)
+    ORDER BY w.Kategorie, HeimSumme DESC, m.Name, m.Vorname";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        throw new Exception("Fehler beim Vorbereiten der Abfrage: " . $conn->error);
+    }
+    
+    $stmt->bind_param("i", $selectedYear);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    // Daten nach Kategorie gruppieren
+    $kategorienDaten = [
+        'Kat. A' => [],
+        'Kat. B' => []
+    ];
+    
+    while ($row = $result->fetch_assoc()) {
+        $kategorienDaten[$row['Kategorie']][] = $row;
+    }
+    
+    $stmt->close();
+    $conn->close();
+
+    // HTML generieren
+    $html = '<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<title>Cup <?= $year ?></title>
-<style>
-@page { margin: 1.5cm; }
-body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 0; }
-.header { position: relative; margin-bottom: 30px; min-height: 100px; }
-.logo { position: absolute; top: 0; left: 0; width: 100px; height: auto; }
-h1 { text-align: center; font-size: 20px; margin: 0; padding-top: 20px; }
-.section { margin-bottom: 25px; page-break-inside: avoid; }
-.section h2 { font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 4px; }
-.footer { text-align: center; font-size: 9px; color: #666; margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; }
-</style>
-<?php echo cup_inject_cup_styles(); ?>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 1.5cm; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            position: relative;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+        .logo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100px;
+            height: auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 20px;
+            margin: 0;
+            padding-top: 20px;
+        }
+        .container {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+            clear: both;
+        }
+        h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .table th, .table td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #343a40;
+            color: #fff;
+            font-weight: bold;
+        }
+        .rang, .passe, .total {
+            text-align: center;
+        }
+        .rang { width: 50px; }
+        .name { width: auto; }
+        .passe { width: 65px; }
+        .total { 
+            width: 70px; 
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+    <title>Heimmeisterschaft ' . $selectedYear . '</title>
 </head>
 <body>
+    <div class="header">
+        <img src="https://jahresmeisterschaft.msvwilen.ch/images/MSVWilen_Logo.jpg" class="logo" alt="MSV Wilen Logo">
+        <h1>Heimmeisterschaft ' . $selectedYear . '</h1>
+    </div>';
 
-<div class="header">
-  <img src="/images/MSVWilen_Logo.jpg" class="logo" alt="MSV Wilen Logo">
-  <h1>Cup <?= $year ?></h1>
-</div>
-
-<div class="section">
-  <h2>Paarungen <?= $year ?></h2>
-  <?php
-  if (empty($pairs)) {
-      echo '<p>Keine Paarungen vorhanden.</p>';
-  } else {
-      foreach ($rounds as $rnd) {
-          echo '<h3>Runde '.(int)$rnd.'</h3>';
-          echo cup_render_round_table($conn, $pairs, $rnd);
-      }
-  }
-  ?>
-</div>
-
-<div class="section">
-  <h2>Finale Rangliste <?= $year ?></h2>
-  <?php
-  if (empty($final)) {
-      echo '<p>Noch keine Finalresultate vorhanden.</p>';
-  } else {
-      // eigenes Rendering ohne Tiefschuss
-      echo '<div class="cup-wrapper"><div class="cup-section"><div class="ranklist">';
-      $rank = 0;
-      foreach ($final as $r) {
-          $rank++;
-          $cls = ($rank===1?'top1':($rank===2?'top2':($rank===3?'top3':'')));
-          $med = ($rank===1?' 🥇':($rank===2?' 🥈':($rank===3?' 🥉':''));
-          echo '<div class="cardline '.$cls.'">';
-          echo '<div class="badge-rank">'.$rank.'</div>';
-          echo '<div class="fullname">'.esc($r['Teilnehmer']).$med.'</div>';
-          echo '<div class="score">'.esc($r['Punkte']).'</div>';
-          echo '<div></div>';
-          echo '</div>';
-      }
-      echo '</div></div></div>';
-  }
-  ?>
-</div>
-
-<div class="section">
-  <h2>Standcup Final <?= $year ?></h2>
-  <?php
-  if (empty($stand)) {
-      echo '<p>Noch keine Standcup-Finaldaten vorhanden.</p>';
-  } else {
-      echo '<div class="cup-wrapper"><div class="cup-section"><div class="ranklist">';
-      $rank = 0;
-      foreach ($stand as $r) {
-          $rank++;
-          $cls = ($rank===1?'top1':($rank===2?'top2':($rank===3?'top3':'')));
-          echo '<div class="cardline '.$cls.'">';
-          echo '<div class="badge-rank">'.$rank.'</div>';
-          echo '<div><span class="fullname">'.esc($r['ParticipantName']).'</span>';
-          if (!empty($r['club'])) echo '<span class="club">'.esc($r['club']).'</span>';
-          echo '</div>';
-          echo '<div class="score">'.esc($r['Punkte']).'</div>';
-          echo '<div></div>';
-          echo '</div>';
-      }
-      echo '</div></div></div>';
-  }
-  ?>
-</div>
-
-<div class="footer">
-  Generiert am <?= date('d.m.Y \u\m H:i') ?> Uhr
-</div>
-
+    // Beide Kategorien hinzufügen
+    $html .= createTable($kategorienDaten['Kat. A'], 'Kategorie A');
+    $html .= createTable($kategorienDaten['Kat. B'], 'Kategorie B');
+    
+    // Footer
+    $html .= '<div class="footer">
+                <p>Generiert am ' . date('d.m.Y \u\m H:i') . ' Uhr</p>
+              </div>
 </body>
-</html>
-<?php
-    $html = ob_get_clean();
+</html>';
 
-    // === PDF rendern ===
-    $options = new Options();
+    // PDF generieren
+    $options = new \Dompdf\Options();
     $options->set('isHtml5ParserEnabled', true);
     $options->set('isRemoteEnabled', true);
     $options->set('defaultFont', 'Arial');
-
-    $dompdf = new Dompdf($options);
+    
+    $dompdf = new \Dompdf\Dompdf($options);
     $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->setPaper('A4', 'landscape');
     $dompdf->render();
 
-    // Speichern
-    $targetDir = __DIR__ . '/exports';
-    if (!is_dir($targetDir)) @mkdir($targetDir, 0755, true);
-    $filename = 'cup_'.$year.'_'.date('Y-m-d_H-i-s').'.pdf';
-    $filePath = $targetDir.'/'.$filename;
-    file_put_contents($filePath, $dompdf->output());
+    // Verzeichnis prüfen
+    if (!is_dir('dat')) {
+        if (!mkdir('dat', 0755, true)) {
+            throw new Exception("Konnte Verzeichnis nicht erstellen");
+        }
+    }
 
-    $pdfUrl = '/inc/cuprang/exports/'.$filename.'?t='.time();
+    // PDF speichern
+    $date = new DateTime();
+    $pdfFilePath = 'dat/RanglisteHeimmeisterschaft_' . $date->format('Y-m-d_H-i-s') . '.pdf';
+    
+    if (!file_put_contents($pdfFilePath, $dompdf->output())) {
+        throw new Exception("Konnte PDF nicht speichern");
+    }
 
+    // Ausgabepuffer leeren
     ob_end_clean();
+
+    // JSON-Antwort zurückgeben
     header('Content-Type: application/json');
-    echo json_encode(['success'=>true, 'pdf_link'=>$pdfUrl]);
+    echo json_encode(array('pdf_link' => "heimrang/" . $pdfFilePath));
 
-} catch (\Throwable $e) {
+} catch (Exception $e) {
     ob_end_clean();
+    error_log("PDF-Generator Fehler: " . $e->getMessage());
+    
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['success'=>false, 'error'=>$e->getMessage()]);
+    echo json_encode(array('pdf_link' => null));
 }
+?>

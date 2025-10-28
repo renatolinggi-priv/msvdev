@@ -202,15 +202,34 @@ if (empty($_SESSION['csrf_token'])) {
             <div class="col-md-6">
               <div id="schwiniSchuesse" class="shooting-category mb-2">
                 <h6 class="mb-2"><i class="bi bi-piggy-bank me-2"></i>Partner Schwini</h6>
+                
+                <!-- 1. Passe -->
                 <div class="mb-2">
-                  <label class="small mb-1">6 Schüsse:</label>
+                  <label class="small mb-1">1. Passe (6 Schüsse):</label>
                   <div class="d-flex align-items-center gap-1">
                     <?php for ($i=1; $i<=6; $i++): ?>
-                      <input type="number" class="small-input schwini-schuss" id="PartnerSchwiniSchuss<?= $i ?>" 
+                      <input type="number" class="small-input schwini-schuss schwini-passe1" id="PartnerSchwiniSchuss<?= $i ?>" 
                              name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1">
                     <?php endfor; ?>
-                    <span id="schwiniSumme" class="total-display ms-1">0</span>
+                    <span id="schwiniSumme1" class="total-display ms-1">0</span>
                   </div>
+                </div>
+                
+                <!-- 2. Passe -->
+                <div class="mb-2">
+                  <label class="small mb-1">2. Passe (6 Schüsse):</label>
+                  <div class="d-flex align-items-center gap-1">
+                    <?php for ($i=7; $i<=12; $i++): ?>
+                      <input type="number" class="small-input schwini-schuss schwini-passe2" id="PartnerSchwiniSchuss<?= $i ?>" 
+                             name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1">
+                    <?php endfor; ?>
+                    <span id="schwiniSumme2" class="total-display ms-1">0</span>
+                  </div>
+                </div>
+                
+                <!-- Total -->
+                <div class="mt-2">
+                  <strong>Total: <span id="schwiniSummeTotal" class="text-primary">0</span></strong>
                 </div>
               </div>
 
@@ -352,13 +371,25 @@ $(document).ready(function() {
         // "Sie und Er" mit Unique-Logik
         updateSieErUniqueVisualization();
         
-        // Partner Schwini Summe (6 Schüsse)
-        let schwiniSum = 0;
-        $('.schwini-schuss').each(function() {
+        // Partner Schwini - 1. Passe (6 Schüsse)
+        let schwiniSum1 = 0;
+        $('.schwini-passe1').each(function() {
             const value = parseFloat($(this).val() || 0);
-            schwiniSum += value;
+            schwiniSum1 += value;
         });
-        $('#schwiniSumme').text(schwiniSum.toFixed(1));
+        $('#schwiniSumme1').text(schwiniSum1.toFixed(1));
+        
+        // Partner Schwini - 2. Passe (6 Schüsse)
+        let schwiniSum2 = 0;
+        $('.schwini-passe2').each(function() {
+            const value = parseFloat($(this).val() || 0);
+            schwiniSum2 += value;
+        });
+        $('#schwiniSumme2').text(schwiniSum2.toFixed(1));
+        
+        // Total Schwini
+        const schwiniTotal = schwiniSum1 + schwiniSum2;
+        $('#schwiniSummeTotal').text(schwiniTotal.toFixed(1));
     }
     
     // Funktion zur Berechnung und Visualisierung der Unique-Logik
@@ -473,12 +504,12 @@ $(document).ready(function() {
         
         // Validierung
         if (!$('#partnerName').val().trim()) {
-            toastManager.show('Bitte geben Sie den Namen der Partnerin ein', 'error');
+            toastManager.show('Bitte gib den Namen der Partnerin ein', 'error');
             return;
         }
         
         if (!$('#mitgliedSelect').val()) {
-            toastManager.show('Bitte wählen Sie ein Mitglied aus', 'error');
+            toastManager.show('Bitte wähle ein Mitglied aus', 'error');
             return;
         }
         
@@ -518,6 +549,12 @@ $(document).ready(function() {
         $('#partnerID').val('');
         $('#jahr').val(currentYear);
         $('.total-display').text('0');
+        
+        // Entferne Gast-Hinweis falls vorhanden
+        $('#guestHint').remove();
+        
+        // Setze Modal-Titel zurück
+        $('#partnerModalLabel').html('<i class="bi bi-people me-2"></i> Partnerin erfassen');
     }
     
     // Partnerin bearbeiten laden
@@ -542,7 +579,7 @@ $(document).ready(function() {
                     $('#SieErSchuss' + i).val(partner['SieErSchuss' + i] || '0');
                 }
                 
-                for (let i = 1; i <= 6; i++) {
+                for (let i = 1; i <= 12; i++) {
                     $('#PartnerSchwiniSchuss' + i).val(partner['PartnerSchwiniSchuss' + i] || '0');
                 }
                 
@@ -557,6 +594,37 @@ $(document).ready(function() {
         });
     }
     
+    // NEU: Funktion um Modal für Gast zu öffnen (mit vorausgefülltem Namen)
+    function openModalForGuest(guestName) {
+        resetForm();
+        
+        // Setze den Gast-Namen
+        $('#partnerName').val(guestName);
+        
+        // Modal-Titel anpassen
+        $('#partnerModalLabel').html('<i class="bi bi-people me-2"></i> Gast-Resultate erfassen');
+        
+        // Zeige Hinweis dass dies ein Gast ist
+        const guestHint = `
+            <div class="alert alert-info mb-3" id="guestHint">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Gast:</strong> Dieser Eintrag wurde als Gast erfasst. 
+                Bitte wähle ein Mitglied aus, dem dieser Gast zugeordnet werden soll.
+            </div>
+        `;
+        
+        // Füge Hinweis nach dem Formular-Start ein (vor Grunddaten)
+        $('#partnerForm .row.g-3').prepend(guestHint);
+        
+        // Öffne Modal
+        $('#partnerModal').modal('show');
+        
+        // Fokus auf Mitglied-Auswahl
+        setTimeout(function() {
+            $('#mitgliedSelect').focus();
+        }, 300);
+    }
+    
     // Lösch-Bestätigung zeigen
     function showDeleteConfirmation(partnerID, name) {
         deletePartnerID = partnerID;
@@ -564,7 +632,7 @@ $(document).ready(function() {
             <div class="d-flex align-items-center">
                 <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
                 <div>
-                    <strong>Möchten Sie die Partnerin "${name}" wirklich löschen?</strong>
+                    <strong>Möchtest du die Partnerin "${name}" wirklich löschen?</strong>
                     <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
                 </div>
             </div>
@@ -712,11 +780,18 @@ $(document).ready(function() {
         loadPartnerForEdit(partnerID);
     });
     
+    // NEU: Gast-Resultate erfassen (delegiert)
+    $(document).on('click', '.add-guest-result-btn', function(e) {
+        e.preventDefault();
+        const guestName = $(this).data('guest-name');
+        openModalForGuest(guestName);
+    });
+    
     // Partnerin löschen (delegiert)
     $(document).on('click', '.delete-partner-btn', function(e) {
         e.preventDefault();
         const partnerID = $(this).data('id');
-        const name = $(this).closest('tr').find('td:eq(1)').text();
+        const name = $(this).closest('tr').find('td:eq(0)').text();
         showDeleteConfirmation(partnerID, name);
     });
     
@@ -729,20 +804,25 @@ $(document).ready(function() {
     $('#confirmModal').on('hidden.bs.modal', function() {
         deletePartnerID = null;
     });
+    
+    // NEU: Modal Reset bei Schließung (entfernt Gast-Hinweis)
+    $('#partnerModal').on('hidden.bs.modal', function() {
+        $('#guestHint').remove();
+    });
 
     document.getElementById("redirect-btn").addEventListener("click", function () {
-    // Gewähltes Jahr holen (falls relevant)
-    const selectedYear = document.getElementById("yearSelect")?.value || "";
+        // Gewähltes Jahr holen (falls relevant)
+        const selectedYear = document.getElementById("yearSelect")?.value || "";
 
-    // Ziel-URL bauen
-    let targetUrl = "https://jahresmeisterschaft.msvwilen.ch/inc/endschrang.php";
-    if (selectedYear) {
-        targetUrl += "?year=" + encodeURIComponent(selectedYear);
-    }
+        // Ziel-URL bauen
+        let targetUrl = "https://jahresmeisterschaft.msvwilen.ch/inc/endschrang.php";
+        if (selectedYear) {
+            targetUrl += "?year=" + encodeURIComponent(selectedYear);
+        }
 
-    // Weiterleiten
-    window.location.href = targetUrl;
-});
+        // Weiterleiten
+        window.location.href = targetUrl;
+    });
 
 
     // Global Scroll aktivieren

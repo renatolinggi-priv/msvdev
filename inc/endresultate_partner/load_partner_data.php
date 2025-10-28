@@ -4,8 +4,8 @@
  * Lädt spezifische Partner-Daten für Bearbeitung
  * 
  * @author System
- * @version 1.0
- * @description Lädt Partner-Daten anhand der ID für das Bearbeitungsformular
+ * @version 1.1
+ * @description Lädt Partner-Daten anhand der ID für das Bearbeitungsformular (inkl. 2. Passe Schwini)
  */
 
 header('Content-Type: application/json');

@@ -220,7 +220,6 @@ ORDER BY m.Name, m.Vorname"
 
             $selected = [];
             $zahlungsmethode = 'bar'; // Default
-            $is_js = false; // JungschützeIn Flag
 
             if ($mitglied_id) {
                 // Mitglied-basierte Suche - hole auch Zahlungsmethode
@@ -237,7 +236,7 @@ ORDER BY m.Name, m.Vorname"
                 $stmt->bind_param("ii", $mitglied_id, $jahr);
             } else {
                 // Gast-basierte Suche - erst Gast-ID finden
-                $stmt = $conn->prepare("SELECT id, waffen_id, geburtsdatum FROM endstich_gaeste WHERE name = ? AND jahr = ?");
+                $stmt = $conn->prepare("SELECT id, waffen_id FROM endstich_gaeste WHERE name = ? AND jahr = ?");
                 $stmt->bind_param("si", $gast_name, $jahr);
                 $stmt->execute();
                 $result = $stmt->get_result();
@@ -246,10 +245,6 @@ ORDER BY m.Name, m.Vorname"
                 if ($gast) {
                     $gast_id = $gast['id'];
                     $waffen_id = $gast['waffen_id'];
-                    $geburtsdatum = $gast['geburtsdatum']; // Speichere Geburtsdatum
-                    
-                    // Prüfe ob JungschützeIn (Geburtsdatum vorhanden)
-                    $is_js = !empty($gast['geburtsdatum']);
 
                     // Hole Zahlungsmethode
                     $stmt = $conn->prepare("SELECT DISTINCT zahlungsmethode FROM endstich_selection WHERE gast_id = ? AND jahr = ? AND zahlungsmethode IS NOT NULL LIMIT 1");
@@ -289,16 +284,9 @@ ORDER BY m.Name, m.Vorname"
                 }
             }
 
-            $response = [
-                'zahlungsmethode' => $zahlungsmethode, 
-                'zabig_partner' => $zabig_partner,
-                'is_js' => $is_js  // NEU: Ob es sich um JungschützeIn handelt
-            ];
+            $response = ['zahlungsmethode' => $zahlungsmethode, 'zabig_partner' => $zabig_partner];
             if (isset($waffen_id) && $waffen_id) {
                 $response['waffen_id'] = $waffen_id;
-            }
-            if (isset($geburtsdatum) && $geburtsdatum) {
-                $response['geburtsdatum'] = $geburtsdatum;
             }
 
             jsonResponse(true, $selected, '', $response);
@@ -328,7 +316,6 @@ ORDER BY m.Name, m.Vorname"
             }
 
             $gast_id = null;
-            $is_js = false; // Flag ob JungschützeIn
 
             // Bei Gast: Prüfe ob er existiert oder lege ihn an
             if ($gast_name && !$mitglied_id) {
@@ -368,9 +355,6 @@ ORDER BY m.Name, m.Vorname"
 
                 if ($existing_gast) {
                     $gast_id = $existing_gast['id'];
-                    
-                    // Prüfe ob JungschützeIn
-                    $is_js = !empty($existing_gast['geburtsdatum']);
 
                     // Update waffen_id wenn vorhanden
                     if (isset($input['waffen_id'])) {
@@ -395,7 +379,7 @@ ORDER BY m.Name, m.Vorname"
                         if (count($date_parts) == 3) {
                             $geburtsdatum = sprintf('%04d-%02d-%02d', $date_parts[2], $date_parts[1], $date_parts[0]);
                             // Entferne das Datum aus dem Namen
-                            $gast_name_clean = trim(preg_replace('/\s*\(' . preg_quote($matches[1], '/') . '\)\s*/', '', $gast_name));
+                            $gast_name_clean = trim(preg_replace('/\s*\(' . preg_quote($matches[1], '/') . '\)/', '', $gast_name));
                         } else {
                             $gast_name_clean = $gast_name;
                         }
@@ -411,9 +395,6 @@ ORDER BY m.Name, m.Vorname"
                     $stmt->bind_param("ssiis", $gast_name_clean, $geburtsdatum, $waffen_id, $jahr, $created_by);
                     $stmt->execute();
                     $gast_id = $conn->insert_id;
-                    
-                    // Setze is_js Flag wenn Geburtsdatum vorhanden
-                    $is_js = !empty($geburtsdatum);
                 }
             }
 
@@ -507,14 +488,10 @@ ORDER BY m.Name, m.Vorname"
                             $stmt->execute();
                         }
                     } else {
-                        // Für Gäste: Setze Spezialpreis nur beim ersten Stich
-                        $first_stich = true;
                         $stmt = $conn->prepare("UPDATE endstich_selection SET zahlungsmethode = ?, gast_spezialpreis = ? WHERE gast_id = ? AND jahr = ? AND stich_id = ?");
                         foreach ($zu_aktualisieren as $stich_id) {
-                            $preis_for_update = $first_stich ? $gast_spezialpreis : null;
-                            $stmt->bind_param("siiii", $zahlungsmethode, $preis_for_update, $gast_id, $jahr, $stich_id);
+                            $stmt->bind_param("siiii", $zahlungsmethode, $gast_spezialpreis, $gast_id, $jahr, $stich_id);
                             $stmt->execute();
-                            $first_stich = false;
                         }
                     }
                 }
@@ -559,27 +536,10 @@ ORDER BY m.Name, m.Vorname"
                             }
                         }
                     } else {
-                        // Für JS (JungschützenInnen): Verwende den JS-Paketpreis
-                        // Dieser wird nur einmal gesetzt (beim ersten Stich), alle anderen bekommen NULL
-                        $js_preis_gesetzt = false;
-                        
                         $stmt = $conn->prepare("INSERT INTO endstich_selection (gast_id, jahr, stich_id, zahlungsmethode, gast_spezialpreis, created_by) VALUES (?, ?, ?, ?, ?, ?)");
                         foreach ($zu_erstellen as $stich_id) {
                             if ($stich_id > 0) {
-                                // Entscheide ob Spezialpreis gesetzt werden soll
-                                $preis_for_insert = null;
-                                if ($is_js && !$js_preis_gesetzt) {
-                                    // Erster Stich bei JS: Setze JS-Paketpreis
-                                    $preis_for_insert = $gast_spezialpreis;
-                                    $js_preis_gesetzt = true;
-                                } else if (!$is_js && !$js_preis_gesetzt) {
-                                    // Normaler Gast: Setze Gast-Spezialpreis einmal
-                                    $preis_for_insert = $gast_spezialpreis;
-                                    $js_preis_gesetzt = true;
-                                }
-                                // Alle weiteren Stiche: NULL (wird nicht zusätzlich berechnet)
-                                
-                                $stmt->bind_param("iiisis", $gast_id, $jahr, $stich_id, $zahlungsmethode, $preis_for_insert, $created_by);
+                                $stmt->bind_param("iiisis", $gast_id, $jahr, $stich_id, $zahlungsmethode, $gast_spezialpreis, $created_by);
                                 $stmt->execute();
                             }
                         }
@@ -808,14 +768,14 @@ ORDER BY m.Name, m.Vorname"
             jsonResponse(true, $zusatz);
             break;
 
-        case 'get_year_details':
+        
+case 'get_year_details':
             // Detaillierte Übersicht mit einzelnen Stich-IDs für Matrix-Darstellung
             $jahr = (int) ($_GET['jahr'] ?? date('Y'));
-            $debug = isset($_GET['debug']) ? (int)$_GET['debug'] : 0;
 
             // Hole alle Mitglieder und Gäste die entweder Stiche ODER Munition haben
             // Mit expliziter Collation um Fehler zu vermeiden
-            // Sortierung: Erst Mitglieder (1), dann Gäste (2), dann JS (3), jeweils alphabetisch
+            // Sortierung: Erst Mitglieder, dann Gäste, jeweils alphabetisch
             // Inkl. Waffentyp für Mitglieder (m.WaffenID) und Gäste (g.waffen_id) via LEFT JOIN Waffen
             $sql = "SELECT 
                 'mitglied' COLLATE utf8mb4_general_ci as typ,
@@ -842,7 +802,7 @@ ORDER BY m.Name, m.Vorname"
                 g.waffen_id as waffe_id,
                 w2.Bezeichnung as waffe_bez,
                 w2.Kategorie as waffe_kat,
-                CASE WHEN g.geburtsdatum IS NOT NULL THEN 3 ELSE 2 END as sort_group
+                2 as sort_group
             FROM endstich_gaeste g
             LEFT JOIN Waffen w2 ON w2.ID = g.waffen_id
             WHERE g.jahr = ?
@@ -891,62 +851,17 @@ ORDER BY m.Name, m.Vorname"
             // Hole die Stiche und Munition für alle Entities
             foreach ($details as &$entity) {
                 // Robustere Ableitung der Munitionsart aus Waffe
-$katbez = ($entity['waffe_kat'] ?? '') . ' ' . ($entity['waffe_bez'] ?? '');
-$katbez_lc = function_exists('mb_strtolower')
-    ? mb_strtolower(trim(preg_replace('/\s+/', ' ', $katbez)), 'UTF-8')
-    : strtolower(trim(preg_replace('/\s+/', ' ', $katbez)));
+                $katbez = mb_strtolower(trim(($entity['waffe_kat'] ?? '').' '.($entity['waffe_bez'] ?? '')), 'UTF-8');
+                $ammoPref = null;
 
-$ammoPref = null;
-
-/**
- * 1) Feste Zuordnung per Waffen-ID (empfohlen, stabil)
- *    -> Passe die IDs an eure Waffen-Tabelle an.
- *       In deinem JSON:
- *         id=1  => "Standardgewehr"  => GP11
- *         id=2  => "Stgw90"          => GP90
- */
-$waffenMap = [
-    1 => 'GP11', // Standardgewehr 300m -> GP11
-    2 => 'GP90', // Stgw90 -> GP90
-    // ggf. weitere IDs ergänzen …
-];
-
-if (!empty($entity['waffe_id']) && isset($waffenMap[(int)$entity['waffe_id']])) {
-    $ammoPref = $waffenMap[(int)$entity['waffe_id']];
-}
-
-/**
- * 2) Heuristik über Bezeichnung, falls IDs mal nicht passen
- *    (z.B. wenn „Standardgewehr“ anderswo auftaucht)
- */
-if ($ammoPref === null && preg_match('/\bstandardgewehr\b|\bstdg\b/i', (string)($entity['waffe_bez'] ?? ''))) {
-    $ammoPref = 'GP11';
-}
-
-/**
- * 3) Regex-Fallbacks über Kat./Bez. (Stgw57/K31/K11/G11 etc.)
- *    Nur ausführen, wenn noch nichts gemappt wurde.
- */
-if ($ammoPref === null) {
-    // GP90: Stgw90 / PE90 / (S)G 550 / SIG 550 / GP 90 / 5.56 / .223
-    if (preg_match('/\b(stgw|stg)\s*90\b|\bpe\s*90\b|\b(sg|sig)\s*550\b|\bgp\s*90\b|\b5\.56\b|\b\.223\b|\b223\b/', $katbez_lc)) {
-        $ammoPref = 'GP90';
-    }
-    // GP11: Stgw57 / K31 / K11 / G11 / Mousqueton / Ordon(n)anz / GP 11 / 7.5 x 55
-    elseif (preg_match('/\b(stgw|stg)\s*57\b|\bk[\s-]?31\b|\bkarabiner\s*31\b|\bk[\s-]?11\b|\bg[\s-]?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp\s*11\b|\b7[,\.\s]*5\s*x\s*55\b/', $katbez_lc)) {
-        $ammoPref = 'GP11';
-    }
-}
-
-// Debug-Felder (nur wenn ?debug=1)
-if (!empty($debug)) {
-    $entity['__debug_katbez']   = $katbez;
-    $entity['__debug_ammoPref'] = $ammoPref;
-    if ($ammoPref === null) {
-        error_log('[ENDSCH] ammoPref ungeklärt: entity_id=' . $entity['entity_id'] . ' katbez="' . $katbez . '"');
-    }
-}
-
+                // GP90: Stgw90 / PE90 / (S)G 550 / SIG 550 / GP90 / 5.56 / .223
+                if (preg_match('/\b(stgw|stg)\s*90\b|\bpe\s*90\b|\bsg\s*550\b|\bsig\s*550\b|\bgp90\b|\b5\.56\b|\b\.223\b|\b223\b/', $katbez)) {
+                    $ammoPref = 'GP90';
+                }
+                // GP11: Stgw57 / K31 / K11 / G11 / Mousqueton / Ordon(n)anz / GP11 / 7.5x55 / 7,5x55
+                elseif (preg_match('/\b(stgw|stg)\s*57\b|\bk-?31\b|\bkarabiner\s*31\b|\bk-?11\b|\bg-?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp11\b|\b7[,\.]5x?55\b/', $katbez)) {
+                    $ammoPref = 'GP11';
+                }
 
                 if ($entity['typ'] === 'mitglied') {
                     // Stiche für Mitglied - berücksichtige auch alte Daten ohne gast_id
@@ -995,8 +910,7 @@ if (!empty($debug)) {
                     $result = $stmt->get_result();
 
                     while ($row = $result->fetch_assoc()) {
-                        // Probeschüsse: Nur bei JS mitzählen, sonst ignorieren
-                        // (Bei Mitgliedern gibt es keine JS, daher immer ignorieren)
+                        // Probeschüsse vollständig ignorieren
                         if (strcasecmp($row['code'] ?? '', 'PROBE') === 0) {
                             continue;
                         }
@@ -1087,12 +1001,9 @@ if (!empty($debug)) {
                     $gast_spezialpreis_gesetzt = false;
 
                     while ($row = $result->fetch_assoc()) {
-                        // Probeschüsse: Bei JS mitzählen, bei normalen Gästen ignorieren
-                        $isProbe = strcasecmp($row['code'] ?? '', 'PROBE') === 0;
-                        $isJS = !empty($entity['geburtsdatum']);
-                        
-                        if ($isProbe && !$isJS) {
-                            continue; // PROBE ignorieren bei normalen Gästen
+                        // Probeschüsse vollständig ignorieren
+                        if (strcasecmp($row['code'] ?? '', 'PROBE') === 0) {
+                            continue;
                         }
 
                         $entity['stiche'][] = (int)$row['stich_id'];
@@ -1138,21 +1049,15 @@ if (!empty($debug)) {
                         'preis_cents' => (int)$row['preis_cents']
                     ];
 
-                    // Debug: Roh-Typen sammeln
-                    if ($debug) {
-                        if (!isset($entity['__debug_zusatz_types'])) $entity['__debug_zusatz_types'] = [];
-                        $entity['__debug_zusatz_types'][] = $row['typ'];
-                    }
-
-                    // Zusatzschüsse nach Munitionsart splitten (Typ tolerant normalisieren)
-                    $typNorm = strtoupper(str_replace(['-', '_', ' '], '', (string)$row['typ']));
-                    if (strpos($typNorm, 'GP11') !== false) {
+                    // Zusatzschüsse nach Munitionsart splitten
+                    $typUpper = strtoupper((string)$row['typ']);
+                    if (strpos($typUpper, 'GP11') !== false) {
                         $entity['zusatz_gp11'] += (int)$row['anzahl'];
-                    } elseif (strpos($typNorm, 'GP90') !== false) {
+                    } elseif (strpos($typUpper, 'GP90') !== false) {
                         $entity['zusatz_gp90'] += (int)$row['anzahl'];
                     }
 
-                    // Summen
+                    // Summen führen
                     $entity['munition_schuss'] += (int)$row['anzahl'];
                     $entity['munition_preis']  += (int)$row['preis_cents'];
                     $entity['total_price']     += (int)$row['preis_cents'];
@@ -1161,6 +1066,7 @@ if (!empty($debug)) {
 
             jsonResponse(true, $details);
             break;
+
 
         case 'delete_selection':
             checkCSRF();
@@ -1206,10 +1112,10 @@ if (!empty($debug)) {
                     $stmt->bind_param("ii", $entity_id, $jahr);
                     $stmt->execute();
 
-                    // Lösche auch den Gast selbst aus der endstich_gaeste Tabelle
-                    $stmt = $conn->prepare("DELETE FROM endstich_gaeste WHERE id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $entity_id, $jahr);
-                    $stmt->execute();
+                    // Optional: Lösche auch den Gast selbst wenn keine Einträge mehr vorhanden
+                    // $stmt = $conn->prepare("DELETE FROM endstich_gaeste WHERE id = ? AND jahr = ?");
+                    // $stmt->bind_param("ii", $entity_id, $jahr);
+                    // $stmt->execute();
                 }
 
                 $conn->commit();

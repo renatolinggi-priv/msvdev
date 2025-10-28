@@ -2,7 +2,11 @@
 require '../spreadsheet/autoload.php'; // PHPSpreadsheet Autoloader
 include '../config.php';
 
-// SQL-Abfrage für die gewünschten Daten
+// Jahr aus Request lesen, Standard ist aktuelles Jahr
+$year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+
+// SQL-Abfrage für die gewünschten Daten mit Jahr-Filter
+// Nur Schützen die mindestens eine Passe geschossen haben (> 0)
 $sql = "SELECT 
     m.Name, 
     m.Vorname, 
@@ -16,7 +20,8 @@ $sql = "SELECT
 FROM mitglieder m
 LEFT JOIN Waffen w ON m.WaffenID = w.ID
 LEFT JOIN kantiresultate kr ON m.ID = kr.MitgliedID 
-WHERE kr.Passe1 IS NOT NULL
+WHERE kr.Jahr = " . $year . "
+AND (kr.Passe1 > 0 OR kr.Passe2 > 0 OR kr.Passe3 > 0 OR kr.Passe4 > 0 OR kr.Passe5 > 0)
 ORDER BY m.Name ASC, m.Vorname ASC;
 ";
 
@@ -55,8 +60,8 @@ if ($result->num_rows > 0) {
         $row++;
     }
 
-    // Dateiname und Pfad der exportierten Excel-Datei
-    $xlsFileName = 'mitglieder_export_' . date('Ymd_His') . '.xlsx';
+    // Dateiname und Pfad der exportierten Excel-Datei mit Jahr
+    $xlsFileName = 'Kantonalstich_' . $year . '_' . date('Ymd_His') . '.xlsx';
     $xlsFilePath = 'dat/' . $xlsFileName;
 
     // Excel-Datei speichern
@@ -67,7 +72,7 @@ if ($result->num_rows > 0) {
     echo json_encode(array('xls_link' => $xlsFilePath));
 } else {
     // Wenn keine Daten vorhanden sind
-    echo json_encode(array('error' => 'Keine Daten gefunden.'));
+    echo json_encode(array('error' => 'Keine Daten für das Jahr ' . $year . ' gefunden.'));
 }
 
 // Verbindung zur Datenbank schließen

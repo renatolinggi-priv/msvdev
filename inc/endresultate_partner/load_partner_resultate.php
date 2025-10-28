@@ -4,8 +4,9 @@
  * Lädt und zeigt Partner-Resultate für Endresultate an
  * 
  * @author System
- * @version 1.0
- * @description Lädt Partner-Resultate mit Mitglied-Verknüpfung
+ * @version 1.2
+ * @description Lädt Partner-Resultate mit Mitglied-Verknüpfung UND Gäste ohne Resultate
+ * @fix Collation-Problem zwischen endresultate_partner und endstich_gaeste behoben
  */
 
 /**
@@ -177,24 +178,25 @@ function generatePartnerResultRow($row) {
 }
 
 /**
- * Generate HTML for an empty input row when no data exists
+ * Generate HTML for a guest without results
  *
- * @param array $mitglied Member data
- * @return string HTML table row with input fields
+ * @param array $guest Guest data from endstich_gaeste
+ * @return string HTML table row
  */
-function generateEmptyPartnerRow($mitglied) {
-    $html = "<tr>";
-    $html .= "<td>" . htmlspecialchars($mitglied['Name'] . " " . $mitglied['Vorname'], ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
+function generateGuestWithoutResultRow($guest) {
+    $guestName = htmlspecialchars($guest['GuestName'] ?? '', ENT_QUOTES, 'UTF-8');
     
-    // Actions column with icon-only buttons
+    $html = "<tr class='table-warning'>";
+    $html .= "<td>" . $guestName . " <span class='badge bg-warning text-dark ms-2'><i class='bi bi-clock-history me-1'></i>Gast (noch keine Resultate)</span></td>";
+    $html .= "<td class='text-muted'><i class='bi bi-dash'></i></td>";
+    $html .= "<td class='text-center text-muted'><i class='bi bi-dash'></i></td>";
+    $html .= "<td class='text-center text-muted'><i class='bi bi-dash'></i></td>";
+    $html .= "<td class='text-center text-muted'><i class='bi bi-dash'></i></td>";
+    
+    // Actions column - nur "Erfassen" Button für Gäste ohne Resultate
     $html .= "<td class='text-center'>";
-    $html .= "<button class='btn btn-outline-primary btn-sm me-1 add-partner-btn' data-mitglied-id='" . htmlspecialchars($mitglied['ID'], ENT_QUOTES, 'UTF-8') . "' title='Partner hinzufügen'>";
-    $html .= "<i class='bi bi-plus'></i></button>";
+    $html .= "<button class='btn btn-success btn-sm add-guest-result-btn' data-guest-name='" . $guestName . "' title='Resultate erfassen'>";
+    $html .= "<i class='bi bi-plus-circle me-1'></i>Erfassen</button>";
     $html .= "</td>";
     $html .= "</tr>";
     
@@ -211,14 +213,14 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Check if table exists
+// Check if tables exist
 $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
     echo "<tr><td colspan='6' class='text-center text-warning'>
             <i class='bi bi-exclamation-triangle me-2'></i>
             Die Tabelle 'endresultate_partner' existiert noch nicht.<br>
-            <small>Bitte führen Sie zuerst das SQL-Setup-Skript aus: <code>inc/endresultate_partner/database_setup.sql</code></small>
+            <small>Bitte führe zuerst das SQL-Setup-Skript aus: <code>inc/endresultate_partner/database_setup.sql</code></small>
           </td></tr>";
     $conn->close();
     exit;
@@ -232,75 +234,119 @@ if (!validateYear($year)) {
     $year = date('Y'); // Fallback to current year
 }
 
-// Prepare SQL statement to get ONLY saved partner results
-$sql = "
-SELECT
-    m.ID,
-    m.Name,
-    m.Vorname,
-    ep.ID as PartnerID,
-    ep.PartnerName,
-    ep.EndstichSchuss1,
-    ep.EndstichSchuss2,
-    ep.EndstichSchuss3,
-    ep.EndstichSchuss4,
-    ep.EndstichSchuss5,
-    ep.EndstichSchuss6,
-    ep.EndstichSchuss7,
-    ep.EndstichSchuss8,
-    ep.EndstichSchuss9,
-    ep.EndstichSchuss10,
-    ep.SieErSchuss1,
-    ep.SieErSchuss2,
-    ep.SieErSchuss3,
-    ep.SieErSchuss4,
-    ep.SieErSchuss5,
-    ep.SieErSchuss6,
-    ep.SieErSchuss7,
-    ep.SieErSchuss8,
-    ep.SieErSchuss9,
-    ep.SieErSchuss10,
-    ep.PartnerSchwiniSchuss1,
-    ep.PartnerSchwiniSchuss2,
-    ep.PartnerSchwiniSchuss3,
-    ep.PartnerSchwiniSchuss4,
-    ep.PartnerSchwiniSchuss5,
-    ep.PartnerSchwiniSchuss6
-FROM
-    endresultate_partner ep
-JOIN mitglieder m ON ep.MitgliedID = m.ID
-WHERE ep.Jahr = ?
-ORDER BY
-    m.Name, m.Vorname
-";
-
 try {
-    // Use prepared statements for security
+    // 1. Lade alle Partner mit Resultaten
+    $sql = "
+    SELECT
+        m.ID,
+        m.Name,
+        m.Vorname,
+        ep.ID as PartnerID,
+        ep.PartnerName,
+        ep.EndstichSchuss1,
+        ep.EndstichSchuss2,
+        ep.EndstichSchuss3,
+        ep.EndstichSchuss4,
+        ep.EndstichSchuss5,
+        ep.EndstichSchuss6,
+        ep.EndstichSchuss7,
+        ep.EndstichSchuss8,
+        ep.EndstichSchuss9,
+        ep.EndstichSchuss10,
+        ep.SieErSchuss1,
+        ep.SieErSchuss2,
+        ep.SieErSchuss3,
+        ep.SieErSchuss4,
+        ep.SieErSchuss5,
+        ep.SieErSchuss6,
+        ep.SieErSchuss7,
+        ep.SieErSchuss8,
+        ep.SieErSchuss9,
+        ep.SieErSchuss10,
+        ep.PartnerSchwiniSchuss1,
+        ep.PartnerSchwiniSchuss2,
+        ep.PartnerSchwiniSchuss3,
+        ep.PartnerSchwiniSchuss4,
+        ep.PartnerSchwiniSchuss5,
+        ep.PartnerSchwiniSchuss6
+    FROM
+        endresultate_partner ep
+    JOIN mitglieder m ON ep.MitgliedID = m.ID
+    WHERE ep.Jahr = ?
+    ORDER BY
+        m.Name, m.Vorname
+    ";
+    
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
     }
     
-    // Bind parameters to prevent SQL injection
     $stmt->bind_param("i", $year);
     $stmt->execute();
     $result = $stmt->get_result();
     
+    $hasResults = false;
+    
+    // Zeige Partner mit Resultaten
     if ($result->num_rows > 0) {
-        // Generate rows with saved partner data only
+        $hasResults = true;
         while ($row = $result->fetch_assoc()) {
             echo generatePartnerResultRow($row);
         }
-    } else {
-        echo "<tr><td colspan='6' class='text-center py-4'>Noch keine Partnerinnen erfasst für das Jahr $year.</td></tr>";
     }
     
     $stmt->close();
     
+    // 2. Lade Gäste ohne Resultate (nur ohne Geburtsdatum)
+    // FIX: COLLATE hinzugefügt um Collation-Konflikt zu vermeiden
+    $guestSql = "
+    SELECT
+        g.id as GuestID,
+        g.name as GuestName
+    FROM
+        endstich_gaeste g
+    WHERE 
+        g.jahr = ?
+        AND g.geburtsdatum IS NULL
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM endresultate_partner ep 
+            WHERE ep.PartnerName COLLATE utf8mb4_general_ci = g.name 
+            AND ep.Jahr = ?
+        )
+    ORDER BY
+        g.name
+    ";
+    
+    $guestStmt = $conn->prepare($guestSql);
+    if (!$guestStmt) {
+        throw new Exception("Prepare guest query failed: " . $conn->error);
+    }
+    
+    $guestStmt->bind_param("ii", $year, $year);
+    $guestStmt->execute();
+    $guestResult = $guestStmt->get_result();
+    
+    // Zeige Gäste ohne Resultate
+    if ($guestResult->num_rows > 0) {
+        $hasResults = true;
+        while ($guestRow = $guestResult->fetch_assoc()) {
+            echo generateGuestWithoutResultRow($guestRow);
+        }
+    }
+    
+    $guestStmt->close();
+    
+    // Wenn weder Partner noch Gäste vorhanden sind
+    if (!$hasResults) {
+        echo "<tr><td colspan='6' class='text-center py-4'>Noch keine Partnerinnen oder Gäste erfasst für das Jahr $year.</td></tr>";
+    }
+    
 } catch (Exception $e) {
     // Log error for debugging while showing user-friendly message
     error_log("Database error in load_partner_resultate.php: " . $e->getMessage());
-    echo "<tr><td colspan='7'>Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.</td></tr>";
+    echo "<tr><td colspan='6' class='text-center text-danger'>Fehler beim Laden der Daten. Bitte versuche es später erneut.</td></tr>";
 } finally {
     // Ensure connection is always closed
     $conn->close();

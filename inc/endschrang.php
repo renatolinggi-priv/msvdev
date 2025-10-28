@@ -4,7 +4,6 @@ include 'dbconnect.inc.php';
 
 // Session-Kontrolle wie in jmresultate.php
 if (empty($_SESSION['csrf_token'])) {
-
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
@@ -13,6 +12,25 @@ $page_specific_css = '';
 
 include 'header.inc.php';
 ?>
+<style>
+/* Rotating Icon Animation statt Spinner */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.rotating-icon {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    font-size: 0.875rem;
+}
+
+/* Sicherstellen dass der Button nicht wächst */
+.btn-compact {
+    white-space: nowrap;
+    overflow: hidden;
+}
+</style>
 <!-- Header -->
 <div class="container-fluid">
     <div class="row">
@@ -133,10 +151,6 @@ include 'header.inc.php';
                     </div>
                 </div>
 
-                <!-- PDF/Word Download Links -->
-                <div id="pdf-link" class="mb-3"></div>
-                <div id="word-link" class="mb-3"></div>
-
                 <!-- Tabellenbereich Kat. A -->
                 <div class="table-wrapper mb-4">
                     <h5 class="table-title">Endschiessen Kat. A</h5>
@@ -191,7 +205,62 @@ include 'header.inc.php';
         </div>
     </div>
 </div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11; margin-top: 70px;">
+  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <i class="bi bi-info-circle-fill text-primary me-2"></i>
+      <strong class="me-auto">Hinweis</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body"></div>
+  </div>
+</div>
+
 <script>
+$(document).ready(function () {
+    var basePath = '';
+    
+    // Toast Initialisierung
+    const toastEl = document.getElementById('liveToast');
+    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+
+    // Toast-Funktion
+    function showToast(message, type = 'info') {
+        const toastBody = toastEl.querySelector('.toast-body');
+        const toastHeader = toastEl.querySelector('.toast-header');
+        const icon = toastHeader.querySelector('i');
+        const title = toastHeader.querySelector('strong');
+
+        toastBody.textContent = message;
+
+        // Icon und Farbe je nach Typ anpassen
+        icon.className = 'me-2 bi bi-' + 
+            (type === 'success' ? 'check-circle-fill text-success' :
+             type === 'error' || type === 'danger' ? 'exclamation-triangle-fill text-danger' :
+             type === 'warning' ? 'exclamation-circle-fill text-warning' :
+             'info-circle-fill text-primary');
+
+        title.textContent = 
+            type === 'success' ? 'Erfolg' :
+            type === 'error' || type === 'danger' ? 'Fehler' :
+            type === 'warning' ? 'Warnung' :
+            'Hinweis';
+
+        toast.show();
+    }
+
+    // Automatischer Download
+    function downloadFile(url, filename) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename || url.split('/').pop();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
@@ -205,152 +274,86 @@ include 'header.inc.php';
         }
     }
 
-    // Redirect Button Handler
-    document.addEventListener('DOMContentLoaded', function () {
-        var redirectButton = document.getElementById('redirect-btn');
-        if (redirectButton) {
-            redirectButton.addEventListener('click', function () {
-                console.log('Button clicked, redirecting...');
-                window.location.href = 'https://jahresmeisterschaft.msvwilen.ch/inc/endresultate.php';
-            });
-        }
-    });
+    // Endschiessen A laden
+    function loadenda() {
+        var selectedYear = $('#yearSelect').val();
+        $.ajax({
+            url: basePath + 'endschrang/load_endsch.php',
+            type: 'GET',
+            data: {
+                kat: 'A',
+                year: selectedYear
+            },
+            success: function (response) {
+                $('#EndA tbody').html(response);
+                showToast('Kategorie A geladen', 'success');
+            },
+            error: function(xhr, status, error) {
+                showToast('Fehler beim Laden Kategorie A: ' + error, 'error');
+            }
+        });
+    }
 
-    $(document).ready(function () {
-        var basePath = '';
+    // Endschiessen B laden
+    function loadendb() {
+        var selectedYear = $('#yearSelect').val();
+        $.ajax({
+            url: basePath + 'endschrang/load_endsch.php',
+            type: 'GET',
+            data: {
+                kat: 'B',
+                year: selectedYear
+            },
+            success: function (response) {
+                $('#EndB tbody').html(response);
+                showToast('Kategorie B geladen', 'success');
+            },
+            error: function(xhr, status, error) {
+                showToast('Fehler beim Laden Kategorie B: ' + error, 'error');
+            }
+        });
+    }
 
-        // Endschiessen A laden
-        function loadenda() {
-            var selectedYear = $('#yearSelect').val();
-            $.ajax({
-                url: basePath + 'endschrang/load_endsch.php',
-                type: 'GET',
-                data: {
-                    kat: 'A',
-                    year: selectedYear
-                },
-                success: function (response) {
-                    $('#EndA tbody').html(response);
-                }
-            });
-        }
-
-        // Endschiessen B laden
-        function loadendb() {
-            var selectedYear = $('#yearSelect').val();
-            $.ajax({
-                url: basePath + 'endschrang/load_endsch.php',
-                type: 'GET',
-                data: {
-                    kat: 'B',
-                    year: selectedYear
-                },
-                success: function (response) {
-                    $('#EndB tbody').html(response);
-                }
-            });
-        }
-
-        // Nachricht anzeigen
-        function showMessage(message, type) {
-            var messageDiv = $('#message');
-            messageDiv.removeClass().addClass('alert alert-' + type).text(message).show();
-            setTimeout(function () {
-                messageDiv.fadeOut();
-            }, 3000);
-        }
-
-        // Generische PDF-Generator Funktion
-        // Generische PDF-Generator Funktion mit Ladeindikator
-        function generatePDF(buttonClass, scriptName) {
-            $(document).on('click', '.' + buttonClass, function (e) {
-                e.preventDefault();
-                var selectedYear = $('#yearSelect').val();
-                var $button = $(this);
-                var originalHtml = $button.html();
-
-                // Ladeindikator anzeigen
-                $button.prop('disabled', true);
-                $button.html('<span class="loading-dots">...</span>');
-
-                // PDF-Link Container leeren
-                $('#pdf-link').empty();
-
-                $.ajax({
-                    url: 'endschrang/' + scriptName,
-                    type: 'GET',
-                    dataType: 'json',
-                    data: {
-                        year: selectedYear
-                    },
-                    success: function (response) {
-                        if (response.pdf_link) {
-                            // PDF direkt herunterladen
-                            const link = document.createElement('a');
-                            link.href = 'endschrang/' + response.pdf_link;
-                            link.download = response.pdf_link.split('/').pop(); // Dateiname extrahieren
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            
-                            // PDF-Link Container leeren nach Download
-                            $('#pdf-link').empty();
-                        } else if (response.error) {
-                            alert('Fehler: ' + response.error);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('AJAX Error:', xhr.responseText);
-                        alert('Fehler beim Generieren des PDFs: ' + error);
-                    },
-                    complete: function () {
-                        // Button wiederherstellen
-                        $button.prop('disabled', false);
-                        $button.html(originalHtml);
-                    }
-                });
-            });
-        }
-
-        // Spezieller Handler für Word-Dokument (Absendenbuch) mit Ladeindikator
-        $(document).on('click', '.abs-btn', function (e) {
+    // Generische PDF-Generator Funktion mit Toast
+    function generatePDF(buttonClass, scriptName, documentName) {
+        $(document).on('click', '.' + buttonClass, function (e) {
             e.preventDefault();
             var selectedYear = $('#yearSelect').val();
             var $button = $(this);
             var originalHtml = $button.html();
 
-            // Ladeindikator anzeigen
+            // Ladeindikator mit rotierendem Icon
             $button.prop('disabled', true);
-            $button.html('<span class="loading-dots">...</span>');
-
-
-            // Word-Link Container leeren
-            $('#word-link').empty();
+            var buttonText = $button.find('span').first().text();
+            $button.html(
+                '<i class="bi bi-arrow-repeat rotating-icon me-1"></i>' +
+                '<span>' + buttonText + '</span>' +
+                '<i class="bi bi-hourglass-split ms-auto"></i>'
+            );
+            showToast(documentName + ' wird generiert...', 'info');
 
             $.ajax({
-                url: 'absenden/generate_absendenbuch.php',
+                url: 'endschrang/' + scriptName,
                 type: 'GET',
                 dataType: 'json',
                 data: {
                     year: selectedYear
                 },
                 success: function (response) {
-                    if (response.word_link) {
-                        // Word-Dokument direkt herunterladen
-                        const link = document.createElement('a');
-                        link.href = 'absenden/' + response.word_link;
-                        link.download = response.word_link.split('/').pop(); // Dateiname extrahieren
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                    if (response.pdf_link) {
+                        // PDF direkt herunterladen
+                        const fullPath = 'endschrang/' + response.pdf_link;
+                        const filename = documentName + '_' + selectedYear + '.pdf';
+                        downloadFile(fullPath, filename);
                         
-                        // Link Container leeren nach Download
-                        $('#word-link').empty();
+                        showToast(documentName + ' erfolgreich erstellt und heruntergeladen', 'success');
+                    } else if (response.error) {
+                        showToast('Fehler: ' + response.error, 'error');
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error('Word generation error:', xhr.responseText);
-                    alert('Fehler beim Generieren des Word-Dokuments: ' + error);
+                    console.error('AJAX Error:', xhr.responseText);
+                    showToast('Fehler beim Generieren: ' + error, 'error');
                 },
                 complete: function () {
                     // Button wiederherstellen
@@ -359,30 +362,81 @@ include 'header.inc.php';
                 }
             });
         });
+    }
 
-        // Alle PDF-Buttons registrieren
-        generatePDF('ges-btn', 'generate_pdf_gesamt.php');
-        generatePDF('zwi-btn', 'generate_pdf_zwischenrangliste.php');
-        generatePDF('end-btn', 'generate_pdf_end.php');
-        generatePDF('sch-btn', 'generate_pdf_schwini.php');
-        generatePDF('kun-btn', 'generate_pdf_kunst.php');
-        generatePDF('glu-btn', 'generate_pdf_glueck.php');
-        generatePDF('zab-btn', 'generate_pdf_zabig.php');
-        generatePDF('dif-btn', 'generate_pdf_diff.php');
-        generatePDF('anm-btn', 'generate_pdf_anmeldung.php');
-        generatePDF('part-btn', 'generate_pdf_partner.php');
-        generatePDF('sieer-btn', 'generate_pdf_sieer.php');
-        // Beim Ändern des Jahres im Dropdown beide Tabellen neu laden
-        $('#yearSelect').on('change', function () {
-            loadenda();
-            loadendb();
+    // Spezieller Handler für Word-Dokument (Absendenbuch) mit Toast
+    $(document).on('click', '.abs-btn', function (e) {
+        e.preventDefault();
+        var selectedYear = $('#yearSelect').val();
+        var $button = $(this);
+        var originalHtml = $button.html();
+
+        // Ladeindikator mit rotierendem Icon
+        $button.prop('disabled', true);
+        var buttonText = $button.find('span').first().text();
+        $button.html(
+            '<i class="bi bi-arrow-repeat rotating-icon me-1"></i>' +
+            '<span>' + buttonText + '</span>' +
+            '<i class="bi bi-hourglass-split ms-auto"></i>'
+        );
+        showToast('Absendenbuch wird generiert...', 'info');
+
+        $.ajax({
+            url: 'absenden/generate_absendenbuch.php',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                year: selectedYear
+            },
+            success: function (response) {
+                 if (response.word_link) {
+                    // Word-Dokument direkt herunterladen mit dem vom Server zurückgegebenen Namen
+                    const fullPath = 'absenden/' + response.word_link;
+                    const filename = response.display_name; // Hier den Namen vom Server verwenden
+                    downloadFile(fullPath, filename);
+                    
+                    showToast('Absendenbuch erfolgreich erstellt und heruntergeladen', 'success');
+                } else {
+                    showToast('Fehler beim Generieren des Absendenbuchs', 'error');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Word generation error:', xhr.responseText);
+                showToast('Fehler beim Generieren: ' + error, 'error');
+            },
+            complete: function () {
+                // Button wiederherstellen
+                $button.prop('disabled', false);
+                $button.html(originalHtml);
+            }
         });
+    });
 
-        // Initialisierung beim Laden der Seite
-        initializeYearDropdown();
+    // Alle PDF-Buttons registrieren mit beschreibenden Namen
+    generatePDF('ges-btn', 'generate_pdf_gesamt.php', 'EndschiessenGesamtrangliste');
+    generatePDF('zwi-btn', 'generate_pdf_zwischenrangliste.php', 'EndschiessenZwischenrangliste');
+    generatePDF('end-btn', 'generate_pdf_end.php', 'EndschiessenEndstich');
+    generatePDF('sch-btn', 'generate_pdf_schwini.php', 'EndschiessenSchwini');
+    generatePDF('kun-btn', 'generate_pdf_kunst.php', 'EndschiessenKunst');
+    generatePDF('glu-btn', 'generate_pdf_glueck.php', 'EndschiessenGlück');
+    generatePDF('zab-btn', 'generate_pdf_zabig.php', 'EndschiessenZabig');
+    generatePDF('dif-btn', 'generate_pdf_diff.php', 'EndschiessenDifferenzler');
+    generatePDF('anm-btn', 'generate_pdf_anmeldung.php', 'EndschiessenAnmeldungen');
+    generatePDF('part-btn', 'generate_pdf_partner.php', 'EndschiessenPartner Rangliste');
+    generatePDF('sieer-btn', 'generate_pdf_sieer.php', 'EndschiessenSie und Er');
+
+    // Beim Ändern des Jahres im Dropdown beide Tabellen neu laden
+    $('#yearSelect').on('change', function () {
+        showToast('Lade Daten für ' + $(this).val() + '...', 'info');
         loadenda();
         loadendb();
     });
+
+    // Initialisierung beim Laden der Seite
+    initializeYearDropdown();
+    loadenda();
+    loadendb();
+});
 </script>
 <?
 include 'footer.inc.php';

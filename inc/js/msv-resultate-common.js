@@ -1,7 +1,7 @@
 /**
  * MSV Resultate Common Library
  * Einheitliche Funktionen für Heim-, Kanti- und Endresultate
- * Version: 1.0.0
+ * Version: 1.0.1
  */
 
 (function(window, $) {
@@ -412,7 +412,7 @@
                     $tbody.html(response);
                     self.inputHandler.bindInputs();
                     self.layoutManager.refresh();
-                    self.toastManager.show('Daten erfolgreich geladen', 'success');
+                    // Toast entfernt - nicht nötig bei jedem Laden
                     
                     // Mobile Enhancement für Kanti
                     if (self.type === 'kanti') {
@@ -612,7 +612,7 @@
                         }
                     });
                     self.calculateAllSums();
-                    self.toastManager.show('Daten erfolgreich geladen', 'success');
+                    // Toast entfernt - nicht nötig beim Laden im Modal
                 } catch(e) {
                     self.toastManager.show('Fehler beim Parsen der Daten', 'error');
                 }
@@ -699,6 +699,7 @@
     };
 
 })(window, jQuery);
+
 // action-buttons-normalizer.js
 function normalizeActionButtons(scope){
   const $scope = scope ? $(scope) : $(document);

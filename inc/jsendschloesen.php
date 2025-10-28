@@ -85,18 +85,18 @@ if (empty($_SESSION['csrf_token'])) {
               <div class="col-md-6">
                 <ul class="mb-0">
                   <li>Endstich (10 Schuss)</li>
-                  <li>Schwini Passe 1 (8 Schuss)</li>
+                  <li>Probeschüsse (3 Schuss)</li>
                 </ul>
               </div>
               <div class="col-md-6">
                 <ul class="mb-0">
-                  <li>Schwini Passe 2 (8 Schuss)</li>
+                  <li>Schwini (8 Schuss)</li>
                   <li>Zabigstich (6 Schuss)</li>
                 </ul>
               </div>
             </div>
             <div class="mt-2">
-              <strong id="paketInfo">Total: <span id="totalSchusse">32</span> Schuss = CHF 75.00</strong>
+              <strong id="paketInfo">Total: <span id="totalSchusse">27</span> Schuss = CHF 75.00</strong>
             </div>
           </div>
           
@@ -405,10 +405,10 @@ if (empty($_SESSION['csrf_token'])) {
   
   // Feste Stich-IDs für JS-Paket (müssen in DB existieren)
   const JS_PAKET_STICHE = {
-    'END': null,        // Endstich
-    'SCHWINI_P1': null, // Schwini Passe 1
-    'SCHWINI_P2': null, // Schwini Passe 2
-    'ZABIG': null       // Zabigstich
+    'END': null,        // Endstich (10 Schuss)
+    'PROBE': null,      // Probeschüsse (3 Schuss)
+    'SCHWINI_P1': null, // Schwini (8 Schuss) - nur noch EINE Passe!
+    'ZABIG': null       // Zabigstich (6 Schuss)
   };
 
   // Admin Modal
@@ -744,8 +744,8 @@ if (empty($_SESSION['csrf_token'])) {
           const listItems = document.querySelectorAll('.alert-success ul li');
           if (listItems.length >= 4 && sticheText.length >= 4) {
             listItems[0].textContent = sticheText[0] || 'Endstich';
-            listItems[1].textContent = sticheText[1] || 'Schwini Passe 1';
-            listItems[2].textContent = sticheText[2] || 'Schwini Passe 2';
+            listItems[1].textContent = sticheText[1] || 'Probeschüsse';
+            listItems[2].textContent = sticheText[2] || 'Schwini';
             listItems[3].textContent = sticheText[3] || 'Zabigstich';
           }
         }
@@ -918,11 +918,11 @@ if (empty($_SESSION['csrf_token'])) {
     const zahlungsmethode = document.querySelector('input[name="zahlungsmethode"]:checked').value;
     const zusatz_schuesse = getMunitionData();
     
-    // Sammle Stich-IDs für das feste Paket
+    // Sammle Stich-IDs für das feste Paket (END, PROBE, SCHWINI_P1, ZABIG)
     const stiche = Object.values(JS_PAKET_STICHE).filter(id => id !== null);
     
     if (stiche.length !== 4) {
-      showToast('Fehler: JS-Paket Stiche nicht korrekt konfiguriert', 'danger');
+      showToast('Fehler: JS-Paket Stiche nicht korrekt konfiguriert (benötigt: Endstich, Probe, Schwini, Zabig)', 'danger');
       return;
     }
     

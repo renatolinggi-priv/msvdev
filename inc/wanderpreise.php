@@ -217,6 +217,7 @@ if (WANDERPREISE_DEBUG) {
                                 <option value="">-- Auswählen --</option>
                                 <option value="Schnitzerei Heinz Schild">Schnitzerei Heinz Schild</option>
                                 <option value="Akura Einsiedeln">Akura Einsiedeln</option>
+                                <option value="MSV Wilen">MSV Wilen</option>
                             </select>
                         </div>
                     </div>
@@ -616,6 +617,7 @@ if (WANDERPREISE_DEBUG) {
                                 <option value="">-- Bitte auswählen --</option>
                                 <option value="Schnitzerei Heinz Schild">Schnitzerei Heinz Schild</option>
                                 <option value="Akura Einsiedeln">Akura Einsiedeln</option>
+                                <option value="MSV Wilen">MSV Wilen</option>
                             </select>
                         </div>
                     </div>

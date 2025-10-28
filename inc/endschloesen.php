@@ -22,7 +22,7 @@ if (empty($_SESSION['csrf_token'])) {
 </div>
 
 <div class="row">
-  <div class="col-xl-6 col-lg-7 col-md-9 col-12">
+<div class="col-xl-8 col-lg-7 col-md-7 col-10">
     <div class="main-content-wrapper">
       <div class="row mb-3">
         <div class="col-md-12">
@@ -71,6 +71,22 @@ if (empty($_SESSION['csrf_token'])) {
                 </div>
               </div>
             </div>
+            
+            <!-- Waffen-Auswahl für Gäste -->
+            <div id="gastWaffeContainer" class="mt-2" style="display: none;">
+              <div class="row g-2">
+                <div class="col-md-6 offset-md-6">
+                  <label for="gastWaffe" class="form-label form-label-sm mb-1">
+                    <i class="bi bi-crosshair"></i> Waffe (für Munitionsberechnung)
+                  </label>
+                  <select id="gastWaffe" class="form-select form-select-sm">
+                    <option value="">– Waffe wählen –</option>
+                  </select>
+                  <small class="text-muted d-block mt-1">Nur Stgw90 verwendet GP90, alle anderen GP11</small>
+                </div>
+              </div>
+            </div>
+            
             <small class="text-muted">Für Jungschützen: Name eingeben und Geburtsdatum wählen</small>
           </div>
 
@@ -87,12 +103,12 @@ if (empty($_SESSION['csrf_token'])) {
           <div class="mt-3 mb-3">
             <h6 class="mb-2"><i class="bi bi-credit-card"></i> Zahlungsmethode</h6>
             <div class="btn-group w-100" role="group" aria-label="Zahlungsmethode">
-              <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_bar" value="bar" checked>
+              <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_bar" value="bar">
               <label class="btn btn-outline-primary" for="zahlung_bar">
                 <i class="bi bi-cash"></i> Bar
               </label>
               
-              <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_karte" value="karte">
+              <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_karte" value="karte" checked>
               <label class="btn btn-outline-primary" for="zahlung_karte">
                 <i class="bi bi-credit-card-2-back"></i> Karte
               </label>
@@ -147,7 +163,7 @@ if (empty($_SESSION['csrf_token'])) {
                         <span class="input-group-text" style="width: 50px;">GP11</span>
                         <input type="number" class="form-control form-control-sm zusatz-custom" 
                                id="zusatz_gp11_custom" data-typ="GP11_CUSTOM" 
-                               min="0" max="500" step="10" value="0">
+                               min="0" max="500" step="1" value="0">
                         <span class="input-group-text" id="preis_gp11_custom" style="min-width: 80px;">CHF 0.00</span>
                       </div>
                     </div>
@@ -156,7 +172,7 @@ if (empty($_SESSION['csrf_token'])) {
                         <span class="input-group-text" style="width: 50px;">GP90</span>
                         <input type="number" class="form-control form-control-sm zusatz-custom" 
                                id="zusatz_gp90_custom" data-typ="GP90_CUSTOM" 
-                               min="0" max="500" step="10" value="0">
+                               min="0" max="500" step="1" value="0">
                         <span class="input-group-text" id="preis_gp90_custom" style="min-width: 80px;">CHF 0.00</span>
                       </div>
                     </div>
@@ -236,7 +252,6 @@ if (empty($_SESSION['csrf_token'])) {
     
       <?php 
       // Admin-Button nur für berechtigte Benutzer anzeigen
-      // Passe diese Bedingung an dein Auth-System an
       $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
       // Für Testing kannst du es auf true setzen:
       $isAdmin = true;
@@ -540,14 +555,15 @@ if (empty($_SESSION['csrf_token'])) {
 <script>
 (function(){
   // === Konfiguration ===
-  const API = 'endschloesen/endschloesen_api.php'; // Backend folgt separat
+  const API = 'endschloesen/endschloesen_api.php';
   let STICHE = [];
-  let ALL_STICHE = []; // Für Admin-Verwaltung
-  let SPEZIALPREISE = {}; // NEU: Speichert die Spezialpreise
+  let ALL_STICHE = [];
+  let SPEZIALPREISE = {};
+  let WAFFEN = []; // NEU: Waffen-Array
   let adminModal = null;
   let editStichModal = null;
 
-  // Fallback (damit Frontend klickbar ist, falls API noch nicht vorhanden)
+  // Fallback
   const FALLBACK_STICHE = [
     {id: 1, code:'END',        name:'Endstich',        shots:10, price_cents:2000, sort_order:10},
     {id: 2, code:'SCHWINI_P1', name:'Schwini P. 1',    shots:10, price_cents:2000, sort_order:20},
@@ -561,7 +577,6 @@ if (empty($_SESSION['csrf_token'])) {
 
   // === Helpers ===
   function fmtCHF(cents){ 
-    // Stelle sicher dass cents eine Zahl ist
     const numCents = Number(cents) || 0;
     const v = numCents/100;
     return 'CHF ' + v.toFixed(2); 
@@ -583,20 +598,49 @@ if (empty($_SESSION['csrf_token'])) {
 function renderStiche(){
   const list = document.getElementById('stichList');
   list.innerHTML = '';
-  const stiche = [...STICHE].sort((a,b)=> (a.sort_order||999) - (b.sort_order||999));
+  let stiche = [...STICHE].sort((a,b)=> (a.sort_order||999) - (b.sort_order||999));
   
-  // Prüfe ob Gast ausgewählt ist
   const isGast = document.getElementById('gastName').value.trim() !== '';
+  const isJS = isGast && document.getElementById('gastGeburtsdatum').value.trim() !== '';
+  const isMitglied = document.getElementById('mitgliedSelect').value !== '';
+  
+  // Bei JS: PROBE an erste Stelle sortieren
+  if (isJS) {
+    stiche = stiche.sort((a, b) => {
+      if (a.code === 'PROBE') return -1;
+      if (b.code === 'PROBE') return 1;
+      return (a.sort_order||999) - (b.sort_order||999);
+    });
+  }
   
   stiche.forEach(s=>{
     const shots = Number.isFinite(+s.shots) ? +s.shots : 0;
     const price = Number.isFinite(+s.price_cents) ? +s.price_cents : 0;
     
-    // Für Gäste deaktiviere bestimmte Stiche
-    const isDisabledForGast = isGast && ['GLUECK', 'ZABIG', 'DIFF', 'KUNST'].includes(s.code);
+    // Logik für disabled/ausgeblendete Stiche
+    let isDisabled = false;
+    let isHidden = false;
     
-    // Spezielle Partner-Checkbox für Zabig (nur für Mitglieder)
-    const partnerCheckbox = (s.code === 'ZABIG' && !isGast) ? `
+    // PROBE nur anzeigen wenn JS ausgewählt ist (nicht bei normalen Mitgliedern!)
+    if (s.code === 'PROBE' && !isJS) {
+      return; // PROBE überspringen wenn nicht JS
+    }
+    
+    if (isJS) {
+      // JS: nur END, SCHWINI_P1, ZABIG, PROBE erlaubt - andere komplett ausblenden
+      if (!['END', 'SCHWINI_P1', 'ZABIG', 'PROBE'].includes(s.code)) {
+        return; // Stich komplett überspringen
+      }
+    } else if (isGast) {
+      // Normale Gäste: GLUECK, ZABIG, DIFF, KUNST, PROBE nicht erlaubt
+      if (['GLUECK', 'ZABIG', 'DIFF', 'KUNST', 'PROBE'].includes(s.code)) {
+        return; // Stich komplett überspringen für normale Gäste
+      }
+    }
+    
+    const isDisabledForGast = isDisabled;
+    
+    const partnerCheckbox = (s.code === 'ZABIG' && !isGast && !isJS) ? `
       <div class="partner-checkbox-wrapper ms-auto d-flex align-items-center">
         <label class="partner-label small me-1 mb-0" for="partner_zabig">
           Partner:
@@ -635,9 +679,7 @@ function renderStiche(){
     list.appendChild(col);
   });
   
-  // Update card selected state
   updateCardStyles();
-  // Update Preise für Gäste
   updateGastPreise();
 }
 
@@ -654,35 +696,66 @@ function updateCardStyles() {
 
 function updateGastPreise() {
   const isGast = document.getElementById('gastName').value.trim() !== '';
+  const isJS = isGast && document.getElementById('gastGeburtsdatum').value.trim() !== '';
   
   if (!isGast) {
-    // Stelle normale Preise wieder her
     STICHE.forEach(s => {
       const priceEl = document.getElementById('price_' + s.id);
-      if (priceEl) {
-        priceEl.textContent = fmtCHF(s.price_cents);
-      }
       const checkbox = document.getElementById('stich_' + s.id);
-      if (checkbox) {
-        checkbox.setAttribute('data-price', s.price_cents);
+      
+      // PROBE ist immer gratis für Mitglieder
+      if (s.code === 'PROBE') {
+        if (priceEl) {
+          priceEl.textContent = 'gratis';
+          priceEl.style.fontSize = '0.7rem';
+        }
+        if (checkbox) {
+          checkbox.setAttribute('data-price', '0');
+        }
+      } else {
+        if (priceEl) {
+          priceEl.textContent = fmtCHF(s.price_cents);
+          priceEl.style.fontSize = '';
+        }
+        if (checkbox) {
+          checkbox.setAttribute('data-price', s.price_cents);
+        }
       }
     });
     return;
   }
   
-  // Spezielle Preise für Gäste
+  // JS: Zeige Paketpreis
+  if (isJS) {
+    const jsPaketPreis = SPEZIALPREISE.js_paket_preis ? SPEZIALPREISE.js_paket_preis.price_cents : 2500;
+    
+    STICHE.forEach(s => {
+      const priceEl = document.getElementById('price_' + s.id);
+      const checkbox = document.getElementById('stich_' + s.id);
+      
+      if (['END', 'SCHWINI_P1', 'ZABIG', 'PROBE'].includes(s.code)) {
+        if (priceEl) {
+          priceEl.textContent = 'inkl.';
+          priceEl.style.fontSize = '0.7rem';
+        }
+        if (checkbox) {
+          checkbox.setAttribute('data-price', '0'); // Preis wird über Paket berechnet
+          checkbox.setAttribute('data-js-paket', 'true');
+        }
+      }
+    });
+    return;
+  }
+  
+  // Normale Gäste
   STICHE.forEach(s => {
     let gastPreis = 0;
     
-    // Sie und Er ist immer CHF 10.00 für Gäste
     if (s.code === 'SIEUNDER') {
-      gastPreis = 1000; // CHF 10.00
+      gastPreis = 1000;
     }
-    // Endstich, Schwini Passe 1, Schwini Passe 2, Kunst
-    // Prüfe welche Kombination ausgewählt ist
     else if (['END', 'SCHWINI_P1', 'SCHWINI_P2', 'KUNST'].includes(s.code)) {
-      // Diese Berechnung erfolgt in recalcTotals() da sie von der Kombination abhängt
-      gastPreis = s.price_cents; // Erstmal normale Preise
+      gastPreis = s.price_cents;
     } else {
       gastPreis = s.price_cents;
     }
@@ -698,23 +771,41 @@ function updateGastPreise() {
   });
 }
 
-
-
 function recalcTotals(){
   const checked = document.querySelectorAll('.stich-check:checked');
   const isGast = document.getElementById('gastName').value.trim() !== '';
+  const isJS = isGast && document.getElementById('gastGeburtsdatum').value.trim() !== '';
   
   let count = 0, shots = 0, price = 0;
   
-  if (isGast) {
-    // Spezielle Preisberechnung für Gäste
+  // JS-Paket Logik
+  if (isJS) {
+    const jsPaketPreis = SPEZIALPREISE.js_paket_preis ? SPEZIALPREISE.js_paket_preis.price_cents : 2500;
+    let hasJSPaketStiche = false;
+    
+    checked.forEach(cb=>{
+      count++;
+      const s = Number(cb.getAttribute('data-shots'));
+      shots += Number.isFinite(s) ? s : 0;
+      
+      const code = cb.getAttribute('data-code');
+      if (['END', 'SCHWINI_P1', 'ZABIG', 'PROBE'].includes(code)) {
+        hasJSPaketStiche = true;
+      }
+    });
+    
+    if (hasJSPaketStiche) {
+      price = jsPaketPreis;
+    }
+  }
+  // Normale Gäste Logik
+  else if (isGast) {
     let hasEnd = false;
     let hasSchwini1 = false;
     let hasSchwini2 = false;
     let hasKunst = false;
     let hasSieUndEr = false;
     
-    // Prüfe welche Stiche ausgewählt sind
     checked.forEach(cb=>{
       const code = cb.getAttribute('data-code');
       if (code === 'END') hasEnd = true;
@@ -724,25 +815,19 @@ function recalcTotals(){
       if (code === 'SIEUNDER') hasSieUndEr = true;
     });
     
-    // Berechne Kombination für End, Schwini, Kunst (alle 4 Stiche)
     const kombiCount = [hasEnd, hasSchwini1, hasSchwini2, hasKunst].filter(Boolean).length;
     
-    // Verwende Spezialpreise aus der Datenbank - stelle sicher dass es Zahlen sind!
     const kombi2Preis = Number(SPEZIALPREISE.gast_kombi_2 ? SPEZIALPREISE.gast_kombi_2.price_cents : 3500);
     const kombi3Preis = Number(SPEZIALPREISE.gast_kombi_3 ? SPEZIALPREISE.gast_kombi_3.price_cents : 4900);
     const sieUndErPreis = Number(SPEZIALPREISE.gast_sie_und_er ? SPEZIALPREISE.gast_sie_und_er.price_cents : 1000);
     
     if (kombiCount === 2) {
-      // Zwei ausgewählt = Kombi-2 Preis
       price = Number(price) + kombi2Preis;
     } else if (kombiCount === 3) {
-      // Drei ausgewählt = Kombi-3 Preis
       price = Number(price) + kombi3Preis;
     } else if (kombiCount === 4) {
-      // Alle vier ausgewählt = Kombi-3 Preis (gleich wie 3)
       price = Number(price) + kombi3Preis;
     } else if (kombiCount === 1) {
-      // Nur einer ausgewählt = normale Preise
       checked.forEach(cb=>{
         const code = cb.getAttribute('data-code');
         if (['END', 'SCHWINI_P1', 'SCHWINI_P2', 'KUNST'].includes(code)) {
@@ -752,48 +837,48 @@ function recalcTotals(){
       });
     }
     
-    // Sie und Er ist immer Spezialpreis für Gäste
     if (hasSieUndEr) {
       price = Number(price) + sieUndErPreis;
     }
     
-    // Zähle alle ausgewählten
     count = checked.length;
     
-    // Zähle Schüsse
     checked.forEach(cb=>{
       const s = Number(cb.getAttribute('data-shots'));
       shots += Number.isFinite(s) ? s : 0;
     });
     
-  } else {
-    // Normale Preisberechnung für Mitglieder
+  } 
+  // Normale Mitglieder
+  else {
     checked.forEach(cb=>{
+      const code = cb.getAttribute('data-code');
       count++;
       const s = Number(cb.getAttribute('data-shots'));
-      const p = Number(cb.getAttribute('data-price'));
       shots += Number.isFinite(s) ? s : 0;
-      price += Number.isFinite(p) ? p : 0;
+      
+      // PROBE hat immer Preis 0 (kostenlose Probeschüsse)
+      if (code !== 'PROBE') {
+        const p = Number(cb.getAttribute('data-price'));
+        price += Number.isFinite(p) ? p : 0;
+      }
     });
   }
   
   document.getElementById('totalCount').textContent = String(count);
   document.getElementById('totalShots').textContent = String(shots);
   
-  // Hole Zusätzliche Schüsse Total
   let zusatzSchuss = 0;
   let zusatzPreis = 0;
   
   const munitionProSchuss = Number(SPEZIALPREISE.munition_pro_schuss ? SPEZIALPREISE.munition_pro_schuss.price_cents : 60);
   
-  // Standard-Pakete
   document.querySelectorAll('.zusatz-check:checked').forEach(cb => {
     const anzahl = parseInt(cb.dataset.anzahl) || 0;
     zusatzSchuss += anzahl;
     zusatzPreis = Number(zusatzPreis) + (anzahl * munitionProSchuss);
   });
   
-  // Individuelle Anzahl
   document.querySelectorAll('.zusatz-custom').forEach(input => {
     const anzahl = parseInt(input.value) || 0;
     if (anzahl > 0) {
@@ -802,22 +887,15 @@ function recalcTotals(){
     }
   });
   
-  // Update alle Totals direkt hier
   document.getElementById('totalZusatzShots').textContent = zusatzSchuss;
   document.getElementById('totalAllShots').textContent = shots + zusatzSchuss;
   
-  // Debug
-  console.log('Gast-Berechnung - price:', price, typeof price, 'zusatzPreis:', zusatzPreis, typeof zusatzPreis, 'total:', (price + zusatzPreis), typeof (price + zusatzPreis));
-  
-  // Stelle sicher dass beide Werte Zahlen sind
   const totalPrice = Number(price) + Number(zusatzPreis);
   document.getElementById('totalPrice').textContent = fmtCHF(totalPrice);
   
-  // Update auch die Munition-Box Anzeige
   document.getElementById('zusatz_total_schuss').textContent = zusatzSchuss;
   document.getElementById('zusatz_total_preis').textContent = fmtCHF(zusatzPreis);
   
-  // Update Munition Badge
   const munitionBadge = document.getElementById('munitionBadge');
   if (zusatzSchuss > 0) {
     munitionBadge.textContent = zusatzSchuss;
@@ -827,12 +905,8 @@ function recalcTotals(){
   }
 }
 
-
-
   // === Events ===
-// Click auf Karte
 document.addEventListener('click', function(e){
-  // Nicht reagieren wenn auf Checkbox oder Label geklickt wurde
   if (e.target.classList.contains('stich-check') || 
       e.target.classList.contains('form-check-input') ||
       e.target.classList.contains('form-check-label') ||
@@ -847,27 +921,23 @@ document.addEventListener('click', function(e){
       cb.checked = !cb.checked;
       const changeEvent = new Event('change', { bubbles: true });
       cb.dispatchEvent(changeEvent);
-      // Zur Sicherheit direkt recalcTotals aufrufen
       recalcTotals();
     }
   }
 });
 
-// Change Event
 document.addEventListener('change', function(e){
   if (e.target.classList.contains('stich-check')) {
     recalcTotals();
     updateCardStyles();
   }
   
-  // Partner-Checkbox bei Zabig
   if (e.target.classList.contains('partner-check')) {
     const stichId = e.target.dataset.stichId;
     const zabigCheckbox = document.getElementById('stich_' + stichId);
     const partnerPreis = SPEZIALPREISE.partner_zabig ? SPEZIALPREISE.partner_zabig.price_cents : 1000;
     
     if (e.target.checked) {
-      // Partner ausgewählt - Zabig automatisch anwählen und Preis auf Partner-Preis
       if (zabigCheckbox && !zabigCheckbox.checked) {
         zabigCheckbox.checked = true;
         updateCardStyles();
@@ -875,7 +945,6 @@ document.addEventListener('change', function(e){
       zabigCheckbox.setAttribute('data-price', partnerPreis);
       document.getElementById('price_' + stichId).textContent = fmtCHF(partnerPreis);
     } else {
-      // Partner nicht ausgewählt - normaler Preis
       const originalStich = STICHE.find(s => s.id == stichId);
       if (originalStich) {
         zabigCheckbox.setAttribute('data-price', originalStich.price_cents);
@@ -887,7 +956,6 @@ document.addEventListener('change', function(e){
   }
 });
 
-// Input Event
 document.addEventListener('input', function(e){
   if (e.target.classList.contains('stich-check')) {
     recalcTotals();
@@ -896,20 +964,17 @@ document.addEventListener('input', function(e){
 
   // === Zusätzliche Schüsse Functions ===
   function initZusatzSchuesse() {
-    // Event Listener für Standard-Pakete
     document.querySelectorAll('.zusatz-check').forEach(cb => {
       cb.addEventListener('change', recalcZusatzTotal);
     });
     
-    // Event Listener für individuelle Anzahl
     document.querySelectorAll('.zusatz-custom').forEach(input => {
       input.addEventListener('input', function() {
         const typ = this.dataset.typ;
         const anzahl = parseInt(this.value) || 0;
         const munitionProSchuss = SPEZIALPREISE.munition_pro_schuss ? SPEZIALPREISE.munition_pro_schuss.price_cents : 60;
-        const preis = anzahl * munitionProSchuss; // Dynamischer Preis pro Schuss
+        const preis = anzahl * munitionProSchuss;
         
-        // Update Preis-Anzeige
         if (typ === 'GP11_CUSTOM') {
           document.getElementById('preis_gp11_custom').textContent = fmtCHF(preis);
         } else if (typ === 'GP90_CUSTOM') {
@@ -921,23 +986,19 @@ document.addEventListener('input', function(e){
     });
   }
   
-  // Neue Funktion um Munitionspreise in der Anzeige zu aktualisieren
   function updateMunitionPreise() {
     const munitionProSchuss = SPEZIALPREISE.munition_pro_schuss ? SPEZIALPREISE.munition_pro_schuss.price_cents : 60;
     
-    // Update "pro Schuss" Anzeige
     const proSchussText = document.getElementById('munitionProSchussText');
     if (proSchussText) {
       proSchussText.textContent = `(CHF ${(munitionProSchuss/100).toFixed(2)} pro Schuss)`;
     }
     
-    // Update GP11 60er Paket Preis
     const gp11_60_preis = document.getElementById('preis_gp11_60');
     if (gp11_60_preis) {
       gp11_60_preis.textContent = `(${fmtCHF(60 * munitionProSchuss)})`;
     }
     
-    // Update GP90 50er Paket Preis
     const gp90_50_preis = document.getElementById('preis_gp90_50');
     if (gp90_50_preis) {
       gp90_50_preis.textContent = `(${fmtCHF(50 * munitionProSchuss)})`;
@@ -945,65 +1006,13 @@ document.addEventListener('input', function(e){
   }
   
   function recalcZusatzTotal() {
-    // Rufe einfach recalcTotals auf, da diese Funktion jetzt alles berechnet
     recalcTotals();
-  }
-  
-  function updateGesamtTotal(stichePreisOverride) {
-    // Hole Stiche-Total
-    let stichePreis = 0;
-    let sticheSchuss = 0;
-    
-    if (typeof stichePreisOverride !== 'undefined') {
-      // Verwende den übergebenen Preis (für Gast-Spezialpreise)
-      stichePreis = stichePreisOverride;
-      // Zähle Schüsse normal
-      document.querySelectorAll('.stich-check:checked').forEach(cb=>{
-        const s = Number(cb.getAttribute('data-shots'));
-        sticheSchuss += Number.isFinite(s) ? s : 0;
-      });
-    } else {
-      // Normale Berechnung
-      document.querySelectorAll('.stich-check:checked').forEach(cb=>{
-        const p = Number(cb.getAttribute('data-price'));
-        const s = Number(cb.getAttribute('data-shots'));
-        stichePreis += Number.isFinite(p) ? p : 0;
-        sticheSchuss += Number.isFinite(s) ? s : 0;
-      });
-    }
-    
-    // Hole Zusätzliche Schüsse Total
-    let zusatzSchuss = 0;
-    let zusatzPreis = 0;
-    
-    // Standard-Pakete
-    document.querySelectorAll('.zusatz-check:checked').forEach(cb => {
-      const anzahl = parseInt(cb.dataset.anzahl) || 0;
-      zusatzSchuss += anzahl;
-      zusatzPreis += anzahl * 50;
-    });
-    
-    // Individuelle Anzahl
-    document.querySelectorAll('.zusatz-custom').forEach(input => {
-      const anzahl = parseInt(input.value) || 0;
-      if (anzahl > 0) {
-        zusatzSchuss += anzahl;
-        zusatzPreis += anzahl * 50;
-      }
-    });
-    
-    // Update Sidebar Totals
-    document.getElementById('totalShots').textContent = sticheSchuss;
-    document.getElementById('totalZusatzShots').textContent = zusatzSchuss;
-    document.getElementById('totalAllShots').textContent = sticheSchuss + zusatzSchuss;
-    document.getElementById('totalPrice').textContent = fmtCHF(stichePreis + zusatzPreis);
   }
   
   function resetZusatzSchuesse() {
     document.querySelectorAll('.zusatz-check').forEach(cb => cb.checked = false);
     document.querySelectorAll('.zusatz-custom').forEach(input => {
       input.value = '0';
-      // Update Preis-Anzeige
       const typ = input.dataset.typ;
       if (typ === 'GP11_CUSTOM') {
         document.getElementById('preis_gp11_custom').textContent = 'CHF 0.00';
@@ -1056,22 +1065,58 @@ document.addEventListener('input', function(e){
       .catch(err => console.error('Error loading zusatz:', err));
   }
 
+  // === NEU: Waffen Functions ===
+  function loadWaffen() {
+    fetch(`${API}?action=list_waffen`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          WAFFEN = data.data;
+          renderWaffenDropdown();
+        }
+      })
+      .catch(err => console.error('Error loading waffen:', err));
+  }
+
+  function renderWaffenDropdown() {
+    const select = document.getElementById('gastWaffe');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">– Waffe wählen –</option>';
+    
+    let stgw90Id = null;
+    
+    WAFFEN.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w.ID;
+      opt.textContent = `${w.Bezeichnung} (${w.Kategorie})`;
+      select.appendChild(opt);
+      
+      // Merke dir die ID von Stgw90
+      if (w.Bezeichnung && w.Bezeichnung.toLowerCase().includes('stgw') && w.Bezeichnung.includes('90')) {
+        stgw90Id = w.ID;
+      }
+    });
+    
+    // Setze Stgw90 als Standard wenn nichts anderes ausgewählt ist
+    if (stgw90Id && !select.value) {
+      select.value = stgw90Id;
+    }
+  }
+
   // Alles auswählen Button
   document.getElementById('btnSelectAll').addEventListener('click', function() {
     const isGast = document.getElementById('gastName').value.trim() !== '';
     let allChecked = true;
     
-    // Prüfe ob alle verfügbaren Checkboxen bereits ausgewählt sind
     document.querySelectorAll('.stich-check:not(:disabled)').forEach(cb => {
       if (!cb.checked) allChecked = false;
     });
     
     if (allChecked) {
-      // Wenn alle ausgewählt sind, deselektiere alle
       document.querySelectorAll('.stich-check').forEach(cb => cb.checked = false);
       this.innerHTML = '<i class="bi bi-check2-square"></i> Alles auswählen';
     } else {
-      // Wähle alle verfügbaren Stiche aus
       document.querySelectorAll('.stich-check').forEach(cb => {
         if (!cb.disabled) {
           cb.checked = true;
@@ -1084,33 +1129,29 @@ document.addEventListener('input', function(e){
     updateCardStyles();
   });
   
-  // Modify reset button
+  // Reset button
   document.getElementById('btnReset').addEventListener('click', function(){
-    // Reset Mitglied/Gast
     document.getElementById('mitgliedSelect').value = '';
     document.getElementById('gastName').value = '';
     document.getElementById('gastGeburtsdatum').value = '';
+    document.getElementById('gastWaffe').value = ''; // NEU
+    document.getElementById('gastWaffeContainer').style.display = 'none'; // NEU
     
-    // Reset Stiche
     document.querySelectorAll('.stich-check').forEach(cb=> cb.checked = false);
-    document.getElementById('zahlung_bar').checked = true; // Reset auf Bar
+    document.getElementById('zahlung_karte').checked = true;
     
-    // Reset Partner-Checkbox bei Zabig
     const partnerCheck = document.getElementById('partner_zabig');
     if (partnerCheck) {
       partnerCheck.checked = false;
-      // Trigger change um Preis zurückzusetzen
       const changeEvent = new Event('change', { bubbles: true });
       partnerCheck.dispatchEvent(changeEvent);
     }
     
-    // Render Stiche neu (ohne Gast-Beschränkungen)
     renderStiche();
     resetZusatzSchuesse();
     recalcTotals();
     updateCardStyles();
     
-    // Reset "Alles auswählen" Button Text
     document.getElementById('btnSelectAll').innerHTML = '<i class="bi bi-check2-square"></i> Alles auswählen';
   });
 
@@ -1126,8 +1167,8 @@ document.addEventListener('input', function(e){
     const gast_name = document.getElementById('gastName').value.trim();
     const gast_geburtsdatum = document.getElementById('gastGeburtsdatum').value;
     const jahr = document.getElementById('yearSelect').value;
+    const isJS = gast_name && gast_geburtsdatum;
     
-    // Prüfe ob Mitglied oder Gast ausgewählt
     if (!mitglied_id && !gast_name) {
       const fb = document.getElementById('saveFeedback');
       fb.className = 'text-end small text-danger mt-2';
@@ -1136,7 +1177,6 @@ document.addEventListener('input', function(e){
       return;
     }
     
-    // Verhindere dass beides ausgewählt ist
     if (mitglied_id && gast_name) {
       const fb = document.getElementById('saveFeedback');
       fb.className = 'text-end small text-danger mt-2';
@@ -1145,10 +1185,8 @@ document.addEventListener('input', function(e){
       return;
     }
     
-    // Füge Geburtsdatum zum Gast-Namen hinzu wenn vorhanden
     let gast_name_with_date = gast_name;
     if (gast_name && gast_geburtsdatum) {
-      // Konvertiere YYYY-MM-DD zu DD.MM.YYYY
       const dateParts = gast_geburtsdatum.split('-');
       if (dateParts.length === 3) {
         const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
@@ -1156,13 +1194,11 @@ document.addEventListener('input', function(e){
       }
     }
     
-    // Sammle ausgewählte Stiche
     const stiche = [];
     let zabigIsPartner = false;
     
     document.querySelectorAll('.stich-check:checked').forEach(cb => {
       stiche.push(cb.value);
-      // Prüfe ob es Zabig ist und Partner ausgewählt
       if (cb.dataset.code === 'ZABIG') {
         const partnerCheck = document.getElementById('partner_zabig');
         if (partnerCheck && partnerCheck.checked) {
@@ -1171,13 +1207,17 @@ document.addEventListener('input', function(e){
       }
     });
     
-    // Hole Zahlungsmethode
     const zahlungsmethode = document.querySelector('input[name="zahlungsmethode"]:checked').value;
     
-    // Berechne Gast-Spezialpreis wenn Gast
     let gastSpezialpreis = null;
-    if (gast_name) {
-      // Prüfe welche Stiche ausgewählt sind
+    
+    // JungschützeIn (JS) - Paketpreis
+    if (isJS) {
+      const jsPaketPreis = SPEZIALPREISE.js_paket_preis ? SPEZIALPREISE.js_paket_preis.price_cents : 2500;
+      gastSpezialpreis = jsPaketPreis;
+    }
+    // Normale Gäste - Kombi-Preise
+    else if (gast_name) {
       let hasEnd = false;
       let hasSchwini1 = false;
       let hasSchwini2 = false;
@@ -1193,19 +1233,15 @@ document.addEventListener('input', function(e){
         if (code === 'SIEUNDER') hasSieUndEr = true;
       });
       
-      // Berechne Kombination für End, Schwini, Kunst (alle 4 Stiche)
       const kombiCount = [hasEnd, hasSchwini1, hasSchwini2, hasKunst].filter(Boolean).length;
       
       let totalPrice = 0;
       
       if (kombiCount === 2) {
-        // Zwei ausgewählt = CHF 35.00
         totalPrice += 3500;
       } else if (kombiCount >= 3) {
-        // Drei oder vier ausgewählt = CHF 49.00
         totalPrice += 4900;
       } else if (kombiCount === 1) {
-        // Nur einer ausgewählt = normale Preise
         document.querySelectorAll('.stich-check:checked').forEach(cb => {
           const code = cb.getAttribute('data-code');
           if (['END', 'SCHWINI_P1', 'SCHWINI_P2', 'KUNST'].includes(code)) {
@@ -1215,7 +1251,6 @@ document.addEventListener('input', function(e){
         });
       }
       
-      // Sie und Er ist immer CHF 10.00
       if (hasSieUndEr) {
         totalPrice += 1000;
       }
@@ -1223,10 +1258,8 @@ document.addEventListener('input', function(e){
       gastSpezialpreis = totalPrice;
     }
     
-    // Sammle zusätzliche Schüsse
     const zusatz_schuesse = [];
     
-    // Standard-Pakete
     if (document.getElementById('zusatz_gp11_60').checked) {
       zusatz_schuesse.push({ typ: 'GP11_60', anzahl: 60 });
     }
@@ -1234,7 +1267,6 @@ document.addEventListener('input', function(e){
       zusatz_schuesse.push({ typ: 'GP90_50', anzahl: 50 });
     }
     
-    // Individuelle Anzahl
     const gp11_custom = parseInt(document.getElementById('zusatz_gp11_custom').value) || 0;
     if (gp11_custom > 0) {
       zusatz_schuesse.push({ typ: 'GP11_CUSTOM', anzahl: gp11_custom });
@@ -1245,16 +1277,13 @@ document.addEventListener('input', function(e){
       zusatz_schuesse.push({ typ: 'GP90_CUSTOM', anzahl: gp90_custom });
     }
     
-    // Zeige Spinner
     const spinner = document.getElementById('saveSpinner');
     const btn = document.getElementById('btnSave');
     spinner.classList.remove('d-none');
     btn.disabled = true;
     
-    // Sende an API
     const url = `${API}?action=save_selection`;
     
-    // Bereite Daten vor
     const requestData = {
       jahr: jahr,
       stiche: stiche,
@@ -1262,21 +1291,23 @@ document.addEventListener('input', function(e){
       zahlungsmethode: zahlungsmethode
     };
     
-    // Füge Zabig-Partner-Info hinzu wenn relevant
     if (zabigIsPartner) {
       requestData.zabig_partner = true;
     }
     
-    // Füge Gast-Spezialpreis hinzu wenn vorhanden
     if (gastSpezialpreis !== null) {
       requestData.gast_spezialpreis = gastSpezialpreis;
     }
     
-    // Entweder Mitglied ID oder Gast Name mit Geburtsdatum
+    // NEU: Waffe bei Gästen mitschicken
     if (mitglied_id) {
       requestData.mitglied_id = mitglied_id;
     } else {
       requestData.gast_name = gast_name_with_date;
+      const gastWaffe = document.getElementById('gastWaffe').value;
+      if (gastWaffe) {
+        requestData.waffen_id = parseInt(gastWaffe);
+      }
     }
     
     fetch(url, {
@@ -1294,19 +1325,16 @@ document.addEventListener('input', function(e){
         fb.className = 'ms-auto small text-success';
         fb.textContent = '✓ ' + (data.message || 'Gespeichert');
         
-        // Tabelle der erfassten Stiche aktualisieren
         loadErfassteStiche();
         
-        // Nach erfolgreichem Speichern alles zurücksetzen
         setTimeout(() => {
-          // Reset Mitglied/Gast Auswahl
           document.getElementById('mitgliedSelect').value = '';
           document.getElementById('gastName').value = '';
+          document.getElementById('gastWaffe').value = ''; // NEU
+          document.getElementById('gastWaffeContainer').style.display = 'none'; // NEU
           
-          // Reset alle Stiche
           document.querySelectorAll('.stich-check').forEach(cb => cb.checked = false);
           
-          // Reset Partner-Checkbox
           const partnerCheck = document.getElementById('partner_zabig');
           if (partnerCheck) {
             partnerCheck.checked = false;
@@ -1314,22 +1342,17 @@ document.addEventListener('input', function(e){
             partnerCheck.dispatchEvent(changeEvent);
           }
           
-          // Reset Zahlungsmethode
-          document.getElementById('zahlung_bar').checked = true;
+          document.getElementById('zahlung_karte').checked = true;
           
-          // Reset Munition
           resetZusatzSchuesse();
           
-          // Render Stiche neu
           renderStiche();
           
-          // Update Totals und Styles
           recalcTotals();
           updateCardStyles();
           
-          // Reset "Alles auswählen" Button
           document.getElementById('btnSelectAll').innerHTML = '<i class="bi bi-check2-square"></i> Alles auswählen';
-        }, 500); // Kurze Verzögerung damit man das Erfolgsmeldung sieht
+        }, 500);
       } else {
         fb.className = 'ms-auto small text-danger';
         fb.textContent = '✗ ' + (data.message || 'Fehler beim Speichern');
@@ -1353,7 +1376,6 @@ document.addEventListener('input', function(e){
   function loadMitglieder(){
     const sel = document.getElementById('mitgliedSelect');
     sel.innerHTML = '<option value="">– bitte wählen –</option>';
-    // Wir versuchen die API – wenn sie (noch) fehlt, machen wir nichts
     fetch(`${API}?action=list_mitglieder`).then(r=>r.ok?r.json():null).then(j=>{
       if (!j || !j.success) return;
       j.data.forEach(m=>{
@@ -1367,7 +1389,6 @@ document.addEventListener('input', function(e){
   }
 
   function loadStiche(){
-    // Lade zuerst Spezialpreise, dann Stiche
     fetch(`${API}?action=get_spezialpreise`)
       .then(r => r.json())
       .then(data => {
@@ -1376,7 +1397,6 @@ document.addEventListener('input', function(e){
         }
       })
       .catch(err => {
-        // Fallback auf Default-Werte wenn Tabelle nicht existiert
         SPEZIALPREISE = {
           munition_pro_schuss: { price_cents: 60 },
           gast_kombi_2: { price_cents: 3500 },
@@ -1386,12 +1406,11 @@ document.addEventListener('input', function(e){
         };
       })
       .finally(() => {
-        // Update Munitionspreise in der Anzeige
         updateMunitionPreise();
         
-        // Dann lade Stiche
         fetch(`${API}?action=list_stiche`).then(r=>r.ok?r.json():null).then(j=>{
           if (j && j.success && Array.isArray(j.data) && j.data.length){
+            // PROBE nicht mehr herausfiltern - wird für JS benötigt
             STICHE = j.data;
           } else {
             STICHE = FALLBACK_STICHE;
@@ -1413,8 +1432,7 @@ function loadSelection(){
   
   if (!mid && !gast) {
     document.querySelectorAll('.stich-check').forEach(cb=> cb.checked=false);
-    // Reset Zahlungsmethode auf Bar
-    document.getElementById('zahlung_bar').checked = true;
+    document.getElementById('zahlung_karte').checked = true;
     recalcTotals();
     updateCardStyles();
     return;
@@ -1432,49 +1450,57 @@ function loadSelection(){
     .then(j=>{
       document.querySelectorAll('.stich-check').forEach(cb=> cb.checked=false);
       if (j && j.success){
-        // Lade Stiche
+        // NEU: Lade Geburtsdatum für JS ZUERST (vor dem Setzen der Checkboxen)
+        if (gast && j.geburtsdatum) {
+          document.getElementById('gastGeburtsdatum').value = j.geburtsdatum;
+          // Render Stiche neu damit JS-Stiche aktiviert/deaktiviert werden
+          renderStiche();
+        } else if (gast) {
+          document.getElementById('gastGeburtsdatum').value = '';
+        }
+        
+        // JETZT erst die Checkboxen setzen (nach renderStiche())
         if (Array.isArray(j.data)){
           j.data.forEach(id=>{ 
             const el = document.getElementById('stich_'+id); 
             if (el) el.checked = true; 
           });
         }
-        // Lade Zahlungsmethode falls vorhanden
         if (j.zahlungsmethode) {
           if (j.zahlungsmethode === 'karte') {
             document.getElementById('zahlung_karte').checked = true;
           } else {
-            document.getElementById('zahlung_bar').checked = true;
+            document.getElementById('zahlung_karte').checked = true;
           }
         } else {
-          // Default auf Bar
-          document.getElementById('zahlung_bar').checked = true;
+          document.getElementById('zahlung_karte').checked = true;
         }
         
-        // Lade Zabig Partner-Status wenn vorhanden
         if (j.zabig_partner) {
           const partnerCheck = document.getElementById('partner_zabig');
           if (partnerCheck) {
             partnerCheck.checked = true;
-            // Trigger change event um Preis zu aktualisieren
             const changeEvent = new Event('change', { bubbles: true });
             partnerCheck.dispatchEvent(changeEvent);
           }
         }
+        
+        // NEU: Lade Waffe für Gast
+        if (gast && j.waffen_id) {
+          document.getElementById('gastWaffe').value = j.waffen_id;
+        }
       }
       recalcTotals();
       updateCardStyles();
-      // Lade auch die zusätzlichen Schüsse
       loadZusatzSchuesse();
     }).catch(()=>{
       document.querySelectorAll('.stich-check').forEach(cb=> cb.checked=false);
-      document.getElementById('zahlung_bar').checked = true;
+      document.getElementById('zahlung_karte').checked = true;
       recalcTotals();
       updateCardStyles();
     });
 }
 
-// Neue Funktion für Gast-Daten laden
 function loadGastSelection() {
   const gast = document.getElementById('gastName').value.trim();
   const yr = document.getElementById('yearSelect').value;
@@ -1493,257 +1519,247 @@ function loadGastSelection() {
       }
       recalcTotals();
       updateCardStyles();
-    }).catch(()=>{
-      // Bei Fehler nichts tun, Gast ist vermutlich neu
-    });
+    }).catch(()=>{});
 }
 
   document.getElementById('mitgliedSelect').addEventListener('change', function() {
-    // Leere Gast-Feld wenn Mitglied ausgewählt
     if (this.value) {
       document.getElementById('gastName').value = '';
       document.getElementById('gastGeburtsdatum').value = '';
+      document.getElementById('gastWaffe').value = ''; // NEU
+      document.getElementById('gastWaffeContainer').style.display = 'none'; // NEU
     }
-    // Render Stiche neu (entfernt Gast-Beschränkungen)
     renderStiche();
     loadSelection();
-    // Aktualisiere die Tabelle um die Highlight-Zeile zu aktualisieren
     loadErfassteStiche();
   });
   
-  // Event Listener für Gast-Eingabe
+  // NEU: Event Listener für Gast-Eingabe mit Waffen-Dropdown
   document.getElementById('gastName').addEventListener('input', function() {
-    // Leere Mitglied-Auswahl wenn Gast eingegeben
+    const container = document.getElementById('gastWaffeContainer');
     if (this.value.trim()) {
+      container.style.display = 'block';
       document.getElementById('mitgliedSelect').value = '';
+      
+      // Setze Stgw90 als Default wenn Container neu angezeigt wird
+      const select = document.getElementById('gastWaffe');
+      if (WAFFEN.length > 0 && !select.value) {
+        const stgw90 = WAFFEN.find(w => w.Bezeichnung && w.Bezeichnung.toLowerCase().includes('stgw') && w.Bezeichnung.includes('90'));
+        if (stgw90) {
+          select.value = stgw90.ID;
+        }
+      }
+    } else {
+      container.style.display = 'none';
     }
     
-    // Render Stiche neu für Gast-spezifische Einstellungen
     renderStiche();
     
-    // Lade evtl. vorhandene Daten für diesen Gast
     if (this.value.trim().length > 2) {
       loadGastSelection();
     }
     
-    // Aktualisiere Preise
     recalcTotals();
+  });
+  
+  // NEU: Event Listener für Geburtsdatum - JS-Paket automatisch auswählen
+  document.getElementById('gastGeburtsdatum').addEventListener('change', function() {
+    const gastName = document.getElementById('gastName').value.trim();
+    if (!gastName) return;
+    
+    const isJS = this.value.trim() !== '';
+    
+    // Render Stiche neu (aktiviert/deaktiviert entsprechende Stiche)
+    renderStiche();
+    
+    // Wenn JS: Automatisch JS-Paket-Stiche auswählen
+    if (isJS) {
+      const jsStiches = ['END', 'SCHWINI_P1', 'ZABIG', 'PROBE'];
+      STICHE.forEach(s => {
+        const checkbox = document.getElementById('stich_' + s.id);
+        if (checkbox && jsStiches.includes(s.code)) {
+          checkbox.checked = true;
+        } else if (checkbox) {
+          checkbox.checked = false;
+        }
+      });
+    } else {
+      // Alle Stiche abwählen wenn Datum entfernt wird
+      document.querySelectorAll('.stich-check').forEach(cb => cb.checked = false);
+    }
+    
+    recalcTotals();
+    updateCardStyles();
   });
   
   document.getElementById('yearSelect').addEventListener('change', function() {
     const currentMitglied = document.getElementById('mitgliedSelect').value;
     if (currentMitglied) {
-      loadSelection(); // Nur laden wenn ein Mitglied ausgewählt ist
+      loadSelection();
     }
-    loadErfassteStiche(); // Immer die Tabelle aktualisieren
+    loadErfassteStiche();
   });
   
-  // Funktion um erfasste Stiche für das Jahr zu laden
   function loadErfassteStiche() {
     const jahr = document.getElementById('yearSelect').value;
     
-    // Lade zuerst die Stich-Definitionen und dann die Daten
     Promise.all([
-      fetch(`${API}?action=list_stiche`).then(r => r.json()),
-      fetch(`${API}?action=get_year_details&jahr=${encodeURIComponent(jahr)}`).then(r => r.json())
-    ]).then(([stichData, yearData]) => {
-      if (stichData.success && yearData.success) {
-        renderErfassteTabelle(stichData.data, yearData.data);
-      }
-    }).catch(err => {
+  fetch(`${API}?action=list_stiche`).then(r => r.json()),
+  fetch(`${API}?action=get_year_details&jahr=${encodeURIComponent(jahr)}`).then(r => r.json())
+]).then(([stichData, yearData]) => {
+  if (stichData.success && yearData.success) {
+    // Alle Stiche anzeigen (inkl. PROBE für JS-Transparenz)
+    const sticheGefiltert = stichData.data || [];
+    renderErfassteTabelle(sticheGefiltert, yearData.data);
+  }
+}).catch(err => {
       console.error('Error loading data:', err);
     });
   }
   
   function renderErfassteTabelle(stiche, data) {
-    // Erstelle Header mit Stich-Spalten
-    const headerRow = document.getElementById('erfassteTableHeader');
-    headerRow.innerHTML = '<th style="min-width: 150px; text-align: left;">Mitglied</th>';
-    
-    // Füge Spalte für jeden aktiven Stich hinzu
-    stiche.forEach(stich => {
-      const th = document.createElement('th');
-      th.className = 'stich-header';
-      th.title = stich.name + ' (' + stich.shots + ' Schuss, ' + fmtCHF(stich.price_cents) + ')';
-      th.innerHTML = stich.name;
-      headerRow.appendChild(th);
-    });
-    
-    // Munition, Zahlungsmethode und Total Spalten
-    headerRow.innerHTML += '<th class="text-center" style="min-width: 120px;">Munition</th>';
-    headerRow.innerHTML += '<th class="text-center" style="min-width: 80px;">Bezahlt</th>';
-    headerRow.innerHTML += '<th class="text-end" style="min-width: 80px;">Total</th>';
-    headerRow.innerHTML += '<th style="width: 50px;"></th>';
-    
-    // Fülle Tabellen-Body
-    const tbody = document.getElementById('erfassteTableBody');
-    
-    if (!data || data.length === 0) {
-      const colCount = stiche.length + 5; // +2 für Munition und Zahlungsmethode
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="${colCount}" class="text-muted text-center">Noch keine Stiche für dieses Jahr erfasst</td>
-        </tr>`;
-      return;
+  const headerRow = document.getElementById('erfassteTableHeader');
+  headerRow.innerHTML = '<th style="min-width: 150px; text-align: left;">Mitglied</th>';
+
+  stiche.forEach(stich => {
+    const th = document.createElement('th');
+    th.className = 'stich-header';
+    th.title = `${stich.name} (${stich.shots} Schuss, ${fmtCHF(stich.price_cents)})`;
+    th.innerHTML = stich.name;
+    headerRow.appendChild(th);
+  });
+
+  // NEU: Waffe
+  headerRow.innerHTML += '<th class="text-center" style="min-width: 120px;">Waffe</th>';
+  headerRow.innerHTML += '<th class="text-center" style="min-width: 120px;">Munition</th>';
+  headerRow.innerHTML += '<th class="text-center" style="min-width: 80px;">Bezahlt</th>';
+  headerRow.innerHTML += '<th class="text-end" style="min-width: 80px;">Total</th>';
+  headerRow.innerHTML += '<th style="width: 50px;"></th>';
+
+  const tbody = document.getElementById('erfassteTableBody');
+  if (!Array.isArray(data) || data.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="${stiche.length + 6}" class="text-muted text-center">
+          Keine erfassten Stiche für dieses Jahr
+        </td>
+      </tr>`;
+    return;
+  }
+
+  // Sortierung: Mitglieder (1), dann Gäste (2), dann JS (3), jeweils alphabetisch
+  data.sort((a, b) => {
+    const g = (x) => {
+      if (x.typ === 'mitglied') return 1;
+      if (x.typ === 'gast' && x.geburtsdatum) return 3; // JS mit Geburtsdatum
+      return 2; // Normale Gäste ohne Geburtsdatum
+    };
+    if (g(a) !== g(b)) return g(a) - g(b);
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  // Hilfsfunktion: Waffenanzeige aus API-Feldern (bevor wir auf WAFFEN-Liste zurückfallen)
+  function getWaffeText(entry) {
+    if (entry.waffe_bez) {
+      return entry.waffe_kat ? `${entry.waffe_bez} (${entry.waffe_kat})` : entry.waffe_bez;
     }
-    
-    // Sortiere die Daten: Mitglieder zuerst, dann normale Gäste, dann JS (Gäste mit Geburtsdatum)
-    data.sort((a, b) => {
-      // Bestimme die Gruppen
-      let groupA, groupB;
-      
-      if (a.typ === 'mitglied') {
-        groupA = 1;
-      } else if (a.typ === 'gast') {
-        // Prüfe ob es ein JS ist (Gast mit Geburtsdatum)
-        // Das erkennen wir am Namen-Suffix oder einem speziellen Marker
-        if (a.geburtsdatum || (a.name && a.name.includes('(JS)'))) {
-          groupA = 3; // JS ganz unten
-        } else {
-          groupA = 2; // Normale Gäste in der Mitte
-        }
-      } else {
-        groupA = 2;
-      }
-      
-      if (b.typ === 'mitglied') {
-        groupB = 1;
-      } else if (b.typ === 'gast') {
-        if (b.geburtsdatum || (b.name && b.name.includes('(JS)'))) {
-          groupB = 3;
-        } else {
-          groupB = 2;
-        }
-      } else {
-        groupB = 2;
-      }
-      
-      // Sortiere erst nach Gruppe, dann alphabetisch
-      if (groupA !== groupB) {
-        return groupA - groupB;
-      }
-      
-      // Innerhalb der Gruppe alphabetisch sortieren
-      return (a.name || '').localeCompare(b.name || '');
-    });
-    
-    tbody.innerHTML = '';
-    data.forEach(entry => {
-      const tr = document.createElement('tr');
-      
-      // Mitglied/Gast Name - zeige JS statt Gast wenn Geburtsdatum vorhanden
-      let displayName = entry.name;
-      if (entry.typ === 'gast' && entry.name) {
-        // Entferne das alte (Gast) Suffix falls vorhanden
-        displayName = displayName.replace(' (Gast)', '');
-        
-        // Füge JS oder Gast hinzu
-        if (entry.geburtsdatum) {
-          displayName += ' (JS)';
-        } else {
-          displayName += ' (Gast)';
-        }
-      }
-      
-      let html = `<td style="text-align: left;">${displayName}</td>`;
-      
-      // Stich-Checkmarks
-      stiche.forEach(stich => {
-        const stichId = parseInt(stich.id);
-        if (entry.stiche && entry.stiche.includes(stichId)) {
-          // Prüfe ob es ein Partner-Stich ist
-          let isPartner = false;
-          if (entry.partner_stiche && entry.partner_stiche.includes(stichId)) {
-            isPartner = true;
-          }
-          
-          if (isPartner && stich.code === 'ZABIG') {
-            // Zeige Partner-Icon für Zabig
-            html += '<td class="check-cell text-center" title="Partner: CHF 10.00"><i class="bi bi-people-fill text-primary"></i></td>';
-          } else {
-            html += '<td class="check-cell text-center"><i class="bi bi-check-circle-fill text-success"></i></td>';
-          }
-        } else {
-          html += '<td class="check-cell"></td>';
-        }
-      });
-      
-      // Munition (GP11 und GP90 getrennt anzeigen)
-      let gp11Total = 0;
-      let gp90Total = 0;
-      
-      if (entry.zusatz_schuesse && Array.isArray(entry.zusatz_schuesse)) {
-        entry.zusatz_schuesse.forEach(z => {
-          const anzahl = parseInt(z.anzahl) || 0;
-          if (z.typ === 'GP11_60' || z.typ === 'GP11_CUSTOM') {
-            gp11Total += anzahl;
-          } else if (z.typ === 'GP90_50' || z.typ === 'GP90_CUSTOM') {
-            gp90Total += anzahl;
-          }
-        });
-      }
-      
-      // Formatiere die Anzeige
-      let munitionText = '';
-      if (gp11Total > 0 || gp90Total > 0) {
-        const parts = [];
-        if (gp11Total > 0) parts.push(`GP11: ${gp11Total}`);
-        if (gp90Total > 0) parts.push(`GP90: ${gp90Total}`);
-        munitionText = parts.join('<br>');
-      } else {
-        munitionText = '-';
-      }
-      
-      html += `<td class="text-center small">${munitionText}</td>`;
-      
-      // Zahlungsmethode
-      let zahlungIcon = '';
-      if (entry.zahlungsmethode === 'karte') {
-        zahlungIcon = '<i class="bi bi-credit-card-2-back text-primary" title="Karte"></i>';
-      } else if (entry.zahlungsmethode === 'bar') {
-        zahlungIcon = '<i class="bi bi-cash text-success" title="Bar"></i>';
-      } else {
-        zahlungIcon = '<span class="text-muted">-</span>';
-      }
-      html += `<td class="text-center">${zahlungIcon}</td>`;
-      
-      // Total
-      html += `<td class="text-end total-cell">${fmtCHF(entry.total_price || 0)}</td>`;
-      
-      // Bearbeiten und Löschen Buttons
+    if (entry.waffe_id && Array.isArray(WAFFEN) && WAFFEN.length) {
+      const w = WAFFEN.find(x => String(x.ID) === String(entry.waffe_id));
+      if (w) return w.Kategorie ? `${w.Bezeichnung} (${w.Kategorie})` : w.Bezeichnung;
+    }
+    return '-';
+  }
+
+  tbody.innerHTML = '';
+  data.forEach(entry => {
+    const tr = document.createElement('tr');
+
+    // Name mit (Gast)/(JS)
+    let displayName = entry.name || '';
+    if (entry.typ === 'gast') {
+      displayName = displayName.replace(' (Gast)', '');
+      displayName += entry.geburtsdatum ? ' (JS)' : ' (Gast)';
+    }
+
+    let html = `<td style="text-align: left;">${displayName}</td>`;
+
+    // Dynamische Stich-Spalten Häkchen
+    stiche.forEach(stich => {
+      const stichId = parseInt(stich.id);
+      const hat = Array.isArray(entry.stiche) ? entry.stiche.includes(stichId) : false;
       html += `
         <td class="text-center">
-          <div class="btn-group btn-group-sm" role="group">
-            <button class="btn btn-outline-secondary btn-edit-selection" 
-                    data-entity-id="${entry.entity_id || entry.mitglied_id}"
-                    data-entity-typ="${entry.typ || 'mitglied'}"
-                    data-entity-name="${entry.name}"
-                    title="Bearbeiten">
-              <i class="bi bi-pencil-square"></i>
-            </button>
-            <button class="btn btn-outline-danger btn-delete-selection" 
-                    data-entity-id="${entry.entity_id || entry.mitglied_id}"
-                    data-entity-typ="${entry.typ || 'mitglied'}"
-                    data-entity-name="${entry.name}"
-                    data-jahr="${document.getElementById('yearSelect').value}"
-                    title="Löschen">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
+          ${hat ? '<i class="bi bi-check2-circle text-success"></i>' : '<span class="text-muted">–</span>'}
         </td>`;
-      
-      tr.innerHTML = html;
-      
-      // Highlight-Zeile wenn dieses Mitglied aktuell ausgewählt ist
-      if (entry.mitglied_id == document.getElementById('mitgliedSelect').value) {
-        tr.classList.add('table-active');
-      }
-      
-      tbody.appendChild(tr);
     });
-  }
-  
-  // Event Listener für Bearbeiten-Button
+
+    // NEU: Waffe
+    html += `<td class="text-center small">${getWaffeText(entry)}</td>`;
+
+    // Munition
+    /*
+    const munText = (entry.munition_schuss && entry.munition_schuss > 0)
+      ? `${entry.munition_schuss} (${fmtCHF(entry.munition_preis || 0)})`
+      : '<span class="text-muted">–</span>';
+    html += `<td class="text-center">${munText}</td>`;
+*/
+// Munition – getrennt nach Stiche vs. Zusatz, inkl. Ammo-Arten
+const partsStiche = [];
+if (Number(entry.stich_gp11) > 0) partsStiche.push(`GP11: ${Number(entry.stich_gp11)}`);
+if (Number(entry.stich_gp90) > 0) partsStiche.push(`GP90: ${Number(entry.stich_gp90)}`);
+
+const partsZusatz = [];
+if (Number(entry.zusatz_gp11) > 0) partsZusatz.push(`GP11: ${Number(entry.zusatz_gp11)}`);
+if (Number(entry.zusatz_gp90) > 0) partsZusatz.push(`GP90: ${Number(entry.zusatz_gp90)}`);
+
+let munHtml = '';
+if (partsStiche.length) munHtml += `<div><strong>Stiche:</strong> ${partsStiche.join(' / ')}</div>`;
+if (partsZusatz.length) munHtml += `<div><strong>Zusatz:</strong> ${partsZusatz.join(' / ')}</div>`;
+
+// Fallback: alte Summendarstellung, falls (noch) nichts gesplittet wurde
+if (!munHtml) {
+  const shots = Number(entry.munition_schuss) || 0;
+  const preis = Number(entry.munition_preis) || 0;
+  munHtml = shots > 0 ? `${shots} (${fmtCHF(preis)})` : '<span class="text-muted">–</span>';
+}
+
+html += `<td class="text-center small">${munHtml}</td>`;
+
+    // Bezahlt
+    let zahlungIcon = '<span class="text-muted">-</span>';
+    if (entry.zahlungsmethode === 'karte') zahlungIcon = '<i class="bi bi-credit-card-2-back text-primary" title="Karte"></i>';
+    if (entry.zahlungsmethode === 'bar')   zahlungIcon = '<i class="bi bi-cash text-success" title="Bar"></i>';
+    html += `<td class="text-center">${zahlungIcon}</td>`;
+
+    // Total
+    html += `<td class="text-end total-cell">${fmtCHF(entry.total_price || 0)}</td>`;
+
+    // Aktionen
+    html += `
+      <td class="text-center">
+        <div class="btn-group btn-group-sm" role="group">
+          <button class="btn btn-outline-secondary btn-edit-selection" 
+                  data-entity-id="${entry.entity_id || entry.mitglied_id}"
+                  data-entity-typ="${entry.typ || 'mitglied'}"
+                  data-entity-name="${entry.name}"
+                  title="Bearbeiten">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          
+      <button class="btn btn-outline-danger btn-delete-selection"
+              data-entity-id="${entry.entity_id || entry.mitglied_id}"
+              data-entity-typ="${entry.typ || 'mitglied'}"
+              data-entity-name="${entry.name}"
+              title="Löschen">
+        <i class="bi bi-trash3"></i>
+        </div>
+      </td>`;
+
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
   document.addEventListener('click', function(e) {
     if (e.target.closest('.btn-edit-selection')) {
       e.preventDefault();
@@ -1755,32 +1771,25 @@ function loadGastSelection() {
       const entityName = btn.dataset.entityName;
       
       if (entityTyp === 'mitglied') {
-        // Setze das Mitglied im Dropdown
         document.getElementById('mitgliedSelect').value = entityId;
         document.getElementById('gastName').value = '';
-        // Render Stiche für Mitglied
+        document.getElementById('gastWaffeContainer').style.display = 'none'; // NEU
         renderStiche();
       } else if (entityTyp === 'gast') {
-        // Setze den Gast-Namen
         document.getElementById('mitgliedSelect').value = '';
-        // Entferne " (Gast)" vom Namen
-        const gastName = entityName.replace(' (Gast)', '');
+        const gastName = entityName.replace(' (Gast)', '').replace(' (JS)', '');
         document.getElementById('gastName').value = gastName;
-        // Render Stiche für Gast
+        document.getElementById('gastWaffeContainer').style.display = 'block'; // NEU
         renderStiche();
       }
       
-      // Lade die Auswahl
       loadSelection();
       
-      // Scrolle nach oben zum Formular
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      // Zeige kurz eine Info
       showToast(`Bearbeite Stiche für ${entityName}`, 'info');
     }
     
-    // Event Listener für Löschen-Button
     if (e.target.closest('.btn-delete-selection')) {
       e.preventDefault();
       e.stopPropagation();
@@ -1791,14 +1800,11 @@ function loadGastSelection() {
       const entityName = btn.dataset.entityName;
       const jahr = btn.dataset.jahr;
       
-      // Bestätigungsdialog mit Modal
       showDeleteConfirmation(entityId, entityTyp, entityName, jahr);
     }
   });
   
-  // Lösch-Funktion
   function deleteSelection(entityId, entityTyp, entityName, jahr) {
-    // Zeige Ladeindikator im Button
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     const originalText = confirmBtn.innerHTML;
     confirmBtn.disabled = true;
@@ -1822,10 +1828,8 @@ function loadGastSelection() {
     .then(data => {
       if (data.success) {
         showToast(`${entityName} wurde gelöscht`, 'success');
-        // Tabelle neu laden
         loadErfassteStiche();
         
-        // Falls das gelöschte Element gerade bearbeitet wird, Form zurücksetzen
         const currentMitglied = document.getElementById('mitgliedSelect').value;
         const currentGast = document.getElementById('gastName').value.trim();
         
@@ -1842,7 +1846,6 @@ function loadGastSelection() {
       showToast('Netzwerkfehler beim Löschen', 'danger');
     })
     .finally(() => {
-      // Reset Button
       const confirmBtn = document.getElementById('confirmDeleteBtn');
       if (confirmBtn) {
         confirmBtn.disabled = false;
@@ -1863,7 +1866,6 @@ function loadGastSelection() {
       document.getElementById('btnAddNewStich').addEventListener('click', () => openEditStichDialog(null));
       document.getElementById('btnSaveStich').addEventListener('click', saveStichDefinition);
       
-      // Enter-Taste im Edit-Form
       document.getElementById('editStichForm').addEventListener('submit', function(e) {
         e.preventDefault();
         saveStichDefinition();
@@ -1903,7 +1905,8 @@ function loadGastSelection() {
       { typ: 'gast_kombi_2', label: 'Gäste: 2er Kombination', einheit: 'CHF', beschreibung: '2 Stiche aus Endstich/Schwini' },
       { typ: 'gast_kombi_3', label: 'Gäste: 3er Kombination', einheit: 'CHF', beschreibung: '3 Stiche aus Endstich/Schwini' },
       { typ: 'gast_sie_und_er', label: 'Gäste: Sie und Er', einheit: 'CHF', beschreibung: 'Spezialpreis für Sie und Er Stich' },
-      { typ: 'partner_zabig', label: 'Partner Zabigstich', einheit: 'CHF', beschreibung: 'Preis wenn Zabig mit Partner gelöst wird' }
+      { typ: 'partner_zabig', label: 'Partner Zabigstich', einheit: 'CHF', beschreibung: 'Preis wenn Zabig mit Partner gelöst wird' },
+      { typ: 'js_paket_preis', label: 'Jungschützen Paket', einheit: 'CHF', beschreibung: 'JS-Paket: Endstich + Schwini + Zabig + Probe', highlight: true }
     ];
     
     let html = '';
@@ -1911,11 +1914,14 @@ function loadGastSelection() {
       const preis = SPEZIALPREISE[config.typ] || { price_cents: 0 };
       const value = config.einheit === 'Rp.' ? preis.price_cents : (preis.price_cents / 100).toFixed(2);
       
+      const cardClass = config.highlight ? 'border-primary' : '';
+      const badgeHtml = config.highlight ? '<span class="badge bg-primary ms-2">JS</span>' : '';
+      
       html += `
         <div class="col-md-6 mb-3">
-          <div class="card">
+          <div class="card ${cardClass}">
             <div class="card-body">
-              <h6 class="card-title">${config.label}</h6>
+              <h6 class="card-title">${config.label}${badgeHtml}</h6>
               <p class="card-text small text-muted">${config.beschreibung}</p>
               <div class="input-group">
                 <span class="input-group-text">${config.einheit}</span>
@@ -1937,7 +1943,6 @@ function loadGastSelection() {
   }
   
   function renderSpezialpreiseDefault() {
-    // Zeige Default-Werte wenn Tabelle noch nicht existiert
     const container = document.getElementById('spezialpreiseContainer');
     if (!container) return;
     
@@ -1952,7 +1957,6 @@ function loadGastSelection() {
     `;
   }
   
-  // Event Listener für Spezialpreise speichern
   document.getElementById('btnSaveSpezialpreise').addEventListener('click', function() {
     const spinner = document.getElementById('saveSpezialpreiseSpinner');
     const btn = this;
@@ -1972,7 +1976,6 @@ function loadGastSelection() {
       });
     });
     
-    // Speichere alle Änderungen
     Promise.all(updates.map(update => {
       return fetch(`${API}?action=update_spezialpreis`, {
         method: 'POST',
@@ -1985,9 +1988,7 @@ function loadGastSelection() {
     }))
     .then(results => {
       showToast('Spezialpreise erfolgreich gespeichert', 'success');
-      // Lade Preise neu für die Anwendung
       loadSpezialpreise();
-      // Aktualisiere die Munitionspreise in der Anzeige
       setTimeout(() => {
         updateMunitionPreise();
         recalcTotals();
@@ -2049,7 +2050,7 @@ function loadGastSelection() {
     
     if (stich) {
       document.getElementById('editStichCode').value = stich.code;
-      document.getElementById('editStichCode').disabled = true; // Code nicht änderbar bei bestehenden
+      document.getElementById('editStichCode').disabled = true;
       document.getElementById('editStichName').value = stich.name;
       document.getElementById('editStichShots').value = stich.shots;
       document.getElementById('editStichPrice').value = (stich.price_cents / 100).toFixed(2);
@@ -2068,7 +2069,6 @@ function loadGastSelection() {
   function saveStichDefinition() {
     const id = document.getElementById('editStichId').value;
     
-    // Daten vorbereiten
     const formData = {
       name: document.getElementById('editStichName').value,
       shots: parseInt(document.getElementById('editStichShots').value),
@@ -2077,7 +2077,6 @@ function loadGastSelection() {
       active: document.getElementById('editStichActive').checked ? 1 : 0
     };
     
-    // Bei neuem Stich auch Code mitschicken
     if (!id) {
       formData.code = document.getElementById('editStichCode').value;
     } else {
@@ -2089,7 +2088,6 @@ function loadGastSelection() {
     spinner.classList.remove('d-none');
     btn.disabled = true;
     
-    // URL mit action als Query-Parameter
     const url = `${API}?action=update_stich_definition`;
     
     fetch(url, {
@@ -2104,9 +2102,9 @@ function loadGastSelection() {
     .then(result => {
       if (result.success) {
         editStichModal.hide();
-        loadAllStiche(); // Admin-Tabelle neu laden
-        loadStiche(); // Hauptansicht neu laden
-        loadErfassteStiche(); // Tabelle aktualisieren
+        loadAllStiche();
+        loadStiche();
+        loadErfassteStiche();
         showToast('Erfolgreich gespeichert', 'success');
       } else {
         showToast('Fehler: ' + result.message, 'danger');
@@ -2122,7 +2120,6 @@ function loadGastSelection() {
     });
   }
   
-  // Verbesserte Toast-Funktion
   function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toastId = 'toast-' + Date.now();
@@ -2148,17 +2145,14 @@ function loadGastSelection() {
     
     toast.show();
     
-    // Entferne Toast nach dem Ausblenden
     toastElement.addEventListener('hidden.bs.toast', () => {
       toastElement.remove();
     });
   }
   
-  // Globale Variablen für Lösch-Bestätigung
   let deleteConfirmModal = null;
   let pendingDeleteData = null;
   
-  // Zeige Lösch-Bestätigungsmodal
   function showDeleteConfirmation(entityId, entityTyp, entityName, jahr) {
     pendingDeleteData = { entityId, entityTyp, entityName, jahr };
     
@@ -2171,7 +2165,6 @@ function loadGastSelection() {
     deleteConfirmModal.show();
   }
   
-  // Event Listener für Bestätigungsbutton
   document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
     if (pendingDeleteData) {
       deleteConfirmModal.hide();
@@ -2180,22 +2173,18 @@ function loadGastSelection() {
     }
   });
   
-  // PDF Generation
   document.getElementById('btnGeneratePDF').addEventListener('click', function() {
     const jahr = document.getElementById('yearSelect').value;
     const btn = this;
     const originalText = btn.innerHTML;
     
-    // Zeige Ladeanimation
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...';
     
-    // Rufe PDF-Generator auf
     fetch(`endschloesen/generate_pdf_endschloesen.php?action=generate_pdf&jahr=${jahr}`)
       .then(response => response.json())
       .then(data => {
         if (data.pdf_link) {
-          // Öffne PDF in neuem Tab
           window.open(data.pdf_link, '_blank');
           showToast('PDF wurde erfolgreich generiert', 'success');
         } else if (data.error) {
@@ -2207,13 +2196,11 @@ function loadGastSelection() {
         showToast('Fehler beim Generieren des PDFs', 'danger');
       })
       .finally(() => {
-        // Button zurücksetzen
         btn.disabled = false;
         btn.innerHTML = originalText;
       });
   });
   
-  // Collapse Event Listener für Chevron-Animation
   document.getElementById('yearCollapse').addEventListener('shown.bs.collapse', function() {
     document.getElementById('yearChevron').className = 'bi bi-chevron-down me-1';
   });
@@ -2233,7 +2220,6 @@ function loadGastSelection() {
     initAdminModals();
     initZusatzSchuesse();
     
-    // Bootstrap Collapse initialisieren
     const yearCollapse = new bootstrap.Collapse(document.getElementById('yearCollapse'), {
       toggle: false
     });
@@ -2244,17 +2230,13 @@ function loadGastSelection() {
   
   populateYearSelect();
   loadMitglieder();
+  loadWaffen(); // NEU: Lade Waffen beim Start
   loadStiche();
   
-  // Lade initial die erfassten Stiche für das ausgewählte Jahr
   setTimeout(() => {
     loadErfassteStiche();
   }, 500);
-//tiche();
 })();
 </script>
 
 <?php include 'footer.inc.php'; ?>
-
-
-
