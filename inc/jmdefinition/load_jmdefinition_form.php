@@ -17,7 +17,7 @@ if ($result->num_rows > 0) {
         $erweitertChecked = $row['Erweitert'] ? 'checked' : '';
         $infoChecked = $row['Info'] ? 'checked' : '';
         $gruppeChecked = $row['Gruppe'] ? 'checked' : '';
-        echo "<tr id='row" . $row['ID'] . " '>";
+        echo "<tr id='row" . $row['ID'] . "'>";
         echo "<td class='fixed-with'><span class='drag-indicator'>⠿</span>" . $row['Reihenfolge'] . "</td>";
                echo "<td>
         <textarea 

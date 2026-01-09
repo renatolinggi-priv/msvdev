@@ -128,11 +128,13 @@ $page_specific_css = "
     box-shadow: var(--box-shadow);
     padding: 1rem 1.25rem;
     margin-bottom: 1.25rem;
-    border-left: 4px solid var(--success-color);
 }
 
+/* Kompakte Buttons */
+.btn-compact { padding: .45rem .75rem; font-size: .875rem; }
+
 .add-event-card h5 {
-    color: var(--success-color);
+    color: var(--secondary-color);
     margin-bottom: 0.75rem;
     font-weight: 600;
     font-size: 0.95rem;
@@ -161,36 +163,18 @@ $page_specific_css = "
     flex-shrink: 0;
 }
 
-/* Action Button Gruppe */
-.action-buttons {
+/* Action Button Gruppe - wie bei jmdefinition */
+.button-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-/* Export Links */
-.export-links {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: var(--border-radius);
-    padding: 0.5rem 0.75rem;
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.export-links a {
-    color: var(--success-color);
-    text-decoration: none;
-    font-weight: 500;
-    display: inline-flex;
+    gap: .5rem;
     align-items: center;
-    gap: 0.5rem;
-}
-
-.export-links a:hover {
-    color: var(--success-color);
-    text-decoration: underline;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
 }
 
 /* Custom Close Button */
@@ -218,18 +202,16 @@ $page_specific_css = "
 }
 
 /* Responsive für Wichtige Termine */
-@media (max-width: 768px) {
+@media (max-width: 576px) {
     .add-event-card {
         padding: 1rem;
-        margin: 0 -0.5rem 1.5rem -0.5rem;
-        border-radius: 0;
     }
     
-    .action-buttons {
+    .button-toolbar {
         flex-direction: column;
     }
     
-    .action-buttons .btn {
+    .button-toolbar .btn {
         width: 100%;
     }
 }
@@ -288,8 +270,8 @@ if (empty($_SESSION['csrf_token'])) {
                         <form id="addEventForm" method="POST" action="add_event.php">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                             
-                            <div class="row mb-2">
-                                <div class="col-md-3">
+                            <div class="row">
+                                <div class="col-md-2">
                                     <label for="eventYear" class="form-label small mb-1">
                                         <i class="bi bi-calendar3 me-1"></i>Jahr:
                                     </label>
@@ -305,7 +287,7 @@ if (empty($_SESSION['csrf_token'])) {
                                     <input type="text" id="eventName" name="event_name" class="form-control form-control-sm" required placeholder="Event Bezeichnung">
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="eventDate" class="form-label small mb-1">
                                         <i class="bi bi-calendar-date me-1"></i>Datum:
                                     </label>
@@ -318,24 +300,25 @@ if (empty($_SESSION['csrf_token'])) {
                                     </label>
                                     <input type="text" id="eventTime" name="event_time" class="form-control form-control-sm" required placeholder="08:00-12:00">
                                 </div>
-                            </div>
 
-                            <div class="action-buttons">
-                                <button type="submit" class="btn btn-compact-standard btn-outline-success">
-                                    <i class="bi bi-plus-circle me-1"></i> Termin hinzufügen
-                                </button>
-                                <button type="button" id="generateIcsButton" class="btn btn-compact-standard btn-outline-info">
-                                    <i class="bi bi-calendar-plus me-1"></i> ICS generieren
-                                </button>
-                                <button type="button" id="generatePDFButton" class="btn btn-compact-standard btn-outline-info">
-                                    <i class="bi bi-file-pdf me-1"></i> PDF generieren
-                                </button>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-compact btn-outline-success w-100">
+                                        <i class="bi bi-plus-circle me-1"></i> Hinzufügen
+                                    </button>
+                                </div>
                             </div>
                         </form>
+                    </div>
 
-                        <div id="icsDownloadLink" class="export-links" style="display: none;">
-                            <i class="bi bi-download me-2"></i>
-                            <a href="" id="downloadLink" target="_blank">Hier herunterladen</a>
+                    <!-- Button Toolbar -->
+                    <div class="button-toolbar">
+                        <div class="btn-row d-flex flex-wrap gap-2">
+                            <button type="button" id="generateIcsButton" class="btn btn-compact btn-outline-info">
+                                <i class="bi bi-calendar-plus me-1"></i> ICS generieren
+                            </button>
+                            <button type="button" id="generatePDFButton" class="btn btn-compact btn-outline-info">
+                                <i class="bi bi-file-pdf me-1"></i> PDF generieren
+                            </button>
                         </div>
                     </div>
 
@@ -399,10 +382,10 @@ if (empty($_SESSION['csrf_token'])) {
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-compact-standard btn-outline-secondary" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-compact btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i> Abbrechen
                     </button>
-                    <button type="submit" class="btn btn-compact-standard btn-outline-primary" id="saveChangesButton">
+                    <button type="submit" class="btn btn-compact btn-outline-primary" id="saveChangesButton">
                         <i class="bi bi-check-circle me-1"></i> Speichern
                     </button>
                 </div>
@@ -433,11 +416,11 @@ if (empty($_SESSION['csrf_token'])) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-compact-standard btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-compact btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-compact-standard btn-outline-danger" id="confirmDeleteButton">
-                    <i class="bi bi-check-circle me-1"></i>Bestätigen
+                <button type="button" class="btn btn-compact btn-outline-danger" id="confirmDeleteButton">
+                    <i class="bi bi-trash me-1"></i>Löschen
                 </button>
             </div>
         </div>
@@ -587,7 +570,11 @@ $(document).ready(function() {
     function initializeYearDropdown() {
         const yearSelect = $('#eventYear').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        const currentMonth = new Date().getMonth() + 1; // 1-12
+        // Ab Oktober (Monat 10) auch Folgejahr anzeigen
+        const maxYear = (currentMonth >= 10) ? currentYear + 1 : currentYear;
+        
+        for (let year = 2024; year <= maxYear; year++) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -679,6 +666,16 @@ $(document).ready(function() {
         });
     });
 
+    // Hilfsfunktion für direkten Download
+    function triggerDownload(url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+
     // ICS generieren
     $('#generateIcsButton').on('click', function() {
         var $btn = $(this);
@@ -692,14 +689,13 @@ $(document).ready(function() {
             url: 'wichtigetermine/export_all_ics.php',
             method: 'GET',
             data: { year: eventYear },
-            success: function(response) {
-                var data = JSON.parse(response);
-                if (data.success) {
-                    $('#icsDownloadLink').show();
-                    $('#downloadLink').attr('href', data.ics_link);
-                    showToast('ICS-Datei erfolgreich erstellt', 'success');
+            dataType: 'json',
+            success: function(data) {
+                if (data.success && data.ics_link) {
+                    triggerDownload(data.ics_link);
+                    showToast('ICS-Datei wird heruntergeladen', 'success');
                 } else {
-                    showToast('Fehler beim Erstellen der ICS-Datei', 'error');
+                    showToast(data.message || 'Fehler beim Erstellen der ICS-Datei', 'error');
                 }
             },
             error: function(xhr, status, error) {
@@ -726,16 +722,15 @@ $(document).ready(function() {
             data: { year: eventYear },
             dataType: 'json',
             success: function(data) {
-                if (data.success) {
-                    $('#icsDownloadLink').show();
-                    $('#downloadLink').attr('href', data.pdf_link);
-                    showToast('PDF-Datei erfolgreich erstellt', 'success');
+                if (data.success && data.pdf_link) {
+                    triggerDownload(data.pdf_link);
+                    showToast('PDF-Datei wird heruntergeladen', 'success');
                 } else {
-                    showToast('Fehler beim Erstellen der PDF-Datei', 'error');
+                    showToast(data.message || 'Fehler beim Erstellen der PDF-Datei', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Generieren der PDF-Datei: ' + error, 'error');
+                showToast('Fehler beim Generieren der PDF-Datei', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

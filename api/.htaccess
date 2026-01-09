@@ -1,0 +1,31 @@
+# API Security & Configuration
+
+# Aktiviere Rewrite Engine
+RewriteEngine On
+
+# Verhindere Directory Listing
+Options -Indexes
+
+# Nur PHP-Dateien und die README erlauben
+<FilesMatch "^(?!api\.php|README\.md).*$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# UTF-8 Encoding
+AddDefaultCharset UTF-8
+
+# Caching für JSON-Responses (5 Minuten)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/json "access plus 5 minutes"
+</IfModule>
+
+# Kompression aktivieren
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Custom Error Pages
+ErrorDocument 404 "API Endpoint nicht gefunden"
+ErrorDocument 500 "Interner Server Fehler"

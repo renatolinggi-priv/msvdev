@@ -61,6 +61,7 @@ $logoBase64 = imgToBase64('../dat/SKSG_Logo.jpg'); // Passe den Pfad zum Logo an
 
 // Aktuelles Jahr (oder spezifisches Jahr aus GET-Parameter)
 $currentYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+$isDraft = isset($_GET['draft']) && $_GET['draft'] == 1;
 
 // SQL-Abfrage vorbereiten, um JMDefinition-Daten zu laden
 $sql = "SELECT Reihenfolge, Bezeichnung, Schiesstage, Maxpunkte, Streicher, Erweitert, Info FROM JMDefinition WHERE year = ? ORDER BY Reihenfolge";
@@ -78,6 +79,43 @@ $jmdefinitions = $result->fetch_all(MYSQLI_ASSOC);
 
 $stmt->close();
 $conn->close();
+
+/**
+ * Extrahiert das erste Jahr aus dem Schiesstage-Feld
+ * Gibt das Jahr zurück oder null wenn keins gefunden
+ */
+function extractFirstYear($schiesstage, $defaultYear) {
+    if (empty($schiesstage)) {
+        return null;
+    }
+    // Suche nach 4-stelliger Jahreszahl
+    if (preg_match('/(\d{4})/', $schiesstage, $matches)) {
+        return intval($matches[1]);
+    }
+    return $defaultYear;
+}
+
+/**
+ * Sortiert die JMDefinitions:
+ * 1. Einträge mit Datum im aktuellen Jahr (nach Reihenfolge)
+ * 2. Einträge ohne Datum (nach Reihenfolge)
+ * 3. Einträge mit Datum im Folgejahr (wie GV fürs nächste Jahr)
+ */
+usort($jmdefinitions, function($a, $b) use ($currentYear) {
+    $yearA = extractFirstYear($a['Schiesstage'], $currentYear);
+    $yearB = extractFirstYear($b['Schiesstage'], $currentYear);
+    
+    // Folgejahr-Einträge ans Ende
+    $aIsFuture = ($yearA !== null && $yearA > $currentYear) ? 1 : 0;
+    $bIsFuture = ($yearB !== null && $yearB > $currentYear) ? 1 : 0;
+    
+    if ($aIsFuture !== $bIsFuture) {
+        return $aIsFuture - $bIsFuture; // Folgejahr kommt nach
+    }
+    
+    // Innerhalb der gleichen Kategorie: nach Reihenfolge
+    return $a['Reihenfolge'] - $b['Reihenfolge'];
+});
 
 // Prüfen, ob Daten verfügbar sind
 if (empty($jmdefinitions)) {
@@ -151,6 +189,20 @@ ob_start();
             height: 30px;
         }
 
+        /* Wasserzeichen für Entwurf */
+        .watermark {
+            position: fixed;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100px;
+            font-weight: bold;
+            color: rgba(200, 0, 0, 0.15);
+            z-index: 1000;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
         /* Zentrierung für die Spalten "JM A", "JM B" und "Gruppenschiessen" */
         .table th:nth-child(4),
         .table td:nth-child(4) {
@@ -173,6 +225,9 @@ ob_start();
 </head>
 
 <body>
+    <?php if ($isDraft): ?>
+    <div class="watermark">ENTWURF</div>
+    <?php endif; ?>
     <table class="table">
         <thead>
             <tr>
@@ -193,11 +248,16 @@ ob_start();
                 <?php
                 // Verarbeitung der Tage und Monate
                 $dateData = extractDaysAndMonths($jm['Schiesstage']);
+                // Bezeichnung anpassen: "Endstich" -> "MSV Wilen Endschiessen"
+                $bezeichnung = $jm['Bezeichnung'];
+                if (trim($bezeichnung) === 'Endstich') {
+                    $bezeichnung = 'MSV Wilen Endschiessen';
+                }
                 ?>
                 <tr>
                     <td><?php echo htmlspecialchars($dateData['days']); ?></td>
                     <td><?php echo htmlspecialchars($dateData['months']); ?></td>
-                    <td><?php echo htmlspecialchars($jm['Bezeichnung']); ?></td>
+                    <td><?php echo htmlspecialchars($bezeichnung); ?></td>
                     <td align="center">
                         <?php
                         $isStreicher = isset($jm['Streicher']) ? $jm['Streicher'] : 0;
@@ -261,7 +321,8 @@ $dompdf->render();
 
 // PDF-Ausgabe speichern
 $date = new DateTime();
-$pdfFileName = "Jahresprogramm_{$currentYear}_" . $date->format('Y-m-d_H-i-s') . ".pdf";
+$draftSuffix = $isDraft ? '_ENTWURF' : '';
+$pdfFileName = "Jahresprogramm_{$currentYear}{$draftSuffix}_" . $date->format('Y-m-d_H-i-s') . ".pdf";
 $pdfFilePath = "dat/" . $pdfFileName;
 file_put_contents($pdfFilePath, $dompdf->output());
 

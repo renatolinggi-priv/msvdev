@@ -20,6 +20,10 @@ $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
     $veranstaltung = $row['Bezeichnung'];
+    // Bezeichnung anpassen: "Endstich" -> "MSV Wilen Endschiessen"
+    if (trim($veranstaltung) === 'Endstich') {
+        $veranstaltung = 'MSV Wilen Endschiessen';
+    }
     $schiesstage   = $row['Schiesstage'];
     $adresse       = $row['Adresse'];  // Hier holen wir die Adresse
 } else {
@@ -44,6 +48,23 @@ function icsEscape($text) {
     // Zeilenumbrüche
     $text = str_replace("\n", '\\n', $text);
     return $text;
+}
+
+/**
+ * Prüft ob ein String Koordinaten enthält (z.B. "47.2034, 8.7812")
+ * Gibt Array [lat, lon] zurück oder false
+ */
+function parseCoordinates($text) {
+    $text = trim($text);
+    // Akzeptiert: Komma, Semikolon, Schrägstrich als Trennzeichen
+    if (preg_match('/^(-?\d+\.\d+)\s*[,;\/]\s*(-?\d+\.\d+)$/', $text, $matches)) {
+        $lat = floatval($matches[1]);
+        $lon = floatval($matches[2]);
+        if ($lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
+            return ['lat' => $lat, 'lon' => $lon];
+        }
+    }
+    return false;
 }
 
 /**
@@ -134,9 +155,19 @@ foreach ($termine as $termin) {
     echo "SUMMARY:$summaryEscaped\r\n";
     echo "DESCRIPTION:$descEscaped\r\n";
 
-    // NEU: Falls Adresse vorhanden ist, LOCATION einfügen
-    if (!empty($addrEscaped)) {
-        echo "LOCATION:$addrEscaped\r\n";
+    // Falls Adresse vorhanden: Koordinaten oder normale Adresse
+    if (!empty($adresse)) {
+        $coords = parseCoordinates($adresse);
+        if ($coords) {
+            // Mindestens 6 Dezimalstellen für Apple Kalender Kompatibilität
+            $lat = number_format($coords['lat'], 6, '.', '');
+            $lon = number_format($coords['lon'], 6, '.', '');
+            echo "GEO:{$lat};{$lon}\r\n";
+            echo "LOCATION:" . icsEscape("{$lat}, {$lon}") . "\r\n";
+            echo "X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-APPLE-RADIUS=100;X-TITLE={$lat}\\, {$lon}:geo:{$lat},{$lon}\r\n";
+        } else {
+            echo "LOCATION:$addrEscaped\r\n";
+        }
     }
 
     echo "END:VEVENT\r\n";

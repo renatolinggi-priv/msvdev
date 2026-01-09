@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Fehler beim Vorbereiten des Insert-Statements: " . $conn->error);
         }
 
-        $stmtInsert->bind_param("isiiisiiisii", $neueReihenfolge, $bezeichnung, $maxpunkte, $streicher, $erweitert, $schiesstage, $info, $gruppe, $hidden, $year, $adresse, $zuschlag);
+        $stmtInsert->bind_param("isiiisiiiisi", $neueReihenfolge, $bezeichnung, $maxpunkte, $streicher, $erweitert, $schiesstage, $info, $gruppe, $hidden, $year, $adresse, $zuschlag);
         if (!$stmtInsert->execute()) {
             throw new Exception("Fehler beim Einfügen des neuen Eintrags: " . $stmtInsert->error);
         }

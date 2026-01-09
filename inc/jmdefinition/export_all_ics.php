@@ -108,6 +108,10 @@ $ics .= "METHOD:PUBLISH\r\n";
 
 while ($row = $result->fetch_assoc()) {
     $veranstaltung = $row['Bezeichnung'];
+    // Bezeichnung anpassen: "Endstich" -> "MSV Wilen Endschiessen"
+    if (trim($veranstaltung) === 'Endstich') {
+        $veranstaltung = 'MSV Wilen Endschiessen';
+    }
     $schiesstage   = $row['Schiesstage'];
     $adresse       = $row['Adresse'];
     $termine       = parseSchiesstage($schiesstage);
@@ -131,8 +135,18 @@ while ($row = $result->fetch_assoc()) {
         $ics .= "SUMMARY:$veranstaltung\r\n";
         $ics .= "DESCRIPTION:Jahresmeisterschaft - $veranstaltung\r\n";
         if (!empty($adresse)) {
-            $adresseEscaped = icsEscape($adresse);
-            $ics .= "LOCATION:$adresseEscaped\r\n";
+            $coords = parseCoordinates($adresse);
+            if ($coords) {
+                // Mindestens 6 Dezimalstellen für Apple Kalender Kompatibilität
+                $lat = number_format($coords['lat'], 6, '.', '');
+                $lon = number_format($coords['lon'], 6, '.', '');
+                $ics .= "GEO:{$lat};{$lon}\r\n";
+                $ics .= "LOCATION:" . icsEscape("{$lat}, {$lon}") . "\r\n";
+                $ics .= "X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-APPLE-RADIUS=100;X-TITLE={$lat}\\, {$lon}:geo:{$lat},{$lon}\r\n";
+            } else {
+                $adresseEscaped = icsEscape($adresse);
+                $ics .= "LOCATION:$adresseEscaped\r\n";
+            }
         }
         $ics .= "END:VEVENT\r\n";
     }
@@ -160,6 +174,22 @@ function icsEscape($text) {
     $text = str_replace(',', '\,', $text);
     $text = str_replace("\n", '\\n', $text);
     return $text;
+}
+
+/**
+ * Prüft ob ein String Koordinaten enthält (z.B. "47.2034, 8.7812")
+ */
+function parseCoordinates($text) {
+    $text = trim($text);
+    // Akzeptiert: Komma, Semikolon, Schrägstrich als Trennzeichen
+    if (preg_match('/^(-?\d+\.\d+)\s*[,;\/]\s*(-?\d+\.\d+)$/', $text, $matches)) {
+        $lat = floatval($matches[1]);
+        $lon = floatval($matches[2]);
+        if ($lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
+            return ['lat' => $lat, 'lon' => $lon];
+        }
+    }
+    return false;
 }
 
 ?>

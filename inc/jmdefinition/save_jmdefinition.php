@@ -22,16 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $adresse    = isset($_POST['adresse']) ? $_POST['adresse'] : [];
     $gruppe    = isset($_POST['gruppe']) ? $_POST['gruppe'] : [];
     $zuschlag = isset($_POST['zuschlag']) ? $_POST['zuschlag'] : [];
-    $year = date('Y'); // Aktuelles Jahr
+    $year = isset($_POST['year']) ? intval($_POST['year']) : date('Y');
     $schiesstage = isset($_POST['schiesstage']) ? $_POST['schiesstage'] : []; // Mehrzeiliger Text pro Event
     $info = isset($_POST['info']) ? $_POST['info'] : [];
+
+    // Debug: Zeige empfangene Daten
+    debug_log("Year: " . $year);
+    debug_log("Adresse Array: " . print_r($adresse, true));
+    debug_log("Bezeichnungen Array Keys: " . implode(',', array_keys($bezeichnungen)));
 
     // Beginne Transaktion
     $conn->begin_transaction();
 
     try {
         // 1. Aktualisiere JMDefinition-Daten
-        $stmtUpdate = $conn->prepare("UPDATE JMDefinition SET Bezeichnung = ?, Maxpunkte = ?, Streicher = ?, Erweitert = ?, Schiesstage = ?, Info = ?, Gruppe = ?, Adresse = ?, Zuschlag = ? WHERE ID = ? AND year = ?");
+        $stmtUpdate = $conn->prepare("UPDATE JMDefinition SET Bezeichnung = ?, Maxpunkte = ?, Streicher = ?, Erweitert = ?, Schiesstage = ?, Info = ?, Gruppe = ?, Adresse = ?, Zuschlag = ? WHERE ID = ?");
         if (!$stmtUpdate) {
             throw new Exception("Fehler beim Vorbereiten des Update-Statements: " . $conn->error);
         }
@@ -48,19 +53,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $adresseValue = isset($adresse[$id]) ? trim($adresse[$id]) : '';
 
             $stmtUpdate->bind_param(
-                "siiisiisiii",
-                $bezeichnung,      // (1)
-                $maxpunkt,         // (2)
-                $isStreicher,      // (3)
-                $isErweitert,      // (4)
-                $schiesstageValue, // (5)
-                $isInfo,           // (6)
-                $isGruppe,         // (7)
-                $adresseValue,     // (8)
-                $zuschlagValue,    // (9)
-                $id,               // (10)
-                $year              // (11)
+                "siiisiisii",
+                $bezeichnung,      // s (1)
+                $maxpunkt,         // i (2)
+                $isStreicher,      // i (3)
+                $isErweitert,      // i (4)
+                $schiesstageValue, // s (5)
+                $isInfo,           // i (6)
+                $isGruppe,         // i (7)
+                $adresseValue,     // s (8)
+                $zuschlagValue,    // i (9)
+                $id                // i (10)
             );
+            
+            debug_log("Updating ID $id: Adresse='$adresseValue'");
             
             if (!$stmtUpdate->execute()) {
                 throw new Exception("Fehler beim Aktualisieren von Event ID $id: " . $stmtUpdate->error);

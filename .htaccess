@@ -3,3 +3,14 @@ Options -Indexes
 
 #@__HCP_END__@#
 # Anything after the comment above is left alone
+
+# URL Rewriting für schöne Kalender-URLs
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Leitet /termine auf termine.php um (ohne .php in der URL)
+    RewriteRule ^termine$ termine.php [L]
+    
+    # Leitet /abo auf abo.php um (ohne .php in der URL)
+    RewriteRule ^abo$ abo.php [L]
+</IfModule>

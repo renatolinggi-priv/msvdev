@@ -3,7 +3,7 @@
 include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles (leichtgewichtig, nutzt deine Global-Tokens)
-$page_specific_css = "
+$page_specific_css = <<<'CSS'
 /* ===== JM Definition – kompakt & robust ===== */
 
 /* --- Wrapper/Viewport --- */
@@ -126,8 +126,8 @@ $page_specific_css = "
 #jmdefinitionTabelle td:nth-child(11) { border-left: 2px solid #f1f3f4; }
 
 /* --- Inputs kompakt & ruhig --- */
-#jmdefinitionTabelle input[type=\"text\"],
-#jmdefinitionTabelle input[type=\"number\"],
+#jmdefinitionTabelle input[type="text"],
+#jmdefinitionTabelle input[type="number"],
 #jmdefinitionTabelle textarea {
   padding: .35rem .5rem;
   font-size: .9rem;
@@ -171,12 +171,6 @@ $page_specific_css = "
   padding: 1.25rem;
 }
 .btn-compact { padding: .45rem .75rem; font-size: .875rem; }
-.btn-soft-primary { background: #eef6ff; color: #1d4ed8; border-color: #bfdbfe; }
-.btn-soft-primary:hover { background: #e0efff; color: #1e40af; border-color: #93c5fd; }
-.btn-soft-success { background: #eafaf0; color: #15803d; border-color: #bbf7d0; }
-.btn-soft-success:hover { background: #dcfce7; color: #166534; border-color: #86efac; }
-.btn-outline-secondary { border-color: #e2e8f0; color: #334155; }
-.btn-outline-secondary:hover { background: #f1f5f9; color: #0f172a; }
 
 /* --- Kompakter Tabellenmodus (optional) --- */
 .table--compact { font-size: .92rem; }
@@ -224,8 +218,8 @@ $page_specific_css = "
 }
 
 /* Formfelder im Hover: transparent, damit der Zeilenhover durchscheint */
-#jmdefinitionTabelle tbody tr:hover input[type=\"text\"],
-#jmdefinitionTabelle tbody tr:hover input[type=\"number\"],
+#jmdefinitionTabelle tbody tr:hover input[type="text"],
+#jmdefinitionTabelle tbody tr:hover input[type="number"],
 #jmdefinitionTabelle tbody tr:hover textarea,
 #jmdefinitionTabelle tbody tr:hover .form-check-input {
   background-color: transparent !important;
@@ -278,8 +272,8 @@ $page_specific_css = "
 
   /* Inputs/Textareas auf Mobile über volle Zellenbreite */
   #jmdefinitionTabelle textarea,
-  #jmdefinitionTabelle input[type=\"text\"],
-  #jmdefinitionTabelle input[type=\"number\"] {
+  #jmdefinitionTabelle input[type="text"],
+  #jmdefinitionTabelle input[type="number"] {
     width: 100%;
   }
 
@@ -290,7 +284,7 @@ $page_specific_css = "
     min-width: 110px;
   }
 
-  /* „Mehr“-Panel: eingeblendete, ausgeblendete Spalten als Block unter der Zeile */
+  /* „Mehr"-Panel: eingeblendete, ausgeblendete Spalten als Block unter der Zeile */
   .jm-row-more {
     display: none;
     background: rgba(248,249,250,.6);
@@ -318,7 +312,7 @@ $page_specific_css = "
   .modal-content { height: 100%; border-radius: 0; }
 }
 
-";
+CSS;
 
 /* Header bindet $page_specific_css ein */
 include 'header.inc.php';
@@ -361,32 +355,46 @@ if (empty($_SESSION['csrf_token'])) {
 <div class="button-toolbar">
   <div class="btn-row d-flex flex-wrap gap-2">
     <button type="button"
-            class="btn btn-soft-success btn-compact"
+            class="btn btn-outline-success btn-compact"
             data-bs-toggle="modal" data-bs-target="#newAnlassModal">
       <i class="bi bi-plus-lg"></i>
       <span class="ms-1">Neuer Anlass</span>
     </button>
 
-    <button type="submit" class="btn btn-soft-primary btn-compact">
+    <button type="button" id="sortByDateButton"
+            class="btn btn-outline-primary btn-compact"
+            title="Sortiert alle Anlässe nach dem ersten Datum im Feld Schiesstage">
+      <i class="bi bi-sort-numeric-down"></i>
+      <span class="ms-1">Nach Datum sortieren</span>
+    </button>
+
+    <button type="submit" class="btn btn-outline-primary btn-compact">
       <i class="bi bi-save"></i>
       <span class="ms-1">Speichern</span>
     </button>
 
     <!-- Export: einzelne Buttons statt Dropdown -->
     <button type="button" id="exportPdfButton"
-            class="btn btn-outline-secondary btn-compact">
+            class="btn btn-outline-info btn-compact">
       <i class="bi bi-file-pdf"></i>
       <span class="ms-1">JM als PDF</span>
     </button>
 
+    <button type="button" id="exportPdfDraftButton"
+            class="btn btn-outline-warning btn-compact"
+            title="PDF mit Wasserzeichen 'Entwurf'">
+      <i class="bi bi-file-pdf"></i>
+      <span class="ms-1">PDF Entwurf</span>
+    </button>
+
     <button type="button" id="exportWordFragebogen"
-            class="btn btn-outline-secondary btn-compact">
+            class="btn btn-outline-info btn-compact">
       <i class="bi bi-file-word"></i>
       <span class="ms-1">Fragebogen</span>
     </button>
 
     <button type="button" id="exportICSAll"
-            class="btn btn-outline-secondary btn-compact">
+            class="btn btn-outline-info btn-compact">
       <i class="bi bi-calendar-plus"></i>
       <span class="ms-1">ICS-Datei</span>
     </button>
@@ -498,8 +506,39 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
-        <button type="button" class="btn btn-outline-primary" id="jmdefinitionHinzufuegen"><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
+        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
+        <button type="button" class="btn btn-outline-success btn-compact" id="jmdefinitionHinzufuegen"><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Löschen bestätigen -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">
+          <i class="bi bi-exclamation-triangle text-warning me-2"></i>Bestätigung erforderlich
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
+          <div>
+            <strong>Möchtest du diesen Anlass wirklich löschen?</strong>
+            <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>Abbrechen
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-compact" id="confirmDeleteButton">
+          <i class="bi bi-trash me-1"></i>Löschen
+        </button>
       </div>
     </div>
   </div>
@@ -510,21 +549,21 @@ if (empty($_SESSION['csrf_token'])) {
 
 $(function () {
   // Tooltips (auch für dynamische Inhalte später erneut initialisieren)
-  document.querySelectorAll('[data-bs-toggle=\"tooltip\"], [title]').forEach(el => new bootstrap.Tooltip(el));
+  document.querySelectorAll('[data-bs-toggle="tooltip"], [title]').forEach(el => new bootstrap.Tooltip(el));
 
   // Toast-Setup
-  if (!$('#toast-container').length) $('body').append('<div id=\"toast-container\" style=\"position: fixed; top: 70px; right: 20px; z-index: 9999;\"></div>');
+  if (!$('#toast-container').length) $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
   function showToast(message, type = 'info', duration = 4000) {
     const colors = { success:'#28a745', error:'#dc3545', warning:'#ffc107', info:'#6c757d' };
     const icons  = { success:'bi-check-circle-fill', error:'bi-exclamation-circle-fill', warning:'bi-exclamation-triangle-fill', info:'bi-info-circle-fill' };
     const id = btoa(message + type).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
     if ($('#toast-'+id).length) return;
-    const $t = $('<div id=\"toast-'+id+'\"/>').css({
+    const $t = $('<div id="toast-'+id+'"/>').css({
       backgroundColor: colors[type]||colors.info, color:'#fff', padding:'14px 20px', marginBottom:'10px',
       borderRadius:'8px', boxShadow:'0 6px 16px rgba(0,0,0,.2)', opacity:'0', transform:'translateX(100%)',
       transition:'all .3s cubic-bezier(.68,-.55,.265,1.55)', fontWeight:500, display:'flex', alignItems:'center',
       minWidth:'280px', maxWidth:'400px', position:'relative'
-    }).html('<i class=\"bi '+icons[type]+' me-2\" style=\"font-size:1.2rem;\"></i><span style=\"flex:1;\">'+message+'</span><button type=\"button\" class=\"btn-close btn-close-white ms-2\" style=\"font-size:.8rem;\"></button>');
+    }).html('<i class="bi '+icons[type]+' me-2" style="font-size:1.2rem;"></i><span style="flex:1;">'+message+'</span><button type="button" class="btn-close btn-close-white ms-2" style="font-size:.8rem;"></button>');
     const $bar = $('<div/>').css({position:'absolute',bottom:0,left:0,height:'3px',backgroundColor:'rgba(255,255,255,.3)',width:'100%',transition:'width '+duration+'ms linear'});
     $t.append($bar);
     $t.find('.btn-close').on('click', ()=>hideToast($t));
@@ -549,14 +588,18 @@ $(function () {
 
   // Basispfad automatisch ermitteln:
   // Läuft diese Seite aus /inc/? Dann ohne Präfix. Sonst 'inc/' voranstellen.
-const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
+  const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
 
   const currentYear = new Date().getFullYear();
 
   // Year-Select
   function initializeYearDropdown(){
     const $sel = $('#yearSelect').empty();
-    for (let y=2024; y<=currentYear; y++){
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    // Ab Oktober (Monat 10) auch Folgejahr anzeigen
+    const maxYear = (currentMonth >= 10) ? currentYear + 1 : currentYear;
+    
+    for (let y=2024; y<=maxYear; y++){
       const $o = $('<option/>').val(y).text(y);
       if (y===currentYear) $o.prop('selected', true);
       $sel.append($o);
@@ -566,13 +609,13 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
   // Skeleton
   function showSkeleton(){
     const row = `
-      <tr class=\"skeleton-row\">
-        <td><div class=\"skeleton\" style=\"width:30px;\"></div></td>
-        <td><div class=\"skeleton\" style=\"width:80%;\"></div></td>
-        <td><div class=\"skeleton\" style=\"width:70%;\"></div></td>
-        <td><div class=\"skeleton\" style=\"width:90%;\"></div></td>
-        <td><div class=\"skeleton\" style=\"width:40px;\"></div></td>
-        <td colspan=\"6\"><div class=\"skeleton\" style=\"width:50%;\"></div></td>
+      <tr class="skeleton-row">
+        <td><div class="skeleton" style="width:30px;"></div></td>
+        <td><div class="skeleton" style="width:80%;"></div></td>
+        <td><div class="skeleton" style="width:70%;"></div></td>
+        <td><div class="skeleton" style="width:90%;"></div></td>
+        <td><div class="skeleton" style="width:40px;"></div></td>
+        <td colspan="6"><div class="skeleton" style="width:50%;"></div></td>
       </tr>`;
     $('#jmdefinitionTabelle tbody').html(row.repeat(5));
   }
@@ -585,51 +628,49 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
 
       // Sortable
       $('#jmdefinitionTabelle tbody').sortable({
-  handle: 'td:first-child',
-  axis: 'y',
-  tolerance: 'pointer',
-  delay: 40,
-  distance: 3,
-  scroll: true,
-  scrollSensitivity: 45,
-  scrollSpeed: 20,
-  forcePlaceholderSize: true,
-  placeholder: 'jm-row-placeholder',
-  helper: function (e, tr) {
-    // Breiten fixieren, damit der Helper nicht „zusammenfällt“
-    const $originals = tr.children();
-    const $helper = tr.clone();
-    $helper.children().each(function (index) {
-      $(this).width($originals.eq(index).outerWidth());
-    });
-    return $helper;
-  },
-  start: function (e, ui) {
-    ui.item.addClass('jm-row-dragging');
-  },
-  stop: function (e, ui) {
-    ui.item.removeClass('jm-row-dragging');
-  },
-  update: function () {
-    const order = [];
-    $('#jmdefinitionTabelle tbody tr').each(function () {
-      const id = $(this).attr('id')?.replace('row','');
-      if (id) order.push(id);
-    });
-    $.post(basePath + 'jmdefinition/update_order.php', {
-      order,
-      csrf_token: $('input[name="csrf_token"]').val()
-    })
-    .done(() => showSuccessToast('Reihenfolge aktualisiert'))
-    .fail(() => showErrorToast('Fehler beim Aktualisieren'));
-  }
-}).disableSelection();
-
+        handle: 'td:first-child',
+        axis: 'y',
+        tolerance: 'pointer',
+        delay: 40,
+        distance: 3,
+        scroll: true,
+        scrollSensitivity: 45,
+        scrollSpeed: 20,
+        forcePlaceholderSize: true,
+        placeholder: 'jm-row-placeholder',
+        helper: function (e, tr) {
+          const $originals = tr.children();
+          const $helper = tr.clone();
+          $helper.children().each(function (index) {
+            $(this).width($originals.eq(index).outerWidth());
+          });
+          return $helper;
+        },
+        start: function (e, ui) {
+          ui.item.addClass('jm-row-dragging');
+        },
+        stop: function (e, ui) {
+          ui.item.removeClass('jm-row-dragging');
+        },
+        update: function () {
+          const order = [];
+          $('#jmdefinitionTabelle tbody tr').each(function () {
+            const id = $(this).attr('id')?.replace('row','');
+            if (id) order.push(id);
+          });
+          $.post(basePath + 'jmdefinition/update_order.php', {
+            order,
+            csrf_token: $('input[name="csrf_token"]').val()
+          })
+          .done(() => showSuccessToast('Reihenfolge aktualisiert'))
+          .fail(() => showErrorToast('Fehler beim Aktualisieren'));
+        }
+      }).disableSelection();
 
       // Tooltips auf dynamischen Inhalten
-      document.querySelectorAll('#jmdefinitionTabelle [data-bs-toggle=\"tooltip\"], #jmdefinitionTabelle [title]').forEach(el => new bootstrap.Tooltip(el));
+      document.querySelectorAll('#jmdefinitionTabelle [data-bs-toggle="tooltip"], #jmdefinitionTabelle [title]').forEach(el => new bootstrap.Tooltip(el));
     }).fail(()=>{
-      $('#jmdefinitionTabelle tbody').html('<tr><td colspan=\"11\" class=\"text-center text-danger py-4\"><i class=\"bi bi-exclamation-triangle me-2\"></i>Fehler beim Laden</td></tr>');
+      $('#jmdefinitionTabelle tbody').html('<tr><td colspan="11" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Fehler beim Laden</td></tr>');
       showErrorToast('Fehler beim Laden der Daten');
     });
   }
@@ -640,29 +681,21 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
     });
   }
 
-  // Auto-Save
-  /*let autoSaveTimer, hasChanges=false;
-  $('body').on('change input', 'input, textarea, select', function(){
+  // Änderungs-Tracking
+  let hasChanges = false;
+  $('body').on('change input', '#jmdefinitionTabelle input, #jmdefinitionTabelle textarea, #jmdefinitionTabelle select, #zusatzText', function(){
     hasChanges = true;
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(function(){
-      if (!hasChanges) return;
-      showInfoToast('Auto-Save...');
-      $('#jmdefinitionForm').trigger('submit');
-      hasChanges = false;
-    }, 3000);
   });
-  */
   $(window).on('beforeunload', function(){ if (hasChanges) return 'Du hast ungespeicherte Änderungen. Wirklich verlassen?'; });
 
   // Speichern
   $('#jmdefinitionForm').on('submit', function(e){
     e.preventDefault();
-    const $btn = $(this).find('button[type=\"submit\"]');
+    const $btn = $(this).find('button[type="submit"]');
     const txt  = $btn.html();
-    $btn.prop('disabled', true).html('<span class=\"spinner-border spinner-border-sm me-2\"></span>Speichere...');
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
 
-    const $prog = $('<div class=\"progress\" style=\"height:3px; position:fixed; top:0; left:0; right:0; z-index:9999;\"><div class=\"progress-bar progress-bar-striped progress-bar-animated\" style=\"width:0%\"></div></div>');
+    const $prog = $('<div class="progress" style="height:3px; position:fixed; top:0; left:0; right:0; z-index:9999;"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div></div>');
     $('body').append($prog);
     let w=0; const intv = setInterval(()=>{ w+=10; $prog.find('.progress-bar').css('width', w+'%'); if (w>=90) clearInterval(intv); },100);
 
@@ -672,7 +705,7 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
       if (id) order.push(id);
     });
 
-    const formData = $(this).serialize() + '&order=' + order.join(',');
+    const formData = $(this).serialize() + '&order=' + order.join(',') + '&year=' + $('#yearSelect').val();
     const zusatzText = $('#zusatzText').val();
 
     $.post(basePath + 'jmdefinition/save_jmdefinition.php', formData)
@@ -681,7 +714,7 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
         hasChanges=false;
         $.post(basePath + 'jmdefinition/save_jminformation.php', {
           zusatztext: zusatzText,
-          csrf_token: $('input[name=\"csrf_token\"]').val()
+          csrf_token: $('input[name="csrf_token"]').val()
         }).always(()=> setTimeout(()=> loadJMDefinition($('#yearSelect').val()), 500));
      })
      .fail(()=> showErrorToast('Fehler beim Speichern'))
@@ -708,7 +741,7 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
   $('#jmdefinitionHinzufuegen').on('click', function(){
     if (!validateAnlass()) return;
     const $b = $(this), t = $b.html();
-    $b.prop('disabled', true).html('<span class=\"spinner-border spinner-border-sm me-2\"></span>Hinzufügen...');
+    $b.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Hinzufügen...');
 
     const payload = {
       bezeichnung: $('#neueJMDefinitionBezeichnung').val(),
@@ -721,7 +754,7 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
       info:        $('#neueJMDefinitionInfo').is(':checked') ? 1 : 0,
       gruppe:      $('#neueJMDefinitionGruppe').is(':checked') ? 1 : 0,
       year:        $('#yearSelect').val(),
-      csrf_token:  $('input[name=\"csrf_token\"]').val()
+      csrf_token:  $('input[name="csrf_token"]').val()
     };
 
     $.post(basePath + 'jmdefinition/add_jmdefinition.php', payload)
@@ -736,62 +769,159 @@ const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
       .always(()=> $b.prop('disabled', false).html(t));
   });
 
-  // Löschen
+  // Löschen mit Modal
+  let deleteId = null;
   $(document).on('click', '.deleteJMDefinition', function(){
-    const id = $(this).data('id');
-    if (id && confirm('Eintrag wirklich löschen?')){
-      $.post(basePath + 'jmdefinition/delete_jmdefinition.php', {
-        id, csrf_token: $('input[name=\"csrf_token\"]').val()
-      }).done(()=>{ showSuccessToast('Eintrag gelöscht'); loadJMDefinition($('#yearSelect').val()); })
-        .fail(()=> showErrorToast('Fehler beim Löschen'));
+    deleteId = $(this).data('id');
+    if (deleteId) {
+      $('#confirmDeleteModal').modal('show');
     }
   });
 
-  // Exporte
- function triggerDownload(url){
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = '';          // Browser lädt direkt herunter
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+  $('#confirmDeleteButton').on('click', function(){
+    if (!deleteId) return;
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
 
-/* PDF */
-$('#exportPdfButton').on('click', function(e){
-  e.preventDefault();
-  const year = $('#yearSelect').val();
-  $.getJSON(basePath + 'jmdefinition/export_jmdefinition_pdf.php', { year }, function(resp){
-    if (resp && resp.success && resp.pdf_link){
-      triggerDownload(resp.pdf_link);
-      showSuccessToast('PDF generiert');
-    } else { showErrorToast('PDF konnte nicht generiert werden'); }
-  }).fail(()=> showErrorToast('PDF-Fehler'));
-});
+    $.post(basePath + 'jmdefinition/delete_jmdefinition.php', {
+      id: deleteId, 
+      csrf_token: $('input[name="csrf_token"]').val()
+    })
+    .done(function(resp){
+      $('#confirmDeleteModal').modal('hide');
+      showSuccessToast('Eintrag gelöscht');
+      loadJMDefinition($('#yearSelect').val());
+    })
+    .fail(function(xhr){
+      let msg = 'Fehler beim Löschen';
+      try {
+        const resp = JSON.parse(xhr.responseText);
+        if (resp.message) msg = resp.message;
+      } catch(e) {}
+      showErrorToast(msg);
+    })
+    .always(function(){
+      $btn.prop('disabled', false).html(originalText);
+      deleteId = null;
+    });
+  });
 
-/* Word */
-$('#exportWordFragebogen').on('click', function(e){
-  e.preventDefault();
-  const year = $('#yearSelect').val();
-  $.getJSON(basePath + 'jmdefinition/export_fragebogen.php', { year }, function(resp){
-    if (resp && resp.success && resp.word_link){
-      triggerDownload(resp.word_link);
-      showSuccessToast('Fragebogen generiert');
-    } else { showErrorToast('Fragebogen konnte nicht generiert werden'); }
-  }).fail(()=> showErrorToast('Word-Fehler'));
-});
+  // Hilfsfunktion für direkten Download
+  function triggerDownload(url){
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 
-/* ICS */
-$('#exportICSAll').on('click', function(e){
-  e.preventDefault();
-  $.getJSON(basePath + 'jmdefinition/export_all_ics.php', function(resp){
-    if (resp && resp.success && resp.ics_link){
-      triggerDownload(resp.ics_link);
-      showSuccessToast('ICS generiert');
-    } else { showErrorToast('ICS konnte nicht generiert werden'); }
-  }).fail(()=> showErrorToast('ICS-Fehler'));
-});
+  /* PDF Export */
+  $('#exportPdfButton').on('click', function(e){
+    e.preventDefault();
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
+    
+    const year = $('#yearSelect').val();
+    $.getJSON(basePath + 'jmdefinition/export_jmdefinition_pdf.php', { year })
+      .done(function(resp){
+        if (resp && resp.success && resp.pdf_link){
+          triggerDownload(resp.pdf_link);
+          showSuccessToast('PDF wird heruntergeladen');
+        } else { 
+          showErrorToast(resp.message || 'PDF konnte nicht generiert werden'); 
+        }
+      })
+      .fail(()=> showErrorToast('PDF-Fehler'))
+      .always(()=> $btn.prop('disabled', false).html(originalText));
+  });
 
+  /* PDF Entwurf Export */
+  $('#exportPdfDraftButton').on('click', function(e){
+    e.preventDefault();
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
+    
+    const year = $('#yearSelect').val();
+    $.getJSON(basePath + 'jmdefinition/export_jmdefinition_pdf.php', { year, draft: 1 })
+      .done(function(resp){
+        if (resp && resp.success && resp.pdf_link){
+          triggerDownload(resp.pdf_link);
+          showSuccessToast('Entwurf-PDF wird heruntergeladen');
+        } else { 
+          showErrorToast(resp.message || 'PDF konnte nicht generiert werden'); 
+        }
+      })
+      .fail(()=> showErrorToast('PDF-Fehler'))
+      .always(()=> $btn.prop('disabled', false).html(originalText));
+  });
+
+  /* Word Export */
+  $('#exportWordFragebogen').on('click', function(e){
+    e.preventDefault();
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
+    
+    const year = $('#yearSelect').val();
+    $.getJSON(basePath + 'jmdefinition/export_fragebogen.php', { year })
+      .done(function(resp){
+        if (resp && resp.success && resp.word_link){
+          triggerDownload(resp.word_link);
+          showSuccessToast('Fragebogen wird heruntergeladen');
+        } else { 
+          showErrorToast(resp.message || 'Fragebogen konnte nicht generiert werden'); 
+        }
+      })
+      .fail(()=> showErrorToast('Word-Fehler'))
+      .always(()=> $btn.prop('disabled', false).html(originalText));
+  });
+
+  /* ICS Export */
+  $('#exportICSAll').on('click', function(e){
+    e.preventDefault();
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
+    
+    $.getJSON(basePath + 'jmdefinition/export_all_ics.php')
+      .done(function(resp){
+        if (resp && resp.success && resp.ics_link){
+          triggerDownload(resp.ics_link);
+          showSuccessToast('ICS wird heruntergeladen');
+        } else { 
+          showErrorToast(resp.message || 'ICS konnte nicht generiert werden'); 
+        }
+      })
+      .fail(()=> showErrorToast('ICS-Fehler'))
+      .always(()=> $btn.prop('disabled', false).html(originalText));
+  });
+
+  /* Nach Datum sortieren */
+  $('#sortByDateButton').on('click', function(e){
+    e.preventDefault();
+    const $btn = $(this);
+    const originalText = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Sortiere...');
+    
+    $.post(basePath + 'jmdefinition/sort_by_date.php', {
+      year: $('#yearSelect').val(),
+      csrf_token: $('input[name="csrf_token"]').val()
+    })
+      .done(function(resp){
+        if (resp && resp.success){
+          showSuccessToast('Anlässe nach Datum sortiert');
+          loadJMDefinition($('#yearSelect').val());
+        } else { 
+          showErrorToast(resp.message || 'Sortierung fehlgeschlagen'); 
+        }
+      })
+      .fail(()=> showErrorToast('Fehler beim Sortieren'))
+      .always(()=> $btn.prop('disabled', false).html(originalText));
+  });
 
   // Jahrwechsel
   $('#yearSelect').on('change', function(){

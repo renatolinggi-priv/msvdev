@@ -1,0 +1,49 @@
+<?php
+// update_kalender.php - Aktualisiert InKalender-Status eines Eintrags
+require_once '../config.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
+    exit;
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+
+if (!$input || !isset($input['id']) || !isset($input['in_kalender'])) {
+    echo json_encode(['success' => false, 'error' => 'ID und in_kalender müssen angegeben werden']);
+    exit;
+}
+
+$id = intval($input['id']);
+$inKalender = intval($input['in_kalender']) ? 1 : 0;
+
+try {
+    $stmt = $conn->prepare("UPDATE Standbelegung SET InKalender = ? WHERE ID = ?");
+    
+    if (!$stmt) {
+        throw new Exception("Prepare failed: " . $conn->error);
+    }
+    
+    $stmt->bind_param("ii", $inKalender, $id);
+    
+    if (!$stmt->execute()) {
+        throw new Exception("Execute failed: " . $stmt->error);
+    }
+    
+    $affected = $stmt->affected_rows;
+    $stmt->close();
+    
+    echo json_encode([
+        'success' => true,
+        'id' => $id,
+        'in_kalender' => $inKalender,
+        'affected' => $affected
+    ]);
+    
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+}
+
+$conn->close();
