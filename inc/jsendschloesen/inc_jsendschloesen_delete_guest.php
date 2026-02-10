@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 // CSRF-Schutz
 if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'CSRF Token ungültig']);
+    echo json_encode(['success' => false, 'message' => 'CSRF Token ungültig']);
     exit;
 }
 
@@ -18,14 +18,14 @@ try {
     include '../dbconnect.inc.php';
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Datenbankverbindung fehlgeschlagen']);
+    echo json_encode(['success' => false, 'message' => 'Datenbankverbindung fehlgeschlagen']);
     exit;
 }
 
 $id = intval($_POST['id'] ?? 0);
 
 if ($id <= 0) {
-    echo json_encode(['success' => false, 'error' => 'Ungültige ID']);
+    echo json_encode(['success' => false, 'message' => 'Ungültige ID']);
     exit;
 }
 
@@ -48,7 +48,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 } finally {
     $conn->close();

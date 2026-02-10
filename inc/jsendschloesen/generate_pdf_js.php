@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 try {
     include '../dbconnect.inc.php';
 } catch (Exception $e) {
-    die(json_encode(['error' => 'Datenbankverbindung fehlgeschlagen']));
+    die(json_encode(['message' => 'Datenbankverbindung fehlgeschlagen']));
 }
 
 // Hole Parameter
@@ -19,7 +19,7 @@ $action = $_GET['action'] ?? '';
 $jahr = isset($_GET['jahr']) ? intval($_GET['jahr']) : date('Y');
 
 if ($action !== 'generate_pdf') {
-    die(json_encode(['error' => 'Ungültige Aktion']));
+    die(json_encode(['message' => 'Ungültige Aktion']));
 }
 
 try {
@@ -331,7 +331,7 @@ try {
     }
     
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Fehler beim Generieren: ' . $e->getMessage()]);
+    echo json_encode(['message' => 'Fehler beim Generieren: ' . $e->getMessage()]);
 } finally {
     $conn->close();
 }

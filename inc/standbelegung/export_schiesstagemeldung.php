@@ -12,14 +12,14 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
+    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input || !isset($input['entries']) || !is_array($input['entries'])) {
-    echo json_encode(['success' => false, 'error' => 'Keine Einträge angegeben']);
+    echo json_encode(['success' => false, 'message' => 'Keine Einträge angegeben']);
     exit;
 }
 
@@ -27,7 +27,7 @@ $entries = $input['entries'];
 $source = $input['source'] ?? 'overview'; // 'overview' oder 'import'
 
 if (empty($entries)) {
-    echo json_encode(['success' => false, 'error' => 'Keine gültigen Einträge']);
+    echo json_encode(['success' => false, 'message' => 'Keine gültigen Einträge']);
     exit;
 }
 
@@ -141,7 +141,7 @@ try {
     ]);
     
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
 if (isset($conn)) {

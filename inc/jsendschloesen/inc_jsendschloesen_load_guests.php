@@ -11,7 +11,7 @@ try {
     include '../dbconnect.inc.php';
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Datenbankverbindung fehlgeschlagen']);
+    echo json_encode(['success' => false, 'message' => 'Datenbankverbindung fehlgeschlagen']);
     exit;
 }
 
@@ -41,7 +41,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 } finally {
     $conn->close();

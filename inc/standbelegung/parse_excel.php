@@ -8,13 +8,13 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
+    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
 
 // File Upload prüfen
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-    echo json_encode(['success' => false, 'error' => 'Datei-Upload fehlgeschlagen']);
+    echo json_encode(['success' => false, 'message' => 'Datei-Upload fehlgeschlagen']);
     exit;
 }
 
@@ -92,7 +92,7 @@ try {
     ]);
     
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
 /**

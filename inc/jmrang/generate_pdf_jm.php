@@ -113,7 +113,7 @@ try {
 } catch (Exception $e) {
     ob_end_clean();
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['error' => 'PDF-Generierung fehlgeschlagen: ' . $e->getMessage()]);
+    echo json_encode(['message' => 'PDF-Generierung fehlgeschlagen: ' . $e->getMessage()]);
     exit;
 }
 

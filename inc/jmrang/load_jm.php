@@ -53,7 +53,7 @@ while ($row = $resDef->fetch_assoc()) {
 if (!$definitions) {
     if ($asJson) { 
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['error' => "Keine Wettbewerbe für Jahr $year gefunden"]);
+        echo json_encode(['message' => "Keine Wettbewerbe für Jahr $year gefunden"]);
         exit; 
     }
     echo json_encode([
@@ -88,7 +88,7 @@ while ($row = $resM->fetch_assoc()) {
 if (!$members) {
     if ($asJson) { 
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['error' => "Keine Mitglieder für Kategorie '$kategorie' gefunden"]);
+        echo json_encode(['message' => "Keine Mitglieder für Kategorie '$kategorie' gefunden"]);
         exit; 
     }
     echo json_encode([

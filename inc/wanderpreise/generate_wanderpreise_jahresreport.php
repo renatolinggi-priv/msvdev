@@ -12,7 +12,7 @@ require_once 'PDFReports.php';
 $conn = get_db_connection();
 if (!$conn) {
     header('Content-Type: application/json');
-    echo json_encode(['error' => 'Datenbankverbindung fehlgeschlagen']);
+    echo json_encode(['message' => 'Datenbankverbindung fehlgeschlagen']);
     exit;
 }
 
@@ -25,7 +25,7 @@ $hersteller = $_GET['hersteller'] ?? null;
 $allowed_hersteller = ['Schnitzerei Heinz Schild', 'Akura Einsiedeln'];
 if ($hersteller && !in_array($hersteller, $allowed_hersteller)) {
     header('Content-Type: application/json');
-    echo json_encode(['error' => 'Ungültiger Hersteller angegeben']);
+    echo json_encode(['message' => 'Ungültiger Hersteller angegeben']);
     exit;
 }
 
@@ -75,7 +75,7 @@ try {
     }
 } catch (Exception $e) {
     header('Content-Type: application/json');
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['message' => $e->getMessage()]);
 } finally {
     $conn->close();
 }

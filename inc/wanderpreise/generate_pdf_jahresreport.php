@@ -9,7 +9,7 @@ use Dompdf\Options;
 $conn = get_db_connection();
 if (!$conn) {
     header('Content-Type: application/json');
-    echo json_encode(['error' => 'Datenbankverbindung fehlgeschlagen']);
+    echo json_encode(['message' => 'Datenbankverbindung fehlgeschlagen']);
     exit;
 }
 

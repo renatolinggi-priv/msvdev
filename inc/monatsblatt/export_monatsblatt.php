@@ -116,7 +116,7 @@ class MonatsblattPDFExporter {
             
         } catch (Exception $e) {
             error_log("PDF Generation Error: " . $e->getMessage());
-            return ['error' => 'Fehler bei der PDF-Erstellung: ' . $e->getMessage()];
+            return ['message' => 'Fehler bei der PDF-Erstellung: ' . $e->getMessage()];
         }
     }
 
@@ -613,7 +613,7 @@ try {
 } catch (Exception $e) {
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['message' => $e->getMessage()]);
     
 } finally {
     if (isset($conn)) {

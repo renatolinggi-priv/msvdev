@@ -11,7 +11,7 @@ $freierWollerau  = floatval($_POST['freierWollerau'] ?? 0);
 
 // Validierung
 if ($freierTitel === '' || ($freierWilen == 0 && $freierWollerau == 0)) {
-  echo json_encode(['error' => 'Bitte gültige Daten eingeben.']);
+  echo json_encode(['message' => 'Bitte gültige Daten eingeben.']);
   exit;
 }
 
@@ -27,7 +27,7 @@ try {
     echo json_encode(['success' => 'Freier Eintrag gespeichert.']);
 
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Fehler beim Speichern: ' . $e->getMessage()]);
+    echo json_encode(['message' => 'Fehler beim Speichern: ' . $e->getMessage()]);
 }
 
 $conn->close();

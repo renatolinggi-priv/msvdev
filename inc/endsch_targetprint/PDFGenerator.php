@@ -302,7 +302,7 @@ class PDFGenerator {
     protected function outputError($message) {
         ob_end_clean();
         header('Content-Type: application/json');
-        echo json_encode(array('error' => $message));
+        echo json_encode(array('message' => $message));
     }
     
     /**

@@ -5,7 +5,7 @@ require_once '../config.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
+    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
 
@@ -21,7 +21,7 @@ if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
         UPLOAD_ERR_EXTENSION => 'Upload durch Erweiterung gestoppt'
     ];
     $errorCode = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
-    echo json_encode(['success' => false, 'error' => $errors[$errorCode] ?? 'Upload-Fehler']);
+    echo json_encode(['success' => false, 'message' => $errors[$errorCode] ?? 'Upload-Fehler']);
     exit;
 }
 
@@ -35,7 +35,7 @@ $mimeType = finfo_file($finfo, $file['tmp_name']);
 finfo_close($finfo);
 
 if (!in_array($mimeType, $allowedTypes)) {
-    echo json_encode(['success' => false, 'error' => 'Nur PDF-Dateien erlaubt']);
+    echo json_encode(['success' => false, 'message' => 'Nur PDF-Dateien erlaubt']);
     exit;
 }
 
@@ -43,7 +43,7 @@ if (!in_array($mimeType, $allowedTypes)) {
 $pdfDir = __DIR__ . '/pdf';
 if (!is_dir($pdfDir)) {
     if (!mkdir($pdfDir, 0755, true)) {
-        echo json_encode(['success' => false, 'error' => 'Konnte PDF-Verzeichnis nicht erstellen']);
+        echo json_encode(['success' => false, 'message' => 'Konnte PDF-Verzeichnis nicht erstellen']);
         exit;
     }
 }
@@ -54,7 +54,7 @@ $filepath = $pdfDir . '/' . $filename;
 
 // Datei verschieben
 if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-    echo json_encode(['success' => false, 'error' => 'Konnte Datei nicht speichern']);
+    echo json_encode(['success' => false, 'message' => 'Konnte Datei nicht speichern']);
     exit;
 }
 
