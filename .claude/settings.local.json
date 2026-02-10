@@ -53,7 +53,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nPhase 1.10: Convert save_mitglieder.php to JSON responses\n\n- Convert CSRF error to JSON response\n- Add Content-Type: application/json header\n- Wrap main logic in try-catch block\n- Convert error messages to thrown exceptions\n- Add error checking for DELETE operation\n- Convert success message to JSON response\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nPhase 1.11: Convert delete_pair.php to clean JSON responses\n\n- Add Content-Type: application/json header\n- Wrap main logic in try-catch block\n- Convert die\\(\\) to JSON exception\n- Remove all debug echo/var_dump statements\n- Replace debug echoes with error_log\\(\\) calls\n- Convert all error echoes to thrown exceptions\n- Add proper HTTP status codes for errors\n- Ensure single JSON response at end\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(do sed -i \"s/''error'' =>/''message'' =>/g\" \"$file\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(test:*)"
     ]
   }
 }

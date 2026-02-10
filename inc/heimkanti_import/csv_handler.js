@@ -542,20 +542,20 @@ const FileHandler = {
         setTimeout(() => {
             $('body').append(modalHtml);
             
-            // Event-Handler für Bestätigung
-            $('#confirmOverwriteBtn').on('click', () => {
+            // Event-Handler für Bestätigung - mit .off() Cleanup
+            $('#confirmOverwriteBtn').off('click.confirmImport').on('click.confirmImport', () => {
                 $('#overwriteModal').modal('hide');
                 setTimeout(() => {
                     $('.modal-backdrop').remove();
                     $('body').removeClass('modal-open').css('padding-right', '');
                 }, 300);
-                
+
                 // Import ausführen
                 this.executeImport();
             });
-            
-            // Event-Handler für Modal schließen
-            $('#overwriteModal').on('hidden.bs.modal', function () {
+
+            // Event-Handler für Modal schließen - .one() für einmalige Ausführung
+            $('#overwriteModal').one('hidden.bs.modal', function () {
                 $('.modal-backdrop').remove();
                 $('body').removeClass('modal-open').css('padding-right', '');
             });

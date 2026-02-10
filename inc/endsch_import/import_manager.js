@@ -288,10 +288,10 @@ const ImportManagerSingle = {
     $('#nextFileModal').remove();
     $('body').append(modalHtml);
     
-    // Event-Handler für "Ja, weitere Datei"
-    $('#loadNextFileBtn').on('click', () => {
+    // Event-Handler für "Ja, weitere Datei" - mit .off() Cleanup
+    $('#loadNextFileBtn').off('click.nextFile').on('click.nextFile', () => {
       $('#nextFileModal').modal('hide');
-      
+
       // Zurück zu Phase 1 für neuen Upload
       setTimeout(() => {
         // Reset und zurück zur Upload-Phase
@@ -304,13 +304,13 @@ const ImportManagerSingle = {
           document.getElementById('phase1').style.display = 'block';
           document.getElementById('phase2').style.display = 'none';
         }
-        
+
         // File Input zurücksetzen
         $('#fileInput').val('');
-        
+
         // Global storage zurücksetzen
         window._allProgramsForSingle = [];
-        
+
         UIHelper.showToast('Bereit für neue CSV-Datei', 'info');
       }, 300);
     });
@@ -318,11 +318,11 @@ const ImportManagerSingle = {
     // Modal anzeigen
     $('#nextFileModal').modal('show');
     
-    // Aufräumen beim Schließen
-    $('#nextFileModal').on('hidden.bs.modal', function () {
+    // Aufräumen beim Schließen - .one() für einmalige Ausführung
+    $('#nextFileModal').one('hidden.bs.modal', function () {
       $('.modal-backdrop').remove();
       $('body').removeClass('modal-open').css('padding-right', '');
-      $('#nextFileModal').remove();
+      $('#nextFileModal').remove(); // Entfernt auch Event-Handler!
     });
   },
 
@@ -772,17 +772,17 @@ const ImportManagerSingle = {
     setTimeout(() => {
       $('body').append(modalHtml);
       
-      // Event-Handler für Bestätigung
-      $('#confirmOverwriteBtn').on('click', () => {
+      // Event-Handler für Bestätigung - mit .off() Cleanup
+      $('#confirmOverwriteBtn').off('click.confirmImport').on('click.confirmImport', () => {
         // Sammle zusätzliche Eingabewerte
         const additionalParams = {};
-        
+
         // Zabig Ansage
         const zabigAnsageInput = $('#zabigAnsage');
         if (zabigAnsageInput.length > 0) {
           additionalParams.zabigAnsage = parseInt(zabigAnsageInput.val()) || 0;
         }
-        
+
         // Endstich AbsendenAnmeldung - Von Radio Buttons lesen
         const selectedAnmeldung = $('input[name="endstichAnmeldung"]:checked');
         if (selectedAnmeldung.length > 0) {
@@ -796,22 +796,22 @@ const ImportManagerSingle = {
             additionalParams.endstichAbsendenAnmeldung = parseInt(endstichAbsendenInput.val()) || 0;
           }
         }
-        
+
         console.log('[ENDSCH-DEBUG] Additional parameters from modal:', additionalParams);
-        
+
         $('#overwriteModal').modal('hide');
         // Aufräumen nach Modal schließen
         setTimeout(() => {
           $('.modal-backdrop').remove();
           $('body').removeClass('modal-open').css('padding-right', '');
         }, 300);
-        
+
         // Import mit force=true und zusätzlichen Parametern ausführen
         this.executeImport(true, additionalParams);
       });
       
-      // Event-Handler für Modal schließen (X-Button und Abbrechen)
-      $('#overwriteModal').on('hidden.bs.modal', function () {
+      // Event-Handler für Modal schließen (X-Button und Abbrechen) - .one() für einmalige Ausführung
+      $('#overwriteModal').one('hidden.bs.modal', function () {
         // Stelle sicher dass alles aufgeräumt wird
         $('.modal-backdrop').remove();
         $('body').removeClass('modal-open').css('padding-right', '');
