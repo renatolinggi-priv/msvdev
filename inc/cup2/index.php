@@ -15,7 +15,7 @@ $pairId = 81;
     $winnerResult = $winnerStmt->get_result();
 
     if ($winnerResult === FALSE) {
-        echo json_encode(['error' => 'Fehler bei der Abfrage nach dem Gewinner: ' . $conn->error]);
+        echo json_encode(['message' => 'Fehler bei der Abfrage nach dem Gewinner: ' . $conn->error]);
 
     }
 
@@ -25,7 +25,7 @@ $pairId = 81;
         $winnerStmt->close();
 
         if (empty($winnerId)) {
-            echo json_encode(['error' => 'Kein Gewinner gefunden']);
+            echo json_encode(['message' => 'Kein Gewinner gefunden']);
 
         }
 
@@ -38,12 +38,12 @@ $pairId = 81;
         if ($deleteStmt->execute()) {
             echo json_encode(['success' => 'Finalergebnisseintrag erfolgreich gelöscht']);
         } else {
-            echo json_encode(['error' => 'Fehler beim Löschen des Finalergebnisseintrags: ' . $deleteStmt->error]);
+            echo json_encode(['message' => 'Fehler beim Löschen des Finalergebnisseintrags: ' . $deleteStmt->error]);
         }
         $deleteStmt->close();
     } else {
         $winnerStmt->close();
-        echo json_encode(['error' => 'Gewinner nicht gefunden']);
+        echo json_encode(['message' => 'Gewinner nicht gefunden']);
     }
 
 $conn->close();

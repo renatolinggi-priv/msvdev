@@ -4,7 +4,7 @@ include '../config.php';
 
 $groupUID = isset($_GET['groupID']) ? intval($_GET['groupID']) : 0; 
 if ($groupUID <= 0) {
-    echo json_encode(['error' => 'Ungültige groupID']);
+    echo json_encode(['message' => 'Ungültige groupID']);
     exit;
 }
 
@@ -23,7 +23,7 @@ $sql = "
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    echo json_encode(['error' => 'Statement-Fehler: '.$conn->error]);
+    echo json_encode(['message' => 'Statement-Fehler: '.$conn->error]);
     exit;
 }
 $stmt->bind_param("i", $groupUID);
@@ -32,7 +32,7 @@ $result = $stmt->get_result();
 
 $row = $result->fetch_assoc();
 if (!$row) {
-    echo json_encode(['error' => 'Keine Daten für GruppenUID='.$groupUID]);
+    echo json_encode(['message' => 'Keine Daten für GruppenUID='.$groupUID]);
     exit;
 }
 

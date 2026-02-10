@@ -14,7 +14,7 @@ header('Content-Type: application/json');
 
 // Überprüfe ob Jahr übergeben wurde
 if (!isset($_GET['year'])) {
-    echo json_encode(['success' => false, 'error' => 'Jahr fehlt']);
+    echo json_encode(['success' => false, 'message' => 'Jahr fehlt']);
     exit;
 }
 
@@ -49,8 +49,8 @@ try {
     
 } catch (Exception $e) {
     echo json_encode([
-        'success' => false, 
-        'error' => $e->getMessage()
+        'success' => false,
+        'message' => $e->getMessage()
     ]);
 }
 

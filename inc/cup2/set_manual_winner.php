@@ -13,7 +13,7 @@ header('Content-Type: application/json');
 // Nur POST-Requests erlauben
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     exit;
 }
 
@@ -24,7 +24,7 @@ $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
 
 // Validierung
 if (!$pair_id) {
-    echo json_encode(['success' => false, 'error' => 'Keine Paarungs-ID angegeben']);
+    echo json_encode(['success' => false, 'message' => 'Keine Paarungs-ID angegeben']);
     exit;
 }
 
@@ -162,7 +162,7 @@ try {
     
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }
 
