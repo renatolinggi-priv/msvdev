@@ -2,6 +2,16 @@
 // save_jmdefinition.php
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
+}
+
+header('Content-Type: application/json; charset=utf-8');
+
 // Debug-Funktion (schreibt in die PHP-Error-Logs)
 function debug_log($message) {
     error_log("[save_jmdefinition DEBUG] " . $message);
@@ -9,7 +19,8 @@ function debug_log($message) {
 
 // Überprüfen der Datenbankverbindung
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    http_response_code(500);
+    die(json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $conn->connect_error]));
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -192,10 +203,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmtInsert->close();
 
         $conn->commit();
-        echo "Alle Änderungen wurden erfolgreich gespeichert.";
+        echo json_encode(['success' => true, 'message' => 'Alle Änderungen wurden erfolgreich gespeichert']);
     } catch (Exception $e) {
         $conn->rollback();
-        echo "Fehler beim Speichern der Änderungen: " . $e->getMessage();
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern der Änderungen: ' . $e->getMessage()]);
         exit;
     }
 
@@ -239,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $erweitertSSM = 0;
                 $stmtInsertSSM->bind_param("isiiisiis", $reihenfolgeSSM, $bezeichnungSSM, $maxpunkteSSM, $streicherSSM, $hiddenSSM, $year, $erweitertSSM, '', 0);
                 if ($stmtInsertSSM->execute()) {
-                    echo "SSM-Eintrag erfolgreich hinzugefügt.";
+                    error_log("SSM-Eintrag erfolgreich hinzugefügt.");
                 } else {
                     throw new Exception("Fehler beim Einfügen von SSM: " . $stmtInsertSSM->error);
                 }
@@ -250,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         $stmtCheckSSM->close();
     } catch (Exception $e) {
-        echo "Fehler bei der SSM-Logik: " . $e->getMessage();
+        error_log("Fehler bei der SSM-Logik: " . $e->getMessage());
     }
 }
 
