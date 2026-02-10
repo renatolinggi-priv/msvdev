@@ -186,42 +186,6 @@ while ($row = $result->fetch_assoc()) {
     color: var(--secondary-color);
 }
 
-/* Toast Container */
-.toast-container {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    z-index: 9999;
-}
-
-.toast-message {
-    min-width: 300px;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0.25rem;
-    background: white;
-    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.3s ease;
-}
-
-.toast-message.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-message.toast-success {
-    border-left: 4px solid #28a745;
-}
-
-.toast-message.toast-error {
-    border-left: 4px solid #dc3545;
-}
-
-.toast-message.toast-warning {
-    border-left: 4px solid #ffc107;
-}
 </style>
 
 <!-- Benutzerverwaltung -->
@@ -313,7 +277,7 @@ while ($row = $result->fetch_assoc()) {
                                             </button>
                                             
                                             <?php if ($user['id'] != 1): ?>
-                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Benutzer <?php echo htmlspecialchars($user['username']); ?> wirklich löschen?');">
+                                            <form method="POST" style="display: inline;" class="delete-user-form" data-username="<?php echo htmlspecialchars($user['username']); ?>">
                                                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                                 <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
                                                 <button type="submit" name="delete_user" class="btn btn-sm btn-outline-danger btn-action" title="Löschen">
@@ -411,11 +375,20 @@ while ($row = $result->fetch_assoc()) {
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
+
+// Delete-User Bestätigung via SweetAlert2
+document.querySelectorAll('.delete-user-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = this.dataset.username;
+        const result = await msvConfirmDelete(`Benutzer "${username}"`);
+        if (result.isConfirmed) {
+            this.submit();
+        }
+    });
+});
 
 function resetUserForm() {
     document.getElementById('userModalTitle').innerHTML = '<i class="bi bi-person-plus me-2"></i>Neuer Benutzer';

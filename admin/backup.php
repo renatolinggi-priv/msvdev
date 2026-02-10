@@ -1,38 +1,36 @@
 <?php
 // /home/USER/backup/backup.php
 if (php_sapi_name() !== 'cli') { http_response_code(403); exit('CLI only'); }
-
 date_default_timezone_set('Europe/Zurich');
-
+// DB-Credentials aus zentraler Konfiguration laden
+$msvConfig = require __DIR__ . '/../../msvjm_config.php';
 $cfg = [
   'app_root'     => '/home/bdebbd4/www/jahresmeisterschaft.msvwilen.ch',           // Root der Webapp
   'backup_root'  => '/home/bdebbd4/backup',        // Nicht-öffentlich!
   'tmp_dir'      => '/home/bdebbd4/backup/tmp',
   'db' => [
-    'host' => 'bdebbd4.mysql.db.internal',
-    'name' => 'bdebbd4_msvjm',
-    'user' => 'bdebbd4_msvjm',
-    'pass' => 'xx*97ubWcy+HnLWyf6PW',
+    'host' => $msvConfig['db']['host'],
+    'name' => $msvConfig['db']['name'],
+    'user' => $msvConfig['db']['user'],
+    'pass' => $msvConfig['db']['pass'],
   ],
   'exclude_paths' => ['backups','backup','cache','node_modules','vendor'],
   'retention' => ['daily'=>7, 'weekly'=>4, 'monthly'=>12],
 ];
-
-
 $mode = in_array('--mode=auto', $argv, true) ? 'auto' : 'manual';
 $ts   = date('Ymd-His');
-
 @mkdir($cfg['backup_root'], 0700, true);
 @mkdir($cfg['tmp_dir'], 0700, true);
 
 function info($m){
   echo '['.date('H:i:s')."] $m\n";
+
   // Write progress information to a file
   $progressFile = $GLOBALS['cfg']['backup_root'] . '/backup_progress.txt';
   file_put_contents($progressFile, '['.date('H:i:s')."] $m\n", FILE_APPEND | LOCK_EX);
 }
-function sha256($file){ return hash_file('sha256', $file); }
 
+function sha256($file){ return hash_file('sha256', $file); }
 try {
   info("Starte Backup ($mode) …");
   $start = microtime(true);
@@ -55,13 +53,15 @@ try {
     $ret = 0;
     exec($cmd." > ".escapeshellarg($tmpSql), $out, $ret);
     if ($ret !== 0) throw new RuntimeException("mysqldump-Fehler: ".implode("\n",$out));
+
     // gzip
     $gz = gzopen($dbDump, 'w9');
     gzwrite($gz, file_get_contents($tmpSql));
     gzclose($gz);
     unlink($tmpSql);
   } else {
-    info("mysqldump NICHT verfügbar – PHP-Fallback");
+    info("mysqldump NICHT verfügbar â€“ PHP-Fallback");
+
     // Sehr einfacher Fallback (für kleinere DBs). Für große Tabellen -> chunked Export ergänzen.
     $pdo = new PDO("mysql:host={$cfg['db']['host']};dbname={$cfg['db']['name']};charset=utf8mb4", $cfg['db']['user'], $cfg['db']['pass'], [
       PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -94,13 +94,14 @@ try {
   $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cfg['app_root'], FilesystemIterator::SKIP_DOTS));
   foreach ($it as $path => $fileInfo) {
     $rel = ltrim(str_replace($cfg['app_root'],'',$path),'/');
+
     // Excludes
     foreach ($cfg['exclude_paths'] as $ex) {
       if (str_starts_with($rel, $ex.'/') || $rel === $ex) { continue 2; }
     }
+
     // Backups-Ordner ausschließen, falls unterhalb app_root
     if (str_starts_with($rel,'backups/') || $rel==='backups') continue;
-
     if ($fileInfo->isFile()) $zip->addFile($path, $rel);
   }
   $zip->close();
@@ -131,7 +132,8 @@ try {
       'date'=>DateTime::createFromFormat('Ymd-His',$bts)
     ];
   }
-  // Sort neueste → älteste
+
+  // Sort neueste â†’ älteste
   uasort($byPrefix, fn($a,$b)=> $b['date'] <=> $a['date']);
 
   // Listen bilden
@@ -141,6 +143,7 @@ try {
     $keyD = $d->format('Y-m-d');
     $keyW = $d->format('o-W');
     $keyM = $d->format('Y-m');
+
     // Erster Treffer pro Gruppe behalten
     $daily[$keyD]  = $daily[$keyD]  ?? $p;
     $weekly[$keyW] = $weekly[$keyW] ?? $p;
@@ -150,17 +153,14 @@ try {
   $keep += array_slice($daily, 0, $cfg['retention']['daily'], true);
   $keep += array_slice($weekly,0, $cfg['retention']['weekly'], true);
   $keep += array_slice($monthly,0,$cfg['retention']['monthly'], true);
-
   $keepIds = array_map(fn($x)=>$x['ts'], $keep);
   foreach ($byPrefix as $p) {
     if (!in_array($p['ts'], $keepIds, true)) {
       foreach (['mf','db','zip'] as $k) if (is_file($p[$k])) @unlink($p[$k]);
     }
   }
-
   info("Backup fertig. Dauer: ".round(microtime(true)-$start,2)."s");
   exit(0);
-
 } catch (Throwable $e) {
   fwrite(STDERR, "FEHLER: ".$e->getMessage()."\n");
   exit(1);

@@ -1,5 +1,5 @@
 <?php
-// endsch_import.php – 3-Phasen CSV-Import für Endstich/Kunst/Glück/Zabig/Schwini
+// endsch_import.php â€“ 3-Phasen CSV-Import für Endstich/Kunst/Glück/Zabig/Schwini
 include 'dbconnect.inc.php';
 
 // Session-Kontrolle
@@ -58,36 +58,6 @@ include 'header.inc.php';
         color: #333;
     }
     
-    /* Toast Messages */
-    #toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-    }
-    
-    .toast-message {
-        background: #fff;
-        border-radius: 8px;
-        padding: 12px 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        opacity: 0;
-        transform: translateX(100%);
-        transition: all 0.3s ease;
-        min-width: 250px;
-        border-left: 4px solid;
-    }
-    
-    .toast-message.show {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    
-    .toast-success { border-left-color: #28a745; }
-    .toast-warning { border-left-color: #ffc107; }
-    .toast-error { border-left-color: #dc3545; }
-    .toast-info { border-left-color: #17a2b8; }
 </style>
 
 <!-- 3-Phasen CSV Import Workflow -->
@@ -102,13 +72,11 @@ include 'header.inc.php';
                             <i class="bi bi-file-earmark-arrow-up me-2"></i>
                             CSV Import - Endschiessen
                         </h2>
-                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload → Auswahl → Import</p>
+                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload â†’ Auswahl â†’ Import</p>
                     </div>
                 </div>
                 
                 <div class="content-background">
-                    
-                   
                     
                     <!-- Phase 1: Upload -->
                     <div id="phase1" class="workflow-phase active">
@@ -202,7 +170,6 @@ include 'header.inc.php';
                         </div>
                     </div>
                     
-                    
                     <!-- Debug/Raw Data Section (collapsed by default) -->
                     <div class="mt-4" id="debugSection" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -263,9 +230,6 @@ include 'header.inc.php';
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <!-- CSRF Token für JavaScript -->
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
@@ -303,7 +267,7 @@ $(document).ready(function() {
         if (typeof UIHelper !== 'undefined') {
             UIHelper.showToast(errorMsg, 'error');
         } else {
-            alert(errorMsg);
+            msvError(errorMsg);
         }
         return;
     }
@@ -342,7 +306,7 @@ $(document).ready(function() {
             if (typeof UIHelper !== 'undefined') {
                 UIHelper.showToast(errorMsg, 'error');
             } else {
-                alert(errorMsg);
+                msvError(errorMsg);
             }
         });
     

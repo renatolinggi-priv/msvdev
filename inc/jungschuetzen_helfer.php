@@ -7,12 +7,12 @@ include 'header.inc.php';
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous" />
 
 <div class="container-fluid">
-  <h5>Helfereinsätze Jungschützenkurs – <?= date('Y') ?></h5>
+  <h5>Helfereinsätze Jungschützenkurs â€“ <?= date('Y') ?></h5>
   <form id="helferstundenForm">
     <div id="helferstundenTabelle" class="col-4"></div>
-    <button type="submit" class="btn btn-outline-primary mt-3">💾 Speichern</button>
-    <button type="button" class="btn btn-outline-success mt-3" data-bs-toggle="modal" data-bs-target="#freierEintragModal">➕ Zusätzlicher Helfereinsatz</button>
-    <button type="button" id="pdfExportBtn" class="btn btn-outline-secondary mt-3">📄 Helferstunden als PDF exportieren</button>
+    <button type="submit" class="btn btn-outline-primary mt-3"><i class="bi bi-save me-1"></i>Speichern</button>
+    <button type="button" class="btn btn-outline-success mt-3" data-bs-toggle="modal" data-bs-target="#freierEintragModal">âž• Zusätzlicher Helfereinsatz</button>
+    <button type="button" id="pdfExportBtn" class="btn btn-outline-secondary mt-3"><i class="bi bi-file-pdf me-1"></i>Helferstunden als PDF exportieren</button>
   </form>
 </div>
 <div class="row mt-3">
@@ -60,7 +60,7 @@ include 'header.inc.php';
         </div>
       </div>
       <div class="modal-footer">
-      <button type="button" class="btn btn-primary" id="freierSpeichernBtn">💾 Speichern</button>
+      <button type="button" class="btn btn-primary" id="freierSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>
 
       </div>
     </form>
@@ -78,20 +78,18 @@ include 'header.inc.php';
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">🗑️ Löschen</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn"><i class="bi bi-trash me-1"></i>Löschen</button>
       </div>
     </div>
   </div>
 </div>
 <script>
 
-
 let deleteId = null;
 // Freier Helfereinsatz: Speichern-Klick löst das Formular-Submit aus
 $('#freierSpeichernBtn').on('click', function () {
   $('#freierEintragForm').trigger('submit');
 });
-
 
 $(document).on('keydown', function (e) {
   if (e.key === 'Enter' && $('.modal.show').length > 0) {
@@ -104,9 +102,6 @@ $(document).on('keydown', function (e) {
     }
   }
 });
-
-
-
 
 function showModalMessage(message) {
   $('#feedbackMessage').html(message);
@@ -133,7 +128,7 @@ function ladeHelferstunden() {
         const wilen = event.helferWilen ?? '';
         const wollerau = event.helferWollerau ?? '';
         const name = event.name ?? '';
-        //const datum = event.date ? new Date(event.date).toLocaleDateString('de-DE') : '—';
+        //const datum = event.date ? new Date(event.date).toLocaleDateString('de-DE') : 'â€”';
         const datum = event.date
         ? (() => {
             const d = new Date(event.date);
@@ -142,15 +137,14 @@ function ladeHelferstunden() {
             const jahr = d.getFullYear();
             return `${tag}.${monat}.${jahr}`;
             })()
-        : '—';
-
+        : 'â€”';
 
         html += `<tr>
           <td align="right">${datum}</td>
           <td>${event.isCustom ? `<i>${name}</i>` : name}</td>
           <td><input type="number" step="0.5" name="helferWilen[${helferKey}]" class="form-control form-control-sm" value="${wilen}"></td>
           <td><input type="number" step="0.5" name="helferWollerau[${helferKey}]" class="form-control form-control-sm" value="${wollerau}"></td>
-          <td><button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${event.helferID}" title="Löschen">🗑️</button></td>
+          <td><button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${event.helferID}" title="Löschen"><i class="bi bi-trash"></i></button></td>
         </tr>`;
       });
 
@@ -173,7 +167,7 @@ $('#pdfExportBtn').on('click', function () {
     dataType: 'json',
     success: function(response) {
       if (response.success && response.pdf_link) {
-        const linkHtml = `<a href="${response.pdf_link}" download>📄 <strong>PDF herunterladen</strong></a>`;
+        const linkHtml = `<a href="${response.pdf_link}" download><i class="bi bi-file-pdf me-1"></i><strong>PDF herunterladen</strong></a>`;
         $('#pdfDownloadLink').html(linkHtml).show();
       } else {
         $('#pdfDownloadLink').hide().html('');
@@ -276,6 +270,5 @@ $(document).ready(function() {
 });
 
 </script>
-
 
 <?php include 'footer.inc.php'; ?>

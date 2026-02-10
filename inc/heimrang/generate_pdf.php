@@ -9,9 +9,8 @@ ob_start();
 // Fehlerbehandlung
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
-
 try {
-    require '../dompdf/autoload.php';
+    require '../vendor/autoload.php';
     include '../config.php';
 
     // Verbindung prüfen
@@ -38,7 +37,6 @@ try {
                             <tr>
                                 <th class="rang">Rang</th>
                                 <th class="name">Name</th>';
-        
         for ($i = 1; $i <= 8; $i++) {
             $html .= '<th class="passe">Passe ' . $i . '</th>';
         }
@@ -46,12 +44,11 @@ try {
                             </tr>
                         </thead>
                         <tbody>';
-        
         $rang = 1;
         $previousTotal = null;
         $sameRankCount = 0;
-        
         foreach ($data as $row) {
+
             // Rangbehandlung bei gleichen Totals
             if ($previousTotal !== null && $row['HeimSumme'] < $previousTotal) {
                 $rang += $sameRankCount;
@@ -61,22 +58,17 @@ try {
             } else {
                 $sameRankCount = 1;
             }
-            
             $html .= '<tr>
                         <td class="rang">' . $rang . '.</td>
                         <td class="name">' . htmlspecialchars($row['Name'] . ' ' . $row['Vorname']) . '</td>';
-            
             for ($i = 1; $i <= 8; $i++) {
                 $value = $row["Passe$i"];
                 $html .= '<td class="passe">' . ($value > 0 ? $value : '-') . '</td>';
             }
-            
             $html .= '<td class="total">' . $row['HeimSumme'] . '</td>
                     </tr>';
-            
             $previousTotal = $row['HeimSumme'];
         }
-        
         $html .= '</tbody></table></div>';
         return $html;
     }
@@ -97,26 +89,22 @@ try {
       AND (h.Passe1 > 0 OR h.Passe2 > 0 OR h.Passe3 > 0 OR h.Passe4 > 0 OR 
            h.Passe5 > 0 OR h.Passe6 > 0 OR h.Passe7 > 0 OR h.Passe8 > 0)
     ORDER BY w.Kategorie, HeimSumme DESC, m.Name, m.Vorname";
-
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         throw new Exception("Fehler beim Vorbereiten der Abfrage: " . $conn->error);
     }
-    
     $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     // Daten nach Kategorie gruppieren
     $kategorienDaten = [
         'Kat. A' => [],
         'Kat. B' => []
     ];
-    
     while ($row = $result->fetch_assoc()) {
         $kategorienDaten[$row['Kategorie']][] = $row;
     }
-    
     $stmt->close();
     $conn->close();
 
@@ -125,6 +113,7 @@ try {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+
     <style>
         @page { margin: 1.5cm; }
         body {
@@ -200,6 +189,7 @@ try {
             border-top: 1px solid #ccc;
         }
     </style>
+
     <title>Heimmeisterschaft ' . $selectedYear . '</title>
 </head>
 <body>
@@ -207,24 +197,21 @@ try {
         <img src="https://jahresmeisterschaft.msvwilen.ch/images/MSVWilen_Logo.jpg" class="logo" alt="MSV Wilen Logo">
         <h1>Heimmeisterschaft ' . $selectedYear . '</h1>
     </div>';
-
     // Beide Kategorien hinzufügen
     $html .= createTable($kategorienDaten['Kat. A'], 'Kategorie A');
     $html .= createTable($kategorienDaten['Kat. B'], 'Kategorie B');
-    
+
     // Footer
     $html .= '<div class="footer">
                 <p>Generiert am ' . date('d.m.Y \u\m H:i') . ' Uhr</p>
               </div>
 </body>
 </html>';
-
     // PDF generieren
     $options = new \Dompdf\Options();
     $options->set('isHtml5ParserEnabled', true);
     $options->set('isRemoteEnabled', true);
     $options->set('defaultFont', 'Arial');
-    
     $dompdf = new \Dompdf\Dompdf($options);
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'landscape');
@@ -240,7 +227,6 @@ try {
     // PDF speichern
     $date = new DateTime();
     $pdfFilePath = 'dat/RanglisteHeimmeisterschaft_' . $date->format('Y-m-d_H-i-s') . '.pdf';
-    
     if (!file_put_contents($pdfFilePath, $dompdf->output())) {
         throw new Exception("Konnte PDF nicht speichern");
     }
@@ -251,13 +237,12 @@ try {
     // JSON-Antwort zurückgeben
     header('Content-Type: application/json');
     echo json_encode(array('pdf_link' => "heimrang/" . $pdfFilePath));
-
 } catch (Exception $e) {
     ob_end_clean();
     error_log("PDF-Generator Fehler: " . $e->getMessage());
-    
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(array('pdf_link' => null));
 }
+
 ?>

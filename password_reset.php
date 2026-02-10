@@ -388,35 +388,6 @@ function validate_password($password, $username) {
             height: 1rem;
         }
 
-        /* Toast Container */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-        }
-
-        .toast {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow-hover);
-            border: none;
-        }
-
-        .toast.show {
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
     </style>
 </head>
 
@@ -502,54 +473,16 @@ function validate_password($password, $username) {
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
-
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="inc/js/msv-toast.js"></script>
+
     <script>
         $(document).ready(function() {
-            // Toast-Funktion
-            function showToast(message, type = 'info') {
-                const colors = {
-                    'success': '#28a745',
-                    'error': '#dc3545',
-                    'warning': '#ffc107',
-                    'info': '#adb5bd'
-                };
-                
-                const icons = {
-                    'success': 'bi-check-circle',
-                    'error': 'bi-exclamation-circle',
-                    'warning': 'bi-exclamation-triangle',
-                    'info': 'bi-info-circle'
-                };
-                
-                const toastId = 'toast_' + Date.now();
-                const toast = $(`
-                    <div class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <i class="bi ${icons[type]} me-2"></i>
-                                ${message}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                        </div>
-                    </div>
-                `).css('background-color', colors[type]);
-                
-                $('#toast-container').append(toast);
-                
-                const bsToast = new bootstrap.Toast(document.getElementById(toastId));
-                bsToast.show();
-                
-                setTimeout(() => {
-                    $('#' + toastId).remove();
-                }, 5000);
-            }
-
             // Passwort-Stärke-Anzeige
             function updatePasswordStrength(password) {
                 const strengthBar = $('#strengthBar');
@@ -613,7 +546,7 @@ function validate_password($password, $username) {
                 }
 
                 if (errors.length > 0) {
-                    showToast(errors.join('<br>'), 'error');
+                    msvToast(errors.join('<br>'), 'error');
                     return;
                 }
 
@@ -623,7 +556,7 @@ function validate_password($password, $username) {
 
                 // Simuliere Verarbeitung (in der echten Anwendung wird das Formular normal abgesendet)
                 setTimeout(() => {
-                    showToast('Passwort wurde erfolgreich zurückgesetzt!', 'success');
+                    msvToast('Passwort wurde erfolgreich zurückgesetzt!', 'success');
                     this.submit(); // Echte Formular-Übermittlung
                 }, 1000);
             });

@@ -28,8 +28,6 @@ include 'header.inc.php';
   </div>
 </div>
 
-
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
@@ -65,12 +63,11 @@ $(document).ready(function() {
                 $('#word-link').html('<a href="absenden/' + wordLink + '" target="_blank">Absendenbüchlein herunterladen</a>');
             },
             error: function(xhr, status, error) {
-                alert('Fehler beim Generieren des Words: ' + error);
+                msvError('Fehler beim Generieren des Words: ' + error);
             }
         });
     });
     initializeYearDropdown();
 });
-
 
 </script>

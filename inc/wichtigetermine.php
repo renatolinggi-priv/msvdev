@@ -431,71 +431,8 @@ if (empty($_SESSION['csrf_token'])) {
 $(document).ready(function() {
     var eventIdToDelete = null;
 
-    // Toast Container hinzufügen (falls nicht vorhanden)
-    if ($('#toast-container').length === 0) {
-        $('body').append('<div id="toast-container"></div>');
-    }
 
-    // Toast-Funktion mit korrekter Positionierung
-    function showToast(message, type = 'info') {
-        const colors = {
-            'success': '#28a745',
-            'error': '#dc3545',
-            'warning': '#ffc107',
-            'info': '#6c757d'
-        };
-        
-        const icons = {
-            'success': 'bi-check-circle',
-            'error': 'bi-exclamation-circle',
-            'warning': 'bi-exclamation-triangle',
-            'info': 'bi-info-circle'
-        };
-        
-        $('#toast-container').css({
-            'position': 'fixed',
-            'top': '80px',
-            'right': '20px',
-            'z-index': '9999',
-            'max-width': '350px'
-        });
-        
-        const toast = $('<div>')
-            .css({
-                'background-color': colors[type] || colors.info,
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '6px',
-                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                'font-weight': '500',
-                'display': 'flex',
-                'align-items': 'center',
-                'min-width': '250px',
-                'max-width': '350px'
-            })
-            .html(`<i class="bi ${icons[type]} me-2"></i>${message}`);
-        
-        $('#toast-container').append(toast);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '1',
-                'transform': 'translateX(0)'
-            });
-        }, 100);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
+
 
     // Höhenberechnung für Tabelle
     function calculateTableHeight() {
@@ -561,7 +498,7 @@ $(document).ready(function() {
                         </div>
                     </div>
                 `);
-                showToast('Fehler beim Laden der Termine', 'error');
+                msvToast('Fehler beim Laden der Termine', 'error');
             }
         });
     }
@@ -643,22 +580,22 @@ $(document).ready(function() {
                 try {
                     jsonResponse = typeof response === "object" ? response : JSON.parse(response);
                 } catch (e) {
-                    showToast("Fehler beim Verarbeiten der Serverantwort", 'error');
+                    msvToast("Fehler beim Verarbeiten der Serverantwort", 'error');
                     return;
                 }
 
                 if (jsonResponse.success) {
                     $('#editModal').modal('hide');
-                    showToast('Termin erfolgreich aktualisiert', 'success');
+                    msvToast('Termin erfolgreich aktualisiert', 'success');
                     setTimeout(() => {
                         loadEvents($('#eventYear').val());
                     }, 300);
                 } else {
-                    showToast("Fehler beim Aktualisieren: " + (jsonResponse.message || "Unbekannter Fehler"), 'error');
+                    msvToast("Fehler beim Aktualisieren: " + (jsonResponse.message || "Unbekannter Fehler"), 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast("Fehler beim Aktualisieren des Termins: " + error, 'error');
+                msvToast("Fehler beim Aktualisieren des Termins: " + error, 'error');
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
@@ -693,13 +630,13 @@ $(document).ready(function() {
             success: function(data) {
                 if (data.success && data.ics_link) {
                     triggerDownload(data.ics_link);
-                    showToast('ICS-Datei wird heruntergeladen', 'success');
+                    msvToast('ICS-Datei wird heruntergeladen', 'success');
                 } else {
-                    showToast(data.message || 'Fehler beim Erstellen der ICS-Datei', 'error');
+                    msvToast(data.message || 'Fehler beim Erstellen der ICS-Datei', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Generieren der ICS-Datei', 'error');
+                msvToast('Fehler beim Generieren der ICS-Datei', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -724,13 +661,13 @@ $(document).ready(function() {
             success: function(data) {
                 if (data.success && data.pdf_link) {
                     triggerDownload(data.pdf_link);
-                    showToast('PDF-Datei wird heruntergeladen', 'success');
+                    msvToast('PDF-Datei wird heruntergeladen', 'success');
                 } else {
-                    showToast(data.message || 'Fehler beim Erstellen der PDF-Datei', 'error');
+                    msvToast(data.message || 'Fehler beim Erstellen der PDF-Datei', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Generieren der PDF-Datei', 'error');
+                msvToast('Fehler beim Generieren der PDF-Datei', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -753,7 +690,7 @@ $(document).ready(function() {
         var eventTime = $('#eventTime').val().trim();
 
         if (!eventName || !eventDate || !eventTime) {
-            showToast('Bitte alle Felder ausfüllen', 'warning');
+            msvToast('Bitte alle Felder ausfüllen', 'warning');
             $submitBtn.prop('disabled', false).html(originalText);
             return;
         }
@@ -769,14 +706,14 @@ $(document).ready(function() {
                 csrf_token: $('input[name="csrf_token"]').val()
             },
             success: function(response) {
-                showToast('Termin erfolgreich hinzugefügt!', 'success');
+                msvToast('Termin erfolgreich hinzugefügt!', 'success');
                 $('#eventName').val('');
                 $('#eventDate').val('');
                 $('#eventTime').val('');
                 setTimeout(() => loadEvents(eventYear), 500);
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Hinzufügen des Termins', 'error');
+                msvToast('Fehler beim Hinzufügen des Termins', 'error');
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
@@ -811,26 +748,31 @@ $(document).ready(function() {
                 try {
                     jsonResponse = typeof response === "object" ? response : JSON.parse(response);
                 } catch (e) {
-                    showToast("Fehler beim Verarbeiten der Serverantwort", 'error');
+                    msvToast("Fehler beim Verarbeiten der Serverantwort", 'error');
                     return;
                 }
 
                 if (jsonResponse.success) {
                     $("#confirmModal").modal("hide");
-                    showToast('Termin erfolgreich gelöscht', 'success');
+                    msvToast('Termin erfolgreich gelöscht', 'success');
                     setTimeout(() => loadEvents($('#eventYear').val()), 500);
                 } else {
-                    showToast("Fehler beim Löschen: " + (jsonResponse.message || "Unbekannter Fehler"), 'error');
+                    msvToast("Fehler beim Löschen: " + (jsonResponse.message || "Unbekannter Fehler"), 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast("Fehler beim Löschen des Termins: " + error, 'error');
+                msvToast("Fehler beim Löschen des Termins: " + error, 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
                 eventIdToDelete = null;
             }
         });
+    });
+
+    // Jahreswechsel: Events neu laden wenn Jahr geändert wird
+    $('#eventYear').on('change', function() {
+        loadEvents($(this).val());
     });
 
     // Initialisierung

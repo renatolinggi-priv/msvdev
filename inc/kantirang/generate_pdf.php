@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
 try {
-    require '../dompdf/autoload.php';
+    require '../vendor/autoload.php';
     include '../config.php';
 
     // Verbindung prüfen

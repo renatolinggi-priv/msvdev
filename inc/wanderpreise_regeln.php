@@ -284,46 +284,8 @@ LIMIT 1</pre>
   </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>
-
 <script>
 $(document).ready(function() {
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const colors = {
-            'success': '#28a745',
-            'error': '#dc3545',
-            'warning': '#ffc107',
-            'info': '#6c757d'
-        };
-        
-        const toast = $('<div>')
-            .css({
-                'background-color': colors[type],
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '6px',
-                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s'
-            })
-            .html(message);
-        
-        $('#toast-container').append(toast);
-        
-        setTimeout(() => {
-            toast.css({'opacity': '1', 'transform': 'translateX(0)'});
-        }, 100);
-        
-        setTimeout(() => {
-            toast.css({'opacity': '0', 'transform': 'translateX(100%)'});
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
-    
     // Regeln laden
     function loadRegeln() {
         $.get('wanderpreise/get_regeln_list.php', function(response) {
@@ -353,25 +315,26 @@ $(document).ready(function() {
         
         $.post('wanderpreise/save_regel.php', postData, function(response) {
             if (response.success) {
-                showToast(response.message, 'success');
+                msvToast(response.message, 'success');
                 $('#addRegelForm')[0].reset();
                 $('#addRegelForm').removeData('edit-id');
                 $('#addRegelForm button[type="submit"]').html('<i class="bi bi-save me-2"></i>Regel speichern');
                 loadRegeln();
             } else {
-                showToast('Fehler: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                msvToast('Fehler: ' + (response.message || 'Unbekannter Fehler'), 'error');
             }
         }, 'json').fail(function() {
-            showToast('Fehler beim Speichern der Regel', 'error');
+            msvToast('Fehler beim Speichern der Regel', 'error');
         }).always(function() {
             $btn.prop('disabled', false).html(originalText);
         });
     });
     
     // Regel löschen
-    $(document).on('click', '.delete-regel', function() {
-        if (!confirm('Möchten Sie diese Regel wirklich löschen?')) return;
-        
+    $(document).on('click', '.delete-regel', async function() {
+        const result = await msvConfirmDelete('diese Regel');
+        if (!result.isConfirmed) return;
+
         const regelId = $(this).data('id');
         const $btn = $(this);
         
@@ -380,10 +343,10 @@ $(document).ready(function() {
             csrf_token: $('input[name="csrf_token"]').val()
         }, function(response) {
             if (response.success) {
-                showToast('Regel gelöscht', 'success');
+                msvToast('Regel gelöscht', 'success');
                 loadRegeln();
             } else {
-                showToast('Fehler beim Löschen', 'error');
+                msvToast('Fehler beim Löschen', 'error');
             }
         }, 'json');
     });

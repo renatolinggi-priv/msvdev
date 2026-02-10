@@ -57,7 +57,6 @@ try {
     if (!$w->execute()) err_json('DB-Fehler (execute Wanderpreise): '.$w->error);
     $resW = $w->get_result();
 
-
     // Regel-Statement vorbereiten (nur aktive Regeln)
     $sqlRegel = "SELECT regel_name, sql_query FROM wanderpreise_regeln WHERE regel_code = ? AND aktiv = 1";
     $getRegel = $conn->prepare($sqlRegel);
@@ -84,7 +83,7 @@ try {
     $sqlUpdDef = "UPDATE wanderpreise SET gewinner_id = ?, verknuepfung_jahr = ?, updated_at = NOW() WHERE id = ?";
     $updDef = $conn->prepare($sqlUpdDef); // darf fehlschlagen, kein err_json()
 
-    // Transaktion einmal global – die einzelnen Preise laufen einzeln in Try/Catch
+    // Transaktion einmal global â€“ die einzelnen Preise laufen einzeln in Try/Catch
     $conn->begin_transaction();
 
     while ($wp = $resW->fetch_assoc()) {
@@ -99,20 +98,20 @@ try {
             $exists->execute();
             $has = $exists->get_result()->fetch_assoc();
             if ($has) {
-                $details[] = "⏭️ {$wpName}: Für {$jahr} existiert bereits ein Gewinner – übersprungen.";
+                $details[] = "â­ï¸ {$wpName}: Für {$jahr} existiert bereits ein Gewinner â€“ übersprungen.";
                 continue;
             }
 
             // Regel holen
             if ($code === '') {
-                $details[] = "⚠️ {$wpName}: Keine Regel verknüpft.";
+                $details[] = "âš ï¸ {$wpName}: Keine Regel verknüpft.";
                 continue;
             }
             $getRegel->bind_param("s", $code);
             $getRegel->execute();
             $rRow = $getRegel->get_result()->fetch_assoc();
             if (!$rRow) {
-                $details[] = "⚠️ {$wpName}: Regel '{$code}' nicht gefunden oder inaktiv.";
+                $details[] = "âš ï¸ {$wpName}: Regel '{$code}' nicht gefunden oder inaktiv.";
                 continue;
             }
 
@@ -144,12 +143,12 @@ if (stripos($sql, 'SET @year') !== false || stripos($sql, 'SET @kategorie') !== 
     );
 }
 
-// Ausführen – wenn Semikola drin sind, Multi-Statements nutzen und letztes Resultat nehmen
+// Ausführen â€“ wenn Semikola drin sind, Multi-Statements nutzen und letztes Resultat nehmen
 $r = null;
 if (strpos($sql, ';') !== false) {
     if (!$conn->multi_query($sql)) {
         $fehler++;
-        $details[] = "❌ {$wpName}: SQL-Fehler ({$conn->errno}) ".$conn->error;
+        $details[] = "âŒ {$wpName}: SQL-Fehler ({$conn->errno}) ".$conn->error;
         continue;
     }
     do {
@@ -164,17 +163,17 @@ if (strpos($sql, ';') !== false) {
 
 if (!$r instanceof mysqli_result) {
     $fehler++;
-    $details[] = "❌ {$wpName}: Regel liefert kein Resultset.";
+    $details[] = "âŒ {$wpName}: Regel liefert kein Resultset.";
     continue;
 }
 
             if ($r === false) {
                 $fehler++;
-                $details[] = "❌ {$wpName}: SQL-Fehler – ".$conn->error;
+                $details[] = "âŒ {$wpName}: SQL-Fehler â€“ ".$conn->error;
                 continue;
             }
             if ($r->num_rows < 1) {
-                $details[] = "ℹ️ {$wpName}: Keine Daten für {$jahr} – keine Zuordnung.";
+                $details[] = "â„¹ï¸ {$wpName}: Keine Daten für {$jahr} â€“ keine Zuordnung.";
                 continue;
             }
 
@@ -183,7 +182,7 @@ if (!$r instanceof mysqli_result) {
             $gewinnerId = (int)($row['gewinner_id'] ?? 0);
             if ($gewinnerId <= 0) {
                 $fehler++;
-                $details[] = "❌ {$wpName}: Regel liefert keine gültige 'gewinner_id'.";
+                $details[] = "âŒ {$wpName}: Regel liefert keine gültige 'gewinner_id'.";
                 continue;
             }
             $rang     = isset($row['rang'])     ? (string)$row['rang']     : '';
@@ -201,7 +200,7 @@ if (!$r instanceof mysqli_result) {
             $ins->bind_param("iiisssii", $wpId, $gewinnerId, $jahr, $rang, $resultat, $bemerk, $istDef, $anzNeu);
             if (!$ins->execute()) {
                 $fehler++;
-                $details[] = "❌ {$wpName}: Insert-Fehler – ".$ins->error;
+                $details[] = "âŒ {$wpName}: Insert-Fehler â€“ ".$ins->error;
                 continue;
             }
 
@@ -212,14 +211,14 @@ if (!$r instanceof mysqli_result) {
             }
 
             $zuordnungen++;
-            $details[] = "✅ {$wpName}: Gewinner ID {$gewinnerId} zugeordnet"
+            $details[] = "âœ… {$wpName}: Gewinner ID {$gewinnerId} zugeordnet"
                        . ($istDef ? " (definitiver Besitz erreicht)" : "")
-                       . ($resultat !== '' ? " – Resultat: {$resultat}" : "")
-                       . ($rang !== '' ? " – Rang: {$rang}" : "");
+                       . ($resultat !== '' ? " â€“ Resultat: {$resultat}" : "")
+                       . ($rang !== '' ? " â€“ Rang: {$rang}" : "");
 
         } catch (Throwable $inner) {
             $fehler++;
-            $details[] = "❌ {$wpName}: ".$inner->getMessage();
+            $details[] = "âŒ {$wpName}: ".$inner->getMessage();
             // weiter mit nächstem Preis
         }
     }

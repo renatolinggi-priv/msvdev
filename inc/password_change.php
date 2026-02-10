@@ -433,49 +433,6 @@ function validate_password($password, $username) {
 
 <script>
 $(document).ready(function() {
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const colors = {
-            'success': '#28a745',
-            'error': '#dc3545',
-            'warning': '#ffc107',
-            'info': '#adb5bd'
-        };
-        
-        const icons = {
-            'success': 'bi-check-circle',
-            'error': 'bi-exclamation-circle',
-            'warning': 'bi-exclamation-triangle',
-            'info': 'bi-info-circle'
-        };
-        
-        const toastId = 'toast_' + Date.now();
-        const toast = $(`
-            <div class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi ${icons[type]} me-2"></i>
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        `).css('background-color', colors[type]);
-        
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>');
-        }
-        
-        $('#toast-container').append(toast);
-        
-        const bsToast = new bootstrap.Toast(document.getElementById(toastId));
-        bsToast.show();
-        
-        setTimeout(() => {
-            $('#' + toastId).remove();
-        }, 5000);
-    }
-
     // Passwort-Stärke-Anzeige mit Live-Validierung
     function updatePasswordStrength(password) {
         const strengthBar = $('#strengthBar');
@@ -635,7 +592,7 @@ $(document).ready(function() {
         }
 
         if (errors.length > 0) {
-            showToast(errors.join('<br>'), 'error');
+            msvToast(errors.join('<br>'), 'error');
             return;
         }
 

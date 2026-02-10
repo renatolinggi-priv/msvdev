@@ -174,8 +174,8 @@ class NavigationManager {
             echo '<li><hr class="dropdown-divider"></li>';
         }
 
-        // Benutzerverwaltung - nur für User "renato"
-        if (strtolower($username) === 'renato') {
+        // Benutzerverwaltung - nur für Admins
+        if ((int)($_SESSION['user_id'] ?? 0) === 1) {
             echo '<li><a class="dropdown-item" href="benutzerverwaltung.php"><i class="bi bi-people-fill me-2 text-warning"></i>Benutzerverwaltung</a></li>';
         }
 

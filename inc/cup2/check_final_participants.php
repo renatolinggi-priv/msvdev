@@ -8,8 +8,11 @@ include '../config.php';
 $year = date("Y");
 
 // Überprüfen, ob Finalteilnehmer vorhanden sind
-$sql = "SELECT * FROM cupFinalResults WHERE Year = $year";
-$result = $conn->query($sql);
+$sql = "SELECT * FROM cupFinalResults WHERE Year = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 if ($conn->error) {
     // Gib eine detaillierte Fehlermeldung zurück, falls die SQL-Abfrage fehlschlägt

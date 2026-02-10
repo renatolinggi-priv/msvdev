@@ -97,7 +97,6 @@ $artCodes = [
     background-color: #e7f1ff;
 }
 
-
 /* =========================================================
    Loading Overlay
    ========================================================= */
@@ -132,41 +131,6 @@ $artCodes = [
     to { transform: rotate(360deg); }
 }
 
-
-/* =========================================================
-   Toast Messages
-   ========================================================= */
-#toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-}
-
-.toast-message {
-    background: #fff;
-    border-radius: 0.5rem;
-    padding: 12px 20px;
-    margin-bottom: 10px;
-    min-width: 250px;
-    border-left: 4px solid;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.25s ease-in-out;
-}
-
-.toast-message.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.toast-success { border-left-color: #28a745; }
-.toast-warning { border-left-color: #ffc107; }
-.toast-error   { border-left-color: #dc3545; }
-.toast-info    { border-left-color: #17a2b8; }
-
-
 /* =========================================================
    Preview Table
    ========================================================= */
@@ -189,7 +153,6 @@ $artCodes = [
     border-radius: 0.5rem;
 }
 
-
 /* =========================================================
    Stat Cards
    ========================================================= */
@@ -211,7 +174,6 @@ $artCodes = [
     color: #6c757d;
 }
 
-
 /* =========================================================
    Tabs
    ========================================================= */
@@ -223,7 +185,6 @@ $artCodes = [
     background-color: #f8f9fa;
     border-bottom-color: #f8f9fa;
 }
-
 
 /* =========================================================
    Filter Chips (Bootstrap Outline Style)
@@ -277,7 +238,6 @@ $artCodes = [
     opacity: 0.8;
 }
 
-
 /* =========================================================
    Keyword Tags
    ========================================================= */
@@ -311,7 +271,6 @@ $artCodes = [
     color: #a71d2a;
 }
 
-
 /* =========================================================
    Badge Farben (Art)
    ========================================================= */
@@ -330,7 +289,6 @@ $artCodes = [
 .badge-VS  { background-color: #6c757d; }
 .badge-AND { background-color: #343a40; }
 
-
 /* =========================================================
    Art Select
    ========================================================= */
@@ -339,7 +297,6 @@ $artCodes = [
     font-size: 0.8rem;
     padding: 0.2rem 0.4rem;
 }
-
 
 /* =========================================================
    Kalender Toggle
@@ -362,7 +319,6 @@ $artCodes = [
     opacity: 0.7;
 }
 
-
 /* =========================================================
    Import Kalender
    ========================================================= */
@@ -371,7 +327,6 @@ $artCodes = [
 }
 
 </style>
-
 
 <div class="container-fluid">
     <div class="row">
@@ -399,7 +354,7 @@ $artCodes = [
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
                                 <i class="bi bi-table me-1"></i> Übersicht & Export
-                                <span class="badge bg-secondary ms-1"><?= count($existingEntries) ?></span>
+                                <span class="badge bg-secondary ms-1"><?= isset($stats[$currentYear]) ? $stats[$currentYear]['total'] : 0 ?></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -676,6 +631,9 @@ $artCodes = [
                                     </button>
                                 </div>
                                 <div>
+                                    <button type="button" class="btn btn-outline-info me-2" onclick="exportJskPdf()">
+                                        <i class="bi bi-file-pdf me-1"></i> JSK-Termine PDF
+                                    </button>
                                     <button type="button" class="btn btn-outline-primary me-2" onclick="openAddModal()">
                                         <i class="bi bi-plus-lg me-1"></i> Neuer Eintrag
                                     </button>
@@ -811,9 +769,6 @@ $artCodes = [
         <h4 class="mt-3" id="loadingText">Wird verarbeitet...</h4>
     </div>
 </div>
-
-<!-- Toast Container -->
-<div id="toast-container"></div>
 
 <!-- Edit/Add Entry Modal -->
 <div class="modal fade" id="editModal" tabindex="-1">
@@ -1010,7 +965,7 @@ function initUploadHandlers() {
 
 function handleFileUpload(file) {
     if (!file.name.match(/\.xlsx?$/i)) {
-        showToast('Bitte nur Excel-Dateien hochladen', 'error');
+        msvToast('Bitte nur Excel-Dateien hochladen', 'error');
         return;
     }
     
@@ -1033,21 +988,21 @@ function handleFileUpload(file) {
             if (response.success) {
                 importData = response.data;
                 showImportPreview(response.stats);
-                showToast(`${importData.length} Termine gefunden`, 'success');
+                msvToast(`${importData.length} Termine gefunden`, 'success');
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function(xhr, status, error) {
             hideLoading();
-            showToast('Fehler: ' + error, 'error');
+            msvToast('Fehler: ' + error, 'error');
         }
     });
 }
 
 function handlePdfUpload(file) {
     if (!file.name.match(/\.pdf$/i)) {
-        showToast('Bitte nur PDF-Dateien hochladen', 'error');
+        msvToast('Bitte nur PDF-Dateien hochladen', 'error');
         return;
     }
     
@@ -1068,17 +1023,17 @@ function handlePdfUpload(file) {
         success: function(response) {
             hideLoading();
             if (response.success) {
-                showToast('PDF für ' + response.year + ' gespeichert', 'success');
+                msvToast('PDF für ' + response.year + ' gespeichert', 'success');
                 $('#pdfFileName').text(response.filename).show();
                 // Icon ändern auf Erfolg
                 $('#pdfUploadArea i').removeClass('bi-file-earmark-pdf').addClass('bi-check-circle-fill').css('color', '#28a745');
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function(xhr, status, error) {
             hideLoading();
-            showToast('Fehler: ' + error, 'error');
+            msvToast('Fehler: ' + error, 'error');
         }
     });
 }
@@ -1186,7 +1141,7 @@ function saveImport() {
     });
     
     if (selectedData.length === 0) {
-        showToast('Bitte mindestens einen Eintrag auswählen', 'warning');
+        msvToast('Bitte mindestens einen Eintrag auswählen', 'warning');
         return;
     }
     
@@ -1205,15 +1160,15 @@ function saveImport() {
         success: function(response) {
             hideLoading();
             if (response.success) {
-                showToast(`${response.inserted} neu, ${response.updated} aktualisiert`, 'success');
+                msvToast(`${response.inserted} neu, ${response.updated} aktualisiert`, 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function() {
             hideLoading();
-            showToast('Fehler beim Speichern', 'error');
+            msvToast('Fehler beim Speichern', 'error');
         }
     });
 }
@@ -1331,14 +1286,14 @@ function toggleOverviewKalender(el, id) {
             if (response.success) {
                 $(el).toggleClass('active');
                 // Lokale Daten aktualisieren
-                const entry = overviewData.find(e => e.ID === id);
+                const entry = overviewData.find(e => e.ID == id);
                 if (entry) entry.InKalender = newValue ? 1 : 0;
             } else {
-                showToast('Fehler beim Speichern', 'error');
+                msvToast('Fehler beim Speichern', 'error');
             }
         },
         error: function() {
-            showToast('Fehler beim Speichern', 'error');
+            msvToast('Fehler beim Speichern', 'error');
         }
     });
 }
@@ -1419,8 +1374,9 @@ function deselectAllOverview() {
 }
 
 // ==================== DELETE ====================
-function deleteSingle(id) {
-    if (confirm('Diesen Eintrag wirklich löschen?')) {
+async function deleteSingle(id) {
+    const result = await msvConfirmDelete('diesen Eintrag');
+    if (result.isConfirmed) {
         deleteEntries([id]);
     }
 }
@@ -1432,7 +1388,7 @@ function deleteSelected() {
     });
     
     if (ids.length === 0) {
-        showToast('Bitte Einträge auswählen', 'warning');
+        msvToast('Bitte Einträge auswählen', 'warning');
         return;
     }
     
@@ -1461,17 +1417,18 @@ function deleteEntries(ids) {
         success: function(response) {
             hideLoading();
             if (response.success) {
-                showToast(`${response.deleted} Einträge gelöscht`, 'success');
+                msvToast(`${response.deleted} Einträge gelöscht`, 'success');
                 // Aus lokalen Daten entfernen
-                overviewData = overviewData.filter(e => !ids.includes(e.ID));
+                // Vergleich mit == für String/Number Kompatibilität
+                overviewData = overviewData.filter(e => !ids.some(id => e.ID == id));
                 renderOverviewTable();
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function() {
             hideLoading();
-            showToast('Fehler beim Löschen', 'error');
+            msvToast('Fehler beim Löschen', 'error');
         }
     });
 }
@@ -1485,12 +1442,13 @@ function showExportPreview() {
     });
     
     if (ids.length === 0) {
-        showToast('Bitte Einträge für Export auswählen', 'warning');
+        msvToast('Bitte Einträge für Export auswählen', 'warning');
         return;
     }
     
     // Daten für Export sammeln
-    exportData = overviewData.filter(e => ids.includes(e.ID));
+    // Vergleich mit == für String/Number Kompatibilität
+    exportData = overviewData.filter(e => ids.some(id => e.ID == id));
     renderExportPreview();
 }
 
@@ -1511,7 +1469,7 @@ function showExportPreviewFromImport() {
     });
     
     if (exportData.length === 0) {
-        showToast('Bitte Einträge für Export auswählen', 'warning');
+        msvToast('Bitte Einträge für Export auswählen', 'warning');
         return;
     }
     
@@ -1619,18 +1577,24 @@ function executeExport() {
         success: function(response) {
             hideLoading();
             if (response.success && response.file) {
-                showToast('Export erstellt', 'success');
+                msvToast('Export erstellt', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
                 window.location.href = response.file;
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function() {
             hideLoading();
-            showToast('Fehler beim Export', 'error');
+            msvToast('Fehler beim Export', 'error');
         }
     });
+}
+
+// ==================== JSK PDF EXPORT ====================
+function exportJskPdf() {
+    const year = $('#overviewYear').val() || new Date().getFullYear();
+    window.open('standbelegung/export_jsk_pdf.php?year=' + year, '_blank');
 }
 
 // ==================== KEYWORDS MANAGEMENT ====================
@@ -1639,7 +1603,7 @@ function addKeyword() {
     const art = $('#newKeywordArt').val();
     
     if (!keyword) {
-        showToast('Bitte ein Keyword eingeben', 'warning');
+        msvToast('Bitte ein Keyword eingeben', 'warning');
         return;
     }
     
@@ -1656,7 +1620,7 @@ function addKeyword() {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                showToast('Keyword hinzugefügt', 'success');
+                msvToast('Keyword hinzugefügt', 'success');
                 // Lokale Liste aktualisieren
                 artKeywords.push({ID: response.id, Keyword: keyword, Art: art});
                 // UI aktualisieren
@@ -1672,17 +1636,18 @@ function addKeyword() {
                 `);
                 $('#newKeyword').val('');
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function() {
-            showToast('Fehler beim Hinzufügen', 'error');
+            msvToast('Fehler beim Hinzufügen', 'error');
         }
     });
 }
 
-function deleteKeyword(id) {
-    if (!confirm('Keyword wirklich löschen?')) return;
+async function deleteKeyword(id) {
+    const result = await msvConfirmDelete('dieses Keyword');
+    if (!result.isConfirmed) return;
     
     $.ajax({
         url: 'standbelegung/manage_keywords.php',
@@ -1696,17 +1661,17 @@ function deleteKeyword(id) {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                showToast('Keyword gelöscht', 'success');
+                msvToast('Keyword gelöscht', 'success');
                 // Aus lokaler Liste entfernen
                 artKeywords = artKeywords.filter(kw => kw.ID !== id);
                 // UI aktualisieren
                 $(`.keyword-tag[data-id="${id}"]`).remove();
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function() {
-            showToast('Fehler beim Löschen', 'error');
+            msvToast('Fehler beim Löschen', 'error');
         }
     });
 }
@@ -1727,9 +1692,10 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-    const entry = overviewData.find(e => e.ID === id);
+    // ID-Vergleich mit == statt === wegen String/Number Typenunterschied aus PHP
+    const entry = overviewData.find(e => e.ID == id);
     if (!entry) {
-        showToast('Eintrag nicht gefunden', 'error');
+        msvToast('Eintrag nicht gefunden', 'error');
         return;
     }
     
@@ -1757,11 +1723,11 @@ function saveEntry() {
     
     // Validierung
     if (!datum) {
-        showToast('Bitte Datum eingeben', 'warning');
+        msvToast('Bitte Datum eingeben', 'warning');
         return;
     }
     if (!bezeichnung) {
-        showToast('Bitte Bezeichnung eingeben', 'warning');
+        msvToast('Bitte Bezeichnung eingeben', 'warning');
         return;
     }
     
@@ -1785,13 +1751,13 @@ function saveEntry() {
         success: function(response) {
             hideLoading();
             if (response.success) {
-                showToast(id ? 'Eintrag aktualisiert' : 'Eintrag hinzugefügt', 'success');
+                msvToast(id ? 'Eintrag aktualisiert' : 'Eintrag hinzugefügt', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
                 
                 // Lokale Daten aktualisieren
                 if (id) {
-                    // Update
-                    const idx = overviewData.findIndex(e => e.ID === parseInt(id));
+                    // Update - Vergleich mit == für String/Number Kompatibilität
+                    const idx = overviewData.findIndex(e => e.ID == id);
                     if (idx !== -1) {
                         overviewData[idx] = {
                             ...overviewData[idx],
@@ -1801,6 +1767,7 @@ function saveEntry() {
                             EndZeit: endZeit,
                             Kategorie: kategorie,
                             InKalender: inKalender,
+                            Jahr: new Date(datum).getFullYear().toString(),
                             Wochentag: response.wochentag || overviewData[idx].Wochentag
                         };
                     }
@@ -1821,12 +1788,12 @@ function saveEntry() {
                 
                 renderOverviewTable();
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannt'), 'error');
             }
         },
         error: function() {
             hideLoading();
-            showToast('Fehler beim Speichern', 'error');
+            msvToast('Fehler beim Speichern', 'error');
         }
     });
 }
@@ -1862,15 +1829,6 @@ function hideLoading() {
     $('#loadingOverlay').hide();
 }
 
-function showToast(message, type = 'info') {
-    const toast = $(`<div class="toast-message toast-${type}">${message}</div>`);
-    $('#toast-container').append(toast);
-    setTimeout(() => toast.addClass('show'), 100);
-    setTimeout(() => {
-        toast.removeClass('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-}
 </script>
 
 <?php include 'footer.inc.php'; ?>

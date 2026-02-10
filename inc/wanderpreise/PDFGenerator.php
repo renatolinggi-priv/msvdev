@@ -2,7 +2,7 @@
 // PDFGenerator.php - Zentrale Klasse für alle PDF-Generierungen im Wanderpreis-Modul
 
 require_once 'wanderpreise_config.php';
-require_once '../dompdf/autoload.php';
+require_once '../vendor/autoload.php';
 
 // Nur includen wenn noch nicht geladen
 if (!defined('DB_HOST')) {
@@ -79,9 +79,13 @@ class PDFGenerator {
             height: 40px;
             text-align: center;
             font-size: 10px;
-            border-top: 1px solid #000;
+            border-top: 1px;
             background-color: #ffffff;
-            padding-top: 10px;
+        }
+        .footer hr {
+            border: none;
+            border-top: 1px solid #000;
+            margin: 0;
         }
     ';
     
@@ -166,8 +170,8 @@ class PDFGenerator {
      */
     protected function createHTMLFooter() {
         return '</div>
-        <!-- Footer mit Datum -->
         <div class="footer">
+            <hr>
             <p>' . getactdate() . '</p>
         </div>
         </body>

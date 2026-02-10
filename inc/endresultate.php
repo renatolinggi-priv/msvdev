@@ -338,18 +338,6 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11; margin-top: 70px;">
-  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-header">
-      <i class="bi bi-info-circle-fill text-primary me-2"></i>
-      <strong class="me-auto">Hinweis</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
-    <div class="toast-body"></div>
-  </div>
-</div>
-
 <!-- Gemeinsame Bibliothek einbinden -->
 <script src="js/msv-resultate-common.js"></script>
 
@@ -648,7 +636,7 @@ function customOpenEditModal(mitgliedID) {
         error: function(xhr, status, error) {
             console.error('=== AJAX ERROR ===');
             console.error('Response:', xhr.responseText);
-            showToast('Fehler beim Laden der Schussdaten', 'error');
+            msvToast('Fehler beim Laden der Schussdaten', 'error');
         }
     });
 }
@@ -657,35 +645,6 @@ function customOpenEditModal(mitgliedID) {
 $(document).ready(function() {
     endManager = MSV.init('end');
     MSV.enableGlobalScroll();
-    
-    // Toast Initialisierung
-    const toastEl = document.getElementById('liveToast');
-    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const toastBody = toastEl.querySelector('.toast-body');
-        const toastHeader = toastEl.querySelector('.toast-header');
-        const icon = toastHeader.querySelector('i');
-        const title = toastHeader.querySelector('strong');
-
-        toastBody.textContent = message;
-
-        // Icon und Farbe je nach Typ anpassen
-        icon.className = 'me-2 bi bi-' + 
-            (type === 'success' ? 'check-circle-fill text-success' :
-             type === 'error' || type === 'danger' ? 'exclamation-triangle-fill text-danger' :
-             type === 'warning' ? 'exclamation-circle-fill text-warning' :
-             'info-circle-fill text-primary');
-
-        title.textContent = 
-            type === 'success' ? 'Erfolg' :
-            type === 'error' || type === 'danger' ? 'Fehler' :
-            type === 'warning' ? 'Warnung' :
-            'Hinweis';
-
-        toast.show();
-    }
     
     // Enter-Navigation Setup
     setupEnterNavigation();
@@ -735,13 +694,13 @@ $(document).ready(function() {
             data: formData,
             success: function(response) {
                 console.log('✓ Speichern erfolgreich');
-                showToast('Resultate erfolgreich gespeichert!', 'success');
+                msvToast('Resultate erfolgreich gespeichert!', 'success');
                 $('#schussModal').modal('hide');
                 setTimeout(() => endManager.loadData(selectedYear), 500);
             },
             error: function(xhr, status, error) {
                 console.error('✗ Fehler beim Speichern:', error);
-                showToast('Fehler beim Speichern der Resultate', 'error');
+                msvToast('Fehler beim Speichern der Resultate', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

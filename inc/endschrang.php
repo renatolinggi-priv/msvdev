@@ -9,9 +9,9 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Alle Styles sind jetzt zentral in msv-styles.css verwaltet
 $page_specific_css = '';
-
 include 'header.inc.php';
 ?>
+
 <style>
 /* Rotating Icon Animation statt Spinner */
 @keyframes spin {
@@ -30,7 +30,9 @@ include 'header.inc.php';
     white-space: nowrap;
     overflow: hidden;
 }
+
 </style>
+
 <!-- Header -->
 <div class="container-fluid">
     <div class="row">
@@ -46,7 +48,6 @@ include 'header.inc.php';
                         </h2>
                     </div>
                 </div>
-
                 <!-- Weißer Container für den Rest -->
                 <div class="content-background">
                 <!-- Jahr-Auswahl -->
@@ -62,7 +63,6 @@ include 'header.inc.php';
                         </div>
                     </div>
                 </div>
-
                 <!-- Dashboard Kachel-Grid -->
                 <div class="row g-2 mb-4">
                     <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
@@ -150,7 +150,6 @@ include 'header.inc.php';
                         </button>
                     </div>
                 </div>
-
                 <!-- Tabellenbereich Kat. A -->
                 <div class="table-wrapper mb-4">
                     <h5 class="table-title">Endschiessen Kat. A</h5>
@@ -175,7 +174,6 @@ include 'header.inc.php';
                         </table>
                     </div>
                 </div>
-
                 <!-- Tabellenbereich Kat. B -->
                 <div class="table-wrapper mb-4">
                     <h5 class="table-title">Endschiessen Kat. B</h5>
@@ -205,51 +203,9 @@ include 'header.inc.php';
         </div>
     </div>
 </div>
-
-<!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11; margin-top: 70px;">
-  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-header">
-      <i class="bi bi-info-circle-fill text-primary me-2"></i>
-      <strong class="me-auto">Hinweis</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
-    <div class="toast-body"></div>
-  </div>
-</div>
-
 <script>
 $(document).ready(function () {
     var basePath = '';
-    
-    // Toast Initialisierung
-    const toastEl = document.getElementById('liveToast');
-    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const toastBody = toastEl.querySelector('.toast-body');
-        const toastHeader = toastEl.querySelector('.toast-header');
-        const icon = toastHeader.querySelector('i');
-        const title = toastHeader.querySelector('strong');
-
-        toastBody.textContent = message;
-
-        // Icon und Farbe je nach Typ anpassen
-        icon.className = 'me-2 bi bi-' + 
-            (type === 'success' ? 'check-circle-fill text-success' :
-             type === 'error' || type === 'danger' ? 'exclamation-triangle-fill text-danger' :
-             type === 'warning' ? 'exclamation-circle-fill text-warning' :
-             'info-circle-fill text-primary');
-
-        title.textContent = 
-            type === 'success' ? 'Erfolg' :
-            type === 'error' || type === 'danger' ? 'Fehler' :
-            type === 'warning' ? 'Warnung' :
-            'Hinweis';
-
-        toast.show();
-    }
 
     // Automatischer Download
     function downloadFile(url, filename) {
@@ -286,10 +242,10 @@ $(document).ready(function () {
             },
             success: function (response) {
                 $('#EndA tbody').html(response);
-                showToast('Kategorie A geladen', 'success');
+                msvToast('Kategorie A geladen', 'success');
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Laden Kategorie A: ' + error, 'error');
+                msvToast('Fehler beim Laden Kategorie A: ' + error, 'error');
             }
         });
     }
@@ -306,10 +262,10 @@ $(document).ready(function () {
             },
             success: function (response) {
                 $('#EndB tbody').html(response);
-                showToast('Kategorie B geladen', 'success');
+                msvToast('Kategorie B geladen', 'success');
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Laden Kategorie B: ' + error, 'error');
+                msvToast('Fehler beim Laden Kategorie B: ' + error, 'error');
             }
         });
     }
@@ -330,8 +286,7 @@ $(document).ready(function () {
                 '<span>' + buttonText + '</span>' +
                 '<i class="bi bi-hourglass-split ms-auto"></i>'
             );
-            showToast(documentName + ' wird generiert...', 'info');
-
+            msvToast(documentName + ' wird generiert...', 'info');
             $.ajax({
                 url: 'endschrang/' + scriptName,
                 type: 'GET',
@@ -341,21 +296,22 @@ $(document).ready(function () {
                 },
                 success: function (response) {
                     if (response.pdf_link) {
+
                         // PDF direkt herunterladen
                         const fullPath = 'endschrang/' + response.pdf_link;
                         const filename = documentName + '_' + selectedYear + '.pdf';
                         downloadFile(fullPath, filename);
-                        
-                        showToast(documentName + ' erfolgreich erstellt und heruntergeladen', 'success');
+                        msvToast(documentName + ' erfolgreich erstellt und heruntergeladen', 'success');
                     } else if (response.error) {
-                        showToast('Fehler: ' + response.error, 'error');
+                        msvToast('Fehler: ' + response.error, 'error');
                     }
                 },
                 error: function (xhr, status, error) {
                     console.error('AJAX Error:', xhr.responseText);
-                    showToast('Fehler beim Generieren: ' + error, 'error');
+                    msvToast('Fehler beim Generieren: ' + error, 'error');
                 },
                 complete: function () {
+
                     // Button wiederherstellen
                     $button.prop('disabled', false);
                     $button.html(originalHtml);
@@ -379,8 +335,7 @@ $(document).ready(function () {
             '<span>' + buttonText + '</span>' +
             '<i class="bi bi-hourglass-split ms-auto"></i>'
         );
-        showToast('Absendenbuch wird generiert...', 'info');
-
+        msvToast('Absendenbuch wird generiert...', 'info');
         $.ajax({
             url: 'absenden/generate_absendenbuch.php',
             type: 'GET',
@@ -390,21 +345,22 @@ $(document).ready(function () {
             },
             success: function (response) {
                  if (response.word_link) {
+
                     // Word-Dokument direkt herunterladen mit dem vom Server zurückgegebenen Namen
                     const fullPath = 'absenden/' + response.word_link;
                     const filename = response.display_name; // Hier den Namen vom Server verwenden
                     downloadFile(fullPath, filename);
-                    
-                    showToast('Absendenbuch erfolgreich erstellt und heruntergeladen', 'success');
+                    msvToast('Absendenbuch erfolgreich erstellt und heruntergeladen', 'success');
                 } else {
-                    showToast('Fehler beim Generieren des Absendenbuchs', 'error');
+                    msvToast('Fehler beim Generieren des Absendenbuchs', 'error');
                 }
             },
             error: function (xhr, status, error) {
                 console.error('Word generation error:', xhr.responseText);
-                showToast('Fehler beim Generieren: ' + error, 'error');
+                msvToast('Fehler beim Generieren: ' + error, 'error');
             },
             complete: function () {
+
                 // Button wiederherstellen
                 $button.prop('disabled', false);
                 $button.html(originalHtml);
@@ -427,7 +383,7 @@ $(document).ready(function () {
 
     // Beim Ändern des Jahres im Dropdown beide Tabellen neu laden
     $('#yearSelect').on('change', function () {
-        showToast('Lade Daten für ' + $(this).val() + '...', 'info');
+        msvToast('Lade Daten für ' + $(this).val() + '...', 'info');
         loadenda();
         loadendb();
     });
@@ -437,7 +393,9 @@ $(document).ready(function () {
     loadenda();
     loadendb();
 });
+
 </script>
+
 <?
 include 'footer.inc.php';
 ?>

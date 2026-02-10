@@ -1,7 +1,7 @@
 <?php
 // parse_excel.php - Parst den Standbelegungsplan aus Excel
 require_once '../config.php';
-require_once '../spreadsheet/autoload.php';
+require_once '../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -100,7 +100,10 @@ try {
  */
 function parseEntry($row, $startCol, $currentMonth, $year, $monate) {
     $wochentag = isset($row[$startCol]) ? trim($row[$startCol]) : '';
-    $tag = isset($row[$startCol + 1]) ? trim(str_replace('.', '', $row[$startCol + 1])) : '';
+    // Tag bereinigen: Punkt am ENDE entfernen (nicht mittendrin wie bei "13.0")
+    $tagRaw = isset($row[$startCol + 1]) ? trim($row[$startCol + 1]) : '';
+    $tag = preg_replace('/\.0*$/', '', $tagRaw); // Entfernt ".0", ".00" etc. am Ende
+    $tag = rtrim($tag, '. '); // Entfernt einzelnen Punkt am Ende (z.B. "23.")
     $bezeichnung = isset($row[$startCol + 2]) ? trim($row[$startCol + 2]) : '';
     $zeit = isset($row[$startCol + 3]) ? trim($row[$startCol + 3]) : '';
     
@@ -117,9 +120,12 @@ function parseEntry($row, $startCol, $currentMonth, $year, $monate) {
         }
     }
     
+    // Wochentag bereinigen: Punkt am Ende entfernen, nur erste 2 Zeichen nehmen (für kaputte Excel-Zellen wie "SA+I21...")
+    $wochentag = preg_replace('/[^A-Za-z]/', '', strtoupper(substr($wochentag, 0, 2)));
+    
     // Kein gültiger Wochentag = überspringen
     $validDays = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
-    if (!in_array(strtoupper($wochentag), $validDays)) {
+    if (!in_array($wochentag, $validDays)) {
         return null;
     }
     
@@ -130,7 +136,9 @@ function parseEntry($row, $startCol, $currentMonth, $year, $monate) {
     
     // Datum erstellen
     $monat = $currentMonth ?: 1;
-    $datum = sprintf('%02d.%02d.%d', intval($tag), $monat, $year);
+    // Tag als Integer, auch wenn es als Float kommt (z.B. "12.0")
+    $tagInt = intval(floatval($tag));
+    $datum = sprintf('%02d.%02d.%d', $tagInt, $monat, $year);
     
     // Zeit parsen
     $zeitParsed = parseZeit($zeit);
@@ -141,7 +149,7 @@ function parseEntry($row, $startCol, $currentMonth, $year, $monate) {
     return [
         'type' => 'entry',
         'datum' => $datum,
-        'wochentag' => strtoupper($wochentag),
+        'wochentag' => $wochentag,
         'bezeichnung' => $bezeichnung,
         'start_zeit' => $zeitParsed['start'],
         'end_zeit' => $zeitParsed['end'],

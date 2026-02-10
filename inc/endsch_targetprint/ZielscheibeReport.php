@@ -7,7 +7,7 @@ require_once dirname(__FILE__) . '/ZielscheibeGeneratorImagick.php';
 require_once dirname(__FILE__) . '/ZielscheibeGeneratorKeiler.php';
 
 // Dompdf laden - MUSS GANZ OBEN stehen
-require_once dirname(dirname(__FILE__)) . '/dompdf/autoload.php';
+require_once dirname(dirname(__FILE__)) . '/vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;

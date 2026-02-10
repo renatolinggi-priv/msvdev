@@ -1,5 +1,5 @@
 <?php
-require '../dompdf/autoload.php'; // Pfad zu Composer's autoload Datei
+require '../vendor/autoload.php'; // Pfad zu Composer's autoload Datei
 require '../config.php';
 use Dompdf\Dompdf;
 use Dompdf\Options;

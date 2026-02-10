@@ -5,7 +5,7 @@
 ob_start();
 
 // Autoload von Composer
-require_once '../spreadsheet/autoload.php'; // Stellen Sie sicher, dass dieser Pfad korrekt ist
+require_once '../vendor/autoload.php'; // Stellen Sie sicher, dass dieser Pfad korrekt ist
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;

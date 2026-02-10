@@ -9,20 +9,17 @@ if ($conn->connect_error) {
     die("Verbindung fehlgeschlagen: " . $conn->connect_error);
 }
 
-
-
-
 // SQL-Abfrage, um die Gewinner der Runde 2 abzurufen
 $sql = "
-    SELECT 
+    SELECT
         m.ID, m.Vorname, m.Name
-    FROM 
+    FROM
         cupPairs cp
-    JOIN 
+    JOIN
         mitglieder m ON (cp.Participant1 = m.ID OR cp.Participant2 = m.ID OR cp.Participant3 = m.ID)
-    WHERE 
-        cp.Round = 2 
-        AND cp.Year = $year
+    WHERE
+        cp.Round = 2
+        AND cp.Year = ?
         AND (
             -- Bedingungen für Zweierpaarungen
             (
@@ -65,7 +62,10 @@ $sql = "
         m.Name ASC, m.Vorname ASC;
 ";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $finalists = [];
 

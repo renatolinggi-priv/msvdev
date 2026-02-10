@@ -185,7 +185,7 @@ include 'header.inc.php';
                     type: 'POST',
                     data: { round: round, matches: matches },
                     success: function (response) {
-                        alert(response);
+                        msvError(response);
                         if (round === 'round1') {
                             loadWinnersRound1();
                         } else if (round === 'round2') {

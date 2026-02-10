@@ -1,7 +1,7 @@
 <?php
 // generate_wanderpreise_jahresreport.php
 require_once '../dbconnect.inc.php';
-require_once 'dompdf/autoload.inc.php';
+require_once '../vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;

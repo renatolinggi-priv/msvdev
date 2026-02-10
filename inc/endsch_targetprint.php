@@ -105,37 +105,6 @@ try {
         100% { transform: rotate(360deg); }
     }
     
-    /* Toast Messages */
-    #toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-    }
-    
-    .toast-message {
-        background: #fff;
-        border-radius: 8px;
-        padding: 12px 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        opacity: 0;
-        transform: translateX(100%);
-        transition: all 0.3s ease;
-        min-width: 250px;
-        border-left: 4px solid;
-    }
-    
-    .toast-message.show {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    
-    .toast-success { border-left-color: #28a745; }
-    .toast-warning { border-left-color: #ffc107; }
-    .toast-error { border-left-color: #dc3545; }
-    .toast-info { border-left-color: #17a2b8; }
-    
     .stich-preview-card {
         border: 1px solid #dee2e6;
         border-radius: 0.5rem;
@@ -343,9 +312,6 @@ try {
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <!-- CSRF Token und Stich-Definitionen für JavaScript -->
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
@@ -416,7 +382,7 @@ function handleFileUpload(file) {
     
     // Validierung
     if (!file.name.endsWith('.csv')) {
-        showToast('Bitte nur CSV-Dateien hochladen', 'error');
+        msvToast('Bitte nur CSV-Dateien hochladen', 'error');
         return;
     }
     
@@ -427,7 +393,7 @@ function handleFileUpload(file) {
         parseCSV(content, file.name);
     };
     reader.onerror = function() {
-        showToast('Fehler beim Lesen der Datei', 'error');
+        msvToast('Fehler beim Lesen der Datei', 'error');
     };
     reader.readAsText(file);
 }
@@ -566,7 +532,7 @@ function parseCSV(content, filename) {
         console.log('[TARGETPRINT] Gefundene Programme:', alleStiche.map(s => `${s.programmNummer} (${s.stichName})`).join(', '));
         
         if (alleStiche.length === 0) {
-            showToast('Keine Stiche mit Schüssen gefunden', 'warning');
+            msvToast('Keine Stiche mit Schüssen gefunden', 'warning');
             return;
         }
         
@@ -581,7 +547,7 @@ function parseCSV(content, filename) {
         
     } catch (error) {
         console.error('[TARGETPRINT] Parse error:', error);
-        showToast('Fehler beim Parsen der CSV: ' + error.message, 'error');
+        msvToast('Fehler beim Parsen der CSV: ' + error.message, 'error');
     }
 }
 
@@ -646,7 +612,7 @@ function showPreview() {
     // Button aktivieren
     $('#generatePdfBtn').prop('disabled', false);
     
-    showToast('CSV erfolgreich geladen', 'success');
+    msvToast('CSV erfolgreich geladen', 'success');
 }
 
 // Stich-Name aus Programmnummer (verwendet DB-Mapping)
@@ -657,7 +623,7 @@ function getStichName(programmNummer) {
 // PDF generieren
 function generatePDF() {
     if (!parsedData) {
-        showToast('Keine Daten zum Generieren', 'error');
+        msvToast('Keine Daten zum Generieren', 'error');
         return;
     }
     
@@ -689,19 +655,19 @@ function generatePDF() {
             $('#loadingOverlay').hide();
             
             if (response.success && response.pdf_link) {
-                showToast('PDF erfolgreich generiert!', 'success');
+                msvToast('PDF erfolgreich generiert!', 'success');
                 
                 // Modal mit Download-Link anzeigen
                 showSuccessModal(response.pdf_link, response.filename || 'Zielscheibe.pdf');
                 
             } else {
-                showToast('Fehler: ' + (response.error || 'Unbekannter Fehler'), 'error');
+                msvToast('Fehler: ' + (response.error || 'Unbekannter Fehler'), 'error');
             }
         },
         error: function(xhr, status, error) {
             $('#loadingOverlay').hide();
             console.error('[TARGETPRINT] AJAX Error:', error, xhr.responseText);
-            showToast('Fehler bei der PDF-Generierung: ' + error, 'error');
+            msvToast('Fehler bei der PDF-Generierung: ' + error, 'error');
         }
     });
 }
@@ -737,23 +703,6 @@ function resetUpload() {
     $('#generatePdfBtn').prop('disabled', true);
 }
 
-// Toast Notification
-function showToast(message, type = 'info') {
-    const toast = $(`
-        <div class="toast-message toast-${type}">
-            ${message}
-        </div>
-    `);
-    
-    $('#toast-container').append(toast);
-    
-    setTimeout(() => toast.addClass('show'), 100);
-    
-    setTimeout(() => {
-        toast.removeClass('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
 </script>
 
 <?php

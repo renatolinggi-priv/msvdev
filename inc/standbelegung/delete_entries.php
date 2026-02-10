@@ -2,24 +2,32 @@
 // delete_entries.php - Löscht einzelne Standbelegung-Einträge
 require_once '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
+    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input || !isset($input['ids']) || !is_array($input['ids'])) {
-    echo json_encode(['success' => false, 'error' => 'Keine IDs angegeben']);
+    echo json_encode(['success' => false, 'message' => 'Keine IDs angegeben']);
     exit;
 }
 
 $ids = array_filter($input['ids'], 'is_numeric');
 
 if (empty($ids)) {
-    echo json_encode(['success' => false, 'error' => 'Keine gültigen IDs']);
+    echo json_encode(['success' => false, 'message' => 'Keine gültigen IDs']);
     exit;
 }
 
@@ -48,7 +56,7 @@ try {
     ]);
     
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
 $conn->close();

@@ -1,5 +1,5 @@
 <?php
-require '../phpword/vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
@@ -78,8 +78,6 @@ if ($result->num_rows > 0) {
     }
 }
 
-
-
 // SQL-Abfrage ausführen
 $sql = "
 SELECT m.Name, m.Vorname, k.Passe1, k.Passe2, k.Passe3, k.Passe4, k.Passe5,
@@ -109,8 +107,6 @@ $result->data_seek(0); // Setze den Zeiger zurück
 $currentRow = 1;
 // Klone die Platzhalter-Zeile entsprechend der Anzahl der Datenzeilen
 $templateProcessor->cloneRow('bRang', $rowCount);
-
-
 
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -156,8 +152,6 @@ $filename = 'Kantonalstich_' . $date->format('Y-m-d_H-i-s') . '.docx';
 
 // Speichern des neuen Word-Dokuments
 $templateProcessor->saveAs($filename);
-
-
 
 // Überprüfen, ob die Datei existiert und lesbar ist
 if (file_exists($filename) && is_readable($filename)) {

@@ -440,12 +440,12 @@ if (empty($_SESSION['csrf_token'])) {
     const geburtsdatum = document.getElementById('gastGeburtsdatum').value;
     
     if (!vorname || !nachname) {
-      showToast('Bitte Vor- und Nachname eingeben', 'warning');
+      msvToast('Bitte Vor- und Nachname eingeben', 'warning');
       return false;
     }
     
     if (!geburtsdatum) {
-      showToast('Bitte Geburtsdatum eingeben', 'warning');
+      msvToast('Bitte Geburtsdatum eingeben', 'warning');
       return false;
     }
     
@@ -455,7 +455,7 @@ if (empty($_SESSION['csrf_token'])) {
     const alter = Math.floor((heute - geb) / (365.25 * 24 * 60 * 60 * 1000));
     
     if (alter < 10 || alter > 20) {
-      showToast('Jungschützen müssen zwischen 10 und 20 Jahre alt sein', 'warning');
+      msvToast('Jungschützen müssen zwischen 10 und 20 Jahre alt sein', 'warning');
       return false;
     }
     
@@ -662,10 +662,10 @@ if (empty($_SESSION['csrf_token'])) {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        showToast('Schussanzahl aktualisiert', 'success');
+        msvToast('Schussanzahl aktualisiert', 'success');
         updatePaketInfo();
       } else {
-        showToast('Fehler beim Speichern', 'danger');
+        msvToast('Fehler beim Speichern', 'danger');
       }
     })
     .finally(() => {
@@ -677,7 +677,7 @@ if (empty($_SESSION['csrf_token'])) {
   function savePaketPreis() {
     const preis = parseFloat(document.getElementById('paketPreis').value);
     if (isNaN(preis) || preis < 0) {
-      showToast('Ungültiger Preis', 'warning');
+      msvToast('Ungültiger Preis', 'warning');
       return;
     }
     
@@ -703,10 +703,10 @@ if (empty($_SESSION['csrf_token'])) {
         PAKET_PREIS = preisCents;
         document.getElementById('paketPreisBadge').textContent = 'Festes Paket: ' + fmtCHF(preisCents);
         updatePaketInfo();
-        showToast('Paket-Preis gespeichert', 'success');
+        msvToast('Paket-Preis gespeichert', 'success');
         loadErfassteJS(); // Tabelle neu laden mit neuen Preisen
       } else {
-        showToast('Fehler beim Speichern', 'danger');
+        msvToast('Fehler beim Speichern', 'danger');
       }
     })
     .finally(() => {
@@ -922,7 +922,7 @@ if (empty($_SESSION['csrf_token'])) {
     const stiche = Object.values(JS_PAKET_STICHE).filter(id => id !== null);
     
     if (stiche.length !== 4) {
-      showToast('Fehler: JS-Paket Stiche nicht korrekt konfiguriert (benötigt: Endstich, Probe, Schwini, Zabig)', 'danger');
+      msvToast('Fehler: JS-Paket Stiche nicht korrekt konfiguriert (benötigt: Endstich, Probe, Schwini, Zabig)', 'danger');
       return;
     }
     
@@ -971,9 +971,9 @@ if (empty($_SESSION['csrf_token'])) {
         
         // Toast-Meldung anzeigen
         if (isEditing) {
-          showToast('Jungschütze wurde erfolgreich aktualisiert', 'success');
+          msvToast('Jungschütze wurde erfolgreich aktualisiert', 'success');
         } else {
-          showToast('Jungschütze wurde erfolgreich gespeichert', 'success');
+          msvToast('Jungschütze wurde erfolgreich gespeichert', 'success');
         }
         
         // Tabelle aktualisieren
@@ -1100,14 +1100,14 @@ if (empty($_SESSION['csrf_token'])) {
           document.querySelector('.content-background').scrollIntoView({ behavior: 'smooth' });
           
           // Zeige Hinweis
-          showToast('Bearbeitungsmodus - Daten geladen', 'info');
+          msvToast('Bearbeitungsmodus - Daten geladen', 'info');
         } else {
-          showToast('Fehler beim Laden der Daten', 'error');
+          msvToast('Fehler beim Laden der Daten', 'error');
         }
       })
       .catch(err => {
         console.error('Error loading JS data:', err);
-        showToast('Fehler beim Laden der Daten', 'error');
+        msvToast('Fehler beim Laden der Daten', 'error');
       });
   }
   
@@ -1140,7 +1140,7 @@ if (empty($_SESSION['csrf_token'])) {
     saveBtn.appendChild(document.createTextNode(' Speichern'));
     
     if (showMessage) {
-      showToast('Bearbeitung abgebrochen', 'info');
+      msvToast('Bearbeitung abgebrochen', 'info');
     }
   }
 
@@ -1185,15 +1185,15 @@ if (empty($_SESSION['csrf_token'])) {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        showToast('Jungschütze wurde gelöscht', 'success');
+        msvToast('Jungschütze wurde gelöscht', 'success');
         loadErfassteJS();
       } else {
-        showToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
+        msvToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
       }
     })
     .catch(err => {
       console.error('Delete error:', err);
-      showToast('Netzwerkfehler beim Löschen', 'danger');
+      msvToast('Netzwerkfehler beim Löschen', 'danger');
     });
   }
 
@@ -1217,51 +1217,20 @@ if (empty($_SESSION['csrf_token'])) {
       .then(data => {
         if (data.pdf_link) {
           window.open(data.pdf_link, '_blank');
-          showToast('PDF wurde erfolgreich generiert', 'success');
+          msvToast('PDF wurde erfolgreich generiert', 'success');
         } else if (data.error) {
-          showToast('Fehler: ' + data.error, 'danger');
+          msvToast('Fehler: ' + data.error, 'danger');
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        showToast('Fehler beim Generieren des PDFs', 'danger');
+        msvToast('Fehler beim Generieren des PDFs', 'danger');
       })
       .finally(() => {
         btn.disabled = false;
         btn.innerHTML = originalText;
       });
   });
-
-  // Toast-Funktion
-  function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toastId = 'toast-' + Date.now();
-    
-    const toastHtml = `
-      <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'danger' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} border-0 mb-2" role="alert">
-        <div class="d-flex">
-          <div class="toast-body">
-            ${message}
-          </div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-      </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', toastHtml);
-    
-    const toastElement = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastElement, {
-      autohide: true,
-      delay: 4000
-    });
-    
-    toast.show();
-    
-    toastElement.addEventListener('hidden.bs.toast', () => {
-      toastElement.remove();
-    });
-  }
 
   // Collapse Event Listener
   document.getElementById('munitionCollapse').addEventListener('shown.bs.collapse', function() {

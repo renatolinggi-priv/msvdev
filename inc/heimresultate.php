@@ -4,11 +4,6 @@ include 'dbconnect.inc.php';
 
 // Spezifische Styles für Heim-Resultate Z-Index Fix
 
-
-
-
-
-
 include 'header.inc.php';
 
 // CSRF Token generieren

@@ -3,8 +3,11 @@ include '../config.php'; // Konfigurationsdatei
 
 $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 // SQL-Abfrage, um die Daten für den Standcup Final abzurufen
-$sql = "SELECT ParticipantName, Result, club FROM cupStandFinal where Year = $year";
-$result = $conn->query($sql);
+$sql = "SELECT ParticipantName, Result, club FROM cupStandFinal WHERE Year = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $data = array();
 

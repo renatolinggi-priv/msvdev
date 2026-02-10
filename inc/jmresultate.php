@@ -154,11 +154,6 @@ html, body { height:100%; overflow:hidden; }
 }
 ";
 
-
-
-
-
-
 include 'header.inc.php';
 
 // CSRF Token generieren
@@ -299,7 +294,6 @@ if (empty($_SESSION['csrf_token'])) {
   resp.style.setProperty('--jm-title-h', h + 'px');
 }
 
-
     // Scrollbox dynamisch begrenzen
 function sizeJMTable() {
   const resp = document.querySelector('#jmresultateTabelle')?.closest('.table-responsive');
@@ -324,7 +318,6 @@ function sizeJMTable() {
   resp.style.maxHeight = maxH + 'px';
   resp.style.overflowY = 'auto';
 }
-
 
     // EINZIGE zentrale Recalc-Funktion
     function afterJMRowsInserted() {
@@ -355,23 +348,12 @@ function sizeJMTable() {
             applyViewportVars();
             sizeJMTable();
         }, 120));
-        window.addEventListener('resize', setJMTitleOffset);  // <— wichtig für den Titel-Offset
+        window.addEventListener('resize', setJMTitleOffset);  // <â€” wichtig für den Titel-Offset
 
         // Scroll-Delegation (scrollen auch außerhalb der Tabelle)
         enableGlobalScrollToTable('jmresultateTabelle');
 
-        // Toasts
-        function showToast(message, type = 'info') {
-            if ($('#toast-container').length === 0) {
-                $('body').append('<div id="toast-container" style="position:fixed;top:70px;right:20px;z-index:9999;"></div>');
-            }
-            const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle');
-            const $t = $('<div>').addClass(`toast-message toast-${type}`).html(`<i class="bi bi-${icon} me-2"></i>${message}`);
-            $('#toast-container').append($t);
-            setTimeout(() => $t.addClass('show'), 40);
-            setTimeout(() => { $t.removeClass('show'); setTimeout(() => $t.remove(), 300); }, 4000);
-        }
-        function showMessage(m, t) { const map = { danger: 'error', success: 'success', warning: 'warning', info: 'info' }; showToast(m, map[t] || 'info'); }
+        function showMessage(m, t) { const map = { danger: 'error', success: 'success', warning: 'warning', info: 'info' }; msvToast(m, map[t] || 'info'); }
 
         // Jahr-Dropdown
         $yearDD.empty();
@@ -386,7 +368,7 @@ function sizeJMTable() {
             $.get(basePath + 'jmresultate/load_jmresultate_form.php', { year })
                 .done(function (html) {
                     $('#jmresultateTabelle').html(html);
-                    showToast('Daten erfolgreich geladen', 'success');
+                    msvToast('Daten erfolgreich geladen', 'success');
 
                     // Tooltips
                     $('#jmresultateTabelle input.small-input').each(function () {
@@ -422,7 +404,7 @@ function sizeJMTable() {
                     $('#jmresultateTabelle').html(
                         '<tr><td class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Fehler beim Laden der Daten</td></tr>'
                     );
-                    showToast('Fehler beim Laden der Daten', 'error');
+                    msvToast('Fehler beim Laden der Daten', 'error');
                 });
         }
         loadJMResultate(currentYear);
@@ -545,7 +527,6 @@ function sizeJMTable() {
   });
 }
 
-
         function debounce(fn, wait) { let t; return function () { clearTimeout(t); t = setTimeout(() => fn.apply(this, arguments), wait); }; }
     });
 </script>
@@ -626,7 +607,7 @@ function sizeJMTable() {
   });
 
   // Falls deine Seite nach AJAX neue Inhalte einsetzt, kannst du das auch manuell triggern:
-  // (keine Pflicht – ResizeObserver deckt i.d.R. alles ab)
+  // (keine Pflicht â€“ ResizeObserver deckt i.d.R. alles ab)
   window.jmUpdateTopScroller = function(){
     syncSpacerWidth();
     setTopHOffset();
@@ -716,15 +697,15 @@ document.getElementById("redirect-btn").addEventListener("click", function () {
     }).done(res=>{
       if(res && res.success){
         if(!hasPayload()) isDirty = false;
-        showToast('Gespeichert.', 'success');
+        msvToast('Gespeichert.', 'success');
       } else {
         isDirty = true;
-        showToast('Fehler beim Speichern: ' + (res?.message || 'Unbekannt'), 'error');
+        msvToast('Fehler beim Speichern: ' + (res?.message || 'Unbekannt'), 'error');
       }
     }).fail(xhr=>{
       isDirty = true;
       console.error('Autosave failed', xhr);
-      showToast('Speichern fehlgeschlagen (HTTP ' + xhr.status + ')', 'error');
+      msvToast('Speichern fehlgeschlagen (HTTP ' + xhr.status + ')', 'error');
     });
   }, DEBOUNCE_MS);
   */
@@ -805,12 +786,12 @@ document.getElementById("redirect-btn").addEventListener("click", function () {
         } else {
           isDirty = true;
           $btn.prop('disabled', false);
-          showToast('Speichern fehlgeschlagen: ' + (res?.message || ''), 'error');
+          msvToast('Speichern fehlgeschlagen: ' + (res?.message || ''), 'error');
         }
       }).fail(xhr=>{
         isDirty = true;
         $btn.prop('disabled', false);
-        showToast('Speichern fehlgeschlagen (HTTP ' + xhr.status + ')', 'error');
+        msvToast('Speichern fehlgeschlagen (HTTP ' + xhr.status + ')', 'error');
       });
     } else {
       // Nichts im Buffer -> einfach verlassen
@@ -822,26 +803,9 @@ document.getElementById("redirect-btn").addEventListener("click", function () {
     pendingNav = null; // einfach Modal schliessen
   });
 
-  // ---- Mini-Toast Helper (nutzt dein #message, falls vorhanden) ----
-  function showToast(text, type){
-    const $msg = $('#message');
-    if($msg.length){
-      $msg
-        .stop(true, true)
-        .removeClass()
-        .addClass('alert ' + (type==='success'?'alert-success':type==='error'?'alert-danger':'alert-info'))
-        .text(text)
-        .fadeIn(120)
-        .delay(1200)
-        .fadeOut(180);
-    } else {
-      console.log(text);
-    }
-  }
 
 })();
 </script>
-
 
 <?php
 include 'footer.inc.php';

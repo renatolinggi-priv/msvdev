@@ -359,11 +359,6 @@ if (WANDERPREISE_DEBUG) {
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"
-    style="position: fixed; top: 80px; right: 20px; z-index: 9999; pointer-events: none; display: flex; flex-direction: column; align-items: flex-end;">
-</div>
-
 <!-- Modal für Export Jahr-Auswahl -->
 <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -504,7 +499,7 @@ if (WANDERPREISE_DEBUG) {
                                         <p class="card-text text-muted mb-1" id="historie_beschreibung">Beschreibung...
                                         </p>
                                         <small class="text-muted">
-                                            <i class="bi bi-calendar me-1"></i><span id="historie_jahr">Jahr</span> •
+                                            <i class="bi bi-calendar me-1"></i><span id="historie_jahr">Jahr</span> â€¢
                                             <i class="bi bi-building me-1"></i><span
                                                 id="historie_hersteller">Hersteller</span>
                                         </small>
@@ -675,7 +670,7 @@ if (WANDERPREISE_DEBUG) {
                 <p class="mb-0">
                     <strong>Jahr:</strong> <span class="auto-year fw-semibold"></span>
                 </p>
-                <small class="text-muted">Hinweis: Option C aktiv – 0/leer = alle Jahre.</small>
+                <small class="text-muted">Hinweis: Option C aktiv â€“ 0/leer = alle Jahre.</small>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
@@ -686,7 +681,6 @@ if (WANDERPREISE_DEBUG) {
         </div>
     </div>
 </div>
-
 
 <div class="modal fade" id="confirmDeleteHistorieModal" tabindex="-1" aria-labelledby="confirmDeleteHistorieLabel"
     aria-hidden="true">
@@ -740,14 +734,14 @@ if (WANDERPREISE_DEBUG) {
                     const usedYears = (resp.gewinner || []).map(g => Number(g.jahr));
                     const suggested = getNextFreeYear(usedYears, startYear);
 
-                    // Input oder Select? – beides unterstützen
+                    // Input oder Select? â€“ beides unterstützen
                     const $year = $(yearFieldSel);
                     $year.val(suggested);
                     // falls Select2/Select: .trigger('change') nicht vergessen
                     if ($year.is('select')) $year.trigger('change');
                 })
                 .fail(function () {
-                    // optional: showToast('Jahre konnten nicht geladen werden', 'error');
+                    // optional: msvToast('Jahre konnten nicht geladen werden', 'error');
                 });
         });
 
@@ -760,69 +754,8 @@ if (WANDERPREISE_DEBUG) {
         var wanderpreisId = null;
         var currentExportType = null;
 
-        // Toast Container hinzufügen falls nicht vorhanden
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 80px; right: 20px; z-index: 9999; pointer-events: none; display: flex; flex-direction: column; align-items: flex-end;"></div>');
-        }
 
-        // Toast-Funktion
-        function showToast(message, type = 'info') {
-            const colors = {
-                'success': '#28a745',
-                'error': '#dc3545',
-                'warning': '#ffc107',
-                'info': '#6c757d'
-            };
 
-            const icons = {
-                'success': 'bi-check-circle',
-                'error': 'bi-exclamation-circle',
-                'warning': 'bi-exclamation-triangle',
-                'info': 'bi-info-circle'
-            };
-
-            const toast = $('<div>')
-                .css({
-                    'background-color': colors[type] || colors.info,
-                    'color': 'white',
-                    'padding': '12px 16px',
-                    'margin-bottom': '8px',
-                    'border-radius': '6px',
-                    'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                    'opacity': '0',
-                    'transform': 'translateX(100%)',
-                    'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                    'font-weight': '500',
-                    'display': 'flex',
-                    'align-items': 'center',
-                    'min-width': '280px',
-                    'max-width': '400px',
-                    'width': 'auto',
-                    'word-wrap': 'break-word',
-                    'font-size': '14px',
-                    'line-height': '1.4',
-                    'pointer-events': 'auto',
-                    'position': 'relative'
-                })
-                .html(`<i class="bi ${icons[type]} me-2" style="flex-shrink: 0;"></i><span>${message}</span>`);
-
-            $('#toast-container').append(toast);
-
-            setTimeout(() => {
-                toast.css({
-                    'opacity': '1',
-                    'transform': 'translateX(0)'
-                });
-            }, 100);
-
-            setTimeout(() => {
-                toast.css({
-                    'opacity': '0',
-                    'transform': 'translateX(100%)'
-                });
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
 
         // Export-Button Klick Handler
         $('.export-btn').on('click', function () {
@@ -860,7 +793,7 @@ $('#startExport').on('click', function () {
     var jahr = $('#modalExportJahr').val();
 
     if (!jahr || jahr < 1900 || jahr > 2100) {
-        showToast('Bitte ein gültiges Jahr eingeben (1900-2100)', 'error');
+        msvToast('Bitte ein gültiges Jahr eingeben (1900-2100)', 'error');
         return;
     }
 
@@ -873,7 +806,7 @@ $('#startExport').on('click', function () {
     if (currentExportType === 'csv') {
         // CSV Export
         window.open('wanderpreise/export_wanderpreise.php?jahr=' + jahr, '_blank');
-        showToast('CSV Export gestartet!', 'success');
+        msvToast('CSV Export gestartet!', 'success');
         $('#exportModal').modal('hide');
         $btn.prop('disabled', false).html(originalText);
         
@@ -931,14 +864,14 @@ $('#startExport').on('click', function () {
                     } else if (currentExportType === 'pdf-schnitzerei') {
                         successMsg = 'Schnitzerei PDF erfolgreich erstellt!';
                     }
-                    showToast(successMsg, 'success');
+                    msvToast(successMsg, 'success');
                     $('#exportModal').modal('hide');
                 } else if (response.error) {
-                    showToast('Fehler: ' + response.error, 'error');
+                    msvToast('Fehler: ' + response.error, 'error');
                 }
             },
             error: function (xhr, status, error) {
-                showToast('Fehler beim Generieren: ' + error, 'error');
+                msvToast('Fehler beim Generieren: ' + error, 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -984,7 +917,7 @@ $('#startExport').on('click', function () {
                     <?php if (WANDERPREISE_DEBUG): ?>
                     console.error('Fehler beim Laden:', error);
                     <?php else: ?>
-                    showToast('Fehler beim Laden der Wanderpreise', 'error');
+                    msvToast('Fehler beim Laden der Wanderpreise', 'error');
                     <?php endif; ?>
                 }
             });
@@ -992,8 +925,8 @@ $('#startExport').on('click', function () {
 
         // Neuen Wanderpreis hinzufügen
         // >>> PATCH: zuverlässiger Submit ohne doppeltes JSON.parse + disabled-Felder
-        // Neuen Wanderpreis hinzufügen – korrektes Form-Target
-        // Neuen Wanderpreis hinzufügen – nur Toast, kein alert()
+        // Neuen Wanderpreis hinzufügen â€“ korrektes Form-Target
+        // Neuen Wanderpreis hinzufügen â€“ nur Toast, kein alert()
         $('#addWanderpreisForm').on('submit', function (e) {
             e.preventDefault();
 
@@ -1021,20 +954,16 @@ $('#startExport').on('click', function () {
                 data: formData
             }).done(function (res) {
                 if (res && res.success) {
-                    showToast(res.message || 'Wanderpreis gespeichert.', 'success');
+                    msvToast(res.message || 'Wanderpreis gespeichert.', 'success');
                     $('#addWanderpreisModal').modal('hide');
                     location.reload();
                 } else {
-                    showToast((res && res.message) ? res.message : 'Fehler beim Speichern.', 'error');
+                    msvToast((res && res.message) ? res.message : 'Fehler beim Speichern.', 'error');
                 }
             }).fail(function (xhr, status, error) {
-                showToast('Fehler beim Speichern: ' + (xhr.responseJSON?.message || error), 'error');
+                msvToast('Fehler beim Speichern: ' + (xhr.responseJSON?.message || error), 'error');
             });
         });
-
-
-
-
 
         // Wanderpreise für Modal laden
         function loadWanderpreiseForModal() {
@@ -1162,19 +1091,19 @@ $('#startExport').on('click', function () {
                     try {
                         const jsonResponse = JSON.parse(response);
                         if (jsonResponse.success) {
-                            showToast('Gewinner erfolgreich zugeordnet!', 'success');
+                            msvToast('Gewinner erfolgreich zugeordnet!', 'success');
                             $('#zuordnungModal').modal('hide');
                             $('#zuordnungForm')[0].reset();
                             loadWanderpreise();
                         } else {
-                            showToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                            msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
                         }
                     } catch (e) {
-                        showToast('Fehler beim Zuordnen des Gewinners', 'error');
+                        msvToast('Fehler beim Zuordnen des Gewinners', 'error');
                     }
                 },
                 error: function (xhr, status, error) {
-                    showToast('Fehler beim Zuordnen des Gewinners', 'error');
+                    msvToast('Fehler beim Zuordnen des Gewinners', 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -1206,18 +1135,18 @@ $('#startExport').on('click', function () {
                         if (Array.isArray(res.details) && res.details.length) {
                             msg += '\n' + res.details.join('\n');
                         }
-                        showToast(msg, 'success');
+                        msvToast(msg, 'success');
                         if (typeof loadWanderpreise === 'function') {
                             loadWanderpreise();
                         } else {
                             location.reload();
                         }
                     } else {
-                        showToast('Fehler: ' + (res?.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + (res?.message || 'Unbekannter Fehler'), 'error');
                     }
                 })
                 .fail(function (xhr, status, error) {
-                    showToast('Fehler bei der automatischen Zuordnung: ' + error, 'error');
+                    msvToast('Fehler bei der automatischen Zuordnung: ' + error, 'error');
                 })
                 .always(function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -1260,7 +1189,6 @@ $('#startExport').on('click', function () {
             }, 300);
         });
 
-
         // Wanderpreis löschen
         $(document).on('click', '.delete-wanderpreis', function () {
             wanderpreisId = $(this).data('id');
@@ -1270,7 +1198,7 @@ $('#startExport').on('click', function () {
         // Löschen bestätigen (robust + echtes JSON + FK-Fehler sichtbar)
         $('#confirmAction').off('click').on('click', function () {
             if (!wanderpreisId) {
-                showToast('Fehler: Keine Wanderpreis-ID vorhanden.', 'error');
+                msvToast('Fehler: Keine Wanderpreis-ID vorhanden.', 'error');
                 return;
             }
 
@@ -1290,10 +1218,10 @@ $('#startExport').on('click', function () {
                 .done(function (res) {
                     if (res && res.success) {
                         $('#confirmModal').modal('hide');
-                        showToast(res.message || 'Wanderpreis erfolgreich gelöscht', 'success');
+                        msvToast(res.message || 'Wanderpreis erfolgreich gelöscht', 'success');
                         loadWanderpreise();
                     } else {
-                        showToast('Löschen fehlgeschlagen: ' + (res?.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Löschen fehlgeschlagen: ' + (res?.message || 'Unbekannter Fehler'), 'error');
                     }
                 })
                 .fail(function (xhr) {
@@ -1302,15 +1230,13 @@ $('#startExport').on('click', function () {
                         // typischer FK-Fehler (z. B. verknüpfte Gewinner/Historie)
                         msg = 'Löschen nicht möglich: Es existieren verknüpfte Datensätze (z. B. Gewinner/Historie).';
                     }
-                    showToast('Fehler beim Löschen: ' + msg, 'error');
+                    msvToast('Fehler beim Löschen: ' + msg, 'error');
                 })
                 .always(function () {
                     $btn.prop('disabled', false).html(originalText);
                     wanderpreisId = null;
                 });
         });
-
-
 
         // Gewinner-/Historie-Modal per Button öffnen
         $(document).on('click', '.view-gewinner', function (e) {
@@ -1338,15 +1264,15 @@ $('#startExport').on('click', function () {
                 url: 'wanderpreise/add_vergangener_gewinner.php',
                 method: 'POST',
                 data: formData,
-                dataType: 'json',            // <— jQuery parst JSON für dich
+                dataType: 'json',            // <â€” jQuery parst JSON für dich
                 success: function (json) {
                     if (json && json.success) {
-                        showToast('Vergangener Gewinner erfolgreich eingetragen!', 'success');
+                        msvToast('Vergangener Gewinner erfolgreich eingetragen!', 'success');
                         $('#vergangeneGewinnerModal').modal('hide');
                         $('#vergangeneGewinnerForm')[0].reset();
                         loadWanderpreise();
                     } else {
-                        showToast('Fehler: ' + ((json && json.message) || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + ((json && json.message) || 'Unbekannter Fehler'), 'error');
                     }
                 },
                 error: function (xhr) {
@@ -1355,7 +1281,7 @@ $('#startExport').on('click', function () {
                         const j = JSON.parse(xhr.responseText);
                         if (j && j.message) msg = 'Fehler: ' + j.message;
                     } catch (e) { }
-                    showToast(msg, 'error');
+                    msvToast(msg, 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -1416,7 +1342,6 @@ $('#startExport').on('click', function () {
             });
         }
 
-
         // Event-Handler für Wanderpreis-Details (Klick auf Tabellenzeile)
         $(document).on('click', '.wanderpreis-row', function (e) {
             // Verhindern dass Edit/Delete Buttons das Modal öffnen
@@ -1456,7 +1381,6 @@ $('#startExport').on('click', function () {
             Lade Wanderpreis-Historie...
         </div>
     `);
-
 
             // Daten laden
             $.ajax({
@@ -1513,10 +1437,10 @@ $('#startExport').on('click', function () {
                                             </div>
                                         </td>
                                         <td>
-                                            ${gewinner.rang ? `<span class="badge bg-light text-dark">${gewinner.rang}</span>` : '<span class="text-muted">—</span>'}
+                                            ${gewinner.rang ? `<span class="badge bg-light text-dark">${gewinner.rang}</span>` : '<span class="text-muted">â€”</span>'}
                                         </td>
                                         <td>
-                                            <small class="text-muted">${gewinner.bemerkung || '—'}</small>
+                                            <small class="text-muted">${gewinner.bemerkung || 'â€”'}</small>
                                         </td>
                                         <td>
                                             <button type="button" 
@@ -1549,10 +1473,10 @@ $('#startExport').on('click', function () {
                             `);
                             }
                         } else {
-                            showToast('Fehler beim Laden der Historie: ' + (data.message || 'Unbekannter Fehler'), 'error');
+                            msvToast('Fehler beim Laden der Historie: ' + (data.message || 'Unbekannter Fehler'), 'error');
                         }
                     } catch (e) {
-                        showToast('Fehler beim Verarbeiten der Historie-Daten', 'error');
+                        msvToast('Fehler beim Verarbeiten der Historie-Daten', 'error');
                     }
                 },
                 error: function (xhr, status, error) {
@@ -1563,7 +1487,7 @@ $('#startExport').on('click', function () {
                         <p class="mb-0">Die Historie konnte nicht geladen werden.</p>
                     </div>
                 `);
-                    showToast('Fehler beim Laden der Wanderpreis-Historie', 'error');
+                    msvToast('Fehler beim Laden der Wanderpreis-Historie', 'error');
                 }
             });
         }
@@ -1593,14 +1517,14 @@ $('#startExport').on('click', function () {
     link.click();
     document.body.removeChild(link);
 
-    showToast('Historie-PDF erfolgreich erstellt!', 'success');
+    msvToast('Historie-PDF erfolgreich erstellt!', 'success');
   } else {
-    showToast('Fehler beim Erstellen des PDFs: ' + (response.message || 'Unbekannter Fehler'), 'error');
+    msvToast('Fehler beim Erstellen des PDFs: ' + (response.message || 'Unbekannter Fehler'), 'error');
   }
 },
 
                     error: function () {
-                        showToast('Fehler beim Erstellen des Historie-PDFs', 'error');
+                        msvToast('Fehler beim Erstellen des Historie-PDFs', 'error');
                     },
                     complete: function () {
                         $btn.prop('disabled', false).html(originalText);
@@ -1643,7 +1567,7 @@ $('#startExport').on('click', function () {
 
             // Prüfen ob ID vorhanden
             if (!wanderpreisId) {
-                showToast('Fehler: Keine Wanderpreis-ID gefunden', 'error');
+                msvToast('Fehler: Keine Wanderpreis-ID gefunden', 'error');
                 return;
             }
 
@@ -1669,7 +1593,6 @@ $('#startExport').on('click', function () {
                         // Hersteller-Daten füllen
                         $('#edit_hersteller').val(data.hersteller || '');
 
-
                         // Verknüpfungsdaten
                         // $('#edit_verknuepfung_regel').val(data.verknuepfung_regel);
                         $('#edit_verknuepfung_jahr').val(data.verknuepfung_jahr);
@@ -1693,14 +1616,14 @@ $('#startExport').on('click', function () {
                             });
 
                     } else {
-                        showToast('Fehler beim Laden des Wanderpreises: ' + response.message, 'error');
+                        msvToast('Fehler beim Laden des Wanderpreises: ' + response.message, 'error');
                     }
                 },
                 error: function (xhr, status, error) {
                     <?php if (WANDERPREISE_DEBUG): ?>
                     console.error('Fehler beim Laden des Wanderpreises:', error, xhr.responseText);
                     <?php endif; ?>
-                    showToast('Fehler beim Laden des Wanderpreises', 'error');
+                    msvToast('Fehler beim Laden des Wanderpreises', 'error');
                 }
             });
         });
@@ -1729,21 +1652,21 @@ $('#startExport').on('click', function () {
                         try {
                             jsonResponse = JSON.parse(response);
                         } catch (e) {
-                            showToast('Fehler beim Verarbeiten der Server-Antwort', 'error');
+                            msvToast('Fehler beim Verarbeiten der Server-Antwort', 'error');
                             return;
                         }
                     }
 
                     if (jsonResponse.success) {
-                        showToast('Wanderpreis erfolgreich aktualisiert!', 'success');
+                        msvToast('Wanderpreis erfolgreich aktualisiert!', 'success');
                         $('#editWanderpreisModal').modal('hide');
                         loadWanderpreise();
                     } else {
-                        showToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
                     }
                 },
                 error: function (xhr, status, error) {
-                    showToast('Fehler beim Aktualisieren des Wanderpreises: ' + error, 'error');
+                    msvToast('Fehler beim Aktualisieren des Wanderpreises: ' + error, 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -1825,7 +1748,6 @@ $('#startExport').on('click', function () {
                 }
             },
 
-
             complete: function () {
                 $btn.prop('disabled', false);
             }
@@ -1834,7 +1756,7 @@ $('#startExport').on('click', function () {
 
     // Debug-Info am Seitenende
     <?php if (WANDERPREISE_DEBUG): ?>
-    console.log('🏆 Wanderpreise-Modul geladen');
+    console.log('Wanderpreise-Modul geladen');
     console.log('Environment:', '<?php echo WANDERPREISE_ENV; ?>');
     console.log('Debug Mode:', <?php echo WANDERPREISE_DEBUG ? 'true' : 'false'; ?>);
     <?php endif; ?>

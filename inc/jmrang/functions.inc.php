@@ -8,7 +8,6 @@ include_once '../config.php';
 
 // Datenbankverbindung herstellen
 
-
 function getTotal($kategorie, $year)
 {
     global $conn;
@@ -20,8 +19,11 @@ function getTotal($kategorie, $year)
     // Mitglieder abrufen
     $sqlMitgliederA = "SELECT m.id FROM `mitglieder` m
         INNER JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE w.Kategorie = '$kategorie' AND m.Status = 1";
-    $mitglieder = $conn->query($sqlMitgliederA);
+        WHERE w.Kategorie = ? AND m.Status = 1";
+    $stmt = $conn->prepare($sqlMitgliederA);
+    $stmt->bind_param("s", $kategorie);
+    $stmt->execute();
+    $mitglieder = $stmt->get_result();
 
     if ($mitglieder->num_rows > 0) {
         foreach ($mitglieder as $mitglied) {
@@ -33,37 +35,45 @@ function getTotal($kategorie, $year)
                 SELECT jm.Punkte
                 FROM `jmresultate` jm
                 INNER JOIN JMDefinition jd ON jd.ID = jm.jmdefinitionID
-                WHERE jm.mitgliederID = $mitgliedID AND jd.Streicher = 0 AND year = $year
+                WHERE jm.mitgliederID = ? AND jd.Streicher = 0 AND year = ?
             ";
             if ($ssmExists) {
                 $sqlResultateFix .= " AND jd.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
             }
-            $punkteFix = $conn->query($sqlResultateFix);
+            $stmtFix = $conn->prepare($sqlResultateFix);
+            $stmtFix->bind_param("ii", $mitgliedID, $year);
+            $stmtFix->execute();
+            $punkteFix = $stmtFix->get_result();
 
             if ($punkteFix->num_rows > 0) {
                 while ($row = $punkteFix->fetch_assoc()) {
                     $totalFix += $row['Punkte'];
                 }
             }
+            $stmtFix->close();
 
             // 2.2 Prüfe welche Wettbewerbe überhaupt Resultate haben
             $sqlWettbewerbeWithResults = "
                 SELECT DISTINCT jd.ID, jd.Maxpunkte, jd.Bezeichnung
                 FROM JMDefinition jd
                 INNER JOIN jmresultate jr ON jd.ID = jr.jmdefinitionID
-                WHERE jd.Streicher = 1 AND jd.year = $year
+                WHERE jd.Streicher = 1 AND jd.year = ?
             ";
             if ($ssmExists) {
                 $sqlWettbewerbeWithResults .= " AND jd.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
             }
-            $wettbewerbeWithResults = $conn->query($sqlWettbewerbeWithResults);
-            
+            $stmtWett = $conn->prepare($sqlWettbewerbeWithResults);
+            $stmtWett->bind_param("i", $year);
+            $stmtWett->execute();
+            $wettbewerbeWithResults = $stmtWett->get_result();
+
             $activeWettbewerbeIDs = array();
             if ($wettbewerbeWithResults->num_rows > 0) {
                 while ($row = $wettbewerbeWithResults->fetch_assoc()) {
                     $activeWettbewerbeIDs[] = $row['ID'];
                 }
             }
+            $stmtWett->close();
 
             // 2.3 Resultate mit Streicher = 1 sammeln (tatsächliche Teilnahmen)
             $sqlResultateStreicher = "
@@ -78,14 +88,17 @@ function getTotal($kategorie, $year)
                 INNER JOIN
                     JMDefinition jd ON jr.jmdefinitionID = jd.ID
                 WHERE
-                    jr.mitgliederID = $mitgliedID
+                    jr.mitgliederID = ?
                     AND jd.Streicher = 1
-                    AND jd.year = $year
+                    AND jd.year = ?
             ";
             if ($ssmExists) {
                 $sqlResultateStreicher .= " AND jd.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
             }
-            $punkteStreicher = $conn->query($sqlResultateStreicher);
+            $stmtStreicher = $conn->prepare($sqlResultateStreicher);
+            $stmtStreicher->bind_param("ii", $mitgliedID, $year);
+            $stmtStreicher->execute();
+            $punkteStreicher = $stmtStreicher->get_result();
 
             $streicherArray = array();
             $teilgenommeneWettbewerbe = array();
@@ -100,6 +113,7 @@ function getTotal($kategorie, $year)
                     $teilgenommeneWettbewerbe[] = $row['WettbewerbID'];
                 }
             }
+            $stmtStreicher->close();
 
             // Nicht-Teilnahmen nur für Wettbewerbe hinzufügen, die überhaupt Resultate haben
             foreach ($activeWettbewerbeIDs as $wettbewerbID) {
@@ -136,11 +150,10 @@ function getTotal($kategorie, $year)
             }
         }
     }
+    $stmt->close();
     arsort($resultatetotal);
     return $resultatetotal;
 }
-
-
 
 function GetStreicher($kategorie, $year)
 {
@@ -152,8 +165,11 @@ function GetStreicher($kategorie, $year)
 
     $sqlMitgliederA = "SELECT m.id FROM `mitglieder` m
         INNER JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE w.Kategorie = '$kategorie' AND m.Status = 1";
-    $mitglieder = $conn->query($sqlMitgliederA);
+        WHERE w.Kategorie = ? AND m.Status = 1";
+    $stmt = $conn->prepare($sqlMitgliederA);
+    $stmt->bind_param("s", $kategorie);
+    $stmt->execute();
+    $mitglieder = $stmt->get_result();
 
     if ($mitglieder->num_rows > 0) {
         foreach ($mitglieder as $mitglied) {
@@ -164,19 +180,23 @@ function GetStreicher($kategorie, $year)
                 SELECT DISTINCT jd.ID, jd.Maxpunkte, jd.Bezeichnung
                 FROM JMDefinition jd
                 INNER JOIN jmresultate jr ON jd.ID = jr.jmdefinitionID
-                WHERE jd.Streicher = 1 AND jd.year = $year
+                WHERE jd.Streicher = 1 AND jd.year = ?
             ";
             if ($ssmExists) {
                 $sqlWettbewerbeWithResults .= " AND jd.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
             }
-            $wettbewerbeWithResults = $conn->query($sqlWettbewerbeWithResults);
-            
+            $stmtWett = $conn->prepare($sqlWettbewerbeWithResults);
+            $stmtWett->bind_param("i", $year);
+            $stmtWett->execute();
+            $wettbewerbeWithResults = $stmtWett->get_result();
+
             $activeWettbewerbeIDs = array();
             if ($wettbewerbeWithResults->num_rows > 0) {
                 while ($row = $wettbewerbeWithResults->fetch_assoc()) {
                     $activeWettbewerbeIDs[] = $row['ID'];
                 }
             }
+            $stmtWett->close();
 
             // Resultate mit Streicher = 1 sammeln (tatsächliche Teilnahmen)
             $sqlResultateStreicher = "
@@ -191,14 +211,17 @@ function GetStreicher($kategorie, $year)
                 INNER JOIN
                     JMDefinition jd ON jr.jmdefinitionID = jd.ID
                 WHERE
-                    jr.mitgliederID = $mitgliedID
+                    jr.mitgliederID = ?
                     AND jd.Streicher = 1
-                    AND jd.year = $year
+                    AND jd.year = ?
             ";
             if ($ssmExists) {
                 $sqlResultateStreicher .= " AND jd.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
             }
-            $punkteStreicher = $conn->query($sqlResultateStreicher);
+            $stmtStreicher = $conn->prepare($sqlResultateStreicher);
+            $stmtStreicher->bind_param("ii", $mitgliedID, $year);
+            $stmtStreicher->execute();
+            $punkteStreicher = $stmtStreicher->get_result();
 
             $streicherArray = array();
             $teilgenommeneWettbewerbe = array();
@@ -213,6 +236,7 @@ function GetStreicher($kategorie, $year)
                     $teilgenommeneWettbewerbe[] = $row['WettbewerbID'];
                 }
             }
+            $stmtStreicher->close();
 
             // Nicht-Teilnahmen nur für Wettbewerbe hinzufügen, die überhaupt Resultate haben
             foreach ($activeWettbewerbeIDs as $wettbewerbID) {
@@ -238,10 +262,9 @@ function GetStreicher($kategorie, $year)
             }
         }
     }
+    $stmt->close();
     return $MitgliedStreicher;
 }
-
-
 
 function CheckIfStreicher($wert, $streicher)
 {
@@ -252,13 +275,18 @@ function CheckIfStreicher($wert, $streicher)
     }
 }
 
-
 function checkIfSSMExists($kategorie, $year)
 {
     global $conn;
-    $sqlCheckSSM = "SELECT ID FROM JMDefinition WHERE Bezeichnung = 'SSM $year'";
-    $resultSSM = $conn->query($sqlCheckSSM);
-    return ($resultSSM && $resultSSM->num_rows > 0);
+    $ssmLabel = "SSM " . $year;
+    $sqlCheckSSM = "SELECT ID FROM JMDefinition WHERE Bezeichnung = ?";
+    $stmt = $conn->prepare($sqlCheckSSM);
+    $stmt->bind_param("s", $ssmLabel);
+    $stmt->execute();
+    $resultSSM = $stmt->get_result();
+    $exists = ($resultSSM && $resultSSM->num_rows > 0);
+    $stmt->close();
+    return $exists;
 }
 
 ?>

@@ -1,9 +1,13 @@
 <?php
 
-$servername = "bdebbd4.mysql.db.internal";
-$username = "bdebbd4_msvjm";
-$password = "xx*97ubWcy+HnLWyf6PW";
-$dbname = "bdebbd4_msvjm";
+// DB-Credentials aus zentraler Konfiguration
+$config = require __DIR__ . '/../../config.php';
+$dbConf = $config['db'];
+
+$servername = $dbConf['host'];
+$username = $dbConf['user'];
+$password = $dbConf['pass'];
+$dbname = $dbConf['name'];
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);

@@ -16,7 +16,7 @@ WITH winners AS (
         END as winner_id
     FROM cupPairs cp
     WHERE cp.Round = 1 
-    AND cp.Year = $year
+    AND cp.Year = ?
     AND cp.Participant3 IS NULL
     AND (cp.Result1 IS NOT NULL OR cp.ManualWinner IS NOT NULL)
     
@@ -29,13 +29,13 @@ WITH winners AS (
             ROW_NUMBER() OVER (PARTITION BY pair_id ORDER BY result DESC, lowshot DESC) as rn
         FROM (
             SELECT ID as pair_id, Participant1 as participant_id, Result1 as result, LowShot1 as lowshot
-            FROM cupPairs WHERE Round = 1 AND Year = $year AND Participant3 IS NOT NULL
+            FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
             UNION ALL
             SELECT ID as pair_id, Participant2 as participant_id, Result2 as result, LowShot2 as lowshot
-            FROM cupPairs WHERE Round = 1 AND Year = $year AND Participant3 IS NOT NULL
+            FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
             UNION ALL
             SELECT ID as pair_id, Participant3 as participant_id, Result3 as result, LowShot3 as lowshot
-            FROM cupPairs WHERE Round = 1 AND Year = $year AND Participant3 IS NOT NULL
+            FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
         ) as all_participants
         WHERE result IS NOT NULL
     ) ranked
@@ -48,7 +48,10 @@ JOIN Waffen w ON w.ID = m.WaffenID
 WHERE w.Kategorie = 'Kat. B'
 ";
 
-$katb_result = $conn->query($katb_check_sql);
+$stmt = $conn->prepare($katb_check_sql);
+$stmt->bind_param("iiii", $year, $year, $year, $year);
+$stmt->execute();
+$katb_result = $stmt->get_result();
 $has_single_katb = ($katb_result->fetch_assoc()['katb_count'] == 1);
 
 // Abfrage, um reguläre und manuelle Gewinner der ersten Runde zu laden
@@ -107,7 +110,7 @@ LEFT JOIN (
   AND m.ID = top.winner_id
 WHERE 
     cp.Round = 1 
-    AND cp.Year = $year
+    AND cp.Year = ?
     AND (
         -- Manuelle Gewinner immer mitnehmen
         cp.ManualWinner = m.ID
@@ -139,7 +142,7 @@ WHERE
         SELECT 1
         FROM cupPairs cp2
         WHERE cp2.Round = 2
-          AND cp2.Year = $year
+          AND cp2.Year = ?
           AND m.ID IN (cp2.Participant1, cp2.Participant2, cp2.Participant3)
     )";
 
@@ -153,7 +156,10 @@ $sql .= " ORDER BY
     m.Name, 
     m.Vorname";
 
-$result = $conn->query($sql);
+$stmt2 = $conn->prepare($sql);
+$stmt2->bind_param("ii", $year, $year);
+$stmt2->execute();
+$result = $stmt2->get_result();
 if (!$result) {
     error_log("SQL Error in fetch_winners.php: " . $conn->error);
     echo json_encode([]);

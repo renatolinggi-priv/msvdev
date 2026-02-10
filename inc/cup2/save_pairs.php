@@ -7,13 +7,21 @@
 
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 // Header für JSON-Response
 header('Content-Type: application/json');
 
 // Nur POST-Requests erlauben
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    die(json_encode(['success' => false, 'error' => 'Method not allowed']));
+    die(json_encode(['success' => false, 'message' => 'Method not allowed']));
 }
 
 // Logging für Debugging
@@ -24,12 +32,12 @@ $pairs = isset($_POST['pairs']) ? $_POST['pairs'] : [];
 if (!is_array($pairs)) {
     $pairs = json_decode($pairs, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        die(json_encode(['success' => false, 'error' => 'Ungültige JSON-Daten: ' . json_last_error_msg()]));
+        die(json_encode(['success' => false, 'message' => 'Ungültige JSON-Daten: ' . json_last_error_msg()]));
     }
 }
 
 if (!is_array($pairs) || empty($pairs)) {
-    die(json_encode(['success' => false, 'error' => 'Keine Paarungsdaten erhalten']));
+    die(json_encode(['success' => false, 'message' => 'Keine Paarungsdaten erhalten']));
 }
 
 // Weitere Parameter validieren
@@ -37,7 +45,7 @@ $year  = isset($_POST['year'])  ? (int)$_POST['year']  : date('Y');
 $round = isset($_POST['round']) ? (int)$_POST['round'] : 0;
 
 if ($round < 1 || $round > 3) {
-    die(json_encode(['success' => false, 'error' => 'Ungültige Runde: ' . $round]));
+    die(json_encode(['success' => false, 'message' => 'Ungültige Runde: ' . $round]));
 }
 
 // Variablen für Tracking

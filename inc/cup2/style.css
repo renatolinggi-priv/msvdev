@@ -274,8 +274,6 @@ input[type="number"] {
     white-space: nowrap; /* Verhindert Zeilenumbruch */
 }
 
-
-
 /* Festlegen einer festen Breite für die Labels */
 .standcup-final-container label {
     display: inline-block;
@@ -324,4 +322,3 @@ input[type="number"] {
     text-align: center;
     margin-top: 20px;
 }
-

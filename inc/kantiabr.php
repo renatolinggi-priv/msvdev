@@ -140,23 +140,9 @@ $page_specific_css = "
   </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11; margin-top: 70px;">
-  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-header">
-      <i class="bi bi-info-circle-fill text-primary me-2"></i>
-      <strong class="me-auto">Hinweis</strong>
-      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
-    <div class="toast-body"></div>
-  </div>
-</div>
-
 <script>
 $(document).ready(function() {
     var basePath = '';
-    const toastEl = document.getElementById('liveToast');
-    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
 
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
@@ -179,30 +165,6 @@ $(document).ready(function() {
                                   '<span class="spinner-border spinner-border-sm me-2"></span>') +
             '<div>' + message + '</div></div>'
         );
-    }
-
-    function showToast(message, type = 'info') {
-        const toastBody = toastEl.querySelector('.toast-body');
-        const toastHeader = toastEl.querySelector('.toast-header');
-        const icon = toastHeader.querySelector('i');
-        const title = toastHeader.querySelector('strong');
-
-        toastBody.textContent = message;
-
-        // Icon und Farbe je nach Typ anpassen
-        icon.className = 'me-2 bi bi-' + 
-            (type === 'success' ? 'check-circle-fill text-success' :
-             type === 'error' || type === 'danger' ? 'exclamation-triangle-fill text-danger' :
-             type === 'warning' ? 'exclamation-circle-fill text-warning' :
-             'info-circle-fill text-primary');
-
-        title.textContent = 
-            type === 'success' ? 'Erfolg' :
-            type === 'error' || type === 'danger' ? 'Fehler' :
-            type === 'warning' ? 'Warnung' :
-            'Hinweis';
-
-        toast.show();
     }
 
     // Automatischer Download einer Datei
@@ -236,7 +198,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 setStatus('Fehler beim Laden Kategorie A: ' + error, 'danger');
-                showToast('Fehler beim Laden Kategorie A', 'error');
+                msvToast('Fehler beim Laden Kategorie A', 'error');
             }
         });
     }
@@ -261,7 +223,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 setStatus('Fehler beim Laden Kategorie B: ' + error, 'danger');
-                showToast('Fehler beim Laden Kategorie B', 'error');
+                msvToast('Fehler beim Laden Kategorie B', 'error');
             }
         });
     }
@@ -289,13 +251,13 @@ $(document).ready(function() {
                         '<div>PDF wurde heruntergeladen. <a href="' + response.pdf_link + '" target="_blank" class="alert-link">' +
                         '<i class="bi bi-arrow-clockwise me-1"></i>Erneut herunterladen</a></div></div>'
                     );
-                    showToast('PDF erfolgreich generiert und heruntergeladen', 'success');
+                    msvToast('PDF erfolgreich generiert und heruntergeladen', 'success');
                 } else {
                     $('#pdf-link').html(
                         '<div class="alert alert-danger">' +
                         '<i class="bi bi-x-circle-fill me-2"></i>Fehler beim Generieren der PDF-Datei</div>'
                     );
-                    showToast('PDF-Generierung fehlgeschlagen', 'error');
+                    msvToast('PDF-Generierung fehlgeschlagen', 'error');
                 }
             },
             error: function(xhr, status, error) {
@@ -303,7 +265,7 @@ $(document).ready(function() {
                     '<div class="alert alert-danger">' +
                     '<i class="bi bi-x-circle-fill me-2"></i>Fehler: ' + error + '</div>'
                 );
-                showToast('Fehler beim Generieren der PDF: ' + error, 'error');
+                msvToast('Fehler beim Generieren der PDF: ' + error, 'error');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalHtml);
@@ -342,13 +304,13 @@ $(document).ready(function() {
                         '<div>Excel wurde heruntergeladen. <a href="' + wordLink + '" target="_blank" class="alert-link">' +
                         '<i class="bi bi-arrow-clockwise me-1"></i>Erneut herunterladen</a></div></div>'
                     );
-                    showToast('Excel erfolgreich generiert und heruntergeladen', 'success');
+                    msvToast('Excel erfolgreich generiert und heruntergeladen', 'success');
                 } else {
                     $('#pdf-link').html(
                         '<div class="alert alert-danger">' +
                         '<i class="bi bi-x-circle-fill me-2"></i>Fehler: Kein Download-Link erhalten</div>'
                     );
-                    showToast('Excel-Generierung fehlgeschlagen', 'error');
+                    msvToast('Excel-Generierung fehlgeschlagen', 'error');
                 }
             },
             error: function(xhr, status, error) {
@@ -356,7 +318,7 @@ $(document).ready(function() {
                     '<div class="alert alert-danger">' +
                     '<i class="bi bi-x-circle-fill me-2"></i>Fehler: ' + error + '</div>'
                 );
-                showToast('Fehler beim Generieren der Excel-Datei: ' + error, 'error');
+                msvToast('Fehler beim Generieren der Excel-Datei: ' + error, 'error');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalHtml);
@@ -375,7 +337,7 @@ $(document).ready(function() {
     $('#reload-btn').on('click', function() {
         loadKantonala();
         loadKantonalb();
-        showToast('Daten aktualisiert', 'info');
+        msvToast('Daten aktualisiert', 'info');
     });
 
     // Redirect-Button

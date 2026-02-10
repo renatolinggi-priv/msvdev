@@ -94,7 +94,9 @@ class ZielscheibeReport extends PDFGenerator {
                 
                 error_log("Stich $stichIndex: Programm=$programmNummer, Name=$stichName, istKeiler=" . ($istKeilerStich ? 'JA' : 'NEIN'));
                 
-                // 🚀 Option 2+3: JPEG + Memory-Optimierung (keine Temp-Datei mehr!)
+                // Zielscheibe als PNG generieren - IMMER 1200x1200 (quadratisch)
+                $tempBildDatei = sys_get_temp_dir() . '/zielscheibe_temp_' . time() . '_' . $stichIndex . '.png';
+                
                 if ($istKeilerStich) {
                     // Keiler-Scheibe generieren - QUADRATISCH 1200x1200
                     $keilerBildPfad = __DIR__ . '/keiler_scheibe.jpg';
@@ -105,24 +107,24 @@ class ZielscheibeReport extends PDFGenerator {
                     }
                     
                     $generator = new ZielscheibeGeneratorKeiler(1200, 1200);
-                    $generator->setzeSkalierungsfaktor(1.6);
-                    $result = $generator->generiereZielscheibeBlob($treffer, $keilerBildPfad);
+                    $generator->setzeSkalierungsfaktor(1.6); // Deine Einstellung
+                    $erfolg = $generator->generiereZielscheibe($treffer, $tempBildDatei, $keilerBildPfad);
                     
                 } else {
                     // Normale Ringscheibe generieren - QUADRATISCH 1200x1200
                     $generator = new ZielscheibeGeneratorImagick(1200, 1200);
                     $generator->setzeKoordinatenFaktor(1.1);
-                    $result = $generator->generiereZielscheibeBlob($treffer, false);
+                    $erfolg = $generator->generiereZielscheibe($treffer, $tempBildDatei, false);
                 }
                 
-                if (!$result['success']) {
+                if (!$erfolg || !file_exists($tempBildDatei)) {
                     error_log("FEHLER: Zielscheiben-Generierung fehlgeschlagen für Stich " . $stichIndex);
                     continue; // Überspringe wenn Generierung fehlschlägt
                 }
                 
-                // Direkt aus Memory - kein Temp-File mehr!
-                $imageData = base64_encode($result['blob']);
-                $bildBase64 = 'data:' . $result['mime'] . ';base64,' . $imageData;
+                // Bild in Base64 konvertieren
+                $imageData = base64_encode(file_get_contents($tempBildDatei));
+                $bildBase64 = 'data:' . mime_content_type($tempBildDatei) . ';base64,' . $imageData;
                 
                 // Layout: TABELLE LINKS, BILD RECHTS nebeneinander
                 $html .= '<table style="width: 100%; border: none; border-collapse: collapse; margin: 10px 0;"><tr>';
@@ -160,7 +162,10 @@ class ZielscheibeReport extends PDFGenerator {
                 // Horizontale Trennlinie nach jedem Stich
                 $html .= '<hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">';
                 
-                // Kein Temp-File mehr zum Löschen! 🚀
+                // Temporäre Bilddatei löschen
+                if (file_exists($tempBildDatei)) {
+                    unlink($tempBildDatei);
+                }
             }
             
             $html .= $this->createHTMLFooter();

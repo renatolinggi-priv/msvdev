@@ -27,43 +27,6 @@
     return 'CHF ' + ((cents || 0) / 100).toFixed(2);
   }
   
-  function showToast(message, type = 'info') {
-    console.log('Toast:', type, message);
-    
-    const container = document.getElementById('toastContainer');
-    if (!container) {
-      console.error('Toast container not found');
-      return;
-    }
-    
-    const toastId = 'toast-' + Date.now();
-    
-    const toastHtml = `
-      <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'danger' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body">
-            ${message}
-          </div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-      </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', toastHtml);
-    
-    const toastElement = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastElement, {
-      autohide: true,
-      delay: 4000
-    });
-    
-    toast.show();
-    
-    toastElement.addEventListener('hidden.bs.toast', () => {
-      toastElement.remove();
-    });
-  }
-  
   // === Initialization Functions ===
   function initYearSelector() {
     const sel = document.getElementById('yearSelect');
@@ -256,17 +219,17 @@
     
     // Validation
     if (!mitglied_id && !gast_name) {
-      showToast('Bitte wähle ein Mitglied oder gib einen Gastnamen ein', 'danger');
+      msvToast('Bitte wähle ein Mitglied oder gib einen Gastnamen ein', 'danger');
       return;
     }
     
     if (mitglied_id && gast_name) {
-      showToast('Bitte nur Mitglied ODER Gast auswählen, nicht beides', 'danger');
+      msvToast('Bitte nur Mitglied ODER Gast auswählen, nicht beides', 'danger');
       return;
     }
     
     if (!kauf_datum) {
-      showToast('Bitte ein Kaufdatum angeben', 'danger');
+      msvToast('Bitte ein Kaufdatum angeben', 'danger');
       return;
     }
     
@@ -295,7 +258,7 @@
     console.log('Munition:', munition);
     
     if (munition.length === 0) {
-      showToast('Bitte mindestens eine Munitionsbestellung auswählen', 'danger');
+      msvToast('Bitte mindestens eine Munitionsbestellung auswählen', 'danger');
       return;
     }
     
@@ -343,7 +306,7 @@
       console.log('Save response data:', data);
       
       if (data.success) {
-        showToast('Bestellung erfolgreich gespeichert', 'success');
+        msvToast('Bestellung erfolgreich gespeichert', 'success');
         resetForm();
         
         // WICHTIG: Nach dem Speichern IMMER die aktuelle Ansicht neu laden
@@ -358,20 +321,20 @@
         
       } else {
         console.error('Save failed:', data.message);
-        showToast('Fehler: ' + (data.message || 'Unbekannter Fehler'), 'danger');
+        msvToast('Fehler: ' + (data.message || 'Unbekannter Fehler'), 'danger');
       }
     })
     .catch(err => {
       console.error('Save error:', err);
       // Detailliertere Fehlermeldung
       if (err.message && err.message.includes('403')) {
-        showToast('Sitzung abgelaufen - bitte Seite neu laden', 'danger');
+        msvToast('Sitzung abgelaufen - bitte Seite neu laden', 'danger');
         // Optional: Nach 2 Sekunden neu laden
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        showToast('Netzwerkfehler beim Speichern: ' + err.message, 'danger');
+        msvToast('Netzwerkfehler beim Speichern: ' + err.message, 'danger');
       }
     })
     .finally(() => {
@@ -441,14 +404,14 @@
           renderBestellungenTable(data.data || [], data.totals || {});
         } else {
           console.error('API returned error:', data.message);
-          showToast('Fehler beim Laden: ' + data.message, 'danger');
+          msvToast('Fehler beim Laden: ' + data.message, 'danger');
           renderBestellungenTable([], {});
         }
       })
       .catch(err => {
         console.error('Error loading bestellungen:', err);
         console.error('Error details:', err.message);
-        showToast('Fehler beim Laden der Daten: ' + err.message, 'danger');
+        msvToast('Fehler beim Laden der Daten: ' + err.message, 'danger');
         // Show empty table
         renderBestellungenTable([], {});
       });
@@ -569,16 +532,16 @@
     })
     .then(data => {
       if (data.success) {
-        showToast('Bestellung erfolgreich gelöscht', 'success');
+        msvToast('Bestellung erfolgreich gelöscht', 'success');
         loadBestellungen(currentFilter);
         loadStatistics();
       } else {
-        showToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
+        msvToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
       }
     })
     .catch(err => {
       console.error('Delete error:', err);
-      showToast('Netzwerkfehler beim Löschen', 'danger');
+      msvToast('Netzwerkfehler beim Löschen', 'danger');
     })
     .finally(() => {
       confirmBtn.disabled = false;
@@ -662,14 +625,14 @@
       .then(data => {
         if (data.pdf_link) {
           window.open(data.pdf_link, '_blank');
-          showToast('PDF wurde erfolgreich generiert', 'success');
+          msvToast('PDF wurde erfolgreich generiert', 'success');
         } else if (data.error) {
-          showToast('Fehler: ' + data.error, 'danger');
+          msvToast('Fehler: ' + data.error, 'danger');
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        showToast('Fehler beim Generieren des PDFs', 'danger');
+        msvToast('Fehler beim Generieren des PDFs', 'danger');
       })
       .finally(() => {
         btn.disabled = false;

@@ -9,8 +9,9 @@
 // - Shortcode: [msv_standbelegung year="2025"]
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://www.msvwilen.ch');
 header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Credentials: true');
 
 $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 

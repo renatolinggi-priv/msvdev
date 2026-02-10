@@ -1,5 +1,5 @@
 <?php
-require '../phpword/vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
@@ -87,8 +87,6 @@ if ($result->num_rows > 0) {
     }
 }
 
-
-
 // SQL-Abfrage ausführen
 $sql = "
 SELECT m.Name, m.Vorname, h.Passe1, h.Passe2, h.Passe3, h.Passe4, h.Passe5, h.Passe6, h.Passe7, h.Passe8,
@@ -118,8 +116,6 @@ $result->data_seek(0); // Setze den Zeiger zurück
 $currentRow = 1;
 // Klone die Platzhalter-Zeile entsprechend der Anzahl der Datenzeilen
 $templateProcessor->cloneRow('bRang', $rowCount);
-
-
 
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {

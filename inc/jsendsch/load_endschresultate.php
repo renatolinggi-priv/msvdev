@@ -58,7 +58,6 @@ WHERE
 ORDER BY Nachname, Vorname;
 ";
 
-
 // Debug-Ausgaben entfernen für Production
 // error_log("=== JSENDSCHRESULTATE DEBUG ===");
 // error_log("Year: " . $year);

@@ -245,28 +245,6 @@ $(document).ready(function () {
     var currentYear = new Date().getFullYear();
     var selectedDefinition = null;
 
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-        }
-        
-        const toast = $('<div>')
-            .addClass(`toast-message toast-${type}`)
-            .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>${message}`);
-
-        $('#toast-container').append(toast);
-
-        setTimeout(() => {
-            toast.addClass('show');
-        }, 100);
-
-        setTimeout(() => {
-            toast.removeClass('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
-
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
@@ -304,7 +282,7 @@ $(document).ready(function () {
             },
             error: function () {
                 $('#anlassSelect').html('<option value="" disabled>Fehler beim Laden</option>');
-                showToast('Fehler beim Laden der verfügbaren Anlässe', 'error');
+                msvToast('Fehler beim Laden der verfügbaren Anlässe', 'error');
             }
         });
     }
@@ -353,7 +331,7 @@ $(document).ready(function () {
                     if (response.result && response.result.alle_resultate && response.result.alle_resultate.length > 0) {
                         displayResults(response.result);
                         $('#exportPdfBtn').prop('disabled', false);
-                        showToast('Durchschnitt erfolgreich berechnet', 'success');
+                        msvToast('Durchschnitt erfolgreich berechnet', 'success');
                     } else {
                         // Keine Resultate vorhanden
                         $('#noResultsMessage').show();
@@ -361,13 +339,13 @@ $(document).ready(function () {
                     }
                 } else {
                     $('#noResultsMessage').show();
-                    showToast('Fehler bei der Berechnung: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast('Fehler bei der Berechnung: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
                 $('#loadingIndicator').hide();
                 $('#noResultsMessage').show();
-                showToast('Fehler bei der Berechnung', 'error');
+                msvToast('Fehler bei der Berechnung', 'error');
             }
         });
     }
@@ -430,13 +408,13 @@ $(document).ready(function () {
                     link.href = response.pdf_url;
                     link.download = response.filename;
                     link.click();
-                    showToast('PDF erfolgreich generiert', 'success');
+                    msvToast('PDF erfolgreich generiert', 'success');
                 } else {
-                    showToast('Fehler beim PDF-Export: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast('Fehler beim PDF-Export: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                showToast('Fehler beim PDF-Export', 'error');
+                msvToast('Fehler beim PDF-Export', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

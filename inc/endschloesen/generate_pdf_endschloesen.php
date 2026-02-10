@@ -42,7 +42,7 @@ class EndschloesenReport extends PDFGenerator
         // Custom CSS für Querformat-Tabelle
         $customStyles = $this->getCustomStyles();
 
-        // HTML Header (DOMPDF) – wir lassen die Schrift klein & schlicht
+        // HTML Header (DOMPDF) â€“ wir lassen die Schrift klein & schlicht
         $html = $this->createHTMLHeader($title, $customStyles, 10);
         $html .= '<h1>' . $title . '</h1>';
         //$html .= '<h1>MSV Wilen</h1>';
@@ -221,15 +221,14 @@ class EndschloesenReport extends PDFGenerator
             // GP11-Erkennung (Stgw 57 / K31 / Karabiner 31 …)
             if (preg_match('/\b(stgw|stg)\s*57\b|\bk[\s-]?31\b|\bkarabiner\s*31\b|\bk[\s-]?11\b|\bg[\s-]?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp\s*11\b|\b7[,\.\s]*5\s*x\s*55\b/', $lc))
                 return 'GP11';
-            // ★ Neu: „Karabiner“ ohne Zahl als GP11 werten
+            // â˜… Neu: „Karabiner“ ohne Zahl als GP11 werten
             if (preg_match('/\bkarabiner\b/', $lc))
                 return 'GP11';
-            // Schon drin: Standardgewehr → GP11
+            // Schon drin: Standardgewehr â†’ GP11
             if (preg_match('/\bstandardgewehr\b|\bstdg\b/i', $str))
                 return 'GP11';
             return null;
         };
-
 
         // Stiche & Preise
         foreach ($details as $key => &$entry) {
@@ -292,7 +291,7 @@ class EndschloesenReport extends PDFGenerator
                         $entry['total_price'] = (int)$row['gast_spezialpreis'];
                         $gastSpezialpreisGesetzt = true;
                     } elseif (!$gastSpezialpreisGesetzt) {
-                        // Weder JS-Paket noch Gast-Spezialpreis → normal summieren
+                        // Weder JS-Paket noch Gast-Spezialpreis â†’ normal summieren
                         $entry['total_price'] += (int)$row['price_cents'];
                     }
                 }
@@ -418,7 +417,7 @@ class EndschloesenReport extends PDFGenerator
                         : '<span style="color:#28a745; font-weight:bold;">X</span>';
                     $html .= '<td class="stich-cell" style="text-align:center;">' . $badge . '</td>';
                 } else {
-                    $html .= '<td class="stich-cell" style="text-align:center;"><span style="color:#bbb;">–</span></td>';
+                    $html .= '<td class="stich-cell" style="text-align:center;"><span style="color:#bbb;">â€“</span></td>';
                 }
             }
 
@@ -427,7 +426,6 @@ class EndschloesenReport extends PDFGenerator
             $waffeTxt = trim((string) ($entry['waffe_bez'] ?? '')) !== '' ? $entry['waffe_bez'] : '-';
             $html .= '<td class="waffe-cell">' . htmlspecialchars($waffeTxt) . '</td>';
 
-
             // Munition: aufgeteilte Werte
             $stich_gp11 = (int) ($entry['stich_gp11'] ?? 0);
             $stich_gp90 = (int) ($entry['stich_gp90'] ?? 0);
@@ -435,14 +433,14 @@ class EndschloesenReport extends PDFGenerator
             $zusatz_gp90 = (int) ($entry['zusatz_gp90'] ?? 0);
             $mun_preis_cents = (int) ($entry['munition_preis'] ?? 0);
 
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($stich_gp11 > 0 ? $stich_gp11 : '–') . '</td>';
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($stich_gp90 > 0 ? $stich_gp90 : '–') . '</td>';
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($zusatz_gp11 > 0 ? $zusatz_gp11 : '–') . '</td>';
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($zusatz_gp90 > 0 ? $zusatz_gp90 : '–') . '</td>';
+            $html .= '<td class="munition-cell" style="text-align:center;">' . ($stich_gp11 > 0 ? $stich_gp11 : 'â€“') . '</td>';
+            $html .= '<td class="munition-cell" style="text-align:center;">' . ($stich_gp90 > 0 ? $stich_gp90 : 'â€“') . '</td>';
+            $html .= '<td class="munition-cell" style="text-align:center;">' . ($zusatz_gp11 > 0 ? $zusatz_gp11 : 'â€“') . '</td>';
+            $html .= '<td class="munition-cell" style="text-align:center;">' . ($zusatz_gp90 > 0 ? $zusatz_gp90 : 'â€“') . '</td>';
             
             // Gesamt-Munition
             $total_munition = $stich_gp11 + $stich_gp90 + $zusatz_gp11 + $zusatz_gp90;
-            $html .= '<td class="munition-cell" style="text-align:center; font-weight:700; background:#f0f8ff;">' . ($total_munition > 0 ? $total_munition : '–') . '</td>';
+            $html .= '<td class="munition-cell" style="text-align:center; font-weight:700; background:#f0f8ff;">' . ($total_munition > 0 ? $total_munition : 'â€“') . '</td>';
             
             $html .= '<td class="total-cell">' . number_format($mun_preis_cents / 100, 2, '.', '') . '</td>';
 
@@ -603,7 +601,7 @@ class EndschloesenReport extends PDFGenerator
         $left .= '</tr></tfoot></table>';
 */
         // ---- rechte Spalte: Munition kompakt (Tabelle)
-        $ammo = '<div class="h3" style="margin:0 0 6px 0;">Munition – Zusammenfassung</div>';
+        $ammo = '<div class="h3" style="margin:0 0 6px 0;">Munition â€“ Zusammenfassung</div>';
         $ammo .= '<table class="ammo-table"><thead><tr>';
         $ammo .= '<th></th><th>GP11</th><th>GP90</th>';
         $ammo .= '</tr></thead><tbody>';
@@ -622,8 +620,6 @@ class EndschloesenReport extends PDFGenerator
 
         return $html;
     }
-
-
 
     /**
      * Kürzt lange Stich-Namen für die Tabellen-Header
@@ -665,7 +661,6 @@ class EndschloesenReport extends PDFGenerator
         return $label;
     }
 
-
     private function createAmmoSummary($data)
     {
         $stich_gp11 = $stich_gp90 = $zusatz_gp11 = $zusatz_gp90 = 0;
@@ -684,7 +679,7 @@ class EndschloesenReport extends PDFGenerator
             return number_format((int) $n, 0, ',', '\''); };
 
         $html = '<div class="ammo-summary">';
-        $html .= '<div class="h4">Munition – Zusammenfassung</div>';
+        $html .= '<div class="h4">Munition â€“ Zusammenfassung</div>';
 
         // GP11
         $html .= '<div><strong>GP11</strong></div>';
@@ -739,7 +734,7 @@ p, li, span, div {
         .h3 { font-size:12pt; font-weight:700; margin:8px 0 6px; }
         .h4 { font-size:10pt; font-weight:700; margin:6px 0 6px; }
 
-        /* Haupttabelle – Header modern, einmalig definiert */
+        /* Haupttabelle â€“ Header modern, einmalig definiert */
         .main-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:8pt; }
         .main-table th {
             background:#f3f6fb;
@@ -766,7 +761,7 @@ p, li, span, div {
         .total-col   { width:8%; }
         .total-cell  { text-align:right; padding-right:5px !important; font-weight:700; background:#fff7e6; }
 
-        /* Zwei Spalten für Zusammenfassung – final 58 / 42 */
+        /* Zwei Spalten für Zusammenfassung â€“ final 58 / 42 */
         .two-col { width:100%; border-collapse:separate; border-spacing:0; }
         .two-col td { vertical-align:top; padding-top:0; }
         .two-col-left  { width:58%; padding-right:10px; }
@@ -796,7 +791,6 @@ p, li, span, div {
         }
     ';
 }
-
 
 }
 

@@ -2,7 +2,7 @@
 //fetch_pairs.php
 include '../config.php';
 
-$round = $_GET['round'];
+$round = isset($_GET['round']) ? (int)$_GET['round'] : 1;
 $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
 // SQL-Abfrage zur Abrufung der Paarungen für die angegebene Runde und das Jahr
@@ -35,12 +35,14 @@ $sql = "
         mitglieder m2 ON cp.Participant2 = m2.ID
     LEFT JOIN 
         mitglieder m3 ON cp.Participant3 = m3.ID
-    WHERE 
-        cp.Round = '$round' 
-        AND cp.Year = '$year'
+    WHERE
+        cp.Round = ?
+        AND cp.Year = ?
 ";
-
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ii", $round, $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $pairs = [];
 

@@ -404,9 +404,6 @@ include 'header.inc.php';
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <!-- CSRF Token für JavaScript -->
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';

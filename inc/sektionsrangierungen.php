@@ -372,29 +372,6 @@ $(document).ready(function () {
     var currentYear = new Date().getFullYear();
     var selectedYear = currentYear;
 
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-        }
-
-        const icon = (type === 'success') ? 'check-circle' :
-                     (type === 'error')   ? 'exclamation-circle' :
-                     (type === 'warning') ? 'exclamation-triangle' : 'info-circle';
-
-        const toast = $('<div>')
-            .addClass(`toast-message toast-${type}`)
-            .html(`<i class="bi bi-${icon} me-2"></i>${message}`);
-
-        $('#toast-container').append(toast);
-
-        setTimeout(() => { toast.addClass('show'); }, 100);
-        setTimeout(() => {
-            toast.removeClass('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
-
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
@@ -432,7 +409,7 @@ $(document).ready(function () {
             },
             error: function () {
                 $('#anlassSelect').html('<option value="" disabled>Fehler beim Laden</option>');
-                showToast('Fehler beim Laden der verfügbaren Anlässe', 'error');
+                msvToast('Fehler beim Laden der verfügbaren Anlässe', 'error');
             }
         });
     }
@@ -472,7 +449,7 @@ $(document).ready(function () {
                         Fehler beim Laden der Rangierungen.
                     </div>
                 `);
-                showToast('Fehler beim Laden der Rangierungen', 'error');
+                msvToast('Fehler beim Laden der Rangierungen', 'error');
             }
         });
     }
@@ -551,7 +528,7 @@ $(document).ready(function () {
         const preis = $('#preisInput').val();
 
         if (!anlassId || !rang || !preis) {
-            showToast('Bitte alle Felder ausfüllen', 'warning');
+            msvToast('Bitte alle Felder ausfüllen', 'warning');
             return;
         }
 
@@ -573,7 +550,7 @@ $(document).ready(function () {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast('Rangierung erfolgreich gespeichert', 'success');
+                    msvToast('Rangierung erfolgreich gespeichert', 'success');
 
                     $('#anlassSelect').val('');
                     $('#rangInput').val('');
@@ -584,11 +561,11 @@ $(document).ready(function () {
                     loadAvailableDefinitions(selectedYear);
                     loadExistingRankings(selectedYear);
                 } else {
-                    showToast('Fehler beim Speichern: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast('Fehler beim Speichern: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                showToast('Fehler beim Speichern der Rangierung', 'error');
+                msvToast('Fehler beim Speichern der Rangierung', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -618,7 +595,7 @@ $(document).ready(function () {
         const newPreis = $('#editPreisInput').val();
 
         if (!newRang || !newPreis) {
-            showToast('Bitte alle Felder ausfüllen', 'warning');
+            msvToast('Bitte alle Felder ausfüllen', 'warning');
             return;
         }
 
@@ -639,15 +616,15 @@ $(document).ready(function () {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast('Rangierung erfolgreich aktualisiert', 'success');
+                    msvToast('Rangierung erfolgreich aktualisiert', 'success');
                     $('#editRankingModal').modal('hide');
                     loadExistingRankings(selectedYear);
                 } else {
-                    showToast('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                showToast('Fehler beim Aktualisieren der Rangierung', 'error');
+                msvToast('Fehler beim Aktualisieren der Rangierung', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -656,13 +633,12 @@ $(document).ready(function () {
     });
 
     // Delete-Button Event Handler
-    $(document).on('click', '.delete-ranking', function() {
+    $(document).on('click', '.delete-ranking', async function() {
         const id = $(this).data('id');
         const anlassName = $(this).data('anlass');
 
-        if (!confirm(`Möchten Sie die Rangierung für "${anlassName}" wirklich löschen?`)) {
-            return;
-        }
+        const result = await msvConfirmDelete(`Rangierung für "${anlassName}"`);
+        if (!result.isConfirmed) return;
 
         $.ajax({
             url: 'sektionsrangierungen/delete_ranking.php',
@@ -674,15 +650,15 @@ $(document).ready(function () {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast('Rangierung erfolgreich gelöscht', 'success');
+                    msvToast('Rangierung erfolgreich gelöscht', 'success');
                     loadAvailableDefinitions(selectedYear);
                     loadExistingRankings(selectedYear);
                 } else {
-                    showToast('Fehler beim Löschen: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast('Fehler beim Löschen: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                showToast('Fehler beim Löschen der Rangierung', 'error');
+                msvToast('Fehler beim Löschen der Rangierung', 'error');
             }
         });
     });
@@ -690,7 +666,7 @@ $(document).ready(function () {
     // PDF Export Button
     $('#exportPdfBtn').on('click', function() {
         if (!selectedYear) {
-            showToast('Bitte Jahr auswählen', 'warning');
+            msvToast('Bitte Jahr auswählen', 'warning');
             return;
         }
 
@@ -709,7 +685,7 @@ $(document).ready(function () {
             dataType: 'json',
             success: function(response) {
                 if (response.success && response.pdf_url) {
-                    showToast('PDF erfolgreich erstellt', 'success');
+                    msvToast('PDF erfolgreich erstellt', 'success');
 
                     const link = document.createElement('a');
                     link.href = response.pdf_url;
@@ -719,11 +695,11 @@ $(document).ready(function () {
                     link.click();
                     document.body.removeChild(link);
                 } else {
-                    showToast('Fehler beim PDF-Export: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast('Fehler beim PDF-Export: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                showToast('Fehler beim PDF-Export', 'error');
+                msvToast('Fehler beim PDF-Export', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

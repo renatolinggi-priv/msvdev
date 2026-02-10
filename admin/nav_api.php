@@ -5,6 +5,7 @@ require_once __DIR__ . '/../inc/dbconnect.inc.php';
 
 // --- NUR User-ID 1 darf ---
 if (!function_exists('user_can_manage_navigation')) {
+
     function user_can_manage_navigation(): bool {
         return (int)($_SESSION['user_id'] ?? 0) === 1;
     }
@@ -64,7 +65,6 @@ function reorder_siblings(mysqli $conn, $parent_id) {
     $stmt->bind_param('i', $parent_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
     $order = 0;
     while ($row = $result->fetch_assoc()) {
         $update = $conn->prepare("UPDATE navigation SET SortOrder = ? WHERE ID = ?");
@@ -81,18 +81,15 @@ switch($action){
         $items = fetch_all($conn);
         out(['success'=>true,'items'=>$items]);
         break;
-        
     case 'create': 
         $text = trim($_POST['text'] ?? '');
         $link = trim($_POST['link'] ?? '');
         $parent = (int)($_POST['parent_id'] ?? 0);
-        
         if ($text==='' || $link==='') {
             bad('Text und Link sind Pflichtfelder');
         }
-
         ensure_sortorder_column($conn);
-        
+
         // Get next sort order
         $stmt = $conn->prepare("SELECT COALESCE(MAX(SortOrder),0)+10 FROM navigation WHERE ParentID=?");
         $stmt->bind_param('i', $parent); 
@@ -108,16 +105,13 @@ switch($action){
             bad('Einfügen fehlgeschlagen: '.$conn->error, 500);
         }
         $stmt->close();
-
         out(['success'=>true, 'items'=>fetch_all($conn)]);
         break;
-        
     case 'update': 
         $id = (int)($_POST['id'] ?? 0);
         $text = trim($_POST['text'] ?? '');
         $link = trim($_POST['link'] ?? '');
         $parent = (int)($_POST['parent_id'] ?? 0);
-        
         if ($id<=0) bad('Ungültige ID');
         if ($text==='' || $link==='') bad('Text und Link sind Pflichtfelder');
         if ($parent === $id) bad('Parent darf nicht du selbst sein');
@@ -136,17 +130,14 @@ switch($action){
                 break;
             }
         }
-
         $stmt = $conn->prepare("UPDATE navigation SET Text=?, Link=?, ParentID=? WHERE ID=?");
         $stmt->bind_param('ssii', $text, $link, $parent, $id);
         if (!$stmt->execute()) {
             bad('Speichern fehlgeschlagen: '.$conn->error, 500);
         }
         $stmt->close();
-
         out(['success'=>true, 'items'=>fetch_all($conn)]);
         break;
-        
     case 'delete': 
         $id = (int)($_POST['id'] ?? 0);
         if ($id<=0) bad('Ungültige ID');
@@ -158,9 +149,8 @@ switch($action){
         $stmt->bind_result($cnt); 
         $stmt->fetch(); 
         $stmt->close();
-        
         if ($cnt>0) {
-            bad('Eintrag hat Unterpunkte – zuerst Kinder umhängen oder löschen');
+            bad('Eintrag hat Unterpunkte â€“ zuerst Kinder umhängen oder löschen');
         }
 
         // Get parent for reordering
@@ -178,27 +168,23 @@ switch($action){
             bad('Löschen fehlgeschlagen: '.$conn->error, 500);
         }
         $stmt->close();
-        
+
         // Reorder siblings
         reorder_siblings($conn, $parent_id);
-
         out(['success'=>true, 'items'=>fetch_all($conn)]);
         break;
-        
     case 'update_position':
         ensure_sortorder_column($conn);
-        
         $id = (int)($_POST['id'] ?? 0);
         $new_parent = (int)($_POST['parent_id'] ?? 0);
         $position = (int)($_POST['position'] ?? 0);
-        
         if ($id <= 0) bad('Ungültige ID');
-        
+
         // Verhindere dass ein Element sein eigenes Kind wird
         if ($new_parent === $id) {
             bad('Ein Element kann nicht sein eigenes Untermenü sein');
         }
-        
+
         // Prüfe auf zyklische Referenzen
         if ($new_parent > 0) {
             $check_id = $new_parent;
@@ -210,17 +196,15 @@ switch($action){
                 $stmt->bind_result($parent_of_check);
                 $stmt->fetch();
                 $stmt->close();
-                
                 if ($parent_of_check == $id) {
                     bad('Diese Verschiebung würde eine zyklische Referenz erzeugen');
                 }
                 $check_id = $parent_of_check;
             }
         }
-        
         $conn->begin_transaction();
-        
         try {
+
             // Hole alte Parent ID für späteres Reordering
             $stmt = $conn->prepare("SELECT ParentID FROM navigation WHERE ID = ?");
             $stmt->bind_param('i', $id);
@@ -228,28 +212,27 @@ switch($action){
             $stmt->bind_result($old_parent);
             $stmt->fetch();
             $stmt->close();
-            
+
             // Update Parent
             $stmt = $conn->prepare("UPDATE navigation SET ParentID = ? WHERE ID = ?");
             $stmt->bind_param('ii', $new_parent, $id);
             $stmt->execute();
             $stmt->close();
-            
+
             // Hole alle Items des neuen Parents (sortiert)
             $stmt = $conn->prepare("SELECT ID FROM navigation WHERE ParentID = ? AND ID != ? ORDER BY SortOrder, ID");
             $stmt->bind_param('ii', $new_parent, $id);
             $stmt->execute();
             $result = $stmt->get_result();
-            
             $siblings = [];
             while ($row = $result->fetch_assoc()) {
                 $siblings[] = $row['ID'];
             }
             $stmt->close();
-            
+
             // Füge das verschobene Element an der gewünschten Position ein
             array_splice($siblings, $position, 0, $id);
-            
+
             // Update SortOrder für alle Geschwister
             $order = 0;
             foreach ($siblings as $sibling_id) {
@@ -259,83 +242,71 @@ switch($action){
                 $stmt->close();
                 $order += 10;
             }
-            
+
             // Reorder alte Parent-Gruppe wenn verschieden
             if ($old_parent != $new_parent) {
                 reorder_siblings($conn, $old_parent);
             }
-            
             $conn->commit();
             out(['success' => true, 'items' => fetch_all($conn)]);
-            
         } catch (Exception $e) {
             $conn->rollback();
             bad('Fehler beim Verschieben: ' . $e->getMessage());
         }
         break;
-        
     case 'batch_update':
+
         // Batch-Update für mehrere Items gleichzeitig
         $updates_json = $_POST['updates'] ?? '[]';
         $updates = json_decode($updates_json, true);
-        
         if (!is_array($updates) || empty($updates)) {
             bad('Keine Änderungen zu speichern');
         }
-        
         ensure_sortorder_column($conn);
         $conn->begin_transaction();
-        
         try {
             $success_count = 0;
-            
             foreach ($updates as $update) {
                 $id = (int)($update['id'] ?? 0);
                 $parent_id = (int)($update['parent_id'] ?? 0);
                 $sort_order = (int)($update['sort_order'] ?? 0);
-                
                 if ($id <= 0) continue;
-                
+
                 // Verhindere dass ein Element sein eigenes Parent wird
                 if ($parent_id === $id) {
                     $conn->rollback();
                     bad('Ein Element kann nicht sein eigenes Untermenü sein');
                 }
-                
+
                 // Update ParentID und SortOrder
                 $stmt = $conn->prepare("UPDATE navigation SET ParentID = ?, SortOrder = ? WHERE ID = ?");
                 $stmt->bind_param('iii', $parent_id, $sort_order, $id);
-                
                 if ($stmt->execute()) {
                     $success_count++;
                 }
                 $stmt->close();
             }
-            
+
             // Reorder alle betroffenen Parent-Gruppen
             $affected_parents = array_unique(array_column($updates, 'parent_id'));
             foreach ($affected_parents as $parent_id) {
                 reorder_siblings($conn, $parent_id);
             }
-            
             $conn->commit();
             out([
                 'success' => true, 
                 'message' => "$success_count Einträge aktualisiert",
                 'items' => fetch_all($conn)
             ]);
-            
         } catch (Exception $e) {
             $conn->rollback();
             bad('Fehler beim Batch-Update: ' . $e->getMessage());
         }
         break;
-        
     case 'reorder': 
         ensure_sortorder_column($conn);
         $id = (int)($_POST['id'] ?? 0);
         $dir = $_POST['dir'] ?? '';
-        
         if ($id<=0 || !in_array($dir,['up','down'],true)) {
             bad('Ungültige Parameter');
         }
@@ -354,35 +325,30 @@ switch($action){
         } else {
             $stmt = $conn->prepare("SELECT ID, SortOrder FROM navigation WHERE ParentID=? AND SortOrder > ? ORDER BY SortOrder ASC LIMIT 1");
         }
-        
         $stmt->bind_param('ii', $pid, $sort); 
         $stmt->execute(); 
         $stmt->bind_result($oid,$osort);
-        
         if ($stmt->fetch()){
             $stmt->close();
-            
+
             // Swap sort orders
             $conn->begin_transaction();
             $u1 = $conn->prepare("UPDATE navigation SET SortOrder=? WHERE ID=?");
             $u1->bind_param('ii', $osort, $id); 
             $u1->execute(); 
             $u1->close();
-            
             $u2 = $conn->prepare("UPDATE navigation SET SortOrder=? WHERE ID=?");
             $u2->bind_param('ii', $sort, $oid); 
             $u2->execute(); 
             $u2->close();
-            
             $conn->commit();
         } else {
             $stmt->close();
         }
-
         out(['success'=>true, 'items'=>fetch_all($conn)]);
         break;
-        
     default: 
         bad('Unbekannte Aktion', 400);
 }
+
 ?>

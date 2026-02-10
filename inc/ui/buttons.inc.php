@@ -1,4 +1,5 @@
 <?php
+
 function renderActionButtons(int $id, string $titleEdit='Bearbeiten', string $titleDel='Löschen'): string {
   return '
   <div class="btn-group btn-group-sm action-group" role="group" aria-label="Aktionen">

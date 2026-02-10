@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(do if grep -Pz '\\\\n\\\\s*\\\\n\\\\s*\\\\n' \"$file\")",
+      "Bash(then echo \"$file\" fi done)"
+    ]
+  }
+}

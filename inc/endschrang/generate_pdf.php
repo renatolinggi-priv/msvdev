@@ -1,7 +1,7 @@
 <?php
 // Ausgabepufferung starten, um unerwünschte Ausgaben zu unterdrücken
 ob_start();
-require '../dompdf/autoload.php'; // Pfad zu Composer's autoload Datei
+require '../vendor/autoload.php'; // Pfad zu Composer's autoload Datei
 include '../config.php';
 
 use Dompdf\Dompdf;
@@ -187,7 +187,6 @@ if ($result->num_rows > 0) {
 }
 
 $html .= '</div>';
-
 
 // SQL-Abfrage für Kategorie B
 $sql = "SELECT m.Name, m.Vorname, h.Passe1, h.Passe2, h.Passe3, h.Passe4, h.Passe5, h.Passe6, h.Passe7, h.Passe8,

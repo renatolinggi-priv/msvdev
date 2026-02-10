@@ -269,30 +269,9 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
     let currentRestoreType = ''; // 'file' oder 'existing'
     let currentRestoreFile = null;
 
-    // Toast: nutze Deine showToast(), sonst Fallback
+    // Toast: nutze Deine msvToast(), sonst Fallback
     function toast(msg, type = 'info') {
-      if (typeof window.showToast === 'function') { window.showToast(msg, type); return; }
-      const colors = { success: '#28a745', error: '#dc3545', warning: '#ffc107', info: '#6c757d' };
-      let cont = document.getElementById('toast-container');
-      if (!cont) {
-        cont = document.createElement('div');
-        cont.id = 'toast-container';
-        cont.style.position = 'fixed';
-        cont.style.top = '70px';
-        cont.style.right = '20px';
-        cont.style.zIndex = '9999';
-        document.body.appendChild(cont);
-      }
-      const el = document.createElement('div');
-      el.style.background = colors[type] || colors.info;
-      el.style.color = '#fff';
-      el.style.padding = '12px 16px';
-      el.style.marginBottom = '10px';
-      el.style.borderRadius = '6px';
-      el.style.boxShadow = '0 4px 12px rgba(0,0,0,.15)';
-      el.textContent = msg;
-      cont.appendChild(el);
-      setTimeout(() => { el.remove(); }, 3500);
+      msvToast(msg, type);
     }
 
     function fmtSize(bytes) {
@@ -395,7 +374,8 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
     }
 
     async function deleteBackup(name) {
-      if (!confirm('Backup wirklich löschen?')) return;
+      const confirmResult = await msvConfirmDelete('dieses Backup');
+      if (!confirmResult.isConfirmed) return;
       try {
         await apiJSON(API, {
           method: 'POST',

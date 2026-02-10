@@ -3,7 +3,6 @@
  * Einheitliche Funktionen für Heim-, Kanti- und Endresultate
  * Version: 1.0.1
  */
-
 (function(window, $) {
     'use strict';
 
@@ -54,57 +53,49 @@
             this.RESIZE_DEBOUNCE = 120;
             this.initialized = false;
         }
-
         init() {
             if (this.initialized) return;
-            
             this.applyViewportVars();
             this.bindEvents();
             this.initialized = true;
         }
-
         applyViewportVars() {
             const vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', vh + 'px');
-            
             const headerEl = document.querySelector('.navbar, header, .site-header');
             const footerEl = document.querySelector('footer, .site-footer');
-            
             const headerH = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 0;
             const footerH = footerEl ? Math.round(footerEl.getBoundingClientRect().height) : 0;
-            
             document.documentElement.style.setProperty('--app-header', headerH + 'px');
             document.documentElement.style.setProperty('--app-footer', footerH + 'px');
         }
-
         calculateTableHeight(tableId) {
             const table = document.getElementById(tableId);
             if (!table) return;
-            
             const tableResp = table.closest('.table-responsive');
             if (!tableResp) return;
 
             // Einfache Höhenberechnung basierend auf Viewport
             const navbar = document.querySelector('.navbar');
             const navbarH = navbar ? navbar.offsetHeight : 76;
-            
+
             // Berechne Position der Tabelle
             const rect = tableResp.getBoundingClientRect();
             const topPosition = rect.top;
-            
+
             // Padding unten
             const bottomPadding = 30;
-            
+
             // Berechne verfügbare Höhe
             const viewportHeight = window.innerHeight;
             const availableHeight = viewportHeight - topPosition - bottomPadding;
             const maxHeight = Math.max(300, availableHeight); // Minimum 300px
-            
+
             // Setze Höhe für table-responsive
             tableResp.style.maxHeight = maxHeight + 'px';
             tableResp.style.overflowY = 'auto';
             tableResp.style.overflowX = 'auto';
-            
+
             // Debug Info
             console.log('Table Height Calculation:', {
                 viewport: viewportHeight,
@@ -113,21 +104,17 @@
                 applied: maxHeight
             });
         }
-
         bindEvents() {
             const self = this;
-            
             window.addEventListener('load', () => self.refresh());
-            
             window.addEventListener('resize', function() {
                 clearTimeout(self.resizeTimeout);
                 self.resizeTimeout = setTimeout(() => self.refresh(), self.RESIZE_DEBOUNCE);
             });
         }
-
         refresh() {
             this.applyViewportVars();
-            
+
             // Aktualisiere alle bekannten Tabellen
             Object.values(TABLE_CONFIGS).forEach(config => {
                 requestAnimationFrame(() => this.calculateTableHeight(config.tableId));
@@ -136,56 +123,15 @@
     }
 
     /**
-     * Toast Notification System - Einheitlich für alle Seiten
+     * Toast Notification System - Delegiert an zentrales msvToast() (SweetAlert2)
      */
     class ToastManager {
-        constructor() {
-            this.containerId = 'toast-container';
-            this.ensureContainer();
-        }
-
-        ensureContainer() {
-            if (!document.getElementById(this.containerId)) {
-                const container = document.createElement('div');
-                container.id = this.containerId;
-                container.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;';
-                document.body.appendChild(container);
-            }
-        }
-
         show(message, type = 'info') {
-            this.ensureContainer();
-            
-            const iconMap = {
-                'success': 'check-circle',
-                'error': 'exclamation-circle',
-                'warning': 'exclamation-triangle',
-                'info': 'info-circle'
-            };
-            
-            const icon = iconMap[type] || iconMap['info'];
-            const toast = $('<div>')
-                .addClass(`toast-message toast-${type}`)
-                .html(`<i class="bi bi-${icon} me-2"></i>${message}`);
-            
-            $('#' + this.containerId).append(toast);
-            
-            setTimeout(() => toast.addClass('show'), 50);
-            setTimeout(() => {
-                toast.removeClass('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            msvToast(message, type);
         }
-
-        // Alias für Kompatibilität
         showMessage(message, type) {
-            const typeMap = {
-                'danger': 'error',
-                'success': 'success',
-                'warning': 'warning',
-                'info': 'info'
-            };
-            this.show(message, typeMap[type] || 'info');
+            const typeMap = { 'danger': 'error', 'success': 'success', 'warning': 'warning', 'info': 'info' };
+            msvToast(message, typeMap[type] || 'info');
         }
     }
 
@@ -196,11 +142,10 @@
         constructor(tableId) {
             this.tableId = tableId;
         }
-
         bindInputs() {
             const tableSelector = '#' + this.tableId;
             const $inputs = $(tableSelector + ' input[type="number"], ' + tableSelector + ' input[type="text"]');
-            
+
             // Enter/Tab Navigation
             $inputs.off('keydown.msv').on('keydown.msv', function(e) {
                 if (e.key === 'Enter' || e.key === 'Tab') {
@@ -209,13 +154,12 @@
                     const currentIndex = inputs.index(this);
                     const nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
                     const nextInput = inputs.eq(nextIndex);
-                    
                     if (nextInput.length) {
                         nextInput.focus().select();
                     }
                 }
             });
-            
+
             // Focus Verhalten
             $inputs.off('focus.msv').on('focus.msv', function() {
                 const $this = $(this);
@@ -225,38 +169,35 @@
                     $this.select();
                 }
             });
-            
+
             // Blur Verhalten
             $inputs.off('blur.msv').on('blur.msv', function() {
                 if ($(this).val().trim() === '') {
                     $(this).val('0');
                 }
             });
-            
+
             // Input Validierung (nur Zahlen)
             $inputs.filter('[type="number"]').off('input.msv').on('input.msv', function() {
                 let value = $(this).val().replace(/[^0-9]/g, '');
-                
+
                 // Max 2 Zeichen für Schüsse (0-10), 3 für andere Werte
                 const maxLength = $(this).attr('max') === '10' ? 2 : 3;
                 if (value.length > maxLength) {
                     value = value.substring(0, maxLength);
                 }
-                
                 $(this).val(value);
             });
         }
-
         fillEmptyWithZero() {
             $('#' + this.tableId + ' tbody tr').each(function() {
                 const inputs = $(this).find('input[name*="passe"], input[name*="Schuss"]');
                 let hasLaterValue = false;
-                
+
                 // Von hinten nach vorne durchgehen
                 for (let i = inputs.length - 1; i >= 0; i--) {
                     const $input = $(inputs[i]);
                     const val = $input.val().trim();
-                    
                     if (val !== '' && val !== '0') {
                         hasLaterValue = true;
                     } else if (hasLaterValue && val === '') {
@@ -275,74 +216,65 @@
             if (!TABLE_CONFIGS[type]) {
                 throw new Error('Unbekannter Tabellentyp: ' + type);
             }
-            
             this.type = type;
             this.config = TABLE_CONFIGS[type];
             this.layoutManager = new LayoutManager();
             this.toastManager = new ToastManager();
             this.inputHandler = new InputHandler(this.config.tableId);
-            
             this.currentYear = new Date().getFullYear();
             this.basePath = '';
             this.deleteType = '';
             this.itemToDelete = null;
-            
             this.init();
         }
-
         init() {
             const self = this;
-            
+
             // Layout initialisieren
             this.layoutManager.init();
-            
+
             // Jahr-Dropdown initialisieren
             this.initializeYearDropdown();
-            
+
             // Event-Handler binden
             this.bindEvents();
-            
+
             // Initiale Daten laden
             this.loadData(this.currentYear);
         }
-
         initializeYearDropdown() {
             const $yearSelect = $('#yearSelect');
             $yearSelect.empty();
-            
             for (let year = 2024; year <= this.currentYear + 1; year++) {
                 const $option = $('<option></option>')
                     .val(year)
                     .text(year);
-                
                 if (year === this.currentYear) {
                     $option.prop('selected', true);
                 }
-                
                 $yearSelect.append($option);
             }
         }
-
         bindEvents() {
             const self = this;
-            
+
             // Jahr-Auswahl
             $('#yearSelect').off('change.msv').on('change.msv', function() {
                 self.loadData($(this).val());
             });
-            
+
             // Redirect Button
             $('#redirect-btn').off('click.msv').on('click.msv', function() {
                 window.location.href = self.basePath + self.config.redirectUrl;
             });
-            
+
             // Delete All Button
             $('#delete-btn, #delall-btn').off('click.msv').on('click.msv', function(e) {
                 e.preventDefault();
                 self.deleteType = 'all';
                 self.showDeleteConfirmation('all');
             });
-            
+
             // Delete Single Button (dynamisch)
             $(document).off('click.msv', '.delete-btn').on('click.msv', '.delete-btn', function(e) {
                 e.preventDefault();
@@ -352,58 +284,55 @@
                 const name = $(this).closest('tr').find('td:first').text();
                 self.showDeleteConfirmation('single', name);
             });
-            
+
             // Form Submit (für Heim/Kanti)
             $('#heimresultateForm, #kantiresultateForm').off('submit.msv').on('submit.msv', function(e) {
                 e.preventDefault();
                 self.saveData();
             });
-            
+
             // Confirm Action
             $('#confirmAction').off('click.msv').on('click.msv', function() {
                 self.executeDelete();
             });
-            
+
             // Modal verstecken - Reset
             $('#confirmModal').on('hidden.bs.modal', function() {
                 self.deleteType = '';
                 self.itemToDelete = null;
             });
-            
+
             // Spezielle End-Resultate Events
             if (this.type === 'end') {
                 this.bindEndResultateEvents();
             }
         }
-
         bindEndResultateEvents() {
             const self = this;
-            
+
             // Edit Button
             $(document).off('click.msv', '.edit-btn').on('click.msv', '.edit-btn', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 self.openEditModal($(this).data('id'));
             });
-            
+
             // Schuss Form Submit
             $('#schussForm').off('submit.msv').on('submit.msv', function(e) {
                 e.preventDefault();
                 self.saveSchussData();
             });
         }
-
         loadData(year) {
             const self = this;
             const $tbody = $('#' + this.config.tableId + ' tbody');
-            
+
             // Loading indicator
             $tbody.html(
                 `<tr><td colspan="${this.config.columns}" class="text-center py-4">` +
                 `<div class="spinner-border spinner-border-sm text-primary me-2"></div>` +
                 `Lade Daten...</td></tr>`
             );
-            
             $.ajax({
                 url: this.basePath + this.config.loadUrl,
                 type: 'GET',
@@ -412,8 +341,8 @@
                     $tbody.html(response);
                     self.inputHandler.bindInputs();
                     self.layoutManager.refresh();
+
                     // Toast entfernt - nicht nötig bei jedem Laden
-                    
                     // Mobile Enhancement für Kanti
                     if (self.type === 'kanti') {
                         self.enhanceMobileRows();
@@ -429,22 +358,18 @@
                 }
             });
         }
-
         saveData() {
             const self = this;
             const $submitBtn = $('button[type="submit"]');
             const originalText = $submitBtn.html();
-            
             $submitBtn.prop('disabled', true)
                 .html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
-            
+
             // Leere Felder mit 0 füllen
             this.inputHandler.fillEmptyWithZero();
-            
             const selectedYear = $('#yearSelect').val();
             const formSelector = this.type === 'heim' ? '#heimresultateForm' : '#kantiresultateForm';
             const formData = $(formSelector).serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
-            
             $.ajax({
                 url: this.basePath + this.config.saveUrl,
                 type: 'POST',
@@ -461,10 +386,8 @@
                 }
             });
         }
-
         showDeleteConfirmation(type, name = '') {
             let message = '';
-            
             if (type === 'all') {
                 message = `
                     <div class="d-flex align-items-center">
@@ -486,19 +409,15 @@
                     </div>
                 `;
             }
-            
             $('#confirmModal .modal-body').html(message);
             $('#confirmModal').modal('show');
         }
-
         executeDelete() {
             const self = this;
             const $btn = $('#confirmAction');
             const selectedYear = $('#yearSelect').val();
-            
             $btn.prop('disabled', true)
                 .html('<span class="spinner-border spinner-border-sm me-2"></span>Verarbeite...');
-            
             let ajaxConfig = {
                 method: 'POST',
                 data: {
@@ -512,7 +431,6 @@
                     $('#confirmModal').modal('hide');
                 }
             };
-            
             if (this.deleteType === 'all') {
                 ajaxConfig.url = this.basePath + this.config.deleteUrl;
                 ajaxConfig.success = function() {
@@ -533,34 +451,25 @@
                     self.toastManager.show('Fehler beim Löschen', 'error');
                 };
             }
-            
             $.ajax(ajaxConfig);
         }
-
         enhanceMobileRows() {
             if (!window.matchMedia('(max-width: 768px)').matches) return;
-            
             const $tbody = $('#' + this.config.tableId + ' tbody');
             $tbody.find('.kanti-row-more, .kanti-more-btn').remove();
-            
             $('#' + this.config.tableId + ' tbody tr').each(function() {
                 const $tr = $(this);
                 const $cells = $tr.children('td');
-                
                 if ($cells.length < 5) return;
-                
                 const more = {
                     passe3: $cells.eq(2).html(),
                     passe4: $cells.eq(3).html(),
                     passe5: $cells.eq(4).html()
                 };
-                
                 const $firstCell = $cells.first();
                 const btn = $('<button type="button" class="btn btn-outline-secondary btn-sm kanti-more-btn" aria-expanded="false">' +
                            '<i class="bi bi-three-dots"></i> Mehr</button>');
-                
                 $firstCell.append('<br>').append(btn);
-                
                 const $moreRow = $(`
                     <tr class="kanti-row-more" style="display:none;">
                         <td colspan="${$cells.length}">
@@ -572,10 +481,8 @@
                         </td>
                     </tr>
                 `);
-                
                 $tr.after($moreRow);
             });
-            
             $(document).off('click.msvMobile', '.kanti-more-btn').on('click.msvMobile', '.kanti-more-btn', function() {
                 const $tr = $(this).closest('tr');
                 const $moreRow = $tr.next('.kanti-row-more');
@@ -589,14 +496,12 @@
             const self = this;
             const selectedYear = $('#yearSelect').val();
             const name = $(`[data-id="${mitgliedID}"]`).closest('tr').find('td:first').text();
-            
             $('#schussModalLabel').html(`<i class="bi bi-target me-2"></i> Erfassen - ${name}`);
             $('#mitgliedID').val(mitgliedID);
             $('#schussForm')[0].reset();
             $('.total-display').text('0');
-            
             $('#schussModal').modal('show');
-            
+
             // Daten laden
             $.get(this.basePath + 'endschresultate/load_schussdaten.php', {
                 mitgliedID: mitgliedID,
@@ -612,6 +517,7 @@
                         }
                     });
                     self.calculateAllSums();
+
                     // Toast entfernt - nicht nötig beim Laden im Modal
                 } catch(e) {
                     self.toastManager.show('Fehler beim Parsen der Daten', 'error');
@@ -620,18 +526,14 @@
                 self.toastManager.show('Fehler beim Laden der Schussdaten', 'error');
             });
         }
-
         saveSchussData() {
             const self = this;
             const $btn = $('#schussModal button[type="submit"]');
             const originalText = $btn.html();
-            
             $btn.prop('disabled', true)
                 .html('<i class="bi bi-hourglass-split me-2"></i>Speichere...');
-            
             const selectedYear = $('#yearSelect').val();
             const formData = $('#schussForm').serialize() + '&year=' + selectedYear;
-            
             $.post(this.basePath + 'endschresultate/save_schuss.php', formData)
                 .done(function(response) {
                     self.toastManager.show('Resultate erfolgreich gespeichert!', 'success');
@@ -645,7 +547,6 @@
                     $btn.prop('disabled', false).html(originalText);
                 });
         }
-
         calculateAllSums() {
             this.calculateSum('.endschuss', 'endstichSumme');
             this.calculateSum('.schwini-schuss1', 'schwiniSumme1');
@@ -654,7 +555,6 @@
             this.calculateSum('.zabig', 'zabigsum');
             this.calculateSum('.sieunder', 'sieunderSum');
         }
-
         calculateSum(selector, sumId) {
             let sum = 0;
             $(selector).each(function() {
@@ -667,16 +567,17 @@
     /**
      * Global Scroll Delegation - Scroll-Events an Tabelle weiterleiten
      */
+
     function enableGlobalScroll() {
+
         // Scroll-Events an Tabelle weiterleiten wenn Fokus auf der Seite
         // Verwende native addEventListener mit { passive: false } für preventDefault()
         document.addEventListener('wheel', function(e) {
             const $tableContainer = $('.table-responsive');
-            
             if ($tableContainer.length) {
                 const container = $tableContainer[0];
                 const deltaY = e.deltaY;
-                
+
                 // Prüfe ob die Tabelle scrollbar ist
                 if (container.scrollHeight > container.clientHeight) {
                     container.scrollTop += deltaY;
@@ -692,18 +593,18 @@
     window.MSV.ToastManager = ToastManager;
     window.MSV.InputHandler = InputHandler;
     window.MSV.enableGlobalScroll = enableGlobalScroll;
-    
+
     // Helper für Kompatibilität
     window.MSV.init = function(type) {
         return new ResultateManager(type);
     };
-
 })(window, jQuery);
 
 // action-buttons-normalizer.js
 function normalizeActionButtons(scope){
   const $scope = scope ? $(scope) : $(document);
   $scope.find('td').filter(function(){
+
     // Heuristik: Zellen mit Edit/Delete-Buttons erkennen
     return $(this).find('.edit-btn, .delete-btn, .btn-action-edit, .btn-action-delete').length >= 1
            && !$(this).find('.action-group').length;
@@ -711,7 +612,6 @@ function normalizeActionButtons(scope){
     const $cell = $(this);
     const id = $cell.find('[data-id]').first().data('id')
              || $cell.closest('tr').data('id') || 0;
-
     $cell.html(`
       <div class="btn-group btn-group-sm action-group" role="group" aria-label="Aktionen">
         <button type="button" class="btn btn-outline-secondary btn-action-edit" data-id="${id}" title="Bearbeiten">
@@ -724,4 +624,5 @@ function normalizeActionButtons(scope){
     `);
   });
 }
+
 // nach jedem AJAX-Load: normalizeActionButtons('#deineTabelle tbody');

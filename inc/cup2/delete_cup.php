@@ -1,18 +1,28 @@
 
-
 <?php
 include '../config.php';
+
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
 
 // Prüfen, ob die Verbindung erfolgreich ist
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-$year = date("Y");
+$year = intval(date("Y"));
 // Transaktion starten
 $conn->begin_transaction();
 
 try {
-    $conn->query("DELETE FROM `cupPairs` WHERE `Year` = $year;");
+    $stmt = $conn->prepare("DELETE FROM `cupPairs` WHERE `Year` = ?");
+    $stmt->bind_param("i", $year);
+    $stmt->execute();
+    $stmt->close();
     // Transaktion erfolgreich abschließen
     $conn->commit();
     json_encode(['status' => 'success', 'message' => 'Script ausgeführt']);
@@ -23,7 +33,10 @@ try {
     echo "Fehler beim Leeren der Tabellen: " . $e->getMessage();
 }
 try {
-    $conn->query("DELETE FROM `cupFinalResults` WHERE `Year` = $year;");
+    $stmt = $conn->prepare("DELETE FROM `cupFinalResults` WHERE `Year` = ?");
+    $stmt->bind_param("i", $year);
+    $stmt->execute();
+    $stmt->close();
     // Transaktion erfolgreich abschließen
     $conn->commit();
     json_encode(['status' => 'success', 'message' => 'Script ausgeführt']);

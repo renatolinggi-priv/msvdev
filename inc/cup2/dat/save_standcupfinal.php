@@ -1,6 +1,14 @@
 <?
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 $year = date("Y");
 /*
 $participant1Name = $_POST['participant1_name'] ?? null;
@@ -11,7 +19,6 @@ $participant1club = $_POST['participant1_club'] ?? null;
 $participant1Name = $_GET['participant1_name'] ?? null;
 $participant1Result = $_GET['participant1_result'] ?? null;
 $participant1club = $_GET['participant1_club'] ?? null;
-
 
 $participant2Name = $_POST['participant2_name'] ?? null;
 $participant2Result = $_POST['participant2_result'] ?? null;
@@ -30,29 +37,39 @@ $response = [
 // Funktion, um zu prüfen, ob der Teilnehmer bereits existiert
 function checkExistingEntry($conn, $participantName, $year) {
     global $response;  // Für Debugging
-    $sql = "SELECT * FROM cupStandFinal WHERE ParticipantName = '$participantName' AND Year = $year";
-    echo $sql;
-    $result = $conn->query($sql);
-    
-    $response['debug'][] = "SQL: $sql";  // Füge SQL für Debugging hinzu
+    $stmt = $conn->prepare("SELECT * FROM cupStandFinal WHERE ParticipantName = ? AND Year = ?");
+    $stmt->bind_param("si", $participantName, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    return $result && $result->num_rows > 0;
+    $response['debug'][] = "SQL: SELECT * FROM cupStandFinal WHERE ParticipantName = ? AND Year = ? [" . $participantName . ", " . $year . "]";
+
+    $exists = $result && $result->num_rows > 0;
+    $stmt->close();
+    return $exists;
 }
 
 // Funktion zum Aktualisieren eines vorhandenen Eintrags
 function updateEntry($conn, $participantName, $participantResult, $year) {
     global $response;  // Für Debugging
-    $sql = "UPDATE cupStandFinal SET Result = $participantResult WHERE ParticipantName = '$participantName' AND Year = $year";
-    $response['debug'][] = "Update SQL: $sql";  // Füge SQL für Debugging hinzu
-    return $conn->query($sql);
+    $stmt = $conn->prepare("UPDATE cupStandFinal SET Result = ? WHERE ParticipantName = ? AND Year = ?");
+    $participantResult = intval($participantResult);
+    $stmt->bind_param("isi", $participantResult, $participantName, $year);
+    $response['debug'][] = "Update SQL: UPDATE cupStandFinal SET Result = ? WHERE ParticipantName = ? AND Year = ? [" . $participantResult . ", " . $participantName . ", " . $year . "]";
+    $success = $stmt->execute();
+    $stmt->close();
+    return $success;
 }
 
 // Funktion zum Einfügen eines neuen Eintrags
 function insertEntry($conn, $participantName, $participantResult, $club, $year) {
     global $response;  // Für Debugging
-    $sql = "INSERT INTO cupStandFinal (ParticipantName, Result, club, Year) VALUES ('$participantName', $participantResult, '$club', $year)";
-   
-   // return $conn->query($sql);
+    $stmt = $conn->prepare("INSERT INTO cupStandFinal (ParticipantName, Result, club, Year) VALUES (?, ?, ?, ?)");
+    $participantResult = intval($participantResult);
+    $stmt->bind_param("sisi", $participantName, $participantResult, $club, $year);
+    $success = $stmt->execute();
+    $stmt->close();
+    return $success;
 }
 
 // Überprüfen und speichern/aktualisieren der Daten für alle Teilnehmer

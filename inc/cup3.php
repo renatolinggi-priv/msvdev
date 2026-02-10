@@ -787,9 +787,6 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container" style="position: fixed; top: 80px; right: 20px; z-index: 9999;"></div>
-
 <!-- Bestätigungs-Modal -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -829,37 +826,7 @@ $(document).ready(function() {
     let totalPairings = 0;
     let completedPairings = 0;
 
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const typeClasses = {
-            'success': 'text-success',
-            'error': 'text-danger',
-            'warning': 'text-warning',
-            'info': 'text-muted'
-        };
-        
-        const icons = {
-            'success': 'bi-check-circle-fill',
-            'error': 'bi-x-circle-fill',
-            'warning': 'bi-exclamation-triangle-fill',
-            'info': 'bi-info-circle-fill'
-        };
-        
-        const toast = $('<div class="cup3-toast">')
-            .html(`
-                <i class="bi ${icons[type]} ${typeClasses[type]} fs-5"></i>
-                <div>
-                    <strong>${message}</strong>
-                </div>
-            `);
-        
-        $('#toast-container').append(toast);
-        
-        setTimeout(() => {
-            toast.css('opacity', '0');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
+
 
     // Stats aktualisieren
     function updateStats() {
@@ -954,7 +921,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error("AJAX Error:", error);
-                showToast('Fehler beim Laden der Teilnehmer', 'error');
+                msvToast('Fehler beim Laden der Teilnehmer', 'error');
                 $('#participant-list').html('<div class="cup3-empty-state"><i class="bi bi-exclamation-circle cup3-empty-icon"></i><div class="cup3-empty-text">Fehler beim Laden</div></div>');
             }
         });
@@ -1041,7 +1008,7 @@ $(document).ready(function() {
         const pairSize = $('#pair-size').val();
         
         if (pairCount <= 0) {
-            showToast('Bitte geben Sie eine gültige Anzahl ein', 'warning');
+            msvToast('Bitte geben Sie eine gültige Anzahl ein', 'warning');
             return;
         }
         
@@ -1124,16 +1091,16 @@ $(document).ready(function() {
                             loadWinnersForRound2();
                         });
                     });
-                    showToast('Paarung erfolgreich gelöscht', 'success');
+                    msvToast('Paarung erfolgreich gelöscht', 'success');
                 },
                 error: function(xhr, status, error) {
-                    showToast('Fehler beim Löschen der Paarung', 'error');
+                    msvToast('Fehler beim Löschen der Paarung', 'error');
                 }
             });
         } else if (pairItemToDelete) {
             pairItemToDelete.remove();
             updateStats();
-            showToast('Paarung entfernt', 'success');
+            msvToast('Paarung entfernt', 'success');
         }
         
         pairIdToDelete = null;
@@ -1153,11 +1120,11 @@ $(document).ready(function() {
             url: 'cup2/delete_cup.php',
             method: 'POST',
             success: function(response) {
-                showToast('Alle Resultate gelöscht', 'success');
+                msvToast('Alle Resultate gelöscht', 'success');
                 setTimeout(() => location.reload(), 1500);
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Löschen', 'error');
+                msvToast('Fehler beim Löschen', 'error');
             }
         });
         $('#confirmModal').modal('hide');
@@ -1267,11 +1234,11 @@ $(document).ready(function() {
         }
         
         $.when.apply($, promises).done(function() {
-            showToast('Erfolgreich gespeichert!', 'success');
+            msvToast('Erfolgreich gespeichert!', 'success');
             $btn.prop('disabled', false).html(originalHtml);
             setTimeout(() => location.reload(), 1500);
         }).fail(function() {
-            showToast('Fehler beim Speichern!', 'error');
+            msvToast('Fehler beim Speichern!', 'error');
             $btn.prop('disabled', false).html(originalHtml);
         });
     });
@@ -1444,10 +1411,10 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast(winnerId ? 'Nachrücker gesetzt!' : 'Nachrücker entfernt!', 'success');
+                    msvToast(winnerId ? 'Nachrücker gesetzt!' : 'Nachrücker entfernt!', 'success');
                     setTimeout(() => location.reload(), 1000);
                 } else {
-                    showToast('Fehler: ' + response.error, 'error');
+                    msvToast('Fehler: ' + response.error, 'error');
                 }
             }
         });
@@ -1470,13 +1437,13 @@ $(document).ready(function() {
                             <i class="bi bi-download"></i> PDF herunterladen
                         </a>`
                     );
-                    showToast('PDF erfolgreich erstellt', 'success');
+                    msvToast('PDF erfolgreich erstellt', 'success');
                 } else {
-                    showToast('Fehler: ' + response.error, 'error');
+                    msvToast('Fehler: ' + response.error, 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Generieren des PDFs', 'error');
+                msvToast('Fehler beim Generieren des PDFs', 'error');
             }
         });
     });
@@ -1494,12 +1461,12 @@ $(document).ready(function() {
         };
         
         if (!data.participant1_name || !data.participant2_name || !data.participant3_name) {
-            showToast('Bitte alle Namen eingeben', 'warning');
+            msvToast('Bitte alle Namen eingeben', 'warning');
             return;
         }
         
         if (!data.participant1_result || !data.participant2_result || !data.participant3_result) {
-            showToast('Bitte alle Ergebnisse eingeben', 'warning');
+            msvToast('Bitte alle Ergebnisse eingeben', 'warning');
             return;
         }
         
@@ -1510,10 +1477,10 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast('Standcup Final gespeichert!', 'success');
+                    msvToast('Standcup Final gespeichert!', 'success');
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    showToast('Fehler beim Speichern', 'error');
+                    msvToast('Fehler beim Speichern', 'error');
                 }
             }
         });

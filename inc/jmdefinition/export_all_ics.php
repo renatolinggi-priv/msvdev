@@ -167,7 +167,6 @@ echo json_encode([
 ]);
 exit();
 
-
 function icsEscape($text) {
     $text = str_replace('\\', '\\\\', $text);  // Backslashes zuerst ersetzen
     $text = str_replace(';', '\;', $text);

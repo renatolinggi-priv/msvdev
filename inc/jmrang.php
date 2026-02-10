@@ -210,35 +210,10 @@ include 'header.inc.php';
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <script>
 $(document).ready(function() {
     const basePath = '';
     const currentYear = new Date().getFullYear();
-
-    // Toast-Funktion (standardisierte Version)
-    function showToast(message, type = 'info') {
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-        }
-        
-        const toast = $('<div>')
-            .addClass(`toast-message toast-${type}`)
-            .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>${message}`);
-
-        $('#toast-container').append(toast);
-
-        setTimeout(() => {
-            toast.addClass('show');
-        }, 100);
-
-        setTimeout(() => {
-            toast.removeClass('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
 
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
@@ -291,7 +266,7 @@ $(document).ready(function() {
                     if (parsed.thead && parsed.tbody) {
                         updateTable(targetSelector, parsed.thead, parsed.tbody);
                     } else if (parsed.error) {
-                        showToast(parsed.error, 'error');
+                        msvToast(parsed.error, 'error');
                         $(targetSelector).find('tbody').html(
                             '<tr><td colspan="100%" class="text-center text-danger">' +
                             '<i class="bi bi-exclamation-triangle me-2"></i>' +
@@ -309,7 +284,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Fehler beim Laden von ' + url + ':', error);
-                showToast('Fehler beim Laden der Daten.', 'error');
+                msvToast('Fehler beim Laden der Daten.', 'error');
                 $(targetSelector).find('tbody').html(
                     '<tr><td colspan="100%" class="text-center text-danger">' +
                     '<i class="bi bi-exclamation-triangle me-2"></i>' +
@@ -338,7 +313,7 @@ $(document).ready(function() {
     // Event-Handler für Jahresauswahl
     $('#yearSelect').on('change', function() {
         const selectedYear = $(this).val();
-        showToast('Lade Daten für Jahr ' + selectedYear, 'info');
+        msvToast('Lade Daten für Jahr ' + selectedYear, 'info');
         loadJMA(selectedYear);
         loadJMB(selectedYear);
     });
@@ -389,13 +364,13 @@ $(document).ready(function() {
                     
                     // PDF-Link Container leeren nach Download
                     $('#pdf-link').empty();
-                    showToast('PDF wurde erfolgreich generiert!', 'success');
+                    msvToast('PDF wurde erfolgreich generiert!', 'success');
                 } else {
-                    showToast('PDF konnte nicht generiert werden.', 'error');
+                    msvToast('PDF konnte nicht generiert werden.', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+                msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -431,13 +406,13 @@ $(document).ready(function() {
                     
                     // PDF-Link Container leeren nach Download
                     $('#pdf-link').empty();
-                    showToast('PDF wurde erfolgreich generiert!', 'success');
+                    msvToast('PDF wurde erfolgreich generiert!', 'success');
                 } else {
-                    showToast('PDF konnte nicht generiert werden.', 'error');
+                    msvToast('PDF konnte nicht generiert werden.', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+                msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -466,7 +441,7 @@ $(document).ready(function() {
         const rang = $(this).find('td:first-child').text();
         const total = $(this).find('td:last-child').text();
         
-        showToast(`${name} - Rang: ${rang} - Total: ${total}`, 'info');
+        msvToast(`${name} - Rang: ${rang} - Total: ${total}`, 'info');
     });
 
     // Export als CSV Funktionalität (optional)
@@ -508,7 +483,7 @@ $(document).ready(function() {
     
     // $(document).on('click', '.export-csv-a', function() {
     //     exportTableToCSV('JMA', 'jahresmeisterschaft_kat_a.csv');
-    //     showToast('CSV-Export erfolgreich!', 'success');
+    //     msvToast('CSV-Export erfolgreich!', 'success');
     // });
 });
 </script>

@@ -1,7 +1,7 @@
 <?php
 // PDFGenerator.php - Zentrale Klasse für alle PDF-Generierungen
 
-require_once '../dompdf/autoload.php';
+require_once '../vendor/autoload.php';
 
 // Nur includen wenn noch nicht geladen
 if (!defined('DB_HOST')) {

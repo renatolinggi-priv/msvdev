@@ -236,11 +236,11 @@ if (empty($_SESSION['csrf_token'])) {
               <div class="alert alert-info mt-3">
                 <small><i class="bi bi-info-circle me-1"></i>
                 <strong>Hinweise zum "Sie und Er" Stich:</strong><br>
-                • Besteht aus 5 Schüssen der Partnerin (hier erfassen) + 5 Schüssen des Mitglieds<br>
-                • <span class="badge bg-warning text-dark">Spezielle Berechnung:</span> Jeder Wert zählt nur 1x (Unique-Logik)<br>
-                • <span style="color: #28a745;">✓ Grüner Rand</span> = Wert wird gezählt<br>
-                • <span style="color: #dc3545;">✗ Roter Rand</span> = Duplikat (zählt nicht)<br>
-                • Die 5 Mitglied-Schüsse (Position 6-10) werden separat bei den Mitglied-Resultaten erfasst
+                â€¢ Besteht aus 5 Schüssen der Partnerin (hier erfassen) + 5 Schüssen des Mitglieds<br>
+                â€¢ <span class="badge bg-warning text-dark">Spezielle Berechnung:</span> Jeder Wert zählt nur 1x (Unique-Logik)<br>
+                â€¢ <span style="color: #28a745;">âœ“ Grüner Rand</span> = Wert wird gezählt<br>
+                â€¢ <span style="color: #dc3545;">âœ— Roter Rand</span> = Duplikat (zählt nicht)<br>
+                â€¢ Die 5 Mitglied-Schüsse (Position 6-10) werden separat bei den Mitglied-Resultaten erfasst
                 </small>
               </div>
             </div>
@@ -823,7 +823,6 @@ $(document).ready(function() {
         // Weiterleiten
         window.location.href = targetUrl;
     });
-
 
     // Global Scroll aktivieren
     MSV.enableGlobalScroll();

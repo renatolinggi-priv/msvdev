@@ -1,7 +1,7 @@
 <?php
 
 //generate_schuetzenabr_xls.php
-require '../spreadsheet/autoload.php'; // Pfad zu Composer's autoload Datei
+require '../vendor/autoload.php'; // Pfad zu Composer's autoload Datei
 require '../config.php'; // Deine Konfigurationsdatei
 require 'functions.inc.php';
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -12,7 +12,6 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing; // Klasse für das Zeichnen von Bildern
-
 
 // Jahr-Parameter verarbeiten
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
@@ -54,7 +53,6 @@ while ($schuetze = $schuetzen->fetch_assoc()) {
     $sheet->getStyle('A3:C3')->getAlignment()->setWrapText(true);
     $sheet->getStyle($ZelleName)->getFont()->setName('Arial')->setSize(13)->setBold(true);
   
-
     // Kopfzeile fett formatieren
     $sheet->getStyle('A1:B1')->getFont()->setBold(true);
     $sheet->getStyle('A8:A8')->getFont()->setBold(true);
@@ -149,17 +147,13 @@ while ($schuetze = $schuetzen->fetch_assoc()) {
     $sheet->setCellValue('A' .$Zelle, "Betrag erhalten: ");
     $Zelle -= 6;
 
-
-
        // Spalten B und C als Währung (CHF) formatieren
     $chfFormat = '[$CHF] #,##0.00'; // Währungsformat für CHF
     $sheet->getStyle('B' .$ZelleStart .':B' .$Zelle)->getNumberFormat()->setFormatCode($chfFormat);
     $sheet->getStyle('C' .$ZelleStart .':C' .$Zelle)->getNumberFormat()->setFormatCode($chfFormat);
 
-
     // Zellen zentrieren
     $sheet->getStyle('A1:B5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-
 
     // Zelleninhalte rechtsbündig machen
     $sheet->getStyle('A3:C3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT); 

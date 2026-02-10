@@ -22,11 +22,11 @@ $sql = "
     JOIN Waffen w ON m.WaffenID = w.ID
     WHERE m.Status = 1
     AND m.ID NOT IN (
-        SELECT Participant1 FROM cupPairs WHERE Round = 1 AND Year = $year
+        SELECT Participant1 FROM cupPairs WHERE Round = 1 AND Year = ?
         UNION
-        SELECT Participant2 FROM cupPairs WHERE Round = 1 AND Year = $year
+        SELECT Participant2 FROM cupPairs WHERE Round = 1 AND Year = ?
         UNION
-        SELECT Participant3 FROM cupPairs WHERE Round = 1 AND Year = $year AND Participant3 IS NOT NULL
+        SELECT Participant3 FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
     )";
 
 // Wenn nur ein Kat. B Schütze existiert, diesen auch ausschließen
@@ -36,7 +36,10 @@ if ($katb_count == 1) {
 
 $sql .= " ORDER BY m.Name ASC, m.Vorname ASC";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("iii", $year, $year, $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $participants = [];
 if ($result->num_rows > 0) {

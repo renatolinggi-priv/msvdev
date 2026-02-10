@@ -72,12 +72,10 @@ include 'header.inc.php';
                             <i class="bi bi-file-earmark-arrow-up me-2"></i>
                             CSV Import - Heim- und Kantimeisterschaft
                         </h2>
-                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload → Auswahl → Import</p>
+                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload â†’ Auswahl â†’ Import</p>
                     </div>
                 </div>
                 
-               
-                    
                     <!-- Phase 1: Upload -->
                     <div id="phase1" class="workflow-phase active">
                         <div class="upload-area" id="uploadArea">
@@ -224,9 +222,6 @@ include 'header.inc.php';
         </div>
     </div>
 </div>
-
-<!-- Toast Container -->
-<div id="toast-container"></div>
 
 <!-- CSRF Token für JavaScript -->
 <script>

@@ -94,18 +94,7 @@ window.InterneStiche = (function(){
   }
 
   function toast(msg, type){
-    const cls = {
-      success: 'toast-success',
-      error:   'toast-error',
-      warning: 'toast-warning',
-      info:    'toast-info'
-    }[type] || 'toast-info';
-
-    const $c = $('#toast-container');
-    const $t = $(`<div class="toast-message ${cls}">${msg}</div>`);
-    $c.append($t);
-    setTimeout(() => $t.addClass('show'), 20);
-    setTimeout(() => { $t.removeClass('show'); $t.remove(); }, 3000);
+    msvToast(msg, type);
   }
 
   function bind(){

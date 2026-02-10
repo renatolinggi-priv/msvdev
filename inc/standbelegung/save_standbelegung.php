@@ -2,17 +2,25 @@
 // save_standbelegung.php - Speichert Standbelegung in die Datenbank (mit Upsert)
 require_once '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
+    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input || !isset($input['termine']) || !is_array($input['termine'])) {
-    echo json_encode(['success' => false, 'error' => 'Keine Daten empfangen']);
+    echo json_encode(['success' => false, 'message' => 'Keine Daten empfangen']);
     exit;
 }
 
@@ -95,7 +103,7 @@ try {
     
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
 $conn->close();

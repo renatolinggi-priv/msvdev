@@ -411,69 +411,11 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>
-
 <script>
 $(document).ready(function() {
     var siegerId = null;
 
-    // Toast Container hinzufügen falls nicht vorhanden
-    if ($('#toast-container').length === 0) {
-        $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-    }
 
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const colors = {
-            'success': '#28a745',
-            'error': '#dc3545',
-            'warning': '#ffc107',
-            'info': '#6c757d'
-        };
-        
-        const icons = {
-            'success': 'bi-check-circle',
-            'error': 'bi-exclamation-circle',
-            'warning': 'bi-exclamation-triangle',
-            'info': 'bi-info-circle'
-        };
-        
-        const toast = $('<div>')
-            .css({
-                'background-color': colors[type] || colors.info,
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '6px',
-                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                'font-weight': '500',
-                'display': 'flex',
-                'align-items': 'center',
-                'min-width': '250px'
-            })
-            .html(`<i class="bi ${icons[type]} me-2"></i>${message}`);
-        
-        $('#toast-container').append(toast);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '1',
-                'transform': 'translateX(0)'
-            });
-        }, 100);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
 
     // Sieger für Jahr laden
     function loadSieger(year) {
@@ -492,7 +434,7 @@ $(document).ready(function() {
             data: { year: year },
             success: function(response) {
                 $('#siegerTableContainer').html(response);
-                showToast('Sieger erfolgreich geladen', 'success');
+                msvToast('Sieger erfolgreich geladen', 'success');
             },
             error: function(xhr, status, error) {
                 $('#siegerTableContainer').html(`
@@ -501,7 +443,7 @@ $(document).ready(function() {
                         Fehler beim Laden der Sieger
                     </div>
                 `);
-                showToast('Fehler beim Laden der Sieger', 'error');
+                msvToast('Fehler beim Laden der Sieger', 'error');
             }
         });
     }
@@ -527,7 +469,7 @@ $(document).ready(function() {
         var year = $('#year').val();
 
         if (!memberId || !wert || !siegerdef || !year) {
-            showToast('Bitte alle Felder ausfüllen', 'warning');
+            msvToast('Bitte alle Felder ausfüllen', 'warning');
             $submitBtn.prop('disabled', false).html(originalText);
             return;
         }
@@ -546,7 +488,7 @@ $(document).ready(function() {
                 try {
                     const jsonResponse = JSON.parse(response);
                     if (jsonResponse.success) {
-                        showToast('Sieger erfolgreich hinzugefügt!', 'success');
+                        msvToast('Sieger erfolgreich hinzugefügt!', 'success');
                         // Formular zurücksetzen
                         $('#member').val('');
                         $('#wert').val('');
@@ -555,10 +497,10 @@ $(document).ready(function() {
                         // Liste neu laden
                         setTimeout(() => loadSieger(year), 500);
                     } else {
-                        showToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
                     }
                 } catch (e) {
-                    showToast('Sieger erfolgreich hinzugefügt!', 'success');
+                    msvToast('Sieger erfolgreich hinzugefügt!', 'success');
                     $('#member').val('');
                     $('#wert').val('');
                     $('#siegerdef').val('');
@@ -566,7 +508,7 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Hinzufügen des Siegers', 'error');
+                msvToast('Fehler beim Hinzufügen des Siegers', 'error');
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
@@ -601,19 +543,19 @@ $(document).ready(function() {
                     const jsonResponse = JSON.parse(response);
                     if (jsonResponse.success) {
                         $('#confirmModal').modal('hide');
-                        showToast('Sieger erfolgreich gelöscht', 'success');
+                        msvToast('Sieger erfolgreich gelöscht', 'success');
                         setTimeout(() => loadSieger($('#filterYear').val()), 500);
                     } else {
-                        showToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
                     }
                 } catch (e) {
                     $('#confirmModal').modal('hide');
-                    showToast('Sieger erfolgreich gelöscht', 'success');
+                    msvToast('Sieger erfolgreich gelöscht', 'success');
                     setTimeout(() => loadSieger($('#filterYear').val()), 500);
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Löschen des Siegers', 'error');
+                msvToast('Fehler beim Löschen des Siegers', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

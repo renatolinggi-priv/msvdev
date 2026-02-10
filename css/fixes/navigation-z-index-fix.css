@@ -70,11 +70,6 @@ nav.navbar {
     z-index: 8 !important;
 }
 
-/* Toast-Nachrichten - sehr hoch aber unter Modals */
-#toast-container {
-    z-index: 1045 !important;
-}
-
 /* Session Warning */
 .session-warning {
     z-index: 1045 !important;

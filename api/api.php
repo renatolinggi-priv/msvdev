@@ -98,7 +98,7 @@ switch ($endpoint) {
                 'year' => $year,
                 'programm' => $programm,
                 'zusatztext' => $zusatztext,
-                'pdf_url' => "https://jahresmeisterschaft.msvwilen.ch/api/pdf_download.php?year=$year"
+                'pdf_url' => "https://jahresmeisterschaft.msvwilen.ch/inc/jmdefinition/export_jmdefinition_pdf.php?year=$year"
             ]);
             
         } catch (Exception $e) {

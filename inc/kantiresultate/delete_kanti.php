@@ -1,7 +1,15 @@
 
-
 <?php
 include '../config.php';
+
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die('Ungültige Anfrage');
+}
+
 $jahr = isset($_POST['jahr']) ? $_POST['jahr'] : date('Y'); // Jahr wird aus der POST-Anfrage übernommen, falls nicht gesetzt, Standardwert ist das aktuelle Jahr
 // Prüfen, ob die Verbindung erfolgreich ist
 if ($conn->connect_error) {

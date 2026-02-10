@@ -1,7 +1,7 @@
 <?php
 // export_jmdefinition_pdf.php
 
-require '../dompdf/autoload.php'; // Pfad zu Composer's Autoload Datei
+require '../vendor/autoload.php'; // Pfad zu Composer's Autoload Datei
 include '../config.php'; // Datenbankverbindung
 
 use Dompdf\Dompdf;
@@ -54,7 +54,6 @@ function extractDaysAndMonths($schiesstage)
         'months' => $uniqueMonths
     ];
 }
-
 
 // Lade das Logo (optional)
 $logoBase64 = imgToBase64('../dat/SKSG_Logo.jpg'); // Passe den Pfad zum Logo an
@@ -122,8 +121,6 @@ if (empty($jmdefinitions)) {
     echo json_encode(['success' => false, 'message' => "Keine Daten für das Jahr $currentYear gefunden."]);
     exit;
 }
-
-
 
 // HTML-Template für das PDF
 ob_start();
@@ -274,16 +271,12 @@ ob_start();
                         } elseif ($isStreicher == 1) {
                             echo 'X'; // Falls Streicher = 1, dann X setzen
                         } elseif ($isErweitert == 0 && $isInfo == 0) {
-                            echo 'X'; // Falls Erweitert = 0 UND Info = 0 → X setzen
+                            echo 'X'; // Falls Erweitert = 0 UND Info = 0 â†’ X setzen
                         } else {
                             echo ''; // Falls keine Bedingung erfüllt ist, bleibt das Feld leer
                         }
                         ?>
                     </td>
-
-
-
-
 
                     <td align="center">
                         <?php echo $jm['Erweitert'] ? 'X' : ''; ?>

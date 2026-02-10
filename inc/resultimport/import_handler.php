@@ -2,17 +2,7 @@
 // import_handler.php - Backend-Logik für CSV Import
 session_start();
 require_once '../dbconnect.inc.php';
-
-// Datenbankverbindung herstellen (für diese Datei)
-$servername = "bdebbd4.mysql.db.internal";
-$username = "bdebbd4_msvjm";
-$password = "xx*97ubWcy+HnLWyf6PW";
-$dbname = "bdebbd4_msvjm";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// $conn wird von dbconnect.inc.php bereitgestellt
 
 // Mitglied anhand Lizenznummer finden
 // WICHTIG: Die ID in der mitglieder Tabelle IST die Lizenznummer!

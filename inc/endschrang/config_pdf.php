@@ -59,10 +59,9 @@ $header = '<!DOCTYPE html>
         }
     </style>';
 
-
 $footer = '</div>
     <div class="footer">
-        <p>© ' . date("Y") . ' MSV Wilen. Alle Rechte vorbehalten.</p>
+        <p>Â© ' . date("Y") . ' MSV Wilen. Alle Rechte vorbehalten.</p>
     </div>
     </body>
     </html>';

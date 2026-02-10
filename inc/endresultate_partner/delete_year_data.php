@@ -10,11 +10,18 @@
 session_start();
 include '../config.php';
 
+// CSRF-Schutz
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 header('Content-Type: application/json');
 
 // Überprüfe ob Jahr übergeben wurde
 if (!isset($_POST['year'])) {
-    echo json_encode(['success' => false, 'error' => 'Jahr fehlt']);
+    echo json_encode(['success' => false, 'message' => 'Jahr fehlt']);
     exit;
 }
 
@@ -48,7 +55,7 @@ try {
         $conn->rollback();
         echo json_encode([
             'success' => false, 
-            'error' => 'Keine Einträge für das Jahr ' . $year . ' gefunden'
+            'message' => 'Keine Einträge für das Jahr ' . $year . ' gefunden'
         ]);
         exit;
     }
@@ -94,7 +101,7 @@ try {
     
     echo json_encode([
         'success' => false, 
-        'error' => $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }
 

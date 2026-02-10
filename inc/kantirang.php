@@ -125,9 +125,6 @@ include 'header.inc.php';
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <script>
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
@@ -259,7 +256,7 @@ include 'header.inc.php';
                     $('#pdf-link').html('<a href="' + wordLink + '" target="_blank">Word herunterladen</a>');
                 },
                 error: function(xhr, status, error) {
-                    alert('Fehler beim Generieren des Word-Dokuments: ' + error);
+                    msvError('Fehler beim Generieren des Word-Dokuments: ' + error);
                 }
             });
         });

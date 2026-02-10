@@ -2,6 +2,15 @@
 //save_jshelfer.php
 header('Content-Type: application/json');
 include '../config.php';
+
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 file_put_contents('debug_post.txt', print_r($_POST, true));
 
 // POST-Daten auslesen
@@ -9,7 +18,7 @@ $wilen     = $_POST['helferWilen']    ?? [];
 $wollerau  = $_POST['helferWollerau'] ?? [];
 
 if (empty($wilen) && empty($wollerau)) {
-    echo json_encode(['error' => 'Keine Daten übermittelt.']);
+    echo json_encode(['message' => 'Keine Daten übermittelt.']);
     exit;
 }
 
@@ -93,7 +102,7 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['error' => 'Fehler beim Speichern: ' . $e->getMessage()]);
+    echo json_encode(['message' => 'Fehler beim Speichern: ' . $e->getMessage()]);
 }
 
 $conn->close();

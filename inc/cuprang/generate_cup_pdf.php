@@ -11,7 +11,7 @@ ini_set('display_errors', 0);
 
 try {
     // Includes
-    require '../dompdf/autoload.php';
+    require '../vendor/autoload.php';
     include '../config.php';
     
     if (!isset($conn) && function_exists('get_db_connection')) {

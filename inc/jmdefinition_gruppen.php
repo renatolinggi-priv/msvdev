@@ -483,55 +483,7 @@ if (empty($_SESSION['csrf_token'])) {
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Toast Container hinzufügen
-    if ($('#toast-container').length === 0) {
-        $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-    }
 
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const colors = {
-            'success': '#28a745',
-            'error': '#dc3545',
-            'warning': '#ffc107',
-            'info': '#6c757d'  // Geändert von blau zu grau
-        };
-        
-        const toast = $('<div>')
-            .css({
-                'background-color': colors[type] || colors.info,
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '6px',
-                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                'font-weight': '500',
-                'display': 'flex',
-                'align-items': 'center',
-                'min-width': '250px'
-            })
-            .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>${message}`);
-        
-        $('#toast-container').append(toast);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '1',
-                'transform': 'translateX(0)'
-            });
-        }, 100);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
 
     ////////////////////////
     // 1) Initialisierung //
@@ -724,15 +676,15 @@ $(document).ready(function() {
                     data.forEach(function(ev) {
                         eventSelect.append($('<option></option>').val(ev.ID).text(ev.Bezeichnung));
                     });
-                    showToast('Anlässe erfolgreich geladen', 'success');
+                    msvToast('Anlässe erfolgreich geladen', 'success');
                 } else {
                     eventSelect.append($('<option></option>').val('').text('Keine Anlässe gefunden'));
-                    showToast('Keine Gruppen-Anlässe gefunden', 'warning');
+                    msvToast('Keine Gruppen-Anlässe gefunden', 'warning');
                 }
             },
             error: function(xhr, status, error) {
                 console.error("AJAX Error:", xhr.responseText); // DEBUG
-                showToast("Fehler beim Laden der Anlässe: " + error, 'error');
+                msvToast("Fehler beim Laden der Anlässe: " + error, 'error');
             }
         });
     }
@@ -787,7 +739,7 @@ $(document).ready(function() {
 
                         container.append(card);
                     });
-                    showToast('Gruppen erfolgreich geladen', 'success');
+                    msvToast('Gruppen erfolgreich geladen', 'success');
                 } else {
                     container.html(`
                         <div class="text-center text-muted py-3">
@@ -804,7 +756,7 @@ $(document).ready(function() {
                         Fehler beim Laden der Gruppen
                     </div>
                 `);
-                showToast("Fehler beim Laden der Gruppen: " + error, 'error');
+                msvToast("Fehler beim Laden der Gruppen: " + error, 'error');
             }
         });
     }
@@ -836,7 +788,7 @@ $(document).ready(function() {
                         availableContainer.append($member);
                     });
                     setupDragDrop();
-                    showToast('Mitglieder erfolgreich geladen', 'success');
+                    msvToast('Mitglieder erfolgreich geladen', 'success');
                 } else {
                     availableContainer.html(`
                         <div class="text-center text-muted w-100 py-3">
@@ -854,7 +806,7 @@ $(document).ready(function() {
                         Fehler beim Laden der Mitglieder
                     </div>
                 `);
-                showToast("Fehler beim Laden der Mitglieder: " + error, 'error');
+                msvToast("Fehler beim Laden der Mitglieder: " + error, 'error');
             }
         });
     }
@@ -888,7 +840,7 @@ $(document).ready(function() {
     //////////////////////////
 
     function editGroup(groupID) {
-        showToast('Lade Gruppendaten...', 'info');
+        msvToast('Lade Gruppendaten...', 'info');
         $.ajax({
             url: 'jmdefinition/get_group_details.php',
             method: 'GET',
@@ -896,14 +848,14 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(groupData) {
                 if(!groupData || !groupData.ID) {
-                    showToast("Keine Daten gefunden für Gruppe " + groupID, 'error');
+                    msvToast("Keine Daten gefunden für Gruppe " + groupID, 'error');
                     return;
                 }
                 fillGroupEditForm(groupData);
-                showToast('Gruppe wird bearbeitet', 'success');
+                msvToast('Gruppe wird bearbeitet', 'success');
             },
             error: function(xhr, status, error) {
-                showToast("Fehler beim Laden der Gruppe: " + error, 'error');
+                msvToast("Fehler beim Laden der Gruppe: " + error, 'error');
             }
         });
     }
@@ -971,13 +923,13 @@ $(document).ready(function() {
         });
 
         if(!gruppenname || !eventID) {
-            showToast("Bitte Gruppenname und Anlass wählen.", 'warning');
+            msvToast("Bitte Gruppenname und Anlass wählen.", 'warning');
             $submitBtn.prop('disabled', false).html(originalText);
             return;
         }
 
         if(mitgliederIDs.length === 0) {
-            showToast("Bitte mindestens ein Mitglied zur Gruppe hinzufügen.", 'warning');
+            msvToast("Bitte mindestens ein Mitglied zur Gruppe hinzufügen.", 'warning');
             $submitBtn.prop('disabled', false).html(originalText);
             return;
         }
@@ -1001,18 +953,18 @@ $(document).ready(function() {
             data: requestData,
             success: function(response) {
                 if(response.success) {
-                    showToast(editId ? "Gruppe erfolgreich aktualisiert!" : "Gruppe erfolgreich erstellt!", 'success');
+                    msvToast(editId ? "Gruppe erfolgreich aktualisiert!" : "Gruppe erfolgreich erstellt!", 'success');
                     resetForm();
                     setTimeout(() => {
                         loadExistingGroups(eventID, jahr);
                         loadAvailableMembers(eventID, jahr);
                     }, 500);
                 } else if(response.error) {
-                    showToast("Fehler: " + response.error, 'error');
+                    msvToast("Fehler: " + response.error, 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast("Fehler beim Speichern der Gruppe: " + error, 'error');
+                msvToast("Fehler beim Speichern der Gruppe: " + error, 'error');
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
@@ -1023,12 +975,11 @@ $(document).ready(function() {
     //////////////////////////
     // 5) Löschen-Funktion  //
     //////////////////////////
-    function deleteGroup(groupId) {
-        if(!confirm("Möchten Sie diese Gruppe wirklich löschen?")) {
-            return;
-        }
-        
-        showToast('Lösche Gruppe...', 'info');
+    async function deleteGroup(groupId) {
+        const result = await msvConfirmDelete('diese Gruppe');
+        if (!result.isConfirmed) return;
+
+        msvToast('Lösche Gruppe...', 'info');
         $.ajax({
             url: 'jmdefinition/delete_gruppe.php',
             method: 'POST',
@@ -1040,7 +991,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('div.group-card[data-groupid="' + groupId + '"]').remove();
-                    showToast("Gruppe wurde erfolgreich gelöscht.", 'success');
+                    msvToast("Gruppe wurde erfolgreich gelöscht.", 'success');
                     // Mitglieder neu laden
                     let eventID = $('#eventSelect').val();
                     let jahr = $('#yearSelect').val();
@@ -1048,11 +999,11 @@ $(document).ready(function() {
                         loadAvailableMembers(eventID, jahr);
                     }
                 } else if (response.error) {
-                    showToast("Fehler: " + response.error, 'error');
+                    msvToast("Fehler: " + response.error, 'error');
                 }
             },
             error: function(xhr, status, error) {
-                showToast("Fehler beim Löschen der Gruppe: " + error, 'error');
+                msvToast("Fehler beim Löschen der Gruppe: " + error, 'error');
             }
         });
     }
@@ -1076,7 +1027,7 @@ $(document).ready(function() {
         if (eventID) {
             loadAvailableMembers(eventID, jahr);
         }
-        showToast('Formular zurückgesetzt', 'info');
+        msvToast('Formular zurückgesetzt', 'info');
     });
 
     // Neuen Anlass hinzufügen
@@ -1096,7 +1047,7 @@ $(document).ready(function() {
         var year = $('#yearSelect').val() || new Date().getFullYear();
 
         if (!bezeichnung) {
-            showToast('Bitte Anlassname eingeben', 'warning');
+            msvToast('Bitte Anlassname eingeben', 'warning');
             $btn.prop('disabled', false).html(originalText);
             return;
         }
@@ -1117,7 +1068,7 @@ $(document).ready(function() {
                 csrf_token: $('input[name="csrf_token"]').val()
             },
             success: function(response) {
-                showToast('Anlass erfolgreich hinzugefügt!', 'success');
+                msvToast('Anlass erfolgreich hinzugefügt!', 'success');
                 
                 $('#newAnlassModal').modal('hide');
                 
@@ -1130,7 +1081,7 @@ $(document).ready(function() {
                 setTimeout(() => loadEventDropdown(year), 500);
             },
             error: function() {
-                showToast('Fehler beim Hinzufügen des Anlasses', 'error');
+                msvToast('Fehler beim Hinzufügen des Anlasses', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

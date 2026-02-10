@@ -24,7 +24,9 @@ if ($conn->connect_error) {
  */
 function getResults($kat, $selectedYear) {
     global $conn;
-    
+
+    $katValue = 'Kat. ' . $kat;
+
     // Hier folgt die komplexe SQL-Abfrage.
     $sql = "SELECT
         m.Name,
@@ -65,18 +67,21 @@ function getResults($kat, $selectedYear) {
                       s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6)
         ) AS GesamtTotal
     FROM mitglieder m
-    LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = $selectedYear
-    LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = $selectedYear
-    LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = $selectedYear
-    LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = $selectedYear
-    LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = $selectedYear
+    LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
+    LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
+    LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = ?
+    LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = ?
+    LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
     LEFT JOIN Waffen w ON w.ID = m.WaffenID
-    WHERE w.Kategorie = 'Kat. $kat'
-      AND e.Jahr = $selectedYear
+    WHERE w.Kategorie = ?
+      AND e.Jahr = ?
     GROUP BY m.ID, m.Vorname, m.Name
     ORDER BY GesamtTotal DESC, EndstichTotal DESC, m.Geburtsdatum ASC";
     
-    $result = $conn->query($sql);
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iiiiisi", $selectedYear, $selectedYear, $selectedYear, $selectedYear, $selectedYear, $katValue, $selectedYear);
+    $stmt->execute();
+    $result = $stmt->get_result();
     return $result;
 }
 

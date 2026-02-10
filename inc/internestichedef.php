@@ -13,20 +13,6 @@ $sql = "SELECT * FROM mitglieder ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
 
 $page_specific_css = '
-#toast-container{
-  position: fixed;
-  top: calc(var(--toast-top, 76px) + 8px) !important;
-  right: 16px !important;
-  left: auto !important;
-  z-index: 9999 !important;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  pointer-events: none;
-}
-#toast-container .toast-message{ pointer-events: auto; }
-
 /* Erste Spalte linksbündig */
 #stichdefTabelle td:first-child,
 #stichdefTabelle th:first-child {
@@ -36,7 +22,6 @@ $page_specific_css = '
 
 include 'header.inc.php';
 ?>
-
 
 <!-- Result Import CSV Hauptbereich -->
 <div class="container-fluid">
@@ -78,7 +63,7 @@ include 'header.inc.php';
 
                     <!-- Tabelle -->
                     <div class="table-wrapper">
-                        <h3 class="table-title">Interne Stiche – Stichnummern</h3>
+                        <h3 class="table-title">Interne Stiche â€“ Stichnummern</h3>
                         <div class="table-responsive">
                             <table id="stichdefTabelle" class="table table-striped table-bordered align-middle">
                                 <thead>
@@ -95,15 +80,15 @@ include 'header.inc.php';
                                             <td><strong><?= htmlspecialchars($s) ?></strong></td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr1-input"
-                                                    placeholder="—">
+                                                    placeholder="â€”">
                                             </td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr2-input"
-                                                    placeholder="—">
+                                                    placeholder="â€”">
                                             </td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr3-input"
-                                                    placeholder="—">
+                                                    placeholder="â€”">
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -111,7 +96,6 @@ include 'header.inc.php';
                             </table>
                         </div>
                     </div>
-
 
                 </div>
             </div>
@@ -152,13 +136,10 @@ include 'header.inc.php';
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
 <!-- CSRF Token für JavaScript -->
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
 </script>
-
 
 <!-- JavaScript für Interne Stiche -->
 <script src="internestichedef/stiche.js?v=<?= time(); ?>"></script>

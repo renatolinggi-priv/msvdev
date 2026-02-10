@@ -8,7 +8,7 @@
 
 ob_start();
 
-require_once '../dompdf/autoload.php';  // Pfad zu Dompdf
+require_once '../vendor/autoload.php';  // Pfad zu Dompdf
 require_once '../config.php';           // Stellt $conn (mysqli) bereit
 require_once 'config_pdf.php';          // Enthält $header, $footer, CSS etc.
 
@@ -55,7 +55,6 @@ ob_end_clean();
 echo json_encode(['pdf_link' => 'fragebogen/' . $pdfFilePath]);
 exit();
 
-
 // ========================================================================
 // Funktion buildFragebogenTableForPDF($year, $conn)
 // Baut eine HTML-Tabelle mit Fragebogendaten (als reiner Text) 
@@ -66,7 +65,7 @@ exit();
 // ========================================================================
 function buildFragebogenTableForPDF($year, $conn)
 {
-    // 1) Mitglieder laden – inkl. Waffenkategorie (aus Tabelle Waffen)
+    // 1) Mitglieder laden â€“ inkl. Waffenkategorie (aus Tabelle Waffen)
     $sqlM = "
         SELECT m.ID, m.Vorname, m.Name, m.WaffenID, w.Kategorie
         FROM mitglieder m

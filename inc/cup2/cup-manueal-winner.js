@@ -253,7 +253,7 @@ function saveManualWinner() {
     const reason = $('#manual_reason').val().trim();
     
     if (selectedWinner === undefined) {
-        alert('Bitte wähle einen Teilnehmer aus.');
+        msvToast('Bitte wähle einen Teilnehmer aus.', 'warning');
         return;
     }
     
@@ -291,11 +291,19 @@ function saveManualWinner() {
 /**
  * Löscht eine Paarung
  */
-function deletePair(pairId) {
-    if (!confirm('Möchtest du diese Paarung wirklich löschen?\n\nAchtung: Alle abhängigen Einträge (Runde 2, Finale) werden ebenfalls gelöscht!')) {
-        return;
-    }
-    
+async function deletePair(pairId) {
+    const result = await Swal.fire({
+        title: 'Paarung löschen',
+        html: 'Möchtest du diese Paarung wirklich löschen?<br><br><strong>Achtung:</strong> Alle abhängigen Einträge (Runde 2, Finale) werden ebenfalls gelöscht!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ja, löschen',
+        cancelButtonText: 'Abbrechen'
+    });
+    if (!result.isConfirmed) return;
+
     showLoading();
     
     $.ajax({

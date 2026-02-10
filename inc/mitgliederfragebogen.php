@@ -477,176 +477,10 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>
-
 <script>
     $(document).ready(function () {
         let currentYear = new Date().getFullYear();
         let basePath = ''; // Falls du einen Pfadprefix hast
-
-        // Toast Container hinzufügen falls nicht vorhanden
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-        }
-
-        // Erweiterte Toast-Funktion mit mehr Optionen
-        function showToast(message, type = 'info', duration = 4000) {
-            const colors = {
-                'success': '#28a745',
-                'error': '#dc3545',
-                'warning': '#ffc107',
-                'info': '#6c757d'
-            };
-
-            const icons = {
-                'success': 'bi-check-circle-fill',
-                'error': 'bi-exclamation-circle-fill',
-                'warning': 'bi-exclamation-triangle-fill',
-                'info': 'bi-info-circle-fill'
-            };
-
-            // Toast-ID für Duplikate-Vermeidung
-            const toastId = btoa(message + type).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
-
-            // Prüfe ob dieser Toast bereits angezeigt wird
-            if ($(`#toast-${toastId}`).length > 0) {
-                return;
-            }
-
-            const toast = $('<div>')
-                .attr('id', `toast-${toastId}`)
-                .css({
-                    'background-color': colors[type] || colors.info,
-                    'color': 'white',
-                    'padding': '14px 20px',
-                    'margin-bottom': '10px',
-                    'border-radius': '8px',
-                    'box-shadow': '0 6px 16px rgba(0,0,0,0.2)',
-                    'opacity': '0',
-                    'transform': 'translateX(100%)',
-                    'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                    'font-weight': '500',
-                    'display': 'flex',
-                    'align-items': 'center',
-                    'min-width': '280px',
-                    'max-width': '400px',
-                    'word-wrap': 'break-word',
-                    'position': 'relative',
-                    'overflow': 'hidden'
-                })
-                .html(`
-            <i class="bi ${icons[type]} me-2" style="font-size: 1.2rem;"></i>
-            <span style="flex: 1;">${message}</span>
-            <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.8rem;"></button>
-        `);
-
-            // Progress Bar für Timing-Visualisierung
-            const progressBar = $('<div>')
-                .css({
-                    'position': 'absolute',
-                    'bottom': '0',
-                    'left': '0',
-                    'height': '3px',
-                    'background-color': 'rgba(255,255,255,0.3)',
-                    'width': '100%',
-                    'transition': `width ${duration}ms linear`
-                });
-
-            toast.append(progressBar);
-
-            // Close Button Funktionalität
-            toast.find('.btn-close').on('click', function () {
-                hideToast(toast);
-            });
-
-            $('#toast-container').prepend(toast);
-
-            // Animation starten
-            setTimeout(() => {
-                toast.css({
-                    'opacity': '1',
-                    'transform': 'translateX(0)'
-                });
-                progressBar.css('width', '0%');
-            }, 100);
-
-            // Auto-Hide Timer
-            const hideTimer = setTimeout(() => {
-                hideToast(toast);
-            }, duration);
-
-            // Pause bei Hover
-            toast.on('mouseenter', function () {
-                clearTimeout(hideTimer);
-                progressBar.css('transition', 'none');
-            });
-
-            toast.on('mouseleave', function () {
-                const remainingTime = parseFloat(progressBar.css('width')) / parseFloat(toast.css('width')) * duration;
-                progressBar.css('transition', `width ${remainingTime}ms linear`);
-                progressBar.css('width', '0%');
-                setTimeout(() => hideToast(toast), remainingTime);
-            });
-        }
-
-        // Helper-Funktion zum Ausblenden
-        function hideToast(toast) {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }
-
-        // Spezielle Toast-Varianten für häufige Fälle
-        function showSuccessToast(message) {
-            showToast(message, 'success');
-        }
-
-        function showErrorToast(message) {
-            showToast(message, 'error');
-        }
-
-        function showWarningToast(message) {
-            showToast(message, 'warning');
-        }
-
-        function showInfoToast(message) {
-            showToast(message, 'info');
-        }
-
-        // Loading Toast mit Spinner
-        function showLoadingToast(message) {
-            const loadingToast = $('<div>')
-                .attr('id', 'loading-toast')
-                .css({
-                    'background-color': '#6c757d',
-                    'color': 'white',
-                    'padding': '14px 20px',
-                    'margin-bottom': '10px',
-                    'border-radius': '8px',
-                    'box-shadow': '0 6px 16px rgba(0,0,0,0.2)',
-                    'display': 'flex',
-                    'align-items': 'center',
-                    'min-width': '280px'
-                })
-                .html(`
-            <div class="spinner-border spinner-border-sm me-2" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <span>${message}</span>
-        `);
-
-            $('#toast-container').prepend(loadingToast);
-            return loadingToast;
-        }
-
-        function hideLoadingToast() {
-            $('#loading-toast').fadeOut(300, function () {
-                $(this).remove();
-            });
-        }
 
         // Funktion: Aktualisiert die Hintergrundfarbe der Teilnahme-Dropdowns
         function updateSelectColorForParticipation(el) {
@@ -722,19 +556,19 @@ if (empty($_SESSION['csrf_token'])) {
                             updateSelectColorForErweitert(this);
                         });
 
-                        showToast('Fragebogen erfolgreich geladen', 'success');
+                        msvToast('Fragebogen erfolgreich geladen', 'success');
                     } else {
                         console.warn("Keine thead/tbody-Daten gefunden.");
                         $('#fragebogenTabelle thead').html('<tr><th>Keine Daten verfügbar</th></tr>');
                         $('#fragebogenTabelle tbody').html('<tr><td>Keine Daten für dieses Jahr gefunden</td></tr>');
-                        showToast('Keine Daten für dieses Jahr gefunden', 'warning');
+                        msvToast('Keine Daten für dieses Jahr gefunden', 'warning');
                     }
                 },
                 error: function (xhr, status, error) {
                     console.error("Fehler beim Laden des Fragebogens:", error);
                     $('#fragebogenTabelle thead').html('<tr><th class="text-danger">Fehler beim Laden</th></tr>');
                     $('#fragebogenTabelle tbody').html('<tr><td class="text-danger">Fehler beim Laden der Daten</td></tr>');
-                    showToast("Fehler beim Laden des Fragebogens: " + error, 'error');
+                    msvToast("Fehler beim Laden des Fragebogens: " + error, 'error');
                 }
             });
         }
@@ -778,12 +612,12 @@ if (empty($_SESSION['csrf_token'])) {
                 data: formData,
                 success: function (response) {
                     console.log("Speicher-Antwort:", response);
-                    showToast("Fragebogen erfolgreich gespeichert!", 'success');
+                    msvToast("Fragebogen erfolgreich gespeichert!", 'success');
                     loadFragebogen(selectedYear); // Tabelle neu laden
                 },
                 error: function (xhr, status, error) {
                     console.error("Fehler beim Speichern:", error);
-                    showToast("Fehler beim Speichern des Fragebogens!", 'error');
+                    msvToast("Fehler beim Speichern des Fragebogens!", 'error');
                 },
                 complete: function () {
                     $submitBtn.prop('disabled', false).html(originalText);
@@ -814,13 +648,13 @@ if (empty($_SESSION['csrf_token'])) {
                             PDF herunterladen (${selectedYear})
                         </a>
                     `);
-                        showToast('PDF erfolgreich generiert!', 'success');
+                        msvToast('PDF erfolgreich generiert!', 'success');
                     } else {
-                        showToast('PDF konnte nicht generiert werden.', 'error');
+                        msvToast('PDF konnte nicht generiert werden.', 'error');
                     }
                 },
                 error: function (xhr, status, error) {
-                    showToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+                    msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -850,12 +684,12 @@ if (empty($_SESSION['csrf_token'])) {
                 },
                 success: function (response) {
                     console.log('Alle Einträge gelöscht');
-                    showToast('Alle Einträge erfolgreich gelöscht', 'success');
+                    msvToast('Alle Einträge erfolgreich gelöscht', 'success');
                     loadFragebogen($('#yearSelect').val()); // Ergebnisse neu laden
                 },
                 error: function (xhr, status, error) {
                     console.error('Fehler beim Löschen der aktuellen Einträge:', error);
-                    showToast('Fehler beim Löschen der Einträge', 'error');
+                    msvToast('Fehler beim Löschen der Einträge', 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -869,7 +703,7 @@ if (empty($_SESSION['csrf_token'])) {
             // Konvertiere alte Bootstrap-Klassen zu neuen Toast-Typen
             let toastType = type;
             if (type === 'danger') toastType = 'error';
-            showToast(msg, toastType);
+            msvToast(msg, toastType);
         }
 
         // Global verfügbar machen für Legacy-Code

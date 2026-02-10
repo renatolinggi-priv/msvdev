@@ -1,6 +1,14 @@
 <?php
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die('Ungültige Anfrage');
+}
+
 // Sicherstellen, dass die Event-ID übergeben wurde
 if (isset($_POST['event_id']) && is_numeric($_POST['event_id'])) {
     $eventId = intval($_POST['event_id']);
@@ -33,7 +41,6 @@ if (isset($_POST['event_id']) && is_numeric($_POST['event_id'])) {
 } else {
     echo json_encode(['success' => false, 'message' => 'Ungültige Event-ID']);
 }
-
 
 $conn->close();
 ?>

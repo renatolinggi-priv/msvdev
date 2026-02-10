@@ -13,4 +13,7 @@ Options -Indexes
     
     # Leitet /abo auf abo.php um (ohne .php in der URL)
     RewriteRule ^abo$ abo.php [L]
+
+    # Leitet /fragebogen auf fragebogen.php um (öffentliches Umfrageformular)
+    RewriteRule ^fragebogen$ fragebogen.php [L]
 </IfModule>

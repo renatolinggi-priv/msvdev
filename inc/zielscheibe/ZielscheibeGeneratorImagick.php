@@ -54,10 +54,7 @@ class ZielscheibeGeneratorImagick
             // Bild erstellen mit beigem Hintergrund
             $image = new Imagick();
             $image->newImage($this->bildBreite, $this->bildHoehe, new ImagickPixel('#F5F0DC'));
-            
-            // JPEG statt PNG für bessere Performance
-            $image->setImageFormat('jpeg');
-            $image->setImageCompressionQuality(90); // Hohe Qualität, aber komprimiert
+            $image->setImageFormat('png');
 
             // Prüfen ob Zoom nötig
             $zoomAktiv = $this->sollteZoomen($treffer);
@@ -78,7 +75,7 @@ class ZielscheibeGeneratorImagick
                 return $erfolg;
             }
 
-            header('Content-Type: image/jpeg');
+            header('Content-Type: image/png');
             echo $image;
             $image->clear();
             $image->destroy();
@@ -88,54 +85,6 @@ class ZielscheibeGeneratorImagick
         } catch (Exception $e) {
             error_log("Fehler beim Generieren der Zielscheibe: " . $e->getMessage());
             return false;
-        }
-    }
-    
-    /**
-     * Generiert Zielscheibe direkt im Memory als Blob (keine Temp-Datei)
-     * @return array ['success' => bool, 'blob' => string, 'mime' => string]
-     */
-    public function generiereZielscheibeBlob(array $treffer, $mitLegende = true)
-    {
-        try {
-            // Bild erstellen mit beigem Hintergrund
-            $image = new Imagick();
-            $image->newImage($this->bildBreite, $this->bildHoehe, new ImagickPixel('#F5F0DC'));
-            
-            // JPEG statt PNG für bessere Performance
-            $image->setImageFormat('jpeg');
-            $image->setImageCompressionQuality(90);
-
-            // Prüfen ob Zoom nötig
-            $zoomAktiv = $this->sollteZoomen($treffer);
-
-            $this->zeichneRinge($image, $zoomAktiv);
-            $this->zeichneFadenkreuz($image);
-            $this->zeichneTreffer($image, $treffer);
-            
-            if ($mitLegende) {
-                $this->zeichneLegende($image, $treffer, null);
-            }
-
-            // Direkt als Blob zurückgeben (kein File I/O)
-            $blob = $image->getImageBlob();
-            $mime = 'image/jpeg';
-            
-            $image->clear();
-            $image->destroy();
-
-            return [
-                'success' => true,
-                'blob' => $blob,
-                'mime' => $mime
-            ];
-
-        } catch (Exception $e) {
-            error_log("Fehler beim Generieren der Zielscheibe: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
         }
     }
 

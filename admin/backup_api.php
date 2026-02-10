@@ -1,6 +1,6 @@
 <?php
 /**
- * admin/backup_api.php – robuste Backup/Restore API (ohne Shell-Pipe)
+ * admin/backup_api.php â€“ robuste Backup/Restore API (ohne Shell-Pipe)
  * Actions: backup, list, download, delete, restore, diag, whoami, echo
  * Auth:   UI via Session+CSRF  ODER  extern via API-Key (Header X-API-Key / ?key=)
  */
@@ -59,12 +59,12 @@ function require_key(string $expected){
 
   $expected = (string)$expected;
   // Maskierte Ausgabe für Logs (keine Geheimnisse)
-  $mask = function($s){ if($s==='') return '∅'; $len=strlen($s); return $len<6 ? str_repeat('*',$len) : substr($s,0,3).'…'.substr($s,-2)." (len:$len)"; };
+  $mask = function($s){ if($s==='') return 'âˆ…'; $len=strlen($s); return $len<6 ? str_repeat('*',$len) : substr($s,0,3).'…'.substr($s,-2)." (len:$len)"; };
   dbg('Auth check: key_sent='.$mask($got).' key_expected='.$mask($expected).' eq='.(($expected!=='' && $got!=='' && hash_equals($expected,$got))?'1':'0'));
 
   if ($expected !== '' && $got !== '' && hash_equals($expected, $got)) return;
 
-  // 3) unauthorized – mit Hinweisen (ohne Geheimnisse)
+  // 3) unauthorized â€“ mit Hinweisen (ohne Geheimnisse)
   out([
     'success'=>false,
     'message'=>'Unauthorized',
@@ -148,7 +148,6 @@ function build_dump_cmd_without_pipe($dumpbin, $db, $sqlPath){
 
   return implode(' ', $parts);
 }
-
 
 function build_restore_cmd($mysqlbin, $db){
   $host = $db['host'] ?? 'localhost';
@@ -491,7 +490,7 @@ switch ($action) {
     $sess = $_SESSION['csrf_token'] ?? '';
     $hdr  = $_SERVER['HTTP_X_API_KEY'] ?? '';
     $qry  = $_GET['key'] ?? $_POST['key'] ?? '';
-    $mask = function($s){ if($s==='') return '∅'; $len=strlen($s); return $len<6 ? str_repeat('*',$len) : substr($s,0,3).'…'.substr($s,-2)." (len:$len)"; };
+    $mask = function($s){ if($s==='') return 'âˆ…'; $len=strlen($s); return $len<6 ? str_repeat('*',$len) : substr($s,0,3).'…'.substr($s,-2)." (len:$len)"; };
     out([
       'success'=>true,
       'mode'=> ($csrf && $sess && hash_equals($sess,$csrf)) ? 'csrf' : (($hdr||$qry)?'key':'none'),

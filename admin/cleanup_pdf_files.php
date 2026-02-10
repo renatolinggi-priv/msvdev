@@ -1,6 +1,6 @@
 <?php
 /**
- * cleanup_pdf_files.php – Standalone PDF-Cleanup
+ * cleanup_pdf_files.php â€“ Standalone PDF-Cleanup
  *
  * - Rekursiv ab BASE_DIR (Standard: Ordner über diesem Skript)
  * - Ignoriert Ordner: dompdf/, phpword/, spreadsheet/ (case-insensitive)
@@ -10,13 +10,13 @@
  *
  * Exitcodes: 0 = OK, 1 = Fehler
  */
-
 declare(strict_types=1);
 
 // ========================= Konfiguration =========================
 const DEFAULT_BASE_DIR = __DIR__ . '/..';   // ggf. anpassen
 const DEFAULT_DAYS     = 30;
 const EXCLUDE_DIRS     = ['dompdf', 'phpword', 'spreadsheet']; // nur Ordnernamen
+
 // Optionaler fixer Key (oder per ENV: CLEANUP_KEY)
 const FIXED_KEY        = ''; // z.B. 'super-secret-123'; leer lassen = kein Key nötig
 
@@ -76,7 +76,6 @@ function purge_old_pdfs_in_dat(string $datPath, int $days, bool $dryRun = false,
 
 function cleanup_all(string $baseDir, int $days, bool $dryRun = false, bool $verbose = false): array {
     $totalDeleted = 0; $totalScanned = 0; $touchedDat = 0; $allDeletedFiles = [];
-
     $it = new RecursiveIteratorIterator(
         new RecursiveCallbackFilterIterator(
             new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS),
@@ -87,7 +86,6 @@ function cleanup_all(string $baseDir, int $days, bool $dryRun = false, bool $ver
         ),
         RecursiveIteratorIterator::SELF_FIRST
     );
-
     foreach ($it as $fi) {
         if (!$fi->isDir()) continue;
         $dat = $fi->getPathname() . DIRECTORY_SEPARATOR . 'dat';
@@ -101,7 +99,6 @@ function cleanup_all(string $baseDir, int $days, bool $dryRun = false, bool $ver
             }
         }
     }
-
     return [
         'base_dir'      => $baseDir,
         'exclude_dirs'  => EXCLUDE_DIRS,
@@ -120,6 +117,7 @@ $configuredKey = FIXED_KEY !== '' ? FIXED_KEY : (getenv('CLEANUP_KEY') ?: '');
 
 // CLI?
 if (PHP_SAPI === 'cli') {
+
     // --help, --days=, --dry-run, --verbose, --base-dir=, --key=
     $opts = [
         'help::',
@@ -131,7 +129,6 @@ if (PHP_SAPI === 'cli') {
         'json::'
     ];
     $args = getopt('', $opts);
-
     if (isset($args['help'])) {
         echo "Usage:\n";
         echo "  php cleanup.php --days=30 --dry-run --verbose --base-dir=/path --key=SECRET --json\n\n";
@@ -144,25 +141,22 @@ if (PHP_SAPI === 'cli') {
         echo "  --json       Ausgabe als JSON (sonst einfache Text-Zusammenfassung)\n";
         exit(0);
     }
-
     $days    = isset($args['days']) ? max(0, (int)$args['days']) : DEFAULT_DAYS;
     $dryRun  = array_key_exists('dry-run', $args);
     $verbose = array_key_exists('verbose', $args);
     $baseDir = isset($args['base-dir']) ? (string)$args['base-dir'] : DEFAULT_BASE_DIR;
     $keyIn   = isset($args['key']) ? (string)$args['key'] : '';
     $asJson  = array_key_exists('json', $args);
-
     if ($configuredKey !== '' && $keyIn !== $configuredKey) {
         json_out(false, 'Unauthorized (CLI key mismatch)', [], 401);
     }
-
     $stats = cleanup_all($baseDir, $days, $dryRun, $verbose);
-
     if ($asJson) {
         json_out(true, $dryRun
             ? "Dry-Run: {$stats['deleted_count']} Dateien wären gelöscht worden (> {$days} Tage)."
             : "Cleanup: {$stats['deleted_count']} Dateien gelöscht (> {$days} Tage).", $stats, 200);
     } else {
+
         // Kurze Textausgabe + sinnvoller Exitcode
         echo ($dryRun ? "Dry-Run: " : "Cleanup: ") .
              "{$stats['deleted_count']} gelöscht/zu löschen; " .
@@ -182,7 +176,6 @@ $dryRun  = filter_var($_POST['dry_run'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
 $verbose = filter_var($_POST['verbose'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
 $baseDir = isset($_POST['base_dir']) ? (string)$_POST['base_dir'] : DEFAULT_BASE_DIR;
 $keyIn   = (string)($_POST['key'] ?? '');
-
 if ($configuredKey !== '' && $keyIn !== $configuredKey) {
     json_out(false, 'Unauthorized', [], 401);
 }

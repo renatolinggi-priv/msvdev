@@ -1,7 +1,7 @@
 <?php
 // export_jmdefinition_pdf.php
 
-require '../dompdf/autoload.php'; // Pfad zu Composer's Autoload Datei
+require '../vendor/autoload.php'; // Pfad zu Composer's Autoload Datei
 include '../config.php'; // Datenbankverbindung
 
 use Dompdf\Dompdf;

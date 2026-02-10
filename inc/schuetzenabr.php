@@ -9,9 +9,9 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Alle Styles sind jetzt zentral in msv-styles.css verwaltet
 $page_specific_css = '';
-
 include 'header.inc.php';
 ?>
+
 <!-- Schuetzenabr.php HTML-Gerüst nach heimrang.php Vorbild -->
 <div class="container-fluid">
     <div class="row">
@@ -27,12 +27,10 @@ include 'header.inc.php';
                         </h2>
                     </div>
                 </div>
-                
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
                 <form id="schuetzenabr-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-
                     <!-- Jahr-Auswahl in eigener Card -->
                     <div class="year-selection-card">
                         <div class="row align-items-center">
@@ -46,7 +44,6 @@ include 'header.inc.php';
                             </div>
                         </div>
                     </div>
-
                     <!-- Button Toolbar -->
                     <div class="button-toolbar">
                         <div class="button-group">
@@ -57,10 +54,8 @@ include 'header.inc.php';
                         </div>
                         <div id="excel-link"></div>
                     </div>
-
                     <!-- Nachrichten Container -->
                     <div id="message"></div>
-
                     <!-- Info-Bereich -->
                     <div class="table-wrapper">
                         <h5 class="table-title">
@@ -70,10 +65,9 @@ include 'header.inc.php';
                         <div class="alert alert-info">
                             <h6 class="fw-bold">Was ist enthalten:</h6>
                             <ul class="mb-2">
-                            <li><strong>Mitgliederbeitrag:</strong> CHF 10.- (Ehrenmitglieder: CHF 0.-)</li>
-                            <li><strong>Kantonalstich:</strong> Je nach Teilnahme</li>
-                            <li><strong>Königskränze:</strong> Endstich, Kunststich, Endschiessen (Top 3), Endschiessen Gesamt (Top 3 je Kat.), Heimmeisterschaft</li>
-                                <li><strong>MSV Wilen CUP:</strong> 1. Rang CHF 30.-, 2. Rang CHF 20.-, 3. Rang CHF 10.-</li>
+                                <li><strong>Mitgliederbeitrag:</strong> CHF 10.- (Ehrenmitglieder: CHF 0.-)</li>
+                                <li><strong>Kantonalstich:</strong> Je nach Teilnahme</li>
+                                <li><strong>Königskränze:</strong> Endstich, Kunststich, Endschiessen, Heimmeisterschaft</li>
                             </ul>
                             <p class="mb-0">
                                 <i class="bi bi-download me-1"></i>
@@ -87,10 +81,6 @@ include 'header.inc.php';
         </div>
     </div>
 </div>
-
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <script>
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
@@ -104,8 +94,8 @@ include 'header.inc.php';
             yearSelect.append(option);
         }
     }
-
     $(document).ready(function() {
+
         // Nachricht anzeigen
         function showMessage(message, type) {
             var messageDiv = $('#message');
@@ -119,10 +109,9 @@ include 'header.inc.php';
         $(document).on('click', '.xlsx-btn', function(e) {
             e.preventDefault();
             var selectedYear = $('#yearSelect').val();
-            
+
             // Button deaktivieren während der Verarbeitung
             $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split me-2"></i>Generiere...');
-            
             $.ajax({
                 url: 'schuetzenabr/generate_schuetzenabr_xlsx.php',
                 type: 'GET',
@@ -133,6 +122,7 @@ include 'header.inc.php';
                     try {
                         var data = JSON.parse(response);
                         if (data.excel_link) {
+
                             // Excel direkt herunterladen
                             const link = document.createElement('a');
                             link.href = 'schuetzenabr/' + data.excel_link;
@@ -140,7 +130,6 @@ include 'header.inc.php';
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
-                            
                             showMessage('Excel-Datei wurde erfolgreich generiert und heruntergeladen.', 'success');
                             $('#excel-link').empty();
                         } else if (data.error) {
@@ -155,6 +144,7 @@ include 'header.inc.php';
                     showMessage('Fehler beim Generieren der Excel-Datei: ' + error, 'danger');
                 },
                 complete: function() {
+
                     // Button wieder aktivieren
                     $('.xlsx-btn').prop('disabled', false).html('<i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel generieren');
                 }

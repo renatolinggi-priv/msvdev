@@ -4,7 +4,7 @@
 // - Keine Streicher-Logik, alle Werte werden gezählt
 
 ob_start();
-require_once '../dompdf/autoload.php';
+require_once '../vendor/autoload.php';
 require_once '../config.php';
 require_once 'config_pdf.php';
 

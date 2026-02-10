@@ -185,10 +185,3 @@
     border-top: 1px solid #dee2e6;
 }
 
-/* Toast Container - falls es fehlt */
-#toast-container {
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    z-index: 9999;
-}

@@ -377,10 +377,3 @@
     }
 }
 
-/* Toast Container für Cup2 */
-.cup2-page #toast-container {
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    z-index: 9999;
-}

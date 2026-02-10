@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
             a.remove();
             URL.revokeObjectURL(url);
         } catch (e) {
-            alert('Fehler beim PDF-Export: ' + e.message);
+            msvError('Fehler beim PDF-Export: ' + e.message);
         } finally {
             btn.disabled = false;
             btn.innerHTML = orig;

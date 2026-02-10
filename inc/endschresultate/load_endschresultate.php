@@ -44,7 +44,6 @@ function validateYear($year) {
     return is_numeric($year) && $year >= $minYear && $year <= $maxYear;
 }
 
-
 /**
  * Generate HTML for a result row with existing data
  *

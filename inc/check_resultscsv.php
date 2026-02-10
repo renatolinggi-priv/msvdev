@@ -35,37 +35,6 @@ include 'header.inc.php';
         background-color: #e7f1ff;
     }
     
-    /* Toast Messages - from endsch_import */
-    #toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-    }
-    
-    .toast-message {
-        background: #fff;
-        border-radius: 8px;
-        padding: 12px 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        opacity: 0;
-        transform: translateX(100%);
-        transition: all 0.3s ease;
-        min-width: 250px;
-        border-left: 4px solid;
-    }
-    
-    .toast-message.show {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    
-    .toast-success { border-left-color: #28a745; }
-    .toast-warning { border-left-color: #ffc107; }
-    .toast-error { border-left-color: #dc3545; }
-    .toast-info { border-left-color: #17a2b8; }
-    
     /* Fix für Scroll-Layout */
     #resultsContainer {
         display: flex;
@@ -181,9 +150,6 @@ include 'header.inc.php';
         </div>
     </div>
 </div>
-
-<!-- Toast Container -->
-<div id="toast-container"></div>
 
 <!-- jQuery einbinden falls nicht vorhanden -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

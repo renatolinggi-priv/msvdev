@@ -2,9 +2,10 @@
 // endschloesen_api.php - Backend API für Endschiessen Stich-Erfassung (mysqli Version)
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://www.msvwilen.ch');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-CSRF-TOKEN');
+header('Access-Control-Allow-Credentials: true');
 
 // Bei OPTIONS Request (CORS Preflight) sofort beenden
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -768,7 +769,6 @@ ORDER BY m.Name, m.Vorname"
             jsonResponse(true, $zusatz);
             break;
 
-        
 case 'get_year_details':
             // Detaillierte Übersicht mit einzelnen Stich-IDs für Matrix-Darstellung
             $jahr = (int) ($_GET['jahr'] ?? date('Y'));
@@ -1066,7 +1066,6 @@ case 'get_year_details':
 
             jsonResponse(true, $details);
             break;
-
 
         case 'delete_selection':
             checkCSRF();

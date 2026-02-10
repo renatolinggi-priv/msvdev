@@ -9,38 +9,41 @@ if ($conn->connect_error) {
     exit;
 }
 
-$year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+$year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 // SQL-Abfrage, um nur die Gewinner aus Runde 2 zu ermitteln
 $sql = "
     SELECT m.ID, m.Name, m.Vorname, fr.Result, fr.LowShot
     FROM (
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN Result1 > Result2 OR (Result1 = Result2 AND LowShot1 > LowShot2) THEN Participant1
                 WHEN Participant3 IS NOT NULL AND (Result3 > Result1 OR (Result3 = Result1 AND LowShot3 > LowShot1)) THEN Participant3
-                ELSE Participant2 
+                ELSE Participant2
             END AS Winner1,
-            CASE 
-                WHEN Participant3 IS NOT NULL THEN 
-                    CASE 
+            CASE
+                WHEN Participant3 IS NOT NULL THEN
+                    CASE
                         WHEN Result3 > GREATEST(Result1, Result2) OR (Result3 = GREATEST(Result1, Result2) AND LowShot3 > LEAST(LowShot1, LowShot2)) THEN
-                            CASE 
+                            CASE
                                 WHEN Result1 > Result2 OR (Result1 = Result2 AND LowShot1 > LowShot2) THEN Participant1
-                                ELSE Participant2 
+                                ELSE Participant2
                             END
                         ELSE Participant3
                     END
                 ELSE NULL
             END AS Winner2
         FROM cupPairs
-        WHERE Year = '$year' AND Round = 2
+        WHERE Year = ? AND Round = 2
     ) AS winners
     INNER JOIN mitglieder m ON m.ID IN (winners.Winner1, winners.Winner2)
-    LEFT JOIN cupFinalResults fr ON m.ID = fr.ParticipantID AND fr.Year = '$year'
+    LEFT JOIN cupFinalResults fr ON m.ID = fr.ParticipantID AND fr.Year = ?
     WHERE winners.Winner1 IS NOT NULL OR winners.Winner2 IS NOT NULL
 ";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ii", $year, $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 if (!$result) {
     error_log("SQL Fehler: " . $conn->error);

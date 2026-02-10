@@ -293,12 +293,12 @@ include 'header.inc.php';
             // Query für vergangene Schiessanlässe ohne Resultate
             // Extrahiert das letzte Datum aus den Schiesstagen und prüft ob es vergangen ist
             $pending_query = "
-                SELECT 
+                SELECT
                     jd.ID,
                     jd.Bezeichnung,
                     jd.Schiesstage,
                     jd.Reihenfolge,
-                    CASE 
+                    CASE
                         WHEN jd.Schiesstage LIKE '%Dezember%' THEN CONCAT(jd.year, '-12-31')
                         WHEN jd.Schiesstage LIKE '%November%' THEN CONCAT(jd.year, '-11-30')
                         WHEN jd.Schiesstage LIKE '%Oktober%' THEN CONCAT(jd.year, '-10-31')
@@ -315,21 +315,24 @@ include 'header.inc.php';
                     END as approx_date,
                     (SELECT COUNT(*) FROM jmresultate jr WHERE jr.jmdefinitionID = jd.ID) as result_count
                 FROM JMDefinition jd
-                WHERE 
-                    jd.year = '$current_year'
+                WHERE
+                    jd.year = ?
                     AND jd.hidden = 0
                     AND jd.Info = 0
                     AND jd.Erweitert = 0
                     AND jd.Maxpunkte > 0
                     AND LENGTH(jd.Schiesstage) > 0
-                HAVING 
-                    approx_date < '$today'
+                HAVING
+                    approx_date < ?
                     AND result_count = 0
                 ORDER BY jd.Reihenfolge ASC
                 LIMIT 10
             ";
-            
-            $pending_result = connect_db($pending_query);
+
+            $pending_stmt = $conn->prepare($pending_query);
+            $pending_stmt->bind_param("ss", $current_year, $today);
+            $pending_stmt->execute();
+            $pending_result = $pending_stmt->get_result();
             
             if ($pending_result && $pending_result->num_rows > 0) {
                 echo '<div class="list-group">';
@@ -379,7 +382,6 @@ include 'header.inc.php';
             </a>
         </div>
 
-        
         <div class="quick-access-card">
             <a href="endschloesen.php" class="quick-access-card-link">
                 <div class="quick-access-icon" style="background: linear-gradient(135deg, #ffe6e6, #ffcccc); color: #dc3545;">
@@ -463,8 +465,6 @@ include 'header.inc.php';
                 </div>
             </a>
         </div>
-
-        
 
         <div class="quick-access-card">
             <a href="mitgliederverwaltung.php" class="quick-access-card-link">

@@ -1,7 +1,7 @@
 <?php
 // Ausgabepufferung starten, um unerwünschte Ausgaben zu unterdrücken
 ob_start();
-require '../dompdf/autoload.php';
+require '../vendor/autoload.php';
 include '../config.php';
 
 use Dompdf\Dompdf;
@@ -174,8 +174,6 @@ ORDER BY
     Nachname ASC,
     Vorname ASC";
 
-
-
 // Prepared Statement verwenden
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -233,8 +231,6 @@ usort($jungschuetzen, function($a, $b) {
     return strcasecmp($a['name'], $b['name']);
 });
 
-
-
 // Tabelle erstellen
 if (count($jungschuetzen) > 0) {
     $html .= '<table class="table">
@@ -279,7 +275,6 @@ if (count($jungschuetzen) > 0) {
         $lastSchwini  = $js['schwini'];
         $lastAlter    = $js['alter'];
 
-        
         $bold = ($rang <= 3) ? ' class="bold"' : '';
         
         $html .= '<tr>';

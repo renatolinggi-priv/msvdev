@@ -14,21 +14,24 @@ $kat = isset($_GET['kat']) ? $_GET['kat'] : 'A'; // Standard: A
 
 $kategorie = ($kat === 'A') ? 'Kat. A' : 'Kat. B';
 
-$sql = "SELECT 
-    m.Name, 
-    m.Vorname, 
+$sql = "SELECT
+    m.Name,
+    m.Vorname,
     h.Passe1, h.Passe2, h.Passe3, h.Passe4, h.Passe5, h.Passe6, h.Passe7, h.Passe8,
-    (COALESCE(h.Passe1, 0) + COALESCE(h.Passe2, 0) + COALESCE(h.Passe3, 0) + COALESCE(h.Passe4, 0) + 
+    (COALESCE(h.Passe1, 0) + COALESCE(h.Passe2, 0) + COALESCE(h.Passe3, 0) + COALESCE(h.Passe4, 0) +
      COALESCE(h.Passe5, 0) + COALESCE(h.Passe6, 0) + COALESCE(h.Passe7, 0) + COALESCE(h.Passe8, 0)) AS HeimSumme
 FROM heimresultate h
 INNER JOIN mitglieder m ON m.ID = h.MitgliedID
-INNER JOIN Waffen w ON w.ID = m.WaffenID 
-WHERE w.Kategorie = '$kategorie'
-  AND h.Jahr = $selectedYear
+INNER JOIN Waffen w ON w.ID = m.WaffenID
+WHERE w.Kategorie = ?
+  AND h.Jahr = ?
 HAVING HeimSumme > 0
 ORDER BY HeimSumme DESC";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("si", $kategorie, $selectedYear);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $i = 1;
 if ($result && $result->num_rows > 0) {

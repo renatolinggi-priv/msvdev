@@ -11,6 +11,7 @@ function getSiegerHeim()
 
 function getKKEnd($MitgliedID, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
@@ -36,35 +37,38 @@ function getKKEnd($MitgliedID, $year = null)
             mitglieder m
             LEFT JOIN endstich e ON m.ID = e.MitgliedID
             LEFT JOIN Waffen w ON w.ID = m.WaffenID
-            WHERE e.Schuss1 !=0 and m.ID = $MitgliedID AND e.Jahr = $year
+            WHERE e.Schuss1 !=0 and m.ID = ? AND e.Jahr = ?
             GROUP BY
             m.ID, m.Vorname, m.Name
             ORDER BY Endstich_Summe DESC, e.Tiefschuss DESC;
     ";
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $MitgliedID, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if (!$result || $result->num_rows == 0) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     $row = $result->fetch_assoc();
-    $conn->close();
-    
+    $stmt->close();
+
     if ($row['Endstich_Summe'] >= $row['Kranz_Endstich']) {
         return "10";
     }
-    
+
     return "0";
 }
 
 function getKKKunst($MitgliedID, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
-    
+
     $sql = "
        SELECT
     m.ID,
@@ -89,7 +93,7 @@ FROM
     mitglieder m
 LEFT JOIN kunst k ON m.ID = k.MitgliedID
 LEFT JOIN Waffen w ON w.ID = m.WaffenID
-WHERE k.KSchuss1 != 0 and m.ID = $MitgliedID AND k.Jahr = $year
+WHERE k.KSchuss1 != 0 and m.ID = ? AND k.Jahr = ?
 GROUP BY
     m.ID, m.Vorname, m.Name, m.Geburtsdatum
 ORDER BY
@@ -97,26 +101,29 @@ ORDER BY
     TS DESC,
     m.Geburtsdatum ASC;
     ";
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $MitgliedID, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if (!$result || $result->num_rows == 0) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     $row = $result->fetch_assoc();
-    $conn->close();
-    
+    $stmt->close();
+
     if ($row['Kunst_Summe'] >= $row['Kranz_Kunst']) {
         return "10";
     }
-    
+
     return "0";
 }
 
 function getKKEndschiessen($MitgliedID, $kat, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
@@ -206,7 +213,7 @@ function getKKEndschiessen($MitgliedID, $kat, $year = null)
         COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS EndstichTotal,
         COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6 ), 0) AS Schwini_Summe1,
         COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6 ), 0) AS Schwini_Summe2,
-        COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal, 
+        COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal,
         GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
                 s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) as MaxSchwini,
         LEAST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
@@ -304,22 +311,22 @@ function getKKEndschiessen($MitgliedID, $kat, $year = null)
     LEFT JOIN glueck g ON m.ID = g.MitgliedID
     LEFT JOIN zabig z ON m.ID = z.MitgliedID
     LEFT JOIN Waffen w ON w.ID = m.WaffenID
-    WHERE w.Kategorie = '$kat' AND e.Schuss1 != 0 AND e.Jahr = $year
+    WHERE w.Kategorie = ? AND e.Schuss1 != 0 AND e.Jahr = ?
     GROUP BY
         m.ID, m.Vorname, m.Name
     ORDER BY
     GesamtTotal DESC, EndstichTotal DESC, m.Geburtsdatum ASC";
 
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("si", $kat, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
     if (!$result) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     $i = 1;
     $preis = "0";
     while ($row = $result->fetch_assoc()) {
@@ -329,37 +336,37 @@ function getKKEndschiessen($MitgliedID, $kat, $year = null)
         }
         $i++;
     }
-    
-    $conn->close();
+
+    $stmt->close();
     return $preis;
 }
 
-
 function getKKHeimmeisterschaft($MitgliedID, $kat, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
-    
+
     $sql = "SELECT m.ID, m.Name, m.Vorname, h.Passe1, h.Passe2, h.Passe3, h.Passe4, h.Passe5, h.Passe6, h.Passe7, h.Passe8,
        (COALESCE(h.Passe1, 0) + COALESCE(h.Passe2, 0) + COALESCE(h.Passe3, 0) + COALESCE(h.Passe4, 0) +
         COALESCE(h.Passe5, 0) + COALESCE(h.Passe6, 0) + COALESCE(h.Passe7, 0) + COALESCE(h.Passe8, 0)) AS HeimSumme
         FROM heimresultate h
         INNER JOIN mitglieder m ON m.ID = h.MitgliedID
         INNER JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE w.Kategorie = '$kat' and h.Passe1 > 0 AND h.Jahr = $year
+        WHERE w.Kategorie = ? and h.Passe1 > 0 AND h.Jahr = ?
         ORDER BY HeimSumme DESC";
 
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("si", $kat, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
     if (!$result) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     $i = 1;
     $preis = "0";
     while ($row = $result->fetch_assoc()) {
@@ -379,17 +386,18 @@ function getKKHeimmeisterschaft($MitgliedID, $kat, $year = null)
         }
         $i++;
     }
-    
-    $conn->close();
+
+    $stmt->close();
     return $preis;
 }
 
 function getKantiCost($MitgliedID, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
-    
+
     $sql = "  SELECT
     SUM(CASE WHEN Passe1 IS NOT NULL AND Passe1 != 0 THEN 1 ELSE 0 END) AS Passe1,
     SUM(CASE WHEN Passe2 IS NOT NULL AND Passe2 != 0 THEN 1 ELSE 0 END) AS Passe2,
@@ -397,19 +405,21 @@ function getKantiCost($MitgliedID, $year = null)
     SUM(CASE WHEN Passe4 IS NOT NULL AND Passe4 != 0 THEN 1 ELSE 0 END) AS Passe4,
     SUM(CASE WHEN Passe5 IS NOT NULL AND Passe5 != 0 THEN 1 ELSE 0 END) AS Passe5,
     m.ID
-        
+
     FROM kantiresultate k
     join mitglieder m on m.ID = k.MitgliedID
-    WHERE Jahr = $year and m.ID = $MitgliedID";
+    WHERE Jahr = ? and m.ID = ?";
 
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $year, $MitgliedID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if (!$result || $result->num_rows == 0) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     $Cost = 0;
     while ($row = $result->fetch_assoc()) {
         if ($row['Passe1'] > 0) {
@@ -428,15 +438,15 @@ function getKantiCost($MitgliedID, $year = null)
             $Cost += 3;
         }
     }
-    
-    $conn->close();
+
+    $stmt->close();
     return strval($Cost);
 }
 function checkKantiKranzStatus($mitgliedID, $conn) {
 
     $sql = "
       WITH SchuetzeMitAlterskategorie AS (
-    SELECT 
+    SELECT
         m.ID AS MitgliedID,
         m.Name,
         m.Vorname,
@@ -445,33 +455,33 @@ function checkKantiKranzStatus($mitgliedID, $conn) {
         ak.Bezeichnung AS Alterskategorie,
         ak.minAlter,
         ak.maxAlter
-    FROM 
+    FROM
         mitglieder m
-    JOIN sAltersKat ak 
+    JOIN sAltersKat ak
         ON YEAR(CURDATE()) - YEAR(m.Geburtsdatum) BETWEEN ak.minAlter AND ak.maxAlter
 ),
 MaxKategorie AS (
-    SELECT 
-        MitgliedID, 
+    SELECT
+        MitgliedID,
         MAX(AlterskategorieID) AS hoechsteAltersKategorieID
     FROM SchuetzeMitAlterskategorie
     GROUP BY MitgliedID
 ),
 EndKategorie AS (
-    SELECT 
+    SELECT
         sm.MitgliedID,
         sm.Name,
         sm.Vorname,
         sm.Schuetze_Alter,
         sm.AlterskategorieID,
         sm.Alterskategorie
-    FROM 
+    FROM
         SchuetzeMitAlterskategorie sm
-    JOIN MaxKategorie mk 
-      ON sm.MitgliedID = mk.MitgliedID 
+    JOIN MaxKategorie mk
+      ON sm.MitgliedID = mk.MitgliedID
      AND sm.AlterskategorieID = mk.hoechsteAltersKategorieID
 )
-SELECT 
+SELECT
     ek.MitgliedID,
     ek.Name,
     ek.Vorname,
@@ -480,80 +490,86 @@ SELECT
     w.Bezeichnung AS Waffe,
     kr.Resultat AS Kranzlimite,
     k.Passe1,
-    CASE 
-        WHEN k.Passe1 >= kr.Resultat THEN 'Kranz erreicht' 
-        ELSE 'Kranz nicht erreicht' 
+    CASE
+        WHEN k.Passe1 >= kr.Resultat THEN 'Kranz erreicht'
+        ELSE 'Kranz nicht erreicht'
     END AS Passe1_Status,
     k.Passe2,
-    CASE 
-        WHEN k.Passe2 >= kr.Resultat THEN 'Kranz erreicht' 
-        ELSE 'Kranz nicht erreicht' 
+    CASE
+        WHEN k.Passe2 >= kr.Resultat THEN 'Kranz erreicht'
+        ELSE 'Kranz nicht erreicht'
     END AS Passe2_Status,
     k.Passe3,
-    CASE 
-        WHEN k.Passe3 >= kr.Resultat THEN 'Kranz erreicht' 
-        ELSE 'Kranz nicht erreicht' 
+    CASE
+        WHEN k.Passe3 >= kr.Resultat THEN 'Kranz erreicht'
+        ELSE 'Kranz nicht erreicht'
     END AS Passe3_Status,
     k.Passe4,
-    CASE 
-        WHEN k.Passe4 >= kr.Resultat THEN 'Kranz erreicht' 
-        ELSE 'Kranz nicht erreicht' 
+    CASE
+        WHEN k.Passe4 >= kr.Resultat THEN 'Kranz erreicht'
+        ELSE 'Kranz nicht erreicht'
     END AS Passe4_Status,
     k.Passe5,
-    CASE 
-        WHEN k.Passe5 >= kr.Resultat THEN 'Kranz erreicht' 
-        ELSE 'Kranz nicht erreicht' 
+    CASE
+        WHEN k.Passe5 >= kr.Resultat THEN 'Kranz erreicht'
+        ELSE 'Kranz nicht erreicht'
     END AS Passe5_Status
-FROM 
+FROM
     EndKategorie ek
 JOIN kantiresultate k ON ek.MitgliedID = k.MitgliedID
 JOIN Waffen w ON w.ID = (SELECT WaffenID FROM mitglieder m WHERE m.ID = ek.MitgliedID)
 JOIN sKranzLimiten kr ON ek.AlterskategorieID = kr.sAltersKatID AND w.ID = kr.WaffenID
 JOIN JMDefinition jm ON kr.JMDefinitionID = jm.ID
-WHERE 
-    k.Jahr = YEAR(CURDATE()) 
+WHERE
+    k.Jahr = YEAR(CURDATE())
     AND jm.Bezeichnung = 'Bester Kantonalstich'
-    AND k.MitgliedID = $mitgliedID
-GROUP BY 
+    AND k.MitgliedID = ?
+GROUP BY
     ek.MitgliedID, ek.Name, ek.Vorname, ek.Schuetze_Alter, ek.Alterskategorie, w.Bezeichnung, kr.Resultat, k.Passe1, k.Passe2, k.Passe3, k.Passe4, k.Passe5
 ORDER BY ek.Name ASC, ek.Vorname ASC;
  ";
-    
-    $result = $conn->query($sql);
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $mitgliedID);
+    $stmt->execute();
+    $result = $stmt->get_result();
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
+        $stmt->close();
         return $row;
     } else {
+        $stmt->close();
         return "Keine Daten gefunden";
     }
-    
-    $conn->close();
 }
 
 function getKKCupFinal($MitgliedID, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
-    
+
     // Verwende cupFinalResults um die Top 3 zu ermitteln
-    $sql = "SELECT 
+    $sql = "SELECT
         ParticipantID,
         Result,
         LowShot
     FROM cupFinalResults
-    WHERE Year = $year
+    WHERE Year = ?
     ORDER BY Result DESC, LowShot DESC
     LIMIT 3";
 
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if (!$result) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     $rang = 1;
     $preis = "0";
     while ($row = $result->fetch_assoc()) {
@@ -573,8 +589,8 @@ function getKKCupFinal($MitgliedID, $year = null)
         }
         $rang++;
     }
-    
-    $conn->close();
+
+    $stmt->close();
     return $preis;
 }
 
@@ -594,10 +610,11 @@ function calculatePoints($schuss) {
 
 function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
 {
+    global $conn;
     if ($year === null) {
         $year = date('Y');
     }
-    
+
     $sql = "SELECT
         m.ID,
         m.Name,
@@ -605,7 +622,7 @@ function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
         m.Geburtsdatum,
         COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) AS GlueckTotal,
         COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS EndstichTotal,
-        COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal, 
+        COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal,
         GREATEST(
             COALESCE(s.P1Schuss1, 0) + COALESCE(s.P1Schuss2, 0) + COALESCE(s.P1Schuss3, 0) + COALESCE(s.P1Schuss4, 0) + COALESCE(s.P1Schuss5, 0) + COALESCE(s.P1Schuss6, 0),
             COALESCE(s.P2Schuss1, 0) + COALESCE(s.P2Schuss2, 0) + COALESCE(s.P2Schuss3, 0) + COALESCE(s.P2Schuss4, 0) + COALESCE(s.P2Schuss5, 0) + COALESCE(s.P2Schuss6, 0)
@@ -613,26 +630,28 @@ function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
         z.ZSchuss1, z.ZSchuss2, z.ZSchuss3, z.ZSchuss4, z.ZSchuss5, z.ZSchuss6
     FROM
         mitglieder m
-    LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = $year
-    LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = $year
-    LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = $year
-    LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = $year
-    LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = $year
+    LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
+    LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
+    LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = ?
+    LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = ?
+    LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
     LEFT JOIN Waffen w ON w.ID = m.WaffenID
-    WHERE w.Kategorie = '$kat' AND e.Schuss1 != 0
+    WHERE w.Kategorie = ? AND e.Schuss1 != 0
     GROUP BY
         m.ID, m.Vorname, m.Name, m.Geburtsdatum
     ORDER BY
         m.Geburtsdatum ASC";
 
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query($sql);
-    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iiiiis", $year, $year, $year, $year, $year, $kat);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if (!$result) {
-        $conn->close();
+        $stmt->close();
         return "0";
     }
-    
+
     // Daten sammeln und ZabigTotal berechnen
     $data = array();
     while ($row = $result->fetch_assoc()) {
@@ -644,11 +663,11 @@ function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
                 $zabigTotal += calculatePoints($schuss);
             }
         }
-        
+
         // Berechne GesamtTotal
-        $gesamtTotal = $row['EndstichTotal'] + $row['GlueckTotal'] + 
+        $gesamtTotal = $row['EndstichTotal'] + $row['GlueckTotal'] +
                        $zabigTotal + $row['KunstTotal'] + $row['MaxSchwini'];
-        
+
         $data[] = array(
             'ID' => $row['ID'],
             'GesamtTotal' => $gesamtTotal,
@@ -656,7 +675,7 @@ function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
             'Geburtsdatum' => $row['Geburtsdatum']
         );
     }
-    
+
     // Sortiere nach GesamtTotal DESC, EndstichTotal DESC, Geburtsdatum ASC
     usort($data, function($a, $b) {
         if ($a['GesamtTotal'] != $b['GesamtTotal']) {
@@ -667,7 +686,7 @@ function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
         }
         return strcmp($a['Geburtsdatum'], $b['Geburtsdatum']);
     });
-    
+
     // Prüfe ob Mitglied in den ersten 3 ist
     $rang = 1;
     $preis = "0";
@@ -678,7 +697,7 @@ function getKKEndschiessenGesamt($MitgliedID, $kat, $year = null)
         }
         $rang++;
     }
-    
-    $conn->close();
+
+    $stmt->close();
     return $preis;
 }

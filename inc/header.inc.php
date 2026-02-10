@@ -72,7 +72,7 @@ if (!headers_sent()) {
     }
     
     // CSP mit cdn.jsdelivr.net für Source Maps
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net;");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net https://www.google.com; frame-src https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';");
 }
 
 // Hilfsfunktionen
@@ -94,17 +94,21 @@ function get_page_title($conn) {
     
     try {
         $current_page = basename($_SERVER["PHP_SELF"]);
-        $sql = "SELECT n1.Text AS Text, n2.Text AS Parent 
-                FROM navigation n1 
-                LEFT JOIN navigation n2 ON n1.ParentID = n2.ID 
-                WHERE n1.Link = '" . $current_page . "'";
-        $result = connect_db($sql);
-        
+        $stmt = $conn->prepare("SELECT n1.Text AS Text, n2.Text AS Parent
+                FROM navigation n1
+                LEFT JOIN navigation n2 ON n1.ParentID = n2.ID
+                WHERE n1.Link = ?");
+        $stmt->bind_param("s", $current_page);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
         if ($result && $result->num_rows > 0) {
             $row = $result->fetch_assoc();
             $parent = $row['Parent'] ?: 'Wilen';
+            $stmt->close();
             return "MSV " . $parent . " - " . $row['Text'];
         }
+        $stmt->close();
         return $default_title;
     } catch (Exception $e) {
         error_log("Fehler beim Laden des Seitentitels: " . $e->getMessage());
@@ -138,6 +142,10 @@ $Seitentitel = get_page_title($conn);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery UI -->
     <script src="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/jquery-ui.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- MSV Toast System -->
+    <script src="js/msv-toast.js?v=<?php echo time(); ?>"></script>
 
     <style>
         /* Kompakte Basis-Styles */

@@ -185,63 +185,6 @@ $(document).ready(function() {
     var pairItemToDelete = null;
     var isFinalRound = false;
 
-    // Toast Container hinzufügen falls nicht vorhanden
-    if ($('#toast-container').length === 0) {
-        $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-    }
-
-    // Toast-Funktion
-    function showToast(message, type = 'info') {
-        const colors = {
-            'success': '#28a745',
-            'error': '#dc3545',
-            'warning': '#ffc107',
-            'info': '#6c757d'
-        };
-        
-        const icons = {
-            'success': 'bi-check-circle',
-            'error': 'bi-exclamation-circle',
-            'warning': 'bi-exclamation-triangle',
-            'info': 'bi-info-circle'
-        };
-        
-        const toast = $('<div>')
-            .css({
-                'background-color': colors[type] || colors.info,
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '6px',
-                'box-shadow': '0 4px 12px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                'font-weight': '500',
-                'display': 'flex',
-                'align-items': 'center',
-                'min-width': '250px'
-            })
-            .html(`<i class="bi ${icons[type]} me-2"></i>${message}`);
-        
-        $('#toast-container').append(toast);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '1',
-                'transform': 'translateX(0)'
-            });
-        }, 100);
-        
-        setTimeout(() => {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
-
     // Legacy showMessage Funktion
     function showMessage(message, type) {
         const typeMap = {
@@ -250,7 +193,7 @@ $(document).ready(function() {
             'warning': 'warning',
             'info': 'info'
         };
-        showToast(message, typeMap[type] || 'info');
+        msvToast(message, typeMap[type] || 'info');
     }
 
     // Initialisierung des Jahres-Dropdowns
@@ -322,7 +265,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error("AJAX Error:", error);
-                showToast('Fehler beim Laden der Teilnehmer', 'error');
+                msvToast('Fehler beim Laden der Teilnehmer', 'error');
             }
         });
     }
@@ -555,13 +498,13 @@ function initializeDroppable() {
         }
         
         $.when.apply($, promises).done(function() {
-            showToast('Alle Daten erfolgreich gespeichert!', 'success');
+            msvToast('Alle Daten erfolgreich gespeichert!', 'success');
             $('.btn-save').prop('disabled', false).html('<i class="bi bi-save me-1"></i>Paarungen speichern');
             setTimeout(function() {
                 window.location.reload();
             }, 1500);
         }).fail(function() {
-            showToast('Fehler beim Speichern!', 'error');
+            msvToast('Fehler beim Speichern!', 'error');
             $('.btn-save').prop('disabled', false).html('<i class="bi bi-save me-1"></i>Paarungen speichern');
         });
     });
@@ -806,12 +749,12 @@ function initializeDroppable() {
                         '<i class="bi bi-download me-1"></i>PDF herunterladen</a>'
                     );
                 } else {
-                    showToast('Fehler: ' + response.error, 'error');
+                    msvToast('Fehler: ' + response.error, 'error');
                 }
             },
             error: function(xhr, status, error) {
                 console.error('AJAX Error:', error);
-                showToast('Fehler beim Generieren des PDFs', 'error');
+                msvToast('Fehler beim Generieren des PDFs', 'error');
             }
         });
     });
@@ -842,10 +785,10 @@ function initializeDroppable() {
                             loadWinnersForRound2();
                         });
                     });
-                    showToast('Paarung erfolgreich gelöscht', 'success');
+                    msvToast('Paarung erfolgreich gelöscht', 'success');
                 },
                 error: function(xhr, status, error) {
-                    showToast('Fehler beim Löschen der Paarung', 'error');
+                    msvToast('Fehler beim Löschen der Paarung', 'error');
                 }
             });
         }
@@ -968,13 +911,13 @@ function initializeDroppable() {
         }
         
         if (!loserId) {
-            showToast('Bitte erst alle Ergebnisse eintragen!', 'warning');
+            msvToast('Bitte erst alle Ergebnisse eintragen!', 'warning');
             return;
         }
         
         var hasResults = participants.every(p => p.result > 0);
         if (!hasResults) {
-            showToast('Bitte erst alle Ergebnisse eintragen!', 'warning');
+            msvToast('Bitte erst alle Ergebnisse eintragen!', 'warning');
             return;
         }
         
@@ -992,16 +935,16 @@ function initializeDroppable() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast(winnerId ? loserName + ' wurde als Nachrücker gesetzt!' : 'Nachrücker wurde entfernt!', 'success');
+                    msvToast(winnerId ? loserName + ' wurde als Nachrücker gesetzt!' : 'Nachrücker wurde entfernt!', 'success');
                     setTimeout(function() {
                         location.reload();
                     }, 1000);
                 } else {
-                    showToast('Fehler: ' + response.error, 'error');
+                    msvToast('Fehler: ' + response.error, 'error');
                 }
             },
             error: function() {
-                showToast('Verbindungsfehler', 'error');
+                msvToast('Verbindungsfehler', 'error');
             }
         });
     }
@@ -1016,12 +959,12 @@ function initializeDroppable() {
         const participant3Result = $('#participant3-result').val();
         
         if (!participant1Name || !participant2Name || !participant3Name) {
-            showToast('Bitte alle Teilnehmernamen eingeben', 'warning');
+            msvToast('Bitte alle Teilnehmernamen eingeben', 'warning');
             return;
         }
         
         if (!participant1Result || !participant2Result || !participant3Result) {
-            showToast('Bitte alle Ergebnisse eingeben', 'warning');
+            msvToast('Bitte alle Ergebnisse eingeben', 'warning');
             return;
         }
         
@@ -1040,18 +983,18 @@ function initializeDroppable() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    showToast('Standcup Final erfolgreich gespeichert!', 'success');
+                    msvToast('Standcup Final erfolgreich gespeichert!', 'success');
                     setTimeout(function() {
                         location.reload();
                     }, 1500);
                 } else {
                     if (response.errors.length > 0) {
-                        showToast('Fehler: ' + response.errors.join(', '), 'error');
+                        msvToast('Fehler: ' + response.errors.join(', '), 'error');
                     }
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Verbindungsfehler: ' + error, 'error');
+                msvToast('Verbindungsfehler: ' + error, 'error');
             }
         });
     });

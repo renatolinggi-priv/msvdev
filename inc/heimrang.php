@@ -131,8 +131,6 @@ include 'header.inc.php';
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
     <script>
         // Initialisierung des Jahres-Dropdowns
         function initializeYearDropdown() {
@@ -228,12 +226,12 @@ include 'header.inc.php';
                             // PDF-Link Container leeren nach Download
                             $('#pdf-link').empty();
                         } else if (response.error) {
-                            alert('Fehler: ' + response.error);
+                            msvError('Fehler: ' + response.error);
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error('AJAX Error:', xhr.responseText);
-                        alert('Fehler beim Generieren des PDFs: ' + error);
+                        msvError('Fehler beim Generieren des PDFs: ' + error);
                     }
                 });
             });

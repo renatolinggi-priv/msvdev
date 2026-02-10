@@ -1,10 +1,10 @@
 <?php
-// jmdefinition.php – überarbeitet
+// jmdefinition.php â€“ überarbeitet
 include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles (leichtgewichtig, nutzt deine Global-Tokens)
 $page_specific_css = <<<'CSS'
-/* ===== JM Definition – kompakt & robust ===== */
+/* ===== JM Definition â€“ kompakt & robust ===== */
 
 /* --- Wrapper/Viewport --- */
 .table-wrapper {
@@ -92,7 +92,7 @@ $page_specific_css = <<<'CSS'
 }
 #jmdefinitionTabelle tbody td:first-child:active { cursor: grabbing; }
 #jmdefinitionTabelle tbody td:first-child::before {
-  content: '⋮⋮'; color: #cbd5e1; font-size: .9rem; margin-right: .25rem; vertical-align: middle;
+  content: 'â‹®â‹®'; color: #cbd5e1; font-size: .9rem; margin-right: .25rem; vertical-align: middle;
 }
 #jmdefinitionTabelle tbody td:nth-child(2) {
   position: sticky; left: var(--col1); z-index: 3;
@@ -195,7 +195,7 @@ $page_specific_css = <<<'CSS'
     position: static; box-shadow: none;
   }
 }
-/* Einheitlicher Zeilenhover – inkl. Sticky und Formfelder */
+/* Einheitlicher Zeilenhover â€“ inkl. Sticky und Formfelder */
 #jmdefinitionTabelle {
   /* Bootstrap-Defaults neutralisieren, damit nur unsere Farben gelten */
   --bs-table-hover-bg: transparent;
@@ -235,8 +235,7 @@ $page_specific_css = <<<'CSS'
 #jmdefinitionTabelle tbody tr:hover td:first-child { box-shadow: 1px 0 0 rgba(0,0,0,.02); }
 #jmdefinitionTabelle tbody tr:hover td:last-child  { box-shadow: -1px 0 0 rgba(0,0,0,.02); }
 
-
-/* ===== Mobile-Optimierungen (≤ 768px) ===== */
+/* ===== Mobile-Optimierungen (â‰¤ 768px) ===== */
 @media (max-width: 768px) {
   /* Sticky abschalten, Schatten/Trenner reduzieren */
   #jmdefinitionTabelle thead th,
@@ -251,7 +250,7 @@ $page_specific_css = <<<'CSS'
   .btn, .form-check-input { min-height: 44px; min-width: 44px; }
 
   /* Weniger wichtige Spalten ausblenden (Zuschlag + Checkbox-Spalten) */
-  /* sicht­bar bleiben: 1=Nr, 2=Bezeichnung, 4=Schiesstage, 11=Aktion */
+  /* sichtÂ­bar bleiben: 1=Nr, 2=Bezeichnung, 4=Schiesstage, 11=Aktion */
   /* 3=Adresse, 5=Max, 6=Zuschlag, 7..10=Checkboxen werden versteckt */
   #jmdefinitionTabelle th:nth-child(3),
   #jmdefinitionTabelle td:nth-child(3),
@@ -404,7 +403,6 @@ if (empty($_SESSION['csrf_token'])) {
   <div id="pdfDownloadLink" class="ms-auto"></div>
 </div>
 
-
             <div id="message"></div>
 
             <!-- Tabelle -->
@@ -472,7 +470,7 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
         <div class="mb-3">
           <label for="neueJMDefinitionSchiesstage" class="form-label">Schiesstage</label>
-          <textarea class="form-control textarea-large" id="neueJMDefinitionSchiesstage" placeholder="Freitag 14. März 2025 14:00 – 17:00 Uhr&#10;Samstag 15. März 2025 08:00 – 12:00 Uhr" rows="5"></textarea>
+          <textarea class="form-control textarea-large" id="neueJMDefinitionSchiesstage" placeholder="Freitag 14. März 2025 14:00 â€“ 17:00 Uhr&#10;Samstag 15. März 2025 08:00 â€“ 12:00 Uhr" rows="5"></textarea>
         </div>
         <div class="mb-3">
           <label for="neueJMDefinitionMaxpunkte" class="form-label">Maximalpunkte</label>
@@ -551,29 +549,7 @@ $(function () {
   // Tooltips (auch für dynamische Inhalte später erneut initialisieren)
   document.querySelectorAll('[data-bs-toggle="tooltip"], [title]').forEach(el => new bootstrap.Tooltip(el));
 
-  // Toast-Setup
-  if (!$('#toast-container').length) $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-  function showToast(message, type = 'info', duration = 4000) {
-    const colors = { success:'#28a745', error:'#dc3545', warning:'#ffc107', info:'#6c757d' };
-    const icons  = { success:'bi-check-circle-fill', error:'bi-exclamation-circle-fill', warning:'bi-exclamation-triangle-fill', info:'bi-info-circle-fill' };
-    const id = btoa(message + type).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
-    if ($('#toast-'+id).length) return;
-    const $t = $('<div id="toast-'+id+'"/>').css({
-      backgroundColor: colors[type]||colors.info, color:'#fff', padding:'14px 20px', marginBottom:'10px',
-      borderRadius:'8px', boxShadow:'0 6px 16px rgba(0,0,0,.2)', opacity:'0', transform:'translateX(100%)',
-      transition:'all .3s cubic-bezier(.68,-.55,.265,1.55)', fontWeight:500, display:'flex', alignItems:'center',
-      minWidth:'280px', maxWidth:'400px', position:'relative'
-    }).html('<i class="bi '+icons[type]+' me-2" style="font-size:1.2rem;"></i><span style="flex:1;">'+message+'</span><button type="button" class="btn-close btn-close-white ms-2" style="font-size:.8rem;"></button>');
-    const $bar = $('<div/>').css({position:'absolute',bottom:0,left:0,height:'3px',backgroundColor:'rgba(255,255,255,.3)',width:'100%',transition:'width '+duration+'ms linear'});
-    $t.append($bar);
-    $t.find('.btn-close').on('click', ()=>hideToast($t));
-    $('#toast-container').prepend($t);
-    setTimeout(()=>{$t.css({opacity:1, transform:'translateX(0)'}); $bar.css('width','0%');},100);
-    const timer = setTimeout(()=>hideToast($t), duration);
-    $t.on('mouseenter', ()=>{ clearTimeout(timer); $bar.css('transition','none'); });
-  }
-  function hideToast($t){ $t.css({opacity:0, transform:'translateX(100%)'}); setTimeout(()=> $t.remove(), 300); }
-  const showSuccessToast=m=>showToast(m,'success'), showErrorToast=m=>showToast(m,'error'), showWarningToast=m=>showToast(m,'warning'), showInfoToast=m=>showToast(m,'info');
+  const showSuccessToast=m=>msvToast(m,'success'), showErrorToast=m=>msvToast(m,'error'), showWarningToast=m=>msvToast(m,'warning'), showInfoToast=m=>msvToast(m,'info');
 
   // Ajax-Fehler global
   $(document).ajaxError(function (e, xhr, settings, err) {
@@ -581,7 +557,7 @@ $(function () {
     let msg='Ein Fehler ist aufgetreten';
     if (xhr.status===0) msg='Keine Internetverbindung';
     else if (xhr.status===404) msg='Seite nicht gefunden';
-    else if (xhr.status===500) msg='Serverfehler – bitte später erneut versuchen';
+    else if (xhr.status===500) msg='Serverfehler â€“ bitte später erneut versuchen';
     else if (xhr.status===403) msg='Keine Berechtigung';
     showErrorToast(msg);
   });

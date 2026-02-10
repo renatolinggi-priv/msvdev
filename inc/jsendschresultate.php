@@ -369,36 +369,9 @@ $(document).ready(function() {
   let deleteType = '';
   let jungschuetzeIDToDelete = null;
 
-  initializeToastSystem();
   initializeYearSelect();
   loadJungschuetzen();
   setupEventHandlers();
-
-  function initializeToastSystem() {
-    if ($('#toast-container').length === 0) {
-      $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-    }
-  }
-
-  function showToast(message, type = 'info') {
-    const toast = $('<div>')
-      .addClass(`toast-message toast-${type}`)
-      .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}`)
-      .css({
-        'background-color': type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#6c757d',
-        'color': 'white', 'padding': '12px 20px', 'margin-bottom': '10px', 'border-radius': '8px',
-        'box-shadow': '0 4px 15px rgba(0,0,0,0.15)', 'opacity': '0', 'transform': 'translateX(100%)',
-        'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)', 'font-weight': '500',
-        'display': 'flex', 'align-items': 'center', 'min-width': '280px', 'font-size': '0.9rem'
-      });
-
-    $('#toast-container').append(toast);
-    setTimeout(() => { toast.css({'opacity': '1','transform': 'translateX(0)'}); }, 100);
-    setTimeout(() => {
-      toast.css({'opacity': '0','transform': 'translateX(100%)'});
-      setTimeout(() => toast.remove(), 300);
-    }, 4000);
-  }
 
   function initializeYearSelect() {
     const currentYear = new Date().getFullYear();
@@ -453,7 +426,7 @@ $(document).ready(function() {
     // Jahr-Wechsel
     $('#yearSelect').on('change', function() {
       const selectedYear = $(this).val();
-      showToast(`Lade Daten für Jahr ${selectedYear}...`, 'info');
+      msvToast(`Lade Daten für Jahr ${selectedYear}...`, 'info');
       loadJungschuetzen();
     });
 
@@ -488,7 +461,7 @@ $(document).ready(function() {
           try {
             if (typeof data === 'string') data = JSON.parse(data);
             let href = data && data.pdf_link ? String(data.pdf_link) : '';
-            if (!href) { showToast('Keine PDF-URL erhalten.', 'error'); return; }
+            if (!href) { msvToast('Keine PDF-URL erhalten.', 'error'); return; }
             if (!/^https?:\/\//i.test(href) && !href.startsWith('/')) {
               href = 'jsendsch/' + href.replace(/^\.?\//, '');
             }
@@ -499,16 +472,16 @@ $(document).ready(function() {
             a.click();
             document.body.removeChild(a);
 
-            showToast('PDF erfolgreich generiert und heruntergeladen', 'success');
+            msvToast('PDF erfolgreich generiert und heruntergeladen', 'success');
             $('#pdf-link').empty();
           } catch (err) {
             console.error('PDF parse/render error:', err);
-            showToast('Fehler beim Verarbeiten der PDF-Antwort', 'error');
+            msvToast('Fehler beim Verarbeiten der PDF-Antwort', 'error');
           }
         },
         error: function (xhr, status, error) {
           console.error('PDF AJAX error:', status, error, xhr.responseText);
-          showToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+          msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
         },
         complete: function () {
           $btn.prop('disabled', false).html(originalText);
@@ -549,13 +522,13 @@ $(document).ready(function() {
             year: $('#yearSelect').val() || new Date().getFullYear()
           },
           success: function() {
-            showToast('Alle Daten erfolgreich gelöscht', 'success');
+            msvToast('Alle Daten erfolgreich gelöscht', 'success');
             $('#confirmModal').modal('hide');
             setTimeout(() => loadJungschuetzen(), 600);
           },
           error: function(xhr, status, error) {
             console.error('Delete all error:', error, 'Response:', xhr.responseText);
-            showToast('Fehler beim Löschen aller Daten', 'error');
+            msvToast('Fehler beim Löschen aller Daten', 'error');
           },
           complete: function() {
             $btn.prop('disabled', false).html(originalText);
@@ -571,13 +544,13 @@ $(document).ready(function() {
             year: $('#yearSelect').val() || new Date().getFullYear()
           },
           success: function() {
-            showToast('Jungschütze erfolgreich gelöscht', 'success');
+            msvToast('Jungschütze erfolgreich gelöscht', 'success');
             $('#confirmModal').modal('hide');
             setTimeout(() => loadJungschuetzen(), 600);
           },
           error: function(xhr, status, error) {
             console.error('Delete single error:', error, 'Response:', xhr.responseText);
-            showToast('Fehler beim Löschen des Jungschützen', 'error');
+            msvToast('Fehler beim Löschen des Jungschützen', 'error');
           },
           complete: function() {
             $btn.prop('disabled', false).html(originalText);
@@ -634,7 +607,7 @@ $(document).ready(function() {
 
         console.log('Jungschützen loaded successfully');
         if ($('#jungschuetzenTabelle').data('loaded')) {
-          showToast('Jungschützen erfolgreich geladen', 'success');
+          msvToast('Jungschützen erfolgreich geladen', 'success');
         }
         $('#jungschuetzenTabelle').data('loaded', true);
       },
@@ -653,14 +626,14 @@ $(document).ready(function() {
             </td>
           </tr>
         `);
-        showToast(errorMessage, 'error');
+        msvToast(errorMessage, 'error');
       }
     });
   }
 
   // Edit-Modal laden
   function openEditModal(jungschuetzeID, name) {
-    if (!jungschuetzeID) { showToast('Fehler: Keine Jungschützen-ID gefunden', 'error'); return; }
+    if (!jungschuetzeID) { msvToast('Fehler: Keine Jungschützen-ID gefunden', 'error'); return; }
     $('#schussModalLabel').html(`<i class="bi bi-target me-2"></i> Erfassen – ${name}`);
     $('#jungschuetzeID').val(jungschuetzeID);
     $('#schussForm')[0].reset();
@@ -683,13 +656,13 @@ $(document).ready(function() {
           $('#schussModal').modal('show');
         } catch (e) {
           console.error('Parse error:', e);
-          showToast('Fehler beim Verarbeiten der Schussdaten', 'error');
+          msvToast('Fehler beim Verarbeiten der Schussdaten', 'error');
           $('#schussModal').modal('show');
         }
       },
       error: function(xhr, status, error) {
         console.error('Load error:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
-        showToast('Fehler beim Laden der Schussdaten', 'error');
+        msvToast('Fehler beim Laden der Schussdaten', 'error');
         $('#schussModal').modal('show');
       }
     });
@@ -702,7 +675,7 @@ $(document).ready(function() {
     const originalText = $submitBtn.html();
 
     const jungschuetzeID = $('#jungschuetzeID').val();
-    if (!jungschuetzeID) { showToast('Fehler: Keine Jungschützen-ID gefunden', 'error'); return; }
+    if (!jungschuetzeID) { msvToast('Fehler: Keine Jungschützen-ID gefunden', 'error'); return; }
 
     $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
 
@@ -716,20 +689,20 @@ $(document).ready(function() {
       success: function(response) {
         if (response.debug) console.log('Debug info:', response.debug);
         if (response.success) {
-          showToast(response.message || 'Resultate erfolgreich gespeichert', 'success');
+          msvToast(response.message || 'Resultate erfolgreich gespeichert', 'success');
           $('#schussModal').modal('hide');
           setTimeout(() => loadJungschuetzen(), 600);
         } else {
-          showToast('Fehler: ' + (response.message || 'Unbekannt'), 'error');
+          msvToast('Fehler: ' + (response.message || 'Unbekannt'), 'error');
         }
       },
       error: function(xhr, status, error) {
         console.error('Save error:', error, 'Status:', xhr.status, 'Response:', xhr.responseText);
         try {
           const resp = JSON.parse(xhr.responseText);
-          showToast('Fehler: ' + (resp.message || error), 'error');
+          msvToast('Fehler: ' + (resp.message || error), 'error');
         } catch(e2) {
-          showToast('Fehler beim Speichern: ' + error, 'error');
+          msvToast('Fehler beim Speichern: ' + error, 'error');
         }
       },
       complete: function() {

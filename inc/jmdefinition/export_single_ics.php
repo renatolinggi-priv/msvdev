@@ -36,7 +36,6 @@ $conn->close();
 $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $veranstaltung) . ".ics";
 header("Content-Disposition: attachment; filename=\"$filename\"");
 
-
 // Hilfsfunktion zum Escapen von Zeichen für ICS
 function icsEscape($text) {
     // Backslashes zuerst

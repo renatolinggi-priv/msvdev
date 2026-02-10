@@ -2,9 +2,10 @@
 // jsendschloesen_api.php - Backend API für JS-Endschiessen (nur Jungschützen)
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://www.msvwilen.ch');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-CSRF-TOKEN');
+header('Access-Control-Allow-Credentials: true');
 
 // Bei OPTIONS Request (CORS Preflight) sofort beenden
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

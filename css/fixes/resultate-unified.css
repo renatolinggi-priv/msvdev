@@ -287,17 +287,6 @@
     padding: 1rem 1.25rem !important;
 }
 
-/* Toast Nachrichten einheitlich */
-.toast-message {
-    min-width: 300px !important;
-    max-width: 500px !important;
-    padding: 1rem 1.25rem !important;
-    font-size: 0.9rem !important;
-    font-weight: 500 !important;
-    border-radius: 0.5rem !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-}
-
 /* Scrollbar einheitlich */
 .table-responsive::-webkit-scrollbar {
     width: 8px !important;
@@ -333,10 +322,6 @@
 
 .modal {
     z-index: 1060 !important;
-}
-
-#toast-container {
-    z-index: 9999 !important;
 }
 
 .table thead th:last-child,

@@ -1155,7 +1155,6 @@ document.addEventListener('input', function(e){
     document.getElementById('btnSelectAll').innerHTML = '<i class="bi bi-check2-square"></i> Alles auswählen';
   });
 
-
   document.getElementById('stichForm').addEventListener('submit', function(ev){
     ev.preventDefault();
     saveSelection();
@@ -1323,7 +1322,7 @@ document.addEventListener('input', function(e){
       const fb = document.getElementById('saveFeedback');
       if (data.success) {
         fb.className = 'ms-auto small text-success';
-        fb.textContent = '✓ ' + (data.message || 'Gespeichert');
+        fb.textContent = 'âœ“ ' + (data.message || 'Gespeichert');
         
         loadErfassteStiche();
         
@@ -1355,7 +1354,7 @@ document.addEventListener('input', function(e){
         }, 500);
       } else {
         fb.className = 'ms-auto small text-danger';
-        fb.textContent = '✗ ' + (data.message || 'Fehler beim Speichern');
+        fb.textContent = 'âœ— ' + (data.message || 'Fehler beim Speichern');
       }
       setTimeout(() => { fb.textContent = ''; }, 4000);
     })
@@ -1363,7 +1362,7 @@ document.addEventListener('input', function(e){
       console.error('Save error:', err);
       const fb = document.getElementById('saveFeedback');
       fb.className = 'ms-auto small text-danger';
-      fb.textContent = '✗ Netzwerkfehler';
+      fb.textContent = 'âœ— Netzwerkfehler';
       setTimeout(() => { fb.textContent = ''; }, 3000);
     })
     .finally(() => {
@@ -1787,7 +1786,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      showToast(`Bearbeite Stiche für ${entityName}`, 'info');
+      msvToast(`Bearbeite Stiche für ${entityName}`, 'info');
     }
     
     if (e.target.closest('.btn-delete-selection')) {
@@ -1827,7 +1826,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        showToast(`${entityName} wurde gelöscht`, 'success');
+        msvToast(`${entityName} wurde gelöscht`, 'success');
         loadErfassteStiche();
         
         const currentMitglied = document.getElementById('mitgliedSelect').value;
@@ -1838,12 +1837,12 @@ html += `<td class="text-center small">${munHtml}</td>`;
           document.getElementById('btnReset').click();
         }
       } else {
-        showToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
+        msvToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
       }
     })
     .catch(err => {
       console.error('Delete error:', err);
-      showToast('Netzwerkfehler beim Löschen', 'danger');
+      msvToast('Netzwerkfehler beim Löschen', 'danger');
     })
     .finally(() => {
       const confirmBtn = document.getElementById('confirmDeleteBtn');
@@ -1853,7 +1852,6 @@ html += `<td class="text-center small">${munHtml}</td>`;
       }
     });
   }
-
 
   // === Admin Functions ===
   function initAdminModals() {
@@ -1987,7 +1985,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
       }).then(r => r.json());
     }))
     .then(results => {
-      showToast('Spezialpreise erfolgreich gespeichert', 'success');
+      msvToast('Spezialpreise erfolgreich gespeichert', 'success');
       loadSpezialpreise();
       setTimeout(() => {
         updateMunitionPreise();
@@ -1996,7 +1994,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
     })
     .catch(err => {
       console.error('Error saving:', err);
-      showToast('Fehler beim Speichern der Spezialpreise', 'danger');
+      msvToast('Fehler beim Speichern der Spezialpreise', 'danger');
     })
     .finally(() => {
       spinner.classList.add('d-none');
@@ -2105,48 +2103,18 @@ html += `<td class="text-center small">${munHtml}</td>`;
         loadAllStiche();
         loadStiche();
         loadErfassteStiche();
-        showToast('Erfolgreich gespeichert', 'success');
+        msvToast('Erfolgreich gespeichert', 'success');
       } else {
-        showToast('Fehler: ' + result.message, 'danger');
+        msvToast('Fehler: ' + result.message, 'danger');
       }
     })
     .catch(err => {
       console.error('Save error:', err);
-      showToast('Netzwerkfehler beim Speichern', 'danger');
+      msvToast('Netzwerkfehler beim Speichern', 'danger');
     })
     .finally(() => {
       spinner.classList.add('d-none');
       btn.disabled = false;
-    });
-  }
-  
-  function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toastId = 'toast-' + Date.now();
-    
-    const toastHtml = `
-      <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'danger' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body">
-            ${message}
-          </div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-      </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', toastHtml);
-    
-    const toastElement = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastElement, {
-      autohide: true,
-      delay: 4000
-    });
-    
-    toast.show();
-    
-    toastElement.addEventListener('hidden.bs.toast', () => {
-      toastElement.remove();
     });
   }
   
@@ -2186,14 +2154,14 @@ html += `<td class="text-center small">${munHtml}</td>`;
       .then(data => {
         if (data.pdf_link) {
           window.open(data.pdf_link, '_blank');
-          showToast('PDF wurde erfolgreich generiert', 'success');
+          msvToast('PDF wurde erfolgreich generiert', 'success');
         } else if (data.error) {
-          showToast('Fehler: ' + data.error, 'danger');
+          msvToast('Fehler: ' + data.error, 'danger');
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        showToast('Fehler beim Generieren des PDFs', 'danger');
+        msvToast('Fehler beim Generieren des PDFs', 'danger');
       })
       .finally(() => {
         btn.disabled = false;

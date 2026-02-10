@@ -14,10 +14,12 @@ function getTotal($kategorie)
     $resultatetotal = array();
 
     // Mitglieder abrufen
-    $sqlMitgliederA = "SELECT m.id, m.Vorname, m.Name FROM mitglieder m
+    $stmtMitglieder = $conn->prepare("SELECT m.id, m.Vorname, m.Name FROM mitglieder m
         INNER JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE w.Kategorie = '$kategorie' AND m.Status = 1";
-    $mitglieder = $conn->query($sqlMitgliederA);
+        WHERE w.Kategorie = ? AND m.Status = 1");
+    $stmtMitglieder->bind_param("s", $kategorie);
+    $stmtMitglieder->execute();
+    $mitglieder = $stmtMitglieder->get_result();
 
     // Wettbewerbe abrufen (alle nicht versteckten)
     $sqlWettbewerbe = "
@@ -43,43 +45,49 @@ function getTotal($kategorie)
 
                 if ($bezeichnung == 'Endstich') {
                     // Endstich Punkte aus der Tabelle 'endstich' berechnen
-                    $sqlEndstich = "
-                        SELECT 
+                    $stmtEndstich = $conn->prepare("
+                        SELECT
                             Schuss1, Schuss2, Schuss3, Schuss4, Schuss5, Schuss6, Schuss7, Schuss8, Schuss9, Schuss10
-                        FROM 
+                        FROM
                             endstich
-                        WHERE 
-                            MitgliedID = $mitgliedID
+                        WHERE
+                            MitgliedID = ?
                             AND Jahr = 2024
-                    ";
-                    $endstichResult = $conn->query($sqlEndstich);
+                    ");
+                    $stmtEndstich->bind_param("i", $mitgliedID);
+                    $stmtEndstich->execute();
+                    $endstichResult = $stmtEndstich->get_result();
                     if ($endstichResult->num_rows > 0) {
                         $endstichRow = $endstichResult->fetch_assoc();
                         $punkte = array_sum($endstichRow);
                     } else {
                         $punkte = null;
                     }
+                    $stmtEndstich->close();
                 } else {
                     // Normale Wettbewerbe aus jmresultate
-                    $sqlResultate = "
+                    $stmtResultate = $conn->prepare("
                         SELECT
                             jm.Punkte,
                             jd.Maxpunkte,
                             jd.Bezeichnung
-                        FROM 
+                        FROM
                             jmresultate jm
-                        INNER JOIN 
+                        INNER JOIN
                             JMDefinition jd ON jd.ID = jm.jmdefinitionID
-                        WHERE jm.mitgliederID = $mitgliedID
-                        AND jd.ID = $wettbewerbID
-                    ";
-                    $punkteResult = $conn->query($sqlResultate);
+                        WHERE jm.mitgliederID = ?
+                        AND jd.ID = ?
+                    ");
+                    $stmtResultate->bind_param("ii", $mitgliedID, $wettbewerbID);
+                    $stmtResultate->execute();
+                    $punkteResult = $stmtResultate->get_result();
                     if ($punkteResult->num_rows > 0) {
                         $row = $punkteResult->fetch_assoc();
                         $punkte = $row['Punkte'];
                     } else {
                         $punkte = null;
                     }
+                    $stmtResultate->close();
                 }
 
                 // Skalierungsbedingung gemäß Ihren Anforderungen

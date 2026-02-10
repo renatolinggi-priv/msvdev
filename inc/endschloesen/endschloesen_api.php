@@ -2,9 +2,10 @@
 // endschloesen_api.php - Backend API für Endschiessen Stich-Erfassung (mysqli Version)
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://www.msvwilen.ch');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-CSRF-TOKEN');
+header('Access-Control-Allow-Credentials: true');
 
 // Bei OPTIONS Request (CORS Preflight) sofort beenden
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -946,7 +947,6 @@ if (!empty($debug)) {
         error_log('[ENDSCH] ammoPref ungeklärt: entity_id=' . $entity['entity_id'] . ' katbez="' . $katbez . '"');
     }
 }
-
 
                 if ($entity['typ'] === 'mitglied') {
                     // Stiche für Mitglied - berücksichtige auch alte Daten ohne gast_id

@@ -1191,11 +1191,12 @@ class MitgliederInfoReport extends PDFGenerator {
         
         try {
             // Hole das Endstich-Datum aus JMDefinition
-            // Da year ein YEAR-Typ ist, verwenden wir direkte Query
             $year = date('Y');
-            $sql = "SELECT Schiesstage FROM JMDefinition WHERE Bezeichnung = 'Endstich' AND year = '" . $year . "' LIMIT 1";
-            
-            $result = $this->conn->query($sql);
+            $sql = "SELECT Schiesstage FROM JMDefinition WHERE Bezeichnung = 'Endstich' AND year = ? LIMIT 1";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param('i', $year);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
             if (!$result) {
                 // Fallback wenn Query fehlschlägt
@@ -1461,12 +1462,6 @@ class Top3SchuetzenReport extends PDFGenerator {
      * Holt die Top 3 Schützen für eine Kategorie basierend auf dem bereitgestellten SQL
      */
     private function getTopSchuetzen($category) {
-        // Query basierend auf dem bereitgestellten SQL
-        // Da die SQL-Query zu komplex für prepared statements ist, führen wir sie direkt aus
-        // und ersetzen die Parameter manuell
-        
-        // Für die members CTE brauchen wir eine spezielle Behandlung
-        // Da wir nicht einfach ? Platzhalter verwenden können, ersetzen wir sie direkt
         $year = intval($this->selectedYear);
         
         $sql = "
@@ -1476,7 +1471,7 @@ class Top3SchuetzenReport extends PDFGenerator {
             definitions AS (
                 SELECT ID, Bezeichnung, Maxpunkte, Streicher, Reihenfolge
                 FROM JMDefinition
-                WHERE year = $year AND Erweitert = 0 AND Info = 0
+                WHERE year = ? AND Erweitert = 0 AND Info = 0
             ),
 
             -- Mitglieder laden
@@ -1485,7 +1480,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                 FROM mitglieder m
                 JOIN Waffen w ON w.ID = m.WaffenID
                 WHERE m.Status = 1
-                AND w.Kategorie = '" . $this->conn->real_escape_string($category) . "'
+                AND w.Kategorie = ?
             ),
 
             -- Normale Resultate sammeln
@@ -1523,7 +1518,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                 FROM endstich e
                 CROSS JOIN definitions jd
                 WHERE jd.Bezeichnung = 'Endstich'
-                AND e.Jahr = $year
+                AND e.Jahr = ?
                 AND e.MitgliedID IN (SELECT ID FROM members)
             ),
 
@@ -1546,7 +1541,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                 FROM kantiresultate k
                 CROSS JOIN definitions jd
                 WHERE jd.Bezeichnung = 'Bester Kantonalstich'
-                AND k.Jahr = $year
+                AND k.Jahr = ?
                 AND k.MitgliedID IN (SELECT ID FROM members)
             ),
 
@@ -1650,18 +1645,21 @@ class Top3SchuetzenReport extends PDFGenerator {
             LIMIT 3
         ";
         
-        $result = $this->conn->query($sql);
-        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('isii', $year, $category, $year, $year);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
         $data = [];
         if ($result) {
             while ($row = $result->fetch_assoc()) {
                 $data[] = $row;
             }
         }
-        
+
         return $data;
     }
-    
+
     /**
      * Erstellt die Tabelle für die Top Schützen
      */

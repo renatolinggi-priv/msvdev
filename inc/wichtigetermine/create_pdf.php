@@ -2,7 +2,7 @@
 // create_pdf.php
 
 include '../config.php';
-require_once '../dompdf/autoload.php';
+require_once '../vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -22,11 +22,51 @@ while ($row = $result->fetch_assoc()) {
     $termine[] = $row;
 }
 $stmt->close();
+
+// Standbelegung-Termine (InKalender = 1) laden und zusammenführen
+$sql = "SELECT Bezeichnung, Datum, StartZeit, EndZeit FROM Standbelegung WHERE Jahr = ? AND InKalender = 1 ORDER BY Datum, StartZeit";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $year);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Existierende Termine als Lookup für Duplikaterkennung (Datum + Name)
+$existingLookup = [];
+foreach ($termine as $t) {
+    $existingLookup[strtolower($t['date'] . '|' . $t['name'])] = true;
+}
+
+while ($row = $result->fetch_assoc()) {
+    $sbDate = $row['Datum'];
+    $sbName = $row['Bezeichnung'];
+
+    // Nur hinzufügen wenn nicht bereits als wichtiger Termin vorhanden
+    $lookupKey = strtolower($sbDate . '|' . $sbName);
+    if (isset($existingLookup[$lookupKey])) {
+        continue;
+    }
+
+    // Zeit formatieren: "HH:MM - HH:MM"
+    $sbTime = '';
+    if (!empty($row['StartZeit']) && !empty($row['EndZeit'])) {
+        $sbTime = substr($row['StartZeit'], 0, 5) . ' - ' . substr($row['EndZeit'], 0, 5);
+    }
+
+    $termine[] = [
+        'name' => $sbName,
+        'date' => $sbDate,
+        'time' => $sbTime
+    ];
+}
+$stmt->close();
 $conn->close();
 
+// Nach Datum sortieren
+usort($termine, function($a, $b) {
+    return strcmp($a['date'], $b['date']);
+});
 
 $logoBase64 = imgToBase64('dat/MSVWilen_Logo.jpg');
-
 
 // HTML-Inhalt für das PDF erstellen
 $html = '<!DOCTYPE html>
@@ -36,12 +76,12 @@ $html = '<!DOCTYPE html>
   <title>Wichtige Termine ' . $year . '</title>
   <style>
     @page {
-      margin: 20px 20px 10px 20px;
+      margin: 20px 20px 20px 20px;
     }
     body {
       font-family: Arial, sans-serif;
       font-size: 12px;
-      margin: 20px;
+      margin: 20px 20px 60px 20px;
       position: relative;
     }
 
@@ -121,9 +161,6 @@ $html = '<!DOCTYPE html>
     <th>Termin</th>
     <th>Uhrzeit</th>
   </tr>';
-
-
-
 
 foreach ($termine as $termin) {
     $datum = date("d.m.Y", strtotime($termin['date']));

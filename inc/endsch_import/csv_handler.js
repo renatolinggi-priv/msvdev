@@ -1,4 +1,4 @@
-// endsch_import/csv_handler.js — CSV-Handler für Einzel-Stiche (Endstich, Kunst, Glück, Zabig, Schwini)
+// endsch_import/csv_handler.js â€” CSV-Handler für Einzel-Stiche (Endstich, Kunst, Glück, Zabig, Schwini)
 // Architektur: init() -> loadProgramMap() -> setupEvents() -> handleFile() -> processCSV()
 // Erkennt Programme automatisch via Programmnummern-Mapping aus der DB (get_all_stich_definitions)
 
@@ -161,7 +161,7 @@ const FileHandler = {
       if (typeof UIHelper !== 'undefined') {
         UIHelper.showToast('Bitte eine CSV-Datei wählen', 'warning');
       } else {
-        alert('Bitte eine CSV-Datei wählen');
+        msvToast('Bitte eine CSV-Datei wählen', 'warning');
       }
       return;
     }
@@ -202,7 +202,7 @@ const FileHandler = {
 
   // Erwarteter Header: "ProgrammNr;Titel;DD.MM.YYYY-HH:MM:SS;...;Total: N"
   parseHeaderLine(line) {
-    // Sehr ähnlich zu deiner Heim/Kanti-Logik – robust auf "Total: <Zahl>"
+    // Sehr ähnlich zu deiner Heim/Kanti-Logik â€“ robust auf "Total: <Zahl>"
     const m = line.match(/^(\d+);([^;]*);(\d{2}\.\d{2}\.\d{4}-\d{2}:\d{2}:\d{2});.*Total:\s*(\d+)/);
     if (!m) return null;
     return {
@@ -355,7 +355,7 @@ const FileHandler = {
     // 7) UI befüllen
     this.renderResultsUI(fileName, relevantPrograms, allPrograms);
 
-    // 8) Lizenz → Mitglied vorselektieren
+    // 8) Lizenz â†’ Mitglied vorselektieren
     console.log('[ENDSCH-CSV] Checking license for preselection:', lizenzNr);
     if (lizenzNr) {
       console.log('[ENDSCH-CSV] License found, will call preselectMemberByLicense in 400ms');
@@ -596,8 +596,6 @@ const FileHandler = {
     
     // Keine Event-Handler mehr nötig, da keine Checkboxen mehr vorhanden
   },
-
-
 
   // Reset für neuen Upload
   resetUpload() {

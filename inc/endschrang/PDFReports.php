@@ -41,7 +41,7 @@ class EndstichReport extends PDFGenerator
                      (e.Schuss6 = 10) + (e.Schuss7 = 10) + (e.Schuss8 = 10) + (e.Schuss9 = 10) + (e.Schuss10 = 10)) AS Anzahl_10
                 FROM mitglieder m
                 LEFT JOIN endstich e
-                    ON m.ID = e.MitgliedID AND e.Jahr = {$this->selectedYear}
+                    ON m.ID = e.MitgliedID AND e.Jahr = ?
                 LEFT JOIN Waffen w
                     ON w.ID = m.WaffenID
                 WHERE COALESCE(
@@ -69,7 +69,7 @@ class EndstichReport extends PDFGenerator
                      (ej.Schuss6 = 10) + (ej.Schuss7 = 10) + (ej.Schuss8 = 10) + (ej.Schuss9 = 10) + (ej.Schuss10 = 10)) AS Anzahl_10
                 FROM endstich_gaeste g
                 INNER JOIN endstich_jung ej
-                    ON g.id = ej.JungschuetzeID AND ej.Jahr = {$this->selectedYear}
+                    ON g.id = ej.JungschuetzeID AND ej.Jahr = ?
                 WHERE COALESCE(
                         ej.Schuss1 + ej.Schuss2 + ej.Schuss3 + ej.Schuss4 + ej.Schuss5 +
                         ej.Schuss6 + ej.Schuss7 + ej.Schuss8 + ej.Schuss9 + ej.Schuss10
@@ -105,7 +105,7 @@ class EndstichReport extends PDFGenerator
                     ((ep.EndstichSchuss1 = 10) + (ep.EndstichSchuss2 = 10) + (ep.EndstichSchuss3 = 10) + (ep.EndstichSchuss4 = 10) + (ep.EndstichSchuss5 = 10) +
                      (ep.EndstichSchuss6 = 10) + (ep.EndstichSchuss7 = 10) + (ep.EndstichSchuss8 = 10) + (ep.EndstichSchuss9 = 10) + (ep.EndstichSchuss10 = 10)) AS Anzahl_10
                 FROM endresultate_partner ep
-                WHERE ep.Jahr = {$this->selectedYear}
+                WHERE ep.Jahr = ?
                   AND COALESCE(
                         ep.EndstichSchuss1 + ep.EndstichSchuss2 + ep.EndstichSchuss3 + ep.EndstichSchuss4 + ep.EndstichSchuss5 +
                         ep.EndstichSchuss6 + ep.EndstichSchuss7 + ep.EndstichSchuss8 + ep.EndstichSchuss9 + ep.EndstichSchuss10
@@ -118,7 +118,8 @@ class EndstichReport extends PDFGenerator
                 u.Geburtsdatum ASC
         ";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "iii", $y, $y, $y);
 
         // Daten für Tabelle vorbereiten (mit fmtNoTrailingZero)
         $tableData = [];
@@ -226,11 +227,6 @@ class EndstichReport extends PDFGenerator
     }
 }
 
-
-
-
-
-
 /**
  * Schwini Rangliste
  */
@@ -259,7 +255,7 @@ SELECT
     ) AS Tiefste_Summe
 FROM mitglieder m
 LEFT JOIN schwini s 
-    ON m.ID = s.MitgliedID AND s.Jahr = {$this->selectedYear}
+    ON m.ID = s.MitgliedID AND s.Jahr = ?
 WHERE COALESCE(
         (s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0
      ) != 0
@@ -289,7 +285,7 @@ SELECT
     ) AS Tiefste_Summe
 FROM endstich_gaeste g
 INNER JOIN schwini_jung sj 
-    ON g.id = sj.JungschuetzeID AND sj.Jahr = {$this->selectedYear}
+    ON g.id = sj.JungschuetzeID AND sj.Jahr = ?
 WHERE COALESCE(
         (sj.P1Schuss1 + sj.P1Schuss2 + sj.P1Schuss3 + sj.P1Schuss4 + sj.P1Schuss5 + sj.P1Schuss6), 0
      ) != 0
@@ -328,7 +324,7 @@ SELECT
         COALESCE(ep.PartnerSchwiniSchuss7 + ep.PartnerSchwiniSchuss8 + ep.PartnerSchwiniSchuss9 + ep.PartnerSchwiniSchuss10 + ep.PartnerSchwiniSchuss11 + ep.PartnerSchwiniSchuss12, 0)
     ) AS Tiefste_Summe
 FROM endresultate_partner ep
-WHERE ep.Jahr = {$this->selectedYear}
+WHERE ep.Jahr = ?
   AND (
       COALESCE(ep.PartnerSchwiniSchuss1 + ep.PartnerSchwiniSchuss2 + ep.PartnerSchwiniSchuss3 + ep.PartnerSchwiniSchuss4 + ep.PartnerSchwiniSchuss5 + ep.PartnerSchwiniSchuss6, 0) != 0
    OR COALESCE(ep.PartnerSchwiniSchuss7 + ep.PartnerSchwiniSchuss8 + ep.PartnerSchwiniSchuss9 + ep.PartnerSchwiniSchuss10 + ep.PartnerSchwiniSchuss11 + ep.PartnerSchwiniSchuss12, 0) != 0
@@ -337,8 +333,8 @@ WHERE ep.Jahr = {$this->selectedYear}
 ORDER BY Hoechste_Summe DESC, Tiefste_Summe DESC, Geburtsdatum ASC
 ";
 
-
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "iii", $y, $y, $y);
 
         $html = $this->createHTMLHeader('Schwini Rangliste ' . $this->selectedYear);
         $html .= '<h2>Schwini Rangliste ' . $this->selectedYear . '</h2>';
@@ -443,11 +439,12 @@ class KunstReport extends PDFGenerator
         FROM mitglieder m
         LEFT JOIN kunst k ON m.ID = k.MitgliedID
         LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE k.KSchuss1 IS NOT NULL AND k.KSchuss1 != 0 AND k.Jahr = {$this->selectedYear}
+        WHERE k.KSchuss1 IS NOT NULL AND k.KSchuss1 != 0 AND k.Jahr = ?
         GROUP BY m.ID
         ORDER BY Kunst_Summe DESC, TS DESC, m.Geburtsdatum ASC";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "i", $y);
 
         $html = $this->createHTMLHeader('Kunst Rangliste ' . $this->selectedYear);
         $html .= '<h2>Kunst Rangliste ' . $this->selectedYear . '</h2>';
@@ -547,11 +544,12 @@ class GlueckReport extends PDFGenerator
         FROM mitglieder m
         LEFT JOIN glueck g ON m.ID = g.MitgliedID
         LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE g.GSchuss1 != 0 AND g.Jahr = {$this->selectedYear}
+        WHERE g.GSchuss1 != 0 AND g.Jahr = ?
         GROUP BY m.ID
         ORDER BY MaxGlueck DESC, ZweitHoechster DESC, DrittHoechster DESC, m.Geburtsdatum ASC";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "i", $y);
 
         $html = $this->createHTMLHeader('Glückstich Rangliste ' . $this->selectedYear);
         $html .= '<h2>Glückstich Rangliste ' . $this->selectedYear . '</h2>';
@@ -649,7 +647,7 @@ class ZabigReport extends PDFGenerator
                     z.ZSchuss1, z.ZSchuss2, z.ZSchuss3, z.ZSchuss4, z.ZSchuss5, z.ZSchuss6
                 FROM mitglieder m
                 LEFT JOIN zabig z
-                    ON m.ID = z.MitgliedID AND z.Jahr = {$this->selectedYear}
+                    ON m.ID = z.MitgliedID AND z.Jahr = ?
                 WHERE COALESCE(z.ZSchuss1 + z.ZSchuss2 + z.ZSchuss3 + z.ZSchuss4 + z.ZSchuss5 + z.ZSchuss6, 0) != 0
 
                 UNION ALL
@@ -663,13 +661,14 @@ class ZabigReport extends PDFGenerator
                     zj.ZSchuss1, zj.ZSchuss2, zj.ZSchuss3, zj.ZSchuss4, zj.ZSchuss5, zj.ZSchuss6
                 FROM endstich_gaeste g
                 INNER JOIN zabig_jung zj
-                    ON g.id = zj.JungschuetzeID AND zj.Jahr = {$this->selectedYear}
+                    ON g.id = zj.JungschuetzeID AND zj.Jahr = ?
                 WHERE g.Geburtsdatum IS NOT NULL
                   AND COALESCE(zj.ZSchuss1 + zj.ZSchuss2 + zj.ZSchuss3 + zj.ZSchuss4 + zj.ZSchuss5 + zj.ZSchuss6, 0) != 0
             ) u
         ";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "ii", $y, $y);
 
         // Umrechnung: Schüsse -> Punkte (nur für Anzeige & Total)
         // TS bleibt der beste Rohwert (Hunderterskala)
@@ -701,7 +700,7 @@ class ZabigReport extends PDFGenerator
         }
         unset($row);
 
-        // Sortierung: zuerst Total (Punkte) ↓, dann TS (Rohwert 100er) ↓
+        // Sortierung: zuerst Total (Punkte) â†“, dann TS (Rohwert 100er) â†“
         usort($data, function ($a, $b) {
             if ($a['Total'] == $b['Total']) {
                 return $b['TS'] <=> $a['TS'];
@@ -770,8 +769,6 @@ class ZabigReport extends PDFGenerator
     }
 }
 
-
-
 /**
  * Differenzler Rangliste
  */
@@ -791,11 +788,12 @@ class DifferenzlerReport extends PDFGenerator
         FROM mitglieder m
         LEFT JOIN zabig z ON m.ID = z.MitgliedID
         LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE z.ZSchuss1 != 0 AND z.Jahr = {$this->selectedYear}
+        WHERE z.ZSchuss1 != 0 AND z.Jahr = ?
         GROUP BY m.ID
         ORDER BY NormDiff ASC, m.Geburtsdatum ASC";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "i", $y);
 
         $html = $this->createHTMLHeader('Differenzler ' . $this->selectedYear);
         $html .= '<h2>Differenzler ' . $this->selectedYear . '</h2>';
@@ -868,7 +866,6 @@ class DifferenzlerReport extends PDFGenerator
  * Absendenanmeldung Report
  */
 
-
 class AnmeldungReport extends PDFGenerator
 {
     /** Cache für Stich-IDs nach Code */
@@ -904,7 +901,7 @@ private function createAnmeldungTable()
             e.AbsendenAnmeldung AS Anmeldungen
         FROM mitglieder m
         LEFT JOIN endstich e ON m.ID = e.MitgliedID
-        WHERE e.AbsendenAnmeldung IS NOT NULL AND e.Jahr = {$this->selectedYear}
+        WHERE e.AbsendenAnmeldung IS NOT NULL AND e.Jahr = ?
         GROUP BY m.ID
 
         UNION ALL
@@ -914,7 +911,7 @@ private function createAnmeldungTable()
             ej.AbsendenAnmeldung AS Anmeldungen
         FROM jungschuetzen js
         LEFT JOIN endstich_jung ej ON js.ID = ej.JungschuetzeID
-        WHERE ej.AbsendenAnmeldung IS NOT NULL AND ej.Jahr = {$this->selectedYear}
+        WHERE ej.AbsendenAnmeldung IS NOT NULL AND ej.Jahr = ?
         GROUP BY js.ID
 
         UNION ALL
@@ -925,13 +922,14 @@ private function createAnmeldungTable()
         FROM endstich_gaeste g
         LEFT JOIN endstich_jung ej ON g.id = ej.JungschuetzeID AND g.jahr = ej.Jahr
         WHERE g.geburtsdatum IS NOT NULL 
-          AND g.jahr = {$this->selectedYear}
+          AND g.jahr = ?
           AND ej.AbsendenAnmeldung IS NOT NULL
         GROUP BY g.id
 
         ORDER BY Name ASC";
 
-    $data = $this->executeQuery($sql);
+    $y = (int)$this->selectedYear;
+    $data = $this->executePreparedQuery($sql, "iii", $y, $y, $y);
 
     if (!empty($data)) {
         $html = '<table class="table table-bordered">';
@@ -1093,7 +1091,7 @@ private function createAnmeldungTable()
 
     /**
      * Partner-Pakete (Summe über Partner = Gäste ohne Geburtsdatum).
-     * Pro Partner max(gast_spezialpreis) (in Rappen) — so vermeiden wir Doppelzählungen.
+     * Pro Partner max(gast_spezialpreis) (in Rappen) â€” so vermeiden wir Doppelzählungen.
      * Liefert auch Details (heuristisch) für Kombi 2 / Kombi 3.
      */
     private function getPartnerPaketeStats(): array
@@ -1161,8 +1159,13 @@ private function createAnmeldungTable()
         $total_schwini_chf = $mit_p1_amt + $mit_p2_amt + $ga_p1_amt + $ga_p2_amt + $ju_p1_amt;
 
         // --- Differenzler (wie bisher aus zabig) ---
-        $sql_diff = "SELECT COUNT(Ansage) as Anzahl FROM zabig WHERE Ansage IS NOT NULL AND Jahr = {$this->selectedYear}";
-        $row_diff = $this->conn->query($sql_diff)->fetch_assoc();
+        $sql_diff = "SELECT COUNT(Ansage) as Anzahl FROM zabig WHERE Ansage IS NOT NULL AND Jahr = ?";
+        $stmt_diff = $this->conn->prepare($sql_diff);
+        $y_diff = (int)$this->selectedYear;
+        $stmt_diff->bind_param("i", $y_diff);
+        $stmt_diff->execute();
+        $row_diff = $stmt_diff->get_result()->fetch_assoc();
+        $stmt_diff->close();
         $anzahl_diff = (int)($row_diff['Anzahl'] ?? 0);
         $amount_diff_chf = $anzahl_diff * 5.0;
 
@@ -1244,8 +1247,8 @@ private function createAnmeldungTable()
 
         // Partner-Pakete (Details + Brutto/Abzug/Netto)
         $html .= "<tr><td align='left'><strong>Partner Endschiessen</strong></td><td></td><td></td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;– Partner-Paket Kombi 2 Stiche</td><td align='center'>{$cntKombi2}</td><td align='right'>{$amtKombi2_str}</td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;– Partner-Paket Kombi 3 Stiche</td><td align='center'>{$cntKombi3}</td><td align='right'>{$amtKombi3_str}</td></tr>";
+        $html .= "<tr><td align='left'>&nbsp;&nbsp;â€“ Partner-Paket Kombi 2 Stiche</td><td align='center'>{$cntKombi2}</td><td align='right'>{$amtKombi2_str}</td></tr>";
+        $html .= "<tr><td align='left'>&nbsp;&nbsp;â€“ Partner-Paket Kombi 3 Stiche</td><td align='center'>{$cntKombi3}</td><td align='right'>{$amtKombi3_str}</td></tr>";
         $html .= "<tr><td align='left'><em>Zwischentotal Partner</em></td><td align='center'>{$anzPartnerPakete}</td><td align='right'><em>{$amountPartnerPakete_brutto_str}</em></td></tr>";
         $html .= "<tr><td align='left'>abzüglich Schwini-Anteil Partner</td><td align='center'></td><td align='right'>- {$ga_schwini_anteil_str}</td></tr>";
         $html .= "<tr><td align='left'><strong>Total Partner Endschiessen</strong></td><td align='center'></td><td align='right'><strong>{$amountPartnerPakete_netto_str}</strong></td></tr>";
@@ -1260,7 +1263,6 @@ private function createAnmeldungTable()
         return $html;
     }
 }
-
 
 /**
  * Partner Rangliste - Endstich + Beste Partner Schwini Passe
@@ -1324,7 +1326,7 @@ class PartnerRankingReport extends PDFGenerator
                  )) AS Total_Summe
             FROM mitglieder m
             INNER JOIN endresultate_partner ep ON m.ID = ep.MitgliedID
-            WHERE ep.Jahr = {$this->selectedYear}
+            WHERE ep.Jahr = ?
               AND ((COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
                     COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
                     COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
@@ -1338,7 +1340,8 @@ class PartnerRankingReport extends PDFGenerator
             ORDER BY Total_Summe DESC, Endstich_Summe DESC, Schwini_Andere_Passe DESC, m.Name ASC, m.Vorname ASC
         ";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "i", $y);
 
         $html = $this->createHTMLHeader('Partner Rangliste ' . $this->selectedYear);
         $html .= '<h2>Partner Rangliste ' . $this->selectedYear . '</h2>';
@@ -1401,9 +1404,9 @@ class PartnerRankingReport extends PDFGenerator
         // Erklärung hinzufügen
         $html .= '<div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #0d6efd; font-size: 9px;">';
         $html .= '<strong>Erläuterung:</strong><br/>';
-        $html .= '• <strong>Beste Schwini:</strong> Die höhere der beiden Passen wird gezählt<br/>';
-        $html .= '• Wert in Klammern (x.x) = Nicht gezählte Passe (wird bei Gleichstand berücksichtigt)<br/>';
-        $html .= '• <strong>Total</strong> = Endstich + Beste Schwini-Passe';
+        $html .= 'â€¢ <strong>Beste Schwini:</strong> Die höhere der beiden Passen wird gezählt<br/>';
+        $html .= 'â€¢ Wert in Klammern (x.x) = Nicht gezählte Passe (wird bei Gleichstand berücksichtigt)<br/>';
+        $html .= 'â€¢ <strong>Total</strong> = Endstich + Beste Schwini-Passe';
         $html .= '</div>';
 
         return $html;
@@ -1427,7 +1430,7 @@ class SieErReport extends PDFGenerator
                 ep.SieErSchuss6, ep.SieErSchuss7, ep.SieErSchuss8, ep.SieErSchuss9, ep.SieErSchuss10
             FROM mitglieder m
             INNER JOIN endresultate_partner ep ON m.ID = ep.MitgliedID
-            WHERE ep.Jahr = {$this->selectedYear}
+            WHERE ep.Jahr = ?
               AND (COALESCE(ep.SieErSchuss1, 0) + COALESCE(ep.SieErSchuss2, 0) + COALESCE(ep.SieErSchuss3, 0) +
                    COALESCE(ep.SieErSchuss4, 0) + COALESCE(ep.SieErSchuss5, 0) + COALESCE(ep.SieErSchuss6, 0) +
                    COALESCE(ep.SieErSchuss7, 0) + COALESCE(ep.SieErSchuss8, 0) + COALESCE(ep.SieErSchuss9, 0) +
@@ -1435,7 +1438,8 @@ class SieErReport extends PDFGenerator
             ORDER BY m.Name ASC, m.Vorname ASC
         ";
 
-        $data = $this->executeQuery($sql);
+        $y = (int)$this->selectedYear;
+        $data = $this->executePreparedQuery($sql, "i", $y);
 
         // Spezielle Total-Berechnung durchführen und sortieren
         foreach ($data as &$row) {
@@ -1622,11 +1626,11 @@ class SieErReport extends PDFGenerator
         // Erklärungsbox am Ende
         $html .= '<div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #0d6efd; font-size: 9px;">';
         $html .= '<strong>Erläuterung zur speziellen Berechnung:</strong><br/>';
-        $html .= '• <span style="background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px;">Rot</span> = Partner-Schüsse (Position 1-5)<br/>';
-        $html .= '• <span style="background-color: #0d6efd; color: white; padding: 1px 4px; border-radius: 2px;">Blau</span> = Mitglied-Schüsse (Position 6-10)<br/>';
-        $html .= '• <span style="text-decoration: line-through;">Durchgestrichen</span> = Duplikate (zählen nicht für Total)<br/>';
-        $html .= '• <strong>Total*</strong>: Jeder einzigartige Wert wird nur einmal gezählt<br/>';
-        $html .= '• Beispiel: Wenn 3x die "10" geschossen wurde, zählt sie nur 1x für das Total';
+        $html .= 'â€¢ <span style="background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px;">Rot</span> = Partner-Schüsse (Position 1-5)<br/>';
+        $html .= 'â€¢ <span style="background-color: #0d6efd; color: white; padding: 1px 4px; border-radius: 2px;">Blau</span> = Mitglied-Schüsse (Position 6-10)<br/>';
+        $html .= 'â€¢ <span style="text-decoration: line-through;">Durchgestrichen</span> = Duplikate (zählen nicht für Total)<br/>';
+        $html .= 'â€¢ <strong>Total*</strong>: Jeder einzigartige Wert wird nur einmal gezählt<br/>';
+        $html .= 'â€¢ Beispiel: Wenn 3x die "10" geschossen wurde, zählt sie nur 1x für das Total';
         $html .= '</div>';
 
         return $html;
@@ -1656,7 +1660,5 @@ if (!function_exists('fmtNoTrailingZero')) {
         return $s !== '' ? $s : "0\u{200C}";
     }
 }
-
-
 
 ?>

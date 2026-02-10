@@ -10,19 +10,19 @@ abstract class MultiKategorieReport extends PDFGenerator {
     
     protected function getGesamtSQL($kat, $includeZabig = true) {
         $zabigCalculation = $includeZabig ? $this->getZabigCalculation() : '0';
-        
-        return "SELECT
+
+        $sql = "SELECT
             m.Name,
             m.Vorname,
             m.Geburtsdatum,
             {$zabigCalculation} AS ZabigTotal,
             COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1)) AS GlueckTotal,
-            COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + 
+            COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 +
                         e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS EndstichTotal,
-            COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal, 
+            COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal,
             GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
                     s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) as MaxSchwini,
-            (COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + 
+            (COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 +
                          e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) +
              COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1)) +
              {$zabigCalculation} +
@@ -31,15 +31,17 @@ abstract class MultiKategorieReport extends PDFGenerator {
                      s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6)
             ) AS GesamtTotal
         FROM mitglieder m
-        LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = {$this->selectedYear}
-        LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = {$this->selectedYear}
-        LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = {$this->selectedYear}
-        LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = {$this->selectedYear}
-        LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = {$this->selectedYear}
+        LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
+        LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
+        LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = ?
+        LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = ?
+        LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
         LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE w.Kategorie = '$kat' AND e.Schuss1 != 0
+        WHERE w.Kategorie = ? AND e.Schuss1 != 0
         GROUP BY m.ID, m.Vorname, m.Name
         ORDER BY GesamtTotal DESC, EndstichTotal DESC, m.Geburtsdatum ASC";
+
+        return ['sql' => $sql, 'types' => 'iiiiis', 'params' => [$this->selectedYear, $this->selectedYear, $this->selectedYear, $this->selectedYear, $this->selectedYear, $kat]];
     }
     
     protected function getZabigCalculation() {
@@ -136,21 +138,23 @@ class GesamtRanglisteReport extends MultiKategorieReport {
         $html .= '<h2>Endschiessen Gesamtrangliste ' . $this->selectedYear . '</h2>';
         
         // Kategorie A
-        $dataA = $this->executeQuery($this->getGesamtSQL('Kat. A', true));
+        $qA = $this->getGesamtSQL('Kat. A', true);
+        $dataA = $this->executePreparedQuery($qA['sql'], $qA['types'], ...$qA['params']);
         if (!empty($dataA)) {
             $html .= $this->createKategorieTable('Kat. A', $dataA, true);
         }
-        
+
         $html .= "<div class=\"row\">&nbsp;</div>";
-        
+
         // Kategorie B
-        $dataB = $this->executeQuery($this->getGesamtSQL('Kat. B', true));
+        $qB = $this->getGesamtSQL('Kat. B', true);
+        $dataB = $this->executePreparedQuery($qB['sql'], $qB['types'], ...$qB['params']);
         if (!empty($dataB)) {
             $html .= $this->createKategorieTable('Kat. B', $dataB, true);
         }
-        
+
         $html .= $this->createHTMLFooter();
-        
+
         $pdfPath = $this->generatePDF($html, 'EndschiessenGesamtrangliste');
         $this->outputDownloadLink($pdfPath);
     }
@@ -165,21 +169,23 @@ class ZwischenRanglisteReport extends MultiKategorieReport {
         $html .= '<h2>Endschiessen ' . $this->selectedYear . ' Zwischenrangliste</h2>';
         
         // Kategorie A
-        $dataA = $this->executeQuery($this->getGesamtSQL('Kat. A', false));
+        $qA = $this->getGesamtSQL('Kat. A', false);
+        $dataA = $this->executePreparedQuery($qA['sql'], $qA['types'], ...$qA['params']);
         if (!empty($dataA)) {
             $html .= $this->createKategorieTable('Kat. A', $dataA, false);
         }
-        
+
         $html .= "<div class=\"row\">&nbsp;</div>";
-        
+
         // Kategorie B
-        $dataB = $this->executeQuery($this->getGesamtSQL('Kat. B', false));
+        $qB = $this->getGesamtSQL('Kat. B', false);
+        $dataB = $this->executePreparedQuery($qB['sql'], $qB['types'], ...$qB['params']);
         if (!empty($dataB)) {
             $html .= $this->createKategorieTable('Kat. B', $dataB, false);
         }
-        
+
         $html .= $this->createHTMLFooter();
-        
+
         $pdfPath = $this->generatePDF($html, 'EndschschiessenZwischenrangliste');
         $this->outputDownloadLink($pdfPath);
     }

@@ -1,7 +1,7 @@
 <?php
 // PDFGenerator.php - Zentrale Klasse für alle PDF-Generierungen
 
-require_once '../dompdf/autoload.php';
+require_once '../vendor/autoload.php';
 
 // Nur includen wenn noch nicht geladen
 if (!defined('DB_HOST')) {
@@ -238,13 +238,35 @@ class PDFGenerator {
     protected function executeQuery($sql) {
         $result = $this->conn->query($sql);
         $data = [];
-        
+
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $data[] = $row;
             }
         }
-        
+
+        return $data;
+    }
+
+    /**
+     * Führt eine SQL-Abfrage mit Prepared Statement aus und gibt das Ergebnis als Array zurück
+     */
+    protected function executePreparedQuery($sql, $types, ...$params) {
+        $stmt = $this->conn->prepare($sql);
+        if ($types && count($params) > 0) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = [];
+
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $data[] = $row;
+            }
+        }
+
+        $stmt->close();
         return $data;
     }
     

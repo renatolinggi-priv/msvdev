@@ -13,11 +13,19 @@ header('Content-Type: application/json');
 // Include database configuration
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 // Check database connection with proper error handling
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
     http_response_code(500);
-    echo json_encode(['error' => 'Datenbankverbindung fehlgeschlagen: ' . $conn->connect_error]);
+    echo json_encode(['message' => 'Datenbankverbindung fehlgeschlagen: ' . $conn->connect_error]);
     exit;
 }
 
@@ -26,7 +34,7 @@ $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
     http_response_code(500);
-    echo json_encode(['error' => 'Tabelle endresultate_partner existiert nicht. Führen Sie zuerst database_setup.sql aus.']);
+    echo json_encode(['message' => 'Tabelle endresultate_partner existiert nicht. Führen Sie zuerst database_setup.sql aus.']);
     exit;
 }
 
@@ -35,7 +43,7 @@ $partnerID = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
 if ($partnerID <= 0) {
     http_response_code(400);
-    echo json_encode(['error' => 'Ungültige Partner-ID']);
+    echo json_encode(['message' => 'Ungültige Partner-ID']);
     exit;
 }
 
@@ -57,7 +65,7 @@ try {
     
     if ($checkResult->num_rows === 0) {
         http_response_code(404);
-        echo json_encode(['error' => 'Partner-Daten nicht gefunden']);
+        echo json_encode(['message' => 'Partner-Daten nicht gefunden']);
         $checkStmt->close();
         $conn->close();
         exit;
@@ -106,7 +114,7 @@ try {
     
     http_response_code(500);
     echo json_encode([
-        'error' => 'Fehler beim Löschen: ' . $e->getMessage()
+        'message' => 'Fehler beim Löschen: ' . $e->getMessage()
     ]);
     
 } finally {

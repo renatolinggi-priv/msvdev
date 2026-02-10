@@ -36,7 +36,6 @@ function generateICS($veranstaltung, $beschreibung, $schiesstage, $includeCalend
     return $ics;
 }
 
-
 // Schiesstage-Parser-Funktion (bleibt unverändert)
 function parseSchiesstage($input) {
     $input = str_replace("\xe2\x80\x93", "-", $input); // UTF-8 Gedankenstrich ersetzen

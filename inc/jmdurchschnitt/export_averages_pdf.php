@@ -2,7 +2,7 @@
 // export_averages_pdf.php
 session_start();
 include '../config.php';
-require_once '../dompdf/autoload.php';
+require_once '../vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;

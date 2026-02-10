@@ -272,7 +272,7 @@ const ImportManager = {
         this.updateImportPreview();
     },
     
-    executeImport() {
+    async executeImport() {
         const mitgliedId = $('#mitgliedSelect').val();
         const jahr = $('#jahrSelect').val();
         
@@ -287,9 +287,8 @@ const ImportManager = {
         }
         
         // Bestätigung
-        if (!confirm('Möchtest du die ausgewählten Programme wirklich importieren?')) {
-            return;
-        }
+        const confirmResult = await msvConfirm('Möchtest du die ausgewählten Programme wirklich importieren?', 'Import bestätigen', 'Ja, importieren');
+        if (!confirmResult.isConfirmed) return;
         
         // Debug: Log was gesendet wird
         console.log('Sending import data:', {

@@ -427,7 +427,7 @@ $page_specific_css = "
 /* Häkchen Symbol angepasst */
 .form-check-input:checked::after,
 #mitgliederTable input[type='checkbox']:checked::after {
-    content: '✓' !important;
+    content: 'âœ“' !important;
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
@@ -832,7 +832,6 @@ if (!isset($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-
 <script>
 $(document).ready(function () {
     // === GLOBALE VARIABLEN ===
@@ -840,61 +839,13 @@ $(document).ready(function () {
     let modalOpening = false;
 
     // === INITIALISIERUNG ===
-    initializeToastSystem();
     loadMitglieder();
     loadWaffen();
     setupEventHandlers();
     setupModalEventHandlers();
     setupCSVImport();
 
-    // === TOAST SYSTEM ===
-    function initializeToastSystem() {
-        if ($('#toast-container').length === 0) {
-            $('body').append('<div id="toast-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999;"></div>');
-        }
-    }
-
-    // Moderne Toast-Funktion wie in endresultate.php
-    function showToast(message, type = 'info') {
-        const toast = $('<div>')
-            .addClass(`toast-message toast-${type}`)
-            .html(`<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}`)
-            .css({
-                'background-color': type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#6c757d',
-                'color': 'white',
-                'padding': '12px 20px',
-                'margin-bottom': '10px',
-                'border-radius': '8px',
-                'box-shadow': '0 4px 15px rgba(0,0,0,0.15)',
-                'opacity': '0',
-                'transform': 'translateX(100%)',
-                'transition': 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                'font-weight': '500',
-                'display': 'flex',
-                'align-items': 'center',
-                'min-width': '280px',
-                'font-size': '0.9rem'
-            });
-
-        $('#toast-container').append(toast);
-
-        setTimeout(() => {
-            toast.css({
-                'opacity': '1',
-                'transform': 'translateX(0)'
-            });
-        }, 100);
-
-        setTimeout(() => {
-            toast.css({
-                'opacity': '0',
-                'transform': 'translateX(100%)'
-            });
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    }
-
-    // Nachricht anzeigen (wrapper für Toast)
+    // Nachricht anzeigen (wrapper für msvToast)
     function showMessage(message, type) {
         const typeMap = {
             'danger': 'error',
@@ -902,7 +853,7 @@ $(document).ready(function () {
             'warning': 'warning',
             'info': 'info'
         };
-        showToast(message, typeMap[type] || 'info');
+        msvToast(message, typeMap[type] || 'info');
     }
 
     // === DATEN-LADEN FUNKTIONEN ===
@@ -924,7 +875,7 @@ $(document).ready(function () {
             timeout: 10000,
             success: function(data) {
                 $('#mitgliederTbody').html(data);
-                showToast('Mitglieder erfolgreich geladen', 'success');
+                msvToast('Mitglieder erfolgreich geladen', 'success');
             },
             error: function(xhr, status, error) {
                 console.error('Fehler beim Laden der Mitglieder:', error);
@@ -1036,11 +987,11 @@ $(document).ready(function () {
             type: 'POST',
             data: $('#mitgliederForm').serialize(),
             success: function(response) {
-                showToast('Alle Änderungen erfolgreich gespeichert!', 'success');
+                msvToast('Alle Änderungen erfolgreich gespeichert!', 'success');
                 setTimeout(() => loadMitglieder(), 1000);
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Speichern der Änderungen', 'error');
+                msvToast('Fehler beim Speichern der Änderungen', 'error');
             },
             complete: function() {
                 $saveBtn.prop('disabled', false).html(originalText);
@@ -1065,22 +1016,22 @@ $(document).ready(function () {
                 try {
                     const result = JSON.parse(response);
                     if (result.success) {
-                        showToast('Neues Mitglied erfolgreich hinzugefügt!', 'success');
+                        msvToast('Neues Mitglied erfolgreich hinzugefügt!', 'success');
                         $('#newMemberModal').modal('hide');
                         $('#newMemberForm')[0].reset();
                         setTimeout(() => loadMitglieder(), 1000);
                     } else {
-                        showToast('Fehler: ' + (result.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + (result.message || 'Unbekannter Fehler'), 'error');
                     }
                 } catch (e) {
-                    showToast('Neues Mitglied erfolgreich hinzugefügt!', 'success');
+                    msvToast('Neues Mitglied erfolgreich hinzugefügt!', 'success');
                     $('#newMemberModal').modal('hide');
                     $('#newMemberForm')[0].reset();
                     setTimeout(() => loadMitglieder(), 1000);
                 }
             },
             error: function(xhr, status, error) {
-                showToast('Verbindungsfehler beim Hinzufügen des Mitglieds', 'error');
+                msvToast('Verbindungsfehler beim Hinzufügen des Mitglieds', 'error');
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
@@ -1089,33 +1040,34 @@ $(document).ready(function () {
     }
 
     // Mitglied löschen
-    function handleDeleteMember() {
+    async function handleDeleteMember() {
         const id = $(this).data('id');
         const memberName = $(this).closest('tr').find('td:nth-child(2)').text() + ' ' + $(this).closest('tr').find('td:nth-child(3)').text();
-        
-        if (confirm(`Möchten Sie das Mitglied "${memberName}" wirklich löschen?`)) {
-            const $btn = $(this);
-            const originalText = $btn.html();
-            $btn.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm"></span>');
-            
-            $.ajax({
-                url: 'mitgliederverwaltung/delete_mitglied.php',
-                type: 'POST',
-                data: {
-                    id: id,
-                    csrf_token: $('input[name="csrf_token"]').val()
-                },
-                success: function(response) {
-                    showToast('Mitglied erfolgreich gelöscht', 'success');
-                    setTimeout(() => loadMitglieder(), 1000);
-                },
-                error: function(xhr, status, error) {
-                    showToast('Fehler beim Löschen des Mitglieds', 'error');
-                    $btn.prop('disabled', false).html(originalText);
-                }
-            });
-        }
+
+        const result = await msvConfirmDelete(`Mitglied "${memberName}"`);
+        if (!result.isConfirmed) return;
+
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm"></span>');
+
+        $.ajax({
+            url: 'mitgliederverwaltung/delete_mitglied.php',
+            type: 'POST',
+            data: {
+                id: id,
+                csrf_token: $('input[name="csrf_token"]').val()
+            },
+            success: function(response) {
+                msvToast('Mitglied erfolgreich gelöscht', 'success');
+                setTimeout(() => loadMitglieder(), 1000);
+            },
+            error: function(xhr, status, error) {
+                msvToast('Fehler beim Löschen des Mitglieds', 'error');
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
     }
 
     // === CSV IMPORT FUNKTIONALITÄT ===
@@ -1151,7 +1103,7 @@ $(document).ready(function () {
         if (files.length > 0 && files[0].name.endsWith('.csv')) {
             parseCSV(files[0]);
         } else {
-            showToast('Bitte nur CSV-Dateien hochladen', 'warning');
+            msvToast('Bitte nur CSV-Dateien hochladen', 'warning');
         }
     }
 
@@ -1161,7 +1113,7 @@ $(document).ready(function () {
             const lines = e.target.result.split('\n').filter(line => line.trim());
             
             if (lines.length < 2) {
-                showToast('CSV-Datei ist leer', 'error');
+                msvToast('CSV-Datei ist leer', 'error');
                 return;
             }
             
@@ -1178,7 +1130,7 @@ $(document).ready(function () {
             }
             
             showPreview(headers, csvData.slice(0, 5));
-            showToast(`${csvData.length} Datensätze erkannt`, 'info');
+            msvToast(`${csvData.length} Datensätze erkannt`, 'info');
         };
         reader.readAsText(file, 'UTF-8');
     }
@@ -1215,9 +1167,9 @@ $(document).ready(function () {
             success: function(response) {
                 try {
                     const res = JSON.parse(response);
-                    showToast(`Import erfolgreich: ${res.imported} neue Mitglieder, ${res.updated} aktualisiert`, 'success');
+                    msvToast(`Import erfolgreich: ${res.imported} neue Mitglieder, ${res.updated} aktualisiert`, 'success');
                 } catch (e) {
-                    showToast('Import erfolgreich abgeschlossen', 'success');
+                    msvToast('Import erfolgreich abgeschlossen', 'success');
                 }
                 $('#importModal').modal('hide');
                 $('#importPreview').hide();
@@ -1225,7 +1177,7 @@ $(document).ready(function () {
                 setTimeout(() => loadMitglieder(), 1000);
             },
             error: function(xhr, status, error) {
-                showToast('Fehler beim Import der Daten', 'error');
+                msvToast('Fehler beim Import der Daten', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

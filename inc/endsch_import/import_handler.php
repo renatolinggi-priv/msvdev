@@ -1,5 +1,5 @@
 <?php
-// endsch_import/import_handler.php – Backend-Endpoint (ALLE Stiche)
+// endsch_import/import_handler.php â€“ Backend-Endpoint (ALLE Stiche)
 header('Content-Type: application/json; charset=utf-8');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -369,7 +369,7 @@ try {
                 }
                 case 'schwini': {
                     // Schwini: 6 Schüsse pro Import
-                    // Erste Passe → P1Schuss1-6, Zweite Passe → P2Schuss1-6
+                    // Erste Passe â†’ P1Schuss1-6, Zweite Passe â†’ P2Schuss1-6
                     $current_shots = array_pad(array_slice($clean, 0, 6), 6, null);
                     
                     if ($existing) {
@@ -382,18 +382,18 @@ try {
                         $check_stmt->close();
                         
                         if ($result && $result['P1Schuss1'] === null) {
-                            // P1 ist leer → erste Passe speichern
+                            // P1 ist leer â†’ erste Passe speichern
                             $sql = "UPDATE schwini SET P1Schuss1=?,P1Schuss2=?,P1Schuss3=?,P1Schuss4=?,P1Schuss5=?,P1Schuss6=? WHERE MitgliedID=? AND Jahr=?";
                             $stmt = $db->prepare($sql);
                             $stmt->bind_param('iiiiiiii', $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $mitglied_id, $jahr);
                         } else {
-                            // P1 ist gefüllt → zweite Passe speichern
+                            // P1 ist gefüllt â†’ zweite Passe speichern
                             $sql = "UPDATE schwini SET P2Schuss1=?,P2Schuss2=?,P2Schuss3=?,P2Schuss4=?,P2Schuss5=?,P2Schuss6=? WHERE MitgliedID=? AND Jahr=?";
                             $stmt = $db->prepare($sql);
                             $stmt->bind_param('iiiiiiii', $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $mitglied_id, $jahr);
                         }
                     } else {
-                        // Neuer Eintrag → erste Passe speichern
+                        // Neuer Eintrag â†’ erste Passe speichern
                         $sql = "INSERT INTO schwini (MitgliedID, P1Schuss1,P1Schuss2,P1Schuss3,P1Schuss4,P1Schuss5,P1Schuss6, Jahr) VALUES (?,?,?,?,?,?,?,?)";
                         $stmt = $db->prepare($sql);
                         $stmt->bind_param('iiiiiiii', $mitglied_id, $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $jahr);
@@ -443,4 +443,3 @@ try {
 } catch (Throwable $e) {
     json_err('Serverfehler: '.$e->getMessage());
 }
-

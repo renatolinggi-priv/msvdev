@@ -10,6 +10,14 @@
 
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+}
+
 // Input validation
 $mitgliedID = isset($_POST['mitgliedID']) ? (int)$_POST['mitgliedID'] : 0;
 $jahr = isset($_POST['jahr']) ? (int)$_POST['jahr'] : date('Y');
@@ -17,7 +25,7 @@ $partnerName = isset($_POST['partnerName']) ? trim($_POST['partnerName']) : '';
 
 if ($conn->connect_error) {
     http_response_code(500);
-    die(json_encode(['error' => 'Datenbankverbindung fehlgeschlagen: ' . $conn->connect_error]));
+    die(json_encode(['message' => 'Datenbankverbindung fehlgeschlagen: ' . $conn->connect_error]));
 }
 
 // Check if table exists
@@ -25,25 +33,25 @@ $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
     http_response_code(500);
-    die(json_encode(['error' => 'Tabelle endresultate_partner existiert nicht. Führen Sie zuerst database_setup.sql aus.']));
+    die(json_encode(['message' => 'Tabelle endresultate_partner existiert nicht. Führen Sie zuerst database_setup.sql aus.']));
 }
 
 // Validate inputs
 if ($mitgliedID <= 0) {
     http_response_code(400);
-    die(json_encode(['error' => 'Ungültige Mitglied-ID']));
+    die(json_encode(['message' => 'Ungültige Mitglied-ID']));
 }
 
 if (empty($partnerName)) {
     http_response_code(400);
-    die(json_encode(['error' => 'Partner-Name ist erforderlich']));
+    die(json_encode(['message' => 'Partner-Name ist erforderlich']));
 }
 
 // Validate year
 $currentYear = date('Y');
 if ($jahr < 2000 || $jahr > $currentYear + 1) {
     http_response_code(400);
-    die(json_encode(['error' => 'Ungültiges Jahr']));
+    die(json_encode(['message' => 'Ungültiges Jahr']));
 }
 
 try {
@@ -180,7 +188,7 @@ try {
     
     http_response_code(500);
     echo json_encode([
-        'error' => 'Fehler beim Speichern: ' . $e->getMessage()
+        'message' => 'Fehler beim Speichern: ' . $e->getMessage()
     ]);
     
 } finally {

@@ -3,7 +3,7 @@
 // ANGEPASST für /inc/endsch_targetprint/
 
 // KORRIGIERT: Von endsch_targetprint/ zu inc/dompdf/
-require_once dirname(dirname(__FILE__)) . '/dompdf/autoload.php';
+require_once dirname(dirname(__FILE__)) . '/vendor/autoload.php';
 
 // Nur includen wenn noch nicht geladen
 if (!defined('DB_HOST')) {

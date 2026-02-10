@@ -1,5 +1,5 @@
 <?php
-require '../spreadsheet/autoload.php'; // PHPSpreadsheet Autoloader
+require '../vendor/autoload.php'; // PHPSpreadsheet Autoloader
 include '../config.php';
 
 // Jahr aus Request lesen, Standard ist aktuelles Jahr
@@ -20,15 +20,18 @@ $sql = "SELECT
 FROM mitglieder m
 LEFT JOIN Waffen w ON m.WaffenID = w.ID
 LEFT JOIN kantiresultate kr ON m.ID = kr.MitgliedID 
-WHERE kr.Jahr = " . $year . "
+WHERE kr.Jahr = ?
 AND (kr.Passe1 > 0 OR kr.Passe2 > 0 OR kr.Passe3 > 0 OR kr.Passe4 > 0 OR kr.Passe5 > 0)
 ORDER BY m.Name ASC, m.Vorname ASC;
 ";
-
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 // Überprüfen, ob Ergebnisse vorhanden sind
 if ($result->num_rows > 0) {
+
     // PHPSpreadsheet-Objekt initialisieren
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -71,6 +74,7 @@ if ($result->num_rows > 0) {
     // JSON-Antwort mit dem Pfad zur Excel-Datei
     echo json_encode(array('xls_link' => $xlsFilePath));
 } else {
+
     // Wenn keine Daten vorhanden sind
     echo json_encode(array('error' => 'Keine Daten für das Jahr ' . $year . ' gefunden.'));
 }

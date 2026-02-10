@@ -1,7 +1,7 @@
 <?php
 // rangcup.php
 include '../config.php';
-require '../dompdf/autoload.php';
+require '../vendor/autoload.php';
 //require '../functions.inc.php';
 //include 'config_pdf.php';
 
