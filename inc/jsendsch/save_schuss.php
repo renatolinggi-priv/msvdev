@@ -1,6 +1,16 @@
 <?php
 include '../config.php';
 
+// CSRF-Schutz
+if (session_status() === PHP_SESSION_NONE) session_start();
+$csrf = $_POST['csrf_token'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
+}
+
+header('Content-Type: application/json; charset=utf-8');
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -14,13 +24,15 @@ error_log("save_schuss.php - JungschuetzeID: $jungschuetzeID, Year: $year");
 
 if ($jungschuetzeID == 0) {
     error_log("save_schuss.php - ERROR: Ungültige JungschuetzeID");
-    die("Ungültige JungschuetzeID");
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Ungültige JungschuetzeID']));
 }
 
 $schussData = $_POST;
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    http_response_code(500);
+    die(json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $conn->connect_error]));
 }
 
 function saveSchuss($conn, $jungschuetzeID, $year, $schussData, $table, $fields) {
@@ -28,7 +40,7 @@ function saveSchuss($conn, $jungschuetzeID, $year, $schussData, $table, $fields)
     $checkSql = "SELECT ID FROM $table WHERE JungschuetzeID = ? AND Jahr = ?";
     $stmtCheck = $conn->prepare($checkSql);
     if (!$stmtCheck) {
-        die("Prepare failed: " . $conn->error);
+        throw new Exception("Prepare failed: " . $conn->error);
     }
     $stmtCheck->bind_param("ii", $jungschuetzeID, $year);
     $stmtCheck->execute();
@@ -62,7 +74,7 @@ function saveSchuss($conn, $jungschuetzeID, $year, $schussData, $table, $fields)
         
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
-            die("Prepare failed: " . $conn->error . " SQL: " . $sql);
+            throw new Exception("Prepare failed: " . $conn->error . " SQL: " . $sql);
         }
         $stmt->bind_param($types, ...$values);
         
@@ -88,15 +100,14 @@ function saveSchuss($conn, $jungschuetzeID, $year, $schussData, $table, $fields)
         
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
-            die("Prepare failed: " . $conn->error . " SQL: " . $sql);
+            throw new Exception("Prepare failed: " . $conn->error . " SQL: " . $sql);
         }
         $stmt->bind_param($types, ...$values);
     }
 
     if ($stmt->execute() === FALSE) {
         error_log("save_schuss.php - Execute failed in $table: " . $stmt->error);
-        echo "Execute failed: " . $stmt->error . " SQL: " . $sql;
-        return false;
+        throw new Exception("Execute failed: " . $stmt->error);
     } else {
         error_log("save_schuss.php - Successfully saved to $table");
     }
@@ -120,13 +131,17 @@ $schwiniFieldsDB = ['P1Schuss1', 'P1Schuss2', 'P1Schuss3', 'P1Schuss4', 'P1Schus
 $zabigFields = ['ZSchuss1', 'ZSchuss2', 'ZSchuss3', 'ZSchuss4', 'ZSchuss5', 'ZSchuss6'];
 
 // Nur die benötigten Tabellen speichern
-saveSchuss($conn, $jungschuetzeID, $year, $schussData, 'endstich_jung', $endstichFields);
-// Schwini mit angepassten Daten speichern
-saveSchuss($conn, $jungschuetzeID, $year, $schwiniMapping, 'schwini_jung', $schwiniFieldsDB);
-saveSchuss($conn, $jungschuetzeID, $year, $schussData, 'zabig_jung', $zabigFields);
-// Kunst und Glück entfernt
+try {
+    saveSchuss($conn, $jungschuetzeID, $year, $schussData, 'endstich_jung', $endstichFields);
+    // Schwini mit angepassten Daten speichern
+    saveSchuss($conn, $jungschuetzeID, $year, $schwiniMapping, 'schwini_jung', $schwiniFieldsDB);
+    saveSchuss($conn, $jungschuetzeID, $year, $schussData, 'zabig_jung', $zabigFields);
+    // Kunst und Glück entfernt
 
-$conn->close();
-
-echo "Schüsse erfolgreich gespeichert";
-?>
+    $conn->close();
+    echo json_encode(['success' => true, 'message' => 'Schüsse erfolgreich gespeichert']);
+} catch (Exception $e) {
+    $conn->close();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
