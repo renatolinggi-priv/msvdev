@@ -1,0 +1,212 @@
+/**
+ * MSV Mobile Cards - Wiederverwendbares Mobile Card Pattern
+ * Basis-Styles für Mobile-Optimierung aller Seiten
+ * Breakpoint: 767.98px (Bootstrap sm)
+ */
+
+/* Desktop: Cards verstecken */
+.mobile-cards-container {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    /* Mobile: Tabelle verstecken, Cards zeigen */
+    .desktop-table-container {
+        display: none !important;
+    }
+
+    .mobile-cards-container {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Mobile Card */
+    .mobile-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+        transition: box-shadow 0.2s ease;
+    }
+
+    .mobile-card:active {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .mobile-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.875rem 1rem;
+        cursor: pointer;
+        user-select: none;
+        min-height: 44px; /* WCAG Touch Target */
+    }
+
+    .mobile-card-header:active {
+        background-color: #f8f9fa;
+    }
+
+    .mobile-card-body {
+        display: none;
+        padding: 0 1rem 1rem;
+        border-top: 1px solid #f1f3f4;
+    }
+
+    .mobile-card.open .mobile-card-body {
+        display: block;
+    }
+
+    .mobile-card-header i {
+        transition: transform 0.2s ease;
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+
+    .mobile-card.open .mobile-card-header i {
+        transform: rotate(180deg);
+    }
+
+    /* Mobile Search */
+    .mobile-search {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8f9fa;
+        flex-shrink: 0;
+    }
+
+    .mobile-search input {
+        border-radius: 2rem;
+        padding-left: 2.5rem;
+        min-height: 44px; /* WCAG Touch Target */
+        font-size: 16px; /* Verhindert iOS-Zoom */
+    }
+
+    .mobile-search .search-icon {
+        position: absolute;
+        left: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+    }
+
+    /* Scroll Container */
+    .mobile-cards-scroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem;
+    }
+
+    /* Button Toolbar stacken */
+    .button-toolbar {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .button-toolbar .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .button-toolbar .button-group .btn {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 120px;
+        min-height: 44px; /* WCAG Touch Target */
+        font-size: 16px;
+    }
+
+
+    /* Formulare stacken */
+    .form-row-compact .row > [class*="col-md"] {
+        margin-bottom: 0.5rem;
+    }
+
+    .form-row-compact input,
+    .form-row-compact select,
+    .form-row-compact textarea {
+        min-height: 44px; /* WCAG Touch Target */
+        font-size: 16px; /* Verhindert iOS-Zoom */
+    }
+
+    /* Ranglisten - Podest-Darstellung für Top 3 */
+    .mobile-card.rank-1 .mobile-card-header {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        font-weight: bold;
+    }
+
+    .mobile-card.rank-2 .mobile-card-header {
+        background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+        font-weight: bold;
+    }
+
+    .mobile-card.rank-3 .mobile-card-header {
+        background: linear-gradient(135deg, #cd7f32 0%, #e9a76a 100%);
+        font-weight: bold;
+    }
+
+    .rank-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-right: 0.5rem;
+    }
+
+    /* Detail Row in Card Body */
+    .mobile-card-detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .mobile-card-detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .mobile-card-detail-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .mobile-card-detail-value {
+        font-weight: 500;
+        text-align: right;
+    }
+
+    /* Empty State */
+    .mobile-cards-empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #6c757d;
+    }
+
+    .mobile-cards-empty i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    /* Loading State */
+    .mobile-cards-loading {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+
+    .mobile-cards-loading .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+}

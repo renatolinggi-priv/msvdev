@@ -149,7 +149,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-file-earmark-arrow-up me-2"></i>

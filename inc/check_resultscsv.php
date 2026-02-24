@@ -10,8 +10,6 @@ if (empty($_SESSION['csrf_token'])) {
 $page_specific_css = '<link rel="stylesheet" href="inc/check_resultscsv/workflow-styles.css?v=' . time() . '">';
 include 'header.inc.php';
 ?>
-<link rel="stylesheet" href="../css/fixes/no-page-scroll-override.css">
-
 <style>
     .upload-area {
         border: 2px dashed #dee2e6;
@@ -85,7 +83,7 @@ include 'header.inc.php';
         <div class="col-xl-7 col-lg-11 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-file-earmark-text me-2"></i>

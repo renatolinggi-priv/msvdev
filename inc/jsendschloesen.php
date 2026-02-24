@@ -21,12 +21,13 @@ if (empty($_SESSION['csrf_token'])) {
   <div id="toastContainer"></div>
 </div>
 
+<div class="container-fluid">
 <div class="row">
-  <div class="col-xl-6 col-lg-7 col-md-9 col-12">
+  <div class="col-xl-6 col-lg-7 col-md-9 col-12 ps-0">
     <div class="main-content-wrapper">
-      <div class="row mb-3">
+      <div class="row mb-4 d-none d-md-flex">
         <div class="col-md-12">
-          <h2 class="h5 mb-0" style="color: var(--secondary-color);">
+          <h2 class="h4 mb-0" style="color: var(--secondary-color);">
             <i class="bi bi-person-badge me-2"></i>
             JS-Endschiessen – Jungschützen erfassen
           </h2>
@@ -38,18 +39,14 @@ if (empty($_SESSION['csrf_token'])) {
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
           <!-- Jahr -->
-          <div class="year-selection-card mb-2">
-            <div class="row align-items-center">
-              <div class="col-md-6">
-                <label for="yearSelect" class="form-label fw-bold mb-1">
-                  <i class="bi bi-calendar3"></i> Jahr
-                </label>
-                <select id="yearSelect" class="form-select form-select-sm"></select>
-              </div>
-              <div class="col-md-6 text-end">
-                <span class="badge bg-info" id="paketPreisBadge">Festes Paket: CHF 75.00</span>
-              </div>
+          <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                <i class="bi bi-calendar3 me-1"></i>Jahr:
+              </label>
+              <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
             </div>
+            <span class="badge bg-info" id="paketPreisBadge">Festes Paket: CHF 75.00</span>
           </div>
 
           <!-- Jungschütze erfassen -->
@@ -218,26 +215,43 @@ if (empty($_SESSION['csrf_token'])) {
                 <i class="bi bi-download"></i> Export CSV
               </button>
             </div>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover table-bordered" id="erfassteTabelle">
-                <thead class="table-light">
-                  <tr>
-                    <th>Name</th>
-                    <th>Vorname</th>
-                    <th>Geburtsdatum</th>
-                    <th>Alter</th>
-                    <th class="text-center">Munition</th>
-                    <th class="text-center">Bezahlt</th>
-                    <th class="text-end">Total</th>
-                    <th style="width: 80px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="erfassteTableBody">
-                  <tr>
-                    <td colspan="7" class="text-muted text-center">Noch keine Jungschützen erfasst</td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- Desktop: Tabelle -->
+            <div class="desktop-table-container">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered" id="erfassteTabelle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Name</th>
+                      <th>Vorname</th>
+                      <th>Geburtsdatum</th>
+                      <th>Alter</th>
+                      <th class="text-center">Munition</th>
+                      <th class="text-center">Bezahlt</th>
+                      <th class="text-end">Total</th>
+                      <th style="width: 80px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="erfassteTableBody">
+                    <tr>
+                      <td colspan="7" class="text-muted text-center">Noch keine Jungschützen erfasst</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Mobile: Cards -->
+            <div class="mobile-cards-container" id="mobileCardsJsendsch">
+              <div class="mobile-search">
+                <div class="position-relative">
+                  <i class="bi bi-search search-icon"></i>
+                  <input type="text" class="form-control" placeholder="Suchen..."
+                         oninput="filterMobileJsendsch(this)">
+                </div>
+              </div>
+              <div class="mobile-cards-scroll">
+                <!-- Cards werden per JavaScript generiert -->
+              </div>
             </div>
           </div>
         </form>
@@ -394,6 +408,32 @@ if (empty($_SESSION['csrf_token'])) {
   h6[data-bs-toggle="collapse"]:hover {
     color: var(--bs-primary);
   }
+
+@media (max-width: 767.98px) {
+  .desktop-table-container { display: none !important; }
+  .mobile-cards-container { display: flex !important; }
+
+  .mobile-card-detail-row {
+    padding: 0.75rem 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  .mobile-card-detail-label {
+    font-size: 0.875rem !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+  }
+
+  .mobile-card-detail-value {
+    font-size: 1rem !important;
+    color: #1e293b !important;
+  }
+
+  .mobile-card-body .btn {
+    min-height: 48px !important;
+    font-size: 1rem !important;
+  }
+}
 </style>
 
 <script>
@@ -425,7 +465,7 @@ if (empty($_SESSION['csrf_token'])) {
     const sel = document.getElementById('yearSelect');
     sel.innerHTML = '';
     const currentYear = new Date().getFullYear();
-    for(let y = currentYear + 1; y >= 2024; y--){
+    for(let y = currentYear; y >= currentYear - 3; y--){
       const opt = document.createElement('option');
       opt.value = String(y);
       opt.textContent = String(y);
@@ -889,6 +929,11 @@ if (empty($_SESSION['csrf_token'])) {
       
       tbody.appendChild(tr);
     });
+
+    // Mobile Cards generieren
+    if (typeof buildMobileJsendschCards === 'function') {
+      buildMobileJsendschCards();
+    }
   }
 
   function updateTotals() {
@@ -1251,10 +1296,120 @@ if (empty($_SESSION['csrf_token'])) {
     });
   });
 
+  // Mobile Cards für JS-Endschloesen
+  function buildMobileJsendschCards() {
+    const isMobile = window.matchMedia('(max-width: 767.98px)');
+    if (!isMobile.matches) return;
+
+    const table = document.getElementById('erfassteTabelle');
+    const container = document.querySelector('#mobileCardsJsendsch .mobile-cards-scroll');
+    if (!table || !container) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      return;
+    }
+
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0 || (rows.length === 1 && rows[0].cells.length === 1)) {
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      return;
+    }
+
+    let html = '';
+    rows.forEach((row, idx) => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      if (cells.length < 7) return;
+
+      const nachname = cells[0]?.textContent?.trim() || '';
+      const vorname = cells[1]?.textContent?.trim() || '';
+      const geburtsdatum = cells[2]?.textContent?.trim() || '-';
+      const alter = cells[3]?.textContent?.trim() || '-';
+      const munition = cells[4]?.innerHTML || '-';
+      const bezahlt = cells[5]?.innerHTML || '-';
+      const total = cells[6]?.textContent?.trim() || '-';
+
+      // Action buttons
+      const actionCell = cells[7];
+      const editBtn = actionCell?.querySelector('[data-id]');
+      const entityId = editBtn ? editBtn.dataset.id : '';
+
+      html += `
+      <div class="mobile-card" data-index="${idx}">
+        <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+          <div>
+            <div class="fw-bold">${nachname} ${vorname}</div>
+            <small class="text-muted">Alter: ${alter} | Total: ${total}</small>
+          </div>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Geburtsdatum</span>
+            <span class="mobile-card-detail-value">${geburtsdatum}</span>
+          </div>
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Alter</span>
+            <span class="mobile-card-detail-value">${alter}</span>
+          </div>
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Munition</span>
+            <span class="mobile-card-detail-value">${munition}</span>
+          </div>
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Bezahlt</span>
+            <span class="mobile-card-detail-value">${bezahlt}</span>
+          </div>
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Total</span>
+            <span class="mobile-card-detail-value"><strong>${total}</strong></span>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  window.filterMobileJsendsch = function(searchInput) {
+    const query = searchInput.value.toLowerCase();
+    const cards = document.querySelectorAll('#mobileCardsJsendsch .mobile-card');
+
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      const isVisible = text.includes(query);
+      card.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCount++;
+    });
+
+    const container = document.querySelector('#mobileCardsJsendsch .mobile-cards-scroll');
+    const existingEmpty = container.querySelector('.mobile-cards-empty');
+    if (visibleCount === 0 && !existingEmpty) {
+      container.insertAdjacentHTML('beforeend', `
+        <div class="mobile-cards-empty">
+          <i class="bi bi-search"></i>
+          <div>Keine Treffer gefunden</div>
+        </div>`);
+    } else if (visibleCount > 0 && existingEmpty) {
+      existingEmpty.remove();
+    }
+  };
+
+  let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
+  window.addEventListener('resize', function() {
+    const isNowDesktop = window.matchMedia('(min-width: 768px)').matches;
+    if (wasDesktop && !isNowDesktop) {
+      buildMobileJsendschCards();
+    }
+    wasDesktop = isNowDesktop;
+  });
+
   populateYearSelect();
   loadStichIds();
   loadErfassteJS();
-  
+
   // Lade initiale Konfiguration
   fetch(`${API}?action=get_js_config`)
     .then(r => r.json())
@@ -1265,7 +1420,7 @@ if (empty($_SESSION['csrf_token'])) {
         updatePaketInfo();
       }
     });
-  
+
 })();
 </script>
 

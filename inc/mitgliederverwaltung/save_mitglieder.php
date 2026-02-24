@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $waffenids = $_POST['waffenid'];
         $status = isset($_POST['status']) ? $_POST['status'] : [];
         $ehrenmitglied = isset($_POST['ehrenmitglied']) ? $_POST['ehrenmitglied'] : [];
+        $verstorben = isset($_POST['verstorben']) ? $_POST['verstorben'] : [];
         $geburtsdatums = $_POST['geburtsdatum'];
 
         // NEUE FELDER
@@ -37,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $waffenid = intval($waffenids[$old_id]);
             $isActive = isset($status[$old_id]) ? 1 : 0;
             $isEhrenmitglied = isset($ehrenmitglied[$old_id]) ? 1 : 0;
+            $isVerstorben = isset($verstorben[$old_id]) ? 1 : 0;
 
             // Neue Felder escapen
             $strasse = $conn->real_escape_string($strassen[$old_id] ?? '');
@@ -49,9 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($new_id != $old_id) {
                 // Erst neuen Eintrag erstellen
                 $sql = "INSERT INTO mitglieder (id, vorname, name, waffenid, status, Geburtsdatum, Ehrenmitglied,
-                        Strasse, PLZ, Ort, Email, Telefon)
+                        Strasse, PLZ, Ort, Email, Telefon, Verstorben)
                         VALUES ('$new_id', '$vorname', '$name', '$waffenid', $isActive, '$birthday', '$isEhrenmitglied',
-                        '$strasse', '$plz', '$ort', '$email', '$telefon')";
+                        '$strasse', '$plz', '$ort', '$email', '$telefon', $isVerstorben)";
 
                 if ($conn->query($sql) === TRUE) {
                     // Dann alten Eintrag löschen
@@ -71,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         status=$isActive,
                         Geburtsdatum='$birthday',
                         Ehrenmitglied=$isEhrenmitglied,
+                        Verstorben=$isVerstorben,
                         Strasse='$strasse',
                         PLZ='$plz',
                         Ort='$ort',

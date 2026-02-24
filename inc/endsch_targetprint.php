@@ -161,10 +161,10 @@ try {
 <!-- Zielscheiben-Ausdruck Workflow -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-9 col-lg-10 col-md-12 col-12">
+        <div class="col-xl-9 col-lg-10 col-md-12 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-3">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-bullseye me-2"></i>

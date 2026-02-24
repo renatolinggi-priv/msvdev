@@ -3,20 +3,22 @@
 declare(strict_types=1);
 
 // ======= Konfiguration =======
-const ANZAHL_STREICHER = 3; // Anzahl zu streichender Wettbewerbe bei Streicher=1
 const DEZIMALSTELLEN = 2;   // Für Punkt-Ausgabe
 
 require_once '../config.php'; // $conn (mysqli)
 
 // ======= Hilfsfunktionen =======
 
-// Hochrechnung, falls nicht explizit ausgenommen
+// Hochrechnung nur wenn Maxpunkte < 100 (z.B. 50 → 49*100/50 = 98)
 function scalePoints(float $points, array $def): float {
     if (in_array($def['Bezeichnung'], ['Einzelwettschiessen', 'Obligatorisch', 'Feldschiessen'])) {
         return $points;
     }
     $maxP = (int)$def['Maxpunkte'];
-    return $maxP > 0 ? round(($points * 100) / $maxP, DEZIMALSTELLEN) : $points;
+    if ($maxP > 0 && $maxP < 100) {
+        return round(($points * 100) / $maxP, DEZIMALSTELLEN);
+    }
+    return $points;
 }
 
 // Sicheres HTML
@@ -28,6 +30,14 @@ function h(?string $str): string {
 $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $kategorie = $_GET['kategorie'] ?? '';
 $asJson = !empty($_GET['json']);
+
+// Anzahl Streicher aus Parameter-Tabelle (Fallback 3)
+$stParam = $conn->prepare("SELECT excludeCount FROM Parameter WHERE year = ?");
+$stParam->bind_param('i', $year);
+$stParam->execute();
+$rowParam = $stParam->get_result()->fetch_assoc();
+$stParam->close();
+$anzahl_streicher = $rowParam ? max(1, (int)$rowParam['excludeCount']) : 3;
 
 // ======= 2. Wettbewerbe laden =======
 $sqlDef = "SELECT ID, Bezeichnung, Maxpunkte, Streicher FROM JMDefinition WHERE year = ? AND Erweitert=0 AND Info=0
@@ -261,8 +271,8 @@ foreach ($resultData as $mid => &$mData) {
     
     // Streicher anwenden
     usort($streicher1Values, fn($a,$b)=> $a['punkte'] <=> $b['punkte']);
-    $gestr    = array_slice($streicher1Values, 0, ANZAHL_STREICHER);
-    $verwendet= array_slice($streicher1Values, ANZAHL_STREICHER);
+    $gestr    = array_slice($streicher1Values, 0, $anzahl_streicher);
+    $verwendet= array_slice($streicher1Values, $anzahl_streicher);
 
     $sumStreicher1 = array_sum(array_column($verwendet, 'punkte'));
 
@@ -310,51 +320,121 @@ if ($asJson) {
     exit;
 }
 
-// ======= 9a. HTML Ausgabe =======
-function renderTable(array $resultData, array $definitions): string {
-    $theadHtml = "<tr><th>Rang</th><th>Name</th>";
-    foreach ($definitions as $def) {
-        $theadHtml .= "<th class='vertical-header'>" . h($def['Bezeichnung']) . "</th>";
-    }
-    $theadHtml .= "<th>Total</th></tr>";
-
-    $tbodyHtml = "";
-    $actualPosition=0; $currentRank=0; $previousScore=null;
-    foreach($resultData as $entry) {
-        $actualPosition++;
-        $sumTotal = $entry['sumTotal'];
-        if($sumTotal!==$previousScore) {
-            $currentRank=$actualPosition;
-            $previousScore=$sumTotal;
+// ======= 9a. Zell-Inhalt formatieren =======
+function formatCell(array $entry, $defID): string {
+    if (empty($entry['wettbewerbe'][$defID])) return "-";
+    $ptArr = $entry['wettbewerbe'][$defID];
+    $tmp = [];
+    foreach ($ptArr as $pItem) {
+        $pVal = number_format($pItem['punkte'], DEZIMALSTELLEN, '.', '');
+        if ($pItem['strichen']) {
+            $tmp[] = "<span style='color:red;text-decoration:line-through' title='Streicher'>{$pVal}</span>";
+        } else {
+            $tmp[] = "<span title='Gewertet'>{$pVal}</span>";
         }
-        $m = $entry['mitglied'];
-        $fullname = h($m['Name']." ".$m['Vorname']);
-        $tbodyHtml .= "<tr>";
-        $tbodyHtml .= "<td>$currentRank</td>";
-        $tbodyHtml .= "<td>$fullname</td>";
-
-        foreach($definitions as $def) {
-            $defID = $def['ID'];
-            $cellContent = "-";
-            if(!empty($entry['wettbewerbe'][$defID])) {
-                $ptArr = $entry['wettbewerbe'][$defID];
-                $tmp=[];
-                foreach($ptArr as $pItem) {
-                    $pVal = number_format($pItem['punkte'], DEZIMALSTELLEN, '.', '');
-                    if($pItem['strichen']) {
-                        $tmp[] = "<span style='color:red;text-decoration:line-through;' title='Nicht gewertet (Streicher)'>{$pVal}</span>";
-                    } else {
-                        $tmp[] = "<span title='Gewertet'>{$pVal}</span>";
-                    }
-                }
-                $cellContent = implode(", ", $tmp);
-            }
-            $tbodyHtml .= "<td>$cellContent</td>";
-        }
-        $tbodyHtml .= "<td><strong>" .number_format($sumTotal, DEZIMALSTELLEN, '.', ''). "</strong></td>";
-        $tbodyHtml .= "</tr>";
     }
-    return "<thead>$theadHtml</thead><tbody>$tbodyHtml</tbody>";
+    return implode(", ", $tmp);
 }
 
-echo renderTable($resultData, $definitions);
+// Prüft ob alle Resultate eines Wettbewerbs gestrichen sind
+function allStreicher(array $entry, $defID): bool {
+    if (empty($entry['wettbewerbe'][$defID])) return false;
+    foreach ($entry['wettbewerbe'][$defID] as $p) {
+        if (!$p['strichen']) return false;
+    }
+    return true;
+}
+
+// ======= 9b. HTML Ausgabe als JSON (Hybrid-Layout) =======
+function renderTable(array $resultData, array $definitions): array {
+    // Letzte 5 Wettbewerbe als Hauptspalten sichtbar
+    $mainDefCount = min(5, count($definitions));
+    $mainDefs = array_slice($definitions, -$mainDefCount);
+    $mainDefIDs = array_column($mainDefs, 'ID');
+    $hasDetail = count($definitions) > $mainDefCount;
+    $totalColspan = $mainDefCount + 3 + ($hasDetail ? 1 : 0);
+
+    // Header
+    $theadHtml = "<tr><th class='jm-th-rang'>Rang</th><th class='jm-th-name'>Name</th>";
+    foreach ($mainDefs as $def) {
+        $theadHtml .= "<th class='jm-th-result text-center'>" . h($def['Bezeichnung']) . "</th>";
+    }
+    $theadHtml .= "<th class='jm-th-total text-center'>Total</th>";
+    if ($hasDetail) {
+        $theadHtml .= "<th class='jm-th-toggle'></th>";
+    }
+    $theadHtml .= "</tr>";
+
+    // Body
+    $tbodyHtml = "";
+    $actualPosition = 0; $currentRank = 0; $previousScore = null;
+    $rowIdx = 0;
+
+    foreach ($resultData as $entry) {
+        $actualPosition++;
+        $rowIdx++;
+        $sumTotal = $entry['sumTotal'];
+        if ($sumTotal !== $previousScore) {
+            $currentRank = $actualPosition;
+            $previousScore = $sumTotal;
+        }
+        $m = $entry['mitglied'];
+        $fullname = h($m['Name'] . " " . $m['Vorname']);
+
+        // Hauptzeile
+        $tbodyHtml .= "<tr class='jm-main-row' data-row='$rowIdx'>";
+        $tbodyHtml .= "<td class='text-center fw-semibold'>$currentRank</td>";
+        $tbodyHtml .= "<td class='text-nowrap'>$fullname</td>";
+
+        foreach ($mainDefs as $def) {
+            $tbodyHtml .= "<td class='text-center'>" . formatCell($entry, $def['ID']) . "</td>";
+        }
+
+        $tbodyHtml .= "<td class='text-center fw-bold'>" . number_format($sumTotal, DEZIMALSTELLEN, '.', '') . "</td>";
+
+        if ($hasDetail) {
+            $tbodyHtml .= "<td class='text-center'>"
+                . "<button type='button' class='btn btn-sm btn-link p-0 jm-toggle-btn' title='Alle Wettbewerbe anzeigen'>"
+                . "<i class='bi bi-chevron-down'></i>"
+                . "</button></td>";
+        }
+        $tbodyHtml .= "</tr>";
+
+        // Detail-Zeile: Alle Wettbewerbe als zweispaltige Liste
+        if ($hasDetail) {
+            $tbodyHtml .= "<tr class='jm-detail-row' data-row='$rowIdx' style='display:none'>";
+            $tbodyHtml .= "<td colspan='$totalColspan'>";
+            $tbodyHtml .= "<div class='jm-detail-panel'>";
+            $tbodyHtml .= "<div class='jm-detail-list'>";
+
+            foreach ($definitions as $def) {
+                $cellContent = formatCell($entry, $def['ID']);
+                $isEmpty = empty($entry['wettbewerbe'][$def['ID']]);
+                $isMain = in_array($def['ID'], $mainDefIDs);
+                $isStreicher = !$isEmpty && allStreicher($entry, $def['ID']);
+
+                $cls = 'jm-detail-card';
+                if ($isMain) $cls .= ' jm-detail-card-main';
+                if ($isStreicher) $cls .= ' jm-detail-card-streicher';
+                if ($isEmpty) $cls .= ' jm-detail-card-empty';
+
+                $tbodyHtml .= "<div class='{$cls}'>"
+                    . "<div class='jm-detail-card-name' title='" . h($def['Bezeichnung']) . "'>" . h($def['Bezeichnung']) . "</div>"
+                    . "<div class='jm-detail-card-pts'>$cellContent</div>"
+                    . "</div>";
+            }
+
+            $tbodyHtml .= "</div>"; // .jm-detail-list
+            $tbodyHtml .= "<div class='jm-detail-sum'>"
+                . "<span>Total</span>"
+                . "<span class='jm-detail-sum-val'>" . number_format($sumTotal, DEZIMALSTELLEN, '.', '') . "</span>"
+                . "</div>";
+            $tbodyHtml .= "</div></td></tr>"; // .jm-detail-panel
+        }
+    }
+
+    return ['thead' => $theadHtml, 'tbody' => $tbodyHtml];
+}
+
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode(renderTable($resultData, $definitions));

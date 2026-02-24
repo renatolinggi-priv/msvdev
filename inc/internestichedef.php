@@ -9,7 +9,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Lade Mitglieder für Dropdown
 // Versuche Lizenznummer zu laden falls vorhanden
-$sql = "SELECT * FROM mitglieder ORDER BY Name, Vorname";
+$sql = "SELECT * FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
 
 $page_specific_css = '
@@ -30,7 +30,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-file-earmark-arrow-up me-2"></i>
@@ -53,7 +53,7 @@ include 'header.inc.php';
                     </div>
 
                     <!-- Toolbar -->
-                    <div class="year-selection-card">
+                    <div class="mb-3">
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <button id="btnSave" class="btn btn-outline-success btn-compact-standard" disabled>
                                 <i class="bi bi-save"></i><span>Speichern</span>
@@ -64,17 +64,18 @@ include 'header.inc.php';
                     <!-- Tabelle -->
                     <div class="table-wrapper">
                         <h3 class="table-title">Interne Stiche â€“ Stichnummern</h3>
-                        <div class="table-responsive">
-                            <table id="stichdefTabelle" class="table table-striped table-bordered align-middle">
-                                <thead>
-                                    <tr>
-                                        <th style="min-width:120px">Stich</th>
-                                        <th class="text-center" style="min-width:160px">Stichnr. 1</th>
-                                        <th class="text-center" style="min-width:160px">Stichnr. 2</th>
-                                        <th class="text-center" style="min-width:160px">Stichnr. 3</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        <div class="desktop-table-container">
+                            <div class="table-responsive">
+                                <table id="stichdefTabelle" class="table table-striped table-bordered align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width:120px">Stich</th>
+                                            <th class="text-center" style="min-width:160px">Stichnr. 1</th>
+                                            <th class="text-center" style="min-width:160px">Stichnr. 2</th>
+                                            <th class="text-center" style="min-width:160px">Stichnr. 3</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                     <?php foreach ($stiche as $s): ?>
                                         <tr data-stich="<?= htmlspecialchars($s) ?>">
                                             <td><strong><?= htmlspecialchars($s) ?></strong></td>
@@ -93,7 +94,18 @@ include 'header.inc.php';
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
-                            </table>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="mobile-cards-container" id="mobileInternestichedefCards">
+                            <div class="mobile-search">
+                                <div class="position-relative">
+                                    <i class="bi bi-search search-icon"></i>
+                                    <input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileInternestichedef(this)">
+                                </div>
+                            </div>
+                            <div class="mobile-cards-scroll"></div>
                         </div>
                     </div>
 
@@ -146,8 +158,83 @@ const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
 <script>
 $(function(){
     window.InterneStiche.init();
+    buildMobileInternestichedefCards();
 });
+
+function buildMobileInternestichedefCards() {
+    const isMobile = window.matchMedia('(max-width: 767.98px)');
+    if (!isMobile.matches) return;
+    const table = document.querySelector('#stichdefTabelle');
+    if (!table) return;
+    const container = document.querySelector('#mobileInternestichedefCards .mobile-cards-scroll');
+    if (!container) return;
+    container.innerHTML = '';
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 4) return;
+        const stich = cells[0].textContent.trim();
+        const nr1Input = cells[1].querySelector('input');
+        const nr2Input = cells[2].querySelector('input');
+        const nr3Input = cells[3].querySelector('input');
+        const card = document.createElement('div');
+        card.className = 'mobile-card';
+        card.innerHTML = `
+            <div class="mobile-card-header"><div class="mobile-card-title">${stich}</div></div>
+            <div class="mobile-card-body">
+                <div class="mb-3"><label class="form-label fw-bold small">Stichnr. 1:</label>
+                <input type="text" class="form-control" data-row="${row.dataset.stich}" data-col="nr1" value="${nr1Input.value}" placeholder="—"></div>
+                <div class="mb-3"><label class="form-label fw-bold small">Stichnr. 2:</label>
+                <input type="text" class="form-control" data-row="${row.dataset.stich}" data-col="nr2" value="${nr2Input.value}" placeholder="—"></div>
+                <div class="mb-3"><label class="form-label fw-bold small">Stichnr. 3:</label>
+                <input type="text" class="form-control" data-row="${row.dataset.stich}" data-col="nr3" value="${nr3Input.value}" placeholder="—"></div>
+            </div>`;
+        container.appendChild(card);
+    });
+    container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', function() {
+            const stichRow = table.querySelector(`tr[data-stich="${this.dataset.row}"]`);
+            if (stichRow) {
+                const desktopInput = stichRow.querySelector(`.${this.dataset.col}-input`);
+                if (desktopInput) desktopInput.value = this.value;
+            }
+        });
+    });
+}
+window.filterMobileInternestichedef = function(searchInput) {
+    const searchTerm = searchInput.value.toLowerCase();
+    document.querySelectorAll('#mobileInternestichedefCards .mobile-card').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
+    });
+};
 </script>
+
+<style>
+@media (max-width: 767.98px) {
+    /* WCAG AAA Touch Targets: Alle Form-Elemente */
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="number"] {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+    }
+
+    /* Alle Buttons */
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Desktop Table/Mobile Cards Toggle */
+    .desktop-table-container { display: none !important; }
+    .mobile-cards-container { display: block !important; }
+}
+@media (min-width: 768px) {
+    .mobile-cards-container { display: none !important; }
+}
+</style>
 
 <?php
 include 'footer.inc.php';

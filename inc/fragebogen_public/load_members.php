@@ -3,7 +3,7 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once '../config.php';
 
-$stmt = $conn->prepare("SELECT ID, Name, Vorname FROM mitglieder WHERE Status = 1 ORDER BY Name, Vorname");
+$stmt = $conn->prepare("SELECT ID, Name, Vorname FROM mitglieder WHERE Status = 1 AND Verstorben = 0 ORDER BY Name, Vorname");
 $stmt->execute();
 $result = $stmt->get_result();
 

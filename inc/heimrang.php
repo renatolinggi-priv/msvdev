@@ -7,8 +7,26 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Alle Styles sind jetzt zentral in msv-styles.css verwaltet
-$page_specific_css = '';
+// Mobile-Optimierung für Heimrang
+$page_specific_css = '
+/* Mobile-Optimierung (WCAG AAA Touch Targets) */
+@media (max-width: 767.98px) {
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="number"],
+    select {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+    }
+
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+}
+';
 
 include 'header.inc.php';
 ?>
@@ -19,7 +37,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-trophy me-2"></i>
@@ -33,37 +51,47 @@ include 'header.inc.php';
                 <form id="heimresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl in eigener Card -->
-                    <div class="year-selection-card">
-                        <div class="row align-items-center">
-                            <div class="col-md-5">
-                                <label for="yearSelect" class="form-label fw-bold">
-                                    <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                                </label>
-                                <select id="yearSelect" class="form-select">
-                                    <!-- Optionen werden per JavaScript eingefügt -->
-                                </select>
+                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                    <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                            <i class="bi bi-calendar3 me-1"></i>Jahr:
+                        </label>
+                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                    </div>
+
+                    <!-- Aktionsbereich (Bootstrap Collapse) -->
+                    <div class="card action-card mb-0">
+                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                             data-bs-toggle="collapse" data-bs-target="#heimrangActions"
+                             aria-expanded="false" aria-controls="heimrangActions">
+                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                            <i class="bi bi-chevron-down action-chevron"></i>
+                        </div>
+                        <div class="collapse" id="heimrangActions">
+                            <div class="card-body pt-2 pb-3 px-3">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12">
+                                        <button id="redirect-btn" type="button" class="btn btn-success w-100">
+                                            <i class="bi bi-pencil-square me-2"></i>Bearbeiten
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="border-top pt-2">
+                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <button class="pdf-btn btn btn-outline-danger btn-sm w-100">
+                                                <i class="bi bi-file-pdf me-1"></i>Rangliste PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="pdf-link" class="mt-2"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Button Toolbar -->
-                    <div class="button-toolbar">
-                        <div class="button-group">
-                            <button class="btn btn-compact-standard btn-outline-info pdf-btn" type="button">
-                                <i class="bi bi-file-pdf me-2"></i>
-                                Rangliste
-                            </button>
-                            <button id="redirect-btn" class="btn btn-compact-standard btn-outline-success" type="button">
-                                <i class="bi bi-pencil-square me-2"></i>
-                                Bearbeiten
-                            </button>
-                        </div>
-                        <div id="pdf-link"></div>
-                    </div>
-
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
+                    </div><!-- Ende flex-row Jahr+Aktionen -->
 
                     <!-- Kategorie A Tabelle -->
                     <div class="table-wrapper">
@@ -71,8 +99,9 @@ include 'header.inc.php';
                             <i class="bi bi-star me-2"></i>
                             Heimmeisterschaft Kat. A
                         </h5>
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="heimresultateTabelleA">
+                        <div class="desktop-table-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="heimresultateTabelleA">
                                 <thead>
                                     <tr>
                                         <th scope="col">Rang</th>
@@ -92,6 +121,17 @@ include 'header.inc.php';
                                     <!-- Dynamisch per AJAX -->
                                 </tbody>
                             </table>
+                        </div>
+                        </div>
+                        <div class="mobile-cards-container" id="mobileCardsHeimA">
+                            <div class="mobile-search">
+                                <div class="position-relative">
+                                    <i class="bi bi-search search-icon"></i>
+                                    <input type="text" class="form-control" placeholder="Suchen..."
+                                           oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCardsHeimA')">
+                                </div>
+                            </div>
+                            <div class="mobile-cards-scroll"></div>
                         </div>
                     </div>
 
@@ -101,8 +141,9 @@ include 'header.inc.php';
                             <i class="bi bi-star-half me-2"></i>
                             Heimmeisterschaft Kat. B
                         </h5>
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="heimresultateTabelleB">
+                        <div class="desktop-table-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="heimresultateTabelleB">
                                 <thead>
                                     <tr>
                                         <th scope="col">Rang</th>
@@ -122,6 +163,17 @@ include 'header.inc.php';
                                     <!-- Dynamisch per AJAX -->
                                 </tbody>
                             </table>
+                        </div>
+                        </div>
+                        <div class="mobile-cards-container" id="mobileCardsHeimB">
+                            <div class="mobile-search">
+                                <div class="position-relative">
+                                    <i class="bi bi-search search-icon"></i>
+                                    <input type="text" class="form-control" placeholder="Suchen..."
+                                           oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCardsHeimB')">
+                                </div>
+                            </div>
+                            <div class="mobile-cards-scroll"></div>
                         </div>
                     </div>
                 </form>
@@ -136,7 +188,7 @@ include 'header.inc.php';
         function initializeYearDropdown() {
             const yearSelect = $('#yearSelect').empty();
             const currentYear = new Date().getFullYear();
-            for (let year = 2024; year <= currentYear; year++) {
+            for (let year = currentYear; year >= currentYear - 3; year--) {
                 const option = $('<option></option>').val(year).text(year);
                 if (year === currentYear) {
                     option.prop('selected', true);
@@ -171,6 +223,7 @@ include 'header.inc.php';
                     },
                     success: function (response) {
                         $('#heimresultateTabelleA tbody').html(response);
+                        buildMobileCardsHeimA();
                     }
                 });
             }
@@ -187,17 +240,31 @@ include 'header.inc.php';
                     },
                     success: function (response) {
                         $('#heimresultateTabelleB tbody').html(response);
+                        buildMobileCardsHeimB();
                     }
                 });
             }
 
-            // Nachricht anzeigen
-            function showMessage(message, type) {
-                var messageDiv = $('#message');
-                messageDiv.removeClass().addClass('alert alert-' + type).text(message).show();
-                setTimeout(function () {
-                    messageDiv.fadeOut();
-                }, 3000);
+            // Mobile Cards für Heim Kat. A
+            function buildMobileCardsHeimA() {
+                MSVMobileCards.initResponsive(function() {
+                    MSVMobileCards.buildCards('#heimresultateTabelleA', '#mobileCardsHeimA', {
+                        titleColumns: [0, 1],
+                        summaryColumns: [9],
+                        rankColumn: 0
+                    });
+                });
+            }
+
+            // Mobile Cards für Heim Kat. B
+            function buildMobileCardsHeimB() {
+                MSVMobileCards.initResponsive(function() {
+                    MSVMobileCards.buildCards('#heimresultateTabelleB', '#mobileCardsHeimB', {
+                        titleColumns: [0, 1],
+                        summaryColumns: [9],
+                        rankColumn: 0
+                    });
+                });
             }
 
             // PDF-Button Handler

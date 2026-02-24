@@ -30,7 +30,7 @@ while ($definition = $definitionsResult->fetch_assoc()) {
 }
 
 // Mitglieder laden
-$mitgliederSql = "SELECT * FROM mitglieder WHERE status = 1 ORDER BY Name ASC, Vorname ASC";
+$mitgliederSql = "SELECT * FROM mitglieder WHERE status = 1 AND Verstorben = 0 ORDER BY Name ASC, Vorname ASC";
 $mitgliederResult = $conn->query($mitgliederSql);
 
 // Tabellenüberschrift erzeugen

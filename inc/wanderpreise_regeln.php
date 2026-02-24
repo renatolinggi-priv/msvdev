@@ -67,6 +67,171 @@ $page_specific_css = "
 .regel-card {
     animation: fadeIn .3s ease-out;
 }
+
+/* Mobile Cards */
+@media (max-width: 767.98px) {
+    .desktop-table-container {
+        display: none !important;
+    }
+
+    .mobile-cards-container {
+        display: block !important;
+    }
+
+    .mobile-search {
+        position: sticky;
+        top: var(--nav-height);
+        z-index: 100;
+        background: white;
+        padding: 1rem;
+        border-bottom: 2px solid #e9ecef;
+        margin: -1rem -1rem 1rem -1rem;
+    }
+
+    .mobile-search .position-relative {
+        position: relative;
+    }
+
+    .mobile-search .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+    }
+
+    .mobile-search .form-control {
+        padding-left: 40px;
+        border-radius: 20px;
+        border: 2px solid #dee2e6;
+        font-size: 16px;
+    }
+
+    .mobile-cards-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .mobile-regel-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+    .mobile-regel-card:active {
+        transform: scale(0.98);
+    }
+
+    .mobile-regel-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .mobile-regel-code {
+        font-family: 'Courier New', monospace;
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 13px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .mobile-regel-name {
+        font-weight: 600;
+        font-size: 16px;
+        color: #212529;
+        margin: 0;
+    }
+
+    .mobile-regel-body {
+        padding: 1rem;
+    }
+
+    .mobile-regel-field {
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .mobile-regel-field:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .mobile-regel-label {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .mobile-regel-value {
+        font-size: 14px;
+        color: #212529;
+    }
+
+    .mobile-regel-actions {
+        display: flex;
+        gap: 8px;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .mobile-regel-btn {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 2px solid;
+        background: white;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 44px;
+    }
+
+    .mobile-regel-btn.btn-info {
+        border-color: #17a2b8;
+        color: #17a2b8;
+    }
+
+    .mobile-regel-btn.btn-warning {
+        border-color: #ffc107;
+        color: #856404;
+    }
+
+    .mobile-regel-btn.btn-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+    .mobile-regel-btn:active {
+        transform: scale(0.95);
+    }
+}
+
+@media (min-width: 768px) {
+    .mobile-cards-container {
+        display: none !important;
+    }
+
+    .desktop-table-container {
+        display: block !important;
+    }
+}
 ";
 
 // Header einbinden - WICHTIG: Das definiert content-background!
@@ -79,7 +244,7 @@ include 'header.inc.php';
       <!-- Außen-Container -->
       <div class="main-content-wrapper">
         <!-- Header-Zeile -->
-        <div class="row mb-4">
+        <div class="row mb-4 d-none d-md-flex">
           <div class="col-md-12">
             <h2 class="h4 mb-0" style="color: var(--secondary-color);">
               <i class="bi bi-gear me-2"></i> Wanderpreise Automatische Zuordnungsregeln
@@ -290,6 +455,10 @@ $(document).ready(function() {
     function loadRegeln() {
         $.get('wanderpreise/get_regeln_list.php', function(response) {
             $('#regelListContainer').html(response);
+            // Mobile cards generieren
+            if (typeof buildMobileRegelnCards === 'function') {
+                buildMobileRegelnCards();
+            }
         }).fail(function() {
             $('#regelListContainer').html('<div class="alert alert-danger">Fehler beim Laden der Regeln</div>');
         });
@@ -426,6 +595,105 @@ $(document).ready(function() {
     // Initial laden
     loadRegeln();
 });
+
+// Mobile Cards Build Funktion
+function buildMobileRegelnCards() {
+    const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+    if (!isMobile) return;
+
+    const table = document.querySelector('#regelnTable');
+    if (!table) return;
+
+    const container = document.querySelector('#mobileRegelnCards .mobile-cards-scroll');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const rows = table.querySelectorAll('tbody tr.regel-item');
+
+    rows.forEach((row, index) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 5) return;
+
+        const code = cells[0].textContent.trim();
+        const name = cells[1].textContent.trim();
+        const beschreibung = cells[2].textContent.trim();
+        const status = cells[3].querySelector('.badge') ? cells[3].querySelector('.badge').textContent.trim() : '';
+        const statusClass = cells[3].querySelector('.badge.bg-success') ? 'success' : 'secondary';
+
+        // Buttons aus der Desktop-Version extrahieren
+        const buttons = cells[4].querySelectorAll('button');
+        const viewBtn = buttons[0];
+        const testBtn = buttons[1];
+        const editBtn = buttons[2];
+        const deleteBtn = buttons[3];
+
+        const card = document.createElement('div');
+        card.className = 'mobile-regel-card';
+        card.innerHTML = `
+            <div class="mobile-regel-header">
+                <span class="mobile-regel-code">${code}</span>
+                <h3 class="mobile-regel-name">${name}</h3>
+            </div>
+            <div class="mobile-regel-body">
+                <div class="mobile-regel-field">
+                    <div class="mobile-regel-label">Beschreibung</div>
+                    <div class="mobile-regel-value">${beschreibung || 'Keine Beschreibung'}</div>
+                </div>
+                <div class="mobile-regel-field">
+                    <div class="mobile-regel-label">Status</div>
+                    <div class="mobile-regel-value">
+                        <span class="badge bg-${statusClass}">${status}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mobile-regel-actions">
+                <button class="mobile-regel-btn btn-info mobile-view-sql">
+                    <i class="bi bi-code"></i> SQL
+                </button>
+                <button class="mobile-regel-btn btn-warning mobile-edit-regel">
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button class="mobile-regel-btn btn-danger mobile-delete-regel">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+
+        // Event listeners für mobile Buttons
+        card.querySelector('.mobile-view-sql').addEventListener('click', function() {
+            viewBtn.click();
+        });
+
+        card.querySelector('.mobile-edit-regel').addEventListener('click', function() {
+            editBtn.click();
+        });
+
+        card.querySelector('.mobile-delete-regel').addEventListener('click', function() {
+            deleteBtn.click();
+        });
+
+        container.appendChild(card);
+    });
+}
+
+// Mobile Filter Funktion
+function filterMobileRegeln(input) {
+    const searchTerm = input.value.toLowerCase();
+    const cards = document.querySelectorAll('.mobile-regel-card');
+
+    cards.forEach(card => {
+        const code = card.querySelector('.mobile-regel-code').textContent.toLowerCase();
+        const name = card.querySelector('.mobile-regel-name').textContent.toLowerCase();
+        const beschreibung = card.querySelector('.mobile-regel-value').textContent.toLowerCase();
+
+        const matches = code.includes(searchTerm) ||
+                       name.includes(searchTerm) ||
+                       beschreibung.includes(searchTerm);
+
+        card.style.display = matches ? 'block' : 'none';
+    });
+}
+
 </script>
 
 <?php include 'footer.inc.php'; ?>

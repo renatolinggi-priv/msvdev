@@ -9,7 +9,72 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // Alle Styles sind jetzt zentral in msv-styles.css verwaltet
-$page_specific_css = '';
+$page_specific_css = "
+/* === MOBILE OPTIMIZATION === */
+@media (max-width: 767.98px) {
+    /* WCAG AAA Touch Targets: Alle Form-Elemente */
+    .form-control,
+    .form-select,
+    input[type=\"text\"],
+    input[type=\"number\"],
+    input[type=\"email\"],
+    textarea,
+    select {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+    }
+
+    /* Alle Buttons */
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Desktop-Tabelle ausblenden */
+    .desktop-table-container {
+        display: none !important;
+    }
+
+    /* Mobile Cards anzeigen */
+    .mobile-cards-container {
+        display: block !important;
+    }
+
+    /* Button-Anpassungen für Mobile */
+    .row.g-2.mb-3 .col-6,
+    .row.g-2.mb-3 .col-md-4,
+    .row.g-2.mb-3 .col-lg-3,
+    .row.g-2.mb-4 .col-6,
+    .row.g-2.mb-4 .col-md-4,
+    .row.g-2.mb-4 .col-lg-3 {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-compact {
+        min-height: 48px !important;
+        font-size: 14px !important;
+        padding: 0.5rem 0.625rem !important;
+    }
+
+    /* Container-Anpassungen */
+    .main-content-wrapper {
+        padding: 0.5rem;
+    }
+
+    .content-background {
+        padding: 0.5rem;
+    }
+}
+
+/* Desktop: Mobile Cards ausblenden */
+@media (min-width: 768px) {
+    .mobile-cards-container {
+        display: none !important;
+    }
+}
+";
 
 include 'header.inc.php';
 
@@ -31,7 +96,7 @@ if (WANDERPREISE_DEBUG) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-award me-2"></i>
@@ -39,97 +104,102 @@ if (WANDERPREISE_DEBUG) {
                         </h2>
                         <p class="text-muted mb-0" style="font-size: 0.85rem;">Wanderpreise erfassen und Gewinner
                             zuordnen</p>
-                        <div id="message" class="mt-2"></div>
                     </div>
                 </div>
 
                 <!-- Weißer Container für den Rest -->
                 <div class="content-background">
 
-                    <!-- Verwaltungs-Buttons -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-12">
-                            <h6 class="text-muted mb-2">
-                                <i class="bi bi-tools me-1"></i> Verwaltung
-                            </h6>
+                    <!-- Aktionsbereich (Bootstrap Collapse) -->
+                    <div class="card mb-3 action-card">
+                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                             data-bs-toggle="collapse" data-bs-target="#wanderpreiseActions"
+                             aria-expanded="false" aria-controls="wanderpreiseActions">
+                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                            <i class="bi bi-chevron-down action-chevron"></i>
                         </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button class="btn btn-compact btn-primary w-100" data-bs-toggle="modal"
-                                data-bs-target="#addWanderpreisModal">
-                                <i class="bi bi-plus-circle me-1"></i>
-                                <span>Neuer Wanderpreis</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" id="zuordnungButton" class="btn btn-compact btn-success w-100"
-                                data-bs-toggle="modal" data-bs-target="#zuordnungModal">
-                                <i class="bi bi-link-45deg me-1"></i>
-                                <span>Gewinner zuordnen</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" id="autoZuordnungButton" class="btn btn-compact btn-warning w-100">
-                                <i class="bi bi-magic me-1"></i>
-                                <span>Auto-Zuordnung</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" id="vergangeneGewinnerButton" class="btn btn-compact btn-info w-100"
-                                data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal">
-                                <i class="bi bi-calendar-plus me-1"></i>
-                                <span>Vergangene Gewinner</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Export-Buttons -->
-                    <div class="row g-2 mb-4">
-                        <div class="col-12">
-                            <h6 class="text-muted mb-2">
-                                <i class="bi bi-download me-1"></i> Export & Berichte
-                            </h6>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" class="btn btn-compact btn-success w-100 export-btn"
-                                data-export-type="csv">
-                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>
-                                <span>CSV Export</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" class="btn btn-compact btn-danger w-100 export-btn"
-                                data-export-type="pdf-all">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                <span>PDF Alle</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" class="btn btn-compact btn-warning w-100 export-btn"
-                                data-export-type="pdf-schnitzerei">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                <span>PDF Schnitzerei</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" class="btn btn-compact btn-info w-100 export-btn"
-                                data-export-type="pdf-akura">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                <span>PDF Akura</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" class="btn btn-compact btn-primary w-100 export-btn"
-                                data-export-type="pdf-jm">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                <span>JM Preise</span>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                            <button type="button" class="btn btn-compact btn-secondary w-100 export-btn"
-                                data-export-type="pdf-mitglieder-info">
-                                <i class="bi bi-people-fill me-1"></i>
-                                <span>PDF Mitglieder-Info</span>
-                            </button>
+                        <div class="collapse" id="wanderpreiseActions">
+                            <div class="card-body pt-2 pb-3 px-3">
+                                <!-- Verwaltungs-Buttons -->
+                                <small class="text-muted d-block mb-2"><i class="bi bi-tools me-1"></i>Verwaltung</small>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <button class="btn btn-compact btn-primary w-100" data-bs-toggle="modal"
+                                            data-bs-target="#addWanderpreisModal">
+                                            <i class="bi bi-plus-circle me-1"></i>
+                                            <span>Neuer Wanderpreis</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <button type="button" id="zuordnungButton" class="btn btn-compact btn-success w-100"
+                                            data-bs-toggle="modal" data-bs-target="#zuordnungModal">
+                                            <i class="bi bi-link-45deg me-1"></i>
+                                            <span>Gewinner zuordnen</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <button type="button" id="autoZuordnungButton" class="btn btn-compact btn-warning w-100">
+                                            <i class="bi bi-magic me-1"></i>
+                                            <span>Auto-Zuordnung</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <button type="button" id="vergangeneGewinnerButton" class="btn btn-compact btn-info w-100"
+                                            data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal">
+                                            <i class="bi bi-calendar-plus me-1"></i>
+                                            <span>Vergangene Gewinner</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Export-Buttons -->
+                                <div class="border-top pt-2">
+                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Export & Berichte</small>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                            <button type="button" class="btn btn-compact btn-success w-100 export-btn"
+                                                data-export-type="csv">
+                                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+                                                <span>CSV Export</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                            <button type="button" class="btn btn-compact btn-danger w-100 export-btn"
+                                                data-export-type="pdf-all">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                                <span>PDF Alle</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                            <button type="button" class="btn btn-compact btn-warning w-100 export-btn"
+                                                data-export-type="pdf-schnitzerei">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                                <span>PDF Schnitzerei</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                            <button type="button" class="btn btn-compact btn-info w-100 export-btn"
+                                                data-export-type="pdf-akura">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                                <span>PDF Akura</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                            <button type="button" class="btn btn-compact btn-primary w-100 export-btn"
+                                                data-export-type="pdf-jm">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                                <span>JM Preise</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                            <button type="button" class="btn btn-compact btn-secondary w-100 export-btn"
+                                                data-export-type="pdf-mitglieder-info">
+                                                <i class="bi bi-people-fill me-1"></i>
+                                                <span>PDF Mitglieder-Info</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -902,6 +972,10 @@ $('#startExport').on('click', function () {
                     console.log('Wanderpreis-Daten geladen:', response);
                     <?php endif; ?>
                     $('#wanderpreisTableContainer').html(response);
+                    // Mobile Cards generieren
+                    if (typeof buildMobileWanderpreiseCards === 'function') {
+                        buildMobileWanderpreiseCards();
+                    }
                     // Debug-Info nur in Development
         <?php if (WANDERPREISE_DEBUG): ?>
         console.log('Wanderpreise geladen');
@@ -1753,6 +1827,95 @@ $('#startExport').on('click', function () {
             }
         });
     });
+
+    // Mobile Cards für Wanderpreise generieren
+    function buildMobileWanderpreiseCards() {
+        const isMobile = window.matchMedia('(max-width: 767.98px)');
+        if (!isMobile.matches) return;
+
+        const table = document.querySelector('#wanderpreiseTable');
+        if (!table) return;
+
+        const container = document.querySelector('#mobileWanderpreiseCards .mobile-cards-scroll');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const rows = table.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 6) return;
+
+            // Wanderpreis Info (enthält Bezeichnung + Beschreibung + Anschaffung)
+            const wanderpreisCell = cells[0];
+            const bezeichnung = wanderpreisCell.querySelector('strong')
+                ? wanderpreisCell.querySelector('strong').textContent.trim()
+                : wanderpreisCell.textContent.split('\n')[0].trim();
+
+            const hersteller = cells[1].textContent.trim();
+            const aktuellerGewinner = cells[2].textContent.trim();
+            const gewinnerHistorie = cells[3].textContent.trim();
+            const minGewinne = cells[4].querySelector('.badge')
+                ? cells[4].querySelector('.badge').textContent.trim()
+                : cells[4].textContent.trim();
+
+            // Buttons extrahieren
+            const editBtn = cells[5].querySelector('.edit-wanderpreis');
+            const viewBtn = cells[5].querySelector('.view-gewinner');
+            const deleteBtn = cells[5].querySelector('.delete-wanderpreis');
+
+            const wanderpreisId = editBtn ? editBtn.getAttribute('data-id') : '';
+
+            const card = document.createElement('div');
+            card.className = 'mobile-card';
+            card.innerHTML = `
+                <div class="mobile-card-header">
+                    <div class="mobile-card-title">${bezeichnung}</div>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary btn-sm edit-wanderpreis" data-id="${wanderpreisId}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-sm view-gewinner" data-id="${wanderpreisId}">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-wanderpreis" data-id="${wanderpreisId}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mobile-card-body">
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="bi bi-building me-1"></i>Hersteller:</span>
+                        <span class="mobile-card-value">${hersteller}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="bi bi-person-check me-1"></i>Aktuell:</span>
+                        <span class="mobile-card-value">${aktuellerGewinner}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="bi bi-trophy me-1"></i>Historie:</span>
+                        <span class="mobile-card-value">${gewinnerHistorie}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="bi bi-hash me-1"></i>Min. Gewinne:</span>
+                        <span class="mobile-card-value">${minGewinne}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Global filterMobileWanderpreise function
+    window.filterMobileWanderpreise = function(searchInput) {
+        const searchTerm = searchInput.value.toLowerCase();
+        const cards = document.querySelectorAll('#mobileWanderpreiseCards .mobile-card');
+
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    };
 
     // Debug-Info am Seitenende
     <?php if (WANDERPREISE_DEBUG): ?>

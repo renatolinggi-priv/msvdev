@@ -4,7 +4,31 @@
 include 'dbconnect.inc.php';
 
 // Alle Styles sind jetzt zentral in msv-styles.css verwaltet
-$page_specific_css = '';
+$page_specific_css = '
+<style>
+/* Mobile Optimierung für Monatsblatt */
+@media (max-width: 767.98px) {
+    .form-control, .form-select {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    textarea.form-control {
+        min-height: 120px !important;
+        font-size: 16px !important;
+    }
+
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    .container-fluid {
+        padding: 1rem !important;
+    }
+}
+</style>
+';
 
 include 'header.inc.php';
 
@@ -20,7 +44,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-file-earmark-text me-2"></i>
@@ -35,7 +59,7 @@ if (empty($_SESSION['csrf_token'])) {
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
                         <!-- Jahr & Monat Auswahl -->
-                        <div class="year-selection-card mb-3">
+                        <div class="mb-3">
                             <div class="row align-items-end g-3">
                                 <!-- Jahr -->
                                 <div class="col-md-3 col-sm-6">
@@ -92,7 +116,7 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
 
                         <!-- Bemerkungsfeld -->
-                        <div class="year-selection-card mb-3">
+                        <div class="mb-3">
                             <label for="bemerkung" class="form-label fw-bold mb-1">
                                 <i class="bi bi-chat-text me-1"></i> Bemerkungen:
                             </label>
@@ -112,8 +136,6 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
                     </form>
 
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
                 </div>
             </div>
         </div>
@@ -127,7 +149,7 @@ $(document).ready(function() {
     function initializeExportYearDropdown() {
         const exportYear = $('#exportYear').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);

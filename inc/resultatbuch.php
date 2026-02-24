@@ -2,21 +2,45 @@
 include 'dbconnect.inc.php';
 include 'header.inc.php';
 ?>
+<style>
+/* Mobile Optimierung für Resultatbuch */
+@media (max-width: 767.98px) {
+    .form-control, .form-select {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        width: 100%;
+    }
+
+    .container-fluid {
+        padding: 1rem !important;
+    }
+}
+</style>
+
 <div class="container-fluid">
   <!-- Dropdown für Jahresauswahl -->
-  <div class="row mb-1">
-    <div class="col-md-1">
-      <label for="yearSelect"><strong>Jahr auswählen:</strong></label>
-      <select id="yearSelect" class="form-control">
+  <div class="row mb-3">
+    <div class="col-md-4 col-12">
+      <label for="yearSelect" class="form-label fw-bold">
+        <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
+      </label>
+      <select id="yearSelect" class="form-select">
         <!-- Optionen werden per JavaScript eingefügt -->
       </select>
     </div>
   </div>
 
   <!-- Button zum Word erstellen -->
-  <div class="row mb-1">
-    <div class="col-md-12">
-      <button class="btn btn-info word-btn">Word erstellen</button>
+  <div class="row mb-3">
+    <div class="col-md-4 col-12">
+      <button class="btn btn-info word-btn">
+        <i class="bi bi-file-word me-2"></i>Word erstellen
+      </button>
     </div>
   </div>
 
@@ -35,7 +59,7 @@ $(document).ready(function() {
        function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);

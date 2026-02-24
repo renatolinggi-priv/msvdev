@@ -269,32 +269,21 @@ select[name*=\"[erweitert]\"][style*=\"rgb(248, 215, 218)\"] {
     font-size: 1.1rem;
 }
 
-/* Responsive für Fragebogen */
-@media (max-width: 768px) {
-    .main-card, .controls-card, .table-card {
-        padding: 0.8rem;
-        margin: 0 0 1.5rem 0;
-        border-radius: 0;
+/* Mobile: Fragebogen-spezifische Card-Styles */
+@media (max-width: 767.98px) {
+    .mobile-fb-select {
+        font-size: 0.85rem;
+        max-width: 170px;
     }
-    
-    #fragebogenTabelle {
-        font-size: 0.65rem;
+
+    .mobile-card-detail-row {
+        align-items: center;
     }
-    
-    .fragebogen-form select {
-        max-width: 80px;
-        min-width: 60px;
-        font-size: 0.7rem;
-        padding: 0.1rem 0.2rem;
-    }
-    
-    #fragebogenTabelle thead th {
-        padding: 0.4rem 0.2rem;
-        font-size: 0.65em;
-    }
-    
-    #fragebogenTabelle tbody td {
-        padding: 0.3rem 0.2rem;
+
+    /* PDF-Link auf Mobile full-width */
+    #pdf-link a {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -361,7 +350,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-clipboard-check me-2"></i>
@@ -377,41 +366,53 @@ if (empty($_SESSION['csrf_token'])) {
                         <input type="hidden" name="csrf_token"
                             value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr-Auswahl in eigener Card -->
-                        <div class="year-selection-card">
-                            <div class="row align-items-center">
-                                <div class="col-md-3">
-                                    <label for="yearSelect" class="form-label fw-bold">
-                                        <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                                    </label>
-                                    <select id="yearSelect" class="form-select">
-                                        <!-- Optionen werden per JavaScript eingefügt -->
-                                    </select>
+                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                        </div>
+
+                        <!-- Aktionsbereich (Bootstrap Collapse) -->
+                        <div class="card action-card mb-0">
+                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                                 data-bs-toggle="collapse" data-bs-target="#fragebogenActions"
+                                 aria-expanded="false" aria-controls="fragebogenActions">
+                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                                <i class="bi bi-chevron-down action-chevron"></i>
+                            </div>
+                            <div class="collapse" id="fragebogenActions">
+                                <div class="card-body pt-2 pb-3 px-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="bi bi-save me-2"></i>Speichern
+                                            </button>
+                                        </div>
+                                        <div class="col-12">
+                                            <button id="delete-btn" type="button" class="btn btn-outline-danger w-100">
+                                                <i class="bi bi-trash me-1"></i>Löschen
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border-top pt-2">
+                                        <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <button class="pdf-btn btn btn-outline-danger btn-sm w-100">
+                                                    <i class="bi bi-file-earmark-pdf me-1"></i>PDF exportieren
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="pdf-link" class="mt-2"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Button Toolbar -->
-                        <div class="button-toolbar">
-                            <div class="button-group">
-                                <button type="submit" class="btn btn-compact-standard btn-outline-success">
-                                    <i class="bi bi-save me-2"></i>
-                                    Speichern
-                                </button>
-                                <button id="delete-btn" type="button" class="btn btn-compact-standard btn-outline-danger">
-                                    <i class="bi bi-trash me-2"></i>
-                                    Löschen
-                                </button>
-                                <button class="btn btn-compact-standard btn-outline-info pdf-btn" type="button">
-                                    <i class="bi bi-file-earmark-pdf me-2"></i>
-                                    PDF exportieren
-                                </button>
-                            </div>
-                            <div id="pdf-link" class="ms-auto"></div>
-                        </div>
-
-                        <!-- Nachrichten Container -->
-                        <div id="message"></div>
+                        </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Tabelle -->
                         <div class="table-wrapper">
@@ -420,22 +421,36 @@ if (empty($_SESSION['csrf_token'])) {
                                 Teilnahme-Übersicht
                             </h5>
 
-                            <div class="table-responsive">
-                                <table class="table table-bordered mb-0" id="fragebogenTabelle">
-                                    <thead>
-                                        <tr>
-                                            <td colspan="100%" class="text-center">
-                                                <div class="loading-spinner">
-                                                    <div class="spinner-border-custom me-3"></div>
-                                                    Lade Fragebogen...
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Dynamisch per AJAX -->
-                                    </tbody>
-                                </table>
+                            <!-- Desktop: Tabelle -->
+                            <div class="desktop-table-container">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0" id="fragebogenTabelle">
+                                        <thead>
+                                            <tr>
+                                                <td colspan="100%" class="text-center">
+                                                    <div class="loading-spinner">
+                                                        <div class="spinner-border-custom me-3"></div>
+                                                        Lade Fragebogen...
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Dynamisch per AJAX -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Mobile: Card-Ansicht -->
+                            <div class="mobile-cards-container" id="fragebogenMobileCards">
+                                <div class="mobile-cards-scroll">
+                                    <div class="mobile-cards-loading">
+                                        <div class="spinner-border text-secondary" role="status">
+                                            <span class="visually-hidden">Laden...</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -511,8 +526,7 @@ if (empty($_SESSION['csrf_token'])) {
         // 1) Jahr-Dropdown initialisieren
         function initializeYearDropdown() {
             let yearSelect = $('#yearSelect');
-            // z.B. von 2024 bis currentYear+1
-            for (let y = 2024; y < currentYear + 1; y++) {
+            for (let y = currentYear; y >= currentYear - 3; y--) {
                 let option = $('<option></option>').val(y).text(y);
                 if (y === currentYear) {
                     option.prop('selected', true);
@@ -535,6 +549,7 @@ if (empty($_SESSION['csrf_token'])) {
             </tr>
         `);
             $('#fragebogenTabelle tbody').empty();
+            MSVMobileCards.showLoading('#fragebogenMobileCards');
 
             $.ajax({
                 url: basePath + 'fragebogen/load_fragebogen_form.php',
@@ -545,32 +560,64 @@ if (empty($_SESSION['csrf_token'])) {
                     if (response.thead && response.tbody) {
                         $('#fragebogenTabelle thead').html(response.thead);
                         $('#fragebogenTabelle tbody').html(response.tbody);
-                        console.log("Tabelle nach Insert:", $('#fragebogenTabelle').html());
 
-                        // Setze Hintergrundfarbe für alle Teilnahme-Dropdowns
+                        // Setze Hintergrundfarbe für alle Teilnahme-Dropdowns (Tabelle)
                         $('select[name*="[mannschaft]"], select[name*="[gruppen]"]').each(function () {
                             updateSelectColorForParticipation(this);
                         });
-                        // Setze Hintergrundfarbe für alle erweiterten Dropdowns
+                        // Setze Hintergrundfarbe für alle erweiterten Dropdowns (Tabelle)
                         $('select[name*="[erweitert]"]').each(function () {
                             updateSelectColorForErweitert(this);
                         });
 
+                        // Mobile Cards befüllen
+                        if (response.mobile_cards) {
+                            $('#fragebogenMobileCards').html(response.mobile_cards);
+                            // Farben für Mobile-Selects
+                            $('#fragebogenMobileCards .mobile-fb-select[data-field="mannschaft"],' +
+                              '#fragebogenMobileCards .mobile-fb-select[data-field="gruppen"]').each(function () {
+                                updateSelectColorForParticipation(this);
+                            });
+                            $('#fragebogenMobileCards .mobile-fb-select[data-field="erweitert"]').each(function () {
+                                updateSelectColorForErweitert(this);
+                            });
+                        }
+
                         msvToast('Fragebogen erfolgreich geladen', 'success');
                     } else {
-                        console.warn("Keine thead/tbody-Daten gefunden.");
                         $('#fragebogenTabelle thead').html('<tr><th>Keine Daten verfügbar</th></tr>');
                         $('#fragebogenTabelle tbody').html('<tr><td>Keine Daten für dieses Jahr gefunden</td></tr>');
+                        MSVMobileCards.showError('#fragebogenMobileCards', 'Keine Daten für dieses Jahr');
                         msvToast('Keine Daten für dieses Jahr gefunden', 'warning');
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error("Fehler beim Laden des Fragebogens:", error);
                     $('#fragebogenTabelle thead').html('<tr><th class="text-danger">Fehler beim Laden</th></tr>');
                     $('#fragebogenTabelle tbody').html('<tr><td class="text-danger">Fehler beim Laden der Daten</td></tr>');
+                    MSVMobileCards.showError('#fragebogenMobileCards');
                     msvToast("Fehler beim Laden des Fragebogens: " + error, 'error');
                 }
             });
+        }
+
+        // Helper: Badge im Mobile-Card-Header aktualisieren
+        function updateMobileBadge(card, field, val) {
+            const isParticipation = (field === 'mannschaft' || field === 'gruppen');
+            const badgeClass = isParticipation
+                ? (val === 'teil' ? 'bg-success' : (val === 'evtl' ? 'bg-warning text-dark' : 'bg-danger'))
+                : (val === 'ja'   ? 'bg-success' : 'bg-danger');
+
+            if (field === 'mannschaft') {
+                const text = val === 'teil' ? 'MM ✓' : (val === 'evtl' ? 'MM ?' : 'MM ✗');
+                card.find('.fb-badge-mannschaft')
+                    .removeClass('bg-success bg-warning bg-danger text-dark')
+                    .addClass(badgeClass).text(text);
+            } else if (field === 'gruppen') {
+                const text = val === 'teil' ? 'GM ✓' : (val === 'evtl' ? 'GM ?' : 'GM ✗');
+                card.find('.fb-badge-gruppen')
+                    .removeClass('bg-success bg-warning bg-danger text-dark')
+                    .addClass(badgeClass).text(text);
+            }
         }
 
         // 3) JahrDropdown-Change
@@ -593,6 +640,31 @@ if (empty($_SESSION['csrf_token'])) {
             updateSelectColorForErweitert(this);
         });
 
+        // 5b) Sync: Mobile-Card-Select → versteckte Tabellen-Selects (für Formular-Submit)
+        $(document).on('change', '.mobile-fb-select', function () {
+            const $sel  = $(this);
+            const mid   = $sel.data('mid');
+            const field = $sel.data('field');
+            const val   = $sel.val();
+            const $card = $sel.closest('.mobile-card');
+
+            if (field === 'waffenID') {
+                $('select[name="fragebogen[' + mid + '][waffenID]"]').val(val);
+            } else if (field === 'mannschaft') {
+                $('select[name="fragebogen[' + mid + '][mannschaft]"]').val(val);
+                updateSelectColorForParticipation(this);
+                updateMobileBadge($card, 'mannschaft', val);
+            } else if (field === 'gruppen') {
+                $('select[name="fragebogen[' + mid + '][gruppen]"]').val(val);
+                updateSelectColorForParticipation(this);
+                updateMobileBadge($card, 'gruppen', val);
+            } else if (field === 'erweitert') {
+                const defid = $sel.data('defid');
+                $('select[name="fragebogen[' + mid + '][erweitert][' + defid + ']"]').val(val);
+                updateSelectColorForErweitert(this);
+            }
+        });
+
         // 6) Formular absenden => Speichern
         $('#fragebogenForm').on('submit', function (e) {
             e.preventDefault();
@@ -611,12 +683,10 @@ if (empty($_SESSION['csrf_token'])) {
                 type: 'POST',
                 data: formData,
                 success: function (response) {
-                    console.log("Speicher-Antwort:", response);
                     msvToast("Fragebogen erfolgreich gespeichert!", 'success');
                     loadFragebogen(selectedYear); // Tabelle neu laden
                 },
                 error: function (xhr, status, error) {
-                    console.error("Fehler beim Speichern:", error);
                     msvToast("Fehler beim Speichern des Fragebogens!", 'error');
                 },
                 complete: function () {
@@ -683,12 +753,10 @@ if (empty($_SESSION['csrf_token'])) {
                     csrf_token: $('input[name="csrf_token"]').val()
                 },
                 success: function (response) {
-                    console.log('Alle Einträge gelöscht');
                     msvToast('Alle Einträge erfolgreich gelöscht', 'success');
                     loadFragebogen($('#yearSelect').val()); // Ergebnisse neu laden
                 },
                 error: function (xhr, status, error) {
-                    console.error('Fehler beim Löschen der aktuellen Einträge:', error);
                     msvToast('Fehler beim Löschen der Einträge', 'error');
                 },
                 complete: function () {

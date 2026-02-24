@@ -4,50 +4,6 @@ include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles definieren
 $page_specific_css = "
-/* Gruppenerfassung-spezifische Styles */
-.main-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 2rem;
-    margin-bottom: 2rem;
-}
-
-.sidebar-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-left: 4px solid var(--info-color);
-}
-
-.group-creation-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1.5rem;
-    border-left: 4px solid var(--success-color);
-}
-
-.existing-groups-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border-left: 4px solid var(--warning-color);
-}
-
-.card-title {
-    color: var(--secondary-color);
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 /* Drag & Drop Styling */
 .draggable-member {
     cursor: move;
@@ -99,7 +55,7 @@ $page_specific_css = "
     padding: 2rem 0;
 }
 
-/* Verfügbare Mitglieder Container */
+/* Verfügbare Mitglieder */
 .available-members-container {
     background: var(--light-color);
     border: 1px solid #dee2e6;
@@ -109,60 +65,6 @@ $page_specific_css = "
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
-}
-
-/* Bestehende Gruppen Cards */
-.group-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: var(--border-radius);
-    margin-bottom: 0.75rem;
-    box-shadow: var(--box-shadow);
-    transition: all var(--transition-speed) ease;
-}
-
-.group-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--box-shadow-hover);
-}
-
-.group-card-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #ffffff 100%);
-    padding: 0.75rem;
-    border-bottom: 1px solid #dee2e6;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.group-card-body {
-    padding: 0.75rem;
-    display: flex;
-    justify-content: between;
-    align-items: center;
-}
-
-.group-card-title {
-    font-weight: 600;
-    color: var(--dark-color);
-    margin: 0;
-    font-size: 0.9rem;
-}
-
-.group-card-text {
-    color: var(--secondary-color);
-    font-size: 0.8rem;
-    margin: 0.25rem 0 0 0;
-}
-
-.group-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-left: auto;
-}
-
-.btn-icon {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-    border-radius: var(--border-radius);
 }
 
 /* UI Draggable States */
@@ -200,49 +102,148 @@ $page_specific_css = "
     visibility: visible !important;
 }
 
-/* Section Headers */
-.section-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
-    padding: 0.75rem 1rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
-    border-left: 4px solid var(--secondary-color);
-}
-
-.section-title {
-    color: var(--secondary-color);
-    font-weight: 600;
-    margin: 0;
-    font-size: 0.95rem;
-}
-
 /* Responsive für Gruppenerfassung */
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
+    /* Desktop Drag & Drop verstecken */
+    .desktop-group-container {
+        display: none !important;
+    }
+
+    /* Mobile Touch-Interface anzeigen */
+    .mobile-group-container {
+        display: block !important;
+    }
+
     .main-card, .sidebar-card, .group-creation-card {
         padding: 1rem;
         margin: 0 0 2rem 0;
-        border-radius: 0;
+        border-radius: 8px;
     }
-    
+
     .member-flex-item {
         width: 100%;
         margin: 0.25rem 0;
     }
-    
+
     .group-actions {
-        flex-direction: column;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    /* Mobile Member Selection */
+    .mobile-member-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .mobile-member-item.selected {
+        background: #d4edda;
+        border-color: #28a745;
+    }
+
+    .mobile-member-name {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .mobile-add-btn, .mobile-remove-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 2px solid;
+        background: white;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .mobile-add-btn {
+        border-color: #28a745;
+        color: #28a745;
+    }
+
+    .mobile-add-btn:active {
+        background: #28a745;
+        color: white;
+        transform: scale(0.95);
+    }
+
+    .mobile-remove-btn {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+    .mobile-remove-btn:active {
+        background: #dc3545;
+        color: white;
+        transform: scale(0.95);
+    }
+
+    .mobile-group-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .mobile-section-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .mobile-group-list {
+        min-height: 100px;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #dee2e6;
+    }
+
+    .mobile-group-list.empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    /* Formular-Buttons */
+    .btn-compact, .btn-compact-standard {
+        min-height: 48px;
+        font-size: 16px;
+        width: 100%;
+        margin-bottom: 8px;
     }
 }
 
-/* Animationen */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Desktop: Mobile Container verstecken */
+@media (min-width: 768px) {
+    .mobile-group-container {
+        display: none !important;
+    }
+
+    .desktop-group-container {
+        display: block !important;
+    }
 }
 
-.main-card, .sidebar-card, .group-creation-card, .existing-groups-card {
-    animation: fadeIn 0.5s ease-out;
-}
 ";
 
 include 'header.inc.php';
@@ -259,7 +260,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-people me-2"></i>
@@ -271,132 +272,145 @@ if (empty($_SESSION['csrf_token'])) {
                 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
-                    <!-- Jahr-Auswahl in eigener Card -->
-                    <div class="year-selection-card">
-                        <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <label for="yearSelect" class="form-label fw-bold">
-                                    <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                                </label>
-                                <select id="yearSelect" class="form-select">
-                                    <!-- Dynamisch per JS -->
-                                </select>
-                            </div>
-                        </div>
+                    <!-- Jahr-Auswahl -->
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                            <i class="bi bi-calendar3 me-1"></i>Jahr:
+                        </label>
+                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                            <!-- Dynamisch per JS -->
+                        </select>
                     </div>
 
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
-
-                    <div class="row">
+                    <div class="row g-3">
                         <!-- Sidebar: Anlass und bestehende Gruppen -->
-                        <div class="col-lg-3">
+                        <div class="col-xl-3 col-lg-4">
                             <!-- Anlass auswählen -->
-                            <div class="sidebar-card">
-                                <h5 class="card-title">
-                                    <i class="bi bi-calendar-event"></i>
-                                    Anlass auswählen
-                                </h5>
-                                <select id="eventSelect" class="form-select">
-                                    <option value="">Bitte wählen...</option>
-                                </select>
-                                
-                                <button type="button" class="btn btn-compact-standard btn-outline-success w-100 mt-3" data-bs-toggle="modal" data-bs-target="#newAnlassModal">
-                                    <i class="bi bi-plus-circle me-1"></i> Neuer Anlass
-                                </button>
+                            <div class="card mb-3">
+                                <div class="card-header py-2">
+                                    <span class="fw-semibold"><i class="bi bi-calendar-event me-2"></i>Anlass auswählen</span>
+                                </div>
+                                <div class="card-body py-2">
+                                    <select id="eventSelect" class="form-select form-select-sm mb-2">
+                                        <option value="">Bitte wählen...</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-success btn-compact w-100" data-bs-toggle="modal" data-bs-target="#newAnlassModal">
+                                        <i class="bi bi-plus-circle me-1"></i>Neuer Anlass
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Bestehende Gruppen -->
-                            <div class="existing-groups-card">
-                                <h5 class="card-title">
-                                    <i class="bi bi-collection"></i>
-                                    Bestehende Gruppen
-                                </h5>
-                                <div id="existingGroups">
-                                    <div class="text-center text-muted py-3">
-                                        <i class="bi bi-info-circle me-2"></i>
-                                        Bitte zuerst einen Anlass wählen
+                            <div class="card">
+                                <div class="card-header py-2">
+                                    <span class="fw-semibold"><i class="bi bi-collection me-2"></i>Bestehende Gruppen</span>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div id="existingGroups">
+                                        <div class="text-center text-muted py-3">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            Bitte zuerst einen Anlass wählen
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Hauptbereich: Gruppe erstellen -->
-                        <div class="col-lg-9">
-                            <div class="group-creation-card">
-                                <h5 class="card-title">
-                                    <i class="bi bi-plus-square"></i>
-                                    Neue Gruppe erstellen
-                                </h5>
-                                
-                                <form id="newGroupForm">
-                                    <input type="hidden" id="editGroupId" value="">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-                                    
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <label for="gruppenname" class="form-label">
+                        <div class="col-xl-9 col-lg-8">
+                            <div class="card">
+                                <div class="card-header py-2">
+                                    <span class="fw-semibold" id="formCardTitle"><i class="bi bi-plus-square me-2"></i>Neue Gruppe erstellen</span>
+                                </div>
+                                <div class="card-body">
+                                    <form id="newGroupForm">
+                                        <input type="hidden" id="editGroupId" value="">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+
+                                        <div class="mb-3">
+                                            <label for="gruppenname" class="form-label fw-semibold small">
                                                 <i class="bi bi-tag me-1"></i>Gruppenname:
                                             </label>
-                                            <input type="text" id="gruppenname" class="form-control" placeholder="Name der Gruppe" required>
+                                            <input type="text" id="gruppenname" class="form-control form-control-sm" style="max-width: 320px;" placeholder="Name der Gruppe" required>
                                         </div>
-                                    </div>
 
-                                    <div class="row">
-                                        <!-- Verfügbare Mitglieder -->
-                                        <div class="col-md-5">
-                                            <div class="section-header">
-                                                <h6 class="section-title">
-                                                    <i class="bi bi-person-lines-fill me-1"></i>
-                                                    Verfügbare Mitglieder
-                                                </h6>
-                                            </div>
-                                            <div id="availableMembers" class="available-members-container">
-                                                <div class="text-center text-muted w-100 py-3">
-                                                    <i class="bi bi-person-plus me-2"></i>
-                                                    Wähle zuerst einen Anlass
+                                        <!-- Desktop Drag & Drop Container -->
+                                        <div class="desktop-group-container">
+                                            <div class="row g-3">
+                                                <!-- Verfügbare Mitglieder -->
+                                                <div class="col-md-5">
+                                                    <p class="fw-semibold small text-muted mb-2">
+                                                        <i class="bi bi-person-lines-fill me-1"></i>Verfügbare Mitglieder
+                                                    </p>
+                                                    <div id="availableMembers" class="available-members-container">
+                                                        <div class="text-center text-muted w-100 py-3">
+                                                            <i class="bi bi-person-plus me-2"></i>
+                                                            Wähle zuerst einen Anlass
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Pfeil -->
+                                                <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                                    <div class="text-center text-muted">
+                                                        <i class="bi bi-arrow-right" style="font-size: 2rem;"></i>
+                                                        <div class="small mt-1">Drag & Drop</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Gruppe zusammenstellen -->
+                                                <div class="col-md-5">
+                                                    <p class="fw-semibold small text-muted mb-2">
+                                                        <i class="bi bi-people-fill me-1"></i>Gruppe zusammenstellen
+                                                    </p>
+                                                    <div id="groupMembers" class="droppable-group">
+                                                        <p class="text-muted">
+                                                            <i class="bi bi-cursor me-2"></i>
+                                                            Ziehe die Mitglieder hierher...
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Pfeil -->
-                                        <div class="col-md-2 d-flex align-items-center justify-content-center">
-                                            <div class="text-center text-muted">
-                                                <i class="bi bi-arrow-right" style="font-size: 2rem;"></i>
-                                                <div style="font-size: 0.8rem; margin-top: 0.5rem;">Drag & Drop</div>
+                                        <!-- Mobile Touch Container -->
+                                        <div class="mobile-group-container" style="display:none;">
+                                            <!-- Verfügbare Mitglieder -->
+                                            <div class="mobile-group-section">
+                                                <div class="mobile-section-header">
+                                                    <i class="bi bi-person-lines-fill me-2"></i>
+                                                    Verfügbare Mitglieder
+                                                </div>
+                                                <div id="mobileAvailableMembers">
+                                                    <div class="text-center text-muted py-3">
+                                                        <i class="bi bi-person-plus me-2"></i>
+                                                        Wähle zuerst einen Anlass
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Gruppe -->
+                                            <div class="mobile-group-section">
+                                                <div class="mobile-section-header">
+                                                    <i class="bi bi-people-fill me-2"></i>
+                                                    Gruppe (<span id="mobileGroupCount">0</span>)
+                                                </div>
+                                                <div id="mobileGroupMembers" class="mobile-group-list empty">
+                                                    <span>Noch keine Mitglieder hinzugefügt</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <!-- Gruppe zusammenstellen -->
-                                        <div class="col-md-5">
-                                            <div class="section-header">
-                                                <h6 class="section-title">
-                                                    <i class="bi bi-people-fill me-1"></i>
-                                                    Gruppe zusammenstellen
-                                                </h6>
-                                            </div>
-                                            <div id="groupMembers" class="droppable-group">
-                                                <p class="text-muted">
-                                                    <i class="bi bi-cursor me-2"></i>
-                                                    Ziehe die Mitglieder hierher...
-                                                </p>
-                                            </div>
+                                        <div class="d-flex gap-2 mt-3">
+                                            <button type="submit" class="btn btn-outline-success btn-compact" id="saveGruppe">
+                                                <i class="bi bi-save me-1"></i>Gruppe speichern
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-compact" id="resetForm">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Zurücksetzen
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    <div class="row mt-4">
-                                        <div class="col-12">
-                                            <div class="d-flex gap-3">
-                                                <button type="submit" class="btn btn-compact-standard btn-outline-success" id="saveGruppe">
-                                                    <i class="bi bi-save me-1"></i> Gruppe speichern
-                                                </button>
-                                                <button type="button" class="btn btn-compact-standard btn-outline-secondary" id="resetForm">
-                                                    <i class="bi bi-arrow-clockwise me-1"></i> Zurücksetzen
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -493,7 +507,7 @@ $(document).ready(function() {
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -644,6 +658,107 @@ $(document).ready(function() {
     // Einmal aufrufen
     setupDragDrop();
 
+    // Mobile Detection
+    var isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+    var mobileGroupMembers = []; // Array für mobile Gruppenmitglieder
+
+    // Mobile Member Liste erstellen
+    function buildMobileMemberList(members) {
+        if (!isMobile) return;
+
+        var container = $('#mobileAvailableMembers');
+        if (!members || members.length === 0) {
+            container.html('<div class="text-center text-muted py-3"><i class="bi bi-person-x me-2"></i>Keine verfügbaren Mitglieder</div>');
+            return;
+        }
+
+        var html = '';
+        members.forEach(function(member) {
+            var memberId = member.dataset.id;
+            var memberName = member.textContent.trim();
+
+            // Prüfen ob Mitglied bereits in Gruppe
+            var isInGroup = mobileGroupMembers.some(function(m) { return m.id == memberId; });
+
+            if (!isInGroup) {
+                html += '<div class="mobile-member-item" data-id="' + memberId + '">';
+                html += '<span class="mobile-member-name">' + memberName + '</span>';
+                html += '<button type="button" class="mobile-add-btn" onclick="addToMobileGroup(' + memberId + ', \'' + memberName.replace(/'/g, "\\'") + '\')">';
+                html += '<i class="bi bi-plus-lg"></i>';
+                html += '</button>';
+                html += '</div>';
+            }
+        });
+
+        container.html(html || '<div class="text-center text-muted py-3">Alle Mitglieder bereits in Gruppe</div>');
+    }
+
+    // Member zur mobilen Gruppe hinzufügen
+    window.addToMobileGroup = function(memberId, memberName) {
+        // Zu mobile Array hinzufügen
+        mobileGroupMembers.push({ id: memberId, name: memberName });
+
+        // Auch zum Desktop #groupMembers hinzufügen
+        var $newMember = $("<div></div>")
+            .addClass("draggable-member")
+            .attr("data-id", memberId)
+            .text(memberName);
+        $("#groupMembers").find("p.text-muted").remove();
+        $("#groupMembers").append($newMember);
+
+        // Mobile UI aktualisieren
+        updateMobileGroupDisplay();
+        rebuildMobileAvailableList();
+    };
+
+    // Member aus mobiler Gruppe entfernen
+    window.removeFromMobileGroup = function(memberId) {
+        // Aus mobile Array entfernen
+        mobileGroupMembers = mobileGroupMembers.filter(function(m) { return m.id != memberId; });
+
+        // Auch aus Desktop #groupMembers entfernen
+        $("#groupMembers .draggable-member[data-id='" + memberId + "']").remove();
+
+        if ($("#groupMembers .draggable-member").length === 0) {
+            $("#groupMembers").html('<p class="text-muted"><i class="bi bi-cursor me-2"></i>Ziehe die Mitglieder hierher...</p>');
+        }
+
+        // Mobile UI aktualisieren
+        updateMobileGroupDisplay();
+        rebuildMobileAvailableList();
+    };
+
+    // Mobile Gruppenanzeige aktualisieren
+    function updateMobileGroupDisplay() {
+        var container = $('#mobileGroupMembers');
+        $('#mobileGroupCount').text(mobileGroupMembers.length);
+
+        if (mobileGroupMembers.length === 0) {
+            container.addClass('empty');
+            container.html('<span>Noch keine Mitglieder hinzugefügt</span>');
+            return;
+        }
+
+        container.removeClass('empty');
+        var html = '';
+        mobileGroupMembers.forEach(function(member) {
+            html += '<div class="mobile-member-item selected">';
+            html += '<span class="mobile-member-name">' + member.name + '</span>';
+            html += '<button type="button" class="mobile-remove-btn" onclick="removeFromMobileGroup(' + member.id + ')">';
+            html += '<i class="bi bi-dash-lg"></i>';
+            html += '</button>';
+            html += '</div>';
+        });
+        container.html(html);
+    }
+
+    // Mobile verfügbare Liste neu aufbauen
+    function rebuildMobileAvailableList() {
+        if (!isMobile) return;
+        var members = document.querySelectorAll('#availableMembers .draggable-member');
+        buildMobileMemberList(members);
+    }
+
     // Beim Start: hole das Jahr aus dem Dropdown
     let selectedYear = $('#yearSelect').val() || new Date().getFullYear();
     loadEventDropdown(selectedYear);
@@ -710,17 +825,17 @@ $(document).ready(function() {
                 if (data && data.length > 0) {
                     data.forEach(function(group) {
                         let card = $(`
-                            <div class="group-card" data-groupid="${group.ID}">
-                                <div class="group-card-body">
+                            <div class="card mb-2" data-groupid="${group.ID}">
+                                <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between">
                                     <div>
-                                        <h6 class="group-card-title">${group.Gruppenname}</h6>
-                                        <p class="group-card-text">Mitglieder: ${group.Mitglieder}</p>
+                                        <div class="fw-semibold small">${group.Gruppenname}</div>
+                                        <div class="text-muted" style="font-size:0.8rem;">Mitglieder: ${group.Mitglieder}</div>
                                     </div>
-                                    <div class="group-actions">
-                                        <button class="btn btn-outline-primary btn-icon edit-group" title="Gruppe bearbeiten">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-outline-primary btn-sm edit-group" title="Gruppe bearbeiten">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger btn-icon delete-group" title="Gruppe löschen">
+                                        <button class="btn btn-outline-danger btn-sm delete-group" title="Gruppe löschen">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -771,7 +886,16 @@ $(document).ready(function() {
                 Lade Mitglieder...
             </div>
         `);
-        
+
+        if (isMobile) {
+            $('#mobileAvailableMembers').html(`
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
+                    Lade Mitglieder...
+                </div>
+            `);
+        }
+
         $.ajax({
             url: 'jmdefinition/load_gruppen_members.php',  // KORRIGIERT: richtige Datei
             method: 'GET',
@@ -788,6 +912,13 @@ $(document).ready(function() {
                         availableContainer.append($member);
                     });
                     setupDragDrop();
+
+                    // Mobile Liste generieren
+                    if (isMobile) {
+                        var members = document.querySelectorAll('#availableMembers .draggable-member');
+                        buildMobileMemberList(members);
+                    }
+
                     msvToast('Mitglieder erfolgreich geladen', 'success');
                 } else {
                     availableContainer.html(`
@@ -796,6 +927,15 @@ $(document).ready(function() {
                             Keine verfügbaren Mitglieder gefunden.
                         </div>
                     `);
+
+                    if (isMobile) {
+                        $('#mobileAvailableMembers').html(`
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-person-x me-2"></i>
+                                Keine verfügbaren Mitglieder
+                            </div>
+                        `);
+                    }
                 }
             },
             error: function(xhr, status, error) {
@@ -806,6 +946,16 @@ $(document).ready(function() {
                         Fehler beim Laden der Mitglieder
                     </div>
                 `);
+
+                if (isMobile) {
+                    $('#mobileAvailableMembers').html(`
+                        <div class="text-center text-danger py-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Fehler beim Laden
+                        </div>
+                    `);
+                }
+
                 msvToast("Fehler beim Laden der Mitglieder: " + error, 'error');
             }
         });
@@ -865,7 +1015,14 @@ $(document).ready(function() {
         $("#gruppenname").val(groupData.Gruppenname);
         $("#groupMembers").empty();
 
+        // Mobile Array zurücksetzen
+        mobileGroupMembers = [];
+
         if (!groupData.MemberIDs) {
+            if (isMobile) {
+                updateMobileGroupDisplay();
+                rebuildMobileAvailableList();
+            }
             return;
         }
 
@@ -882,10 +1039,17 @@ $(document).ready(function() {
                     .attr("data-id", mid)
                     .text($cand.text());
                 $("#groupMembers").append($clone);
+
+                // Zu mobile Array hinzufügen
+                mobileGroupMembers.push({
+                    id: mid,
+                    name: $cand.text().trim()
+                });
+
                 $cand.remove();
             } else {
                 let nameFallback = "Mitglied " + mid;
-                
+
                 if (arrNames[index]) {
                     nameFallback = arrNames[index].trim();
                 }
@@ -895,10 +1059,22 @@ $(document).ready(function() {
                     .attr("data-id", mid)
                     .text(nameFallback);
                 $("#groupMembers").append($newElem);
+
+                // Zu mobile Array hinzufügen
+                mobileGroupMembers.push({
+                    id: mid,
+                    name: nameFallback
+                });
             }
         });
 
         setupDragDrop();
+
+        // Mobile UI aktualisieren
+        if (isMobile) {
+            updateMobileGroupDisplay();
+            rebuildMobileAvailableList();
+        }
     }
 
     //////////////////////////
@@ -1018,6 +1194,12 @@ $(document).ready(function() {
                 Ziehe die Mitglieder hierher...
             </p>
         `);
+
+        // Mobile zurücksetzen
+        mobileGroupMembers = [];
+        if (isMobile) {
+            updateMobileGroupDisplay();
+        }
     }
 
     $('#resetForm').on('click', function() {

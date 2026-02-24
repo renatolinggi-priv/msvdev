@@ -32,7 +32,7 @@
     const sel = document.getElementById('yearSelect');
     sel.innerHTML = '';
     const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y >= 2025; y--) {
+    for (let y = currentYear; y >= currentYear - 3; y--) {
       const opt = document.createElement('option');
       opt.value = String(y);
       opt.textContent = String(y);

@@ -80,12 +80,12 @@ try {
     
     // Dateiname generieren
     $filename = "Sektionsrangierungen_" . $year . "_" . date('Y-m-d_H-i-s') . ".pdf";
-    $filepath = '../temp/' . $filename;
-    
-    // Temp-Verzeichnis erstellen falls nicht vorhanden
-    if (!file_exists('../temp/')) {
-        if (!mkdir('../temp/', 0777, true)) {
-            echo json_encode(['success' => false, 'message' => 'Temp-Verzeichnis konnte nicht erstellt werden']);
+    $filepath = 'dat/' . $filename;
+
+    // dat-Verzeichnis erstellen falls nicht vorhanden
+    if (!file_exists('dat/')) {
+        if (!mkdir('dat/', 0777, true)) {
+            echo json_encode(['success' => false, 'message' => 'dat-Verzeichnis konnte nicht erstellt werden']);
             exit;
         }
     }
@@ -100,7 +100,7 @@ try {
     // Erfolgreiche Antwort
     echo json_encode([
         'success' => true,
-        'pdf_url' => 'temp/' . $filename,
+        'pdf_url' => 'sektionsrangierungen/dat/' . $filename,
         'filename' => $filename,
         'message' => 'PDF erfolgreich generiert'
     ]);

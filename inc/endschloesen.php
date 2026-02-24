@@ -21,12 +21,13 @@ if (empty($_SESSION['csrf_token'])) {
   <div id="toastContainer"></div>
 </div>
 
+<div class="container-fluid">
 <div class="row">
-<div class="col-xl-8 col-lg-7 col-md-7 col-10">
+<div class="col-xl-8 col-lg-9 col-md-9 col-12 ps-0">
     <div class="main-content-wrapper">
-      <div class="row mb-3">
+      <div class="row mb-4 d-none d-md-flex">
         <div class="col-md-12">
-          <h2 class="h5 mb-0" style="color: var(--secondary-color);">
+          <h2 class="h4 mb-0" style="color: var(--secondary-color);">
             <i class="bi bi-bullseye me-2"></i>
             Endschiessen – Stiche erfassen
           </h2>
@@ -37,8 +38,8 @@ if (empty($_SESSION['csrf_token'])) {
         <form id="stichForm">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-          <!-- Jahr (einheitlich wie endresultate.php) -->
-          <div class="year-selection-card mb-2">
+          <!-- Jahr -->
+          <div class="mb-2">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="mb-0" role="button" data-bs-toggle="collapse" data-bs-target="#yearCollapse" aria-expanded="false" style="cursor: pointer;">
                 <i class="bi bi-chevron-right me-1" id="yearChevron"></i>
@@ -64,10 +65,13 @@ if (empty($_SESSION['csrf_token'])) {
                 </select>
               </div>
               <div class="col-md-6">
-                <div class="input-group input-group-sm">
+                <div class="input-group input-group-sm mb-1">
                   <span class="input-group-text"><i class="bi bi-person-plus"></i></span>
                   <input type="text" class="form-control" id="gastName" placeholder="Gast/JS Name">
-                  <input type="date" class="form-control" id="gastGeburtsdatum" placeholder="Geburtsdatum" style="max-width: 140px;">
+                </div>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                  <input type="date" class="form-control" id="gastGeburtsdatum">
                 </div>
               </div>
             </div>
@@ -193,17 +197,23 @@ if (empty($_SESSION['csrf_token'])) {
           </div>
           
           <!-- Toolbar direkt unter den Stichen -->
-          <div class="d-flex justify-content-between gap-2 mt-2 mb-3">
-            <button type="button" id="btnGeneratePDF" class="btn btn-outline-primary btn-sm">
-              <i class="bi bi-file-earmark-pdf"></i> Abrechnung
-            </button>
-            <div class="d-flex gap-2">
-              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-counterclockwise"></i> Zurücksetzen
+          <div class="row g-2 mt-2 mb-3">
+            <div class="col-8 col-sm-4 col-md-auto">
+              <button type="button" id="btnGeneratePDF" class="btn btn-outline-primary btn-sm w-100">
+                <i class="bi bi-file-earmark-pdf"></i> Abrechnung
               </button>
-              <button type="submit" id="btnSave" class="btn btn-primary btn-sm">
-                <span class="spinner-border spinner-border-sm me-2 d-none" id="saveSpinner"></span>
-                <i class="bi bi-save"></i> Speichern
+            </div>
+            <div class="col-2 col-sm-4 col-md-auto ms-md-auto">
+              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center px-1" title="Zurücksetzen">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span class="d-none d-sm-inline ms-1">Zurücksetzen</span>
+              </button>
+            </div>
+            <div class="col-2 col-sm-4 col-md-auto">
+              <button type="submit" id="btnSave" class="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center px-1">
+                <span class="spinner-border spinner-border-sm d-none" id="saveSpinner"></span>
+                <i class="bi bi-save d-sm-none"></i>
+                <span class="d-none d-sm-inline"><i class="bi bi-save me-1"></i>Speichern</span>
               </button>
             </div>
           </div>
@@ -214,8 +224,10 @@ if (empty($_SESSION['csrf_token'])) {
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="mb-0"><i class="bi bi-table"></i> Bereits erfasste Stiche</h6>
             </div>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover table-bordered" id="erfassteTabelle">
+            <!-- Desktop: Tabelle -->
+            <div class="desktop-table-container">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered" id="erfassteTabelle">
                 <thead class="table-light">
                   <tr id="erfassteTableHeader">
                     <th style="min-width: 150px;">Mitglied</th>
@@ -232,6 +244,21 @@ if (empty($_SESSION['csrf_token'])) {
               </table>
             </div>
           </div>
+
+          <!-- Mobile: Cards -->
+          <div class="mobile-cards-container" id="mobileCardsEndsch">
+            <div class="mobile-search">
+              <div class="position-relative">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="form-control" placeholder="Suchen..."
+                       oninput="filterMobileEndsch(this)">
+              </div>
+            </div>
+            <div class="mobile-cards-scroll">
+              <!-- Cards werden per JavaScript generiert -->
+            </div>
+          </div>
+        </div>
         </form>
       </div>
     </div>
@@ -550,6 +577,32 @@ if (empty($_SESSION['csrf_token'])) {
   #munitionBadge {
     transition: all 0.3s ease;
   }
+
+@media (max-width: 767.98px) {
+  .desktop-table-container { display: none !important; }
+  .mobile-cards-container { display: flex !important; }
+
+  .mobile-card-detail-row {
+    padding: 0.75rem 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  .mobile-card-detail-label {
+    font-size: 0.875rem !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+  }
+
+  .mobile-card-detail-value {
+    font-size: 1rem !important;
+    color: #1e293b !important;
+  }
+
+  .mobile-card-body .btn {
+    min-height: 48px !important;
+    font-size: 1rem !important;
+  }
+}
 </style>
 
 <script>
@@ -586,7 +639,7 @@ if (empty($_SESSION['csrf_token'])) {
     const sel = document.getElementById('yearSelect');
     sel.innerHTML = '';
     const currentYear = new Date().getFullYear();
-    for(let y = currentYear + 1; y >= 2024; y--){
+    for(let y = currentYear; y >= currentYear - 3; y--){
       const opt = document.createElement('option');
       opt.value = String(y);
       opt.textContent = String(y);
@@ -1757,6 +1810,11 @@ html += `<td class="text-center small">${munHtml}</td>`;
     tr.innerHTML = html;
     tbody.appendChild(tr);
   });
+
+  // Mobile Cards generieren
+  if (typeof buildMobileEndschCards === 'function') {
+    buildMobileEndschCards();
+  }
 }
 
   document.addEventListener('click', function(e) {
@@ -2196,11 +2254,119 @@ html += `<td class="text-center small">${munHtml}</td>`;
     });
   });
   
+  // Mobile Cards für Endschloesen
+  function buildMobileEndschCards() {
+    const isMobile = window.matchMedia('(max-width: 767.98px)');
+    if (!isMobile.matches) return;
+
+    const table = document.getElementById('erfassteTabelle');
+    const container = document.querySelector('#mobileCardsEndsch .mobile-cards-scroll');
+    if (!table || !container) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      return;
+    }
+
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0 || rows[0].cells.length === 1) {
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      return;
+    }
+
+    let html = '';
+    rows.forEach((row, idx) => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      if (cells.length < 2) return;
+
+      const name = cells[0]?.textContent?.trim() || 'Unbekannt';
+      const totalIdx = cells.length - 2;
+      const total = cells[totalIdx]?.textContent?.trim() || '-';
+
+      // Stich-Daten extrahieren (alle Spalten außer Name, Total, Actions)
+      let stichHtml = '';
+      for (let i = 1; i < totalIdx; i++) {
+        const val = cells[i]?.textContent?.trim() || '';
+        if (val !== '–' && val !== '') {
+          stichHtml += `<div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Spalte ${i}</span>
+            <span class="mobile-card-detail-value">${val}</span>
+          </div>`;
+        }
+      }
+
+      // Action buttons
+      const actionCell = cells[cells.length - 1];
+      const editBtn = actionCell?.querySelector('.btn-edit-selection');
+      const entityId = editBtn ? editBtn.dataset.entityId : '';
+      const entityTyp = editBtn ? editBtn.dataset.entityTyp : '';
+
+      html += `
+      <div class="mobile-card" data-index="${idx}">
+        <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+          <div>
+            <div class="fw-bold">${name}</div>
+            <small class="text-muted">Total: ${total}</small>
+          </div>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="mobile-card-body">
+          ${stichHtml}
+          ${entityId ? `
+          <button type="button" class="btn btn-primary w-100 mt-3 btn-edit-selection"
+                  data-entity-id="${entityId}"
+                  data-entity-typ="${entityTyp}"
+                  data-entity-name="${name}"
+                  style="min-height: 48px;">
+            <i class="bi bi-pencil me-2"></i>Bearbeiten
+          </button>` : ''}
+        </div>
+      </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  window.filterMobileEndsch = function(searchInput) {
+    const query = searchInput.value.toLowerCase();
+    const cards = document.querySelectorAll('#mobileCardsEndsch .mobile-card');
+
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      const isVisible = text.includes(query);
+      card.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCount++;
+    });
+
+    const container = document.querySelector('#mobileCardsEndsch .mobile-cards-scroll');
+    const existingEmpty = container.querySelector('.mobile-cards-empty');
+    if (visibleCount === 0 && !existingEmpty) {
+      container.insertAdjacentHTML('beforeend', `
+        <div class="mobile-cards-empty">
+          <i class="bi bi-search"></i>
+          <div>Keine Treffer gefunden</div>
+        </div>`);
+    } else if (visibleCount > 0 && existingEmpty) {
+      existingEmpty.remove();
+    }
+  };
+
+  let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
+  window.addEventListener('resize', function() {
+    const isNowDesktop = window.matchMedia('(min-width: 768px)').matches;
+    if (wasDesktop && !isNowDesktop) {
+      buildMobileEndschCards();
+    }
+    wasDesktop = isNowDesktop;
+  });
+
   populateYearSelect();
   loadMitglieder();
   loadWaffen(); // NEU: Lade Waffen beim Start
   loadStiche();
-  
+
   setTimeout(() => {
     loadErfassteStiche();
   }, 500);

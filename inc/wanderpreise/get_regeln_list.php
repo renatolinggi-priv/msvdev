@@ -13,8 +13,10 @@ try {
     $result = $conn->query($sql);
     
     if ($result && $result->num_rows > 0) {
+        // Desktop Table Container
+        echo '<div class="desktop-table-container">';
         echo '<div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover" id="regelnTable">
                 <thead>
                     <tr>
                         <th>Code</th>
@@ -78,7 +80,21 @@ try {
         }
         
         echo '</tbody></table></div>';
-        
+        echo '</div>'; // Ende desktop-table-container
+
+        // Mobile Cards Container
+        echo '<div class="mobile-cards-container" id="mobileRegelnCards">';
+        echo '<div class="mobile-search">';
+        echo '<div class="position-relative">';
+        echo '<i class="bi bi-search search-icon"></i>';
+        echo '<input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileRegeln(this)">';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="mobile-cards-scroll">';
+        echo '<!-- Cards werden per JavaScript generiert -->';
+        echo '</div>';
+        echo '</div>';
+
         // Zähler
         echo '<div class="mt-3 text-muted">
               <i class="bi bi-info-circle me-1"></i>

@@ -16,7 +16,8 @@ if ($eventID === 0) {
 $sql = "
     SELECT m.ID, m.Vorname, m.Name
     FROM mitglieder m
-    WHERE m.Status = 1 
+    WHERE m.Status = 1
+      AND m.Verstorben = 0
       AND m.ID NOT IN (
             SELECT mitgliederID 
             FROM JMDefinition_Gruppen 

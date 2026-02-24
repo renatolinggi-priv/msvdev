@@ -102,7 +102,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-calculator me-2"></i>
@@ -118,17 +118,13 @@ if (empty($_SESSION['csrf_token'])) {
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                         
                         <!-- Jahr-Auswahl -->
-                        <div class="year-selection-card">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <label for="yearSelect" class="form-label fw-bold">
-                                        <i class="bi bi-calendar3 me-1"></i>Jahr auswählen:
-                                    </label>
-                                    <select id="yearSelect" class="form-select">
-                                        <!-- Optionen werden per JavaScript eingefügt -->
-                                    </select>
-                                </div>
-                            </div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                                <!-- Optionen werden per JavaScript eingefügt -->
+                            </select>
                         </div>
 
                         <!-- Berechnungslogik Info -->
@@ -187,6 +183,8 @@ if (empty($_SESSION['csrf_token'])) {
                                     Durchschnittsresultat
                                 </h5>
                                 <div class="table-responsive">
+                                <div class="desktop-table-container">
+                                <div class="table-responsive">
                                     <table class="table table-hover mb-0 result-preview-table" id="durchschnittTabelle">
                                         <thead>
                                             <tr>
@@ -200,6 +198,16 @@ if (empty($_SESSION['csrf_token'])) {
                                             <!-- Wird per JavaScript gefüllt -->
                                         </tbody>
                                     </table>
+                                </div>
+                                </div>
+                                <!-- Mobile Cards Container -->
+                                <div class="mobile-cards-container" id="mobileCardsDurchschnitt">
+                                    <div class="mobile-search-container">
+                                        <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
+                                    </div>
+                                    <div class="mobile-scroll-container">
+                                        <!-- Cards werden hier eingefügt -->
+                                    </div>
                                 </div>
                                 
                                 <!-- Zusammenfassung -->
@@ -220,7 +228,7 @@ if (empty($_SESSION['csrf_token'])) {
                                                     <span id="averageScore" class="h5 text-warning">-</span>
                                                 </div>
                                                 <div class="col-md-2">
-                                                    <strong>Zuschlag:</strong><br>
+                                                    <strong>Beteiligungszuschlag:</strong><br>
                                                     <span id="bonusPoints" class="h5 text-secondary">-</span>
                                                 </div>
                                                 <div class="col-md-3">
@@ -248,7 +256,7 @@ $(document).ready(function () {
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -273,7 +281,7 @@ $(document).ready(function () {
                     response.definitions.forEach(function(def) {
                         const option = $('<option></option>')
                             .val(def.ID)
-                            .text(`${def.Bezeichnung} (Max: ${def.Maxpunkte}, Zuschlag: ${def.Zuschlag || 0})`);
+                            .text(`${def.Bezeichnung} (Max: ${def.Maxpunkte}, Beteiligungszuschlag: ${def.Zuschlag || 0})`);
                         $('#anlassSelect').append(option);
                     });
                 } else {
@@ -374,6 +382,7 @@ $(document).ready(function () {
         
         $('#durchschnittTabelle tbody').html(html);
         
+        buildMobileCardsDurchschnitt();
         // Zusammenfassung aktualisieren
         $('#totalParticipants').text(result.teilnehmer_anzahl);
         $('#usedResults').text(result.verwendete_resultate);
@@ -438,8 +447,20 @@ $(document).ready(function () {
     initializeYearDropdown();
     loadAvailableDefinitions(currentYear);
 });
+
+    // Mobile Cards Builder für Durchschnittstabelle
+    function buildMobileCardsDurchschnitt() {
+        MSVMobileCards.initResponsive({
+            tableId: 'durchschnittTabelle',
+            mobileContainerId: 'mobileCardsDurchschnitt',
+            titleColumns: [0, 1],
+            summaryColumns: [2],
+            rankColumn: 0
+        });
+    }
+
 </script>
 
-<?php
+<?
 include 'footer.inc.php';
 ?>

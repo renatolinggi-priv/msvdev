@@ -33,7 +33,7 @@ $conn->begin_transaction();
 
 try {
     // 1. Prüfen ob die Paarung existiert und alle Teilnehmer laden
-    $check_sql = "SELECT cp.*, 
+    $check_sql = "SELECT cp.*,
                          m1.Name as Name1, m1.Vorname as Vorname1,
                          m2.Name as Name2, m2.Vorname as Vorname2,
                          m3.Name as Name3, m3.Vorname as Vorname3
@@ -41,7 +41,7 @@ try {
                   LEFT JOIN mitglieder m1 ON cp.Participant1 = m1.ID
                   LEFT JOIN mitglieder m2 ON cp.Participant2 = m2.ID
                   LEFT JOIN mitglieder m3 ON cp.Participant3 = m3.ID
-                  WHERE cp.ID = ? AND cp.Year = YEAR(CURDATE())";
+                  WHERE cp.ID = ?";
     
     $stmt = $conn->prepare($check_sql);
     if (!$stmt) {
@@ -64,20 +64,23 @@ try {
     ]);
     
     // 2. Wenn winner_id gesetzt ist (nicht null), prüfen ob er Teil der Paarung ist
-    if ($winner_id !== null && !in_array($winner_id, $valid_participants)) {
+    // Negative IDs = Verlierer bei Dreier-Gleichstand (abs() für Validierung)
+    $check_id = $winner_id !== null ? abs($winner_id) : null;
+    if ($check_id !== null && !in_array($check_id, $valid_participants)) {
         throw new Exception('Der gewählte Schütze ist nicht Teil dieser Paarung');
     }
-    
-    // 3. Prüfen ob bereits Gewinner in Runde 2 eingetragen wurden (nur wenn winner_id nicht null)
-    if ($winner_id !== null) {
-        $check_round2_sql = "SELECT COUNT(*) as count 
-                            FROM cupPairs 
-                            WHERE Round = 2 
-                            AND Year = YEAR(CURDATE())
+
+    // 3. Prüfen ob bereits Gewinner in Runde 2 eingetragen wurden (nur wenn winner_id positiv)
+    if ($winner_id !== null && $winner_id > 0) {
+        $pair_year = $pair['Year'];
+        $check_round2_sql = "SELECT COUNT(*) as count
+                            FROM cupPairs
+                            WHERE Round = 2
+                            AND Year = ?
                             AND ? IN (Participant1, Participant2, Participant3)";
-        
+
         $stmt = $conn->prepare($check_round2_sql);
-        $stmt->bind_param("i", $winner_id);
+        $stmt->bind_param("ii", $pair_year, $winner_id);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();

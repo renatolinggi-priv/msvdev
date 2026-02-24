@@ -62,6 +62,15 @@ $logoBase64 = imgToBase64('../dat/SKSG_Logo.jpg'); // Passe den Pfad zum Logo an
 $currentYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 $isDraft = isset($_GET['draft']) && $_GET['draft'] == 1;
 
+// Anzahl Streicher aus Parameter-Tabelle laden und Platzhalter im Zusatztext ersetzen
+$stParam = $conn->prepare("SELECT excludeCount FROM Parameter WHERE year = ?");
+$stParam->bind_param('i', $currentYear);
+$stParam->execute();
+$rowParam = $stParam->get_result()->fetch_assoc();
+$stParam->close();
+$anzahl_streicher_pdf = $rowParam ? max(1, (int)$rowParam['excludeCount']) : 3;
+$zusatztext = str_replace('{anzahl_streicher}', (string)$anzahl_streicher_pdf, $zusatztext);
+
 // SQL-Abfrage vorbereiten, um JMDefinition-Daten zu laden
 $sql = "SELECT Reihenfolge, Bezeichnung, Schiesstage, Maxpunkte, Streicher, Erweitert, Info FROM JMDefinition WHERE year = ? ORDER BY Reihenfolge";
 $stmt = $conn->prepare($sql);

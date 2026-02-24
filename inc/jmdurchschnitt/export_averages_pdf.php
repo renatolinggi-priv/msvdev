@@ -124,12 +124,12 @@ try {
     
     // Dateiname generieren
     $filename = "JM_Vereinsabrechnung_" . preg_replace('/[^a-zA-Z0-9]/', '_', $result['anlass_name']) . "_" . $year . ".pdf";
-    $filepath = '../temp/' . $filename;
-    
-    // Temp-Verzeichnis erstellen falls nicht vorhanden
-    if (!file_exists('../temp/')) {
-        if (!mkdir('../temp/', 0777, true)) {
-            echo json_encode(['success' => false, 'message' => 'Temp-Verzeichnis konnte nicht erstellt werden']);
+    $filepath = 'dat/' . $filename;
+
+    // dat-Verzeichnis erstellen falls nicht vorhanden
+    if (!file_exists('dat/')) {
+        if (!mkdir('dat/', 0777, true)) {
+            echo json_encode(['success' => false, 'message' => 'dat-Verzeichnis konnte nicht erstellt werden']);
             exit;
         }
     }
@@ -144,7 +144,7 @@ try {
     // Erfolgreiche Antwort
     echo json_encode([
         'success' => true,
-        'pdf_url' => 'temp/' . $filename,
+        'pdf_url' => 'jmdurchschnitt/dat/' . $filename,
         'filename' => $filename,
         'message' => 'PDF erfolgreich generiert'
     ]);
@@ -388,7 +388,7 @@ function generatePdfHtml($result, $year) {
                 Berechnungsformel:
             </div>
             <div class="calculation-line">
-                Endergebnis = (Summe Pflichtteilnehmer + Zuschlag × Summe Nicht-Pflichtteilnehmer ÷ 100) ÷ Anzahl Pflichtteilnehmer
+                Endergebnis = (Summe Pflichtteilnehmer + Beteiligungszuschlag × Summe Nicht-Pflichtteilnehmer ÷ 100) ÷ Anzahl Pflichtteilnehmer
             </div>
             <div class="calculation-line">
                 Endergebnis = (' . number_format($summePflicht, 0) . ' + ' . $zuschlagsProzent . '% × ' . number_format($summeNichtPflicht, 0) . ' ÷ 100) ÷ ' . $result['verwendete_resultate'] . '

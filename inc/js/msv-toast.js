@@ -8,12 +8,29 @@ function msvToast(message, type = 'success') {
     // Bootstrap 'danger' auf SweetAlert2 'error' mappen
     if (type === 'danger') type = 'error';
 
+    // Responsive: Mobile kompakter und unter Navbar, Desktop wie gewohnt
+    const isMobile = window.innerWidth < 992;
+
     const Toast = Swal.mixin({
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
         timer: 3000,
         timerProgressBar: true,
+        customClass: {
+            popup: isMobile ? 'swal2-toast-mobile' : ''
+        },
+        didOpen: (toast) => {
+            // Mobile: Kompakteres Styling unter dem Hamburger-Button
+            if (isMobile) {
+                toast.style.top = '60px'; // Unter der Navbar/Hamburger
+                toast.style.fontSize = '13px';
+                toast.style.padding = '6px 10px';
+                toast.style.minWidth = 'auto';
+                toast.style.maxWidth = '85%';
+                toast.style.right = '10px';
+            }
+        }
     });
     Toast.fire({ icon: type, title: message });
 }

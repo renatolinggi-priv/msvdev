@@ -63,10 +63,10 @@ include 'header.inc.php';
 <!-- 3-Phasen CSV Import Workflow -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-7 col-lg-8 col-md-10 col-12">
+        <div class="col-xl-7 col-lg-8 col-md-10 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-3">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-file-earmark-arrow-up me-2"></i>

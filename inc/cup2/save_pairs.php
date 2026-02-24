@@ -116,21 +116,35 @@ try {
 
     } else {
         // ========== RUNDEN 1 UND 2 SPEICHERN ==========
-        $stmt_check  = $conn->prepare("SELECT ID FROM cupPairs WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?");
-        $stmt_insert = $conn->prepare("INSERT INTO cupPairs (Participant1, Participant2, Participant3, Result1, LowShot1, Result2, LowShot2, Result3, LowShot3, Round, Year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt_update = $conn->prepare("UPDATE cupPairs SET Result1 = ?, LowShot1 = ?, Result2 = ?, LowShot2 = ?, Result3 = ?, LowShot3 = ?, Participant3 = ? WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?");
-        if (!$stmt_check || !$stmt_insert || !$stmt_update) {
+        $stmt_check = $conn->prepare("SELECT ID FROM cupPairs WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?");
+        if (!$stmt_check) {
             throw new Exception("Prepare Statement fehlgeschlagen: " . $conn->error);
         }
 
+        // Separate Statements für 2er und 3er (damit NULL korrekt gespeichert wird)
+        $stmt_insert_2 = $conn->prepare(
+            "INSERT INTO cupPairs (Participant1, Participant2, Participant3, Result1, LowShot1, Result2, LowShot2, Result3, LowShot3, Round, Year)
+             VALUES (?, ?, NULL, ?, NULL, ?, NULL, NULL, NULL, ?, ?)"
+        );
+        $stmt_insert_3 = $conn->prepare(
+            "INSERT INTO cupPairs (Participant1, Participant2, Participant3, Result1, LowShot1, Result2, LowShot2, Result3, LowShot3, Round, Year)
+             VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, ?)"
+        );
+        $stmt_update_2 = $conn->prepare(
+            "UPDATE cupPairs SET Result1 = ?, Result2 = ?, Participant3 = NULL, Result3 = NULL, LowShot1 = NULL, LowShot2 = NULL, LowShot3 = NULL
+             WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?"
+        );
+        $stmt_update_3 = $conn->prepare(
+            "UPDATE cupPairs SET Result1 = ?, Result2 = ?, Result3 = ?, Participant3 = ?, LowShot1 = NULL, LowShot2 = NULL, LowShot3 = NULL
+             WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?"
+        );
+
         foreach ($pairs as $index => $pair) {
             // ======= LEERE PAARUNGEN ÜBERSPRINGEN =======
-            // Erst prüfen, ob es mindestens zwei gültige Teilnehmer-IDs > 0 gibt
             $validIds = array_filter(array_slice($pair, 0, 3), function($v){
                 return is_numeric($v) && $v > 0;
             });
             if (count($validIds) < 2) {
-                // kein echtes 2er- oder 3er-Paar → skip
                 continue;
             }
 
@@ -140,31 +154,23 @@ try {
             // Teilnehmer IDs extrahieren
             $p1 = (int)$pair[0];
             $p2 = (int)$pair[1];
-            $p3 = $is_three_pair && isset($pair[2]) ? (int)$pair[2] : null;
+            $p3 = $is_three_pair && isset($pair[2]) && (int)$pair[2] > 0 ? (int)$pair[2] : null;
 
             // Validierung der Teilnehmer IDs
-            if ($p1 <= 0 || $p2 <= 0 || ($is_three_pair && $p3 <= 0)) {
+            if ($p1 <= 0 || $p2 <= 0 || ($is_three_pair && ($p3 === null || $p3 <= 0))) {
                 $errors[] = "Ungültige Teilnehmer-IDs für Paarung " . ($index + 1);
                 continue;
             }
 
-            // Ergebnisse extrahieren basierend auf Paarungstyp
+            // Ergebnisse extrahieren
             if ($is_three_pair) {
-                // 3er Paarung
-                $r1  = isset($pair[3]) && is_numeric($pair[3]) ? (int)$pair[3] : null;
-                $ls1 = isset($pair[6]) && is_numeric($pair[6]) ? (int)$pair[6] : null;
-                $r2  = isset($pair[4]) && is_numeric($pair[4]) ? (int)$pair[4] : null;
-                $ls2 = isset($pair[7]) && is_numeric($pair[7]) ? (int)$pair[7] : null;
-                $r3  = isset($pair[5]) && is_numeric($pair[5]) ? (int)$pair[5] : null;
-                $ls3 = isset($pair[8]) && is_numeric($pair[8]) ? (int)$pair[8] : null;
+                $r1 = isset($pair[3]) && is_numeric($pair[3]) ? (int)$pair[3] : null;
+                $r2 = isset($pair[4]) && is_numeric($pair[4]) ? (int)$pair[4] : null;
+                $r3 = isset($pair[5]) && is_numeric($pair[5]) ? (int)$pair[5] : null;
             } else {
-                // 2er Paarung
-                $r1  = isset($pair[2]) && is_numeric($pair[2]) ? (int)$pair[2] : null;
-                $ls1 = isset($pair[4]) && is_numeric($pair[4]) ? (int)$pair[4] : null;
-                $r2  = isset($pair[3]) && is_numeric($pair[3]) ? (int)$pair[3] : null;
-                $ls2 = isset($pair[5]) && is_numeric($pair[5]) ? (int)$pair[5] : null;
-                $r3  = null;
-                $ls3 = null;
+                $r1 = isset($pair[2]) && is_numeric($pair[2]) ? (int)$pair[2] : null;
+                $r2 = isset($pair[3]) && is_numeric($pair[3]) ? (int)$pair[3] : null;
+                $r3 = null;
             }
 
             // Prüfen ob Paarung bereits existiert
@@ -172,39 +178,41 @@ try {
             $stmt_check->execute();
             $exists = $stmt_check->get_result()->num_rows > 0;
 
-            if ($exists) {
-                // Update
-                $stmt_update->bind_param(
-                    "iiiiiiiiiii",
-                    $r1, $ls1, $r2, $ls2, $r3, $ls3, $p3,
-                    $p1, $p2, $round, $year
-                );
-                if ($stmt_update->execute()) {
-                    $updated_count++;
-                    $success_count++;
+            $ok = false;
+            if ($is_three_pair) {
+                if ($exists) {
+                    $stmt_update_3->bind_param("iiiiiiii", $r1, $r2, $r3, $p3, $p1, $p2, $round, $year);
+                    $ok = $stmt_update_3->execute();
                 } else {
-                    $errors[] = "Update fehlgeschlagen für Paarung $p1 vs $p2: " . $stmt_update->error;
+                    $stmt_insert_3->bind_param("iiiiiiii", $p1, $p2, $p3, $r1, $r2, $r3, $round, $year);
+                    $ok = $stmt_insert_3->execute();
                 }
             } else {
-                // Insert
-                $stmt_insert->bind_param(
-                    "iiiiiiiiiii",
-                    $p1, $p2, $p3,
-                    $r1, $ls1, $r2, $ls2, $r3, $ls3,
-                    $round, $year
-                );
-                if ($stmt_insert->execute()) {
-                    $inserted_count++;
-                    $success_count++;
+                if ($exists) {
+                    $stmt_update_2->bind_param("iiiiii", $r1, $r2, $p1, $p2, $round, $year);
+                    $ok = $stmt_update_2->execute();
                 } else {
-                    $errors[] = "Insert fehlgeschlagen für Paarung $p1 vs $p2: " . $stmt_insert->error;
+                    $stmt_insert_2->bind_param("iiiiii", $p1, $p2, $r1, $r2, $round, $year);
+                    $ok = $stmt_insert_2->execute();
                 }
+            }
+
+            if ($ok) {
+                $exists ? $updated_count++ : $inserted_count++;
+                $success_count++;
+            } else {
+                $stmt_err = $is_three_pair
+                    ? ($exists ? $stmt_update_3->error : $stmt_insert_3->error)
+                    : ($exists ? $stmt_update_2->error : $stmt_insert_2->error);
+                $errors[] = "Fehler für Paarung $p1 vs $p2: " . $stmt_err;
             }
         }
 
         $stmt_check->close();
-        $stmt_insert->close();
-        $stmt_update->close();
+        $stmt_insert_2->close();
+        $stmt_insert_3->close();
+        $stmt_update_2->close();
+        $stmt_update_3->close();
     }
 
     // Transaktion abschließen

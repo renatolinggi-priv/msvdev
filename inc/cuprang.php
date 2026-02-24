@@ -5,11 +5,34 @@ require_once 'dbconnect.inc.php';
 require_once 'cuprang/cup_repository.php';
 require_once 'cuprang/cup_table_renderer.php';
 
-if (empty($_SESSION['csrf_token'])) { 
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-$page_specific_css = '';
+$page_specific_css = '
+<style>
+/* Mobile Optimierung für Cuprang */
+@media (max-width: 767.98px) {
+    .form-select {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    .table-title {
+        font-size: 1.1rem !important;
+    }
+
+    .container-fluid {
+        padding: 0.5rem !important;
+    }
+}
+</style>
+';
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 
 include 'header.inc.php';
@@ -21,7 +44,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-trophy me-2"></i>
@@ -32,30 +55,37 @@ include 'header.inc.php';
                 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
-                    <!-- Jahr-Auswahl in eigener Card -->
-                    <div class="year-selection-card">
-                        <div class="row align-items-center">
-                            <div class="col-md-5">
-                                <label for="yearSelect" class="form-label fw-bold">
-                                    <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                                </label>
-                                <select id="yearSelect" class="form-select">
-                                    <!-- Optionen werden per JavaScript eingefügt -->
-                                </select>
+                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                    <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                            <i class="bi bi-calendar3 me-1"></i>Jahr:
+                        </label>
+                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                    </div>
+
+                    <!-- Aktionsbereich (Bootstrap Collapse) -->
+                    <div class="card action-card mb-0">
+                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                             data-bs-toggle="collapse" data-bs-target="#cuprangActions"
+                             aria-expanded="false" aria-controls="cuprangActions">
+                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                            <i class="bi bi-chevron-down action-chevron"></i>
+                        </div>
+                        <div class="collapse" id="cuprangActions">
+                            <div class="card-body pt-2 pb-3 px-3">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <button id="btnCupPdf" class="pdf-btn btn btn-outline-danger w-100" type="button">
+                                            <i class="bi bi-file-pdf me-1"></i>PDF exportieren
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="pdf-link" class="mt-2"></div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Button Toolbar -->
-                    <div class="button-toolbar">
-                        <div class="button-group">
-                            <button id="btnCupPdf" class="btn btn-compact-standard btn-outline-info pdf-btn" type="button">
-                                <i class="bi bi-file-pdf me-2"></i>
-                                PDF exportieren
-                            </button>
-                        </div>
-                        <div id="pdf-link"></div>
-                    </div>
+                    </div><!-- Ende flex-row Jahr+Aktionen -->
 
                     <?php
                     $conn = get_db_connection();
@@ -199,11 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Year-Dropdown füllen und Event-Handler
     const yearSelect = document.getElementById('yearSelect');
     const current = new Date().getFullYear();
-    const start = 2024;
-    const end = current + 1;
     const selected = <?= (int)$selectedYear ?>;
-    
-    for (let y = end; y >= start; y--) {
+
+    for (let y = current; y >= current - 3; y--) {
         const opt = document.createElement('option');
         opt.value = y; 
         opt.textContent = y;

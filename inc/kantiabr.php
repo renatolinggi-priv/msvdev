@@ -42,8 +42,8 @@ $page_specific_css = "
   <div class="row">
     <div class="col-xl-9 col-lg-8">
       <div class="main-card">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-          <h2 class="h4 mb-0"><i class="bi bi-clipboard-data me-2"></i>Kantonalstich – Ranglisten</h2>
+        <div class="d-none d-md-flex align-items-center justify-content-between mb-3">
+          <h2 class="h4 mb-0" style="color: var(--secondary-color);"><i class="bi bi-clipboard-data me-2"></i>Kantonalstich – Ranglisten</h2>
           <div class="d-flex gap-2">
             <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
             <button id="reload-btn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Neu laden</button>
@@ -148,7 +148,7 @@ $(document).ready(function() {
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);

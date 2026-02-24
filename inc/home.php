@@ -71,9 +71,16 @@ include 'header.inc.php';
 
 .quick-access-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.2rem;
     margin-bottom: 1.5rem;
+}
+
+@media (max-width: 991.98px) and (min-width: 768px) {
+    /* Tablet: 2 Spalten */
+    .quick-access-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .quick-access-card {
@@ -220,27 +227,78 @@ include 'header.inc.php';
     font-size: 0.9rem;
 }
 
-@media (max-width: 768px) {
+/* Mobile-Optimierung (konsistenter Breakpoint) */
+@media (max-width: 767.98px) {
     .hero-section {
-        padding: 2rem 1.5rem; /* Angepasst */
+        padding: 1.5rem 1rem;
+        margin-bottom: 1rem;
     }
-    
+
+    .hero-logo {
+        width: 50px;
+        height: 50px;
+    }
+
     .hero-title {
-        font-size: 1.5rem; /* Angepasst von 2rem */
+        font-size: 1.3rem;
     }
-    
+
     .hero-subtitle {
-        font-size: 0.9rem; /* Angepasst von 1rem */
+        font-size: 0.85rem;
     }
-    
+
+    /* Quick Access Grid - single column auf Mobile */
     .quick-access-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1rem;
     }
-    
+
+    .quick-access-card-link {
+        padding: 1.25rem;
+    }
+
+    .quick-access-icon {
+        width: 44px;
+        height: 44px;
+        min-height: 44px; /* WCAG Touch Target */
+        font-size: 1.3rem;
+    }
+
+    .quick-access-title {
+        font-size: 1rem;
+    }
+
+    .quick-access-description {
+        font-size: 0.8rem;
+    }
+
+    /* Info Section - Benutzername und Jahr stacken */
+    .info-section .col-md-8,
+    .info-section .col-md-4 {
+        text-align: center !important;
+        margin-bottom: 1rem;
+    }
+
+    .info-section .row {
+        flex-direction: column;
+    }
+
+    /* Stats Row - 2 Spalten auf Mobile */
     .stats-row {
         grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+        gap: 0.75rem;
+    }
+
+    .stat-card {
+        padding: 0.75rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
     }
 }
 </style>

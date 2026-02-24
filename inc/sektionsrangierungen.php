@@ -9,208 +9,32 @@ if (empty($_SESSION['csrf_token'])) {
 }
 ?>
 <style>
-/* ==========================================
-   SEKTIONSRANGIERUNGEN.PHP SPEZIFISCHE FIXES
-   ========================================== */
+/* Sektionsrangierungen - Desktop Styles */
 
-/* 1. Das #addRankingCard Element soll keinen Flex-Raum wegnehmen */
-#addRankingCard {
-  flex-shrink: 0 !important;
-}
-
-/* 2. Margin-Probleme lösen - fixe Höhen für alle Margin-Elemente */
-.year-selection-card.mb-3,
-.add-ranking-card.mb-3,
-.button-toolbar.mb-3,
-#message.mb-2 {
-  flex-shrink: 0 !important;
-  margin-bottom: 1rem !important; /* Einheitlich statt mb-3/mb-2 Mix */
-}
-
-/* 3. Die table-wrapper muss alle verfügbare Höhe nutzen */
-.table-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0 !important;
-  margin-bottom: 0 !important;
-  overflow: hidden !important;
-}
-
-/* 4. table-responsive als Scroll-Container */
-.table-wrapper .table-responsive {
-  flex: 1 1 auto;
-  min-height: 0 !important;
-  overflow: auto !important;
-  height: auto !important;
-}
-
-/* 5. Das dynamische #rankingsList Element */
-#rankingsList {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0 !important;
-}
-
-/* 6. Tabelle in rankingsList soll nicht überlaufen */
-#rankingsList table {
-  width: auto !important;
-  min-width: 100%;
-  margin-bottom: 0 !important;
-}
-
-/* 7. Debug: Falls immer noch Probleme bestehen */
+/* Flex-Layout für Form */
 #rankingForm {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-/* 8. Stelle sicher, dass Padding/Margins die Höhenberechnung nicht stören */
-.content-background {
-  padding: 1.5rem !important;
-  box-sizing: border-box !important;
-}   
-
-/* ==========================================
-   STICKY HEADER FIX für sektionsrangierungen.php
-   ========================================== */
-
-/* 1. Sticky Header für alle Tabellen in #rankingsList */
-#rankingsList table thead th {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 10 !important;
-  background-color: #f8f9fa !important; /* Bootstrap's table-light background */
-  border-bottom: 2px solid #dee2e6 !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-}
-
-/* 2. Erste Spalte (Anlass) - Links sticky + höherer z-index */
-#rankingsList table thead th:first-child,
-#rankingsList table tbody td:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 11 !important; /* Höher als normale Header */
-  background-color: #f8f9fa !important;
-  border-right: 2px solid #dee2e6 !important;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
-}
-
-/* 3. Erste Spalte Header bekommt höchsten z-index (beide sticky) */
-#rankingsList table thead th:first-child {
-  z-index: 12 !important; /* Höchster Wert für Ecke links-oben */
-  background-color: #e9ecef !important; /* Leicht dunklerer Ton */
-}
-
-/* 4. Hover-Effekte respektieren z-index */
-#rankingsList table tbody tr:hover td {
-  z-index: 5 !important;
-}
-
-#rankingsList table tbody tr:hover td:first-child {
-  z-index: 11 !important; /* Erste Spalte bleibt über hover */
-}
-
-/* 5. Sicherstellen dass Tabelle die richtige Struktur hat */
-#rankingsList table {
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
-}
-
-/* 6. Fix für Bootstrap Tabellen-Borders */
-#rankingsList table th,
-#rankingsList table td {
-  border-left: 1px solid #dee2e6 !important;
-  border-right: 1px solid #dee2e6 !important;
-}
-
-#rankingsList table thead th {
-  border-top: 1px solid #dee2e6 !important;
-}
-
-/* 7. Smooth Scrolling für bessere UX */
-#rankingsList .table-responsive {
-  scroll-behavior: smooth;
-}
-
-/* 8. Mobile/Responsive Anpassungen */
-@media (max-width: 768px) {
-  #rankingsList table thead th:first-child,
-  #rankingsList table tbody td:first-child {
-    min-width: 150px !important; /* Mindestbreite für erste Spalte */
-  }
-}
-
-/* 9. Alternative: Falls sticky nicht funktioniert - Fallback */
-.table-fixed-header {
-  position: relative;
-}
-
-.table-fixed-header thead {
-  position: absolute;
+/* Sticky Header */
+#sektionsrangTable thead th {
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 10;
-  background: #f8f9fa;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-/* 10. Debug Styles (entferne nach dem Testen) */
-/*
-#rankingsList table thead th {
-  border: 2px solid red !important;
-}
-#rankingsList table thead th:first-child {
-  border: 2px solid blue !important;
-}
-*/
-
-#rankingsList table {
-  border-collapse: collapse !important; /* Zurück zu collapse */
-  border-spacing: 0 !important;
-}
-
-#rankingsList table th,
-#rankingsList table td {
-  border: 1px solid #dee2e6 !important;
-}
-
-/* Sticky Header Borders */
-#rankingsList table thead th {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 10 !important;
-  background-color: #f8f9fa !important;
-  border-bottom: 2px solid #dee2e6 !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-}
-
-/* Erste Spalte - ohne doppelte Borders */
-#rankingsList table thead th:first-child,
-#rankingsList table tbody td:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 11 !important;
-  background-color: #f8f9fa !important;
-  border-right: 2px solid #dee2e6 !important;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
-}
-
-#rankingsList table thead th:first-child {
-  z-index: 12 !important;
-  background-color: #e9ecef !important;
 </style>
-<link rel="stylesheet" href="../css/fixes/no-page-scroll-override.css">
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-7 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-trophy me-2"></i>
@@ -225,19 +49,46 @@ if (empty($_SESSION['csrf_token'])) {
                     <form id="rankingForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr-Auswahl (einheitlich) -->
-                        <div class="year-selection-card mb-3">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <label for="yearSelect" class="form-label fw-bold">
-                                        <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                                    </label>
-                                    <select id="yearSelect" class="form-select">
-                                        <!-- Optionen via JS -->
-                                    </select>
+                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+
+                        <!-- Jahr-Auswahl (ohne Card) -->
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                                <!-- Optionen via JS -->
+                            </select>
+                        </div>
+
+                        <!-- Aktionsbereich (Bootstrap Collapse) -->
+                        <div class="card action-card mb-0">
+                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                                 data-bs-toggle="collapse" data-bs-target="#sektionsrangActions"
+                                 aria-expanded="false" aria-controls="sektionsrangActions">
+                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                                <i class="bi bi-chevron-down action-chevron"></i>
+                            </div>
+                            <div class="collapse" id="sektionsrangActions">
+                                <div class="card-body pt-2 pb-3 px-3">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <button type="button" id="addNewBtn" class="btn btn-primary w-100" disabled>
+                                                <i class="bi bi-plus-circle me-2"></i>Neue Rangierung
+                                            </button>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="button" id="exportPdfBtn" class="btn btn-outline-danger w-100" style="display: none;">
+                                                <i class="bi bi-file-pdf me-1"></i>PDF Export
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Neue Rangierung hinzufügen (versteckt) -->
                         <div class="add-ranking-card mb-3" id="addRankingCard" style="display: none;">
@@ -245,7 +96,7 @@ if (empty($_SESSION['csrf_token'])) {
                                 <i class="bi bi-plus-circle me-2"></i>
                                 Neue Rangierung hinzufügen
                             </h6>
-                            
+
                             <div class="row">
                                 <div class="col-md-4">
                                     <label for="anlassSelect" class="form-label">Anlass:</label>
@@ -269,28 +120,37 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
                         </div>
 
-                        <!-- Button Toolbar (einheitlich) -->
-                        <div class="button-toolbar mb-3">
-                            <div class="button-group d-flex gap-2 flex-wrap">
-                                <button type="button" id="addNewBtn" class="btn btn-compact-standard btn-outline-primary" disabled>
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Neue Rangierung
-                                </button>
-                                <button type="button" class="btn btn-compact-standard btn-outline-success" id="exportPdfBtn" style="display: none;">
-                                    <i class="bi bi-file-pdf me-2"></i>
-                                    PDF Export
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Message Container -->
-                        <div id="message" class="mb-2"></div>
-
                         <!-- Tabelle (einheitlich wie heimresultate.php) -->
                         <div class="table-wrapper">
+                            <div class="desktop-table-container">
                             <div class="table-responsive">
-                                <div id="rankingsList"></div>
+                                <table class="table table-hover mb-0" id="sektionsrangTable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" style="min-width: 200px;">
+                                                <i class="bi bi-calendar-event me-1"></i>Anlass
+                                            </th>
+                                            <th scope="col" class="text-center">Rang</th>
+                                            <th scope="col" class="text-center">Preis (CHF)</th>
+                                            <th scope="col" class="text-center text-nowrap">Aktionen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rankingsList">
+                                        <!-- Wird per JavaScript gefüllt -->
+                                    </tbody>
+                                </table>
                             </div>
+                            </div>
+                            <!-- Mobile Cards Container -->
+                            <div class="mobile-cards-container" id="mobileCardsSektionsrang">
+                                <div class="mobile-search-container">
+                                    <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
+                                </div>
+                                <div class="mobile-scroll-container">
+                                    <!-- Cards werden hier eingefügt -->
+                                </div>
+                            </div>
+                        </div>
                         </div>
                     </form>
                 </div><!-- /content-background -->
@@ -375,7 +235,7 @@ $(document).ready(function () {
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) option.prop('selected', true);
             yearSelect.append(option);
@@ -457,33 +317,19 @@ $(document).ready(function () {
     // Rangierungen anzeigen - EXAKT wie heimresultate.php
     function displayRankings(rankings) {
         let totalPrize = 0;
-
-        let html = `
-            <table class="table table-hover mb-0" style="width:auto;">
-                <thead>
-                    <tr>
-                        <th scope="col" style="min-width: 200px;">
-                            <i class="bi bi-calendar-event me-1"></i>Anlass
-                        </th>
-                        <th scope="col" class="text-center">Rang</th>
-                        <th scope="col" class="text-center">Preis (CHF)</th>
-                        <th scope="col" class="text-center">Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        let html = '';
 
         rankings.forEach(function(ranking) {
             const preisNum = Number(ranking.preis) || 0;
             totalPrize += preisNum;
             html += `
                 <tr>
-                    <td>${ranking.bezeichnung}</td>
+                    <td class="text-start">${ranking.bezeichnung}</td>
                     <td class="text-center">
                         <span class="badge bg-primary">${ranking.rang}</span>
                     </td>
                     <td class="text-center">CHF ${preisNum.toFixed(2)}</td>
-                    <td class="text-center">
+                    <td class="text-center text-nowrap">
                         <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-ranking"
                                 data-id="${ranking.id}" 
                                 data-rang="${ranking.rang}" 
@@ -509,11 +355,10 @@ $(document).ready(function () {
                     <td class="text-center">CHF ${totalPrize.toFixed(2)}</td>
                     <td class="text-center">-</td>
                 </tr>
-            </tbody>
-        </table>
         `;
 
         $('#rankingsList').html(html);
+        buildMobileCardsSektionsrang();
     }
 
     // Event Handlers
@@ -721,8 +566,20 @@ $(document).ready(function () {
     loadAvailableDefinitions(currentYear);
     loadExistingRankings(currentYear);
 });
+
+    // Mobile Cards Builder für Sektionsrangierungen
+    function buildMobileCardsSektionsrang() {
+        MSVMobileCards.initResponsive({
+            tableId: 'sektionsrangTable',
+            mobileContainerId: 'mobileCardsSektionsrang',
+            titleColumns: [0],
+            summaryColumns: [2],
+            rankColumn: 1
+        });
+    }
+
 </script>
 
-<?php
+<?
 include 'footer.inc.php';
 ?>

@@ -130,7 +130,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-person-badge me-2"></i>
@@ -146,17 +146,13 @@ if (empty($_SESSION['csrf_token'])) {
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                         
                         <!-- Jahr-Auswahl -->
-                        <div class="year-selection-card">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <label for="yearSelect" class="form-label fw-bold">
-                                        <i class="bi bi-calendar3 me-1"></i>Jahr auswählen:
-                                    </label>
-                                    <select id="yearSelect" class="form-select">
-                                        <!-- Optionen werden per JavaScript eingefügt -->
-                                    </select>
-                                </div>
-                            </div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                                <!-- Optionen werden per JavaScript eingefügt -->
+                            </select>
                         </div>
 
                         <!-- Neue Rangierung hinzufügen -->
@@ -201,17 +197,29 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
                         </div>
 
-                        <!-- Button Toolbar -->
-                        <div class="button-toolbar">
-                            <div class="button-group">
-                                <button type="button" id="addNewBtn" class="btn btn-compact-standard btn-outline-primary" disabled>
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Neue Rangierung
-                                </button>
-                                <button type="button" class="btn btn-compact-standard btn-outline-success" id="exportPdfBtn" style="display: none;">
-                                    <i class="bi bi-file-pdf me-2"></i>
-                                    PDF Export
-                                </button>
+                        <!-- Aktionsbereich (Bootstrap Collapse) -->
+                        <div class="card mb-3 action-card">
+                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                                 data-bs-toggle="collapse" data-bs-target="#einzelrangActions"
+                                 aria-expanded="false" aria-controls="einzelrangActions">
+                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                                <i class="bi bi-chevron-down action-chevron"></i>
+                            </div>
+                            <div class="collapse" id="einzelrangActions">
+                                <div class="card-body pt-2 pb-3 px-3">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <button type="button" id="addNewBtn" class="btn btn-primary w-100" disabled>
+                                                <i class="bi bi-plus-circle me-2"></i>Neue Rangierung
+                                            </button>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="button" id="exportPdfBtn" class="btn btn-outline-danger w-100" style="display: none;">
+                                                <i class="bi bi-file-pdf me-1"></i>PDF Export
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -222,14 +230,34 @@ if (empty($_SESSION['csrf_token'])) {
                                     <i class="bi bi-list-ul me-2"></i>
                                     Vorhandene Einzelrangierungen
                                 </h5>
-                                <div id="rankingsList">
-                                    <!-- Wird per JavaScript geladen -->
-                                    <div class="text-center py-4">
-                                        <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                                        Lade Rangierungen...
+                                <div class="desktop-table-container">
+                                <div class="table-responsive">
+                                    <table class="table table-hover ranking-table" id="einzelrangTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="anlass-col">Anlass</th>
+                                                <th class="mitglied-col">Mitglied</th>
+                                                <th class="rang-col text-center">Rang</th>
+                                                <th class="resultat-col text-center">Resultat</th>
+                                                <th class="preis-col text-end">Preis (CHF)</th>
+                                                <th class="aktionen-col text-center">Aktionen</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rankingsList">
+                                            <!-- Wird per JavaScript geladen -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                </div>
+                                <!-- Mobile Cards Container -->
+                                <div class="mobile-cards-container" id="mobileCardsEinzelrang">
+                                    <div class="mobile-search-container">
+                                        <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
+                                    </div>
+                                    <div class="mobile-scroll-container">
+                                        <!-- Cards werden hier eingefügt -->
                                     </div>
                                 </div>
-                            </div>
                         </div>
                     </form>
                 </div>
@@ -328,7 +356,7 @@ $(document).ready(function () {
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -442,21 +470,7 @@ $(document).ready(function () {
 
     // Rangierungen anzeigen
     function displayRankings(rankings) {
-        let html = `
-            <div class="table-responsive">
-                <table class="table table-hover ranking-table">
-                    <thead>
-                        <tr>
-                            <th class="anlass-col">Anlass</th>
-                            <th class="mitglied-col">Mitglied</th>
-                            <th class="rang-col text-center">Rang</th>
-                            <th class="resultat-col text-center">Resultat</th>
-                            <th class="preis-col text-end">Preis (CHF)</th>
-                            <th class="aktionen-col text-center">Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+        let html = '';
         
         rankings.forEach(function(ranking) {
             html += `
@@ -485,15 +499,9 @@ $(document).ready(function () {
             `;
         });
         
-        html += '</tbody></table></div>';
         $('#rankingsList').html(html);
+        buildMobileCardsEinzelrang();
     }
-
-    // Event Handlers
-    $('#addNewBtn').on('click', function() {
-        $('#addRankingCard').slideDown();
-        $(this).prop('disabled', true);
-    });
 
     $('#saveRankingBtn').on('click', function() {
         const anlassId = $('#anlassSelect').val();
@@ -744,8 +752,20 @@ $(document).ready(function () {
     loadAvailableMembers();
     loadExistingRankings(currentYear);
 });
+
+    // Mobile Cards Builder für Einzelrangierungen
+    function buildMobileCardsEinzelrang() {
+        MSVMobileCards.initResponsive({
+            tableId: 'einzelrangTable',
+            mobileContainerId: 'mobileCardsEinzelrang',
+            titleColumns: [0, 1],
+            summaryColumns: [4],
+            rankColumn: 2
+        });
+    }
+
 </script>
 
-<?php
+<?
 include 'footer.inc.php';
 ?>

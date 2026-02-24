@@ -1,21 +1,15 @@
 <?php
 include 'inc/config.php';
+if (!function_exists('getDB')) {
+    require_once 'inc/dbconnect.inc.php';
+}
+require_once 'inc/remember_me.inc.php';
 // reCAPTCHA-Keys aus zentraler Konfiguration (msvjm_config.php via inc/config.php)
 $recaptcha_site_key   = $config['recaptcha']['site_key'] ?? '';
 $recaptcha_secret_key = $config['recaptcha']['secret_key'] ?? '';
 
-// Session-Konfiguration VOR session_start()
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Lax');
-// HTTPS-Erkennung (gleiche Logik wie in header.inc.php)
-$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
-           (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443) ||
-           (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-if ($isHttps) ini_set('session.cookie_secure', 1);
-
-// Session starten - KEINE Cookie-Löschung hier, das macht Probleme!
-session_start();
+// Zentrale Session-Konfiguration (inkl. Cross-Subdomain Cookie-Domain)
+require_once __DIR__ . '/inc/session_config.inc.php';
 
 // Bei Logout-Parameter alte Session komplett erneuern
 if (isset($_GET['logout']) || isset($_GET['timeout'])) {
@@ -23,20 +17,63 @@ if (isset($_GET['logout']) || isset($_GET['timeout'])) {
     $_SESSION = array(); // Session-Daten löschen
 }
 
+// Hilfsfunktionen fuer Login mit Rollen/Status
+function checkUserStatus($status) {
+    switch ($status) {
+        case 'pending':  return "Dein Account wird noch geprüft. Du wirst benachrichtigt sobald er freigeschaltet wurde.";
+        case 'rejected': return "Deine Registrierung wurde abgelehnt.";
+        case 'disabled': return "Dein Account wurde deaktiviert. Bitte kontaktiere den Administrator.";
+        case 'approved': return true;
+        default:         return true; // Bestehende Admins ohne Status
+    }
+}
+
+function setLoginSession($id, $username, $full_name, $role, $status, $mitglied_id) {
+    $_SESSION['user_id'] = $id;
+    $_SESSION['username'] = $username;
+    $_SESSION['user_name'] = $full_name;
+    $_SESSION['user_role'] = $role ?? 'admin';
+    $_SESSION['user_status'] = $status ?: 'approved'; // '' und NULL → 'approved' (Legacy-Admins)
+    $_SESSION['mitglied_id'] = $mitglied_id;
+    $_SESSION['last_activity'] = time();
+    $_SESSION['regenerated'] = time();
+}
+
+function getLoginRedirect($role) {
+    $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    // Admin-Domains: admin., jm., jahresmeisterschaft. → Admin-Bereich (nur für Admins/Vorstand)
+    $isAdminDomain = (bool)preg_match('/^(admin|jm|jahresmeisterschaft)\./i', $host);
+    if ($role == 'admin' && $isAdminDomain) return $basePath . '/index.php';
+    return $basePath . '/portal/dashboard.php';
+}
+
+// Auto-Redirect: Session noch gültig oder Remember-Cookie vorhanden → kein Login nötig.
+// Wichtig: localStorage['msv_rt'] wird dadurch NICHT gelöscht (passiert nur bei echtem Login-Form).
+if (!isset($_GET['logout']) && !isset($_GET['timeout'])) {
+    if (isset($_SESSION['user_id'])) {
+        header('Location: ' . getLoginRedirect($_SESSION['user_role'] ?? 'admin'));
+        exit;
+    }
+    if (restoreSessionFromToken()) {
+        header('Location: ' . getLoginRedirect($_SESSION['user_role'] ?? 'mitglied'));
+        exit;
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username_input = htmlspecialchars($_POST['username'], ENT_QUOTES, 'UTF-8');
     $password = $_POST['password'];
-
-    // reCAPTCHA v3 Überprüfung (optional)
+    // reCAPTCHA v3 Überprüfung (optional, nicht blockierend)
     $recaptcha_secret = $recaptcha_secret_key;
     $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
     $recaptcha_valid = true; // Standard: gültig
-    if (!empty($recaptcha_response)) {
+    if (!empty($recaptcha_response) && !empty($recaptcha_secret)) {
         $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptcha_secret&response=$recaptcha_response");
         $responseKeys = json_decode($response, true);
-        if (intval($responseKeys["success"]) !== 1 || $responseKeys["score"] < 0.3) {
-            $recaptcha_valid = false;
-            $error = "Sicherheitsprüfung fehlgeschlagen. Bitte versuchen Sie es erneut.";
+        if (intval($responseKeys["success"]) !== 1 || ($responseKeys["score"] ?? 1) < 0.3) {
+            // Nur loggen, nicht blockieren - Passwort-Auth ist die eigentliche Sicherheit
+            error_log("reCAPTCHA fehlgeschlagen: " . json_encode($responseKeys));
         }
     }
     if ($recaptcha_valid) {
@@ -45,13 +82,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             die("Datenbankverbindung fehlgeschlagen. Bitte später erneut versuchen.");
         }
 
-        // Prepared Statement verwenden
-        $stmt = $conn->prepare("SELECT id, username, password_hash FROM users WHERE username = ?");
+        // Prepared Statement verwenden (erweitert fuer Mitgliederportal)
+        $stmt = $conn->prepare("SELECT id, username, password_hash, full_name, role, status, mitglied_id FROM users WHERE username = ?");
         $stmt->bind_param("s", $username_input);
         $stmt->execute();
         $stmt->store_result();
         if ($stmt->num_rows > 0) {
-            $stmt->bind_result($id, $username_db, $password_hash);
+            $stmt->bind_result($id, $username_db, $password_hash, $full_name, $user_role, $user_status, $mitglied_id);
             $stmt->fetch();
 
             // Prüfen, ob der Passwort-Hash ein MD5-Hash ist (32 Zeichen)
@@ -65,14 +102,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $update_stmt->execute();
                     $update_stmt->close();
 
-                    // Erfolgreiche Anmeldung
-                    session_regenerate_id(true); // Neue Session-ID bei Login
-                    $_SESSION['user_id'] = $id;
-                    $_SESSION['username'] = $username_db;
-                    $_SESSION['last_activity'] = time();
-                    $_SESSION['regenerated'] = time();
-                    header("Location: index.php");
-                    exit();
+                    // Status pruefen (Mitgliederportal)
+                    $status_check = checkUserStatus($user_status ?? 'approved');
+                    if ($status_check !== true) {
+                        $error = $status_check;
+                    } else {
+                        // Erfolgreiche Anmeldung
+                        session_regenerate_id(true);
+                        setLoginSession($id, $username_db, $full_name, $user_role, $user_status, $mitglied_id);
+                        setRememberToken($id); // iOS PWA: persistenter Token
+
+                        header("Location: " . getLoginRedirect($user_role ?? 'admin'));
+                        exit();
+                    }
                 } else {
                     $error = "Ungültige Anmeldedaten";
                 }
@@ -81,14 +123,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Verwendung von password_verify für bcrypt-Hashes
                 if (password_verify($password, $password_hash)) {
 
-                    // Erfolgreiche Anmeldung
-                    session_regenerate_id(true); // Neue Session-ID bei Login
-                    $_SESSION['user_id'] = $id;
-                    $_SESSION['username'] = $username_db;
-                    $_SESSION['last_activity'] = time();
-                    $_SESSION['regenerated'] = time();
-                    header("Location: index.php");
-                    exit();
+                    // Status pruefen (Mitgliederportal)
+                    $status_check = checkUserStatus($user_status ?? 'approved');
+                    if ($status_check !== true) {
+                        $error = $status_check;
+                    } else {
+                        // Erfolgreiche Anmeldung
+                        session_regenerate_id(true);
+                        setLoginSession($id, $username_db, $full_name, $user_role, $user_status, $mitglied_id);
+                        setRememberToken($id); // iOS PWA: persistenter Token
+
+                        header("Location: " . getLoginRedirect($user_role ?? 'admin'));
+                        exit();
+                    }
                 } else {
                     $error = "Ungültige Anmeldedaten";
                 }
@@ -110,6 +157,18 @@ if (isset($_GET['timeout'])) {
     $error = "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.";
 }
 
+if (isset($_GET['registered'])) {
+    $success = "Deine Registrierung war erfolgreich! Du wirst benachrichtigt sobald dein Account freigeschaltet wurde.";
+}
+
+if (isset($_GET['auto_approved'])) {
+    $success = "Deine Registrierung war erfolgreich! Du kannst dich jetzt anmelden.";
+}
+
+if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
+    $error = "Dein Account ist nicht freigeschaltet. Bitte kontaktiere den Administrator.";
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -118,6 +177,20 @@ if (isset($_GET['timeout'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - MSV Wilen</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16x16.png">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="MSV Wilen">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -342,10 +415,164 @@ if (isset($_GET['timeout'])) {
             color: #343a40;
             transform: translateY(-1px);
         }
-    </style>    
+    /* PWA Install Banner */
+    #pwa-banner {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: #fff;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -6px 30px rgba(0,0,0,0.18);
+        padding: 1.25rem 1.25rem 2rem;
+        z-index: 2000;
+        display: none;
+        animation: slideUp 0.3s cubic-bezier(.34,1.3,.64,1);
+    }
+    #pwa-banner.show { display: block; }
+    @keyframes slideUp {
+        from { transform: translateY(110%); }
+        to   { transform: translateY(0); }
+    }
+    .pwa-banner-inner { max-width: 420px; margin: 0 auto; }
+    .pwa-banner-header {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin-bottom: 1rem;
+    }
+    .pwa-banner-icon {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    }
+    .pwa-banner-title { flex: 1; }
+    .pwa-banner-title strong {
+        display: block;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1a202c;
+    }
+    .pwa-banner-title span {
+        font-size: 0.83rem;
+        color: #718096;
+    }
+    .pwa-banner-close {
+        background: #f0f2f4;
+        border: none;
+        border-radius: 50%;
+        width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center;
+        color: #6c757d;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .pwa-steps-list {
+        list-style: none;
+        padding: 0; margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+    .pwa-steps-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: #4a5568;
+    }
+    .pwa-step-num {
+        background: #3b5998;
+        color: #fff;
+        width: 24px; height: 24px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .pwa-share-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #007aff;
+        color: #fff;
+        border-radius: 6px;
+        width: 22px; height: 22px;
+        font-size: 0.8rem;
+        vertical-align: middle;
+        margin: 0 1px;
+    }
+    .pwa-install-btn {
+        width: 100%;
+        background: #007aff;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        letter-spacing: 0.01em;
+    }
+    /* Trigger-Link unterhalb der Login-Card */
+    #pwa-install-trigger {
+        display: none;
+        text-align: center;
+        padding: 0.75rem 1rem 0.25rem;
+    }
+    #pwa-trigger-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #495057;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        background: #f0f2f4;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 0.45rem 1.1rem;
+        transition: background 0.15s, color 0.15s;
+    }
+    #pwa-trigger-btn:hover {
+        background: #e2e6ea;
+        color: #343a40;
+        text-decoration: none;
+    }
+    </style>
 
 </head>
 <body>
+
+<!-- PWA Install Banner -->
+<div id="pwa-banner">
+    <div class="pwa-banner-inner">
+        <div class="pwa-banner-header">
+            <img src="icons/icon-192x192.png" class="pwa-banner-icon" alt="MSV">
+            <div class="pwa-banner-title">
+                <strong>App installieren</strong>
+                <span>Kein erneutes Einloggen mehr nötig</span>
+            </div>
+            <button class="pwa-banner-close" id="pwa-banner-close" aria-label="Schliessen">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="pwa-steps-ios" style="display:none">
+            <ul class="pwa-steps-list">
+                <li><span class="pwa-step-num">1</span> Tippe auf <span class="pwa-share-icon"><i class="bi bi-box-arrow-up"></i></span> <strong>Teilen</strong> in Safari</li>
+                <li><span class="pwa-step-num">2</span> Wähle <strong>«Zum Home-Bildschirm»</strong></li>
+                <li><span class="pwa-step-num">3</span> Tippe <strong>«Hinzufügen»</strong></li>
+            </ul>
+        </div>
+        <div class="pwa-steps-android" style="display:none">
+            <button class="pwa-install-btn" id="pwa-install-btn">
+                <i class="bi bi-download me-2"></i>Jetzt installieren
+            </button>
+        </div>
+    </div>
+</div>
+
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
@@ -400,12 +627,26 @@ if (isset($_GET['timeout'])) {
                         Passwort vergessen?
                     </a>
                 </div>
+                <div class="text-center mt-3" style="border-top: 1px solid #e9ecef; padding-top: 1rem;">
+                    <span style="color: var(--secondary-color); font-size: 0.9rem;">Noch kein Konto?</span>
+                    <a href="register.php" style="color: #3b5998; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                        <i class="bi bi-person-plus me-1"></i>Registrieren
+                    </a>
+                </div>
+                <?php if (!empty($recaptcha_site_key)): ?>
                 <div class="recaptcha-info">
                     <i class="bi bi-shield-check me-1"></i>
                     Diese Seite ist durch reCAPTCHA geschützt
                 </div>
+                <?php endif; ?>
             </div>
         </div>
+    </div>
+    <!-- PWA Install Trigger (nur auf Mobile, via JS eingeblendet) -->
+    <div id="pwa-install-trigger">
+        <a href="#" id="pwa-trigger-btn">
+            <i class="bi bi-phone me-1"></i>Als App installieren
+        </a>
     </div>
     <!-- Passwort-Zurücksetzen-Modal -->
     <div class="modal fade" id="passwordResetModal" tabindex="-1" aria-labelledby="passwordResetModalLabel" aria-hidden="true">
@@ -441,14 +682,20 @@ if (isset($_GET['timeout'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- reCAPTCHA v3 -->
-
+    <!-- reCAPTCHA v3 (nur laden wenn Key konfiguriert) -->
+    <?php if (!empty($recaptcha_site_key)): ?>
     <script src="https://www.google.com/recaptcha/api.js?render=<?php echo htmlspecialchars($recaptcha_site_key); ?>"></script>
+    <?php endif; ?>
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="inc/js/msv-toast.js"></script>
 
+    <script>
+        // Hier angekommen bedeutet: kein gültiger Cookie/Session vorhanden (PHP hat bereits geprüft).
+        // localStorage-Token löschen damit kein veralteter Token bleibt.
+        try { localStorage.removeItem('msv_rt'); } catch(e) {}
+    </script>
     <script>
         $(document).ready(function() {
 
@@ -463,24 +710,27 @@ if (isset($_GET['timeout'])) {
                 $loginBtn.prop('disabled', true)
                     .html('<span class="spinner-border spinner-border-sm me-2"></span>Anmelden...');
 
-                // Prüfe ob reCAPTCHA verfügbar ist
-                if (typeof grecaptcha !== 'undefined') {
+                // Prüfe ob reCAPTCHA verfügbar und konfiguriert ist
+                var recaptchaSiteKey = '<?php echo htmlspecialchars($recaptcha_site_key); ?>';
+                if (recaptchaSiteKey && typeof grecaptcha !== 'undefined') {
+                    // Timeout-Fallback: Falls grecaptcha.ready() nie feuert (z.B. Domain nicht autorisiert)
+                    var recaptchaTimeout = setTimeout(function() {
+                        console.warn('reCAPTCHA Timeout - Login ohne Token');
+                        submitLogin();
+                    }, 3000);
 
-                    // reCAPTCHA v3 verwenden
                     grecaptcha.ready(function() {
-                        grecaptcha.execute('<?php echo htmlspecialchars($recaptcha_site_key); ?>', {action: 'login'}).then(function(token) {
+                        clearTimeout(recaptchaTimeout);
+                        grecaptcha.execute(recaptchaSiteKey, {action: 'login'}).then(function(token) {
                             $('#g-recaptcha-response').val(token);
                             submitLogin();
-                        }).catch(function(error) {
-                            console.error('reCAPTCHA error:', error);
-                            msvToast('reCAPTCHA Fehler - versuche ohne...', 'warning');
+                        }).catch(function(err) {
+                            console.warn('reCAPTCHA Fehler:', err);
                             submitLogin(); // Fallback ohne reCAPTCHA
                         });
                     });
                 } else {
-
-                    // Ohne reCAPTCHA fortfahren
-                    console.log('reCAPTCHA nicht verfügbar - Login ohne reCAPTCHA');
+                    // Ohne reCAPTCHA sofort einloggen
                     submitLogin();
                 }
 
@@ -535,6 +785,87 @@ if (isset($_GET['timeout'])) {
                 $('#passwordResetMessage').empty();
             });
         });
+    </script>
+
+    <script>
+    // PWA Install Banner – nur auf Mobilgeräten, nur auf Benutzeranfrage
+    (function() {
+        var isStandalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        // Cookie setzen damit PHP beim Login-Redirect den PWA-Modus erkennt
+        var cookieDomain = <?php echo json_encode(msv_cookie_domain()); ?>;
+        var domainStr = cookieDomain ? '; domain=' + cookieDomain : '';
+        if (isStandalone) {
+            document.cookie = 'pwa_mode=1; path=/' + domainStr + '; SameSite=Lax';
+            return; // Bereits als PWA installiert – Banner nicht zeigen
+        } else {
+            document.cookie = 'pwa_mode=; path=/' + domainStr + '; max-age=0; SameSite=Lax';
+        }
+
+        var isIos     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        var isAndroid = /android/i.test(navigator.userAgent);
+        if (!isIos && !isAndroid) return; // Desktop: nicht anzeigen
+
+        var banner      = document.getElementById('pwa-banner');
+        var trigger     = document.getElementById('pwa-install-trigger');
+        var triggerBtn  = document.getElementById('pwa-trigger-btn');
+        var deferredPrompt = null;
+
+        if (isIos) {
+            // Nur in Safari möglich (nicht Chrome/Firefox auf iOS)
+            var isSafari = /safari/i.test(navigator.userAgent) && !/crios|fxios|opios/i.test(navigator.userAgent);
+            if (!isSafari) return;
+            banner.querySelector('.pwa-steps-ios').style.display = 'block';
+            if (trigger) trigger.style.display = 'block';
+        }
+
+        if (isAndroid) {
+            // Trigger-Button erst zeigen wenn Browser bereit ist
+            window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                deferredPrompt = e;
+                banner.querySelector('.pwa-steps-android').style.display = 'block';
+                if (trigger) trigger.style.display = 'block';
+            });
+
+            // Klick im Banner → nativer Install-Dialog
+            var installBtn = document.getElementById('pwa-install-btn');
+            if (installBtn) {
+                installBtn.addEventListener('click', function() {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function() {
+                        deferredPrompt = null;
+                        banner.classList.remove('show');
+                        if (trigger) trigger.style.display = 'none';
+                    });
+                });
+            }
+        }
+
+        // Trigger-Button Klick → Banner öffnen (oder direkt Android-Dialog)
+        if (triggerBtn) {
+            triggerBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (isAndroid && deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function() {
+                        deferredPrompt = null;
+                        if (trigger) trigger.style.display = 'none';
+                    });
+                } else if (banner) {
+                    banner.classList.add('show');
+                }
+            });
+        }
+
+        // Schliessen-Button
+        var closeBtn = document.getElementById('pwa-banner-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                banner.classList.remove('show');
+            });
+        }
+    })();
     </script>
 
 </body>

@@ -19,7 +19,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-file-earmark-spreadsheet me-2"></i>
@@ -31,31 +31,36 @@ include 'header.inc.php';
                 <div class="content-background">
                 <form id="schuetzenabr-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-                    <!-- Jahr-Auswahl in eigener Card -->
-                    <div class="year-selection-card">
-                        <div class="row align-items-center">
-                            <div class="col-md-5">
-                                <label for="yearSelect" class="form-label fw-bold">
-                                    <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                                </label>
-                                <select id="yearSelect" class="form-select">
-                                    <!-- Optionen werden per JavaScript eingefügt -->
-                                </select>
+                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                    <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                            <i class="bi bi-calendar3 me-1"></i>Jahr:
+                        </label>
+                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                    </div>
+                    <!-- Aktionsbereich (Bootstrap Collapse) -->
+                    <div class="card action-card mb-0">
+                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                             data-bs-toggle="collapse" data-bs-target="#schuetzenabrActions"
+                             aria-expanded="false" aria-controls="schuetzenabrActions">
+                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                            <i class="bi bi-chevron-down action-chevron"></i>
+                        </div>
+                        <div class="collapse" id="schuetzenabrActions">
+                            <div class="card-body pt-2 pb-3 px-3">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <button class="xlsx-btn btn btn-success w-100" type="button">
+                                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel generieren
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="excel-link" class="mt-2"></div>
                             </div>
                         </div>
                     </div>
-                    <!-- Button Toolbar -->
-                    <div class="button-toolbar">
-                        <div class="button-group">
-                            <button class="btn btn-compact-standard btn-outline-success xlsx-btn" type="button">
-                                <i class="bi bi-file-earmark-spreadsheet me-2"></i>
-                                Excel generieren
-                            </button>
-                        </div>
-                        <div id="excel-link"></div>
-                    </div>
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
+                    </div><!-- Ende flex-row Jahr+Aktionen -->
                     <!-- Info-Bereich -->
                     <div class="table-wrapper">
                         <h5 class="table-title">
@@ -86,7 +91,7 @@ include 'header.inc.php';
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -95,15 +100,6 @@ include 'header.inc.php';
         }
     }
     $(document).ready(function() {
-
-        // Nachricht anzeigen
-        function showMessage(message, type) {
-            var messageDiv = $('#message');
-            messageDiv.removeClass().addClass('alert alert-' + type).text(message).show();
-            setTimeout(function () {
-                messageDiv.fadeOut();
-            }, 3000);
-        }
 
         // Excel-Button Handler
         $(document).on('click', '.xlsx-btn', function(e) {
@@ -130,18 +126,18 @@ include 'header.inc.php';
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
-                            showMessage('Excel-Datei wurde erfolgreich generiert und heruntergeladen.', 'success');
+                            msvToast('Excel-Datei wurde erfolgreich generiert und heruntergeladen.', 'success');
                             $('#excel-link').empty();
                         } else if (data.error) {
-                            showMessage('Fehler: ' + data.error, 'danger');
+                            msvToast('Fehler: ' + data.error, 'error');
                         }
                     } catch (e) {
-                        showMessage('Fehler beim Verarbeiten der Antwort.', 'danger');
+                        msvToast('Fehler beim Verarbeiten der Antwort.', 'error');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', xhr.responseText);
-                    showMessage('Fehler beim Generieren der Excel-Datei: ' + error, 'danger');
+                    msvToast('Fehler beim Generieren der Excel-Datei: ' + error, 'error');
                 },
                 complete: function() {
 

@@ -15,14 +15,39 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 ?>
-<link rel="stylesheet" href="../css/fixes/no-page-scroll-override.css">
-<link rel="stylesheet" href="../css/fixes/resultate-unified.css">
-    
+<style>
+@media (max-width: 767.98px) {
+    .desktop-table-container { display: none !important; }
+    .mobile-cards-container { display: flex !important; }
+
+    .mobile-card-detail-row {
+        padding: 0.75rem 0 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    .mobile-card-detail-label {
+        font-size: 0.875rem !important;
+        color: #64748b !important;
+        font-weight: 500 !important;
+    }
+
+    .mobile-card-detail-value {
+        font-size: 1rem !important;
+        color: #1e293b !important;
+    }
+
+    .mobile-card-body .btn {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+    }
+}
+</style>
+
 <div class="container-fluid">
   <div class="row">
     <div class="col-xl-8 col-lg-12 col-12 ps-0">
       <div class="main-content-wrapper">
-        <div class="row mb-4">
+        <div class="row mb-4 d-none d-md-flex">
           <div class="col-md-12">
             <h2 class="h4 mb-0" style="color: var(--secondary-color);">
               <i class="bi bi-people me-2"></i>
@@ -36,15 +61,11 @@ if (empty($_SESSION['csrf_token'])) {
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
             <!-- Jahr (einheitlich) -->
-            <div class="year-selection-card mb-3">
-              <div class="row align-items-center">
-                <div class="col-md-5">
-                  <label for="yearSelect" class="form-label fw-bold">
-                    <i class="bi bi-calendar3 me-1"></i>Jahr auswählen:
-                  </label>
-                  <select id="yearSelect" class="form-select"></select>
-                </div>
-              </div>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                <i class="bi bi-calendar3 me-1"></i>Jahr:
+              </label>
+              <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
             </div>
 
             <!-- Toolbar -->
@@ -62,36 +83,49 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
 
-            <!-- Messages -->
-            <div id="message" class="mb-2"></div>
-
             <!-- Partner Liste -->
             <div class="table-wrapper">
-              <div class="table-responsive">
-                <table class="table table-hover mb-0" id="partnerTabelle" style="">
-                  <thead>
-                    <tr>
-                      <th scope="col" style="min-width: 200px;" class="text-left"><i class="bi bi-heart me-1"></i>Partnerin</th>
-                      <th scope="col" style="min-width: 200px;"><i class="bi bi-person me-1"></i>Mitglied</th>
-                      <th scope="col" class="text-center">Endstich</th>
-                      <th scope="col" class="text-center">Sie und Er</th>
-                      <th scope="col" class="text-center">Partner Schwini</th>
-                      <th scope="col" class="text-center">Aktionen</th>
-                    </tr>
-                  </thead>
-                  <tbody id="partnerListBody">
-                    <tr>
-                      <td colspan="6" class="text-center py-4">
-                        <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                        Lade Daten...
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <!-- Desktop: Tabelle -->
+              <div class="desktop-table-container">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0" id="partnerTabelle" style="">
+                    <thead>
+                      <tr>
+                        <th scope="col" style="min-width: 200px;" class="text-left"><i class="bi bi-heart me-1"></i>Partnerin</th>
+                        <th scope="col" style="min-width: 200px;"><i class="bi bi-person me-1"></i>Mitglied</th>
+                        <th scope="col" class="text-center">Endstich</th>
+                        <th scope="col" class="text-center">Sie und Er</th>
+                        <th scope="col" class="text-center">Partner Schwini</th>
+                        <th scope="col" class="text-center">Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody id="partnerListBody">
+                      <tr>
+                        <td colspan="6" class="text-center py-4">
+                          <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
+                          Lade Daten...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Mobile: Cards -->
+              <div class="mobile-cards-container" id="mobileCardsPartner">
+                <div class="mobile-search">
+                  <div class="position-relative">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="form-control" placeholder="Suchen..."
+                           oninput="filterMobilePartner(this)">
+                  </div>
+                </div>
+                <div class="mobile-cards-scroll">
+                  <!-- Cards werden per JavaScript generiert -->
+                </div>
               </div>
             </div>
           </form>
-        </div>
 
       </div>
     </div>
@@ -125,7 +159,7 @@ if (empty($_SESSION['csrf_token'])) {
                     <select class="form-select form-select-sm" id="mitgliedSelect" name="mitgliedID" required>
                       <option value="">-- Mitglied auswählen --</option>
                       <?php
-                      $sql = "SELECT ID, Name, Vorname FROM mitglieder ORDER BY Name, Vorname";
+                      $sql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
                       $result = $conn->query($sql);
                       if ($result && $result->num_rows > 0) {
                           while ($row = $result->fetch_assoc()) {
@@ -337,7 +371,7 @@ $(document).ready(function() {
     function initYearSelector() {
         const yearSelect = $('#yearSelect');
         yearSelect.empty();
-        for (let year = currentYear; year >= 2020; year--) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             yearSelect.append(`<option value="${year}" ${year === currentYear ? 'selected' : ''}>${year}</option>`);
         }
     }
@@ -352,6 +386,7 @@ $(document).ready(function() {
         }, function(data) {
             tbody.html(data);
             layoutManager.refresh();
+            buildMobilePartnerCards();
         }).fail(function(xhr, status, error) {
             tbody.html('<tr><td colspan="6" class="text-center text-danger">Fehler beim Laden der Daten</td></tr>');
             toastManager.show('Fehler beim Laden der Partner-Daten', 'error');
@@ -824,9 +859,119 @@ $(document).ready(function() {
         window.location.href = targetUrl;
     });
 
+    // Mobile Cards für Partner-Endresultate
+    function buildMobilePartnerCards() {
+        const isMobile = window.matchMedia('(max-width: 767.98px)');
+        if (!isMobile.matches) return;
+
+        const table = document.getElementById('partnerTabelle');
+        const container = document.querySelector('#mobileCardsPartner .mobile-cards-scroll');
+        if (!table || !container) return;
+
+        const tbody = table.querySelector('tbody');
+        if (!tbody) {
+            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+            return;
+        }
+
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length === 0) {
+            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+            return;
+        }
+
+        let html = '';
+        rows.forEach((row, idx) => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            if (cells.length < 6) return;
+
+            const partnerin = cells[0]?.textContent?.trim() || 'Unbekannt';
+            const mitglied = cells[1]?.textContent?.trim() || '-';
+            const endstich = cells[2]?.textContent?.trim() || '-';
+            const sieUndEr = cells[3]?.textContent?.trim() || '-';
+            const schwini = cells[4]?.textContent?.trim() || '-';
+
+            // Extract partner-ID from action button
+            const actionBtn = cells[5]?.querySelector('button[onclick*="openPartnerModal"]');
+            const onclickAttr = actionBtn ? actionBtn.getAttribute('onclick') : '';
+            const partnerId = onclickAttr.match(/openPartnerModal\((\d+)\)/)?.[1] || '';
+
+            html += `
+            <div class="mobile-card" data-index="${idx}">
+                <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+                    <div>
+                        <div class="fw-bold"><i class="bi bi-heart me-2"></i>${partnerin}</div>
+                        <small class="text-muted">mit ${mitglied}</small>
+                    </div>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="mobile-card-body">
+                    <div class="mobile-card-detail-row">
+                        <span class="mobile-card-detail-label">Mitglied</span>
+                        <span class="mobile-card-detail-value"><strong>${mitglied}</strong></span>
+                    </div>
+                    <div class="mobile-card-detail-row">
+                        <span class="mobile-card-detail-label">Endstich</span>
+                        <span class="mobile-card-detail-value"><strong>${endstich}</strong></span>
+                    </div>
+                    <div class="mobile-card-detail-row">
+                        <span class="mobile-card-detail-label">Sie und Er</span>
+                        <span class="mobile-card-detail-value"><strong>${sieUndEr}</strong></span>
+                    </div>
+                    <div class="mobile-card-detail-row">
+                        <span class="mobile-card-detail-label">Partner Schwini</span>
+                        <span class="mobile-card-detail-value"><strong>${schwini}</strong></span>
+                    </div>
+                    ${partnerId ? `
+                    <button type="button" class="btn btn-primary w-100 mt-3"
+                            onclick="loadPartnerForEdit(${partnerId})"
+                            style="min-height: 48px;">
+                        <i class="bi bi-pencil me-2"></i>Bearbeiten
+                    </button>` : ''}
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    window.filterMobilePartner = function(searchInput) {
+        const query = searchInput.value.toLowerCase();
+        const cards = document.querySelectorAll('#mobileCardsPartner .mobile-card');
+
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            const isVisible = text.includes(query);
+            card.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleCount++;
+        });
+
+        const container = document.querySelector('#mobileCardsPartner .mobile-cards-scroll');
+        const existingEmpty = container.querySelector('.mobile-cards-empty');
+        if (visibleCount === 0 && !existingEmpty) {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="mobile-cards-empty">
+                    <i class="bi bi-search"></i>
+                    <div>Keine Treffer gefunden</div>
+                </div>`);
+        } else if (visibleCount > 0 && existingEmpty) {
+            existingEmpty.remove();
+        }
+    };
+
+    let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
+    window.addEventListener('resize', function() {
+        const isNowDesktop = window.matchMedia('(min-width: 768px)').matches;
+        if (wasDesktop && !isNowDesktop) {
+            buildMobilePartnerCards();
+        }
+        wasDesktop = isNowDesktop;
+    });
+
     // Global Scroll aktivieren
     MSV.enableGlobalScroll();
-    
+
     // Initialisierung
     initYearSelector();
     loadPartnerList();

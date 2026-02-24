@@ -229,9 +229,123 @@ $page_specific_css = "
 .add-event-card, .events-list-card {
     animation: fadeIn 0.5s ease-out;
 }
+
+/* === MOBILE OPTIMIZATION === */
+@media (max-width: 767.98px) {
+    /* Desktop-Tabelle ausblenden */
+    .desktop-table-container {
+        display: none !important;
+    }
+
+    /* Mobile Cards anzeigen */
+    .mobile-cards-container {
+        display: block !important;
+    }
+
+    /* Touch-friendly Form Controls (WCAG AAA + iOS Zoom Prevention) */
+    .form-control, .form-control-sm, input, select {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Formular-Anpassungen für Mobile */
+    .add-event-card {
+        padding: 0.875rem;
+    }
+
+    .add-event-card h5 {
+        font-size: 0.9rem;
+    }
+
+    /* Button-Anpassungen */
+    .btn, .btn-compact {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .button-toolbar {
+        flex-direction: column;
+        padding: 0.875rem;
+    }
+
+    .button-toolbar .btn {
+        width: 100%;
+    }
+
+    /* Container-Anpassungen */
+    .main-content-wrapper {
+        padding: 0.5rem;
+        height: auto !important;
+    }
+
+    .content-background {
+        padding: 0.5rem;
+        overflow: visible !important;
+        min-height: auto !important;
+    }
+
+    #eventsListContainer {
+        overflow: visible !important;
+        min-height: auto !important;
+    }
+
+    .events-list-card {
+        overflow: visible !important;
+        min-height: auto !important;
+    }
+
+    /* Formular in Spalten umbrechen */
+    .add-event-card .row .col-md-2,
+    .add-event-card .row .col-md-4 {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Desktop: Mobile Cards ausblenden */
+@media (min-width: 768px) {
+    .mobile-cards-container {
+        display: none !important;
+    }
+}
+
+/* === MOBILE EVENT CARDS === */
+
+.mobile-event-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.875rem;
+    margin-bottom: 1.75rem;
+}
+
+.mobile-event-card .event-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+}
+
+.mobile-month-header {
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    padding: 0.75rem 0.25rem 0.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.4rem;
+}
 ";
 
 include 'header.inc.php';
+?><style><?= $page_specific_css ?></style><?php
 
 // CSRF Token generieren
 if (empty($_SESSION['csrf_token'])) {
@@ -245,7 +359,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-calendar-event me-2"></i>
@@ -257,70 +371,41 @@ if (empty($_SESSION['csrf_token'])) {
                 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
+                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                    <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="eventYear" class="form-label fw-bold mb-0 text-nowrap">
+                            <i class="bi bi-calendar3 me-1"></i>Jahr:
+                        </label>
+                        <select id="eventYear" name="event_year" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                    </div>
 
-                    <!-- Neuen Termin hinzufügen -->
-                    <div class="add-event-card">
-                        <h5>
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Neuen Termin hinzufügen
-                        </h5>
-                        
-                        <form id="addEventForm" method="POST" action="add_event.php">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-                            
-                            <div class="row">
-                                <div class="col-md-2">
-                                    <label for="eventYear" class="form-label small mb-1">
-                                        <i class="bi bi-calendar3 me-1"></i>Jahr:
-                                    </label>
-                                    <select id="eventYear" name="event_year" class="form-control form-control-sm" required>
-                                        <!-- Optionen werden dynamisch per JS eingefügt -->
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label for="eventName" class="form-label small mb-1">
-                                        <i class="bi bi-tag me-1"></i>Bezeichnung:
-                                    </label>
-                                    <input type="text" id="eventName" name="event_name" class="form-control form-control-sm" required placeholder="Event Bezeichnung">
-                                </div>
-
-                                <div class="col-md-2">
-                                    <label for="eventDate" class="form-label small mb-1">
-                                        <i class="bi bi-calendar-date me-1"></i>Datum:
-                                    </label>
-                                    <input type="date" id="eventDate" name="event_date" class="form-control form-control-sm" required>
-                                </div>
-
-                                <div class="col-md-2">
-                                    <label for="eventTime" class="form-label small mb-1">
-                                        <i class="bi bi-clock me-1"></i>Zeit:
-                                    </label>
-                                    <input type="text" id="eventTime" name="event_time" class="form-control form-control-sm" required placeholder="08:00-12:00">
-                                </div>
-
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-compact btn-outline-success w-100">
-                                        <i class="bi bi-plus-circle me-1"></i> Hinzufügen
-                                    </button>
+                    <!-- Aktionsbereich (Bootstrap Collapse) -->
+                    <div class="card action-card mb-0">
+                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                             data-bs-toggle="collapse" data-bs-target="#wichtigetermineActions"
+                             aria-expanded="false" aria-controls="wichtigetermineActions">
+                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                            <i class="bi bi-chevron-down action-chevron"></i>
+                        </div>
+                        <div class="collapse" id="wichtigetermineActions">
+                            <div class="card-body pt-2 pb-3 px-3">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <button type="button" id="generateIcsButton" class="btn btn-outline-secondary w-100">
+                                            <i class="bi bi-calendar-plus me-1"></i>ICS generieren
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" id="generatePDFButton" class="btn btn-outline-danger w-100">
+                                            <i class="bi bi-file-pdf me-1"></i>PDF generieren
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </form>
-                    </div>
-
-                    <!-- Button Toolbar -->
-                    <div class="button-toolbar">
-                        <div class="btn-row d-flex flex-wrap gap-2">
-                            <button type="button" id="generateIcsButton" class="btn btn-compact btn-outline-info">
-                                <i class="bi bi-calendar-plus me-1"></i> ICS generieren
-                            </button>
-                            <button type="button" id="generatePDFButton" class="btn btn-compact btn-outline-info">
-                                <i class="bi bi-file-pdf me-1"></i> PDF generieren
-                            </button>
                         </div>
                     </div>
+                    </div><!-- Ende flex-row Jahr+Aktionen -->
 
                     <!-- Container für die Events des aktuellen Jahres -->
                     <div id="eventsListContainer">
@@ -484,6 +569,10 @@ $(document).ready(function() {
                 $('#eventsListContainer').html(response);
                 // Höhe nach dem Laden neu berechnen
                 setTimeout(calculateTableHeight, 100);
+                // Mobile Cards generieren
+                if (typeof buildMobileEventsCards === 'function') {
+                    buildMobileEventsCards();
+                }
             },
             error: function(xhr, status, error) {
                 $('#eventsListContainer').html(`
@@ -507,11 +596,7 @@ $(document).ready(function() {
     function initializeYearDropdown() {
         const yearSelect = $('#eventYear').empty();
         const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1; // 1-12
-        // Ab Oktober (Monat 10) auch Folgejahr anzeigen
-        const maxYear = (currentMonth >= 10) ? currentYear + 1 : currentYear;
-        
-        for (let year = 2024; year <= maxYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -675,52 +760,6 @@ $(document).ready(function() {
         });
     });
 
-    // Neuen Termin hinzufügen
-    $('#addEventForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        var $submitBtn = $(this).find('button[type="submit"]');
-        var originalText = $submitBtn.html();
-        $submitBtn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Hinzufügen...');
-
-        var eventYear = $('#eventYear').val();
-        var eventName = $('#eventName').val().trim();
-        var eventDate = $('#eventDate').val();
-        var eventTime = $('#eventTime').val().trim();
-
-        if (!eventName || !eventDate || !eventTime) {
-            msvToast('Bitte alle Felder ausfüllen', 'warning');
-            $submitBtn.prop('disabled', false).html(originalText);
-            return;
-        }
-
-        $.ajax({
-            url: 'wichtigetermine/add_event.php',
-            method: 'POST',
-            data: {
-                event_year: eventYear,
-                event_name: eventName,
-                event_date: eventDate,
-                event_time: eventTime,
-                csrf_token: $('input[name="csrf_token"]').val()
-            },
-            success: function(response) {
-                msvToast('Termin erfolgreich hinzugefügt!', 'success');
-                $('#eventName').val('');
-                $('#eventDate').val('');
-                $('#eventTime').val('');
-                setTimeout(() => loadEvents(eventYear), 500);
-            },
-            error: function(xhr, status, error) {
-                msvToast('Fehler beim Hinzufügen des Termins', 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false).html(originalText);
-            }
-        });
-    });
-
     // Event löschen
     $(document).on("click", ".delete-event", function() {
         eventIdToDelete = $(this).data('id');
@@ -770,6 +809,102 @@ $(document).ready(function() {
         });
     });
 
+    // Mobile Cards für Events generieren
+    function buildMobileEventsCards() {
+        const isMobile = window.matchMedia('(max-width: 767.98px)');
+        if (!isMobile.matches) return;
+
+        const table = document.querySelector('#eventsTable');
+        if (!table) return;
+
+        const scrollContainer = document.querySelector('#mobileEventsCards .mobile-cards-scroll');
+        if (!scrollContainer) return;
+
+        scrollContainer.innerHTML = '';
+        const rows = table.querySelectorAll('tbody tr');
+
+        if (rows.length === 0) {
+            scrollContainer.innerHTML = `
+                <div class="mobile-cards-empty">
+                    <i class="bi bi-calendar-x"></i>
+                    <div>Keine Termine vorhanden</div>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        rows.forEach(row => {
+            // Monats-Separator
+            if (row.classList.contains('table-secondary')) {
+                const monthText = row.querySelector('td')?.textContent?.trim() || '';
+                html += `<div class="mobile-month-header" style="font-weight:700; font-size:0.95rem; line-height:1.3; color:#212529; padding:0.75rem 0.25rem 0.25rem; border-bottom:1px solid #e2e8f0; margin-bottom:0.4rem;">${monthText}</div>`;
+                return;
+            }
+
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+
+            const bezeichnung = cells[0].querySelector('.fw-semibold')?.textContent.trim()
+                || cells[0].textContent.trim();
+
+            // Datum-Zelle: Badge (Wochentag) + Datumstext
+            const datumCell = cells[1];
+            const wochentagBadge = datumCell.querySelector('.badge')?.outerHTML || '';
+            const datumText = datumCell.textContent.trim();
+
+            // Zeit-Badge
+            const zeitBadge = cells[2].querySelector('.badge')?.outerHTML
+                || cells[2].textContent.trim();
+
+            // Buttons-Daten
+            const editBtn = cells[3].querySelector('.edit-event');
+            const eventId   = editBtn?.getAttribute('data-id')   || '';
+            const eventName = editBtn?.getAttribute('data-name')  || '';
+            const eventDate = editBtn?.getAttribute('data-date')  || '';
+            const eventTime = editBtn?.getAttribute('data-time')  || '';
+
+            const datumOnly = datumText.replace(datumCell.querySelector('.badge')?.textContent || '', '').trim();
+            html += `
+            <div class="mobile-event-card">
+                <div class="d-flex justify-content-between align-items-start gap-2" style="margin-bottom:0.3rem;">
+                    <span style="font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; color:#6c757d;">${bezeichnung}</span>
+                    <div class="d-flex gap-1 flex-shrink-0">
+                        <button class="btn btn-outline-primary btn-sm edit-event event-action-btn"
+                                data-id="${eventId}"
+                                data-name="${eventName}"
+                                data-date="${eventDate}"
+                                data-time="${eventTime}">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-event event-action-btn"
+                                data-id="${eventId}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center flex-wrap gap-1" style="font-size:0.82rem; color:#6c757d;">
+                    ${wochentagBadge}
+                    <span>${datumOnly}</span>
+                    <span style="color:#ced4da;">·</span>
+                    ${zeitBadge}
+                </div>
+            </div>`;
+        });
+
+        scrollContainer.innerHTML = html;
+    }
+
+    // Global filterMobileEvents function
+    window.filterMobileEvents = function(searchInput) {
+        const searchTerm = searchInput.value.toLowerCase();
+        const cards = document.querySelectorAll('#mobileEventsCards .mobile-event-card');
+
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    };
+
     // Jahreswechsel: Events neu laden wenn Jahr geändert wird
     $('#eventYear').on('change', function() {
         loadEvents($(this).val());
@@ -779,7 +914,7 @@ $(document).ready(function() {
     initializeYearDropdown();
     const currentYear = new Date().getFullYear();
     loadEvents(currentYear);
-    
+
     // Initiale Höhenberechnung nach kurzer Verzögerung
     setTimeout(calculateTableHeight, 200);
 });

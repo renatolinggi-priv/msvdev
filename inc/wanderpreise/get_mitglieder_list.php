@@ -16,6 +16,7 @@ try {
             LEFT JOIN Waffen w ON w.ID = m.WaffenID
             LEFT JOIN wanderpreise_gewinner wg ON wg.gewinner_id = m.ID
             WHERE m.Status = 1
+              AND m.Verstorben = 0
             GROUP BY m.ID, m.Name, m.Vorname, m.Status, w.Kategorie
             ORDER BY m.Name, m.Vorname";
     

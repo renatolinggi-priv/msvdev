@@ -21,9 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $notizen = $conn->real_escape_string($_POST['notizen'] ?? '');
 
     $sql = "INSERT INTO mitglieder (ID, Vorname, Name, Geburtsdatum, WaffenID, Status, Ehrenmitglied,
-            Strasse, PLZ, Ort, Email, Telefon, Mobile, Notizen)
+            Strasse, PLZ, Ort, Email, Telefon, Mobile, Notizen, Verstorben)
             VALUES ('$id', '$vorname', '$name', '$geburtsdatum', '$waffenid', '$status', '$ehrenmitglied',
-            '$strasse', '$plz', '$ort', '$email', '$telefon', '$mobile', '$notizen')";
+            '$strasse', '$plz', '$ort', '$email', '$telefon', '$mobile', '$notizen', 0)";
 
     if ($conn->query($sql) === TRUE) {
         echo "Mitglied erfolgreich hinzugefügt";

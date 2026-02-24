@@ -15,10 +15,6 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 ?>
-<link rel="stylesheet" href="../css/fixes/no-page-scroll-override.css">
-<link rel="stylesheet" href="../css/fixes/resultate-unified.css">
-<link rel="stylesheet" href="../css/fixes/endresultate-firstcol-override.css">
-
 <style>
 /* ===== Schönere Tabelle – JS-Endschiessen ===== */
 .table-modern {
@@ -73,6 +69,51 @@ if (empty($_SESSION['csrf_token'])) {
 /* Kleinere Anpassungen für sehr kleine Screens */
 @media (max-width: 400px) {
   .table-modern tbody td { padding: 8px 10px; }
+}
+
+/* =========================================
+   Mobile Cards Optimierung
+   ========================================= */
+@media (max-width: 767.98px) {
+  /* WCAG AAA Touch Targets: Alle Form-Elemente */
+  .form-control,
+  .form-select,
+  input[type="text"],
+  input[type="number"],
+  select {
+    min-height: 48px !important;
+    font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+  }
+
+  .btn {
+    min-height: 48px !important;
+    font-size: 16px !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  .desktop-table-container { display: none !important; }
+  .mobile-cards-container { display: flex !important; }
+
+  .mobile-card-detail-row {
+    padding: 0.75rem 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  .mobile-card-detail-label {
+    font-size: 0.875rem !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+  }
+
+  .mobile-card-detail-value {
+    font-size: 1rem !important;
+    color: #1e293b !important;
+  }
+
+  .mobile-card-body .btn {
+    min-height: 48px !important;
+    font-size: 1rem !important;
+  }
 }
 
 /* ===== JS-Endschiessen Resultate: Tabelle im Stil von "Jungschützen erfassen" ===== */
@@ -170,7 +211,7 @@ if (empty($_SESSION['csrf_token'])) {
   <div class="row">
     <div class="col-xl-8 col-lg-12 col-12 ps-0">
       <div class="main-content-wrapper">
-        <div class="row mb-4">
+        <div class="row mb-4 d-none d-md-flex">
           <div class="col-md-12">
             <h2 class="h4 mb-0" style="color: var(--secondary-color);">
               <i class="bi bi-target me-2"></i>
@@ -184,15 +225,11 @@ if (empty($_SESSION['csrf_token'])) {
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
             <!-- Jahr -->
-            <div class="year-selection-card mb-3">
-              <div class="row align-items-center">
-                <div class="col-md-5">
-                  <label for="yearSelect" class="form-label fw-bold">
-                    <i class="bi bi-calendar3 me-1"></i>Jahr auswählen:
-                  </label>
-                  <select id="yearSelect" class="form-select"></select>
-                </div>
-              </div>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                <i class="bi bi-calendar3 me-1"></i>Jahr:
+              </label>
+              <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
             </div>
 
             <!-- Toolbar -->
@@ -210,39 +247,54 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
 
-            <!-- Messages / PDF Link -->
-            <div id="message" class="mb-2"></div>
             <div id="pdf-link" class="mb-3"></div>
 
             <!-- Tabelle -->
             <div class="table-wrapper">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0 table-modern table-clickable align-middle" id="jungschuetzenTabelle">
-                  <colgroup>
-                    <col style="width: 42%">
-                    <col style="width: 16%">
-                    <col style="width: 16%">
-                    <col style="width: 16%">
-                    <col style="width: 10%">
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th scope="col" class="th-name text-start"><i class="bi bi-person me-1"></i>Jungschütze</th>
-                      <th scope="col" class="text-center">Endstich</th>
-                      <th scope="col" class="text-center">Schwini</th>
-                      <th scope="col" class="text-center">Zabig</th>
-                      <th scope="col" class="text-center">Aktionen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td colspan="5" class="text-center py-4">
-                        <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                        Lade Jungschützen...
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <!-- Desktop: Tabelle -->
+              <div class="desktop-table-container">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0 table-modern table-clickable align-middle" id="jungschuetzenTabelle">
+                    <colgroup>
+                      <col style="width: 42%">
+                      <col style="width: 16%">
+                      <col style="width: 16%">
+                      <col style="width: 16%">
+                      <col style="width: 10%">
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th scope="col" class="th-name text-start"><i class="bi bi-person me-1"></i>Jungschütze</th>
+                        <th scope="col" class="text-center">Endstich</th>
+                        <th scope="col" class="text-center">Schwini</th>
+                        <th scope="col" class="text-center">Zabig</th>
+                        <th scope="col" class="text-center">Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="5" class="text-center py-4">
+                          <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
+                          Lade Jungschützen...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Mobile: Cards -->
+              <div class="mobile-cards-container" id="mobileCardsJsend">
+                <div class="mobile-search">
+                  <div class="position-relative">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="form-control" placeholder="Jungschütze suchen..."
+                           oninput="filterMobileJsend(this)">
+                  </div>
+                </div>
+                <div class="mobile-cards-scroll">
+                  <!-- Cards werden per JavaScript generiert -->
+                </div>
               </div>
             </div>
           </form>
@@ -375,9 +427,8 @@ $(document).ready(function() {
 
   function initializeYearSelect() {
     const currentYear = new Date().getFullYear();
-    const startYear = 2020;
     let options = '';
-    for (let year = currentYear; year >= startYear; year--) {
+    for (let year = currentYear; year >= currentYear - 3; year--) {
       const selected = year === currentYear ? 'selected' : '';
       options += `<option value="${year}" ${selected}>${year}</option>`;
     }
@@ -610,6 +661,9 @@ $(document).ready(function() {
           msvToast('Jungschützen erfolgreich geladen', 'success');
         }
         $('#jungschuetzenTabelle').data('loaded', true);
+
+        // Mobile Cards generieren
+        buildMobileJsendCards();
       },
       error: function(xhr, status, error) {
         console.error('Load error:', status, error, 'Response:', xhr.responseText);
@@ -732,6 +786,111 @@ $(document).ready(function() {
     });
     $('#zabigsum').text(zabigSum);
   }
+
+  // Mobile Cards für Jungschützen-Endresultate
+  function buildMobileJsendCards() {
+    const isMobile = window.matchMedia('(max-width: 767.98px)');
+    if (!isMobile.matches) return;
+
+    const table = document.getElementById('jungschuetzenTabelle');
+    const container = document.querySelector('#mobileCardsJsend .mobile-cards-scroll');
+    if (!table || !container) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      return;
+    }
+
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0) {
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      return;
+    }
+
+    let html = '';
+    rows.forEach((row, idx) => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      if (cells.length < 5) return;
+
+      const name = cells[0]?.textContent?.trim() || 'Unbekannt';
+      const endstich = cells[1]?.textContent?.trim() || '-';
+      const schwini = cells[2]?.textContent?.trim() || '-';
+      const zabig = cells[3]?.textContent?.trim() || '-';
+
+      // Extract Mitglied-ID from action button
+      const actionBtn = cells[4]?.querySelector('button[onclick*="openSchussModal"]');
+      const onclickAttr = actionBtn ? actionBtn.getAttribute('onclick') : '';
+      const mitgliedId = onclickAttr.match(/openSchussModal\((\d+)\)/)?.[1] || '';
+
+      html += `
+      <div class="mobile-card" data-index="${idx}">
+        <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+          <div>
+            <div class="fw-bold">${name}</div>
+            <small class="text-muted">Endstich: ${endstich} | Schwini: ${schwini}</small>
+          </div>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Endstich</span>
+            <span class="mobile-card-detail-value"><strong>${endstich}</strong></span>
+          </div>
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Schwini</span>
+            <span class="mobile-card-detail-value"><strong>${schwini}</strong></span>
+          </div>
+          <div class="mobile-card-detail-row">
+            <span class="mobile-card-detail-label">Zabig</span>
+            <span class="mobile-card-detail-value"><strong>${zabig}</strong></span>
+          </div>
+          ${mitgliedId ? `
+          <button type="button" class="btn btn-primary w-100 mt-3"
+                  onclick="openSchussModal(${mitgliedId})"
+                  style="min-height: 48px;">
+            <i class="bi bi-pencil me-2"></i>Bearbeiten
+          </button>` : ''}
+        </div>
+      </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  window.filterMobileJsend = function(searchInput) {
+    const query = searchInput.value.toLowerCase();
+    const cards = document.querySelectorAll('#mobileCardsJsend .mobile-card');
+
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      const isVisible = text.includes(query);
+      card.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCount++;
+    });
+
+    const container = document.querySelector('#mobileCardsJsend .mobile-cards-scroll');
+    const existingEmpty = container.querySelector('.mobile-cards-empty');
+    if (visibleCount === 0 && !existingEmpty) {
+      container.insertAdjacentHTML('beforeend', `
+        <div class="mobile-cards-empty">
+          <i class="bi bi-search"></i>
+          <div>Keine Treffer gefunden</div>
+        </div>`);
+    } else if (visibleCount > 0 && existingEmpty) {
+      existingEmpty.remove();
+    }
+  };
+
+  let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
+  window.addEventListener('resize', function() {
+    const isNowDesktop = window.matchMedia('(min-width: 768px)').matches;
+    if (wasDesktop && !isNowDesktop) {
+      buildMobileJsendCards();
+    }
+    wasDesktop = isNowDesktop;
+  });
 });
 </script>
 

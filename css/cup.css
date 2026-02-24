@@ -1,0 +1,1025 @@
+/* ========================================
+   CUP4 — Turnierbaum UI
+   ======================================== */
+
+:root {
+    --cup4-primary: #2c3e50;
+    --cup4-success: #28a745;
+    --cup4-danger: #dc3545;
+    --cup4-warning: #ffc107;
+    --cup4-info: #17a2b8;
+    --cup4-muted: #6c757d;
+    --cup4-light: #f8f9fa;
+    --cup4-border: #dee2e6;
+    --cup4-bg: #fafbfc;
+    --cup4-card-bg: #fff;
+    --cup4-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --cup4-shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --cup4-shadow-hover: 0 8px 20px rgba(0,0,0,0.14);
+    --cup4-radius: 8px;
+    --cup4-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cup4-page { background: var(--cup4-bg); }
+
+/* ── Progress Bar ─────────────────────── */
+
+.cup4-progress {
+    background: var(--cup4-card-bg);
+    border: 1px solid var(--cup4-border);
+    border-radius: var(--cup4-radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--cup4-shadow-sm);
+    max-width: 1280px;
+}
+
+@media (min-width: 1600px) {
+    .cup4-progress { max-width: 1400px; }
+}
+
+.cup4-progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.cup4-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--cup4-muted);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.cup4-step.active {
+    color: var(--cup4-primary);
+    background: #e8f4fd;
+}
+
+.cup4-step.completed {
+    color: var(--cup4-success);
+}
+
+.cup4-step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cup4-border);
+    flex-shrink: 0;
+}
+
+.cup4-step.active .cup4-step-dot { background: var(--cup4-info); }
+.cup4-step.completed .cup4-step-dot { background: var(--cup4-success); }
+
+.cup4-step-arrow {
+    color: var(--cup4-border);
+    margin: 0 0.25rem;
+}
+
+.cup4-progress-bar {
+    height: 4px;
+    background: var(--cup4-border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cup4-progress-fill {
+    height: 100%;
+    background: var(--cup4-primary);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+/* ── Sticky Toolbar ───────────────────── */
+
+.cup4-toolbar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 56px; /* unter Bootstrap Navbar */
+    z-index: 100;
+    background: var(--cup4-card-bg);
+    border: 1px solid var(--cup4-border);
+    border-radius: var(--cup4-radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--cup4-shadow-sm);
+    max-width: 1280px;
+}
+
+.cup4-toolbar-body {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.cup4-toolbar-toggle {
+    display: none;
+}
+
+.cup4-mini-progress {
+    display: none; /* nur auf Mobile sichtbar */
+}
+
+.cup4-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (min-width: 1600px) {
+    .cup4-toolbar { max-width: 1400px; }
+}
+
+.cup4-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cup4-toolbar-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--cup4-border);
+    flex-shrink: 0;
+}
+
+.cup4-toolbar label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cup4-muted);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.cup4-toolbar .form-select,
+.cup4-toolbar .form-control {
+    font-size: 0.875rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+}
+
+.cup4-toolbar .form-control[type="number"] {
+    width: 70px;
+}
+
+.cup4-toolbar .btn {
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+}
+
+.cup4-toolbar-spacer {
+    flex: 1;
+}
+
+/* ── Bracket Grid (Desktop) ──────────── */
+
+.cup4-bracket {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 340px) minmax(0, 340px) minmax(0, 300px);
+    gap: 1.25rem;
+    align-items: start;
+    min-height: 400px;
+    max-width: 1280px;
+}
+
+/* Auf sehr grossen Screens (>1600px) etwas breiter */
+@media (min-width: 1600px) {
+    .cup4-bracket {
+        max-width: 1400px;
+    }
+}
+
+/* ── Participant Pool (Sidebar) ───────── */
+
+.cup4-pool {
+    background: var(--cup4-card-bg);
+    border: 1px solid var(--cup4-border);
+    border-radius: var(--cup4-radius);
+    padding: 1rem;
+    position: sticky;
+    top: 130px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    box-shadow: var(--cup4-shadow-sm);
+}
+
+.cup4-pool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--cup4-border);
+}
+
+.cup4-pool-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.cup4-pool-chevron {
+    display: none;
+}
+
+.cup4-pool-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cup4-primary);
+}
+
+.cup4-counter {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cup4-muted);
+    background: var(--cup4-light);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.cup4-pool-item {
+    background: var(--cup4-light);
+    border: 1px solid var(--cup4-border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.375rem;
+    font-size: 0.875rem;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+.cup4-pool-item:hover {
+    background: #fff;
+    box-shadow: var(--cup4-shadow-sm);
+    transform: translateX(3px);
+}
+
+.cup4-pool-item:active { cursor: grabbing; }
+
+.cup4-pool-item.ui-draggable-dragging {
+    cursor: grabbing !important;
+    opacity: 0.9;
+    box-shadow: var(--cup4-shadow-hover) !important;
+    z-index: 9999;
+    transform: rotate(1deg);
+}
+
+/* Winner items in pool */
+.cup4-pool-item.cup4-winner-item {
+    background: #d4edda;
+    border-left: 3px solid var(--cup4-success);
+}
+
+/* ── Round Columns ────────────────────── */
+
+.cup4-round {
+    background: var(--cup4-card-bg);
+    border: 1px solid var(--cup4-border);
+    border-radius: var(--cup4-radius);
+    padding: 1rem;
+    box-shadow: var(--cup4-shadow-sm);
+    min-height: 200px;
+}
+
+.cup4-round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--cup4-border);
+}
+
+.cup4-round-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cup4-primary);
+}
+
+.cup4-round-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: var(--cup4-light);
+    color: var(--cup4-muted);
+}
+
+/* ── Pair Cards ───────────────────────── */
+
+.cup4-pair-card {
+    background: var(--cup4-card-bg);
+    border: 1px solid var(--cup4-border);
+    border-radius: var(--cup4-radius);
+    padding: 0.5rem 0.6rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    transition: var(--cup4-transition);
+}
+
+.cup4-pair-card:hover {
+    box-shadow: var(--cup4-shadow-md);
+}
+
+.cup4-pair-card.cup4-pair-complete {
+    border-left: 3px solid var(--cup4-success);
+}
+
+.cup4-participant-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.cup4-participant-row.winner {
+    background: #e8f5e9;
+    font-weight: 600;
+}
+
+.cup4-participant-row.winner::before {
+    content: '\f091'; /* trophy icon - we'll use bi-trophy */
+    font-family: 'bootstrap-icons';
+    color: var(--cup4-success);
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+}
+
+.cup4-participant-row.loser {
+    opacity: 0.45;
+}
+
+.cup4-participant-row.loser .cup4-name {
+    text-decoration: line-through;
+}
+
+.cup4-name {
+    flex: 1;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* Drop zone (empty slot) */
+.cup4-drop-zone {
+    flex: 1;
+    min-height: 32px;
+    max-width: 220px;
+    border: 2px dashed var(--cup4-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #adb5bd;
+    font-size: 0.75rem;
+    transition: var(--cup4-transition);
+    padding: 0.25rem 0.5rem;
+}
+
+.cup4-drop-zone::after {
+    content: 'hierher ziehen';
+}
+
+.cup4-drop-zone[data-id] {
+    border-style: solid;
+    border-color: var(--cup4-border);
+    color: var(--cup4-primary);
+    font-size: 0.875rem;
+    justify-content: flex-start;
+    background: var(--cup4-light);
+    cursor: grab;
+    position: relative;
+}
+.cup4-zone-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+button.cup4-zone-remove {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #888;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0 0.25rem !important;
+    margin: 0 0 0 0.25rem !important;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-width: auto;
+}
+button.cup4-zone-remove:hover {
+    color: var(--cup4-danger);
+}
+
+.cup4-drop-zone[data-id]::after {
+    content: none;
+}
+
+.cup4-drop-zone.ui-droppable-hover {
+    background: #e3f2fd !important;
+    border-color: #2196F3 !important;
+    border-style: solid !important;
+    transform: scale(1.02);
+}
+
+.cup4-drop-zone.drop-success {
+    animation: cup4DropPulse 0.4s ease;
+}
+
+@keyframes cup4DropPulse {
+    0% { background: #c8e6c9; }
+    100% { background: var(--cup4-light); }
+}
+
+/* Result inputs */
+.cup4-result {
+    width: 60px;
+    text-align: center;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.35rem;
+    border: 1px solid var(--cup4-border);
+    border-radius: 4px;
+    transition: border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.cup4-result:focus {
+    outline: none;
+    border-color: var(--cup4-primary);
+    box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
+}
+
+.cup4-result-label {
+    font-size: 0.6rem;
+    color: #adb5bd;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.cup4-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+/* VS divider */
+.cup4-vs {
+    text-align: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #adb5bd;
+    text-transform: uppercase;
+    padding: 0.15rem 0;
+    letter-spacing: 1px;
+}
+
+/* Card remove button (absolute top-right) */
+.cup4-card-remove {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    border: none;
+    background: transparent;
+    color: #999;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: var(--cup4-transition);
+    z-index: 2;
+    line-height: 1;
+}
+.cup4-pair-card:hover .cup4-card-remove { opacity: 0.6; }
+.cup4-card-remove:hover { opacity: 1 !important; color: var(--cup4-danger); background: #fce4e4; }
+
+/* Generic small button (used in finale items) */
+.cup4-btn-sm {
+    border: none;
+    background: transparent;
+    color: var(--cup4-muted);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--cup4-transition);
+}
+.cup4-btn-sm:hover { background: var(--cup4-light); }
+.cup4-btn-sm.cup4-btn-remove:hover { color: var(--cup4-danger); background: #fce4e4; }
+
+/* ── Tie State ─────────────────────────── */
+
+.cup4-pair-card.cup4-pair-tied {
+    border-color: var(--cup4-warning);
+    border-left: 3px solid var(--cup4-warning);
+}
+
+.cup4-participant-row.cup4-tied {
+    background: #fff8e1;
+}
+
+.cup4-tie-pick {
+    border: 1px solid var(--cup4-warning);
+    background: #fff8e1;
+    color: #f57f17;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--cup4-transition);
+    flex-shrink: 0;
+    margin-left: 0.25rem;
+}
+
+.cup4-tie-pick:hover {
+    background: var(--cup4-warning);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.cup4-tie-eliminate {
+    border: 1px solid var(--cup4-danger);
+    background: #ffebee;
+    color: var(--cup4-danger);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 1;
+    transition: var(--cup4-transition);
+    flex-shrink: 0;
+    margin-left: 0.25rem;
+}
+
+.cup4-tie-eliminate:hover {
+    background: var(--cup4-danger);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* Manual winner badge */
+.cup4-manual-badge {
+    display: inline-block;
+    background: #ff9800;
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+}
+
+/* Kat. B Auto-Qualifier */
+.cup4-katb-qualifier {
+    background: #f3e8ff !important;
+    border-left: 4px solid #6f42c1 !important;
+    cursor: default !important;
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.cup4-katb-badge {
+    display: inline-block;
+    background: #6f42c1;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.02em;
+}
+
+/* Nachnominierung - Pool-Items */
+.cup4-nominated {
+    background: #e3f2fd !important;
+    border-left: 3px solid var(--cup4-info) !important;
+}
+
+.cup4-nominated-badge {
+    display: inline-block;
+    background: var(--cup4-info);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+/* Nachnominierung - Drop-Zones in R2-Paarungen */
+.cup4-nachnominiert {
+    background: #e3f2fd;
+    border-left: 2px solid var(--cup4-info);
+}
+.cup4-nachnominiert .cup4-nominated-badge {
+    font-size: 0.55rem;
+    padding: 0.05rem 0.3rem;
+}
+
+/* Nachnominierung - Kompaktes SweetAlert */
+.cup4-swal-compact {
+    font-size: 0.875rem !important;
+}
+.cup4-swal-compact .swal2-title {
+    font-size: 1.1rem !important;
+    padding: 0.8rem 1rem 0.4rem !important;
+}
+.cup4-swal-compact .swal2-html-container {
+    margin: 0.5rem 0.8rem !important;
+}
+.cup4-swal-compact .swal2-actions {
+    padding: 0.5rem 0 0.8rem !important;
+}
+
+/* ── Final Section ────────────────────── */
+
+.cup4-final-section {
+    background: #fffde7;
+    border: 2px solid #fff9c4;
+}
+
+.cup4-final-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid var(--cup4-border);
+}
+
+.cup4-final-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.875rem;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Standcup Section ─────────────────── */
+
+.cup4-standcup {
+    background: var(--cup4-card-bg);
+    border: 1px solid var(--cup4-border);
+    border-radius: var(--cup4-radius);
+    padding: 1rem;
+    margin-top: 1.25rem;
+    box-shadow: var(--cup4-shadow-sm);
+    max-width: 560px;
+}
+
+.cup4-standcup-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.cup4-standcup-label {
+    width: 110px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.cup4-standcup-row .form-control {
+    font-size: 0.875rem;
+}
+
+/* ── Empty State ──────────────────────── */
+
+.cup4-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--cup4-muted);
+}
+
+.cup4-empty-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.4;
+}
+
+.cup4-empty-text {
+    font-size: 0.875rem;
+}
+
+/* ── Responsive: Tabs < 1200px ────────── */
+
+@media (max-width: 1199.98px) {
+    .cup4-bracket {
+        display: block;
+    }
+
+    .cup4-pool {
+        position: static;
+        max-height: 250px;
+        margin-bottom: 1rem;
+    }
+
+    .cup4-round {
+        display: none;
+        margin-bottom: 1rem;
+    }
+
+    .cup4-round.active {
+        display: block;
+    }
+
+    .cup4-tabs {
+        display: flex !important;
+        margin: 0.75rem 0 0 0;
+    }
+
+    .cup4-tab {
+        flex: 1;
+        text-align: center;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        border: 1px solid var(--cup4-border);
+        background: var(--cup4-light);
+        color: var(--cup4-muted);
+        cursor: pointer;
+        transition: var(--cup4-transition);
+    }
+
+    .cup4-tab:first-child { border-radius: 6px 0 0 6px; }
+    .cup4-tab:last-child { border-radius: 0 6px 6px 0; }
+    .cup4-tab + .cup4-tab { border-left: none; }
+
+    .cup4-tab.active {
+        background: var(--cup4-primary);
+        color: #fff;
+        border-color: var(--cup4-primary);
+    }
+}
+
+@media (min-width: 1200px) {
+    .cup4-tabs { display: none !important; }
+}
+
+/* ── Mobile ───────────────────────────── */
+
+@media (max-width: 767.98px) {
+
+    /* Fix: overflow auf Eltern-Chain aufheben damit sticky funktioniert */
+    .cup4-page .container-fluid,
+    .cup4-page .row,
+    .cup4-page .col-12,
+    .cup4-page .col {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+    }
+
+    /* Progress bar: auf Mobile ausblenden (Mini-Version im Toolbar) */
+    .cup4-progress {
+        display: none;
+    }
+
+    /* Toolbar: ausklappbare Aktions-Card mit Tabs */
+    .cup4-toolbar {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 56px;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        padding: 0.75rem;
+    }
+
+    .cup4-toolbar-toggle { order: 1; }
+    .cup4-tabs { order: 2; margin: 0.5rem 0 0 0 !important; }
+    .cup4-toolbar-body { order: 3; }
+
+    .cup4-toolbar-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    /* Mini-Progress im Toolbar-Header */
+    .cup4-mini-progress {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .cup4-mini-step {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        color: var(--cup4-muted);
+        padding: 0.15rem 0.3rem;
+        border-radius: 3px;
+        white-space: nowrap;
+    }
+
+    .cup4-mini-step.active {
+        color: var(--cup4-primary);
+        background: #e8f4fd;
+    }
+
+    .cup4-mini-step.completed {
+        color: var(--cup4-success);
+    }
+
+    .cup4-mini-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--cup4-border);
+        flex-shrink: 0;
+    }
+
+    .cup4-mini-step.active .cup4-mini-dot { background: var(--cup4-info); }
+    .cup4-mini-step.completed .cup4-mini-dot { background: var(--cup4-success); }
+
+    .cup4-mini-arrow {
+        color: var(--cup4-border);
+        font-size: 0.5rem;
+    }
+
+    #toolbar-chevron {
+        transition: transform 0.25s ease;
+        font-size: 0.875rem;
+        color: var(--cup4-muted);
+        margin-left: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .cup4-toolbar.expanded #toolbar-chevron {
+        transform: rotate(180deg);
+    }
+
+    .cup4-toolbar-body {
+        display: none;
+        flex-direction: column;
+        align-items: stretch; /* linksbündig statt zentriert */
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--cup4-border);
+    }
+
+    .cup4-toolbar.expanded .cup4-toolbar-body {
+        display: flex;
+    }
+
+    .cup4-toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cup4-toolbar-group label {
+        min-width: 75px;
+    }
+
+    .cup4-toolbar-group .form-select,
+    .cup4-toolbar-group .form-control {
+        flex: 1;
+    }
+
+    #generate-pairs {
+        width: 100%;
+    }
+
+    .cup4-toolbar-divider { display: none; }
+    .cup4-toolbar-spacer { display: none; }
+
+    .cup4-toolbar-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--cup4-border);
+    }
+
+    .cup4-toolbar-actions .btn {
+        flex: 1;
+        font-size: 0.75rem;
+        padding: 0.4rem 0.5rem;
+    }
+
+    /* Pair cards / participant rows */
+    .cup4-participant-row {
+        flex-wrap: wrap;
+    }
+
+    .cup4-result {
+        width: 52px;
+    }
+
+    .cup4-name {
+        flex-basis: 100%;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Drop-Zone: kompakterer Platzhalter */
+    .cup4-drop-zone {
+        min-height: 30px;
+        font-size: 0.7rem;
+    }
+
+    /* Standcup */
+    .cup4-standcup-row {
+        flex-wrap: wrap;
+    }
+
+    .cup4-standcup-label {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Pool: kompakter + eingeklappt */
+    .cup4-pool {
+        padding: 0.75rem;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .cup4-pool-header {
+        cursor: pointer;
+        margin-bottom: 0;
+        padding-bottom: 0.5rem;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.05);
+    }
+
+    .cup4-pool-chevron {
+        display: inline-block;
+        transition: transform 0.25s ease;
+        font-size: 0.75rem;
+        color: var(--cup4-muted);
+    }
+
+    #pool-list {
+        display: none;
+        margin-top: 0.5rem;
+    }
+
+    .cup4-pool.expanded #pool-list {
+        display: block;
+    }
+
+    .cup4-pool.expanded .cup4-pool-chevron {
+        transform: rotate(180deg);
+    }
+
+    .cup4-pool.expanded {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .cup4-pool.expanded .cup4-pool-header {
+        margin-bottom: 0;
+    }
+
+    .cup4-pool-item {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* ── Print ────────────────────────────── */
+
+@media print {
+    .cup4-toolbar,
+    .cup4-card-remove,
+    .cup4-pool { display: none; }
+
+    .cup4-pair-card { break-inside: avoid; }
+}

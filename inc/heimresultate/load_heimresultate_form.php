@@ -74,7 +74,7 @@ try {
     }
 
     // Mitglieder mit prepared statement laden
-    $mitgliederSql = "SELECT ID, Name, Vorname FROM mitglieder ORDER BY Name ASC, Vorname ASC";
+    $mitgliederSql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Verstorben = 0 ORDER BY Name ASC, Vorname ASC";
     $mitgliederStmt = $conn->prepare($mitgliederSql);
     
     if (!$mitgliederStmt) {

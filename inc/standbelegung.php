@@ -319,6 +319,55 @@ $artCodes = [
     opacity: 0.7;
 }
 
+/* Mobile-Optimierung */
+@media (max-width: 767.98px) {
+    /* WCAG AAA Touch Targets: Alle Form-Elemente & Buttons */
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="number"],
+    select {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+    }
+
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Filter-Chips responsiv */
+    .filter-chip {
+        flex: 1 1 calc(50% - 0.4rem);
+        justify-content: center;
+        min-height: 48px; /* WCAG AAA Touch Target */
+    }
+
+
+    /* Stat Cards - 2 Spalten */
+    #overviewStatsRow .col-auto {
+        flex: 0 0 calc(50% - 0.5rem);
+        max-width: calc(50% - 0.5rem);
+    }
+
+    /* Kalender-Toggle in Mobile Cards größer */
+    .mobile-card .kalender-toggle {
+        font-size: 1.5rem;
+        min-width: 48px;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Checkbox in Mobile Cards */
+    .mobile-card .form-check-input {
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+}
+
 /* =========================================================
    Import Kalender
    ========================================================= */
@@ -330,10 +379,10 @@ $artCodes = [
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-11 col-lg-12 col-md-12 col-12">
+        <div class="col-xl-11 col-lg-12 col-md-12 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-3">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-calendar-week me-2"></i>
@@ -588,9 +637,9 @@ $artCodes = [
                             
                             <!-- Overview Table -->
                             <div class="card mb-3">
-                                <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
                                     <span><i class="bi bi-table me-2"></i>Einträge (<span id="overviewCount">0</span> ausgewählt)</span>
-                                    <div>
+                                    <div class="mt-2 mt-sm-0">
                                         <button type="button" class="btn btn-outline-success btn-sm" onclick="selectAllOverview()">
                                             <i class="bi bi-check-all"></i> Alle
                                         </button>
@@ -600,46 +649,84 @@ $artCodes = [
                                     </div>
                                 </div>
                                 <div class="card-body p-0">
-                                    <div class="preview-table-wrapper">
-                                        <table class="table table-hover table-sm preview-table mb-0">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="overviewSelectAll"></th>
-                                                    <th style="width: 50px;" title="Im Kalender anzeigen"><i class="bi bi-calendar-check"></i></th>
-                                                    <th>Datum</th>
-                                                    <th>Tag</th>
-                                                    <th>Bezeichnung</th>
-                                                    <th>Von</th>
-                                                    <th>Bis</th>
-                                                    <th>Kategorie</th>
-                                                    <th style="width: 90px;">Aktionen</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="overviewTableBody">
-                                                <!-- Wird dynamisch gefüllt -->
-                                            </tbody>
-                                        </table>
+                                    <!-- Desktop: Tabelle -->
+                                    <div class="desktop-table-container">
+                                        <div class="preview-table-wrapper">
+                                            <table class="table table-hover table-sm preview-table mb-0" id="overviewTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="overviewSelectAll"></th>
+                                                        <th style="width: 50px;" title="Im Kalender anzeigen"><i class="bi bi-calendar-check"></i></th>
+                                                        <th>Datum</th>
+                                                        <th>Tag</th>
+                                                        <th>Bezeichnung</th>
+                                                        <th>Von</th>
+                                                        <th>Bis</th>
+                                                        <th>Kategorie</th>
+                                                        <th style="width: 90px;">Aktionen</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="overviewTableBody">
+                                                    <!-- Wird dynamisch gefüllt -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mobile: Cards -->
+                                    <div class="mobile-cards-container" id="mobileCardsStandbelegung">
+                                        <div class="mobile-search">
+                                            <div class="position-relative">
+                                                <i class="bi bi-search search-icon"></i>
+                                                <input type="text" class="form-control" placeholder="Suchen..."
+                                                       oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCardsStandbelegung')">
+                                            </div>
+                                        </div>
+                                        <div class="mobile-cards-scroll">
+                                            <!-- Cards werden per JavaScript generiert -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Export Buttons -->
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <button type="button" class="btn btn-outline-danger" onclick="deleteSelected()">
-                                        <i class="bi bi-trash me-1"></i> Ausgewählte löschen
-                                    </button>
+                            <!-- Aktionsbereich (Bootstrap Collapse) -->
+                            <div class="card mb-3 action-card">
+                                <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                                     data-bs-toggle="collapse" data-bs-target="#standbelegungActions"
+                                     aria-expanded="false" aria-controls="standbelegungActions">
+                                    <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                                    <i class="bi bi-chevron-down action-chevron"></i>
                                 </div>
-                                <div>
-                                    <button type="button" class="btn btn-outline-info me-2" onclick="exportJskPdf()">
-                                        <i class="bi bi-file-pdf me-1"></i> JSK-Termine PDF
-                                    </button>
-                                    <button type="button" class="btn btn-outline-primary me-2" onclick="openAddModal()">
-                                        <i class="bi bi-plus-lg me-1"></i> Neuer Eintrag
-                                    </button>
-                                    <button type="button" class="btn btn-outline-success" onclick="showExportPreview()">
-                                        <i class="bi bi-file-earmark-excel me-1"></i> Schiesstagemeldung exportieren
-                                    </button>
+                                <div class="collapse" id="standbelegungActions">
+                                    <div class="card-body pt-2 pb-3 px-3">
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-12">
+                                                <button type="button" class="btn btn-success w-100" onclick="openAddModal()">
+                                                    <i class="bi bi-plus-lg me-2"></i>Neuer Eintrag
+                                                </button>
+                                            </div>
+                                            <div class="col-12">
+                                                <button type="button" class="btn btn-outline-danger w-100" onclick="deleteSelected()">
+                                                    <i class="bi bi-trash me-1"></i>Ausgewählte löschen
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="border-top pt-2">
+                                            <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="exportJskPdf()">
+                                                        <i class="bi bi-file-pdf me-1"></i>JSK-Termine PDF
+                                                    </button>
+                                                </div>
+                                                <div class="col-6">
+                                                    <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="showExportPreview()">
+                                                        <i class="bi bi-file-earmark-excel me-1"></i>Schiesstagemeldung
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -1233,6 +1320,81 @@ function initOverviewTable() {
     renderOverviewTable();
 }
 
+// Mobile Cards für Standbelegung generieren
+function buildMobileCardsStandbelegung() {
+    MSVMobileCards.initResponsive(function() {
+        MSVMobileCards.buildCards('#overviewTable', '#mobileCardsStandbelegung', {
+            customHtml: function(row, cells, headers, idx) {
+                // Daten extrahieren
+                const id = $(row).data('id');
+                const kategorie = $(row).data('kategorie');
+                const jahr = $(row).data('jahr');
+
+                // Checkbox-Status von der Zeile
+                const isChecked = $(cells[0]).find('.row-checkbox').prop('checked');
+
+                // Kalender-Icon Status
+                const hasKalender = $(cells[1]).find('.kalender-toggle').hasClass('active');
+
+                // Badge Klasse
+                const badgeClass = $(cells[7]).find('.badge').attr('class');
+
+                return `
+                    <div class="mobile-card" data-id="${id}" data-kategorie="${kategorie}" data-jahr="${jahr}">
+                        <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                <input type="checkbox" class="form-check-input row-checkbox"
+                                       data-id="${id}" ${isChecked ? 'checked' : ''}
+                                       onclick="event.stopPropagation(); updateOverviewCount();">
+                                <i class="bi bi-calendar-check kalender-toggle ${hasKalender ? 'active' : ''}"
+                                   data-id="${id}"
+                                   onclick="event.stopPropagation(); toggleOverviewKalender(this, ${id});"></i>
+                                <div>
+                                    <div class="fw-bold">${cells[2].textContent} - ${cells[4].textContent}</div>
+                                    <small class="text-muted">${cells[3].textContent} | ${cells[5].textContent} - ${cells[6].textContent}</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="${badgeClass}">${cells[7].textContent}</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="mobile-card-body">
+                            <div class="mobile-card-detail-row">
+                                <span class="mobile-card-detail-label">Datum</span>
+                                <span class="mobile-card-detail-value">${cells[2].textContent}</span>
+                            </div>
+                            <div class="mobile-card-detail-row">
+                                <span class="mobile-card-detail-label">Wochentag</span>
+                                <span class="mobile-card-detail-value">${cells[3].textContent}</span>
+                            </div>
+                            <div class="mobile-card-detail-row">
+                                <span class="mobile-card-detail-label">Von - Bis</span>
+                                <span class="mobile-card-detail-value">${cells[5].textContent} - ${cells[6].textContent}</span>
+                            </div>
+                            <div class="mobile-card-detail-row">
+                                <span class="mobile-card-detail-label">Kategorie</span>
+                                <span class="mobile-card-detail-value"><span class="${badgeClass}">${cells[7].textContent}</span></span>
+                            </div>
+                            <div class="mobile-card-detail-row">
+                                <span class="mobile-card-detail-label">Aktionen</span>
+                                <span class="mobile-card-detail-value">
+                                    <button class="btn btn-outline-primary btn-sm me-1" onclick="openEditModal(${id})" title="Bearbeiten">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSingle(${id})" title="Löschen">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    });
+}
+
 function renderOverviewTable() {
     let html = '';
     overviewData.forEach((item, index) => {
@@ -1264,9 +1426,12 @@ function renderOverviewTable() {
             </tr>`;
     });
     $('#overviewTableBody').html(html);
-    
+
     $('#overviewTableBody .row-checkbox').on('change', updateOverviewCount);
     applyOverviewFilters();
+
+    // Mobile Cards generieren
+    buildMobileCardsStandbelegung();
 }
 
 function toggleOverviewKalender(el, id) {

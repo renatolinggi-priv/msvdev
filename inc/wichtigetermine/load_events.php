@@ -25,9 +25,10 @@ if ($result->num_rows > 0) {
   echo '<span class="badge bg-secondary ms-2">' . $result->num_rows . '</span>';
   echo '</div>';
   
-  // Tabelle mit modernem Styling
+  // Desktop: Tabelle
+  echo '<div class="desktop-table-container">';
   echo '<div class="table-responsive">';
-  echo '<table class="table table-hover align-middle mb-0">';
+  echo '<table class="table table-hover align-middle mb-0" id="eventsTable">';
   echo '<thead class="table-light">';
   echo '<tr>';
   echo '<th class="text-start" style="width: 40%;"><i class="bi bi-tag me-2"></i>Bezeichnung</th>';
@@ -115,6 +116,21 @@ if ($result->num_rows > 0) {
   echo '</tbody>';
   echo '</table>';
   echo '</div>'; // Ende table-responsive
+  echo '</div>'; // Ende desktop-table-container
+
+  // Mobile: Cards
+  echo '<div class="mobile-cards-container" id="mobileEventsCards">';
+  echo '<div class="mobile-search">';
+  echo '<div class="position-relative">';
+  echo '<i class="bi bi-search search-icon"></i>';
+  echo '<input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileEvents(this)">';
+  echo '</div>';
+  echo '</div>';
+  echo '<div class="mobile-cards-scroll">';
+  echo '<!-- Cards werden per JavaScript generiert -->';
+  echo '</div>';
+  echo '</div>';
+
   echo '</div>'; // Ende events-list-card
   
   // JavaScript für Tooltips
@@ -135,7 +151,7 @@ if ($result->num_rows > 0) {
   echo '<div class="p-5 text-center">';
   echo '<i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>';
   echo '<p class="text-muted mt-3 mb-0">Keine Termine für ' . $year . ' gefunden.</p>';
-  echo '<p class="text-muted small">Füge oben einen neuen Termin hinzu.</p>';
+  echo '<p class="text-muted small">Keine Termine eingetragen.</p>';
   echo '</div>';
   echo '</div>';
 }

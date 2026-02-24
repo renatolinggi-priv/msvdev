@@ -9,6 +9,18 @@ use PhpOffice\PhpWord\Element\Table as PhpWordTable;
 use PhpOffice\PhpWord\SimpleType\JcTable;
 $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 
+// Liest Anzahl Streicher aus Parameter-Tabelle; Fallback 3
+if (!function_exists('getExcludeCount')) {
+    function getExcludeCount(mysqli $conn, int $year): int {
+        $st = $conn->prepare("SELECT excludeCount FROM Parameter WHERE year = ?");
+        $st->bind_param('i', $year);
+        $st->execute();
+        $row = $st->get_result()->fetch_assoc();
+        $st->close();
+        return $row ? max(1, (int)$row['excludeCount']) : 3;
+    }
+}
+
 // ========================================
 // HILFSFUNKTIONEN
 
@@ -2536,19 +2548,19 @@ function getTotal($kategorie, $conn) {
             $fehlendeResultate = array_filter($streicherArray, function($r) {
                 return $r['NormalizedPoints'] == 0 || $r['NormalizedPoints'] === 0.0;
             });
-            $excludeCount = 3;
+            $excludeCount = getExcludeCount($conn, $selectedYear);
 
-            // Wenn mehr als 3 fehlen: Nimm die ersten 3 nach Reihenfolge (sind bereits sortiert)
-            if (count($fehlendeResultate) > 3) {
+            // Wenn mehr fehlende als Streicher erlaubt: Nimm die ersten nach Reihenfolge (sind bereits sortiert)
+            if (count($fehlendeResultate) > $excludeCount) {
 
-                // Streiche die ersten 3 fehlenden Wettbewerbe
+                // Streiche die ersten $excludeCount fehlenden Wettbewerbe
                 $gestricheneIDs = array();
                 $count = 0;
                 foreach ($streicherArray as $result) {
                     if ($result['NormalizedPoints'] == 0 || $result['NormalizedPoints'] === 0.0) {
                         $gestricheneIDs[] = $result['WettbewerbID'];
                         $count++;
-                        if ($count >= 3) break;
+                        if ($count >= $excludeCount) break;
                     }
                 }
 
@@ -2558,7 +2570,7 @@ function getTotal($kategorie, $conn) {
                 });
             } else {
 
-                // Normale Logik: Die 3 niedrigsten Resultate streichen
+                // Normale Logik: Die $excludeCount niedrigsten Resultate streichen
                 usort($streicherArray, function ($a, $b) {
                     return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
                 });
@@ -2706,24 +2718,24 @@ function GetStreicher($kategorie, $conn) {
             $fehlendeResultate = array_filter($streicherArray, function($r) {
                 return $r['NormalizedPoints'] == 0 || $r['NormalizedPoints'] === 0.0;
             });
-            $excludeCount = 3;
+            $excludeCount = getExcludeCount($conn, $selectedYear);
             $gestricheneResultate = array();
 
-            // Wenn mehr als 3 fehlen: Nimm die ersten 3 nach Reihenfolge (sind bereits sortiert)
-            if (count($fehlendeResultate) > 3) {
+            // Wenn mehr fehlende als Streicher erlaubt: Nimm die ersten nach Reihenfolge (sind bereits sortiert)
+            if (count($fehlendeResultate) > $excludeCount) {
 
-                // Streiche die ersten 3 fehlenden Wettbewerbe
+                // Streiche die ersten $excludeCount fehlenden Wettbewerbe
                 $count = 0;
                 foreach ($streicherArray as $result) {
                     if ($result['NormalizedPoints'] == 0 || $result['NormalizedPoints'] === 0.0) {
                         $gestricheneResultate[] = $result;
                         $count++;
-                        if ($count >= 3) break;
+                        if ($count >= $excludeCount) break;
                     }
                 }
             } else {
 
-                // Normale Logik: Die 3 niedrigsten Resultate streichen
+                // Normale Logik: Die $excludeCount niedrigsten Resultate streichen
                 usort($streicherArray, function ($a, $b) {
                     return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
                 });
@@ -2735,7 +2747,7 @@ function GetStreicher($kategorie, $conn) {
 
             // Debug-Ausgabe für Streicher
             $fehlendCount = count($fehlendeResultate);
-            $logikType = ($fehlendCount > 3) ? "REIHENFOLGE (>3 fehlend)" : "NIEDRIGSTE WERTE";
+            $logikType = ($fehlendCount > $excludeCount) ? "REIHENFOLGE (>$excludeCount fehlend)" : "NIEDRIGSTE WERTE";
             logDebug("GetStreicher - Mitglied $mitgliedID: " . count($gestricheneResultate) . " Streicher von " . count($streicherArray) . " Wettkämpfen ($fehlendCount fehlend, Logik: $logikType)");
         }
     }

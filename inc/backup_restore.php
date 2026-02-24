@@ -83,6 +83,54 @@ $page_specific_css = "
     0% { background-position: 100% 0; }
     100% { background-position: -100% 0; }
 }
+
+/* Mobile Optimierung für Backup & Restore */
+@media (max-width: 767.98px) {
+    .form-control, .form-control-sm {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    .btn, .btn-compact-standard {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .sidebar-card, .group-creation-card, .existing-groups-card {
+        padding: 1rem !important;
+    }
+
+    .card-title {
+        font-size: 1rem !important;
+    }
+
+    /* Stack Quick Action Buttons on Mobile */
+    .d-flex.gap-2 {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+
+    .d-flex.gap-2 .btn {
+        width: 100% !important;
+    }
+
+    /* Table Actions kompakter */
+    #tblBackups .btn {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        padding: 0.5rem !important;
+    }
+
+    /* Modal Buttons volle Breite */
+    .modal-footer .btn {
+        flex: 1 1 auto !important;
+    }
+
+    .container-fluid {
+        padding: 0.5rem !important;
+    }
+}
 ";
 
 // Header binden (zieht globale Styles/Variablen/Bootstrap/Icons)
@@ -108,7 +156,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
       <!-- Außen-Container -->
       <div class="main-content-wrapper">
         <!-- Header-Zeile -->
-        <div class="row mb-4">
+        <div class="row mb-4 d-none d-md-flex">
           <div class="col-md-12">
             <h2 class="h4 mb-0" style="color: var(--secondary-color);">
               <i class="bi bi-hdd-stack me-2"></i> Backup &amp; Restore

@@ -15,7 +15,6 @@ use PhpOffice\PhpSpreadsheet\Reader\Xml\PageSettings;
 use PhpOffice\PhpSpreadsheet\Reader\Xml\Properties;
 use PhpOffice\PhpSpreadsheet\Reader\Xml\Style;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
-use PhpOffice\PhpSpreadsheet\Settings;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use PhpOffice\PhpSpreadsheet\Shared\File;
 use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
@@ -79,7 +78,8 @@ class Xml extends BaseReader
         ];
 
         // Open file
-        $data = file_get_contents($filename) ?: '';
+        $data = (string) file_get_contents($filename);
+        $data = $this->getSecurityScannerOrThrow()->scan($data);
 
         // Why?
         //$data = str_replace("'", '"', $data); // fix headers with single quote
@@ -91,15 +91,6 @@ class Xml extends BaseReader
                 $valid = false;
 
                 break;
-            }
-        }
-
-        //    Retrieve charset encoding
-        if (preg_match('/<?xml.*encoding=[\'"](.*?)[\'"].*?>/m', $data, $matches)) {
-            $charSet = strtoupper($matches[1]);
-            if (preg_match('/^ISO-8859-\d[\dL]?$/i', $charSet) === 1) {
-                $data = StringHelper::convertEncoding($data, 'UTF-8', $charSet);
-                $data = (string) preg_replace('/(<?xml.*encoding=[\'"]).*?([\'"].*?>)/um', '$1' . 'UTF-8' . '$2', $data, 1);
             }
         }
         $this->fileContents = $data;
@@ -142,9 +133,7 @@ class Xml extends BaseReader
             }
             if ($continue) {
                 $xml = @simplexml_load_string(
-                    $this->getSecurityScannerOrThrow()->scan($data),
-                    'SimpleXMLElement',
-                    Settings::getLibXmlLoaderOptions()
+                    $this->getSecurityScannerOrThrow()->scan($data)
                 );
             }
         } catch (Throwable $e) {
@@ -310,6 +299,7 @@ class Xml extends BaseReader
         $worksheetID = 0;
         $xml_ss = $xml->children(self::NAMESPACES_SS);
 
+        $sheetCreated = false;
         /** @var null|SimpleXMLElement $worksheetx */
         foreach ($xml_ss->Worksheet as $worksheetx) {
             $worksheet = $worksheetx ?? new SimpleXMLElement('<xml></xml>');
@@ -324,6 +314,7 @@ class Xml extends BaseReader
 
             // Create new Worksheet
             $spreadsheet->createSheet();
+            $sheetCreated = true;
             $spreadsheet->setActiveSheetIndex($worksheetID);
             $worksheetName = '';
             if (isset($worksheet_ss['Name'])) {
@@ -379,9 +370,11 @@ class Xml extends BaseReader
                             $spreadsheet->getActiveSheet()->getColumnDimension($columnID)->setWidth($columnWidth / 5.4);
                         }
                         if (isset($columnVisible)) {
-                            $spreadsheet->getActiveSheet()->getColumnDimension($columnID)->setVisible($columnVisible);
+                            $spreadsheet->getActiveSheet()
+                                ->getColumnDimension($columnID)
+                                ->setVisible($columnVisible);
                         }
-                        ++$columnID;
+                        StringHelper::stringIncrement($columnID);
                         --$colspan;
                     }
                 }
@@ -411,7 +404,7 @@ class Xml extends BaseReader
 
                         if ($this->getReadFilter() !== null) {
                             if (!$this->getReadFilter()->readCell($columnID, $rowID, $worksheetName)) {
-                                ++$columnID;
+                                StringHelper::stringIncrement($columnID);
 
                                 continue;
                             }
@@ -525,9 +518,9 @@ class Xml extends BaseReader
                                     ->applyFromArray($this->styles[$style]);
                             }
                         }
-                        ++$columnID;
+                        StringHelper::stringIncrement($columnID);
                         while ($additionalMergedCells > 0) {
-                            ++$columnID;
+                            StringHelper::stringIncrement($columnID);
                             --$additionalMergedCells;
                         }
                     }
@@ -666,6 +659,9 @@ class Xml extends BaseReader
                 }
             }
             ++$worksheetID;
+        }
+        if ($this->createBlankSheetIfNoneRead && !$sheetCreated) {
+            $spreadsheet->createSheet();
         }
 
         // Globally scoped defined names

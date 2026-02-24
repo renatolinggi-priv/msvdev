@@ -1,0 +1,218 @@
+[
+  {
+    "version": "1.8.0",
+    "datum": "2026-02-23",
+    "aenderungen": [
+      {
+        "titel": "Umfragen",
+        "beschreibung": "Vorstand und Administratoren können ab sofort eigene Umfragen erstellen und an Mitglieder verschicken. Fragen in verschiedenen Formaten (Auswahl, Mehrfachauswahl, Freitext) sind möglich. Mitglieder beantworten Umfragen direkt im Portal — der Vorstand sieht die Ergebnisse und Beteiligungsquote in der Auswertung.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Dokumente: Verbesserter PDF-Reader",
+        "beschreibung": "Einsatzpläne und Protokolle werden jetzt zuverlässig angezeigt — auch auf dem iPhone war bisher oft nur die erste Seite sichtbar. Alle Seiten sind nun scrollbar, mit Vor/Zurück-Navigation, Zoom-Buttons und automatischer Anpassung an die Bildschirmbreite.",
+        "typ": "verbesserung",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.7.0",
+    "datum": "2026-02-23",
+    "aenderungen": [
+      {
+        "titel": "Persönliches Kalender-Abo für Einsätze",
+        "beschreibung": "Deine Arbeitseinsätze können jetzt direkt in der Kalender-App abonniert werden. Unter \"Kalender-Abo\" einen persönlichen Abo-Link erstellen — iPhone-Nutzer tippen einmal auf \"Kalender abonnieren\", Android-Nutzer kopieren die URL in Google Kalender. Der Feed aktualisiert sich automatisch.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Kalender-Abo Seite überarbeitet",
+        "beschreibung": "Die Kalender-Abo Seite wurde neu strukturiert: Vereinskalender und persönliche Einsätze sind als separate Karten dargestellt, mit direktem Abonnieren-Button für iOS.",
+        "typ": "verbesserung",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.6.0",
+    "datum": "2026-02-20",
+    "aenderungen": [
+      {
+        "titel": "Neuigkeiten-Seite",
+        "beschreibung": "Ab sofort findest du auf dem Dashboard und unter \"Neuigkeiten\" eine Übersicht aller Neuerungen und Verbesserungen.",
+        "typ": "feature",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.5.0",
+    "datum": "2026-02-19",
+    "aenderungen": [
+      {
+        "titel": "Neuer Cup-Turnierbaum",
+        "beschreibung": "Der Cup wird neu als übersichtlicher Turnierbaum dargestellt. Von Runde 1 über Runde 2 bis zum Finale — alles auf einen Blick.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Nachnominierung im Cup",
+        "beschreibung": "Nachrücker in Runde 2 werden automatisch erkannt und als \"NR\" markiert. Paarungen werden dynamisch berechnet.",
+        "typ": "feature",
+        "portal": false
+      }
+    ]
+  },
+  {
+    "version": "1.4.0",
+    "datum": "2026-02-17",
+    "aenderungen": [
+      {
+        "titel": "Mitgliederportal",
+        "beschreibung": "Das neue Mitgliederportal ist da! Unter mitglieder.msvwilen.ch hast du ab sofort Zugriff auf deine persönlichen Vereinsdaten — jederzeit und von überall.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Dein persönliches Dashboard",
+        "beschreibung": "Nach dem Login siehst du auf einen Blick deinen nächsten Termin, deinen nächsten Arbeitseinsatz und die neuesten Vereins-Updates.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Jahresmeisterschaft einsehen",
+        "beschreibung": "Alle deine JM-Resultate übersichtlich aufgelistet — inkl. Streicher-Berechnung und Gesamttotal.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Heimmeisterschaft einsehen",
+        "beschreibung": "Deine 8 Passen der Heimmeisterschaft kompakt im Überblick.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Kantonalstich einsehen",
+        "beschreibung": "Deine 5 Passen mit aktueller Kranzlimite-Anzeige.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Fragebogen ausfüllen",
+        "beschreibung": "Deine Teilnahme und Verfügbarkeit für Vereinsanlässe kannst du direkt im Portal erfassen — kein Papier mehr nötig.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Wanderpreise",
+        "beschreibung": "Sieh auf einen Blick, welche Wanderpreise du aktuell besitzt und wann sie zurückgegeben werden müssen.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Kalender-Abo",
+        "beschreibung": "Abonniere alle Vereinstermine direkt in deinen Handy-Kalender — die Termine werden automatisch aktualisiert.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Einsatzpläne",
+        "beschreibung": "Deine persönlichen Arbeitseinsätze und Funktionen findest du jetzt direkt im Portal.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Protokolle abrufen",
+        "beschreibung": "GV-Protokolle sind für alle Mitglieder einsehbar. Vorstandsmitglieder sehen zusätzlich die Sitzungsprotokolle.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "App auf dem Homescreen",
+        "beschreibung": "Du kannst das Portal als App auf deinem iPhone oder Android-Homescreen speichern — für schnellen Zugriff ohne Browser.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Registrierung und Benutzerverwaltung",
+        "beschreibung": "Neue Mitglieder können sich selbst registrieren. Bei bekannter E-Mail-Adresse erfolgt die Freischaltung automatisch.",
+        "typ": "feature",
+        "portal": false
+      },
+      {
+        "titel": "Rollen- und Rechtesystem",
+        "beschreibung": "Drei Rollen (Admin, Vorstand, Mitglied) mit abgestuften Berechtigungen für Portal und Admin-Bereich.",
+        "typ": "feature",
+        "portal": false
+      }
+    ]
+  },
+  {
+    "version": "1.3.0",
+    "datum": "2026-02-14",
+    "aenderungen": [
+      {
+        "titel": "Einsatzplan-Import",
+        "beschreibung": "Einsatzpläne können als PDF hochgeladen und automatisch eingelesen werden.",
+        "typ": "feature",
+        "portal": false
+      },
+      {
+        "titel": "Dokumenten-Verwaltung",
+        "beschreibung": "Upload und Verwaltung von Vereinsdokumenten mit Sichtbarkeits-Steuerung.",
+        "typ": "feature",
+        "portal": false
+      },
+      {
+        "titel": "JM-Parameter konfigurierbar",
+        "beschreibung": "Streicher-Anzahl und weitere JM-Parameter direkt in der Definition einstellbar.",
+        "typ": "feature",
+        "portal": false
+      }
+    ]
+  },
+  {
+    "version": "1.2.0",
+    "datum": "2026-02-12",
+    "aenderungen": [
+      {
+        "titel": "Neue Web-Adresse",
+        "beschreibung": "Das Portal ist neu unter mitglieder.msvwilen.ch erreichbar, die Administration unter admin.msvwilen.ch.",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Login-Problem auf dem iPhone behoben",
+        "beschreibung": "Das Portal merkt sich dein Login jetzt zuverlässig — auch als App auf dem iPhone-Homescreen.",
+        "typ": "fix",
+        "portal": true
+      },
+      {
+        "titel": "Mobile Admin-Ansicht",
+        "beschreibung": "Admin-Tabellen werden auf dem Handy als übersichtliche Karten dargestellt.",
+        "typ": "verbesserung",
+        "portal": false
+      }
+    ]
+  },
+  {
+    "version": "1.1.0",
+    "datum": "2026-02-08",
+    "aenderungen": [
+      {
+        "titel": "Fehlermeldungen verbessert",
+        "beschreibung": "Erfolgs- und Fehlermeldungen werden einheitlich und übersichtlicher angezeigt.",
+        "typ": "verbesserung",
+        "portal": false
+      },
+      {
+        "titel": "Doppelte Meldungen behoben",
+        "beschreibung": "Ein Fehler wurde behoben, bei dem Benachrichtigungen mehrfach erschienen.",
+        "typ": "fix",
+        "portal": false
+      }
+    ]
+  }
+]

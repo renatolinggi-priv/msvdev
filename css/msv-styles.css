@@ -40,180 +40,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* ==========================================
-   MODERNE NAVIGATION
-   ========================================== */
-
-/* Moderne Navbar mit optimierter Performance */
-.navbar {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
-    padding: 0.75rem 0 !important;
-    z-index: 1030 !important; /* Hoher z-index für Navigation */
-}
-
-/* Navbar Brand Verbesserungen */
-.navbar-brand {
-    font-weight: 700 !important;
-    font-size: 1.4rem !important;
-    color: var(--dark-color) !important;
-    transition: color 0.15s ease !important;
-    text-decoration: none !important;
-}
-
-.navbar-brand:hover {
-    color: var(--primary-color) !important;
-}
-
-.navbar-brand i {
-    background: linear-gradient(135deg, #3b5998, #0ea5e9) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-}
-
-/* Moderne Nav-Links - Performance optimiert */
-.navbar-nav .nav-link {
-    color: var(--dark-color) !important;
-    font-weight: 500 !important;
-    padding: 0.75rem 1rem !important;
-    border-radius: 0.5rem !important;
-    margin: 0 0.25rem !important;
-    transition: background-color 0.15s ease, color 0.15s ease !important;
-    position: relative !important;
-}
-
-.navbar-nav .nav-link:hover {
-    color: var(--dark-color) !important;
-    background-color: rgba(108, 117, 125, 0.08) !important;
-}
-
-/* Aktive Navigation - dezenter */
-.navbar-nav .nav-link.active {
-    color: var(--dark-color) !important;
-    background-color: rgba(108, 117, 125, 0.12) !important;
-    border-left: 3px solid var(--secondary-color) !important;
-}
-
-.navbar-nav .nav-link.active:hover {
-    background-color: rgba(108, 117, 125, 0.15) !important;
-}
-
-/* Moderne Dropdown-Menüs - Performance optimiert */
-.dropdown-menu {
-    border: none !important;
-    border-radius: 1rem !important;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-    padding: 0.75rem 0 !important;
-    margin-top: 0.5rem !important;
-    animation: dropdownFadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    transition: opacity 0.15s ease, transform 0.15s ease !important;
-    z-index: 1040 !important; /* Noch höherer z-index für Dropdown-Menüs */
-}
-
-/* Beim Verstecken des Dropdowns */
-.dropdown-menu.hide {
-    animation: dropdownFadeOut 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-@keyframes dropdownFadeIn {
-    from { opacity: 0; transform: translateY(-8px) scale(0.95); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-
-@keyframes dropdownFadeOut {
-    from { opacity: 1; transform: translateY(0)   scale(1); }
-    to   { opacity: 0; transform: translateY(-5px) scale(0.98); }
-}
-
-.dropdown-item {
-    padding: 0.75rem 1.5rem !important;
-    transition: background-color 0.15s ease !important;
-    border-radius: 0.5rem !important;
-    margin: 0 0.5rem !important;
-    font-weight: 500 !important;
-}
-
-.dropdown-item:hover {
-    background-color: rgba(108, 117, 125, 0.08) !important;
-    color: var(--dark-color) !important;
-}
-
-.dropdown-item.active {
-    background-color: rgba(108, 117, 125, 0.12) !important;
-    color: var(--dark-color) !important;
-    border-left: 3px solid var(--secondary-color) !important;
-}
-
-.dropdown-item i {
-    width: 1.2rem !important;
-    text-align: center !important;
-}
-
-/* User Dropdown spezielle Styles */
-#userDropdown {
-    background: rgba(108, 117, 125, 0.08) !important;
-    border: 1px solid rgba(108, 117, 125, 0.15) !important;
-    color: var(--dark-color) !important;
-}
-
-#userDropdown {
-    transition: background-color 0.15s ease, border-color 0.15s ease !important;
-}
-
-#userDropdown:hover {
-    background: rgba(108, 117, 125, 0.12) !important;
-    border-color: rgba(108, 117, 125, 0.2) !important;
-}
-
-.dropdown-item.text-danger { color: var(--danger-color) !important; }
-.dropdown-item.text-danger:hover {
-    background: rgba(220, 53, 69, 0.08) !important;
-    color: #c53030 !important;
-}
-
-/* Dropdown Divider */
-.dropdown-divider {
-    margin: 0.5rem 1rem !important;
-    border-color: rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Mobile Navbar Toggler */
-.navbar-toggler {
-    border: none !important;
-    padding: 0.5rem !important;
-    border-radius: 0.5rem !important;
-    transition: transform 0.15s ease !important;
-}
-
-.navbar-toggler:focus { box-shadow: 0 0 0 3px rgba(59, 89, 152, 0.25) !important; }
-.navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
-}
-
-.navbar-toggler:hover { transform: scale(1.05) !important; }
-
-/* Responsive Anpassungen für Navigation */
-@media (max-width: 991px) {
-    .navbar-nav {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border-radius: 1rem !important;
-        padding: 1rem !important;
-        margin-top: 1rem !important;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
-    }
-    .navbar-nav .nav-link { margin: 0.25rem 0 !important; text-align: center !important; }
-    .dropdown-menu {
-        position: static !important;
-        float: none !important;
-        box-shadow: none !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        margin: 0.5rem 0 !important;
-    }
-}
+/* Navigation-Styles sind zentral in navigation.inc.php definiert */
 
 /* Breadcrumb Verbesserungen */
 .breadcrumb {
@@ -234,11 +61,7 @@ body {
 .breadcrumb-item a:hover { color: var(--dark-color) !important; }
 .breadcrumb-item.active { color: var(--dark-color) !important; font-weight: 600 !important; }
 
-/* Scroll-Effekt für Navbar */
-.navbar.scrolled {
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15) !important;
-}
+/* Scroll-Effekt: siehe navigation.inc.php */
 
 /* ==========================================
    CONTENT CONTAINER
@@ -268,28 +91,6 @@ body {
         margin: 0 0 1.5rem 0;
         border-radius: 0.5rem;
     }
-}
-
-/* ==========================================
-   JAHR-AUSWAHL CARD
-   ========================================== */
-.year-selection-card {
-    background: #ffffff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid #f1f5f9;
-}
-
-.content-wrapper .year-selection-card,
-.content-background .year-selection-card {
-    background: #ffffff !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid #e2e8f0 !important;
-    margin-bottom: 2rem !important;
-    padding: 1.75rem !important;
-    border-radius: 0.5rem !important;
 }
 
 /* ==========================================
@@ -487,17 +288,11 @@ body {
     background-color: rgba(108, 117, 125, 0.02);
 }
 
-/* ACHTUNG: Der frühere globale „Name-Spalte sticky“ wird auf JM beschränkt,
-   damit Heim/Kanti/End nicht doppelt kleben. */
+/* JM-Ranglisten: Name-Spalte (Hybrid-Layout, kein sticky nötig) */
 #JMA th:nth-child(2), #JMA td:nth-child(2),
 #JMB th:nth-child(2), #JMB td:nth-child(2) {
-    min-width: 200px;
     text-align: left;
     font-weight: 500;
-    background-color: rgba(108, 117, 125, 0.02);
-    position: sticky;
-    left: 60px; /* Breite der Rang-Spalte */
-    z-index: 4;
 }
 
 /* === JM-Resultate: erste Spalte sticky + vertikale Header bleiben speziell === */
@@ -691,24 +486,8 @@ body {
     z-index: 3 !important; /* Unter table-title */
 }
 
-/* Spezifische Styles für JM Tabellen - alle Spalten außer den ersten beiden */
-#JMA th:not(:first-child):not(:nth-child(2)):not(:last-child),
-#JMB th:not(:first-child):not(:nth-child(2)):not(:last-child),
-#JMA thead th:nth-child(n+3):not(:last-child),
-#JMB thead th:nth-child(n+3):not(:last-child) {
-    writing-mode: vertical-rl !important;
-    text-orientation: mixed !important;
-    font-size: 0.75rem !important;
-    text-align: center !important;
-    padding: 8px 4px !important;
-    min-width: 40px !important;
-    max-width: 50px !important;
-    height: 150px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    font-weight: 600 !important;
-    background-color: var(--light-color) !important;
-}
+/* JM-Ranglisten: Hybrid-Layout mit horizontalen Headern (kein vertical-rl) */
+/* Die alten vertikalen Header sind ersetzt durch das Hybrid-Layout in jmrang.php */
 
 /* Spezifische Klasse für vertikale Header */
 .table th.vertical-header,
@@ -762,11 +541,11 @@ body {
 .info-card i { color: var(--info-color) !important; }
 
 /* Margin-Helpers */
-.year-selection-card + .button-toolbar { margin-top: 2rem !important; }
 .button-toolbar + .table-wrapper { margin-top: 2rem !important; }
 .table-wrapper + .table-wrapper { margin-top: 2rem !important; }
 .content-background > * { margin-bottom: 2rem !important; }
 .content-background > *:last-child { margin-bottom: 0 !important; }
+.content-background > *:empty { margin-bottom: 0 !important; }
 
 /* ==========================================
    ANIMATIONEN
@@ -797,9 +576,9 @@ body {
 
 @media (max-width: 1200px) {
 
-    /* Sticky-Spalten bei kleineren Screens deaktivieren (generisch) */
-    .table th:nth-child(2), .table td:nth-child(2),
-    .table th:last-child,   .table td:last-child { position: static; }
+    /* Sticky-Spalten bei kleineren Screens deaktivieren (generisch, NICHT für JM-Ranglisten) */
+    .table:not(#JMA):not(#JMB) th:nth-child(2), .table:not(#JMA):not(#JMB) td:nth-child(2),
+    .table:not(#JMA):not(#JMB) th:last-child,   .table:not(#JMA):not(#JMB) td:last-child { position: static; }
 }
 
 @media (max-width: 768px) {
@@ -901,97 +680,33 @@ body {
 .btn:focus { outline: 2px solid var(--secondary-color); outline-offset: 2px; }
 .table tbody tr:focus-within { outline: 2px solid var(--secondary-color); outline-offset: -2px; }
 
-/* Mehrstufige Dropdowns */
-.dropdown-submenu {
-  position: relative;
-}
-
-.dropdown-submenu > .dropdown-menu {
-  top: 0.2rem;              /* leicht nach unten versetzt */
-  left: 100%;               /* rechts andocken */
-  margin-left: 0.25rem;
-  margin-right: 0.25rem;
-}
-
-/* Kleiner Caret / Pfeil für Items mit Untermenü */
-.dropdown-item.dropdown-toggle::after {
-  content: "â€º";
-  float: right;
-  opacity: 0.6;
-  transform: translateY(1px);
-}
-
-/* Hover-Open Verhalten am Desktop */
-@media (min-width: 992px) {
-  .dropdown-submenu:hover > .dropdown-menu {
-    display: block;
-  }
-}
-
-/* Touch/kleine Screens: Dropdowns sollen in Fluss bleiben */
-@media (max-width: 991.98px) {
-  .dropdown-submenu > .dropdown-menu {
-    position: static;       /* untereinander stapeln */
-    margin-left: 0;
-  }
-}
-
-/* === Mehrstufige Dropdowns â€“ Optik fein === */
-.dropdown-submenu{ position:relative; }
-
-/* Submenu direkt an den Parent andocken */
-.dropdown-submenu > .dropdown-menu{
-  top: -0.25rem;                 /* bündiger zur Zeile */
-  left: calc(100% - 6px);        /* leicht überlappend statt großer Lücke */
-  margin: 0;
-  min-width: 220px;              /* konsistente Breite */
-  border-radius: 0.75rem !important;
-  padding: 0.5rem 0.25rem !important;
-}
-
-/* Pfeilchen am rechten Rand für Items mit Kindern */
-.dropdown-item.dropdown-toggle::after{
-  content:"â€º";
-  float:right;
-  opacity:.55;
-  font-weight:600;
-  transform: translateY(1px);
-}
-
-/* „Verbindungsnut“ â€“ dezente Kante zwischen Level 1 und Level 2 */
-.dropdown-submenu > .dropdown-menu::before{
-  content:"";
-  position:absolute;
-  top: 12px;
-  left:-6px;
-  width:6px; height:14px;
-  background: rgba(0,0,0,0);      /* nur für Shadow */
-  box-shadow: -6px 0 10px rgba(0,0,0,0.06);
-  border-radius: 6px 0 0 6px;
-}
-
-/* Hover: Parent-Item dezent hervorheben, Submenu sichtbar */
-.dropdown-submenu > .dropdown-item.dropdown-toggle:hover{
-  background-color: rgba(108,117,125,0.08) !important;
-}
-
-/* Desktop: Hover darf Submenu zeigen */
-@media (min-width: 992px){
-  .dropdown-submenu:hover > .dropdown-menu{ display:block; }
-}
-
-/* Mobile: Submenus stapeln statt daneben */
-@media (max-width: 991.98px){
-  .dropdown-submenu > .dropdown-menu{
-    position: static;
-    left: auto; right: auto;
-    padding-left: 0.25rem !important;
-  }
-}
+/* Submenu-Styles: siehe navigation.inc.php */
 
 /* === Globale Action-Buttons (Kapsel) === */
 .action-group .btn{line-height:1!important;padding:.25rem .45rem!important;border-radius:8px!important}
 .action-group .btn + .btn{margin-left:-1px}
+
+/* ==========================================
+   AKTIONS-CARD (EINKLAPPBAR)
+   ========================================== */
+.action-card { border-color: #e2e8f0; }
+.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; }
+.action-card-header:hover { background-color: #f1f5f9; }
+.action-chevron { transition: transform .2s ease; }
+.action-card-header[aria-expanded="true"] .action-chevron { transform: rotate(180deg); }
+
+/* Mobile: Action-Card ohne Rahmen/Hintergrund */
+@media (max-width: 767.98px) {
+    .action-card { border: none !important; background: transparent !important; box-shadow: none !important; }
+    .action-card-header { background: transparent !important; padding-left: 0 !important; }
+}
+
+/* Desktop: Action-Card passt sich der Inhaltsbreite an */
+@media (min-width: 768px) {
+    .action-card { width: fit-content; }
+    .action-card .card-body [class*="col-"] { flex: 0 0 auto !important; width: auto !important; }
+    .action-card .card-body .btn { width: auto !important; }
+}
 .action-group .btn:first-child{border-top-right-radius:0!important;border-bottom-right-radius:0!important}
 .action-group .btn:last-child{border-top-left-radius:0!important;border-bottom-left-radius:0!important}
 .btn-action-edit{border-color:#dee2e6!important;color:#0d6efd!important;background:#fff!important}

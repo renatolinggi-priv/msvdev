@@ -36,6 +36,7 @@ foreach ($csvData as $row) {
     $telefon = $conn->real_escape_string($row['Telefon'] ?? '');
     $mobile = $conn->real_escape_string($row['Mobile'] ?? '');
     $notizen = $conn->real_escape_string($row['Notizen'] ?? '');
+    $verstorben = intval($row['Verstorben'] ?? 0);
     
     // Check if member exists
     $checkSql = "SELECT id FROM mitglieder WHERE id = '$id'";
@@ -56,7 +57,8 @@ foreach ($csvData as $row) {
                 Email = '$email',
                 Telefon = '$telefon',
                 Mobile = '$mobile',
-                Notizen = '$notizen'
+                Notizen = '$notizen',
+                Verstorben = $verstorben
                 WHERE id = '$id'";
         
         if ($conn->query($sql) === TRUE) {
@@ -67,9 +69,9 @@ foreach ($csvData as $row) {
     } else {
         // Insert new
         $sql = "INSERT INTO mitglieder (id, vorname, name, Geburtsdatum, waffenid, status, Ehrenmitglied,
-                Strasse, PLZ, Ort, Email, Telefon, Mobile, Notizen) 
+                Strasse, PLZ, Ort, Email, Telefon, Mobile, Notizen, Verstorben)
                 VALUES ('$id', '$vorname', '$name', '$geburtsdatum', $waffenId, $status, $ehrenmitglied,
-                '$strasse', '$plz', '$ort', '$email', '$telefon', '$mobile', '$notizen')";
+                '$strasse', '$plz', '$ort', '$email', '$telefon', '$mobile', '$notizen', $verstorben)";
         
         if ($conn->query($sql) === TRUE) {
             $imported++;

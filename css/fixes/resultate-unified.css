@@ -3,6 +3,30 @@
    Zusätzliche Styles für Heim-, Kanti- und Endresultate
    ========================================== */
 
+/* --- Flex-Layout-Kette (ersetzt no-page-scroll-override.css) ---
+   Kein overflow:hidden auf html/body mehr nötig.
+   Stattdessen: Flex-Kette + JS-basierte Höhenberechnung (LayoutManager)
+   ------------------------------------------------------------ */
+
+/* Bootstrap-Container dürfen Flex-Kette nicht unterbrechen */
+.main-content-wrapper .container-fluid,
+.main-content-wrapper .row,
+.main-content-wrapper [class*="col-"] {
+  min-height: 0 !important;
+}
+
+/* Formulare in der Flex-Kette */
+#heimresultateForm,
+#kantiresultateForm,
+#endresultateForm {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0 !important;
+}
+
+/* --- Ende Flex-Layout-Kette --- */
+
 /* Überschreibt inkonsistente inline-styles */
 .main-content-wrapper {
     background-color: #ffffff !important;
@@ -10,6 +34,9 @@
     box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.08) !important;
     padding: 1.5rem !important;
     margin-bottom: 2rem !important;
+    display: flex;
+    flex-direction: column;
+    min-height: 0 !important;
 }
 
 .content-background {
@@ -19,16 +46,10 @@
     margin-bottom: 0 !important;
     box-shadow: none !important;
     border: 1px solid #e2e8f0 !important;
-}
-
-/* Einheitliche Jahr-Auswahl */
-.year-selection-card {
-    background: #ffffff !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid #e2e8f0 !important;
-    margin-bottom: 1.5rem !important;
-    padding: 1.5rem !important;
-    border-radius: 0.5rem !important;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0 !important;
 }
 
 /* Einheitliche Button Toolbar */
@@ -56,6 +77,10 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
     overflow: hidden !important;
     margin-bottom: 0 !important;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0 !important;
 }
 
 /* Einheitliche Responsive-Tabelle */
@@ -66,6 +91,7 @@
     -webkit-overflow-scrolling: touch !important;
     max-height: calc(100vh - 350px) !important;
     min-height: 300px !important;
+    flex: 1 1 auto;
 }
 
 /* Sticky Headers für alle drei Tabellen */
@@ -195,7 +221,6 @@
         padding: 1rem !important;
     }
     
-    .year-selection-card,
     .button-toolbar {
         padding: 1rem !important;
         margin-bottom: 1rem !important;

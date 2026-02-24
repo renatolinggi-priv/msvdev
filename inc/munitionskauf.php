@@ -22,12 +22,13 @@ if (empty($_SESSION['csrf_token'])) {
   <div id="toastContainer"></div>
 </div>
 
+<div class="container-fluid">
 <div class="row">
   <div class="col-xl-6 col-lg-8 col-md-10 col-12 ps-0">
     <div class="main-content-wrapper">
-      <div class="row mb-3">
+      <div class="row mb-4 d-none d-md-flex">
         <div class="col-md-12">
-          <h2 class="h5 mb-0" style="color: var(--secondary-color);">
+          <h2 class="h4 mb-0" style="color: var(--secondary-color);">
             <i class="bi bi-cart-check me-2"></i>
             Munitionskauf erfassen
           </h2>
@@ -39,7 +40,7 @@ if (empty($_SESSION['csrf_token'])) {
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
           <!-- Jahr und Datum -->
-          <div class="year-selection-card mb-3">
+          <div class="mb-3">
             <div class="row align-items-center g-2">
               <div class="col-lg-4 col-md-6">
                 <label for="yearSelect" class="form-label fw-bold mb-1 small">
@@ -185,34 +186,50 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
             
-            <div class="table-responsive">
-              <table class="table table-sm table-hover table-bordered" id="bestellungenTabelle">
-                <thead class="table-light">
-                  <tr>
-                    <th style="width: 100px;">Datum</th>
-                    <th style="min-width: 150px;">Käufer</th>
-                    <th>Anlass</th>
-                    <th class="text-center">GP11</th>
-                    <th class="text-center">GP90</th>
-                    <th class="text-end">Preis</th>
-                    <th style="width: 80px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="bestellungenTableBody">
-                  <tr>
-                    <td colspan="7" class="text-muted text-center">Wähle einen Filter um Bestellungen zu sehen</td>
-                  </tr>
-                </tbody>
-                <tfoot class="table-light">
-                  <tr>
-                    <th colspan="3">Total</th>
-                    <th class="text-center" id="footerGP11">0</th>
-                    <th class="text-center" id="footerGP90">0</th>
-                    <th class="text-end" id="footerPreis">CHF 0.00</th>
-                    <th></th>
-                  </tr>
-                </tfoot>
-              </table>
+            <!-- Desktop: Tabelle -->
+            <div class="desktop-table-container">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered" id="bestellungenTabelle">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 100px;">Datum</th>
+                      <th style="min-width: 150px;">Käufer</th>
+                      <th>Anlass</th>
+                      <th class="text-center">GP11</th>
+                      <th class="text-center">GP90</th>
+                      <th class="text-end">Preis</th>
+                      <th style="width: 80px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="bestellungenTableBody">
+                    <tr>
+                      <td colspan="7" class="text-muted text-center">Wähle einen Filter um Bestellungen zu sehen</td>
+                    </tr>
+                  </tbody>
+                  <tfoot class="table-light">
+                    <tr>
+                      <th colspan="3">Total</th>
+                      <th class="text-center" id="footerGP11">0</th>
+                      <th class="text-center" id="footerGP90">0</th>
+                      <th class="text-end" id="footerPreis">CHF 0.00</th>
+                      <th></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- Mobile: Cards -->
+            <div class="mobile-cards-container" id="mobileMunitionsCards">
+              <div class="mobile-search">
+                <div class="position-relative">
+                  <i class="bi bi-search search-icon"></i>
+                  <input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileMunitions(this)">
+                </div>
+              </div>
+              <div class="mobile-cards-scroll">
+                <!-- Cards werden per JavaScript generiert -->
+              </div>
             </div>
           </div>
         </form>
@@ -327,7 +344,6 @@ if (empty($_SESSION['csrf_token'])) {
   }
   
   /* Kompakteres Layout */
-  .year-selection-card,
   .content-background {
     max-width: 100%;
   }
@@ -337,7 +353,224 @@ if (empty($_SESSION['csrf_token'])) {
       max-width: 900px;
     }
   }
+
+  /* === MOBILE OPTIMIZATION === */
+  @media (max-width: 767.98px) {
+    /* Desktop-Tabelle ausblenden */
+    .desktop-table-container {
+      display: none !important;
+    }
+
+    /* Mobile Cards anzeigen */
+    .mobile-cards-container {
+      display: block !important;
+    }
+
+    /* Touch-friendly Form Controls (WCAG AAA + iOS Zoom Prevention) */
+    .form-control, .form-control-sm, .form-select, .form-select-sm, input, select {
+      min-height: 48px !important;
+      font-size: 16px !important;
+    }
+
+    .input-group-text {
+      min-height: 48px !important;
+      font-size: 16px !important;
+    }
+
+    .form-check {
+      min-height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    .form-check-input {
+      min-width: 24px !important;
+      min-height: 24px !important;
+    }
+
+    .form-check-label {
+      font-size: 16px !important;
+      padding: 12px 8px !important;
+    }
+
+    /* Button-Anpassungen für Mobile */
+    .btn, .btn-sm, .btn-group-sm .btn {
+      min-height: 48px !important;
+      font-size: 16px !important;
+      padding: 0.5rem 1rem !important;
+    }
+
+    /* Filter Buttons stacken */
+    .btn-group {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .btn-group .btn {
+      border-radius: 0.25rem !important;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Container-Anpassungen */
+    .main-content-wrapper {
+      padding: 0.5rem;
+    }
+
+    .content-background {
+      padding: 0.5rem;
+    }
+
+  }
+
+  /* Desktop: Mobile Cards ausblenden */
+  @media (min-width: 768px) {
+    .mobile-cards-container {
+      display: none !important;
+    }
+  }
 </style>
+
+<script>
+// Mobile Cards für Munitionskäufe generieren
+function buildMobileMunitionsCards() {
+  const isMobile = window.matchMedia('(max-width: 767.98px)');
+  if (!isMobile.matches) return;
+
+  const table = document.querySelector('#bestellungenTabelle');
+  if (!table) return;
+
+  const container = document.querySelector('#mobileMunitionsCards .mobile-cards-scroll');
+  if (!container) return;
+
+  const tbody = table.querySelector('tbody');
+  if (!tbody) {
+    container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+    return;
+  }
+
+  const rows = tbody.querySelectorAll('tr');
+
+  // Check if empty state
+  if (rows.length === 1 && rows[0].querySelector('td[colspan]')) {
+    container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>' + rows[0].textContent.trim() + '</div></div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 6) return;
+
+    const datum = cells[0].textContent.trim();
+    const kaeufer = cells[1].textContent.trim();
+    const anlass = cells[2].textContent.trim();
+    const gp11 = cells[3].textContent.trim();
+    const gp90 = cells[4].textContent.trim();
+    const preis = cells[5].textContent.trim();
+
+    // Actions (Delete button)
+    const deleteBtn = cells[6] ? cells[6].querySelector('.btn-danger') : null;
+    const deleteId = deleteBtn ? deleteBtn.getAttribute('data-id') : '';
+    const deleteKaeufer = deleteBtn ? deleteBtn.getAttribute('data-kaeufer') : '';
+    const deleteDatum = deleteBtn ? deleteBtn.getAttribute('data-datum') : '';
+
+    const card = document.createElement('div');
+    card.className = 'mobile-card';
+    card.innerHTML = `
+      <div class="mobile-card-header">
+        <div class="mobile-card-title">${kaeufer}</div>
+        ${deleteBtn ? `
+          <button class="btn btn-outline-danger btn-sm"
+                  data-id="${deleteId}"
+                  data-kaeufer="${deleteKaeufer}"
+                  data-datum="${deleteDatum}"
+                  onclick="handleDeleteMobile(this)">
+            <i class="bi bi-trash"></i>
+          </button>
+        ` : ''}
+      </div>
+      <div class="mobile-card-body">
+        <div class="mobile-card-row">
+          <span class="mobile-card-label"><i class="bi bi-calendar3 me-1"></i>Datum:</span>
+          <span class="mobile-card-value">${datum}</span>
+        </div>
+        ${anlass ? `
+          <div class="mobile-card-row">
+            <span class="mobile-card-label"><i class="bi bi-tag me-1"></i>Anlass:</span>
+            <span class="mobile-card-value">${anlass}</span>
+          </div>
+        ` : ''}
+        <div class="mobile-card-row">
+          <span class="mobile-card-label">GP11:</span>
+          <span class="mobile-card-value"><strong>${gp11}</strong></span>
+        </div>
+        <div class="mobile-card-row">
+          <span class="mobile-card-label">GP90:</span>
+          <span class="mobile-card-value"><strong>${gp90}</strong></span>
+        </div>
+        <div class="mobile-card-row">
+          <span class="mobile-card-label"><i class="bi bi-cash me-1"></i>Preis:</span>
+          <span class="mobile-card-value text-primary"><strong>${preis}</strong></span>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Handle delete click from mobile card
+window.handleDeleteMobile = function(btn) {
+  // Trigger the same logic as desktop delete button
+  const id = btn.getAttribute('data-id');
+  const kaeufer = btn.getAttribute('data-kaeufer');
+  const datum = btn.getAttribute('data-datum');
+
+  // Find the original delete button in desktop table and trigger its click
+  const desktopBtn = document.querySelector(`#bestellungenTabelle .btn-danger[data-id="${id}"]`);
+  if (desktopBtn) {
+    desktopBtn.click();
+  }
+};
+
+// Global filterMobileMunitions function
+window.filterMobileMunitions = function(searchInput) {
+  const searchTerm = searchInput.value.toLowerCase();
+  const cards = document.querySelectorAll('#mobileMunitionsCards .mobile-card');
+
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(searchTerm) ? '' : 'none';
+  });
+};
+
+// MutationObserver to detect table updates and rebuild mobile cards
+document.addEventListener('DOMContentLoaded', function() {
+  const tbody = document.querySelector('#bestellungenTableBody');
+  if (tbody) {
+    const observer = new MutationObserver(function(mutations) {
+      // Rebuild cards when tbody content changes
+      buildMobileMunitionsCards();
+    });
+
+    observer.observe(tbody, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    // Initial build
+    buildMobileMunitionsCards();
+  }
+
+  // Rebuild on window resize
+  let resizeTimeout;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(buildMobileMunitionsCards, 250);
+  });
+});
+</script>
 
 <script src="munitionskauf/munitionskauf.js"></script>
 

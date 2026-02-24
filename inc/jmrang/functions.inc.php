@@ -6,6 +6,16 @@ error_reporting(E_ALL);
 
 include_once '../config.php';
 
+// Liest Anzahl Streicher aus der Parameter-Tabelle; Fallback 3
+function getExcludeCount(mysqli $conn, int $year): int {
+    $st = $conn->prepare("SELECT excludeCount FROM Parameter WHERE year = ?");
+    $st->bind_param('i', $year);
+    $st->execute();
+    $row = $st->get_result()->fetch_assoc();
+    $st->close();
+    return $row ? max(1, (int)$row['excludeCount']) : 3;
+}
+
 // Datenbankverbindung herstellen
 
 function getTotal($kategorie, $year)
@@ -131,7 +141,7 @@ function getTotal($kategorie, $year)
                 return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
             });
 
-            $excludeCount = 3; // Anzahl der Streichergebnisse
+            $excludeCount = getExcludeCount($conn, $year); // Anzahl der Streichergebnisse
             $gestricheneResultate = array_slice($streicherArray, 0, $excludeCount);
             $verbleibendeResultate = array_slice($streicherArray, $excludeCount);
 
@@ -254,7 +264,7 @@ function GetStreicher($kategorie, $year)
                 return $a['NormalizedPoints'] <=> $b['NormalizedPoints'];
             });
 
-            $excludeCount = 3; // Anzahl der Streichergebnisse
+            $excludeCount = getExcludeCount($conn, $year); // Anzahl der Streichergebnisse
             $gestricheneResultate = array_slice($streicherArray, 0, $excludeCount);
 
             foreach ($gestricheneResultate as $gestrichen) {

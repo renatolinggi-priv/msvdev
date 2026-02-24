@@ -6,7 +6,7 @@ require_once '../config.php';  // $conn
 $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
 // 1) Mitglieder laden (alle)
-$sqlM = "SELECT ID, Vorname, Name, WaffenID FROM mitglieder ORDER BY Name, Vorname";
+$sqlM = "SELECT ID, Vorname, Name, WaffenID FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
 $resM = $conn->query($sqlM);
 $members = [];
 while ($row = $resM->fetch_assoc()) {
@@ -127,9 +127,91 @@ foreach ($members as $m) {
     $tbody .= $row;
 }
 
+// 8) Mobile Cards bauen
+$mobile_cards = '<div class="mobile-cards-scroll">';
+if (empty($members)) {
+    $mobile_cards .= '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Mitglieder</div></div>';
+} else {
+    foreach ($members as $m) {
+        $mid = $m['ID'];
+        $fullname = htmlspecialchars($m['Name'].' '.$m['Vorname']);
+
+        $currentWaffe      = isset($fragebogenData[$mid]['waffenID'])  ? $fragebogenData[$mid]['waffenID']  : $m['WaffenID'];
+        $currentMannschaft = isset($fragebogenData[$mid]['mannschaft']) ? $fragebogenData[$mid]['mannschaft'] : 'nicht';
+        $currentGruppen    = isset($fragebogenData[$mid]['gruppen'])    ? $fragebogenData[$mid]['gruppen']    : 'nicht';
+
+        // Badges im Card-Header
+        $mClass = $currentMannschaft === 'teil' ? 'bg-success' : ($currentMannschaft === 'evtl' ? 'bg-warning text-dark' : 'bg-danger');
+        $gClass = $currentGruppen    === 'teil' ? 'bg-success' : ($currentGruppen    === 'evtl' ? 'bg-warning text-dark' : 'bg-danger');
+        $mText  = $currentMannschaft === 'teil' ? 'MM ✓' : ($currentMannschaft === 'evtl' ? 'MM ?' : 'MM ✗');
+        $gText  = $currentGruppen    === 'teil' ? 'GM ✓' : ($currentGruppen    === 'evtl' ? 'GM ?' : 'GM ✗');
+
+        $mobile_cards .= '<div class="mobile-card" data-mid="'.$mid.'">';
+        $mobile_cards .= '<div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">';
+        $mobile_cards .= '<span class="fw-semibold">'.$fullname.'</span>';
+        $mobile_cards .= '<div class="d-flex align-items-center gap-1">';
+        $mobile_cards .= '<span class="badge '.$mClass.' fb-badge-mannschaft" style="font-size:0.65rem">'.$mText.'</span>';
+        $mobile_cards .= '<span class="badge '.$gClass.' fb-badge-gruppen" style="font-size:0.65rem">'.$gText.'</span>';
+        $mobile_cards .= '<i class="bi bi-chevron-down ms-1"></i>';
+        $mobile_cards .= '</div>';
+        $mobile_cards .= '</div>'; // mobile-card-header
+
+        $mobile_cards .= '<div class="mobile-card-body">';
+
+        // Waffe
+        $mobile_cards .= '<div class="mobile-card-detail-row">';
+        $mobile_cards .= '<label class="mobile-card-detail-label">Waffe</label>';
+        $mobile_cards .= '<div class="mobile-card-detail-value">';
+        $mobile_cards .= '<select class="form-select form-select-sm mobile-fb-select" data-mid="'.$mid.'" data-field="waffenID">';
+        foreach ($waffen as $wf) {
+            $sel = ($wf['ID'] == $currentWaffe) ? 'selected' : '';
+            $mobile_cards .= '<option value="'.$wf['ID'].'" '.$sel.'>'.htmlspecialchars($wf['Bezeichnung']).'</option>';
+        }
+        $mobile_cards .= '</select></div></div>';
+
+        // Mannschaft
+        $mobile_cards .= '<div class="mobile-card-detail-row">';
+        $mobile_cards .= '<label class="mobile-card-detail-label">Vereinsmannschaft</label>';
+        $mobile_cards .= '<div class="mobile-card-detail-value">';
+        $mobile_cards .= '<select class="form-select form-select-sm mobile-fb-select" data-mid="'.$mid.'" data-field="mannschaft">';
+        $mobile_cards .= '<option value="teil" '.($currentMannschaft==='teil' ? 'selected' : '').'>Ja</option>';
+        $mobile_cards .= '<option value="nicht" '.($currentMannschaft==='nicht' ? 'selected' : '').'>Nein</option>';
+        $mobile_cards .= '<option value="evtl" '.($currentMannschaft==='evtl' ? 'selected' : '').'>Evtl.</option>';
+        $mobile_cards .= '</select></div></div>';
+
+        // Gruppen
+        $mobile_cards .= '<div class="mobile-card-detail-row">';
+        $mobile_cards .= '<label class="mobile-card-detail-label">Gruppenmeisterschaft</label>';
+        $mobile_cards .= '<div class="mobile-card-detail-value">';
+        $mobile_cards .= '<select class="form-select form-select-sm mobile-fb-select" data-mid="'.$mid.'" data-field="gruppen">';
+        $mobile_cards .= '<option value="teil" '.($currentGruppen==='teil' ? 'selected' : '').'>Ja</option>';
+        $mobile_cards .= '<option value="nicht" '.($currentGruppen==='nicht' ? 'selected' : '').'>Nein</option>';
+        $mobile_cards .= '<option value="evtl" '.($currentGruppen==='evtl' ? 'selected' : '').'>Evtl.</option>';
+        $mobile_cards .= '</select></div></div>';
+
+        // Erweitert-Felder
+        foreach ($defs as $df) {
+            $defID         = $df['ID'];
+            $currentAnswer = isset($extData[$mid][$defID]) ? $extData[$mid][$defID] : 'nein';
+            $mobile_cards .= '<div class="mobile-card-detail-row">';
+            $mobile_cards .= '<label class="mobile-card-detail-label">'.htmlspecialchars($df['Bezeichnung']).'</label>';
+            $mobile_cards .= '<div class="mobile-card-detail-value">';
+            $mobile_cards .= '<select class="form-select form-select-sm mobile-fb-select" data-mid="'.$mid.'" data-field="erweitert" data-defid="'.$defID.'">';
+            $mobile_cards .= '<option value="nein" '.($currentAnswer==='nein' ? 'selected' : '').'>Nein</option>';
+            $mobile_cards .= '<option value="ja"   '.($currentAnswer==='ja'   ? 'selected' : '').'>Ja</option>';
+            $mobile_cards .= '</select></div></div>';
+        }
+
+        $mobile_cards .= '</div>'; // mobile-card-body
+        $mobile_cards .= '</div>'; // mobile-card
+    }
+}
+$mobile_cards .= '</div>'; // mobile-cards-scroll
+
 // JSON ausgeben
 echo json_encode([
-    'thead' => $thead,
-    'tbody' => $tbody
+    'thead'        => $thead,
+    'tbody'        => $tbody,
+    'mobile_cards' => $mobile_cards,
 ]);
 ?>

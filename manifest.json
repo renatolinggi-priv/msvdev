@@ -1,0 +1,36 @@
+{
+  "name": "MSV Wilen",
+  "short_name": "MSV Wilen",
+  "description": "Jahresmeisterschaft - MSV Wilen Schützenverein",
+  "start_url": "./portal/dashboard.php",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#adb5bd",
+  "orientation": "portrait",
+  "lang": "de-CH",
+  "icons": [
+    {
+      "src": "./icons/icon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

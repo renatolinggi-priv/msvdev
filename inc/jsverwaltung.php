@@ -407,7 +407,7 @@ if (!isset($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-person-badge-fill me-2"></i>
@@ -446,8 +446,6 @@ if (!isset($_SESSION['csrf_token'])) {
                             </div>
                         </div>
                     </div>
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
                     <!-- Tabelle -->
                     <form id="jungschuetzenForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">

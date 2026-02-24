@@ -152,6 +152,75 @@ html, body { height:100%; overflow:hidden; }
   flex:1 1 auto;
   min-height:0 !important;
 }
+
+/* =========================================
+   Mobile Cards Optimierung
+   ========================================= */
+@media (max-width: 767.98px) {
+  /* Desktop-Tabelle ausblenden, Mobile Cards einblenden */
+  .desktop-table-container { display: none !important; }
+  .mobile-cards-container { display: flex !important; }
+
+  /* WCAG AAA Touch Targets: Alle Form-Elemente */
+  .form-control,
+  .form-select,
+  input[type=\"text\"],
+  input[type=\"number\"],
+  select {
+    min-height: 48px !important;
+    font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+  }
+
+  .btn {
+    min-height: 48px !important;
+    font-size: 16px !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  /* Mobile Inputs: WCAG AAA touch targets + iOS zoom prevention */
+  .mobile-card-body .small-input-mobile {
+    min-height: 48px !important;
+    font-size: 16px !important;
+    padding: 0.5rem !important;
+    text-align: center !important;
+    font-weight: 500 !important;
+  }
+
+  /* Mobile Card Body: bessere Abstände */
+  .mobile-card-body .mb-3 {
+    margin-bottom: 1rem !important;
+  }
+
+  .mobile-card-body .form-label {
+    margin-bottom: 0.35rem !important;
+    color: #475569 !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Detail Rows (readonly Felder): kompakter */
+  .mobile-card-detail-row {
+    padding: 0.5rem 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  .mobile-card-detail-label {
+    font-size: 0.875rem !important;
+    color: #64748b !important;
+  }
+
+  .mobile-card-detail-value {
+    font-size: 0.95rem !important;
+    color: #1e293b !important;
+  }
+
+  /* Buttons: größere Touch-Targets */
+  .button-toolbar .btn {
+    min-height: 48px !important;
+    font-size: 0.95rem !important;
+  }
+
+
+}
 ";
 
 include 'header.inc.php';
@@ -161,7 +230,6 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 ?>
-<link rel="stylesheet" href="../css/fixes/resultate-unified.css">
 <link rel="stylesheet" href="../css/fixes/table-title-and-firstcol-override.css">
 <div class="container-fluid">
     <div class="row">
@@ -169,7 +237,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-trophy me-2"></i>
@@ -184,49 +252,70 @@ if (empty($_SESSION['csrf_token'])) {
                         <input type="hidden" name="csrf_token"
                             value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr-Auswahl in eigener Card -->
-                        <div class="year-selection-card">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <label for="yearSelect" class="form-label fw-bold">
-                                        <i class="bi bi-calendar3 me-1"></i>Jahr auswählen:
-                                    </label>
-                                    <select id="yearSelect" class="form-select">
-                                        <!-- Optionen werden per JavaScript eingefügt -->
-                                    </select>
+                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                        </div>
+
+                        <!-- Aktionsbereich (Bootstrap Collapse) -->
+                        <div class="card action-card mb-0">
+                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                                 data-bs-toggle="collapse" data-bs-target="#jmresultateActions"
+                                 aria-expanded="false" aria-controls="jmresultateActions">
+                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                                <i class="bi bi-chevron-down action-chevron"></i>
+                            </div>
+                            <div class="collapse" id="jmresultateActions">
+                                <div class="card-body pt-2 pb-3 px-3">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="bi bi-save me-2"></i>Ergebnisse speichern
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button id="redirect-btn" type="button" class="btn btn-outline-success w-100">
+                                                <i class="bi bi-trophy me-1"></i>Rangliste
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button id="delete-btn" type="button" class="btn btn-outline-danger w-100">
+                                                <i class="bi bi-trash me-1"></i>Löschen
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Button Toolbar -->
-                        <div class="button-toolbar">
-                            <div class="button-group">
-                                <button id="redirect-btn" type="button"
-                                    class="btn btn-compact-standard btn-outline-success">
-                                    <i class="bi bi-trophy me-2"></i>
-                                    Rangliste
-                                </button>
-                                <button type="submit" class="btn btn-compact-standard btn-outline-primary">
-                                    <i class="bi bi-save me-2"></i>
-                                    Ergebnisse speichern
-                                </button>
-                                <button id="delete-btn" type="button"
-                                    class="btn btn-compact-standard btn-outline-danger">
-                                    <i class="bi bi-trash me-2"></i>
-                                    Aktuelle Resultate löschen
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Nachrichten Container -->
-                        <div id="message"></div>
+                        </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Tabelle -->
                         <div class="table-wrapper">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="jmresultateTabelle">
-                                    <!-- Tabelleninhalte werden dynamisch geladen -->
-                                </table>
+                            <!-- Desktop: Tabelle -->
+                            <div class="desktop-table-container">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="jmresultateTabelle">
+                                        <!-- Tabelleninhalte werden dynamisch geladen -->
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Mobile: Cards -->
+                            <div class="mobile-cards-container" id="mobileCardsJMResultate">
+                                <div class="mobile-search">
+                                    <div class="position-relative">
+                                        <i class="bi bi-search search-icon"></i>
+                                        <input type="text" class="form-control" placeholder="Mitglied suchen..."
+                                               oninput="filterMobileJM(this)">
+                                    </div>
+                                </div>
+                                <div class="mobile-cards-scroll">
+                                    <!-- Cards werden per JavaScript generiert -->
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -327,7 +416,7 @@ function sizeJMTable() {
 
     $(function () {
         var currentYear = new Date().getFullYear();
-        var startYear = 2024;
+        var startYear = currentYear - 3;
         var basePath = '';
         var $yearDD = $('#yearSelect');
 
@@ -399,6 +488,9 @@ function sizeJMTable() {
 
                     // <<< WICHTIG: nach dem Einfügen neu berechnen
                     afterJMRowsInserted();
+
+                    // Mobile Cards generieren
+                    buildMobileJMCards();
                 })
                 .fail(function () {
                     $('#jmresultateTabelle').html(
@@ -526,6 +618,163 @@ function sizeJMTable() {
     document.body.style.cursor = '';
   });
 }
+
+        // Mobile Cards für JM-Resultate generieren
+        function buildMobileJMCards() {
+            const isMobile = window.matchMedia('(max-width: 767.98px)');
+            if (!isMobile.matches) return;
+
+            const table = document.getElementById('jmresultateTabelle');
+            const container = document.querySelector('#mobileCardsJMResultate .mobile-cards-scroll');
+            if (!table || !container) return;
+
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            if (!thead || !tbody) {
+                container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+                return;
+            }
+
+            // Headers extrahieren
+            const headers = Array.from(thead.querySelectorAll('th')).map(th => th.textContent.trim());
+            const rows = tbody.querySelectorAll('tr');
+
+            if (rows.length === 0) {
+                container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+                return;
+            }
+
+            let html = '';
+            rows.forEach((row, idx) => {
+                const cells = Array.from(row.querySelectorAll('td'));
+                if (cells.length === 0) return;
+
+                // Erste Zelle: Mitgliedername
+                const memberName = cells[0]?.textContent?.trim() || 'Unbekannt';
+
+                // Felder sammeln (alle außer erste Spalte)
+                let fieldsHtml = '';
+                let summaryTotal = '';
+
+                cells.forEach((cell, colIdx) => {
+                    if (colIdx === 0) return; // Name überspringen
+
+                    const label = headers[colIdx] || `Spalte ${colIdx}`;
+                    const input = cell.querySelector('input');
+                    const isReadonly = input && input.hasAttribute('readonly');
+                    const value = input ? input.value : cell.textContent.trim();
+
+                    // Wenn readonly und letzte Spalte: als Summary behandeln
+                    if (isReadonly && colIdx === cells.length - 1) {
+                        summaryTotal = `<small class="text-muted">Total: <strong>${value}</strong></small>`;
+                        return;
+                    }
+
+                    if (input) {
+                        // Input-Feld mit gleichem Namen wie Desktop
+                        const inputName = input.name || '';
+                        const inputType = input.type || 'text';
+                        const inputValue = input.value || '';
+
+                        if (isReadonly) {
+                            // Readonly Feld (berechnete Werte)
+                            fieldsHtml += `
+                                <div class="mobile-card-detail-row">
+                                    <span class="mobile-card-detail-label">${label}</span>
+                                    <span class="mobile-card-detail-value"><strong>${inputValue}</strong></span>
+                                </div>`;
+                        } else {
+                            // Editierbares Input-Feld (data-name statt name, um Duplikate zu vermeiden)
+                            fieldsHtml += `
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small">${label}</label>
+                                    <input type="${inputType}"
+                                           class="form-control small-input-mobile"
+                                           data-name="${inputName}"
+                                           value="${inputValue}"
+                                           inputmode="numeric"
+                                           pattern="[0-9]*">
+                                </div>`;
+                        }
+                    } else if (value) {
+                        // Readonly Wert ohne Input (z.B. berechnete Felder)
+                        fieldsHtml += `
+                            <div class="mobile-card-detail-row">
+                                <span class="mobile-card-detail-label">${label}</span>
+                                <span class="mobile-card-detail-value"><strong>${value}</strong></span>
+                            </div>`;
+                    }
+                });
+
+                html += `
+                <div class="mobile-card" data-index="${idx}">
+                    <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+                        <div>
+                            <div class="fw-bold">${memberName}</div>
+                            ${summaryTotal}
+                        </div>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="mobile-card-body">
+                        ${fieldsHtml}
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+
+            // Event-Listener für Inputs: Werte zurück in Desktop-Tabelle schreiben
+            container.querySelectorAll('input[data-name]').forEach(input => {
+                input.addEventListener('input', function() {
+                    // Finde das entsprechende Desktop-Input anhand des data-name Attributs
+                    const inputName = this.getAttribute('data-name');
+                    const desktopInput = table.querySelector(`input[name="${inputName}"]`);
+                    if (desktopInput) {
+                        desktopInput.value = this.value;
+                        // Trigger change event für Autosave/isDirty-Tracking
+                        $(desktopInput).trigger('input');
+                    }
+                });
+            });
+        }
+
+        // Mobile Search Filter (global für inline oninput)
+        window.filterMobileJM = function(searchInput) {
+            const query = searchInput.value.toLowerCase();
+            const cards = document.querySelectorAll('#mobileCardsJMResultate .mobile-card');
+
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const isVisible = text.includes(query);
+                card.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+
+            // Empty State
+            const container = document.querySelector('#mobileCardsJMResultate .mobile-cards-scroll');
+            const existingEmpty = container.querySelector('.mobile-cards-empty');
+            if (visibleCount === 0 && !existingEmpty) {
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="mobile-cards-empty">
+                        <i class="bi bi-search"></i>
+                        <div>Keine Treffer gefunden</div>
+                    </div>`);
+            } else if (visibleCount > 0 && existingEmpty) {
+                existingEmpty.remove();
+            }
+        }
+
+        // Resize-Listener: Cards neu generieren bei Wechsel zu Mobile
+        let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
+        window.addEventListener('resize', debounce(function() {
+            const isNowDesktop = window.matchMedia('(min-width: 768px)').matches;
+            if (wasDesktop && !isNowDesktop) {
+                // Von Desktop zu Mobile gewechselt
+                buildMobileJMCards();
+            }
+            wasDesktop = isNowDesktop;
+        }, 250));
 
         function debounce(fn, wait) { let t; return function () { clearTimeout(t); t = setTimeout(() => fn.apply(this, arguments), wait); }; }
     });

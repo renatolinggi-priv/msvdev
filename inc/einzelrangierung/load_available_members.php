@@ -12,9 +12,10 @@ if ($conn->connect_error) {
 
 try {
     // Alle aktiven Mitglieder laden
-    $sql = "SELECT ID, Name, Vorname 
-            FROM mitglieder 
-            WHERE status = 1 
+    $sql = "SELECT ID, Name, Vorname
+            FROM mitglieder
+            WHERE status = 1
+              AND Verstorben = 0
             ORDER BY Name ASC, Vorname ASC";
     
     $stmt = $conn->prepare($sql);

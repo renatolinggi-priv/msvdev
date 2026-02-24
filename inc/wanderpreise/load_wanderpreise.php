@@ -39,7 +39,9 @@ try {
     $result = $conn->query($sql);
     
     if ($result && $result->num_rows > 0) {
-        echo '<table class="table table-hover">
+        // Desktop: Tabelle
+        echo '<div class="desktop-table-container">';
+        echo '<table class="table table-hover" id="wanderpreiseTable">
                 <thead>
                     <tr>
                         <th>Wanderpreis</th>
@@ -112,7 +114,21 @@ try {
         }
         
         echo '</tbody></table>';
-        
+        echo '</div>'; // Ende desktop-table-container
+
+        // Mobile: Cards
+        echo '<div class="mobile-cards-container" id="mobileWanderpreiseCards">';
+        echo '<div class="mobile-search">';
+        echo '<div class="position-relative">';
+        echo '<i class="bi bi-search search-icon"></i>';
+        echo '<input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileWanderpreise(this)">';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="mobile-cards-scroll">';
+        echo '<!-- Cards werden per JavaScript generiert -->';
+        echo '</div>';
+        echo '</div>';
+
         // Zusammenfassung
         $result->data_seek(0); // Reset result pointer
         $total_count = $result->num_rows;

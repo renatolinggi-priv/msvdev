@@ -121,7 +121,8 @@ $page_specific_css = "
 #mitgliederTable th:nth-child(9), #mitgliederTable td:nth-child(9) { min-width: 100px; } /* Telefon */
 #mitgliederTable th:nth-child(10), #mitgliederTable td:nth-child(10) { min-width: 60px; } /* Aktiv */
 #mitgliederTable th:nth-child(11), #mitgliederTable td:nth-child(11) { min-width: 60px; } /* Ehre */
-#mitgliederTable th:nth-child(12), #mitgliederTable td:nth-child(12) { min-width: 60px; } /* Aktionen */
+#mitgliederTable th:nth-child(12), #mitgliederTable td:nth-child(12) { min-width: 60px; } /* Verstorben */
+#mitgliederTable th:nth-child(13), #mitgliederTable td:nth-child(13) { min-width: 60px; } /* Aktionen */
 
 /* === KOMPAKTERE TABELLE === */
 #mitgliederTable th,
@@ -544,7 +545,7 @@ if (!isset($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-people-fill me-2"></i>
@@ -557,8 +558,8 @@ if (!isset($_SESSION['csrf_token'])) {
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
                     <!-- Action Toolbar -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
+                    <div class="row mb-2 mb-md-4">
+                        <div class="col-md-6 d-none d-md-block">
                             <div class="search-wrapper">
                                 <div class="input-group">
                                     <span class="input-group-text">
@@ -593,20 +594,20 @@ if (!isset($_SESSION['csrf_token'])) {
                         </div>
                     </div>
 
-                    <!-- Nachrichten Container -->
-                    <div id="message"></div>
-
                     <!-- Tabelle -->
                     <form id="mitgliederForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                         <div class="table-wrapper">
-                            <h5 class="table-title">
+                            <h5 class="table-title d-none d-md-block">
                                 <i class="bi bi-people me-2"></i>
                                 Mitglieder
                             </h5>
-                            <div class="table-container">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0" id="mitgliederTable">
+
+                            <!-- Desktop: Tabelle -->
+                            <div class="desktop-table-container">
+                                <div class="table-container">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0" id="mitgliederTable">
                                     <thead>
                                         <tr>
                                             <th scope="col">
@@ -622,6 +623,7 @@ if (!isset($_SESSION['csrf_token'])) {
                                             <th scope="col">Telefon</th>
                                             <th scope="col" class="text-center">Aktiv</th>
                                             <th scope="col" class="text-center">Ehre</th>
+                                            <th scope="col" class="text-center">Verst.</th>
                                             <th scope="col" class="text-center">Aktionen</th>
                                         </tr>
                                     </thead>
@@ -634,6 +636,21 @@ if (!isset($_SESSION['csrf_token'])) {
                                         </tr>
                                     </tbody>
                                     </table>
+                                </div>
+                            </div>
+                            </div>
+
+                            <!-- Mobile: Cards -->
+                            <div class="mobile-cards-container" id="mobileMitgliederContainer">
+                                <div class="mobile-search">
+                                    <div class="position-relative">
+                                        <i class="bi bi-search search-icon"></i>
+                                        <input type="text" class="form-control" placeholder="Mitglieder suchen..."
+                                               oninput="filterMobileMitglieder(this)">
+                                    </div>
+                                </div>
+                                <div class="mobile-cards-scroll" id="mobileMitgliederCards">
+                                    <!-- Cards werden per JavaScript generiert -->
                                 </div>
                             </div>
                         </div>
@@ -798,7 +815,7 @@ if (!isset($_SESSION['csrf_token'])) {
                         <i class="bi bi-info-circle me-2"></i>CSV Format
                     </h6>
                     <p class="mb-2">Die Datei sollte folgende Spalten enthalten (Trennzeichen: Semikolon):</p>
-                    <code class="d-block p-2 bg-light rounded">ID;Vorname;Name;Geburtsdatum;WaffenID;Status;Ehrenmitglied;Strasse;PLZ;Ort;Email;Telefon;Mobile;Notizen</code>
+                    <code class="d-block p-2 bg-light rounded">ID;Vorname;Name;Geburtsdatum;WaffenID;Status;Ehrenmitglied;Strasse;PLZ;Ort;Email;Telefon;Mobile;Notizen;Verstorben</code>
                 </div>
                 
                 <div class="import-area" id="dropZone">
@@ -876,6 +893,8 @@ $(document).ready(function () {
             success: function(data) {
                 $('#mitgliederTbody').html(data);
                 msvToast('Mitglieder erfolgreich geladen', 'success');
+                // Mobile Cards generieren
+                buildMobileMitgliederCards();
             },
             error: function(xhr, status, error) {
                 console.error('Fehler beim Laden der Mitglieder:', error);
@@ -1042,7 +1061,15 @@ $(document).ready(function () {
     // Mitglied löschen
     async function handleDeleteMember() {
         const id = $(this).data('id');
-        const memberName = $(this).closest('tr').find('td:nth-child(2)').text() + ' ' + $(this).closest('tr').find('td:nth-child(3)').text();
+        // Desktop: Name aus Tabellenzellen; Mobile: Name aus Card-Header
+        let memberName = '';
+        const $tr = $(this).closest('tr');
+        if ($tr.length) {
+            memberName = $tr.find('td:nth-child(2)').text() + ' ' + $tr.find('td:nth-child(3)').text();
+        } else {
+            const $card = $(this).closest('.mobile-card');
+            memberName = $card.find('.mobile-card-header .fw-bold').text();
+        }
 
         const result = await msvConfirmDelete(`Mitglied "${memberName}"`);
         if (!result.isConfirmed) return;
@@ -1186,6 +1213,213 @@ $(document).ready(function () {
     }
 
 });
+
+// === MOBILE OPTIMIERUNG ===
+function buildMobileMitgliederCards() {
+    const isMobile = window.matchMedia('(max-width: 767.98px)');
+    if (!isMobile.matches) return;
+
+    const container = document.getElementById('mobileMitgliederCards');
+    if (!container) return;
+
+    const tbody = document.querySelector('#mitgliederTable tbody');
+    const rows = tbody.querySelectorAll('tr');
+
+    let html = '';
+    rows.forEach((row, idx) => {
+        const inputs = row.querySelectorAll('input, select');
+        if (inputs.length < 13) return; // Skip loading rows
+
+        // Daten extrahieren
+        const id = inputs[0].value || '';
+        const name = inputs[1].value || '';
+        const vorname = inputs[2].value || '';
+        const geburtsdatum = inputs[3].value || '';
+        const waffenSelect = inputs[4];
+        const strasse = inputs[5].value || '';
+        const plz = inputs[6].value || '';
+        const ort = inputs[7].value || '';
+        const email = inputs[8].value || '';
+        const telefon = inputs[9].value || '';
+        const aktiv = inputs[10].checked;
+        const ehre = inputs[11].checked;
+        const verstorben = inputs[12].checked;
+
+        const waffentext = waffenSelect.options[waffenSelect.selectedIndex]?.text || '';
+
+        // Card HTML generieren
+        html += `
+        <div class="mobile-card" data-member-id="${id}">
+            <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+                <div>
+                    <div class="fw-bold">${name} ${vorname}</div>
+                    <small class="text-muted">Lizenz: ${id} | ${waffentext}</small>
+                    <div class="mt-1">
+                        <span class="badge ${aktiv ? 'bg-success' : 'bg-secondary'} me-1">
+                            ${aktiv ? '✓ Aktiv' : 'Inaktiv'}
+                        </span>
+                        ${ehre ? '<span class="badge bg-warning text-dark me-1">★ Ehrenmitglied</span>' : ''}
+                        ${verstorben ? '<span class="badge bg-dark">† Verstorben</span>' : ''}
+                    </div>
+                </div>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="mobile-card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Vorname</label>
+                    <input type="text" class="form-control" name="${inputs[2].name}" value="${vorname}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Name</label>
+                    <input type="text" class="form-control" name="${inputs[1].name}" value="${name}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Lizenznummer</label>
+                    <input type="text" class="form-control" name="${inputs[0].name}" value="${id}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Geburtsdatum</label>
+                    <input type="date" class="form-control" name="${inputs[3].name}" value="${geburtsdatum}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Waffe</label>
+                    <select class="form-select" name="${waffenSelect.name}">
+                        ${Array.from(waffenSelect.options).map(opt =>
+                            `<option value="${opt.value}" ${opt.selected ? 'selected' : ''}>${opt.text}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Strasse</label>
+                    <input type="text" class="form-control" name="${inputs[5].name}" value="${strasse}">
+                </div>
+                <div class="row">
+                    <div class="col-4 mb-3">
+                        <label class="form-label fw-bold">PLZ</label>
+                        <input type="text" class="form-control" name="${inputs[6].name}" value="${plz}">
+                    </div>
+                    <div class="col-8 mb-3">
+                        <label class="form-label fw-bold">Ort</label>
+                        <input type="text" class="form-control" name="${inputs[7].name}" value="${ort}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Email</label>
+                    <input type="email" class="form-control" name="${inputs[8].name}" value="${email}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Telefon</label>
+                    <input type="tel" class="form-control" name="${inputs[9].name}" value="${telefon}">
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="${inputs[10].name}" value="1" ${aktiv ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold">Aktives Mitglied</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="${inputs[11].name}" value="1" ${ehre ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold">Ehrenmitglied</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="${inputs[12].name}" value="1" ${verstorben ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold">Verstorben</label>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-danger w-100 deleteMitglied" data-id="${id}">
+                    <i class="bi bi-trash me-2"></i>Mitglied löschen
+                </button>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html || '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Mitglieder vorhanden</div></div>';
+}
+
+function filterMobileMitglieder(input) {
+    const query = input.value.toLowerCase();
+    const cards = document.querySelectorAll('#mobileMitgliederCards .mobile-card');
+
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? '' : 'none';
+    });
+}
+
+// Responsive: Cards bei Resize neu generieren
+const isMobile = window.matchMedia('(max-width: 767.98px)');
+isMobile.addEventListener('change', function() {
+    if (isMobile.matches) {
+        buildMobileMitgliederCards();
+    }
+});
 </script>
+
+<style>
+/* Mobile-Optimierung für Mitgliederverwaltung */
+@media (max-width: 767.98px) {
+    /* WCAG AAA Touch Targets: Alle Form-Elemente */
+    .form-control,
+    .form-select {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+    }
+
+    /* Alle Buttons */
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Modal Buttons */
+    .modal-footer .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Inputs in Mobile Cards größer */
+    .mobile-card-body .form-control,
+    .mobile-card-body .form-select {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Form-Switches größer */
+    .mobile-card-body .form-check-input {
+        width: 3em !important;
+        height: 1.5em !important;
+    }
+
+    /* Löschen-Button prominent */
+    .mobile-card-body .deleteMitglied {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+        margin-top: 1rem;
+    }
+
+    /* Labels bold */
+    .mobile-card-body .form-label {
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Search Input */
+    .search-wrapper .form-control {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    /* Compact Action Buttons im Header */
+    .btn-compact-standard {
+        min-height: 48px !important;
+        font-size: 14px !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+}
+</style>
 
 <?php include 'footer.inc.php'; ?>

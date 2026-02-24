@@ -22,22 +22,23 @@ WITH winners AS (
 
     UNION ALL
 
-    -- 3er-Paarungen: Die besten 2
+    -- 3er-Paarungen: Die besten 2 (negative ManualWinner = ausgeschieden)
     SELECT winner_id FROM (
         SELECT
             participant_id as winner_id,
             ROW_NUMBER() OVER (PARTITION BY pair_id ORDER BY result DESC, lowshot DESC) as rn
         FROM (
-            SELECT ID as pair_id, Participant1 as participant_id, Result1 as result, LowShot1 as lowshot
-            FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
+            SELECT cp.ID as pair_id, cp.Participant1 as participant_id, cp.Result1 as result, cp.LowShot1 as lowshot, cp.ManualWinner
+            FROM cupPairs cp WHERE cp.Round = 1 AND cp.Year = ? AND cp.Participant3 IS NOT NULL
             UNION ALL
-            SELECT ID as pair_id, Participant2 as participant_id, Result2 as result, LowShot2 as lowshot
-            FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
+            SELECT cp.ID as pair_id, cp.Participant2 as participant_id, cp.Result2 as result, cp.LowShot2 as lowshot, cp.ManualWinner
+            FROM cupPairs cp WHERE cp.Round = 1 AND cp.Year = ? AND cp.Participant3 IS NOT NULL
             UNION ALL
-            SELECT ID as pair_id, Participant3 as participant_id, Result3 as result, LowShot3 as lowshot
-            FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
+            SELECT cp.ID as pair_id, cp.Participant3 as participant_id, cp.Result3 as result, cp.LowShot3 as lowshot, cp.ManualWinner
+            FROM cupPairs cp WHERE cp.Round = 1 AND cp.Year = ? AND cp.Participant3 IS NOT NULL
         ) as all_participants
         WHERE result IS NOT NULL
+          AND NOT (ManualWinner < 0 AND participant_id = ABS(ManualWinner))
     ) ranked
     WHERE rn <= 2
 )

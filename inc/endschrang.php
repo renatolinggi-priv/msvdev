@@ -31,6 +31,24 @@ include 'header.inc.php';
     overflow: hidden;
 }
 
+/* Mobile-Optimierung (WCAG AAA Touch Targets) */
+@media (max-width: 767.98px) {
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="number"],
+    select {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+    }
+
+    .btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        padding: 0.5rem 1rem !important;
+    }
+}
+
 </style>
 
 <!-- Header -->
@@ -40,7 +58,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4">
+                <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-trophy me-2"></i>
@@ -51,17 +69,13 @@ include 'header.inc.php';
                 <!-- Weißer Container für den Rest -->
                 <div class="content-background">
                 <!-- Jahr-Auswahl -->
-                <div class="year-selection-card">
-                    <div class="row align-items-center">
-                        <div class="col-md-5">
-                            <label for="yearSelect" class="form-label fw-bold">
-                                <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                            </label>
-                            <select id="yearSelect" class="form-select">
-                                <!-- Optionen werden per JavaScript eingefügt -->
-                            </select>
-                        </div>
-                    </div>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                        <i class="bi bi-calendar3 me-1"></i>Jahr:
+                    </label>
+                    <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                        <!-- Optionen werden per JavaScript eingefügt -->
+                    </select>
                 </div>
                 <!-- Dashboard Kachel-Grid -->
                 <div class="row g-2 mb-4">
@@ -154,6 +168,8 @@ include 'header.inc.php';
                 <div class="table-wrapper mb-4">
                     <h5 class="table-title">Endschiessen Kat. A</h5>
                     <div class="table-responsive">
+                    <div class="desktop-table-container">
+                    <div class="table-responsive">
                         <table class="table table-bordered mb-0" id="EndA">
                             <thead>
                                 <tr>
@@ -173,10 +189,21 @@ include 'header.inc.php';
                             </tbody>
                         </table>
                     </div>
+                    </div>
+                    <!-- Mobile Cards Container -->
+                    <div class="mobile-cards-container" id="mobileCardsEndA">
+                        <div class="mobile-search-container">
+                            <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
+                        </div>
+                        <div class="mobile-scroll-container">
+                            <!-- Cards werden hier eingefügt -->
+                        </div>
+                    </div>
                 </div>
                 <!-- Tabellenbereich Kat. B -->
                 <div class="table-wrapper mb-4">
                     <h5 class="table-title">Endschiessen Kat. B</h5>
+                    <div class="desktop-table-container">
                     <div class="table-responsive">
                         <table class="table table-bordered mb-0" id="EndB">
                             <thead>
@@ -198,7 +225,15 @@ include 'header.inc.php';
                         </table>
                     </div>
                     </div>
-                </div>
+                    <!-- Mobile Cards Container -->
+                    <div class="mobile-cards-container" id="mobileCardsEndB">
+                        <div class="mobile-search-container">
+                            <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
+                        </div>
+                        <div class="mobile-scroll-container">
+                            <!-- Cards werden hier eingefügt -->
+                        </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -221,7 +256,7 @@ $(document).ready(function () {
     function initializeYearDropdown() {
         const yearSelect = $('#yearSelect').empty();
         const currentYear = new Date().getFullYear();
-        for (let year = 2024; year <= currentYear; year++) {
+        for (let year = currentYear; year >= currentYear - 3; year--) {
             const option = $('<option></option>').val(year).text(year);
             if (year === currentYear) {
                 option.prop('selected', true);
@@ -242,6 +277,7 @@ $(document).ready(function () {
             },
             success: function (response) {
                 $('#EndA tbody').html(response);
+                buildMobileCardsEndA();
                 msvToast('Kategorie A geladen', 'success');
             },
             error: function(xhr, status, error) {
@@ -262,6 +298,7 @@ $(document).ready(function () {
             },
             success: function (response) {
                 $('#EndB tbody').html(response);
+                buildMobileCardsEndB();
                 msvToast('Kategorie B geladen', 'success');
             },
             error: function(xhr, status, error) {
@@ -393,6 +430,29 @@ $(document).ready(function () {
     loadenda();
     loadendb();
 });
+
+
+    // Mobile Cards Builder für Kategorie A
+    function buildMobileCardsEndA() {
+        MSVMobileCards.initResponsive({
+            tableId: 'EndA',
+            mobileContainerId: 'mobileCardsEndA',
+            titleColumns: [0, 1],
+            summaryColumns: [8],
+            rankColumn: 0
+        });
+    }
+
+    // Mobile Cards Builder für Kategorie B
+    function buildMobileCardsEndB() {
+        MSVMobileCards.initResponsive({
+            tableId: 'EndB',
+            mobileContainerId: 'mobileCardsEndB',
+            titleColumns: [0, 1],
+            summaryColumns: [8],
+            rankColumn: 0
+        });
+    }
 
 </script>
 

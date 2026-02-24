@@ -162,7 +162,7 @@ $csrf = $_SESSION['csrf_token'];
   <div class="container">
     <div class="d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center gap-3">
-        <a href="https://jahresmeisterschaft.msvwilen.ch/inc/home.php" class="btn btn-outline-secondary">
+        <a href="../inc/home.php" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left me-2"></i>Zurück zur Startseite
         </a>
         <h1 class="h4 m-0">
@@ -196,9 +196,9 @@ $csrf = $_SESSION['csrf_token'];
       <div class="mt-2">
         <strong>So funktioniert's:</strong>
         <ul class="mb-0 mt-1">
-          <li>ðŸ”½ <strong>Verschieben:</strong> Ziehe am â‰¡ Symbol für die Reihenfolge</li>
-          <li>â¬…ï¸ <strong>Pfeil links:</strong> Eine Ebene höher verschieben</li>
-          <li>âž¡ï¸ <strong>Pfeil rechts:</strong> Als Unterpunkt des Elements darüber</li>
+          <li>&#x2630; <strong>Verschieben:</strong> Ziehe am &#x2261; Symbol für die Reihenfolge</li>
+          <li>&#x2B05;&#xFE0F; <strong>Pfeil links:</strong> Eine Ebene höher verschieben</li>
+          <li>&#x27A1;&#xFE0F; <strong>Pfeil rechts:</strong> Als Unterpunkt des Elements darüber</li>
         </ul>
         <div class="mt-2 alert alert-warning mb-0">
           <small><strong>Wichtig:</strong> Änderungen werden erst gespeichert, wenn du oben auf "Reihenfolge speichern" klickst!</small>
@@ -373,13 +373,11 @@ function loadItems() {
 
       // Backup für Cancel-Funktion
       originalItems = JSON.parse(JSON.stringify(allItems));
-      console.log('Loaded items:', allItems);
       renderList();
       fillParentSelect();
       showSaveButtons(false);
     })
     .catch(err => {
-      console.error('Load error:', err);
       msvToast('Fehler beim Laden: ' + err.message, 'error');
     });
 }
@@ -445,14 +443,6 @@ function renderList() {
   rootItems
     .sort((a, b) => (a.SortOrder || 0) - (b.SortOrder || 0))
     .forEach(item => buildFlatList(item, 0));
-
-  // Debug-Info
-  console.log('Flat list with levels:', flatList.map(i => ({
-    id: i.ID,
-    text: i.Text,
-    parent: i.ParentID,
-    level: i.level
-  })));
 
   // Render alle Items mit korrekter Einrückung
   flatList.forEach((item, index) => {
@@ -644,8 +634,6 @@ function updateItemPositionLocally(itemId, newParentId, newIndex) {
       sibling.SortOrder = idx * 10;
     });
   }
-  console.log(`Moved item ${itemId} to position ${actualIndex} under parent ${newParentId}`);
-
   // Neu rendern
   renderList();
 }
@@ -726,8 +714,6 @@ function buildDebugTree() {
       const parent = itemMap.get(item.ParentID);
       if (parent) {
         parent.children.push(item);
-      } else {
-        console.warn(`Item ${item.ID} (${item.Text}) hat Parent ${item.ParentID} der nicht existiert!`);
       }
     }
   });
@@ -774,20 +760,7 @@ $(function() {
   delModal = new bootstrap.Modal('#deleteModal');
 
   // Initial laden
-  loadItems().then(() => {
-
-    // Debug: Zeige Hierarchie in der Konsole
-    console.log('=== Navigation Hierarchie ===');
-    const tree = buildDebugTree();
-    console.log(tree);
-
-    // Prüfe ob Styles geladen wurden
-    const testItem = document.querySelector('.sortable-item.indent-1');
-    if (testItem) {
-      const style = window.getComputedStyle(testItem);
-      console.log('Einrückung Level 1:', style.marginLeft);
-    }
-  });
+  loadItems();
 
   // Refresh Button
   $('#btnRefresh').on('click', async () => {
@@ -868,7 +841,7 @@ $(function() {
       }
       modal.hide();
       allItems = res.items;
-      renderTree();
+      renderList();
       msvToast(action === 'create' ? 'Eintrag erstellt' : 'Änderungen gespeichert', 'success');
     }, 'json');
   });
@@ -885,7 +858,7 @@ $(function() {
       }
       delModal.hide();
       allItems = res.items;
-      renderTree();
+      renderList();
       msvToast('Eintrag gelöscht', 'success');
     }, 'json');
   });

@@ -172,6 +172,13 @@ $page_specific_css = <<<'CSS'
 }
 .btn-compact { padding: .45rem .75rem; font-size: .875rem; }
 
+/* --- Aktions-Card (einklappbar) --- */
+.action-card { border-color: #e2e8f0; }
+.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; }
+.action-card-header:hover { background-color: #f1f5f9; }
+.action-chevron { transition: transform .2s ease; }
+.action-card-header[aria-expanded="true"] .action-chevron { transform: rotate(180deg); }
+
 /* --- Kompakter Tabellenmodus (optional) --- */
 .table--compact { font-size: .92rem; }
 .table--compact th, .table--compact td { padding: .55rem .6rem; }
@@ -244,10 +251,28 @@ $page_specific_css = <<<'CSS'
     box-shadow: none !important;
   }
 
-  /* Schrift & Abstände kompakter, Touch-Ziele größer */
+  /* Schrift & Abstände kompakter, Touch-Ziele größer (WCAG AAA: 48px) */
   #jmdefinitionTabelle { font-size: .93rem; }
   #jmdefinitionTabelle th, #jmdefinitionTabelle td { padding: .5rem .6rem; }
-  .btn, .form-check-input { min-height: 44px; min-width: 44px; }
+  .btn, .form-check-input { min-height: 48px; min-width: 48px; font-size: 16px !important; }
+
+  /* Alle Form-Elemente: 48px Touch Target + 16px Font (verhindert iOS Auto-Zoom) */
+  input[type="text"],
+  input[type="number"],
+  textarea,
+  .form-control,
+  .form-select {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  /* Spezifisch für Tabellen-Inputs */
+  #jmdefinitionTabelle input[type="text"],
+  #jmdefinitionTabelle input[type="number"],
+  #jmdefinitionTabelle textarea {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
 
   /* Weniger wichtige Spalten ausblenden (Zuschlag + Checkbox-Spalten) */
   /* sichtÂ­bar bleiben: 1=Nr, 2=Bezeichnung, 4=Schiesstage, 11=Aktion */
@@ -311,6 +336,44 @@ $page_specific_css = <<<'CSS'
   .modal-content { height: 100%; border-radius: 0; }
 }
 
+/* === Mobile Card Edit Layout (JM Definition) === */
+.jm-edit-body {
+  padding: 0.75rem 1rem 1rem !important;
+}
+.jm-field-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+.jm-edit-body textarea {
+  width: 100% !important;
+  min-height: 3rem !important;
+  max-height: 8rem;
+  font-size: 15px !important;
+  resize: vertical;
+}
+.jm-edit-body input[type="text"],
+.jm-edit-body input[type="number"] {
+  width: 100% !important;
+  font-size: 15px !important;
+}
+.jm-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+.jm-check-row .form-check-input {
+  min-width: 22px !important;
+  min-height: 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
 CSS;
 
 /* Header bindet $page_specific_css ein */
@@ -326,9 +389,9 @@ if (empty($_SESSION['csrf_token'])) {
   <div class="row">
     <div class="col-xl-12 col-lg-11 col-12 ps-0">
       <div class="main-content-wrapper">
-        <div class="row mb-4">
+        <div class="row mb-4 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary);">
+            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
               <i class="bi bi-trophy me-2"></i>Jahresmeisterschaft Definition
             </h2>
           </div>
@@ -338,78 +401,84 @@ if (empty($_SESSION['csrf_token'])) {
           <form id="jmdefinitionForm">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-            <!-- Jahr-Auswahl -->
-            <div class="year-selection-card">
-              <div class="row align-items-center">
-                <div class="col-md-5">
-                  <label for="yearSelect" class="form-label fw-bold">
-                    <i class="bi bi-calendar3 me-1"></i> Jahr auswählen:
-                  </label>
-                  <select id="yearSelect" class="form-select"></select>
-                </div>
-              </div>
+            <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+            <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+            <div class="d-flex align-items-center gap-2">
+              <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                <i class="bi bi-calendar3 me-1"></i>Jahr:
+              </label>
+              <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
             </div>
 
-            <!-- Buttons -->
-<div class="button-toolbar">
-  <div class="btn-row d-flex flex-wrap gap-2">
-    <button type="button"
-            class="btn btn-outline-success btn-compact"
-            data-bs-toggle="modal" data-bs-target="#newAnlassModal">
-      <i class="bi bi-plus-lg"></i>
-      <span class="ms-1">Neuer Anlass</span>
-    </button>
-
-    <button type="button" id="sortByDateButton"
-            class="btn btn-outline-primary btn-compact"
-            title="Sortiert alle Anlässe nach dem ersten Datum im Feld Schiesstage">
-      <i class="bi bi-sort-numeric-down"></i>
-      <span class="ms-1">Nach Datum sortieren</span>
-    </button>
-
-    <button type="submit" class="btn btn-outline-primary btn-compact">
-      <i class="bi bi-save"></i>
-      <span class="ms-1">Speichern</span>
-    </button>
-
-    <!-- Export: einzelne Buttons statt Dropdown -->
-    <button type="button" id="exportPdfButton"
-            class="btn btn-outline-info btn-compact">
-      <i class="bi bi-file-pdf"></i>
-      <span class="ms-1">JM als PDF</span>
-    </button>
-
-    <button type="button" id="exportPdfDraftButton"
-            class="btn btn-outline-warning btn-compact"
-            title="PDF mit Wasserzeichen 'Entwurf'">
-      <i class="bi bi-file-pdf"></i>
-      <span class="ms-1">PDF Entwurf</span>
-    </button>
-
-    <button type="button" id="exportWordFragebogen"
-            class="btn btn-outline-info btn-compact">
-      <i class="bi bi-file-word"></i>
-      <span class="ms-1">Fragebogen</span>
-    </button>
-
-    <button type="button" id="exportICSAll"
-            class="btn btn-outline-info btn-compact">
-      <i class="bi bi-calendar-plus"></i>
-      <span class="ms-1">ICS-Datei</span>
-    </button>
+            <!-- Aktionsbereich (eingeklappt) -->
+<div class="card action-card mb-0">
+  <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+       data-bs-toggle="collapse" data-bs-target="#jmdefActions"
+       aria-expanded="false" aria-controls="jmdefActions">
+    <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+    <i class="bi bi-chevron-down action-chevron"></i>
   </div>
-
-  <!-- Download-Link/Status rechts -->
-  <div id="pdfDownloadLink" class="ms-auto"></div>
+  <div class="collapse" id="jmdefActions">
+    <div class="card-body pt-2 pb-3 px-3">
+      <!-- Primäre Aktionen -->
+      <div class="row g-2 mb-2">
+        <div class="col-12">
+          <button type="button" class="btn btn-success w-100"
+                  data-bs-toggle="modal" data-bs-target="#newAnlassModal">
+            <i class="bi bi-plus-lg me-2"></i>Neuer Anlass
+          </button>
+        </div>
+        <div class="col-6">
+          <button type="button" id="sortByDateButton" class="btn btn-outline-secondary w-100"
+                  title="Sortiert alle Anlässe nach dem ersten Datum im Feld Schiesstage">
+            <i class="bi bi-sort-numeric-down me-1"></i>Sortieren
+          </button>
+        </div>
+        <div class="col-6">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-save me-1"></i>Speichern
+          </button>
+        </div>
+      </div>
+      <!-- Exporte -->
+      <div class="border-top pt-2">
+        <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
+        <div class="row g-2">
+          <div class="col-6">
+            <button type="button" id="exportPdfButton" class="btn btn-outline-danger btn-sm w-100">
+              <i class="bi bi-file-pdf me-1"></i>JM als PDF
+            </button>
+          </div>
+          <div class="col-6">
+            <button type="button" id="exportPdfDraftButton" class="btn btn-outline-warning btn-sm w-100"
+                    title="PDF mit Wasserzeichen 'Entwurf'">
+              <i class="bi bi-file-pdf me-1"></i>PDF Entwurf
+            </button>
+          </div>
+          <div class="col-6">
+            <button type="button" id="exportWordFragebogen" class="btn btn-outline-secondary btn-sm w-100">
+              <i class="bi bi-file-word me-1"></i>Fragebogen
+            </button>
+          </div>
+          <div class="col-6">
+            <button type="button" id="exportICSAll" class="btn btn-outline-secondary btn-sm w-100">
+              <i class="bi bi-calendar-plus me-1"></i>ICS-Datei
+            </button>
+          </div>
+        </div>
+        <div id="pdfDownloadLink" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
 </div>
-
-            <div id="message"></div>
+            </div><!-- Ende flex-row Jahr+Aktionen -->
 
             <!-- Tabelle -->
             <div class="table-wrapper">
               <h5 class="table-title"><i class="bi bi-trophy me-2"></i> Jahresmeisterschaft Definition</h5>
-              <div class="table-responsive">
-                <table class="table table-hover table-striped table-borderless table--compact" id="jmdefinitionTabelle">
+              <div class="desktop-table-container">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped table-borderless table--compact" id="jmdefinitionTabelle">
 
                   <thead>
                     <tr>
@@ -422,7 +491,7 @@ if (empty($_SESSION['csrf_token'])) {
                       <th scope="col" style="min-width: 200px;"><i class="bi bi-geo-alt me-1"></i>Adresse</th>
                       <th scope="col" style="min-width: 200px;"><i class="bi bi-calendar-event me-1"></i>Schiesstage</th>
                       <th scope="col" class="text-center"><i class="bi bi-bullseye me-1"></i>Max</th>
-                      <th scope="col" class="text-center"><i class="bi bi-plus-square me-1"></i>Zuschlag</th>
+                      <th scope="col" class="text-center"><i class="bi bi-plus-square me-1"></i>Beteiligungszuschlag</th>
                       <th scope="col" class="text-center" title="Streicher: Wird aus der Wertung genommen"><i class="bi bi-dash-circle" aria-label="Streicher"></i></th>
                       <th scope="col" class="text-center" title="Erweitert JM"><i class="bi bi-plus-circle"></i></th>
                       <th scope="col" class="text-center" title="Info"><i class="bi bi-info-circle"></i></th>
@@ -435,12 +504,30 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
 
-            <!-- Zusatztext -->
+            <div class="mobile-cards-container" id="mobileJmdefinitionCards">
+              <div class="mobile-search">
+                <div class="position-relative">
+                  <i class="bi bi-search search-icon"></i>
+                  <input type="text" class="form-control" placeholder="Suchen..." oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileJmdefinitionCards')">
+                </div>
+              </div>
+              <div class="mobile-cards-scroll"></div>
+            </div>
+            </div>
+
+            <!-- Zusatztext + Parameter -->
             <div class="row mt-4">
               <div class="col-lg-8">
                 <div class="card-base card-primary">
                   <label for="zusatzText" class="form-label"><i class="bi bi-textarea-t me-1"></i> Infotext zur JM</label>
-                  <textarea class="form-control" id="zusatzText" placeholder="Hier Zusatzinformationen eingeben..." rows="5"></textarea>
+                  <textarea class="form-control" id="zusatzText" placeholder="Hier Zusatzinformationen eingeben... Tipp: {anzahl_streicher} wird im PDF durch die aktuelle Anzahl ersetzt." rows="5"></textarea>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="card-base card-primary">
+                  <label for="anzahlStreicherInput" class="form-label"><i class="bi bi-dash-circle me-1"></i> Anzahl Streicher</label>
+                  <input type="number" class="form-control" id="anzahlStreicherInput" min="1" max="9" value="3">
+                  <div class="form-text">Anzahl der schlechtesten Resultate, die aus der Wertung gestrichen werden.</div>
                 </div>
               </div>
             </div>
@@ -477,7 +564,7 @@ if (empty($_SESSION['csrf_token'])) {
           <input type="number" class="form-control" id="neueJMDefinitionMaxpunkte" placeholder="100" min="0">
         </div>
         <div class="mb-3">
-          <label for="neueJMDefinitionZuschlag" class="form-label">Zuschlag</label>
+          <label for="neueJMDefinitionZuschlag" class="form-label">Beteiligungszuschlag</label>
           <input type="number" class="form-control" id="neueJMDefinitionZuschlag" placeholder="0" min="0" max="99">
         </div>
         <div class="row">
@@ -571,11 +658,7 @@ $(function () {
   // Year-Select
   function initializeYearDropdown(){
     const $sel = $('#yearSelect').empty();
-    const currentMonth = new Date().getMonth() + 1; // 1-12
-    // Ab Oktober (Monat 10) auch Folgejahr anzeigen
-    const maxYear = (currentMonth >= 10) ? currentYear + 1 : currentYear;
-    
-    for (let y=2024; y<=maxYear; y++){
+    for (let y=currentYear; y>=currentYear - 3; y--){
       const $o = $('<option/>').val(y).text(y);
       if (y===currentYear) $o.prop('selected', true);
       $sel.append($o);
@@ -645,6 +728,77 @@ $(function () {
 
       // Tooltips auf dynamischen Inhalten
       document.querySelectorAll('#jmdefinitionTabelle [data-bs-toggle="tooltip"], #jmdefinitionTabelle [title]').forEach(el => new bootstrap.Tooltip(el));
+
+      // Mobile Cards generieren
+      MSVMobileCards.initResponsive(function() {
+        MSVMobileCards.buildCards('#jmdefinitionTabelle', '#mobileJmdefinitionCards', {
+          customHtml: function(row, cells, headers, idx) {
+            if (cells.length < 11) return '';
+
+            const titleEl = cells[1].querySelector('textarea');
+            const title = titleEl ? (titleEl.value.split('\n')[0] || titleEl.value) : cells[1].textContent.trim();
+            const maxEl = cells[4].querySelector('input');
+            const maxVal = maxEl ? maxEl.value : '-';
+
+            const actionCell = cells[10];
+            const icsLink = actionCell.querySelector('a');
+            const deleteBtn = actionCell.querySelector('button');
+
+            const icsHtml = icsLink
+              ? `<a href="${icsLink.href}" class="btn btn-outline-secondary btn-sm flex-fill">
+                   <i class="bi bi-calendar-plus me-1"></i>ICS Export
+                 </a>`
+              : '';
+            const deleteHtml = deleteBtn
+              ? `<button class="btn btn-outline-danger btn-sm flex-fill deleteJMDefinition" data-id="${deleteBtn.dataset.id}">
+                   <i class="bi bi-trash me-1"></i>Löschen
+                 </button>`
+              : '';
+
+            return `
+              <div class="mobile-card" data-index="${idx}">
+                <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
+                  <div>
+                    <div class="fw-bold">${title}</div>
+                    <small class="text-muted">Max: ${maxVal || '-'}</small>
+                  </div>
+                  <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="mobile-card-body jm-edit-body">
+                  <div class="mb-2">
+                    <label class="jm-field-label">Bezeichnung</label>
+                    ${cells[1].innerHTML}
+                  </div>
+                  <div class="mb-2">
+                    <label class="jm-field-label"><i class="bi bi-geo-alt me-1"></i>Adresse</label>
+                    ${cells[2].innerHTML}
+                  </div>
+                  <div class="mb-2">
+                    <label class="jm-field-label"><i class="bi bi-calendar-event me-1"></i>Schiesstage</label>
+                    ${cells[3].innerHTML}
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-6">
+                      <label class="jm-field-label">Max. Punkte</label>
+                      ${cells[4].innerHTML}
+                    </div>
+                    <div class="col-6">
+                      <label class="jm-field-label">Beteil.-Zuschlag</label>
+                      ${cells[5].innerHTML}
+                    </div>
+                  </div>
+                  <div class="row g-2 mb-3">
+                    <div class="col-6"><div class="jm-check-row">${cells[6].innerHTML}<span class="small">Streicher</span></div></div>
+                    <div class="col-6"><div class="jm-check-row">${cells[7].innerHTML}<span class="small">Erweitert JM</span></div></div>
+                    <div class="col-6"><div class="jm-check-row">${cells[8].innerHTML}<span class="small">Info</span></div></div>
+                    <div class="col-6"><div class="jm-check-row">${cells[9].innerHTML}<span class="small">Gruppen-WK</span></div></div>
+                  </div>
+                  <div class="d-flex gap-2">${icsHtml}${deleteHtml}</div>
+                </div>
+              </div>`;
+          }
+        });
+      });
     }).fail(()=>{
       $('#jmdefinitionTabelle tbody').html('<tr><td colspan="11" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Fehler beim Laden</td></tr>');
       showErrorToast('Fehler beim Laden der Daten');
@@ -657,9 +811,15 @@ $(function () {
     });
   }
 
+  function loadParameter(year){
+    $.getJSON(basePath + 'jmdefinition/load_parameter.php', { year: year }, function(resp){
+      if (resp && resp.success) $('#anzahlStreicherInput').val(resp.excludeCount);
+    });
+  }
+
   // Änderungs-Tracking
   let hasChanges = false;
-  $('body').on('change input', '#jmdefinitionTabelle input, #jmdefinitionTabelle textarea, #jmdefinitionTabelle select, #zusatzText', function(){
+  $('body').on('change input', '#jmdefinitionTabelle input, #jmdefinitionTabelle textarea, #jmdefinitionTabelle select, #zusatzText, #anzahlStreicherInput', function(){
     hasChanges = true;
   });
   $(window).on('beforeunload', function(){ if (hasChanges) return 'Du hast ungespeicherte Änderungen. Wirklich verlassen?'; });
@@ -681,8 +841,10 @@ $(function () {
       if (id) order.push(id);
     });
 
-    const formData = $(this).serialize() + '&order=' + order.join(',') + '&year=' + $('#yearSelect').val();
+    const selectedYear = $('#yearSelect').val();
+    const formData = $(this).serialize() + '&order=' + order.join(',') + '&year=' + selectedYear;
     const zusatzText = $('#zusatzText').val();
+    const anzahlStreicher = parseInt($('#anzahlStreicherInput').val()) || 3;
 
     $.post(basePath + 'jmdefinition/save_jmdefinition.php', formData)
      .done(function(){
@@ -691,7 +853,12 @@ $(function () {
         $.post(basePath + 'jmdefinition/save_jminformation.php', {
           zusatztext: zusatzText,
           csrf_token: $('input[name="csrf_token"]').val()
-        }).always(()=> setTimeout(()=> loadJMDefinition($('#yearSelect').val()), 500));
+        });
+        $.post(basePath + 'jmdefinition/save_parameter.php', {
+          year: selectedYear,
+          excludeCount: anzahlStreicher,
+          csrf_token: $('input[name="csrf_token"]').val()
+        }).always(()=> setTimeout(()=> loadJMDefinition(selectedYear), 500));
      })
      .fail(()=> showErrorToast('Fehler beim Speichern'))
      .always(function(){
@@ -904,6 +1071,7 @@ $(function () {
     const y = $(this).val();
     loadJMDefinition(y);
     loadZusatztext();
+    loadParameter(y);
   });
 
   // Shortcuts
@@ -920,9 +1088,19 @@ $(function () {
   initializeYearDropdown();
   loadJMDefinition(currentYear);
   loadZusatztext();
+  loadParameter(currentYear);
 });
 </script>
 
-<?php
-include 'footer.inc.php';
+<style>
+@media (max-width: 767.98px) {
+  .desktop-table-container { display: none !important; }
+  .mobile-cards-container { display: block !important; }
+}
+@media (min-width: 768px) {
+  .mobile-cards-container { display: none !important; }
+}
+</style>
+
+<?php include 'footer.inc.php';
 ?>

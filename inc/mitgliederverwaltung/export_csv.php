@@ -16,7 +16,7 @@ fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 fputcsv($output, [
     'ID',
     'Vorname',
-    'Name', 
+    'Name',
     'Geburtsdatum',
     'WaffenID',
     'Status',
@@ -27,7 +27,8 @@ fputcsv($output, [
     'Email',
     'Telefon',
     'Mobile',
-    'Notizen'
+    'Notizen',
+    'Verstorben'
 ], ';');
 
 // Fetch data
@@ -50,7 +51,8 @@ if ($result->num_rows > 0) {
             $row['Email'] ?? '',
             $row['Telefon'] ?? '',
             $row['Mobile'] ?? '',
-            $row['Notizen'] ?? ''
+            $row['Notizen'] ?? '',
+            $row['Verstorben'] ?? 0
         ], ';');
     }
 }

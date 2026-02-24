@@ -53,6 +53,26 @@ function connect_db_mysqli() {
     return get_db_connection();
 }
 
+// PDO-Verbindung fuer neuen Code (Mitgliederportal etc.)
+function getDB() {
+    static $pdo = null;
+    if ($pdo !== null) return $pdo;
+
+    global $dbConf;
+    $dsn = 'mysql:host=' . $dbConf['host'] . ';dbname=' . $dbConf['name'] . ';charset=' . ($dbConf['charset'] ?? 'utf8mb4');
+    try {
+        $pdo = new PDO($dsn, $dbConf['user'], $dbConf['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    } catch (PDOException $e) {
+        error_log("PDO connection failed: " . $e->getMessage());
+        die("Datenbankverbindung fehlgeschlagen. Bitte später erneut versuchen.");
+    }
+    return $pdo;
+}
+
 // Globale Datenbankverbindung für bestehende Dateien
     $servername = $dbConf['host'];
     $username = $dbConf['user'];
