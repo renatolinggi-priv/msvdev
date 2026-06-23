@@ -13,6 +13,9 @@ $sql = "SELECT * FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
 
 $page_specific_css = '
+/* Inhaltsbreite begrenzen, damit die Seite auf grossen Bildschirmen nicht zu breit wird */
+.main-content-wrapper { max-width: 980px; }
+
 /* Erste Spalte linksbündig */
 #stichdefTabelle td:first-child,
 #stichdefTabelle th:first-child {
@@ -63,7 +66,7 @@ include 'header.inc.php';
 
                     <!-- Tabelle -->
                     <div class="table-wrapper">
-                        <h3 class="table-title">Interne Stiche â€“ Stichnummern</h3>
+                        <h3 class="table-title">Interne Stiche – Stichnummern</h3>
                         <div class="desktop-table-container">
                             <div class="table-responsive">
                                 <table id="stichdefTabelle" class="table table-striped table-bordered align-middle">
@@ -81,15 +84,15 @@ include 'header.inc.php';
                                             <td><strong><?= htmlspecialchars($s) ?></strong></td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr1-input"
-                                                    placeholder="â€”">
+                                                    placeholder="—">
                                             </td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr2-input"
-                                                    placeholder="â€”">
+                                                    placeholder="—">
                                             </td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr3-input"
-                                                    placeholder="â€”">
+                                                    placeholder="—">
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

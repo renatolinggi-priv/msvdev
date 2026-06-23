@@ -1,5 +1,269 @@
 [
   {
+    "version": "1.14.6",
+    "datum": "2026-06-23",
+    "aenderungen": [
+      {
+        "titel": "Import-Seiten: schmaler & Zeichendarstellung korrigiert",
+        "beschreibung": "Die Seiten rund um den Schiessdaten-Import (CSV-Import Heim/Kanti, CSV-Import Endschiessen, Imetron-Stichnummern und der CSV-Prüfviewer) werden auf grossen Bildschirmen jetzt etwas schmaler dargestellt, damit die Inhalte nicht unnötig in die Breite gezogen werden. Ausserdem wurden falsch dargestellte Sonderzeichen korrigiert: Die Pfeile im Workflow-Hinweis („Upload → Auswahl → Import“) sowie einige Gedankenstriche erscheinen nun wieder korrekt statt als kryptische Zeichenfolge.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.5",
+    "datum": "2026-06-22",
+    "aenderungen": [
+      {
+        "titel": "Ranglisten-Seiten: Dokumenten-Buttons vereinheitlicht",
+        "beschreibung": "Auf den Ranglisten-Seiten (Endschiessen, Jahresmeisterschaft, Kantonalstich, Heimmeisterschaft, Cup) werden die Knöpfe zum Erstellen von PDF- und Word-Dokumenten jetzt einheitlich in einem aufgeräumten Bereich „Dokumente erstellen“ dargestellt. Beim Endschiessen, wo es besonders viele Exporte gibt, sind diese neu in beschriftete Gruppen gegliedert (Ranglisten & Übersicht, Einzelwettbewerbe, Partner) statt als unübersichtliche Knopf-Wand. Der Knopf „Resultate bearbeiten“ sitzt nun einheitlich oben rechts in diesem Bereich. Zusätzlich wurde die Endschiessen-Rangliste lesbarer gemacht: Zahlen zentriert, Total-Spalte hervorgehoben, die ersten drei Ränge mit dezenten Medaillenfarben und feine Zebrastreifen. Auf grossen Bildschirmen sind diese Seiten ausserdem etwas schmaler, damit die Inhalte nicht unnötig in die Breite gezogen werden.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Vereinscup-Übersicht: Ranglisten-Knopf & Paarungen aufgefrischt",
+        "beschreibung": "Auf der Vereinscup-Übersicht ist der Knopf zum Erstellen der Ranglisten-PDF jetzt türkis (einheitlich mit den übrigen Ranglisten-Seiten) statt rot. Zusätzlich wurde die Darstellung der Paarungen verbessert: Jede Paarung zeigt nun pro Teilnehmer eine eigene Zeile mit dem Resultat rechts als Pille, der Gewinner ist durchgehend grün hervorgehoben und Ausgeschiedene sind durchgestrichen. Dadurch sehen Zweier- und Dreier-Paarungen einheitlich aus und sind besser lesbar. Die Runden (z.B. Runde 1 und Runde 2) stehen jetzt nebeneinander statt untereinander, ebenso die Finale-Rangliste und der Standcup-Final – auf schmalen Bildschirmen brechen sie automatisch untereinander um, und der frühere grosse Leerraum unter den Listen ist weg. Ausserdem zeigt die Übersicht das Weiterkommen jetzt korrekt: Bei Dreier-Gruppen wird die Einstellung „1 oder 2 kommen weiter“ berücksichtigt (kommt nur einer weiter, werden die beiden anderen als ausgeschieden markiert), und manuell entschiedene Paarungen (z.B. bei Gleichstand) werden richtig dargestellt – konsistent mit dem Cup-Editor. Die Cup-PDF bleibt unverändert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.4",
+    "datum": "2026-06-22",
+    "aenderungen": [
+      {
+        "titel": "Gruppenerfassung überarbeitet",
+        "beschreibung": "Die Gruppenerfassung der Jahresmeisterschaft wurde rundum aufgefrischt. Mitglieder lassen sich jetzt nicht nur per Drag & Drop zuteilen, sondern auch einfach per Klick (ein Klick verschiebt ein Mitglied in die Gruppe, ein Klick in der Gruppe wieder zurück). Neu gibt es ein Suchfeld für die verfügbaren Mitglieder sowie Zähler, die laufend zeigen, wie viele Mitglieder verfügbar bzw. in der Gruppe sind. Die früheren Dauer-Erfolgsmeldungen beim Laden wurden entfernt – es erscheinen nur noch Meldungen bei echten Aktionen und Fehlern. Ausserdem wurde ein Fehler behoben, durch den eine gelöschte Gruppe in der Liste stehen blieb; sie verschwindet nun sofort. Die Seite ist insgesamt kompakter und ruhiger gestaltet.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Wichtige Termine: Darstellung vereinheitlicht",
+        "beschreibung": "Die Verwaltung der wichtigen Termine wurde an das Erscheinungsbild der übrigen Seiten angeglichen: Die Tabelle hat neu eine eigene Titelleiste und eine beschriftete Spalte „Optionen“. Im Aktionen-Bereich entfällt die überflüssige Zwischenüberschrift „Erfassen“, und es gibt neu unten einen dezenten, abgesetzten Link „Alle Termine löschen“, der alle Termine des gewählten Jahres auf einmal entfernt (mit Sicherheitsabfrage).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Datenbank aktualisieren: Sicherheitsabfrage als Modal",
+        "beschreibung": "Beim Ausführen ausstehender Datenbank-Migrationen erschien bisher die schlichte Browser-Abfrage. Neu wird vor dem Ausführen ein einheitliches Bestätigungs-Modal (wie im übrigen System) angezeigt, das auch die Anzahl der auszuführenden Migrationen nennt und auf die Tragweite hinweist.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.3",
+    "datum": "2026-06-22",
+    "aenderungen": [
+      {
+        "titel": "Löschen-Knopf in der Resultaterfassung dezenter",
+        "beschreibung": "Auf den Erfassungsseiten (Jahresmeisterschaft, Kantonalstich, Heimmeisterschaft, Endschiessen) war der Knopf zum Löschen aller Resultate eines Jahres gleich präsent wie die normalen Aktionen. Er ist jetzt als unauffälliger, abgesetzter Link „Alle Resultate löschen“ unten im Aktionen-Bereich platziert — so wird er nicht mehr versehentlich für eine Standardaktion gehalten. Die Sicherheitsabfrage vor dem Löschen bleibt unverändert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "PDF-Dokumente einheitlich & ruhiger gestaltet",
+        "beschreibung": "Alle generierten PDFs (Ranglisten, Auswertungen, Cup, Wanderpreise, Abrechnungen usw.) haben jetzt ein einheitliches, ruhigeres Erscheinungsbild: helle statt dunkler/navyblauer Tabellenköpfe, weiche graue Linien statt harter schwarzer Rahmen, dezente Pastelltöne für die Medaillenränge (Gold/Silber/Bronze) und ein gedämpftes Vereins-Blau als einziger Akzent für Titel und Summen. Die Farbgebung wird zentral gesteuert, damit künftige PDFs automatisch gleich aussehen. Hoch- bzw. Querformat bleibt bei jedem Dokument unverändert. Zusätzlich wurde die Gesamt-Resultatliste der Jahresmeisterschaft lesbarer gemacht: Die Namensspalte ist nicht mehr unnötig breit und wird nicht mehr abgeschnitten, die Schrift ist grösser, die Resultat-Spalten sind alle gleich breit und die Kopfzeile wurde aufgeräumt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "PDF-Design im Admin-Bereich anpassbar",
+        "beschreibung": "Das Erscheinungsbild der PDFs lässt sich neu unter „PDF-Design“ direkt im Admin-Bereich anpassen — ohne Programmierung. Mit Farbwählern und einer Live-Vorschau stellt man die Farben (Tabellenkopf, Rahmen, Akzent, Medaillenränge, Status) und ein paar Layout-Werte (Logo-Breite, Schriftgrösse, Rahmenstärke) ein. Zwei 1-Klick-Vorlagen („Hell & minimal“ und „Dezent markentreu“) bieten einen schnellen Start, danach ist alles frei anpassbar. Die Einstellungen gelten für alle PDFs, welche die zentrale Vorlage nutzen; Hoch- bzw. Querformat bleibt unverändert. Mit einem Klick kann jederzeit auf die Standardwerte zurückgesetzt werden. Zusätzlich lässt sich das Vereinslogo direkt hochladen und vor dem Speichern zuschneiden (Bildausschnitt wählen wie bei einem Profilbild) — das neue Logo wird automatisch in allen PDFs übernommen.",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.2",
+    "datum": "2026-06-22",
+    "aenderungen": [
+      {
+        "titel": "Munitionskauf: Tabelle der Käufe korrigiert",
+        "beschreibung": "In der Munitionskauf-Erfassung schoben sich beim Scrollen die Tabellenzeilen optisch über die fixierte Kopfzeile der Käufe-Tabelle. Die Kopfzeile bleibt nun beim Scrollen sauber stehen, und die Total-Zeile wird zusätzlich am unteren Rand fixiert, solange die Liste gescrollt wird.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.1",
+    "datum": "2026-06-22",
+    "aenderungen": [
+      {
+        "titel": "Externe Links in der Navigation",
+        "beschreibung": "In der Navigationsverwaltung kann ein Menüpunkt jetzt auch auf eine externe Webseite verweisen: Trägt man im Feld „Link / Datei\" eine vollständige Adresse ein (z.B. https://www.swissshooting.ch), öffnet sich diese beim Anklicken automatisch in einem neuen Browser-Tab, sodass die Anwendung im bisherigen Tab geöffnet bleibt. Wichtig: Das funktioniert nur bei Menüpunkten ohne Unterpunkte – ein Punkt mit Untermenü dient nur zum Aufklappen und verwendet keinen eigenen Link.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.0",
+    "datum": "2026-06-22",
+    "aenderungen": [
+      {
+        "titel": "JM-Rangliste überarbeitet (Darstellung & Total-Berechnung)",
+        "beschreibung": "Die Jahresmeisterschafts-Rangliste (auf der Ranglisten-Seite und in der Ergebnis-Erfassung) zeigt neu als Spalten die zuletzt stattgefundenen Schiessanlässe (nach Datum), inklusive solcher, die zwar stattgefunden haben, aber noch nicht erfasst sind (Anzeige „–\"). Anlässe mit 20 als Maximalresultat (Obligatorisch, Feldschiessen) werden in den Spalten nicht mehr angezeigt (andere Skala) – sie zählen aber weiterhin und erscheinen in der Aufschlüsselung. Klappt man einen Schützen auf, ist die Aufschlüsselung neu klar in „Pflicht (zählt immer)\" und „Auswärtige Schiessen (Streichresultate)\" gegliedert; gestrichene Resultate sind deutlich markiert. WICHTIG zur Berechnung: Während der laufenden Saison gibt es bewusst noch kein Total und keine Streicher – die Tabelle zeigt nur die erzielten Resultate (Spalte „Total\" = offen). Das definitive Total mit Streichresultaten wird erst berechnet und angezeigt, sobald der Endstich durchgeführt ist; danach zählen für alle die besten (durchgeführte − Streicher) Resultate.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.13.2",
+    "datum": "2026-06-18",
+    "aenderungen": [
+      {
+        "titel": "Einzel- & Sektionsrangierungen überarbeitet",
+        "beschreibung": "Die Seiten „Einzelrangierungen\" und „Sektionsrangierungen\" haben ein aufgeräumtes Design erhalten: Der Rang wird neu als farbige Medaillen-Plakette dargestellt (Gold/Silber/Bronze für die Plätze 1–3), Preise sind farblich hervorgehoben, und die Tabelle umschliesst die Einträge ohne leeren Bereich darunter. Der überflüssige Titel „Vorhandene Einzelrangierungen\" wurde entfernt und die Bedienleiste (Jahr, Hinzufügen, PDF) einheitlich angeordnet. Zusätzlich wurde auf der Einzelrangierungs-Seite ein Fehler behoben, durch den sich das Eingabeformular über „Hinzufügen\" nicht öffnete.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.13.1",
+    "datum": "2026-06-18",
+    "aenderungen": [
+      {
+        "titel": "Kompaktere Resultat-Tabellen (Kantonalstich & Heim)",
+        "beschreibung": "Die Tabellen in der Erfassung von Kantonalstich- und Heimmeisterschafts-Resultaten waren auf grossen Bildschirmen unnötig breit, mit viel Leerraum zwischen den Passe-Spalten. Die Spalten und Eingabefelder wurden enger gesetzt und die Tabelle wird nicht mehr über die ganze Bildschirmbreite gezogen, sondern auf eine sinnvolle Breite begrenzt. Das macht die Eingabe übersichtlicher. Die mobile Kartenansicht bleibt unverändert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.13.0",
+    "datum": "2026-06-17",
+    "aenderungen": [
+      {
+        "titel": "Neuigkeiten-Hinweis im Portal",
+        "beschreibung": "Sobald es Neuerungen im Portal gibt, erscheint beim Öffnen automatisch ein Fenster „Was ist neu?\" mit den neuesten Änderungen. Mit einem Klick auf „Verstanden\" wird der Hinweis dauerhaft weggeklickt und erscheint erst wieder, wenn es das nächste Mal etwas Neues gibt – man muss ihn also nicht bei jedem Login erneut wegklicken. Alle Neuigkeiten lassen sich weiterhin jederzeit unter „Neuigkeiten\" nachlesen.",
+        "typ": "feature",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.12.0",
+    "datum": "2026-06-17",
+    "aenderungen": [
+      {
+        "titel": "Anlässe und Termine vom Vorjahr übernehmen",
+        "beschreibung": "In der Erfassung Jahresmeisterschaft und bei den Wichtigen Terminen gibt es neu den Knopf „Vom Vorjahr übernehmen“. Es öffnet sich ein Fenster mit allen Einträgen des Vorjahres zum Ankreuzen. Das Datum wird dabei automatisch auf denselben Wochentag im neuen Jahr verschoben (z.B. Samstag 18. April → Samstag 17. April, Schaltjahre berücksichtigt) und eine führende Nummer bzw. Jahreszahl im Namen wird hochgezählt (z.B. „36. Schlossturmschiessen“ → „37.“). Bereits im Zieljahr vorhandene Einträge werden erkannt und sind standardmässig abgewählt. Das spart beim jährlich wiederkehrenden Programm sehr viel Tipparbeit. Die Aktionen-Knöpfe auf beiden Seiten wurden zudem in die Gruppen „Erfassen“, „Verwalten“ und „Exporte“ gegliedert.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Schiesstage einfach per Datums- und Zeitauswahl erfassen",
+        "beschreibung": "In der Erfassung Jahresmeisterschaft werden die Schiesstage eines Anlasses neu über strukturierte Felder eingegeben statt als freien Text: pro Schiesstag wählst du das Datum (der Wochentag wird automatisch ergänzt) und fügst beliebig viele Zeitfenster (von–bis) hinzu. Damit ist das richtige Format garantiert und Tippfehler bei Datum oder Uhrzeit gehören der Vergangenheit an — wichtig, weil aus diesen Angaben der Kalender, der ICS-Export und die Benachrichtigungen erzeugt werden. Bestehende Einträge werden beim Öffnen automatisch erkannt und in die neue Ansicht übernommen; ungewöhnliche Einträge lassen sich weiterhin als Freitext bearbeiten.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Resultate aus PDF-Ranglisten importieren",
+        "beschreibung": "In der Erfassung Jahresmeisterschaft gibt es neu den Knopf „PDF importieren\". Damit lädst du die Einzelrangliste eines Anlasses (z.B. Vereinsstich) einfach per Drag & Drop hoch. Die eigenen Vereinsmitglieder werden automatisch anhand von Name oder Lizenznummer erkannt und ihre Resultate in einer Vorschau zur Kontrolle angezeigt — bereits erfasste Resultate werden markiert und sind standardmässig abgewählt. Per Knopfdruck werden die ausgewählten Resultate übernommen: immer als JM-Resultat, bei einer Top-10-Platzierung zusätzlich als Einzelrangierung mit Rang und Preis. Enthält das PDF eine Vereins-/Sektionsrangierung, wird auch die Platzierung des eigenen Vereins erkannt und kann als Sektionsrangierung gespeichert werden.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Erfassung Jahresmeisterschaft lädt flüssiger",
+        "beschreibung": "Auf der Seite „Erfassung Jahresmeisterschaft\" erscheinen die Anlass-Kacheln jetzt sofort beim Öffnen, ohne kurzes Nachladen. Der Knopf „Veröffentlichen\" wurde einheitlich in den Bereich „Aktionen\" einsortiert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Resultate Schütze um Schütze erfassen",
+        "beschreibung": "In der Erfassung von Kantonalstich- und Heimmeisterschafts-Resultaten gibt es neu den Knopf „Schnellerfassung\". Damit öffnet sich ein Fokus-Fenster für einen einzelnen Schützen mit grossen Eingabefeldern für alle Passen. Zuoberst kannst du über ein Suchfeld direkt zu einem Schützen springen (bereits vollständig erfasste sind mit einem Häkchen markiert). Mit Enter springst du von Feld zu Feld, und „Speichern & Weiter\" sichert den Schützen und springt automatisch zum nächsten noch nicht vollständig erfassten Schützen. Ein Fortschrittsbalken zeigt, wie viele Schützen schon vollständig erfasst sind. Die bisherige Tabellenansicht bleibt für Übersicht und Korrekturen erhalten — ein Klick auf den Namen öffnet denselben Schützen im Fokus-Fenster.",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.11.0",
+    "datum": "2026-06-17",
+    "aenderungen": [
+      {
+        "titel": "Navigationsverwaltung: Icons & Trennlinien",
+        "beschreibung": "Die Navigationsverwaltung wurde überarbeitet: Menüeinträge können jetzt ein eigenes Icon erhalten (Icon-Auswahl mit Vorschau und Suche), und es lassen sich Trennlinien einfügen. Neu sind ausserdem Baum-Linien zur besseren Übersicht der Verschachtelung, das Ein-/Ausklappen von Hauptpunkten, ein verbessertes Drag & Drop (Unterpunkte werden mitgezogen) sowie ein Knopf zum Duplizieren eines Eintrags.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Datenbank aktualisieren (Admin)",
+        "beschreibung": "Im Admin-Benutzermenü gibt es neu den Punkt „Datenbank aktualisieren\". Damit lassen sich ausstehende Datenbank-Anpassungen (Migrationen) bequem per Knopfdruck einspielen, statt sie von Hand auszuführen. Bereits angewendete Anpassungen werden automatisch übersprungen.",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.10.0",
+    "datum": "2026-06-16",
+    "aenderungen": [
+      {
+        "titel": "Frischeres, einheitlicheres Portal-Design",
+        "beschreibung": "Das ganze Mitgliederportal wurde optisch überarbeitet: kompakter, ruhiger und über alle Seiten hinweg einheitlich (Karten, Abstände und Farben). Das Dashboard zeigt die Kacheln jetzt aufgeräumter mit Symbol und Titel — und auf dem Handy übersichtlich zweispaltig.",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Heim- & Kantonalstich übersichtlicher",
+        "beschreibung": "Die Passen werden neu als klare Liste statt als einzelne Kästchen dargestellt, mit einer kompakten Zusammenfassung (Total, geschossene Passen, Schnitt) zuoberst. Beim Kantonalstich ist auf einen Blick ersichtlich, welche Passe einen Kranz erreicht hat.",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Heimmeisterschaft: Erinnerung an die nächste Runde",
+        "beschreibung": "Solange noch nicht alle Passen erfasst sind, zeigt die Heimmeisterschaft-Seite einen Hinweis auf die nächste anstehende ZSMM-Runde inklusive Datum — damit du die Gelegenheit zum Nachschiessen nicht verpasst.",
+        "typ": "feature",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.9.0",
+    "datum": "2026-06-16",
+    "aenderungen": [
+      {
+        "titel": "Push-Benachrichtigungen",
+        "beschreibung": "Das Portal kann dich jetzt per Push-Benachrichtigung erinnern — direkt aufs Handy oder den Desktop. Unter \"Persönliches → Benachrichtigungen\" aktivierst du Push auf deinem Gerät und wählst selbst, wofür du erinnert werden möchtest: kommende Einsätze, Jahresmeisterschafts-Schiesstage, ablaufende Umfragen sowie Vereinstermine & Training. Jedes Thema lässt sich einzeln ein- und ausschalten, und du legst selbst fest, wie viele Tage vor einem Termin die (einmalige) Erinnerung kommen soll. Tipp fürs iPhone: zuerst über \"Zum Home-Bildschirm\" installieren, dann die App öffnen und dort aktivieren.",
+        "typ": "feature",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.8.2",
+    "datum": "2026-03-27",
+    "aenderungen": [
+      {
+        "titel": "SSV Lizenz-Barcode im Dashboard",
+        "beschreibung": "Neben der Begrüssung auf dem Dashboard gibt es jetzt ein Barcode-Symbol. Ein Tipp darauf zeigt die persönliche SSV-Lizenznummer mit dem dazugehörigen Barcode an — praktisch zum Vorzeigen am Stand.",
+        "typ": "feature",
+        "portal": true
+      }
+    ]
+  },
+  {
+    "version": "1.8.1",
+    "datum": "2026-03-13",
+    "aenderungen": [
+      {
+        "titel": "Jahresmeisterschaft: Alle Termine & Navigation",
+        "beschreibung": "Jede Karte in der Jahresmeisterschaft-Übersicht lässt sich jetzt aufklappen (Pfeil-Symbol): So sind alle Schiess-Termine auf einen Blick sichtbar, nicht mehr nur der erste. Hat ein Schiessen eine Adresse, kann man direkt darauf tippen — die Navigations-App öffnet sich automatisch.",
+        "typ": "verbesserung",
+        "portal": true
+      }
+    ]
+  },
+  {
     "version": "1.8.0",
     "datum": "2026-02-23",
     "aenderungen": [

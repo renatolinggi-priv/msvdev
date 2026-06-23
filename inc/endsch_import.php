@@ -1,5 +1,5 @@
 <?php
-// endsch_import.php â€“ 3-Phasen CSV-Import für Endstich/Kunst/Glück/Zabig/Schwini
+// endsch_import.php – 3-Phasen CSV-Import für Endstich/Kunst/Glück/Zabig/Schwini
 include 'dbconnect.inc.php';
 
 // Session-Kontrolle
@@ -11,11 +11,13 @@ if (empty($_SESSION['csrf_token'])) {
 $sql = "SELECT * FROM mitglieder ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
 
-$page_specific_css = '<link rel="stylesheet" href="inc/endsch_import/workflow-styles.css?v=' . time() . '">';
 include 'header.inc.php';
 ?>
 
 <style>
+    /* Inhaltsbreite begrenzen, damit die Seite auf grossen Bildschirmen nicht zu breit wird */
+    .main-content-wrapper { max-width: 980px; }
+
     .upload-area {
         border: 2px dashed #dee2e6;
         border-radius: 0.75rem;
@@ -72,7 +74,7 @@ include 'header.inc.php';
                             <i class="bi bi-file-earmark-arrow-up me-2"></i>
                             CSV Import - Endschiessen
                         </h2>
-                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload â†’ Auswahl â†’ Import</p>
+                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload → Auswahl → Import</p>
                     </div>
                 </div>
                 

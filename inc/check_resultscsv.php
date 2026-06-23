@@ -7,10 +7,12 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-$page_specific_css = '<link rel="stylesheet" href="inc/check_resultscsv/workflow-styles.css?v=' . time() . '">';
 include 'header.inc.php';
 ?>
 <style>
+    /* Inhaltsbreite begrenzen, damit die Seite auf grossen Bildschirmen nicht zu breit wird */
+    .main-content-wrapper { max-width: 980px; }
+
     .upload-area {
         border: 2px dashed #dee2e6;
         border-radius: 0.75rem;
