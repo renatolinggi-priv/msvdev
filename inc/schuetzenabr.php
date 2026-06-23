@@ -50,9 +50,9 @@ include 'header.inc.php';
                         <div class="collapse" id="schuetzenabrActions">
                             <div class="card-body pt-2 pb-3 px-3">
                                 <div class="row g-2">
-                                    <div class="col-12">
-                                        <button class="xlsx-btn btn btn-success w-100" type="button">
-                                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel generieren
+                                    <div class="col-6">
+                                        <button class="xlsx-btn btn btn-outline-success btn-sm w-100" type="button">
+                                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel
                                         </button>
                                     </div>
                                 </div>

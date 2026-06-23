@@ -1,13 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../inc/session_config.inc.php';
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
+require_once __DIR__ . '/../inc/remember_me.inc.php';
+if (!isset($_SESSION['user_id'])) {
+    restoreSessionFromToken();
+}
 
-// --- NUR User-ID 1 darf ---
+// --- Admin-Check ---
 if (!function_exists('user_can_manage_navigation')) {
-
     function user_can_manage_navigation(): bool {
-        return (int)($_SESSION['user_id'] ?? 0) === 1;
+        return ($_SESSION['user_role'] ?? '') === 'admin' || (int)($_SESSION['user_id'] ?? 0) === 1;
     }
 }
 
@@ -45,13 +48,26 @@ function ensure_sortorder_column(mysqli $conn){
     }
 }
 
+// Ensure Icon + IstTrennlinie columns exist (Migration 023, self-healing)
+function ensure_extra_columns(mysqli $conn){
+    $res = $conn->query("SHOW COLUMNS FROM `navigation` LIKE 'Icon'");
+    if ($res && $res->num_rows === 0) {
+        $conn->query("ALTER TABLE `navigation` ADD COLUMN `Icon` VARCHAR(50) NULL DEFAULT NULL AFTER `Link`");
+    }
+    $res = $conn->query("SHOW COLUMNS FROM `navigation` LIKE 'IstTrennlinie'");
+    if ($res && $res->num_rows === 0) {
+        $conn->query("ALTER TABLE `navigation` ADD COLUMN `IstTrennlinie` TINYINT NOT NULL DEFAULT 0 AFTER `SortOrder`");
+    }
+}
+
 function fetch_all(mysqli $conn){
     ensure_sortorder_column($conn);
+    ensure_extra_columns($conn);
     $items = [];
-    $sql = "SELECT ID, Text, Link, ParentID, SortOrder FROM navigation ORDER BY ParentID, SortOrder, ID";
+    $sql = "SELECT ID, Text, Link, Icon, ParentID, SortOrder, IstTrennlinie FROM navigation ORDER BY ParentID, SortOrder, ID";
     if ($res = $conn->query($sql)) {
-        while($row = $res->fetch_assoc()){ 
-            $items[] = $row; 
+        while($row = $res->fetch_assoc()){
+            $items[] = $row;
         }
         $res->free();
     }
@@ -81,43 +97,55 @@ switch($action){
         $items = fetch_all($conn);
         out(['success'=>true,'items'=>$items]);
         break;
-    case 'create': 
+    case 'create':
         $text = trim($_POST['text'] ?? '');
         $link = trim($_POST['link'] ?? '');
+        $icon = trim($_POST['icon'] ?? '');
         $parent = (int)($_POST['parent_id'] ?? 0);
-        if ($text==='' || $link==='') {
+        $istTrenn = !empty($_POST['ist_trennlinie']) ? 1 : 0;
+        // Trennlinien brauchen weder Titel noch Link
+        if (!$istTrenn && ($text==='' || $link==='')) {
             bad('Text und Link sind Pflichtfelder');
         }
+        if ($istTrenn && $text === '') $text = '— Trennlinie —';
+        if ($istTrenn) { $link = '#'; $icon = ''; }
         ensure_sortorder_column($conn);
+        ensure_extra_columns($conn);
 
         // Get next sort order
         $stmt = $conn->prepare("SELECT COALESCE(MAX(SortOrder),0)+10 FROM navigation WHERE ParentID=?");
-        $stmt->bind_param('i', $parent); 
-        $stmt->execute(); 
-        $stmt->bind_result($next); 
-        $stmt->fetch(); 
+        $stmt->bind_param('i', $parent);
+        $stmt->execute();
+        $stmt->bind_result($next);
+        $stmt->fetch();
         $stmt->close();
 
         // Insert new item
-        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, ParentID, SortOrder) VALUES (?,?,?,?)");
-        $stmt->bind_param('ssii', $text, $link, $parent, $next);
+        $iconVal = $icon !== '' ? $icon : null;
+        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, Icon, ParentID, SortOrder, IstTrennlinie) VALUES (?,?,?,?,?,?)");
+        $stmt->bind_param('sssiii', $text, $link, $iconVal, $parent, $next, $istTrenn);
         if (!$stmt->execute()) {
             bad('Einfügen fehlgeschlagen: '.$conn->error, 500);
         }
         $stmt->close();
         out(['success'=>true, 'items'=>fetch_all($conn)]);
         break;
-    case 'update': 
+    case 'update':
         $id = (int)($_POST['id'] ?? 0);
         $text = trim($_POST['text'] ?? '');
         $link = trim($_POST['link'] ?? '');
+        $icon = trim($_POST['icon'] ?? '');
         $parent = (int)($_POST['parent_id'] ?? 0);
+        $istTrenn = !empty($_POST['ist_trennlinie']) ? 1 : 0;
         if ($id<=0) bad('Ungültige ID');
-        if ($text==='' || $link==='') bad('Text und Link sind Pflichtfelder');
+        if (!$istTrenn && ($text==='' || $link==='')) bad('Text und Link sind Pflichtfelder');
+        if ($istTrenn && $text === '') $text = '— Trennlinie —';
+        if ($istTrenn) { $link = '#'; $icon = ''; }
         if ($parent === $id) bad('Parent darf nicht du selbst sein');
+        ensure_extra_columns($conn);
 
         // Check for circular reference
-        $pid = $parent; 
+        $pid = $parent;
         $max = 20;
         while($pid && $max--){
             $res = $conn->query("SELECT ParentID FROM navigation WHERE ID=".(int)$pid);
@@ -130,13 +158,47 @@ switch($action){
                 break;
             }
         }
-        $stmt = $conn->prepare("UPDATE navigation SET Text=?, Link=?, ParentID=? WHERE ID=?");
-        $stmt->bind_param('ssii', $text, $link, $parent, $id);
+        $iconVal = $icon !== '' ? $icon : null;
+        $stmt = $conn->prepare("UPDATE navigation SET Text=?, Link=?, Icon=?, ParentID=?, IstTrennlinie=? WHERE ID=?");
+        $stmt->bind_param('sssiii', $text, $link, $iconVal, $parent, $istTrenn, $id);
         if (!$stmt->execute()) {
             bad('Speichern fehlgeschlagen: '.$conn->error, 500);
         }
         $stmt->close();
         out(['success'=>true, 'items'=>fetch_all($conn)]);
+        break;
+    case 'duplicate':
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id<=0) bad('Ungültige ID');
+        ensure_extra_columns($conn);
+
+        $stmt = $conn->prepare("SELECT Text, Link, Icon, ParentID, SortOrder, IstTrennlinie FROM navigation WHERE ID=?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $orig = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if (!$orig) bad('Eintrag nicht gefunden', 404);
+
+        // Kopie direkt unterhalb des Originals: SortOrder+5, danach Neu-Sortierung
+        $newSort = (int)$orig['SortOrder'] + 5;
+        $newText = trim((string)$orig['Text']) . ' (Kopie)';
+        if (mb_strlen($newText) > 50) $newText = mb_substr($newText, 0, 50);
+        $newLink   = (string)$orig['Link'];
+        $newParent = (int)$orig['ParentID'];
+        $newTrenn  = (int)$orig['IstTrennlinie'];
+        $newIcon   = $orig['Icon'];
+
+        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, Icon, ParentID, SortOrder, IstTrennlinie) VALUES (?,?,?,?,?,?)");
+        $stmt->bind_param('sssiii', $newText, $newLink, $newIcon, $newParent, $newSort, $newTrenn);
+        if (!$stmt->execute()) {
+            bad('Duplizieren fehlgeschlagen: '.$conn->error, 500);
+        }
+        $newId = $conn->insert_id;
+        $stmt->close();
+
+        reorder_siblings($conn, $newParent);
+        out(['success'=>true, 'new_id'=>$newId, 'items'=>fetch_all($conn)]);
         break;
     case 'delete': 
         $id = (int)($_POST['id'] ?? 0);

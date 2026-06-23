@@ -103,24 +103,25 @@ class WanderpreiseJahresReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
                 text-align: center;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -134,7 +135,7 @@ class WanderpreiseJahresReport extends PDFGenerator {
             }
             .wanderpreis-name {
                 font-weight: bold;
-                color: #003366;
+                color: #3b5998;
             }
             .gravur-info {
                 color: #666;
@@ -422,17 +423,17 @@ class WanderpreiseJahresReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
                 text-align: center;
@@ -443,8 +444,9 @@ class WanderpreiseJahresReport extends PDFGenerator {
                 margin: 20px 0;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -458,7 +460,7 @@ class WanderpreiseJahresReport extends PDFGenerator {
             }
             .wanderpreis-name {
                 font-weight: bold;
-                color: #003366;
+                color: #3b5998;
             }
             .text-center {
                 text-align: center;
@@ -475,14 +477,14 @@ class WanderpreiseJahresReport extends PDFGenerator {
                 margin-top: 15px;
                 padding: 10px;
                 background-color: #e7f3ff;
-                border-left: 4px solid #2196F3;
+                border-left: 4px solid #94a3b8;
                 font-size: 10px;
             }
             .legende-box {
                 margin-top: 15px;
                 padding: 10px;
                 background-color: #f0f0f0;
-                border-left: 4px solid #003366;
+                border-left: 4px solid #3b5998;
                 font-size: 9px;
             }
             .legende-box p {
@@ -678,23 +680,23 @@ class WanderpreisHistorieReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
                 text-align: center;
             }
             h3 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 14pt;
                 margin: 15px 0 5px 0;
             }
@@ -704,8 +706,9 @@ class WanderpreisHistorieReport extends PDFGenerator {
                 margin: 20px 0;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -724,7 +727,7 @@ class WanderpreisHistorieReport extends PDFGenerator {
                 margin: 15px 0;
             }
             .wanderpreis-info-box h4 {
-                color: #003366;
+                color: #3b5998;
                 margin-top: 0;
             }
             .text-center {
@@ -840,17 +843,17 @@ class WanderpreisReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
                 text-align: center;
@@ -861,8 +864,9 @@ class WanderpreisReport extends PDFGenerator {
                 margin: 20px 0;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -876,7 +880,7 @@ class WanderpreisReport extends PDFGenerator {
             }
             .wanderpreis-name {
                 font-weight: bold;
-                color: #003366;
+                color: #3b5998;
             }
             .text-center {
                 text-align: center;
@@ -982,24 +986,25 @@ class AkuraGravurReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
                 text-align: center;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -1013,7 +1018,7 @@ class AkuraGravurReport extends PDFGenerator {
             }
             .wanderpreis-name {
                 font-weight: bold;
-                color: #003366;
+                color: #3b5998;
             }
             .gravur-info {
                 color: #666;
@@ -1025,13 +1030,13 @@ class AkuraGravurReport extends PDFGenerator {
             .rechnung-box {
                 background-color: #f0f0f0;
                 padding: 15px;
-                border-left: 4px solid #003366;
+                border-left: 4px solid #3b5998;
                 margin-top: 30px;
             }
             .rechnung-titel {
                 font-weight: bold;
                 font-size: 12pt;
-                color: #003366;
+                color: #3b5998;
                 margin-bottom: 10px;
             }
             .rechnung-adresse {
@@ -1307,11 +1312,11 @@ class MitgliederInfoReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 20pt;
                 margin: 10px 0;
                 font-weight: bold;
@@ -1329,8 +1334,9 @@ class MitgliederInfoReport extends PDFGenerator {
                 margin: 20px 0;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 12px;
                 text-align: left;
                 font-weight: bold;
@@ -1346,11 +1352,11 @@ class MitgliederInfoReport extends PDFGenerator {
             }
             .wanderpreis-name {
                 font-weight: bold;
-                color: #003366;
+                color: #3b5998;
             }
             .badge-definitiv {
                 display: inline-block;
-                background-color: #28a745;
+                background-color: #2f855a;
                 color: white;
                 padding: 2px 6px;
                 border-radius: 3px;
@@ -1362,7 +1368,7 @@ class MitgliederInfoReport extends PDFGenerator {
                 margin-top: 30px;
                 padding: 15px;
                 background-color: #e7f3ff;
-                border-left: 4px solid #2196F3;
+                border-left: 4px solid #94a3b8;
                 font-size: 10pt;
             }
             .info-box p {
@@ -1387,17 +1393,17 @@ class Top3SchuetzenReport extends PDFGenerator {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
                 text-align: center;
@@ -1408,8 +1414,9 @@ class Top3SchuetzenReport extends PDFGenerator {
                 margin: 20px 0;
             }
             .table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -1422,8 +1429,9 @@ class Top3SchuetzenReport extends PDFGenerator {
                 background-color: #f9f9f9;
             }
             .category-header {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: center;
                 font-weight: bold;

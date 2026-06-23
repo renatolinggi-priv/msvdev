@@ -383,12 +383,17 @@ $artCodes = [
             <div class="main-content-wrapper">
                 <!-- Header -->
                 <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-calendar-week me-2"></i>
-                            Standbelegungsplan
-                        </h2>
-                        <p class="text-muted mt-1">Import, Übersicht und Export der Standbelegungen</p>
+                    <div class="col-md-12 d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
+                                <i class="bi bi-calendar-week me-2"></i>
+                                Standbelegungsplan
+                            </h2>
+                            <p class="text-muted mt-1">Import, Übersicht und Export der Standbelegungen</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-success btn-sm" id="publishChangelogBtn">
+                            <i class="bi bi-megaphone me-1"></i>Veröffentlichen
+                        </button>
                     </div>
                 </div>
                 
@@ -546,7 +551,7 @@ $artCodes = [
                                         <thead>
                                             <tr>
                                                 <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="importSelectAll"></th>
-                                                <th style="width: 50px;" title="Im Kalender anzeigen"><i class="bi bi-calendar-check"></i></th>
+                                                <th style="width: 50px;" data-tooltip="Im Kalender anzeigen"><i class="bi bi-calendar-check"></i></th>
                                                 <th>Datum</th>
                                                 <th>Tag</th>
                                                 <th>Bezeichnung</th>
@@ -559,11 +564,11 @@ $artCodes = [
                                     </table>
                                 </div>
                                 
-                                <div class="d-flex justify-content-between mt-3">
+                                <div class="d-flex justify-content-between align-items-center mt-3">
                                     <button type="button" class="btn btn-outline-secondary" onclick="resetImport()">
                                         <i class="bi bi-arrow-left me-1"></i> Zurück
                                     </button>
-                                    <div>
+                                    <div class="d-flex align-items-center">
                                         <button type="button" class="btn btn-success me-2" onclick="saveImport()">
                                             <i class="bi bi-database-add me-1"></i> <span id="saveImportCount">0</span> Einträge importieren
                                         </button>
@@ -656,7 +661,7 @@ $artCodes = [
                                                 <thead>
                                                     <tr>
                                                         <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="overviewSelectAll"></th>
-                                                        <th style="width: 50px;" title="Im Kalender anzeigen"><i class="bi bi-calendar-check"></i></th>
+                                                        <th style="width: 50px;" data-tooltip="Im Kalender anzeigen"><i class="bi bi-calendar-check"></i></th>
                                                         <th>Datum</th>
                                                         <th>Tag</th>
                                                         <th>Bezeichnung</th>
@@ -700,14 +705,14 @@ $artCodes = [
                                 <div class="collapse" id="standbelegungActions">
                                     <div class="card-body pt-2 pb-3 px-3">
                                         <div class="row g-2 mb-2">
-                                            <div class="col-12">
-                                                <button type="button" class="btn btn-success w-100" onclick="openAddModal()">
-                                                    <i class="bi bi-plus-lg me-2"></i>Neuer Eintrag
+                                            <div class="col-6">
+                                                <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="openAddModal()">
+                                                    <i class="bi bi-plus-lg me-1"></i>Hinzufügen
                                                 </button>
                                             </div>
-                                            <div class="col-12">
-                                                <button type="button" class="btn btn-outline-danger w-100" onclick="deleteSelected()">
-                                                    <i class="bi bi-trash me-1"></i>Ausgewählte löschen
+                                            <div class="col-6">
+                                                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="deleteSelected()">
+                                                    <i class="bi bi-trash me-1"></i>Löschen
                                                 </button>
                                             </div>
                                         </div>
@@ -716,12 +721,12 @@ $artCodes = [
                                             <div class="row g-2">
                                                 <div class="col-6">
                                                     <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="exportJskPdf()">
-                                                        <i class="bi bi-file-pdf me-1"></i>JSK-Termine PDF
+                                                        <i class="bi bi-file-pdf me-1"></i>JSK PDF
                                                     </button>
                                                 </div>
                                                 <div class="col-6">
                                                     <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="showExportPreview()">
-                                                        <i class="bi bi-file-earmark-excel me-1"></i>Schiesstagemeldung
+                                                        <i class="bi bi-file-earmark-excel me-1"></i>Schiesstage
                                                     </button>
                                                 </div>
                                             </div>
@@ -1379,10 +1384,10 @@ function buildMobileCardsStandbelegung() {
                             <div class="mobile-card-detail-row">
                                 <span class="mobile-card-detail-label">Aktionen</span>
                                 <span class="mobile-card-detail-value">
-                                    <button class="btn btn-outline-primary btn-sm me-1" onclick="openEditModal(${id})" title="Bearbeiten">
+                                    <button class="btn btn-outline-primary btn-sm me-1" onclick="openEditModal(${id})" data-tooltip="Bearbeiten">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSingle(${id})" title="Löschen">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSingle(${id})" data-tooltip="Löschen">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </span>
@@ -1416,10 +1421,10 @@ function renderOverviewTable() {
                 <td>${formatTime(item.EndZeit)}</td>
                 <td><span class="badge ${badgeClass}">${item.Kategorie}</span></td>
                 <td class="text-nowrap">
-                    <button class="btn btn-outline-primary btn-sm me-1" onclick="openEditModal(${item.ID})" title="Bearbeiten">
+                    <button class="btn btn-outline-primary btn-sm me-1" onclick="openEditModal(${item.ID})" data-tooltip="Bearbeiten">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSingle(${item.ID})" title="Löschen">
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSingle(${item.ID})" data-tooltip="Löschen">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -1993,6 +1998,25 @@ function showLoading(text) {
 function hideLoading() {
     $('#loadingOverlay').hide();
 }
+
+// ==================== VERÖFFENTLICHEN ====================
+$('#publishChangelogBtn').on('click', async function() {
+    const r = await msvConfirm('Änderung veröffentlichen?', 'Ein Eintrag wird auf der Website angezeigt.', 'Veröffentlichen');
+    if (!r.isConfirmed) return;
+    const year = $('#overviewYear').val() || $('#importYear').val();
+    $.post('changelog_publish.php', {
+        kategorie: 'standbelegung',
+        tabelle: 'Standbelegung',
+        jahr: year,
+        beschreibung: 'Standbelegung ' + year + ' aktualisiert',
+        csrf_token: CSRF_TOKEN
+    }).done(function(res) {
+        if (res.success) msvToast(res.message, 'success');
+        else msvToast(res.message || 'Fehler', 'error');
+    }).fail(function() {
+        msvToast('Veröffentlichung fehlgeschlagen', 'error');
+    });
+});
 
 </script>
 

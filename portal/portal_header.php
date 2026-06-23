@@ -2,19 +2,8 @@
 // portal_header.php - Layout fuer das Mitgliederportal
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
-require_once __DIR__ . '/../inc/remember_me.inc.php';
 
-// iOS PWA: Session aus Remember-Cookie wiederherstellen falls nötig
-if (!isset($_SESSION['user_id'])) {
-    if (restoreSessionFromToken()) {
-        session_regenerate_id(true);
-        $_SESSION['regenerated'] = time();
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-    }
-}
-
+// requireLogin() stellt die Session bei Bedarf aus dem Remember-Cookie wieder her (iOS PWA)
 requireLogin();
 
 // CSRF-Token sicherstellen
@@ -28,7 +17,8 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#3b5998">
     <title><?php echo htmlspecialchars($portal_page_title); ?> - MSV Wilen</title>
 
     <!-- iOS PWA: Remember-Token in localStorage sichern (persistiert nach App-Neustart) -->
@@ -53,6 +43,9 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
+    <!-- Portal Design-System (Tokens + Komponenten) -->
+    <link rel="stylesheet" href="../css/portal.css">
+
     <!-- jQuery + Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -63,22 +56,16 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <style>
-        :root {
-            --primary-color: #3b5998;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --border-radius: 0.75rem;
-            --transition-speed: 0.3s;
-            --nav-height: 60px;
-        }
+        /* Design-Tokens (:root) + Karten/Header/Felder: siehe css/portal.css */
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
             padding-top: var(--nav-height);
-            min-height: 100vh;
+            min-height: 100vh;       /* Fallback fuer aeltere Browser */
+            min-height: 100dvh;      /* iOS/Safari: sichtbare Hoehe ohne Browserleiste -> Footer nicht unter der Falz */
+            display: flex;
+            flex-direction: column;
         }
 
         /* Portal Navbar */
@@ -145,57 +132,21 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             font-weight: 500;
         }
 
-        /* Portal Content */
-        .portal-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem 1rem;
+        /* .portal-content, .portal-card(-body), .portal-page-header: siehe css/portal.css */
+
+        /* PWA Standalone: Nur Seitentitel ausblenden (Navbar zeigt ihn bereits), Jahresauswahl bleibt */
+        @media (display-mode: standalone) {
+            .portal-page-header > div:first-child {
+                display: none !important;
+            }
+            .portal-page-header {
+                justify-content: flex-end !important;
+                margin-bottom: 0.75rem;
+            }
         }
 
-        /* Cards */
-        .portal-card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            border: 1px solid #f0f0f0;
-            transition: all var(--transition-speed) ease;
-            overflow: hidden;
-        }
-
-        .portal-card:hover {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-
-        .portal-card-body {
-            padding: 1.25rem;
-        }
-
-        /* Page Header */
-        .portal-page-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .portal-page-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 0.25rem;
-        }
-
-        .portal-page-header .subtitle {
-            color: var(--secondary-color);
-            font-size: 0.9rem;
-        }
-
-        /* Responsive */
+        /* Responsive (Content-/Header-Abstaende: siehe css/portal.css) */
         @media (max-width: 767.98px) {
-            .portal-content {
-                padding: 1rem 0.75rem;
-            }
-            .portal-page-header h1 {
-                font-size: 1.3rem;
-            }
             .d-mobile-none {
                 display: none !important;
             }
@@ -387,6 +338,8 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                 margin-top: auto;
                 border-top: 2px solid #dee2e6;
                 padding: 0.65rem;
+                /* iPhone: Inhalt ueber den Home-Indicator anheben (sonst kaum sichtbar) */
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
                 background: #f8f9fa;
             }
             .mobile-user-header {
@@ -505,6 +458,9 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
         ]];
     }
 
+    // Meine Daten — nach Dokumente/Protokolle
+    $nav_groups[] = ['type' => 'link', 'link' => 'meine_daten.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'];
+
     // Mobile: Flache Liste (für Off-Canvas)
     $nav_items = [];
     foreach ($nav_groups as $group) {
@@ -525,7 +481,8 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                 <img src="../icons/icon-32x32.png" alt="MSV" width="22" height="22" style="border-radius:4px; vertical-align:-3px;"> <?php echo htmlspecialchars($portal_page_title); ?>
             </a>
 
-            <button class="navbar-toggler border-0" type="button" id="portalMenuToggler">
+            <button class="navbar-toggler border-0" type="button" id="portalMenuToggler"
+                    aria-label="Menü öffnen" aria-controls="portalOffcanvas" aria-expanded="false">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -573,7 +530,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><span class="dropdown-item-text text-muted small"><?php echo ucfirst($portal_user_role); ?></span></li>
                             <li><hr class="dropdown-divider"></li>
-                            <?php if (isAdmin()): ?>
+                            <?php if (isVorstand()): ?>
                             <li>
                                 <a class="dropdown-item" href="../inc/home.php">
                                     <i class="bi bi-gear me-2 text-muted"></i>Admin-Bereich
@@ -581,6 +538,11 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
+                            <li>
+                                <a class="dropdown-item <?php echo $current_page == 'benachrichtigungen.php' ? 'active' : ''; ?>" href="benachrichtigungen.php">
+                                    <i class="bi bi-bell me-2 text-muted"></i>Benachrichtigungen
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item" href="changelog.php">
                                     <i class="bi bi-megaphone me-2 text-muted"></i>Neuigkeiten
@@ -621,7 +583,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                 </li>
                 <?php endforeach; ?>
 
-                <?php if (isAdmin()): ?>
+                <?php if (isVorstand()): ?>
                 <li class="mobile-nav-item">
                     <a class="mobile-nav-link" href="../inc/home.php">
                         <i class="bi bi-gear"></i>
@@ -640,6 +602,12 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                     </div>
                 </div>
                 <ul class="mobile-nav-list">
+                    <li class="mobile-nav-item">
+                        <a class="mobile-nav-link <?php echo $current_page == 'benachrichtigungen.php' ? 'active' : ''; ?>" href="benachrichtigungen.php">
+                            <i class="bi bi-bell"></i>
+                            Benachrichtigungen
+                        </a>
+                    </li>
                     <li class="mobile-nav-item">
                         <a class="mobile-nav-link" href="changelog.php">
                             <i class="bi bi-megaphone"></i>
@@ -670,12 +638,15 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             offcanvas.classList.add('show');
             overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
+            toggler.setAttribute('aria-expanded', 'true');
+            if (closeBtn) closeBtn.focus();
         }
 
         function closeMenu() {
             offcanvas.classList.remove('show');
             overlay.classList.remove('show');
             document.body.style.overflow = '';
+            toggler.setAttribute('aria-expanded', 'false');
         }
 
         toggler.addEventListener('click', function(e) {
@@ -686,6 +657,26 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
 
         if (closeBtn) closeBtn.addEventListener('click', closeMenu);
         overlay.addEventListener('click', closeMenu);
+
+        // Escape schliesst das Menü, Tab bleibt im Menü gefangen (Fokus-Falle)
+        document.addEventListener('keydown', function(e) {
+            if (!offcanvas.classList.contains('show')) return;
+            if (e.key === 'Escape') {
+                closeMenu();
+                toggler.focus();
+                return;
+            }
+            if (e.key === 'Tab') {
+                var focusable = offcanvas.querySelectorAll('a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])');
+                if (!focusable.length) return;
+                var first = focusable[0], last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
+            }
+        });
 
         // Close on nav link click
         document.querySelectorAll('#portalOffcanvas .mobile-nav-link').forEach(function(link) {

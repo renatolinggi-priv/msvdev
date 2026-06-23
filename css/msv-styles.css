@@ -140,10 +140,10 @@ body {
 .btn:active { transform: translateY(0); }
 
 /* Outline Button Verbesserungen */
-.btn-outline-info { color: #0ea5e9; border-color: #0ea5e9; background-color: #ffffff; }
-.btn-outline-info:hover { background-color: #0ea5e9; border-color: #0ea5e9; color: #ffffff; }
-.btn-outline-success { color: #22c55e; border-color: #22c55e; background-color: #ffffff; }
-.btn-outline-success:hover { background-color: #22c55e; border-color: #22c55e; color: #ffffff; }
+.btn-outline-info { color: #17a2b8; border-color: #17a2b8; background-color: #ffffff; }
+.btn-outline-info:hover { background-color: #17a2b8; border-color: #17a2b8; color: #ffffff; }
+.btn-outline-success { color: #28a745; border-color: #28a745; background-color: #ffffff; }
+.btn-outline-success:hover { background-color: #28a745; border-color: #28a745; color: #ffffff; }
 .btn-outline-secondary { color: #64748b; border-color: #cbd5e1; background-color: #ffffff; }
 .btn-outline-secondary:hover { background-color: #64748b; border-color: #64748b; color: #ffffff; }
 
@@ -218,6 +218,78 @@ body {
     position: sticky;
     top: 0;
     z-index: 10; /* unter Navigation */
+}
+
+/* ==========================================
+   HYBRID-TABLE (Mitglieder-/Listen-Pattern)
+   ========================================== */
+.hybrid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.hybrid-table thead th {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    background: linear-gradient(180deg, #f8fafc, #eef2f7);
+    border-bottom: 2px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+}
+
+.hybrid-table tbody tr.hybrid-row {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.hybrid-table tbody tr.hybrid-row:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.hybrid-table tbody tr.hybrid-row.selected {
+    background: rgba(59, 130, 246, 0.08);
+    box-shadow: inset 4px 0 0 #3b82f6;
+}
+
+.hybrid-table tbody td {
+    padding: 0.35rem 0.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.82rem;
+}
+
+/* Hybrid-Table Zellen-Typen */
+.h-nr {
+    font-weight: 700;
+    color: #6366f1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.h-name {
+    font-weight: 500;
+}
+
+.h-date {
+    color: #64748b;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.h-email {
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.h-sub {
+    color: #64748b;
+    font-size: 0.82rem;
 }
 
 /* ==========================================
@@ -638,19 +710,19 @@ body {
 
 /* Kompakte Button Varianten für Standard-Seiten */
 .btn-compact-standard.btn-outline-info {
-    color: #0ea5e9 !important; border-color: #0ea5e9 !important; background-color: #ffffff !important;
+    color: #17a2b8 !important; border-color: #17a2b8 !important; background-color: #ffffff !important;
 }
 
 .btn-compact-standard.btn-outline-info:hover {
-    background-color: #0ea5e9 !important; border-color: #0ea5e9 !important; color: #ffffff !important;
+    background-color: #17a2b8 !important; border-color: #17a2b8 !important; color: #ffffff !important;
 }
 
 .btn-compact-standard.btn-outline-success {
-    color: #22c55e !important; border-color: #22c55e !important; background-color: #ffffff !important;
+    color: #28a745 !important; border-color: #28a745 !important; background-color: #ffffff !important;
 }
 
 .btn-compact-standard.btn-outline-success:hover {
-    background-color: #22c55e !important; border-color: #22c55e !important; color: #ffffff !important;
+    background-color: #28a745 !important; border-color: #28a745 !important; color: #ffffff !important;
 }
 
 .btn-compact:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -673,6 +745,73 @@ body {
 .btn-compact.btn-outline-secondary { background-color: #fff !important; color: #718096 !important; border: 1px solid #e2e8f0 !important; }
 .btn-compact.btn-zwischenrang { background-color: #e6f2ff !important; color: #3b5998 !important; }
 .btn-compact.btn-absendenbuch { background-color: #fff9e6 !important; color: #8a6d1c !important; }
+
+/* ==========================================
+   EXPORT-TOOLBAR (gruppierte Dokumenten-Buttons)
+   Wiederverwendbar auf allen Seiten mit Export-/PDF-Buttons.
+   Struktur: .export-toolbar > .export-toolbar-head + .export-groups
+             .export-groups > .export-group > .export-group-label + .export-group-btns
+   Erstmals genutzt in inc/endschrang.php
+   ========================================== */
+.export-toolbar {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius, 0.5rem);
+    box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.08));
+    padding: 1rem 1.25rem;
+}
+.export-toolbar-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    row-gap: 0.5rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #eef2f7;
+}
+.export-toolbar-head .btn { font-weight: 500; }
+.export-toolbar-head i { font-size: 1.05rem; }
+.export-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+.export-group-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #94a3b8;
+    margin-bottom: 0.4rem;
+}
+.export-group-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.export-group-btns .btn-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 1 auto;
+    min-width: 132px;
+}
+.export-group-btns .btn-compact span {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (max-width: 575.98px) {
+    .export-group-btns .btn-compact {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 0;
+    }
+}
 
 /* ==========================================
    ACCESSIBILITY
@@ -701,11 +840,30 @@ body {
     .action-card-header { background: transparent !important; padding-left: 0 !important; }
 }
 
-/* Desktop: Action-Card passt sich der Inhaltsbreite an */
+/* Desktop: Action-Card aufgelöst — Buttons direkt sichtbar */
 @media (min-width: 768px) {
-    .action-card { width: fit-content; }
-    .action-card .card-body [class*="col-"] { flex: 0 0 auto !important; width: auto !important; }
-    .action-card .card-body .btn { width: auto !important; }
+    .action-card { border: none !important; background: transparent !important; box-shadow: none !important; width: auto; }
+    .action-card-header { display: none !important; }
+    .action-card .collapse { display: flex !important; height: auto !important; }
+    /* Card-body = horizontale Button-Leiste */
+    .action-card .card-body { padding: 0 !important; display: flex !important; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+    /* Grid flattening: row + col werden unsichtbar, Buttons fliessen direkt */
+    .action-card .card-body > .row { display: contents !important; }
+    .action-card .card-body > .row > [class*="col"] { display: contents !important; }
+    /* Export-Sektion: vertikaler Separator statt horizontale Linie */
+    .action-card .card-body > .border-top {
+        border-top: none !important; border-left: 1px solid #ced4da !important;
+        padding: 0.15rem 0 0.15rem 0.6rem !important; margin: 0 !important;
+        display: flex !important; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    }
+    .action-card .card-body > .border-top > small { display: none !important; }
+    .action-card .card-body > .border-top .row { display: contents !important; }
+    .action-card .card-body > .border-top [class*="col"] { display: contents !important; }
+    /* Margins/Paddings reset */
+    .action-card .card-body .mb-2 { margin-bottom: 0 !important; }
+    .action-card .card-body .pt-2 { padding-top: 0 !important; }
+    /* Alle Buttons: auto-width, kleiner (btn-sm Grösse) */
+    .action-card .card-body .btn { width: auto !important; font-size: 0.8rem !important; padding: 0.3rem 0.65rem !important; }
 }
 .action-group .btn:first-child{border-top-right-radius:0!important;border-bottom-right-radius:0!important}
 .action-group .btn:last-child{border-top-left-radius:0!important;border-bottom-left-radius:0!important}
@@ -719,4 +877,12 @@ body {
 
 .body-flat-tables .table-modern thead th{
   background:#f2f4f7!important;border-bottom:1px solid #e5e7eb!important
+}
+
+/* ========== MSV Tooltip (globales DOM-Element, position:fixed) ========== */
+.msv-tooltip {
+  position: fixed; white-space: nowrap;
+  background: #1e293b; color: #fff; padding: 6px 12px;
+  border-radius: 6px; font-size: 0.78rem; font-weight: 500;
+  pointer-events: none; z-index: 99999;
 }

@@ -53,63 +53,49 @@ function validateYear($year) {
 function generateResultRow($row) {
     $schwini_hoeher = max($row['Schwini_Summe1'], $row['Schwini_Summe2']);
     $schwini_tiefer = min($row['Schwini_Summe1'], $row['Schwini_Summe2']);
-    
+
     // Calculate Z-result points
     $ZResult = 0;
     for ($i = 1; $i <= 6; $i++) {
         $ZResult += calculatePoints($row['ZSchuss' . $i] ?? 0);
     }
-    
-    // Build HTML with proper escaping
-    $html = "<tr>";
-    $html .= "<td><a href='#' class='edit-btn' data-id='" . htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') . "'>" .
-             htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8') . "</a></td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($row['Endstich_Summe'], ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($schwini_hoeher . ", " . $schwini_tiefer, ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($row['Kunst_Summe'], ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($row['max_glueck'] . " (" . $row['GSchuss1'] . "," . $row['GSchuss2'] . "," . $row['GSchuss3'] . ")", ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($ZResult, ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($row['SieUndEr_Summe'] ?? '-', ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . htmlspecialchars($row['Ansage'] ?? '', ENT_QUOTES, 'UTF-8') . "</td>";
-    
-    // Actions column with icon-only buttons
-    $html .= "<td class='text-center'>";
-    $html .= "<button class='btn btn-outline-primary btn-sm me-1 edit-btn' data-id='" . htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') . "' title='Bearbeiten'>";
-    $html .= "<i class='bi bi-pencil'></i></button>";
-    $html .= "<button class='btn btn-outline-danger btn-sm delete-btn' data-id='" . htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8') . "' title='Löschen'>";
-    $html .= "<i class='bi bi-trash'></i></button>";
-    $html .= "</td>";
-    $html .= "</tr>";
-    
-    return $html;
-}
 
-/**
- * Generate HTML for an empty input row when no data exists
- *
- * @param array $mitglied Member data
- * @return string HTML table row with input fields
- */
-function generateEmptyRow($mitglied) {
-    $html = "<tr>";
-    $html .= "<td>" . htmlspecialchars($mitglied['Name'] . " " . $mitglied['Vorname'], ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    $html .= "<td class='text-center'>-</td>";
-    
-    // Actions column with icon-only buttons
-    $html .= "<td class='text-center'>";
-    $html .= "<button class='btn btn-outline-primary btn-sm me-1 edit-btn' data-id='" . htmlspecialchars($mitglied['ID'], ENT_QUOTES, 'UTF-8') . "' title='Bearbeiten'>";
-    $html .= "<i class='bi bi-pencil'></i></button>";
-    $html .= "<button class='btn btn-outline-danger btn-sm delete-btn' data-id='" . htmlspecialchars($mitglied['ID'], ENT_QUOTES, 'UTF-8') . "' title='Löschen'>";
-    $html .= "<i class='bi bi-trash'></i></button>";
-    $html .= "</td>";
+    // Prüfen ob echte Daten vorliegen
+    $hasRealData = ($row['Endstich_Summe'] > 0
+                    || $row['Schwini_Summe1'] > 0
+                    || $row['Schwini_Summe2'] > 0
+                    || $row['Kunst_Summe'] > 0
+                    || ($row['max_glueck'] ?? 0) > 0
+                    || ($row['SieUndEr_Summe'] ?? 0) > 0
+                    || !empty($row['Ansage']));
+    $dataAttr = $hasRealData ? '1' : '0';
+
+    $id = htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');
+    $name = htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8');
+
+    $html = "<tr class='hybrid-row' data-mitglied-id='{$id}' data-has-data='{$dataAttr}'>";
+    $html .= "<td>{$name}</td>";
+
+    if ($hasRealData) {
+        $html .= "<td class='text-center'>" . htmlspecialchars($row['Endstich_Summe'], ENT_QUOTES, 'UTF-8') . "</td>";
+        $html .= "<td class='text-center'>" . htmlspecialchars($schwini_hoeher . ", " . $schwini_tiefer, ENT_QUOTES, 'UTF-8') . "</td>";
+        $html .= "<td class='text-center'>" . htmlspecialchars($row['Kunst_Summe'], ENT_QUOTES, 'UTF-8') . "</td>";
+        $html .= "<td class='text-center'>" . htmlspecialchars($row['max_glueck'] . " (" . $row['GSchuss1'] . "," . $row['GSchuss2'] . "," . $row['GSchuss3'] . ")", ENT_QUOTES, 'UTF-8') . "</td>";
+        $html .= "<td class='text-center'>" . htmlspecialchars($ZResult, ENT_QUOTES, 'UTF-8') . "</td>";
+        $html .= "<td class='text-center'>" . htmlspecialchars($row['SieUndEr_Summe'] ?? '-', ENT_QUOTES, 'UTF-8') . "</td>";
+        $html .= "<td class='text-center'>" . htmlspecialchars($row['Ansage'] ?? '', ENT_QUOTES, 'UTF-8') . "</td>";
+    } else {
+        $html .= "<td class='text-center'>-</td>";
+        $html .= "<td class='text-center'>-</td>";
+        $html .= "<td class='text-center'>-</td>";
+        $html .= "<td class='text-center'>-</td>";
+        $html .= "<td class='text-center'>-</td>";
+        $html .= "<td class='text-center'>-</td>";
+        $html .= "<td class='text-center'>-</td>";
+    }
+
     $html .= "</tr>";
-    
+
     return $html;
 }
 
@@ -163,6 +149,14 @@ LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
 LEFT JOIN endresultate_partner ep ON m.ID = ep.MitgliedID AND ep.Jahr = ?
 GROUP BY
     m.ID, m.Vorname, m.Name
+HAVING
+    Endstich_Summe > 0
+    OR Schwini_Summe1 > 0
+    OR Schwini_Summe2 > 0
+    OR Kunst_Summe > 0
+    OR max_glueck > 0
+    OR SieUndEr_Summe > 0
+    OR z.Ansage IS NOT NULL
 ORDER BY
     m.Name, m.Vorname
 ";
@@ -179,28 +173,8 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
     
-    if ($result->num_rows > 0) {
-        // Generate rows with data
-        while ($row = $result->fetch_assoc()) {
-            echo generateResultRow($row);
-        }
-    } else {
-        // No results found - show empty input fields
-        $sqlMitglieder = "SELECT ID, Name, Vorname FROM mitglieder ORDER BY Name, Vorname";
-        $mitgliederStmt = $conn->prepare($sqlMitglieder);
-        
-        if (!$mitgliederStmt) {
-            throw new Exception("Prepare failed for members query: " . $conn->error);
-        }
-        
-        $mitgliederStmt->execute();
-        $mitgliederResult = $mitgliederStmt->get_result();
-        
-        while ($mitglied = $mitgliederResult->fetch_assoc()) {
-            echo generateEmptyRow($mitglied);
-        }
-        
-        $mitgliederStmt->close();
+    while ($row = $result->fetch_assoc()) {
+        echo generateResultRow($row);
     }
     
     $stmt->close();
@@ -208,7 +182,7 @@ try {
 } catch (Exception $e) {
     // Log error for debugging while showing user-friendly message
     error_log("Database error in load_endschresultate.php: " . $e->getMessage());
-    echo "<tr><td colspan='9'>Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.</td></tr>";
+    echo "<tr><td colspan='8'>Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.</td></tr>";
 } finally {
     // Ensure connection is always closed
     $conn->close();

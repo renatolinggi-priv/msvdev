@@ -1,85 +1,133 @@
-// munitionskauf.js - Frontend Logic für Munitionsbestellungen
+// munitionskauf.js - Frontend Logic für Munitionsbestellungen (Redesign v2)
 (function() {
   'use strict';
-  
+
   const API = 'munitionskauf/munitionskauf_api.php';
-  let deleteConfirmModal = null;
-  let pendingDeleteData = null;
-  let currentFilter = 'year'; // Start mit 'year' statt 'today'
-  
+  let currentFilter = 'year';
+
+  // === Helper ===
+  function fmtCHF(cents) {
+    return 'CHF ' + ((cents || 0) / 100).toFixed(2);
+  }
+
+  function fmtCHFShort(cents) {
+    const val = (cents || 0) / 100;
+    return val >= 1000 ? "CHF " + val.toLocaleString('de-CH', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : fmtCHF(cents);
+  }
+
   // === Initialization ===
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== Munitionskauf JS initialized ===');
-    
+    initTabs();
     initYearSelector();
     initDateField();
     loadMitglieder();
     initEventListeners();
-    
-    // Start direkt mit "year" Filter um alle Daten zu sehen
+    initMobileFilterPills();
     setFilter('year');
-    
     loadStatistics();
   });
-  
-  // === Helper Functions ===
-  function fmtCHF(cents) {
-    return 'CHF ' + ((cents || 0) / 100).toFixed(2);
+
+  // === Tab System ===
+  function initTabs() {
+    document.querySelectorAll('.msv-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        var tabId = this.getAttribute('data-tab');
+
+        // Deaktiviere alle Tabs und Panes
+        document.querySelectorAll('.msv-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('active'); });
+
+        // Aktiviere geklickten Tab
+        this.classList.add('active');
+        var pane = document.getElementById(tabId);
+        if (pane) pane.classList.add('active');
+
+        // Wenn Käufe-Tab auf Desktop: zeige Erfassung mit Tabelle
+        if (tabId === 'tab-kaeufe') {
+          document.getElementById('tab-erfassung').classList.add('active');
+          // Scroll zur Tabelle
+          var tableWrapper = document.getElementById('desktopKaeufeContainer');
+          if (tableWrapper) tableWrapper.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
   }
-  
-  // === Initialization Functions ===
+
+  // === Mobile Filter Pills ===
+  function initMobileFilterPills() {
+    document.querySelectorAll('#mobileFilterPills .filter-pill[data-filter]').forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        document.querySelectorAll('#mobileFilterPills .filter-pill').forEach(function(p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        setFilter(this.getAttribute('data-filter'));
+      });
+    });
+
+    // Mobile PDF Button
+    var pdfBtn = document.getElementById('mobilePdfBtn');
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', generatePDF);
+    }
+
+    // Mobile Search
+    var searchInput = document.getElementById('mobileSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        filterMobileCards(this.value.toLowerCase());
+      });
+    }
+  }
+
+  function filterMobileCards(term) {
+    document.querySelectorAll('#mobileCardsContainer .mobile-kauf-card').forEach(function(card) {
+      var text = card.textContent.toLowerCase();
+      card.style.display = text.includes(term) ? '' : 'none';
+    });
+  }
+
+  // === Year/Date ===
   function initYearSelector() {
-    const sel = document.getElementById('yearSelect');
+    var sel = document.getElementById('yearSelect');
     sel.innerHTML = '';
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y >= currentYear - 3; y--) {
-      const opt = document.createElement('option');
+    var currentYear = new Date().getFullYear();
+    for (var y = currentYear; y >= currentYear - 3; y--) {
+      var opt = document.createElement('option');
       opt.value = String(y);
       opt.textContent = String(y);
       if (y === currentYear) opt.selected = true;
       sel.appendChild(opt);
     }
-    
     document.getElementById('statsYear').textContent = currentYear;
   }
-  
+
   function initDateField() {
-    // Set today as default
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('kaufDatum').value = today;
-    
-    // Set max date to prevent future dates
-    document.getElementById('kaufDatum').max = today;
+    var today = new Date().toISOString().split('T')[0];
+    var field = document.getElementById('kaufDatum');
+    field.value = today;
+    field.max = today;
   }
-  
+
+  // === Mitglieder ===
   function loadMitglieder() {
-    const sel = document.getElementById('mitgliedSelect');
+    var sel = document.getElementById('mitgliedSelect');
     sel.innerHTML = '<option value="">– Mitglied wählen –</option>';
-    
-    fetch(`${API}?action=list_mitglieder`)
-      .then(r => {
-        console.log('Mitglieder response status:', r.status);
-        if (!r.ok) throw new Error('Network response was not ok');
-        return r.json();
-      })
-      .then(data => {
-        console.log('Mitglieder data:', data);
+
+    fetch(API + '?action=list_mitglieder')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
         if (data.success && data.data) {
-          data.data.forEach(m => {
-            const label = `${(m.Nachname || m.Name || '').trim()} ${(m.Vorname || '').trim()}`.trim();
-            const opt = document.createElement('option');
+          data.data.forEach(function(m) {
+            var label = ((m.Nachname || m.Name || '') + ' ' + (m.Vorname || '')).trim();
+            var opt = document.createElement('option');
             opt.value = m.id;
             opt.textContent = label;
             sel.appendChild(opt);
           });
         }
       })
-      .catch(err => {
-        console.error('Error loading mitglieder:', err);
-        // Silently fail - user can still use guest input
-      });
+      .catch(function(err) { console.error('Mitglieder laden:', err); });
   }
-  
+
   // === Event Listeners ===
   function initEventListeners() {
     // Form submit
@@ -87,570 +135,431 @@
       e.preventDefault();
       saveBestellung();
     });
-    
-    // Reset button
+
+    // Reset
     document.getElementById('btnReset').addEventListener('click', resetForm);
-    
-    // Mitglied/Gast selection
+
+    // Mitglied/Gast gegenseitig ausschliessen
     document.getElementById('mitgliedSelect').addEventListener('change', function() {
-      if (this.value) {
-        document.getElementById('gastName').value = '';
-      }
+      if (this.value) document.getElementById('gastName').value = '';
     });
-    
     document.getElementById('gastName').addEventListener('input', function() {
-      if (this.value.trim()) {
-        document.getElementById('mitgliedSelect').value = '';
-      }
+      if (this.value.trim()) document.getElementById('mitgliedSelect').value = '';
     });
-    
+
     // Year change
     document.getElementById('yearSelect').addEventListener('change', function() {
       document.getElementById('statsYear').textContent = this.value;
       loadBestellungen(currentFilter);
       loadStatistics();
     });
-    
-    // Filter buttons
-    document.getElementById('btnFilterToday').addEventListener('click', () => setFilter('today'));
-    document.getElementById('btnFilterWeek').addEventListener('click', () => setFilter('week'));
-    document.getElementById('btnFilterMonth').addEventListener('click', () => setFilter('month'));
-    document.getElementById('btnFilterYear').addEventListener('click', () => setFilter('year'));
-    
-    // PDF button
+
+    // Desktop Filter buttons
+    document.getElementById('btnFilterToday').addEventListener('click', function() { setFilter('today'); });
+    document.getElementById('btnFilterWeek').addEventListener('click', function() { setFilter('week'); });
+    document.getElementById('btnFilterMonth').addEventListener('click', function() { setFilter('month'); });
+    document.getElementById('btnFilterYear').addEventListener('click', function() { setFilter('year'); });
+
+    // PDF
     document.getElementById('btnGeneratePDF').addEventListener('click', generatePDF);
-    
+
     // Paket checkboxes
-    document.querySelectorAll('.paket-check').forEach(cb => {
+    document.querySelectorAll('.paket-check').forEach(function(cb) {
       cb.addEventListener('change', recalcTotal);
     });
-    
+
     // Custom inputs
-    document.querySelectorAll('.custom-anzahl').forEach(input => {
+    document.querySelectorAll('.custom-anzahl').forEach(function(input) {
       input.addEventListener('input', function() {
-        const anzahl = parseInt(this.value) || 0;
-        const preis = anzahl * 50; // 50 Rappen pro Schuss
-        const preisText = preis > 0 ? 'CHF ' + (preis / 100).toFixed(0) : 'CHF 0';
-        
-        if (this.id === 'custom_gp11') {
-          this.parentElement.querySelector('.custom-preis').textContent = preisText;
-        } else if (this.id === 'custom_gp90') {
-          this.parentElement.querySelector('.custom-preis').textContent = preisText;
-        }
-        
+        var anzahl = parseInt(this.value) || 0;
+        var preis = anzahl * 50;
+        var preisText = preis > 0 ? 'CHF ' + (preis / 100).toFixed(0) : 'CHF 0';
+        this.parentElement.querySelector('.custom-preis').textContent = preisText;
         recalcTotal();
       });
     });
-    
-    // Delete confirmation modal
-    if (!deleteConfirmModal) {
-      deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    }
-    
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-      if (pendingDeleteData) {
-        deleteConfirmModal.hide();
-        executeDelete(pendingDeleteData.id);
-        pendingDeleteData = null;
+
+    // Delete via event delegation (SweetAlert2)
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.btn-delete-bestellung');
+      if (btn) {
+        e.preventDefault();
+        var id = btn.dataset.id;
+        var name = btn.dataset.name || 'diese Bestellung';
+        var datum = btn.dataset.datum || '';
+
+        msvConfirmDelete(name + (datum ? ' (' + datum + ')' : '')).then(function(result) {
+          if (result.isConfirmed) {
+            executeDelete(id);
+          }
+        });
       }
     });
   }
-  
-  // === Calculation Functions ===
+
+  // === Calculation ===
   function recalcTotal() {
-    let gp11Total = 0;
-    let gp90Total = 0;
-    let totalPreis = 0;
-    
-    // Standard packages
-    document.querySelectorAll('.paket-check:checked').forEach(cb => {
-      const anzahl = parseInt(cb.dataset.anzahl) || 0;
-      const typ = cb.dataset.typ;
-      
-      if (typ.startsWith('GP11')) {
-        gp11Total += anzahl;
-      } else if (typ.startsWith('GP90')) {
-        gp90Total += anzahl;
-      }
-      
-      totalPreis += anzahl * 50;
+    var gp11 = 0, gp90 = 0, preis = 0;
+
+    document.querySelectorAll('.paket-check:checked').forEach(function(cb) {
+      var anz = parseInt(cb.dataset.anzahl) || 0;
+      if (cb.dataset.typ.indexOf('GP11') !== -1) gp11 += anz;
+      else if (cb.dataset.typ.indexOf('GP90') !== -1) gp90 += anz;
+      preis += anz * 50;
     });
-    
-    // Custom amounts
-    const customGP11 = parseInt(document.getElementById('custom_gp11').value) || 0;
-    const customGP90 = parseInt(document.getElementById('custom_gp90').value) || 0;
-    
-    gp11Total += customGP11;
-    gp90Total += customGP90;
-    totalPreis += (customGP11 + customGP90) * 50;
-    
-    // Update display
-    document.getElementById('total_gp11').textContent = gp11Total;
-    document.getElementById('total_gp90').textContent = gp90Total;
-    document.getElementById('total_preis').textContent = fmtCHF(totalPreis);
+
+    var cGP11 = parseInt(document.getElementById('custom_gp11').value) || 0;
+    var cGP90 = parseInt(document.getElementById('custom_gp90').value) || 0;
+    gp11 += cGP11;
+    gp90 += cGP90;
+    preis += (cGP11 + cGP90) * 50;
+
+    document.getElementById('total_gp11').textContent = gp11;
+    document.getElementById('total_gp90').textContent = gp90;
+    document.getElementById('total_preis').textContent = fmtCHF(preis);
   }
-  
-  // === Form Functions ===
+
+  // === Form ===
   function resetForm() {
     document.getElementById('munitionForm').reset();
-    
-    // Reset date to today
     initDateField();
-    
-    // Reset custom prices
-    document.querySelectorAll('.custom-preis').forEach(el => {
-      el.textContent = 'CHF 0';
-    });
-    
-    // Recalc totals
+    document.querySelectorAll('.custom-preis').forEach(function(el) { el.textContent = 'CHF 0'; });
     recalcTotal();
   }
-  
+
   function saveBestellung() {
-    console.log('=== SAVE BESTELLUNG START ===');
-    
-    const mitglied_id = document.getElementById('mitgliedSelect').value;
-    const gast_name = document.getElementById('gastName').value.trim();
-    const kauf_datum = document.getElementById('kaufDatum').value;
-    const anlass = document.getElementById('anlass').value.trim();
-    const jahr = document.getElementById('yearSelect').value;
-    
-    console.log('Form data:', { mitglied_id, gast_name, kauf_datum, anlass, jahr });
-    
-    // Validation
+    var mitglied_id = document.getElementById('mitgliedSelect').value;
+    var gast_name = document.getElementById('gastName').value.trim();
+    var kauf_datum = document.getElementById('kaufDatum').value;
+    var anlass = document.getElementById('anlass').value.trim();
+    var jahr = document.getElementById('yearSelect').value;
+
     if (!mitglied_id && !gast_name) {
-      msvToast('Bitte wähle ein Mitglied oder gib einen Gastnamen ein', 'danger');
+      msvToast('Bitte Mitglied wählen oder Gast-Name eingeben', 'danger');
       return;
     }
-    
     if (mitglied_id && gast_name) {
-      msvToast('Bitte nur Mitglied ODER Gast auswählen, nicht beides', 'danger');
+      msvToast('Bitte nur Mitglied ODER Gast, nicht beides', 'danger');
       return;
     }
-    
     if (!kauf_datum) {
-      msvToast('Bitte ein Kaufdatum angeben', 'danger');
+      msvToast('Bitte Kaufdatum angeben', 'danger');
       return;
     }
-    
-    // Collect ammunition data
-    const munition = [];
-    
-    // Standard packages
-    document.querySelectorAll('.paket-check:checked').forEach(cb => {
-      munition.push({
-        typ: cb.dataset.typ,
-        anzahl: parseInt(cb.dataset.anzahl)
-      });
+
+    var munition = [];
+    document.querySelectorAll('.paket-check:checked').forEach(function(cb) {
+      munition.push({ typ: cb.dataset.typ, anzahl: parseInt(cb.dataset.anzahl) });
     });
-    
-    // Custom amounts
-    const customGP11 = parseInt(document.getElementById('custom_gp11').value) || 0;
-    if (customGP11 > 0) {
-      munition.push({ typ: 'GP11_CUSTOM', anzahl: customGP11 });
-    }
-    
-    const customGP90 = parseInt(document.getElementById('custom_gp90').value) || 0;
-    if (customGP90 > 0) {
-      munition.push({ typ: 'GP90_CUSTOM', anzahl: customGP90 });
-    }
-    
-    console.log('Munition:', munition);
-    
+
+    var cGP11 = parseInt(document.getElementById('custom_gp11').value) || 0;
+    if (cGP11 > 0) munition.push({ typ: 'GP11_CUSTOM', anzahl: cGP11 });
+
+    var cGP90 = parseInt(document.getElementById('custom_gp90').value) || 0;
+    if (cGP90 > 0) munition.push({ typ: 'GP90_CUSTOM', anzahl: cGP90 });
+
     if (munition.length === 0) {
-      msvToast('Bitte mindestens eine Munitionsbestellung auswählen', 'danger');
+      msvToast('Bitte mindestens eine Munition auswählen', 'danger');
       return;
     }
-    
-    // Show spinner
-    const spinner = document.getElementById('saveSpinner');
-    const btn = document.getElementById('btnSave');
+
+    var spinner = document.getElementById('saveSpinner');
+    var btn = document.getElementById('btnSave');
     spinner.classList.remove('d-none');
     btn.disabled = true;
-    
-    // Prepare data
-    const csrfToken = document.querySelector('[name="csrf_token"]')?.value || '';
-    
-    const requestData = {
+
+    var csrfToken = document.querySelector('[name="csrf_token"]').value || '';
+    var requestData = {
       jahr: jahr,
       kauf_datum: kauf_datum,
       anlass: anlass,
       munition: munition,
-      csrf_token: csrfToken // Token auch im Body mitsenden
+      csrf_token: csrfToken
     };
-    
-    if (mitglied_id) {
-      requestData.mitglied_id = mitglied_id;
-    } else {
-      requestData.gast_name = gast_name;
-    }
-    
-    console.log('Request data:', requestData);
-    console.log('Sending to:', `${API}?action=save_bestellung`);
-    
-    // Send to API
-    fetch(`${API}?action=save_bestellung`, {
+
+    if (mitglied_id) requestData.mitglied_id = mitglied_id;
+    else requestData.gast_name = gast_name;
+
+    fetch(API + '?action=save_bestellung', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrfToken
-      },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
       body: JSON.stringify(requestData)
     })
-    .then(r => {
-      console.log('Save response status:', r.status);
-      if (!r.ok) throw new Error(`Network response was not ok: ${r.status}`);
-      return r.json();
-    })
-    .then(data => {
-      console.log('Save response data:', data);
-      
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
       if (data.success) {
         msvToast('Bestellung erfolgreich gespeichert', 'success');
         resetForm();
-        
-        // WICHTIG: Nach dem Speichern IMMER die aktuelle Ansicht neu laden
-        console.log('Reloading with current filter:', currentFilter);
-        
-        // Kurze Verzögerung damit die Datenbank Zeit hat
-        setTimeout(() => {
-          console.log('Executing reload now...');
+        setTimeout(function() {
           loadBestellungen(currentFilter);
           loadStatistics();
         }, 100);
-        
       } else {
-        console.error('Save failed:', data.message);
-        msvToast('Fehler: ' + (data.message || 'Unbekannter Fehler'), 'danger');
+        msvToast('Fehler: ' + (data.message || 'Unbekannt'), 'danger');
       }
     })
-    .catch(err => {
-      console.error('Save error:', err);
-      // Detailliertere Fehlermeldung
-      if (err.message && err.message.includes('403')) {
-        msvToast('Sitzung abgelaufen - bitte Seite neu laden', 'danger');
-        // Optional: Nach 2 Sekunden neu laden
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+    .catch(function(err) {
+      if (err.message && err.message.indexOf('403') !== -1) {
+        msvToast('Sitzung abgelaufen – Seite wird neu geladen', 'danger');
+        setTimeout(function() { window.location.reload(); }, 2000);
       } else {
-        msvToast('Netzwerkfehler beim Speichern: ' + err.message, 'danger');
+        msvToast('Netzwerkfehler: ' + err.message, 'danger');
       }
     })
-    .finally(() => {
-      console.log('Save request completed');
+    .finally(function() {
       spinner.classList.add('d-none');
       btn.disabled = false;
     });
   }
-  
-  // === Table Functions ===
+
+  // === Filter ===
   function setFilter(filter) {
-    console.log('setFilter called with:', filter);
     currentFilter = filter;
-    
-    // Update button states
-    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+
+    // Desktop buttons
+    document.querySelectorAll('#btnFilterToday, #btnFilterWeek, #btnFilterMonth, #btnFilterYear').forEach(function(btn) {
       btn.classList.remove('active');
     });
-    
-    const btnId = 'btnFilter' + filter.charAt(0).toUpperCase() + filter.slice(1);
-    const activeBtn = document.getElementById(btnId);
-    if (activeBtn) {
-      activeBtn.classList.add('active');
-    }
-    
-    console.log('Current filter set to:', currentFilter);
-    
+    var btnMap = { today: 'btnFilterToday', week: 'btnFilterWeek', month: 'btnFilterMonth', year: 'btnFilterYear' };
+    var activeBtn = document.getElementById(btnMap[filter]);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Mobile pills
+    document.querySelectorAll('#mobileFilterPills .filter-pill[data-filter]').forEach(function(p) {
+      p.classList.toggle('active', p.getAttribute('data-filter') === filter);
+    });
+
     loadBestellungen(filter);
   }
-  
+
+  // === Load Bestellungen ===
   function loadBestellungen(filter) {
-    const jahr = document.getElementById('yearSelect').value;
-    
-    const url = `${API}?action=get_bestellungen&jahr=${jahr}&filter=${filter}`;
-    console.log('=== LOAD BESTELLUNGEN ===');
-    console.log('URL:', url);
-    console.log('Filter:', filter);
-    console.log('Jahr:', jahr);
-    
-    fetch(url)
-      .then(r => {
-        console.log('Load response status:', r.status);
-        console.log('Response headers:', r.headers.get('content-type'));
-        
-        if (!r.ok) {
-          throw new Error(`Network response was not ok: ${r.status}`);
-        }
-        
-        // Prüfe ob die Antwort JSON ist
-        const contentType = r.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.error('Response is not JSON:', contentType);
-          return r.text().then(text => {
-            console.error('Response body:', text);
-            throw new Error('Response is not JSON');
-          });
-        }
-        
-        return r.json();
-      })
-      .then(data => {
-        console.log('Load response data:', data);
-        
+    var jahr = document.getElementById('yearSelect').value;
+
+    fetch(API + '?action=get_bestellungen&jahr=' + jahr + '&filter=' + filter)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
         if (data.success) {
-          console.log('Data items:', data.data?.length || 0);
-          console.log('Totals:', data.totals);
-          renderBestellungenTable(data.data || [], data.totals || {});
+          renderDesktopTable(data.data || [], data.totals || {});
+          renderMobileCards(data.data || [], data.totals || {});
         } else {
-          console.error('API returned error:', data.message);
-          msvToast('Fehler beim Laden: ' + data.message, 'danger');
-          renderBestellungenTable([], {});
+          msvToast('Fehler: ' + data.message, 'danger');
+          renderDesktopTable([], {});
+          renderMobileCards([], {});
         }
       })
-      .catch(err => {
-        console.error('Error loading bestellungen:', err);
-        console.error('Error details:', err.message);
-        msvToast('Fehler beim Laden der Daten: ' + err.message, 'danger');
-        // Show empty table
-        renderBestellungenTable([], {});
+      .catch(function(err) {
+        console.error('Load error:', err);
+        renderDesktopTable([], {});
+        renderMobileCards([], {});
       });
   }
-  
-  function renderBestellungenTable(bestellungen, totals) {
-    console.log('=== RENDER TABLE ===');
-    console.log('Entries:', bestellungen.length);
-    console.log('Data:', bestellungen);
-    
-    const tbody = document.getElementById('bestellungenTableBody');
-    
-    if (!tbody) {
-      console.error('Table body element not found!');
-      return;
-    }
-    
+
+  // === Desktop Table ===
+  function renderDesktopTable(bestellungen, totals) {
+    var tbody = document.getElementById('bestellungenTableBody');
+    if (!tbody) return;
+
     if (!bestellungen || bestellungen.length === 0) {
-      console.log('No data to display');
       tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Keine Bestellungen gefunden</td></tr>';
-      
-      // Update footer totals mit default-Werten
       document.getElementById('footerGP11').textContent = '0';
       document.getElementById('footerGP90').textContent = '0';
       document.getElementById('footerPreis').textContent = 'CHF 0.00';
       return;
     }
-    
+
     tbody.innerHTML = '';
-    
-    bestellungen.forEach((b, index) => {
-      console.log(`Rendering row ${index}:`, b);
-      
-      const tr = document.createElement('tr');
-      
-      // Format date - füge 'T00:00:00' hinzu um Zeitzonenprobleme zu vermeiden
-      const datum = new Date(b.kauf_datum + 'T00:00:00');
-      const datumStr = datum.toLocaleDateString('de-CH');
-      
-      tr.innerHTML = `
-        <td>${datumStr}</td>
-        <td>${b.kaeufer_name || 'Unbekannt'}</td>
-        <td>${b.anlass || '-'}</td>
-        <td class="text-center">${b.gp11_total || '-'}</td>
-        <td class="text-center">${b.gp90_total || '-'}</td>
-        <td class="text-end">${fmtCHF(b.total_preis)}</td>
-        <td class="text-center">
-          <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-danger btn-delete-bestellung" 
-                    data-id="${b.id}"
-                    data-name="${b.kaeufer_name}"
-                    data-datum="${datumStr}"
-                    title="Löschen">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </td>
-      `;
-      
+    bestellungen.forEach(function(b) {
+      var datum = new Date(b.kauf_datum + 'T00:00:00');
+      var datumStr = datum.toLocaleDateString('de-CH');
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + datumStr + '</td>' +
+        '<td>' + (b.kaeufer_name || 'Unbekannt') + '</td>' +
+        '<td>' + (b.anlass || '–') + '</td>' +
+        '<td class="text-center">' + (b.gp11_total || '–') + '</td>' +
+        '<td class="text-center">' + (b.gp90_total || '–') + '</td>' +
+        '<td class="text-end">' + fmtCHF(b.total_preis) + '</td>' +
+        '<td class="text-center">' +
+          '<button class="btn btn-outline-danger btn-sm btn-delete-bestellung" ' +
+            'data-id="' + b.id + '" data-name="' + (b.kaeufer_name || '') + '" data-datum="' + datumStr + '" ' +
+            'style="padding:0.15rem 0.35rem;">' +
+            '<i class="bi bi-trash"></i>' +
+          '</button>' +
+        '</td>';
       tbody.appendChild(tr);
     });
-    
-    // Update footer totals
-    console.log('Updating totals:', totals);
-    if (totals) {
-      document.getElementById('footerGP11').textContent = totals.gp11_total || 0;
-      document.getElementById('footerGP90').textContent = totals.gp90_total || 0;
-      document.getElementById('footerPreis').textContent = fmtCHF(totals.total_preis || 0);
-    }
-    
-    console.log('Table rendered successfully');
+
+    document.getElementById('footerGP11').textContent = totals.gp11_total || 0;
+    document.getElementById('footerGP90').textContent = totals.gp90_total || 0;
+    document.getElementById('footerPreis').textContent = fmtCHF(totals.total_preis || 0);
   }
-  
-  // === Delete Functions ===
-  document.addEventListener('click', function(e) {
-    if (e.target.closest('.btn-delete-bestellung')) {
-      e.preventDefault();
-      const btn = e.target.closest('.btn-delete-bestellung');
-      const id = btn.dataset.id;
-      const name = btn.dataset.name;
-      const datum = btn.dataset.datum;
-      
-      showDeleteConfirmation(id, name, datum);
+
+  // === Mobile Cards ===
+  function renderMobileCards(bestellungen, totals) {
+    var container = document.getElementById('mobileCardsContainer');
+    if (!container) return;
+
+    if (!bestellungen || bestellungen.length === 0) {
+      container.innerHTML = '<div class="text-muted text-center py-3"><i class="bi bi-inbox" style="font-size: 2rem;"></i><div class="mt-2">Keine Bestellungen</div></div>';
+      updateMobileFooter({});
+      return;
     }
-  });
-  
-  function showDeleteConfirmation(id, name, datum) {
-    pendingDeleteData = { id: id };
-    
-    const message = `Sie sind dabei, die Munitionsbestellung von <strong>${name}</strong> vom ${datum} zu löschen.`;
-    document.getElementById('deleteConfirmMessage').innerHTML = message;
-    
-    deleteConfirmModal.show();
+
+    container.innerHTML = '';
+    bestellungen.forEach(function(b) {
+      var datum = new Date(b.kauf_datum + 'T00:00:00');
+      var datumStr = datum.toLocaleDateString('de-CH');
+      var card = document.createElement('div');
+      card.className = 'mobile-kauf-card';
+      card.innerHTML =
+        '<div class="mobile-kauf-card-header">' +
+          '<div>' +
+            '<div class="mobile-kauf-card-title">' + (b.kaeufer_name || 'Unbekannt') + '</div>' +
+            '<div class="mobile-kauf-card-subtitle">' + datumStr + (b.anlass ? ' · ' + b.anlass : '') + '</div>' +
+          '</div>' +
+          '<span class="mobile-kauf-card-badge">' + fmtCHF(b.total_preis) + '</span>' +
+        '</div>' +
+        '<div class="mobile-kauf-card-body">' +
+          '<div class="mobile-kauf-card-row"><span style="color:var(--secondary-color)">GP11</span><strong>' + (b.gp11_total || '–') + '</strong></div>' +
+          '<div class="mobile-kauf-card-row"><span style="color:var(--secondary-color)">GP90</span><strong>' + (b.gp90_total || '–') + '</strong></div>' +
+        '</div>' +
+        '<div class="mobile-kauf-card-actions">' +
+          '<button class="btn btn-outline-danger btn-sm btn-delete-bestellung" ' +
+            'data-id="' + b.id + '" data-name="' + (b.kaeufer_name || '') + '" data-datum="' + datumStr + '" ' +
+            'style="min-height:36px; font-size:14px;">' +
+            '<i class="bi bi-trash me-1"></i>Löschen</button>' +
+        '</div>';
+      container.appendChild(card);
+    });
+
+    updateMobileFooter(totals);
   }
-  
+
+  function updateMobileFooter(totals) {
+    var gp11El = document.getElementById('mobileFooterGP11');
+    var gp90El = document.getElementById('mobileFooterGP90');
+    var preisEl = document.getElementById('mobileFooterPreis');
+    if (gp11El) gp11El.textContent = totals.gp11_total || 0;
+    if (gp90El) gp90El.textContent = totals.gp90_total || 0;
+    if (preisEl) preisEl.textContent = fmtCHF(totals.total_preis || 0);
+  }
+
+  // === Delete ===
   function executeDelete(id) {
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    const originalText = confirmBtn.innerHTML;
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lösche...';
-    
-    const csrfToken = document.querySelector('[name="csrf_token"]')?.value || '';
-    
-    fetch(`${API}?action=delete_bestellung`, {
+    var csrfToken = document.querySelector('[name="csrf_token"]').value || '';
+
+    fetch(API + '?action=delete_bestellung', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrfToken
-      },
-      body: JSON.stringify({ 
-        id: id,
-        csrf_token: csrfToken // Token auch im Body mitsenden
-      })
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+      body: JSON.stringify({ id: id, csrf_token: csrfToken })
     })
-    .then(r => {
-      if (!r.ok) throw new Error('Network response was not ok');
-      return r.json();
-    })
-    .then(data => {
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
       if (data.success) {
-        msvToast('Bestellung erfolgreich gelöscht', 'success');
+        msvToast('Bestellung gelöscht', 'success');
         loadBestellungen(currentFilter);
         loadStatistics();
       } else {
-        msvToast('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'), 'danger');
+        msvToast('Fehler: ' + (data.message || 'Unbekannt'), 'danger');
       }
     })
-    .catch(err => {
-      console.error('Delete error:', err);
+    .catch(function(err) {
       msvToast('Netzwerkfehler beim Löschen', 'danger');
-    })
-    .finally(() => {
-      confirmBtn.disabled = false;
-      confirmBtn.innerHTML = originalText;
     });
   }
-  
-  // === Statistics Functions ===
+
+  // === Statistics ===
   function loadStatistics() {
-    const jahr = document.getElementById('yearSelect').value;
-    
-    console.log('Loading statistics for year:', jahr);
-    
-    fetch(`${API}?action=get_statistics&jahr=${jahr}`)
-      .then(r => {
-        if (!r.ok) throw new Error('Network response was not ok');
-        return r.json();
+    var jahr = document.getElementById('yearSelect').value;
+
+    fetch(API + '?action=get_statistics&jahr=' + jahr)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) updateStatistics(data.data);
       })
-      .then(data => {
-        if (data.success) {
-          updateStatistics(data.data);
-        }
-      })
-      .catch(err => {
-        console.error('Error loading statistics:', err);
-        // Set default values on error
-        updateStatistics({
-          today: 0,
-          week: 0,
-          month: 0,
-          year: 0,
-          top_buyers: []
-        });
+      .catch(function(err) {
+        console.error('Stats error:', err);
+        updateStatistics({ today: 0, week: 0, month: 0, year: 0, top_buyers: [] });
       });
   }
-  
+
   function updateStatistics(stats) {
     document.getElementById('statsToday').textContent = fmtCHF(stats.today || 0);
     document.getElementById('statsWeek').textContent = fmtCHF(stats.week || 0);
     document.getElementById('statsMonth').textContent = fmtCHF(stats.month || 0);
     document.getElementById('statsYearTotal').textContent = fmtCHF(stats.year || 0);
-    
-    // Update top buyers
-    const topList = document.getElementById('topKaeuferList');
+
+    // Top Käufer
+    var topList = document.getElementById('topKaeuferList');
     if (stats.top_buyers && stats.top_buyers.length > 0) {
       topList.innerHTML = '';
-      stats.top_buyers.forEach((buyer, index) => {
-        const item = document.createElement('div');
-        item.className = 'käufer-item';
-        item.innerHTML = `
-          <span>${index + 1}. ${buyer.name}</span>
-          <strong>${fmtCHF(buyer.total)}</strong>
-        `;
+      stats.top_buyers.forEach(function(buyer, i) {
+        var item = document.createElement('div');
+        item.className = 'top-buyer-item';
+        item.innerHTML =
+          '<span><span class="top-buyer-rank">' + (i + 1) + '</span>' + buyer.name + '</span>' +
+          '<strong class="small">' + fmtCHF(buyer.total) + '</strong>';
         topList.appendChild(item);
       });
     } else {
-      topList.innerHTML = '<div class="text-muted">Keine Daten vorhanden</div>';
+      topList.innerHTML = '<div class="text-muted small">Keine Daten</div>';
     }
+
+    // Ammo Summary (aus Totals berechnen – wir nutzen die year-Statistik)
+    // Hierfür brauchen wir die Jahres-Bestellungen-Totals
+    updateAmmoSummary();
   }
-  
-  // === PDF Generation ===
-  function generatePDF() {
-    const jahr = document.getElementById('yearSelect').value;
-    const btn = document.getElementById('btnGeneratePDF');
-    const originalText = btn.innerHTML;
-    
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generiere...';
-    
-    const params = new URLSearchParams({
-      action: 'generate_pdf',
-      jahr: jahr,
-      filter: currentFilter
-    });
-    
-    fetch(`munitionskauf/generate_pdf_munition.php?${params}`)
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
+
+  function updateAmmoSummary() {
+    var jahr = document.getElementById('yearSelect').value;
+
+    fetch(API + '?action=get_bestellungen&jahr=' + jahr + '&filter=year')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.totals) {
+          var gp11 = data.totals.gp11_total || 0;
+          var gp90 = data.totals.gp90_total || 0;
+
+          document.getElementById('ammoGP11').textContent = Number(gp11).toLocaleString('de-CH');
+          document.getElementById('ammoGP90').textContent = Number(gp90).toLocaleString('de-CH');
+          document.getElementById('ammoGP11Detail').textContent = 'Schuss · ' + fmtCHF(gp11 * 50);
+          document.getElementById('ammoGP90Detail').textContent = 'Schuss · ' + fmtCHF(gp90 * 50);
+        }
       })
-      .then(data => {
+      .catch(function() {});
+  }
+
+  // === PDF ===
+  function generatePDF() {
+    var jahr = document.getElementById('yearSelect').value;
+    var btn = document.getElementById('btnGeneratePDF');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF...';
+    }
+
+    var params = new URLSearchParams({ action: 'generate_pdf', jahr: jahr, filter: currentFilter });
+
+    fetch('munitionskauf/generate_pdf_munition.php?' + params)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
         if (data.pdf_link) {
           window.open(data.pdf_link, '_blank');
-          msvToast('PDF wurde erfolgreich generiert', 'success');
+          msvToast('PDF generiert', 'success');
         } else if (data.error) {
           msvToast('Fehler: ' + data.error, 'danger');
         }
       })
-      .catch(error => {
-        console.error('Error:', error);
-        msvToast('Fehler beim Generieren des PDFs', 'danger');
+      .catch(function(err) {
+        msvToast('Fehler beim PDF-Export', 'danger');
       })
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+      .finally(function() {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-file-earmark-pdf me-1"></i>PDF';
+        }
       });
   }
-  
-  // === Debug Functions ===
-  window.munitionDebug = {
-    currentFilter: () => currentFilter,
-    reload: () => loadBestellungen(currentFilter),
-    testLoad: (filter) => loadBestellungen(filter || currentFilter),
-    showFilter: () => {
-      console.log('Current filter:', currentFilter);
-      console.log('Active button:', document.querySelector('.btn-group .btn.active')?.id);
-      console.log('Year:', document.getElementById('yearSelect').value);
-    }
-  };
-  
-  console.log('Munitionskauf JS loaded. Debug with: window.munitionDebug');
+
 })();

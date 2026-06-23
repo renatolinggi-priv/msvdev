@@ -34,42 +34,31 @@ include 'portal_header.php';
 ?>
 
 <style>
+/* Amber Info-Box — seitenspezifisch */
 .wp-alert {
     background: linear-gradient(135deg, #fff3e0, #ffe0b2);
     border: 1px solid #ffcc80;
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
+    border-radius: var(--p-radius);
+    padding: var(--p-3) var(--p-4);
+    margin-bottom: var(--p-4);
 }
-.wp-alert-icon { font-size: 1.5rem; color: #e65100; }
-.wp-alert h3 { font-size: 1rem; font-weight: 700; color: #e65100; margin-bottom: 0.25rem; }
-.wp-alert p { font-size: 0.85rem; color: #6d4c00; margin-bottom: 0; }
-.wp-list { list-style: none; padding: 0; margin: 0; }
-.wp-item {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 1rem 1.25rem;
-    margin-bottom: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-left: 4px solid #ff9800;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.wp-item-name { font-weight: 600; color: #2d3748; }
-.wp-item-detail { font-size: 0.8rem; color: #718096; }
+.wp-alert-icon { font-size: 1.4rem; color: #e65100; }
+.wp-alert h3 { font-size: .95rem; font-weight: 700; color: #e65100; margin-bottom: .15rem; }
+.wp-alert p { font-size: .82rem; color: #6d4c00; margin-bottom: 0; }
+/* Modifier auf .p-list-row: oranger Links-Akzent */
+.wp-item { border-left: 4px solid #ff9800; }
 .wp-item-year {
-    font-size: 0.8rem;
+    font-size: .8rem;
     font-weight: 600;
     color: #ff9800;
     white-space: nowrap;
 }
 .wp-empty {
     text-align: center;
-    padding: 2.5rem 1rem;
-    color: #718096;
+    padding: var(--p-5) var(--p-4);
+    color: var(--p-text-muted);
 }
-.wp-empty i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; color: #28a745; }
+.wp-empty i { font-size: 2.5rem; margin-bottom: var(--p-3); display: block; color: var(--success-color); }
 .wp-empty p { margin-bottom: 0; }
 </style>
 
@@ -78,6 +67,7 @@ include 'portal_header.php';
     <p class="subtitle">Rückgabe am Endschiessen</p>
 </div>
 
+<div class="p-narrow">
 <?php if (!$mitglied_id): ?>
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Dein Account ist noch nicht mit einem Mitglied verknüpft.</div>
 <?php elseif (empty($zurueckbringen)): ?>
@@ -97,20 +87,24 @@ include 'portal_header.php';
     </div>
 </div>
 
-<ul class="wp-list">
+<div class="p-list">
     <?php foreach ($zurueckbringen as $wp): ?>
-    <li class="wp-item">
-        <div>
-            <div class="wp-item-name"><?php echo htmlspecialchars($wp['bezeichnung']); ?></div>
+    <div class="p-list-row wp-item">
+        <div class="p-chip orange"><i class="bi bi-award"></i></div>
+        <div class="p-list-body">
+            <div class="p-list-title"><?php echo htmlspecialchars($wp['bezeichnung']); ?></div>
             <?php if (!empty($wp['hersteller'])): ?>
-            <div class="wp-item-detail"><?php echo htmlspecialchars($wp['hersteller']); ?></div>
+            <div class="p-list-meta"><?php echo htmlspecialchars($wp['hersteller']); ?></div>
             <?php endif; ?>
         </div>
-        <div class="wp-item-year">Gewonnen <?php echo $wp['gewonnen_jahr']; ?></div>
-    </li>
+        <div class="p-list-actions">
+            <span class="wp-item-year">Gewonnen <?php echo $wp['gewonnen_jahr']; ?></span>
+        </div>
+    </div>
     <?php endforeach; ?>
-</ul>
+</div>
 
 <?php endif; ?>
+</div>
 
 <?php include 'portal_footer.php'; ?>

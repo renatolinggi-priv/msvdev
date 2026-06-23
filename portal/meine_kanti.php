@@ -84,66 +84,13 @@ include 'portal_header.php';
 ?>
 
 <style>
-.kanti-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-.kanti-stat {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 0.6rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-.kanti-stat .number { font-size: 1.15rem; font-weight: 700; color: #2d3748; }
-.kanti-stat .label { font-size: 0.7rem; color: #718096; }
-.kanti-stat .label i { color: #28a745; margin-right: 0.2rem; }
-.kanti-stat.total { border-top: 3px solid #28a745; background: #f0faf3; }
-.kanti-stat.total .number { color: #1a8c35; }
-.passe-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 0.5rem;
-}
-.passe-card {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 0.6rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-left: 4px solid #dee2e6;
-}
-.passe-card.shot { border-left-color: #28a745; }
-.passe-card.not-shot { border-left-color: #dee2e6; }
-.passe-card.best { border-left-color: #28a745; border-left-width: 4px; background: #f0faf3; }
-.passe-card.kranz { border-left-color: #ffc107; background: linear-gradient(135deg, #fff9e6, #fff3cd); }
-.passe-card .passe-nr { font-size: 0.7rem; color: #718096; font-weight: 600; }
-.passe-card .passe-nr .bi-star-fill { color: #28a745; font-size: 0.65rem; }
-.passe-card .passe-value { font-size: 1.3rem; font-weight: 700; }
-.passe-card .passe-value.shot { color: #28a745; }
-.passe-card .passe-value.not-shot { color: #999; }
-.kranz-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #ffc107, #ff9800);
-    color: #343a40;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    margin-top: 0.2rem;
-}
+/* Summary-Strip + Passen-Liste kommen aus css/portal.css. Hier nur die Kranzlimite-Info. */
 .kranz-info {
     background: #f8f9fa;
-    border-radius: 0.75rem;
-    padding: 0.6rem;
-    margin-bottom: 1rem;
-    font-size: 0.8rem;
-}
-@media (max-width: 767.98px) {
-    .passe-grid { grid-template-columns: repeat(2, 1fr); }
-    .kanti-summary { grid-template-columns: repeat(2, 1fr); }
+    border-radius: var(--p-radius);
+    padding: var(--p-2) var(--p-3);
+    margin-bottom: var(--p-3);
+    font-size: .8rem;
 }
 </style>
 
@@ -172,55 +119,51 @@ include 'portal_header.php';
 </div>
 <?php endif; ?>
 
-<div class="kanti-summary">
-    <div class="kanti-stat total">
-        <div class="number"><?php echo $total; ?></div>
-        <div class="label"><i class="bi bi-bullseye"></i>Total</div>
+<div class="result-summary">
+    <div class="rs-item total">
+        <span class="rs-num"><?php echo $total; ?></span>
+        <span class="rs-lbl">Total</span>
     </div>
-    <div class="kanti-stat">
-        <div class="number"><?php echo $geschossen_count; ?> / 5</div>
-        <div class="label"><i class="bi bi-check2-all"></i>Passen geschossen</div>
+    <div class="rs-item">
+        <span class="rs-num"><?php echo $geschossen_count; ?> / 5</span>
+        <span class="rs-lbl">geschossen</span>
     </div>
-    <div class="kanti-stat">
-        <div class="number"><?php echo $best_passe; ?></div>
-        <div class="label"><i class="bi bi-star"></i>Beste Passe</div>
+    <div class="rs-item">
+        <span class="rs-num"><?php echo $best_passe ?: '–'; ?></span>
+        <span class="rs-lbl">Beste</span>
     </div>
     <?php if ($kranzlimite !== null):
         $kranz_count = 0;
         foreach ($passen as $p) { if ($p !== null && $p >= $kranzlimite) $kranz_count++; }
     ?>
-    <div class="kanti-stat">
-        <div class="number"><?php echo $kranz_count; ?></div>
-        <div class="label"><i class="bi bi-award"></i>Kränze</div>
+    <div class="rs-item">
+        <span class="rs-num"><?php echo $kranz_count; ?></span>
+        <span class="rs-lbl">Kränze</span>
     </div>
     <?php endif; ?>
 </div>
 
-<div class="passe-grid">
+<div class="passe-list">
     <?php for ($i = 0; $i < 5; $i++):
         $val = $passen[$i];
         $shot = ($val !== null);
         $is_kranz = ($shot && $kranzlimite !== null && $val >= $kranzlimite);
         $is_best = ($shot && $val == $best_passe && $best_passe > 0);
 
-        $card_class = 'passe-card';
-        if ($is_kranz) $card_class .= ' kranz';
-        elseif ($is_best) $card_class .= ' best';
-        elseif ($shot) $card_class .= ' shot';
-        else $card_class .= ' not-shot';
+        $row_class = 'passe-row';
+        if ($is_kranz) $row_class .= ' kranz';
+        elseif ($is_best) $row_class .= ' best';
+        elseif (!$shot) $row_class .= ' not-shot';
     ?>
-    <div class="<?php echo $card_class; ?>">
-        <div class="passe-nr"><?php if ($is_best && !$is_kranz): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>Passe <?php echo $i + 1; ?></div>
-        <div class="passe-value <?php echo $shot ? 'shot' : 'not-shot'; ?>">
-            <?php echo $shot ? $val : '-'; ?>
-        </div>
-        <?php if ($is_kranz): ?>
-            <div class="kranz-badge"><i class="bi bi-award me-1"></i>Kranz</div>
-        <?php elseif ($shot && $kranzlimite !== null): ?>
-            <small class="text-muted">Kein Kranz (<?php echo $kranzlimite - $val; ?> fehlen)</small>
-        <?php elseif (!$shot): ?>
-            <small class="text-muted">Nicht geschossen</small>
-        <?php endif; ?>
+    <div class="<?php echo $row_class; ?>">
+        <span class="passe-label">Passe <?php echo $i + 1; ?></span>
+        <span class="passe-score"><?php echo $shot ? $val : '–'; ?></span>
+        <span class="passe-status"><?php
+            if ($is_kranz) echo '<i class="bi bi-award-fill"></i> Kranz';
+            elseif ($is_best) echo '<i class="bi bi-star-fill"></i> beste';
+            elseif ($shot && $kranzlimite !== null) echo ($kranzlimite - $val) . ' fehlen';
+            elseif (!$shot) echo 'nicht geschossen';
+        ?></span>
     </div>
     <?php endfor; ?>
 </div>

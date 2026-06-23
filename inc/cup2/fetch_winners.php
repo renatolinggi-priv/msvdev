@@ -22,25 +22,29 @@ WITH winners AS (
     
     UNION ALL
 
-    -- 3er-Paarungen: Die besten 2 (negative ManualWinner = ausgeschieden)
+    -- 3er-Paarungen: Die besten N (negative ManualWinner = ausgeschieden, N = Advancers)
     SELECT winner_id FROM (
         SELECT
             participant_id as winner_id,
-            ROW_NUMBER() OVER (PARTITION BY pair_id ORDER BY result DESC, lowshot DESC) as rn
+            advancers,
+            ROW_NUMBER() OVER (
+                PARTITION BY pair_id
+                ORDER BY (CASE WHEN ManualWinner > 0 AND participant_id = ManualWinner THEN 1 ELSE 0 END) DESC, result DESC, lowshot DESC
+            ) as rn
         FROM (
-            SELECT cp.ID as pair_id, cp.Participant1 as participant_id, cp.Result1 as result, cp.LowShot1 as lowshot, cp.ManualWinner
+            SELECT cp.ID as pair_id, cp.Participant1 as participant_id, cp.Result1 as result, cp.LowShot1 as lowshot, cp.ManualWinner, cp.Advancers as advancers
             FROM cupPairs cp WHERE cp.Round = 1 AND cp.Year = ? AND (cp.Participant3 IS NOT NULL AND cp.Participant3 != 0)
             UNION ALL
-            SELECT cp.ID as pair_id, cp.Participant2 as participant_id, cp.Result2 as result, cp.LowShot2 as lowshot, cp.ManualWinner
+            SELECT cp.ID as pair_id, cp.Participant2 as participant_id, cp.Result2 as result, cp.LowShot2 as lowshot, cp.ManualWinner, cp.Advancers as advancers
             FROM cupPairs cp WHERE cp.Round = 1 AND cp.Year = ? AND (cp.Participant3 IS NOT NULL AND cp.Participant3 != 0)
             UNION ALL
-            SELECT cp.ID as pair_id, cp.Participant3 as participant_id, cp.Result3 as result, cp.LowShot3 as lowshot, cp.ManualWinner
+            SELECT cp.ID as pair_id, cp.Participant3 as participant_id, cp.Result3 as result, cp.LowShot3 as lowshot, cp.ManualWinner, cp.Advancers as advancers
             FROM cupPairs cp WHERE cp.Round = 1 AND cp.Year = ? AND (cp.Participant3 IS NOT NULL AND cp.Participant3 != 0)
         ) as all_participants
         WHERE result IS NOT NULL
           AND NOT (COALESCE(ManualWinner, 0) < 0 AND participant_id = ABS(ManualWinner))
     ) ranked
-    WHERE rn <= 2
+    WHERE rn <= COALESCE(advancers, 2)
 )
 SELECT COUNT(*) as katb_count
 FROM winners w_list
@@ -61,6 +65,7 @@ WITH top_two_winners AS (
     SELECT
         cp2.ID AS pair_id,
         cp2.ManualWinner AS manual_winner,
+        cp2.Advancers AS advancers,
         CASE WHEN n = 1 THEN cp2.Participant1
              WHEN n = 2 THEN cp2.Participant2
              WHEN n = 3 THEN cp2.Participant3
@@ -100,14 +105,14 @@ LEFT JOIN (
             tw.*,
             ROW_NUMBER() OVER (
                 PARTITION BY pair_id
-                ORDER BY result DESC, lowshot DESC
+                ORDER BY (CASE WHEN manual_winner > 0 AND winner_id = manual_winner THEN 1 ELSE 0 END) DESC, result DESC, lowshot DESC
             ) AS rn
         FROM top_two_winners tw
         WHERE winner_id IS NOT NULL
           AND result IS NOT NULL
           AND NOT (COALESCE(manual_winner, 0) < 0 AND winner_id = ABS(manual_winner))
     ) ranked
-    WHERE rn <= 2
+    WHERE rn <= COALESCE(advancers, 2)
 ) AS top
    ON cp.ID = top.pair_id
   AND m.ID = top.winner_id

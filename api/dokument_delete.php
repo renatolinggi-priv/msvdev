@@ -2,9 +2,9 @@
 // api/dokument_delete.php - Dokument loeschen
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
-requireRole(['admin', 'vorstand']);
 
 header('Content-Type: application/json; charset=utf-8');
+requireRoleJson(['admin', 'vorstand']);
 
 if (!validateCsrf($_POST['csrf_token'] ?? '')) {
     http_response_code(403);

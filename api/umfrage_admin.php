@@ -6,17 +6,8 @@ require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../inc/session_config.inc.php';
 require_once __DIR__ . '/../auth.php';
 
-// Auth manuell prüfen (statt requireRole, das HTML/Redirect ausgibt)
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt']);
-    exit;
-}
-$role = $_SESSION['user_role'] ?? '';
-if (!in_array($role, ['admin', 'vorstand'])) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Zugriff verweigert']);
-    exit;
-}
+// Nur Vorstand/Admin (JSON-Antwort bei Auth-Fehler)
+requireRoleJson(['admin', 'vorstand']);
 
 $db = getDB();
 
@@ -59,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
                 echo json_encode(['success' => true, 'umfragen' => $umfragen, 'total_mitglieder' => $total]);
             } catch (Exception $e) {
-                echo json_encode(['success' => false, 'message' => 'DB-Fehler: ' . $e->getMessage()]);
+                error_log('umfrage_admin list: ' . $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten.']);
             }
             break;
 
@@ -122,6 +114,8 @@ switch ($action) {
         $beschreibung = trim($data['beschreibung'] ?? '');
         $gueltig_bis = !empty($data['gueltig_bis']) ? $data['gueltig_bis'] : null;
         $zielgruppe = in_array($data['zielgruppe'] ?? '', ['alle', 'vorstand']) ? $data['zielgruppe'] : 'alle';
+        $allowedKategorien = ['umfrage', 'arbeitseinsatz', 'helfer'];
+        $kategorie = in_array($data['kategorie'] ?? '', $allowedKategorien) ? $data['kategorie'] : 'umfrage';
         $fragen = $data['fragen'] ?? [];
         $umfrage_id = intval($data['id'] ?? 0);
         $activate = !empty($data['activate']);
@@ -179,38 +173,38 @@ switch ($action) {
                     break;
                 }
 
-                // Entwurf oder Aktiv: alles editierbar (Metadaten + Fragen)
-                if ($existing['status'] === 'entwurf') {
-                    $stmt = $db->prepare("UPDATE umfragen SET titel = ?, beschreibung = ?, gueltig_bis = ?, zielgruppe = ? WHERE id = ?");
-                    $stmt->execute([$titel, $beschreibung, $gueltig_bis, $zielgruppe, $umfrage_id]);
-                } else {
-                    // Aktiv: Zielgruppe nicht mehr änderbar
-                    $stmt = $db->prepare("UPDATE umfragen SET titel = ?, beschreibung = ?, gueltig_bis = ? WHERE id = ?");
-                    $stmt->execute([$titel, $beschreibung, $gueltig_bis, $umfrage_id]);
-                }
+                // Entwurf oder Aktiv: Metadaten + Fragen editierbar
+                $stmt = $db->prepare("UPDATE umfragen SET titel = ?, beschreibung = ?, gueltig_bis = ?, zielgruppe = ?, kategorie = ? WHERE id = ?");
+                $stmt->execute([$titel, $beschreibung, $gueltig_bis, $zielgruppe, $kategorie, $umfrage_id]);
 
                 // Alte Fragen löschen und neu einfügen
                 $db->prepare("DELETE FROM umfragen_fragen WHERE umfrage_id = ?")->execute([$umfrage_id]);
             } else {
                 // Neue Umfrage erstellen
-                $stmt = $db->prepare("INSERT INTO umfragen (titel, beschreibung, gueltig_bis, zielgruppe, erstellt_von) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$titel, $beschreibung, $gueltig_bis, $zielgruppe, $_SESSION['user_id']]);
+                $stmt = $db->prepare("INSERT INTO umfragen (titel, beschreibung, gueltig_bis, zielgruppe, kategorie, erstellt_von) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$titel, $beschreibung, $gueltig_bis, $zielgruppe, $kategorie, $_SESSION['user_id']]);
                 $umfrage_id = (int)$db->lastInsertId();
             }
 
             // Fragen einfügen
-            $stmtF = $db->prepare("INSERT INTO umfragen_fragen (umfrage_id, frage_text, frage_typ, pflichtfeld, reihenfolge, optionen) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmtF = $db->prepare("INSERT INTO umfragen_fragen (umfrage_id, frage_text, frage_typ, pflichtfeld, min_auswahl, reihenfolge, optionen) VALUES (?, ?, ?, ?, ?, ?, ?)");
             foreach ($fragen as $i => $frage) {
                 $optionen = null;
                 if (in_array($frage['frage_typ'], ['radio', 'checkbox', 'dropdown'])) {
                     $opts = array_values(array_filter($frage['optionen'] ?? [], function($o) { return trim($o) !== ''; }));
                     $optionen = json_encode($opts, JSON_UNESCAPED_UNICODE);
                 }
+                $min_auswahl = null;
+                if ($frage['frage_typ'] === 'checkbox' && !empty($frage['min_auswahl'])) {
+                    $min_auswahl = intval($frage['min_auswahl']);
+                    if ($min_auswahl < 1) $min_auswahl = null;
+                }
                 $stmtF->execute([
                     $umfrage_id,
                     trim($frage['frage_text']),
                     $frage['frage_typ'],
                     !empty($frage['pflichtfeld']) ? 1 : 0,
+                    $min_auswahl,
                     $i,
                     $optionen
                 ]);
@@ -227,7 +221,8 @@ switch ($action) {
 
         } catch (Exception $e) {
             $db->rollBack();
-            echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+            error_log('umfrage_admin: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.']);
         }
         break;
 
@@ -238,7 +233,6 @@ switch ($action) {
             break;
         }
         // Prüfen ob Fragen vorhanden
-        $cnt = (int)$db->prepare("SELECT COUNT(*) FROM umfragen_fragen WHERE umfrage_id = ?")->execute([$id]) ? 0 : 0;
         $stmtCnt = $db->prepare("SELECT COUNT(*) FROM umfragen_fragen WHERE umfrage_id = ?");
         $stmtCnt->execute([$id]);
         $cnt = (int)$stmtCnt->fetchColumn();
@@ -289,11 +283,12 @@ switch ($action) {
 
         try {
             $db->beginTransaction();
-            $stmt = $db->prepare("INSERT INTO umfragen (titel, beschreibung, gueltig_bis, zielgruppe, erstellt_von, status) VALUES (?, ?, NULL, ?, ?, 'entwurf')");
+            $stmt = $db->prepare("INSERT INTO umfragen (titel, beschreibung, gueltig_bis, zielgruppe, kategorie, erstellt_von, status) VALUES (?, ?, NULL, ?, ?, ?, 'entwurf')");
             $stmt->execute([
                 $orig['titel'] . ' (Kopie)',
                 $orig['beschreibung'],
                 $orig['zielgruppe'],
+                $orig['kategorie'] ?? 'umfrage',
                 $_SESSION['user_id']
             ]);
             $newId = (int)$db->lastInsertId();
@@ -301,16 +296,46 @@ switch ($action) {
             // Fragen kopieren
             $stmtF = $db->prepare("SELECT * FROM umfragen_fragen WHERE umfrage_id = ? ORDER BY reihenfolge");
             $stmtF->execute([$id]);
-            $stmtIns = $db->prepare("INSERT INTO umfragen_fragen (umfrage_id, frage_text, frage_typ, pflichtfeld, reihenfolge, optionen) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmtIns = $db->prepare("INSERT INTO umfragen_fragen (umfrage_id, frage_text, frage_typ, pflichtfeld, min_auswahl, reihenfolge, optionen) VALUES (?, ?, ?, ?, ?, ?, ?)");
             foreach ($stmtF->fetchAll() as $f) {
-                $stmtIns->execute([$newId, $f['frage_text'], $f['frage_typ'], $f['pflichtfeld'], $f['reihenfolge'], $f['optionen']]);
+                $stmtIns->execute([$newId, $f['frage_text'], $f['frage_typ'], $f['pflichtfeld'], $f['min_auswahl'], $f['reihenfolge'], $f['optionen']]);
             }
 
             $db->commit();
             echo json_encode(['success' => true, 'message' => 'Umfrage kopiert als Entwurf', 'id' => $newId]);
         } catch (Exception $e) {
             $db->rollBack();
-            echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+            error_log('umfrage_admin: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.']);
+        }
+        break;
+
+    case 'delete_antworten':
+        // Einzelne Rückmeldung (eines Mitglieds) oder alle Rückmeldungen löschen
+        $umfrage_id = intval($_POST['umfrage_id'] ?? 0);
+        $mitglied_id_target = intval($_POST['mitglied_id'] ?? 0);
+        if ($umfrage_id < 1) {
+            echo json_encode(['success' => false, 'message' => 'Ungültige Umfrage-ID']);
+            break;
+        }
+
+        try {
+            if ($mitglied_id_target > 0) {
+                // Einzelne Rückmeldung löschen
+                $stmt = $db->prepare("DELETE FROM umfragen_antworten WHERE umfrage_id = ? AND mitglied_id = ?");
+                $stmt->execute([$umfrage_id, $mitglied_id_target]);
+                $count = $stmt->rowCount();
+                echo json_encode(['success' => true, 'message' => $count > 0 ? 'Rückmeldung gelöscht' : 'Keine Antworten gefunden', 'deleted' => $count]);
+            } else {
+                // Alle Rückmeldungen löschen
+                $stmt = $db->prepare("DELETE FROM umfragen_antworten WHERE umfrage_id = ?");
+                $stmt->execute([$umfrage_id]);
+                $count = $stmt->rowCount();
+                echo json_encode(['success' => true, 'message' => $count . ' Antworten gelöscht', 'deleted' => $count]);
+            }
+        } catch (Exception $e) {
+            error_log('umfrage_admin: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.']);
         }
         break;
 

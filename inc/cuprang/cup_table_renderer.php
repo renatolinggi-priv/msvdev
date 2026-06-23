@@ -24,7 +24,18 @@ if (!function_exists('cup_inject_cup_styles')) {
 }
 .cup-wrapper{max-width:900px;margin:0; padding-left: 6px;} /* linksbündig, schmaler */
 .cup-section{margin-bottom:18px;}
-.cup-legend{font-size:11px;color:#666;margin:6px 0 10px;}
+/* Runden bzw. Final/Standcup nebeneinander (umbrechend auf schmalen Screens) */
+.cup-rounds, .cup-final-row{display:flex; flex-wrap:wrap; gap:18px 24px; align-items:flex-start;}
+.cup-rounds{padding:12px 16px 16px;}
+.cup-round{flex:1 1 300px; min-width:240px; max-width:460px;}
+/* margin:0 !important hebt die globale .table-wrapper+.table-wrapper{margin-top:2rem} auf → beide Karten top-bündig */
+.cup-final-row > .table-wrapper{flex:1 1 300px !important; min-width:260px; margin:0 !important;}
+.cup-round .cup-wrapper{max-width:none; padding-left:0;}
+.cup-final-row .cup-wrapper{max-width:none; padding:12px 16px 16px;}
+.cup-round .cup-section, .cup-final-row .cup-section{margin-bottom:0;}
+.cup-legend{display:flex; gap:16px; align-items:center; font-size:11px; color:var(--muted); margin:4px 0 12px;}
+.cup-legend .lg-win::before{content:""; display:inline-block; width:11px; height:11px; border-radius:3px; background:var(--win-bg); border:1px solid #bfe6cd; margin-right:6px; vertical-align:-1px;}
+.cup-legend .lg-out{text-decoration:line-through;}
 
 .badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;line-height:1;margin-left:6px;}
 .badge-win{background:#2e7d32;color:#fff;}
@@ -37,7 +48,7 @@ if (!function_exists('cup_inject_cup_styles')) {
 /* generische Card mit Accent-Leiste */
 .cardline{
   position:relative; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center;
-  background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:8px 10px;
+  background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:5px 10px;
 }
 .cardline::before{
   content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:3px;
@@ -50,7 +61,8 @@ if (!function_exists('cup_inject_cup_styles')) {
 
 /* Name + Verein */
 .fullname{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink); font-weight:600;}
-.club{display:block; font-size:12px; color:var(--muted); font-weight:500; margin-top:2px;}
+.club{display:inline; font-size:12px; color:var(--muted); font-weight:500;}
+.club::before{content:"·"; margin:0 6px; color:#cbd5e1;}
 
 /* Score-Pillen rechts */
 .score{
@@ -60,15 +72,17 @@ if (!function_exists('cup_inject_cup_styles')) {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(0,0,0,.03);
 }
 
-/* Matchliste */
-.matchlist{display:flex; flex-direction:column; gap:8px;}
-.match{ background: var(--card); border:1px solid var(--bd); border-radius:12px; padding:8px 10px; }
-.match2{ display:grid; grid-template-columns:1fr auto 1fr auto; gap:10px 8px; align-items:center; }
-.name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink);}
-.name.win{ background: var(--win-bg); padding:2px 8px; border-radius:10px; font-weight:700; }
-.name.lose{ color: var(--muted); text-decoration: line-through; }
-.sep{ height:1px; background: var(--bd); margin:6px 0; }
-.match3 .row{ display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
+/* Matchliste – pro Teilnehmer eine Zeile, Gewinner grün hervorgehoben */
+.matchlist{display:flex; flex-direction:column; gap:10px;}
+.match{ background:var(--card); border:1px solid var(--bd); border-radius:12px; overflow:hidden;
+  box-shadow:0 1px 2px rgba(16,24,40,.05); }
+.prow{ display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:5px 12px; }
+.prow + .prow{ border-top:1px solid var(--bd); }
+.prow.win{ background:var(--win-bg); }
+.pname{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink); font-weight:600; }
+.prow.win .who{ color:#1b5e20; font-weight:700; }
+.prow.win .score{ font-weight:700; }
+.prow.lose .who{ color:var(--muted); text-decoration:line-through; font-weight:500; }
 
 /* Legende */
 .legend-pill{display:inline-block; font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--bd); background:#fafbfc; margin-right:6px;}
@@ -119,9 +133,20 @@ if (!function_exists('cup_render_round_table')) {
 
         $html .= '<div class="cup-wrapper"><div class="cup-section">';
         $html .= '<div class="cup-legend">'
-               . '<span class="legend-pill">Gewinner</span><span class="legend-pill">Ausgeschieden</span>'
+               . '<span class="lg-win">Gewinner</span><span class="lg-out">Ausgeschieden</span>'
                . '</div>';
         $html .= '<div class="matchlist">';
+
+        $fmtScore = function($s){ return ($s === '' || $s === null || $s === 0 || $s === '0') ? '–' : esc($s); };
+        // $winLabel: "Gewinner" wenn nur einer weiterkommt, sonst "Weiter" (3er mit 2 Weiterkommenden)
+        $prow = function($name, $score, $state, $winLabel) use ($fmtScore) {
+            $badge = $state === 'win' ? ' <span class="badge badge-win">'.esc($winLabel).'</span>'
+                   : ($state === 'lose' ? ' <span class="badge badge-out">Out</span>' : '');
+            return '<div class="prow'.($state ? ' '.$state : '').'">'
+                 .   '<span class="pname"><span class="who">'.esc($name).'</span>'.$badge.'</span>'
+                 .   '<span class="score">'.$fmtScore($score).'</span>'
+                 . '</div>';
+        };
 
         foreach ($rows as $row) {
             $p1 = (int)($row['Participant1'] ?? 0);
@@ -136,31 +161,18 @@ if (!function_exists('cup_render_round_table')) {
             $r2 = $row['Result2'] ?? '';
             $r3 = $row['Result3'] ?? '';
 
+            // Weiterkommen-Status exakt wie im Cup-Editor (Advancers + ManualWinner berücksichtigt)
+            $info = cup_pair_states($row);
+            $st = $info['states'];
+            $winLabel = $info['advCount'] === 1 ? 'Gewinner' : 'Weiter';
+
+            $html .= '<div class="match">';
+            $html .= $prow($n1, $r1, $st[1], $winLabel);
+            $html .= $prow($n2, $r2, $st[2], $winLabel);
             if ($p3) {
-                $loser3 = cup_three_loser_index($row);
-                $lose1 = ($loser3===1); $lose2=($loser3===2); $lose3=($loser3===3);
-
-                $html .= '<div class="match match3">'
-                       .   '<div class="row"><div class="name '.($lose1?'lose ':'').'">'.esc($n1).($lose1?' <span class="badge badge-out">Out</span>':'').'</div><div class="score">'.esc($r1).'</div></div>'
-                       .   '<div class="sep"></div>'
-                       .   '<div class="row"><div class="name '.($lose2?'lose ':'').'">'.esc($n2).($lose2?' <span class="badge badge-out">Out</span>':'').'</div><div class="score">'.esc($r2).'</div></div>'
-                       .   '<div class="sep"></div>'
-                       .   '<div class="row"><div class="name '.($lose3?'lose ':'').'">'.esc($n3).($lose3?' <span class="badge badge-out">Out</span>':'').'</div><div class="score">'.esc($r3).'</div></div>'
-                       . '</div>';
-            } else {
-                $w = cup_resolve_winner_if_needed($row, cup_winner_index($row));
-                $c1 = $w===1 ? 'name win' : ($w===2 ? 'name lose' : 'name');
-                $c2 = $w===2 ? 'name win' : ($w===1 ? 'name lose' : 'name');
-                $b1 = $w===1 ? ' <span class="badge badge-win">Gewinner</span>' : ($w===2 ? ' <span class="badge badge-out">Out</span>' : '');
-                $b2 = $w===2 ? ' <span class="badge badge-win">Gewinner</span>' : ($w===1 ? ' <span class="badge badge-out">Out</span>' : '');
-
-                $html .= '<div class="match match2">'
-                       .   '<div class="'.$c1.'">'.esc($n1).$b1.'</div>'
-                       .   '<div class="score">'.esc($r1).'</div>'
-                       .   '<div class="'.$c2.'">'.esc($n2).$b2.'</div>'
-                       .   '<div class="score">'.esc($r2).'</div>'
-                       . '</div>';
+                $html .= $prow($n3, $r3, $st[3], $winLabel);
             }
+            $html .= '</div>';
         }
 
         $html .= '</div></div></div>'; // matchlist + section + wrapper

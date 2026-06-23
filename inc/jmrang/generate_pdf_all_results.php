@@ -310,59 +310,72 @@ function createTable($kategorie, $selectedYear) {
     $html = '<div class="container">';
     $html .= '<h2>Kategorie ' . str_replace('Kat. ', '', $kategorie) . '</h2>';
     
-    $html .= '<table class="table">';
-    $html .= '<thead><tr style="height: 120px;">'; // Erhöht von 100px auf 120px
-    $html .= '<th style="width: 140px; max-width: 140px; text-align: left; vertical-align: bottom;">Name</th>'; // Mehr Platz für Namen
+    // Kopfhöhe dynamisch an die längste Wettbewerbs-Bezeichnung anpassen, damit die
+    // rotierten Labels vollständig in den Kopf passen und nicht nach oben in den Titel ausbrechen.
+    $maxLen = 1;
+    foreach ($wettbewerbe as $wb) {
+        $b = trim($wb['Bezeichnung']);
+        $len = function_exists('mb_strlen') ? mb_strlen($b) : strlen($b);
+        if ($len > $maxLen) { $maxLen = $len; }
+    }
+    $headFont = 8; // px
+    $headH    = min(230, max(96, (int)ceil($maxLen * $headFont * 0.62) + 12)); // Textlänge + Polster
 
-    // Spaltenüberschriften mit 90-Grad-Rotation - OHNE KÜRZUNGEN
+    // Volle Seitenbreite über PROZENTUALE Spaltenbreiten im normalen Auto-Layout
+    // (Dompdf setzt das zuverlässig um; Namen werden nie abgeschnitten, da Auto-Layout
+    // die Spalte notfalls vergrössert). Name 14% + Total 6%, Resultate teilen sich 80%.
+    $nCols  = count($wettbewerbe);
+    $colPct = $nCols > 0 ? round(80 / $nCols, 4) : 80;
+
+    $html .= '<table class="table" style="width: 100%;">';
+    $html .= '<thead><tr style="height: ' . $headH . 'px;">';
+    // Name-Spalte: schmal, aber breit genug für die längsten Namen auf einer Zeile
+    $html .= '<th style="width: 14%; text-align: left; vertical-align: bottom; padding-right: 8px;">Name</th>';
+
+    // Spaltenüberschriften mit 90-Grad-Rotation - OHNE KÜRZUNGEN; gleichmässig verteilt
     foreach ($wettbewerbe as $wbID => $wb) {
-        $bez = $wb['Bezeichnung'];
-        
-        // Keine Kürzungen - verwende Original-Bezeichnung
-        $bez = trim($bez);
-        
-        // Rotation mit div-Container
-        $html .= '<th class="result-col" style="width: 35px; height: 120px; vertical-align: bottom; position: relative; padding: 0;">'; // Höhe angepasst
-        $html .= '<div style="position: absolute; bottom: 5px; left: 20px; transform: rotate(-90deg); transform-origin: left bottom; white-space: nowrap; font-size: 6.5px; width: 110px;">'; // Breite erhöht
+        $bez = trim($wb['Bezeichnung']);
+
+        // Rotation mit div-Container; Kopf hoch genug für volle Bezeichnung
+        $html .= '<th class="result-col" style="width: ' . $colPct . '%; height: ' . $headH . 'px; vertical-align: bottom; position: relative; padding: 0;">';
+        $html .= '<div style="position: absolute; bottom: 6px; left: 19px; transform: rotate(-90deg); transform-origin: left bottom; white-space: nowrap; font-size: ' . $headFont . 'px; width: ' . ($headH - 12) . 'px;">';
         $html .= htmlspecialchars($bez);
         $html .= '</div>';
         $html .= '</th>';
     }
-    
-    $html .= '<th style="width: 50px; vertical-align: bottom;">Total</th></tr>
+
+    $html .= '<th style="width: 6%; vertical-align: bottom; text-align: right;">Total</th></tr>
     </thead><tbody>';
 
     // Daten ausgeben - OHNE RANG-SPALTE
     foreach ($resultData as $entry) {
         $html .= "<tr>";
-        $html .= "<td style='text-align: left; font-size: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;'>{$entry['name']}</td>";
+        $html .= "<td style='text-align: left; font-weight: normal; font-size: 11px; white-space: nowrap; padding-right: 8px;'>{$entry['name']}</td>";
 
-        // Pro Wettbewerb
+        // Pro Wettbewerb (hochgerechnete Resultate mit 2 Nachkommastellen, sonst ohne)
         foreach ($wettbewerbe as $wbID => $wb) {
             if (!empty($entry['resultate'][$wbID])) {
-                $values = array_map(function($v) {
-                    return "<span class='value'>" . number_format($v, 2, '.', '') . "</span>";
-                }, $entry['resultate'][$wbID]);
-                $display = implode(', ', $values);
+                $parts = [];
+                foreach ($entry['resultate'][$wbID] as $v) {
+                    // Ganzzahlige (nicht hochgerechnete) Resultate ohne Nachkommastellen
+                    $dec = (abs($v - round($v)) < 0.005) ? 0 : 2;
+                    $parts[] = "<span class='value'>" . number_format($v, $dec, '.', '') . "</span>";
+                }
+                $display = implode(', ', $parts);
             } else {
                 $display = '<span class="no-data">-</span>';
             }
             $html .= "<td class='result-col'>$display</td>";
         }
 
-        // Total
-        $html .= "<td><strong>" . number_format($entry['total'], 2, '.', '') . "</strong></td>";
+        // Total: nur Nachkommastellen wenn nicht ganzzahlig
+        $totalDec = (abs($entry['total'] - round($entry['total'])) < 0.005) ? 0 : 2;
+        $html .= "<td><strong>" . number_format($entry['total'], $totalDec, '.', '') . "</strong></td>";
         $html .= "</tr>";
     }
 
     $html .= '</tbody></table>';
-    
-    // Legende mit Hinweis
-    $html .= '<div class="legend">';
-    $html .= '<span class="legend-item"><strong>-</strong> = Nicht teilgenommen</span>';
-    $html .= '<span class="legend-item">Bei mehreren Resultaten werden alle Werte angezeigt und summiert</span>';
-    $html .= '</div>';
-    
+
     $html .= '</div>';
     return $html;
 }

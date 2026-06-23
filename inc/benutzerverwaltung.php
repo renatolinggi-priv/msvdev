@@ -205,31 +205,31 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                     <td class="text-center">
                                         <div class="btn-action-group">
                                             <?php if ($is_pending): ?>
-                                                <button class="btn btn-sm btn-success btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'approve')" title="Freischalten">
+                                                <button class="btn btn-sm btn-success btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'approve')" data-tooltip="Freischalten">
                                                     <i class="bi bi-check-lg"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'reject')" title="Ablehnen">
+                                                <button class="btn btn-sm btn-danger btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'reject')" data-tooltip="Ablehnen">
                                                     <i class="bi bi-x-lg"></i>
                                                 </button>
                                             <?php else: ?>
                                                 <?php if (($user['status'] ?? 'approved') == 'approved' && $user['id'] != $_SESSION['user_id']): ?>
-                                                    <button class="btn btn-sm btn-outline-secondary btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'disable')" title="Deaktivieren">
+                                                    <button class="btn btn-sm btn-outline-secondary btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'disable')" data-tooltip="Deaktivieren">
                                                         <i class="bi bi-pause-circle"></i>
                                                     </button>
                                                 <?php elseif (($user['status'] ?? '') == 'disabled'): ?>
-                                                    <button class="btn btn-sm btn-outline-success btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'enable')" title="Aktivieren">
+                                                    <button class="btn btn-sm btn-outline-success btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'enable')" data-tooltip="Aktivieren">
                                                         <i class="bi bi-play-circle"></i>
                                                     </button>
                                                 <?php endif; ?>
                                             <?php endif; ?>
 
                                             <button class="btn btn-sm btn-outline-secondary btn-action"
-                                                    onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)" title="Bearbeiten">
+                                                    onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)" data-tooltip="Bearbeiten">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
 
                                             <?php if ($user['id'] != $_SESSION['user_id'] && $user['id'] != 1): ?>
-                                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" title="Löschen">
+                                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" data-tooltip="Löschen">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                             <?php endif; ?>

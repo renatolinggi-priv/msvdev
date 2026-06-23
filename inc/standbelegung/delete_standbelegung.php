@@ -33,7 +33,7 @@ try {
     
     $deleted = $stmt->affected_rows;
     $stmt->close();
-    
+
     echo json_encode([
         'success' => true,
         'deleted' => $deleted,

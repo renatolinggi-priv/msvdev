@@ -196,8 +196,9 @@ try {
             text-align: left;
         }
         .table th {
-            background-color: #2c5282;
-            color: #fff;
+            background-color: #eef2f7;
+            color: #2d3748;
+            border-bottom: 2px solid #cbd5e0;
             font-weight: bold;
         }
         .datum { width: 90px; }

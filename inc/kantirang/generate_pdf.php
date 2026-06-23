@@ -13,6 +13,7 @@ ini_set('display_errors', 0);
 try {
     require '../vendor/autoload.php';
     include '../config.php';
+    require_once __DIR__ . '/../pdf/pdf_theme.php';
 
     // Verbindung prüfen
     if ($conn->connect_error) {
@@ -126,80 +127,21 @@ try {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <style>
+    <style>' . pdf_theme_css() . '
+        /* Kantonalstich: Layout-Overrides */
         @page { margin: 1.5cm; }
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            position: relative;
-            margin-bottom: 50px;
-            min-height: 100px;
-        }
-        .logo {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100px;
-            height: auto;
-        }
-        h1 {
-            text-align: center;
-            font-size: 20px;
-            margin: 0;
-            padding-top: 20px;
-        }
-        .container {
-            margin-bottom: 30px;
-            page-break-inside: avoid;
-            clear: both;
-        }
-        h2 {
-            font-size: 16px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 5px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .table th, .table td {
-            border: 1px solid #000;
-            padding: 4px;
-            text-align: left;
-        }
-        .table th {
-            background-color: #343a40;
-            color: #fff;
-            font-weight: bold;
-        }
-        .rang, .passe, .total {
-            text-align: center;
-        }
+        body { font-size: 11px; margin: 0; padding: 0; }
+        .header { position: relative; margin-bottom: 50px; min-height: 100px; }
+        .logo { position: absolute; top: 0; left: 0; width: 100px; height: auto; margin: 0; }
+        h1 { text-align: center; font-size: 20px; margin: 0; padding-top: 20px; color: #3b5998; }
+        .container { margin-bottom: 30px; page-break-inside: avoid; clear: both; }
+        h2 { font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid #cbd5e0; padding-bottom: 5px; }
+        .table th, .table td { padding: 4px; }
+        .rang, .passe, .total { text-align: center; }
         .rang { width: 50px; }
         .name { width: auto; }
         .passe { width: 65px; }
-        .total { 
-            width: 70px; 
-            font-weight: bold;
-            background-color: #f0f0f0;
-        }
-        .table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .footer {
-            text-align: center;
-            font-size: 9px;
-            color: #666;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ccc;
-        }
+        .total { width: 70px; font-weight: bold; }
     </style>
     <title>Kantonalstich ' . $selectedYear . '</title>
 </head>

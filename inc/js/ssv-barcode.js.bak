@@ -1,0 +1,76 @@
+/**
+ * SSV Barcode Utilities — Interleaved 2 of 5 (ITF)
+ * Zentrale Funktionen für Lizenznummer → Barcode-Nummer und Canvas-Rendering.
+ */
+
+const ITF_PATTERNS = [
+    'NNWWN', 'WNNNW', 'NWNNW', 'WWNNN', 'NNWNW',
+    'WNWNN', 'NWWNN', 'NNNWW', 'WNNWN', 'NWNWN'
+];
+
+/**
+ * Berechnet die 10-stellige SSV-Barcode-Nummer aus einer 6- oder 8-stelligen Lizenznummer.
+ * @param {string} lizenznummer
+ * @returns {string} 10-stellige Barcode-Nummer oder ''
+ */
+function ssvBarcodeNummer(lizenznummer) {
+    if (!lizenznummer || !/^\d+$/.test(lizenznummer)) return '';
+    if (lizenznummer.length === 6) lizenznummer = '10' + lizenznummer;
+    if (lizenznummer.length !== 8) return '';
+
+    const basis = BigInt(lizenznummer + '00');
+    const rest = Number(basis % 97n);
+    const crc = 97 - rest;
+    return lizenznummer + String(crc).padStart(2, '0');
+}
+
+/**
+ * Zeichnet einen ITF-Barcode auf ein Canvas-2D-Context.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} nummer  10-stellige Barcode-Nummer
+ * @param {number} x       Start-X
+ * @param {number} y       Start-Y
+ * @param {number} width   Gesamtbreite
+ * @param {number} height  Höhe
+ */
+function drawItfBarcode(ctx, nummer, x, y, width, height) {
+    if (!nummer || nummer.length % 2 !== 0) return;
+
+    const narrow = 1, wide = 3;
+
+    // Gesamtbreite in Einheiten berechnen
+    let totalUnits = 4; // Start: NNNN
+    for (let i = 0; i < nummer.length; i += 2) {
+        const p1 = ITF_PATTERNS[parseInt(nummer[i])];
+        const p2 = ITF_PATTERNS[parseInt(nummer[i + 1])];
+        for (let j = 0; j < 5; j++) {
+            totalUnits += (p1[j] === 'W' ? wide : narrow);
+            totalUnits += (p2[j] === 'W' ? wide : narrow);
+        }
+    }
+    totalUnits += wide + narrow + narrow; // Stop: WNN
+
+    const unitWidth = width / totalUnits;
+    let pos = x;
+
+    const drawBar = (units) => { ctx.fillRect(pos, y, units * unitWidth, height); pos += units * unitWidth; };
+    const drawSpace = (units) => { pos += units * unitWidth; };
+
+    ctx.fillStyle = '#000000';
+
+    // Start: Bar-Space-Bar-Space (alle schmal)
+    drawBar(narrow); drawSpace(narrow); drawBar(narrow); drawSpace(narrow);
+
+    // Daten: je 2 Ziffern interleaved
+    for (let i = 0; i < nummer.length; i += 2) {
+        const bars = ITF_PATTERNS[parseInt(nummer[i])];
+        const spaces = ITF_PATTERNS[parseInt(nummer[i + 1])];
+        for (let j = 0; j < 5; j++) {
+            drawBar(bars[j] === 'W' ? wide : narrow);
+            drawSpace(spaces[j] === 'W' ? wide : narrow);
+        }
+    }
+
+    // Stop: Bar breit, Space schmal, Bar schmal
+    drawBar(wide); drawSpace(narrow); drawBar(narrow);
+}

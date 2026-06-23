@@ -143,15 +143,18 @@ function buildFragebogenTableForPDF($year, $conn)
     }
     $html .= '</tr></thead><tbody>';
     
-    // Zeilen für jedes Mitglied
+    // Zeilen für jedes Mitglied (nur mit ausgefülltem Fragebogen und Waffe != "Nehme nicht teil")
     foreach ($members as $m) {
         $mid = $m['ID'];
+
+        // Nur Mitglieder mit ausgefülltem Fragebogen und gewählter Waffe anzeigen
+        if (!isset($fragebogenData[$mid])) continue;
+        $currentWaffeID = (int)$fragebogenData[$mid]['waffenID'];
+        if ($currentWaffeID === 0) continue;
+
         $fullname = htmlspecialchars($m['Name'] . ' ' . $m['Vorname']);
         $html .= '<tr>';
         $html .= '<td>' . $fullname . '</td>';
-        
-        // Waffe: anhand gespeicherter Daten (oder Standardwert)
-        $currentWaffeID = isset($fragebogenData[$mid]['waffenID']) ? $fragebogenData[$mid]['waffenID'] : $m['WaffenID'];
         $waffeText = isset($waffen[$currentWaffeID]) ? $waffen[$currentWaffeID] : '';
         $html .= '<td>' . htmlspecialchars($waffeText) . '</td>';
         

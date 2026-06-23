@@ -251,7 +251,7 @@ class ZielscheibeReport extends PDFGenerator {
         }
         .footer hr {
             border: none;
-            border-top: 1px solid #000;
+            border-top: 1px solid #cbd5e0;
             margin: 0;
         }';
     }
@@ -279,8 +279,9 @@ class ZielscheibeReport extends PDFGenerator {
                 text-align: center;
             }
             .stats-table th {
-                background-color: #343a40;
-                color: #fff;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 font-weight: bold;
                 font-size: 9px;
             }

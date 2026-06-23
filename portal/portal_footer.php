@@ -1,6 +1,42 @@
+<?php
+// ============================================================
+// "Was ist neu"-Hinweis: ungesehene changelog.json-Eintraege fuer diesen User.
+// Logik + Helfer siehe inc/changelog_portal.inc.php. NULL = neuer User ->
+// still auf neuste Version setzen (kein Popup). Sonst seither neue Eintraege sammeln.
+// ============================================================
+$cl_new_entries = [];
+if (!empty($_SESSION['user_id'])) {
+    require_once __DIR__ . '/../inc/dbconnect.inc.php';
+    require_once __DIR__ . '/../inc/changelog_portal.inc.php';
+    try {
+        $_cl        = getPortalChangelog(isVorstand());
+        $_cl_newest = portalChangelogNewest($_cl);
+        if ($_cl_newest !== null) {
+            $_cl_db   = getDB();
+            $_cl_stmt = $_cl_db->prepare('SELECT changelog_seen_version FROM users WHERE id = ?');
+            $_cl_stmt->execute([(int) $_SESSION['user_id']]);
+            $_cl_seen = $_cl_stmt->fetchColumn();
+            if ($_cl_seen === false) {
+                $_cl_seen = null; // kein User-Datensatz
+            }
+
+            if ($_cl_seen === null) {
+                // Neuer User: still als gesehen markieren, kein Popup.
+                $_cl_up = $_cl_db->prepare('UPDATE users SET changelog_seen_version = ? WHERE id = ?');
+                $_cl_up->execute([$_cl_newest, (int) $_SESSION['user_id']]);
+            } elseif ($_cl_seen !== $_cl_newest) {
+                $cl_new_entries = portalChangelogSince($_cl, $_cl_seen);
+            }
+        }
+    } catch (Exception $e) {
+        // Spalte (Migration 025) evtl. noch nicht vorhanden -> Hinweis still ueberspringen.
+        $cl_new_entries = [];
+    }
+}
+?>
     </div><!-- /.portal-content -->
 
-    <footer class="text-center py-3 mt-4" style="color: #adb5bd; font-size: 0.8rem;">
+    <footer class="text-center py-3 mt-4" style="color: #adb5bd; font-size: 0.8rem; flex-shrink: 0; padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
         &copy; <?php echo date('Y'); ?> MSV Wilen
     </footer>
 
@@ -10,7 +46,7 @@
          ============================================================ -->
 
     <!-- Viewer Overlay -->
-    <div id="docViewerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; flex-direction:column; background:#111;">
+    <div id="docViewerOverlay" role="dialog" aria-modal="true" aria-label="Dokumentanzeige" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; flex-direction:column; background:#111;">
 
         <!-- Header Bar -->
         <div id="docViewerHeader" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; background:#1a1a2e; color:white; flex-shrink:0; min-height:52px; user-select:none;">
@@ -366,6 +402,113 @@
 
     <?php if (!empty($portal_page_js)): ?>
     <script><?php echo $portal_page_js; ?></script>
+    <?php endif; ?>
+
+    <!-- Web-Push: Service Worker global registrieren (relativ -> deployment-unabhaengig).
+         Der Subscribe-Flow laeuft nur auf benachrichtigungen.php (User-Geste). -->
+    <script>
+    (function () {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function () {});
+        }
+    })();
+    </script>
+
+    <?php if (!empty($cl_new_entries)):
+        $cl_csrf = ensureCsrfToken();
+        $cl_badges = [
+            'feature'      => ['class' => 'bg-primary',   'label' => 'Feature'],
+            'fix'          => ['class' => 'bg-danger',     'label' => 'Fix'],
+            'verbesserung' => ['class' => 'bg-success',    'label' => 'Verbesserung'],
+            'info'         => ['class' => 'bg-secondary',  'label' => 'Info'],
+        ];
+        $cl_monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    ?>
+    <!-- ============================================================
+         "Was ist neu"-Modal: zeigt seit dem letzten Bestaetigen neue Eintraege.
+         Statischer Backdrop, kein X -> nur "Verstanden" schliesst & persistiert.
+         ============================================================ -->
+    <div class="modal fade" id="whatsNewModal" tabindex="-1" aria-labelledby="whatsNewLabel"
+         aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header" style="background:linear-gradient(135deg,#3b5bdb,#5c7cfa);color:#fff;">
+            <h5 class="modal-title" id="whatsNewLabel"><i class="bi bi-stars me-2"></i>Was ist neu?</h5>
+          </div>
+          <div class="modal-body whatsnew-body">
+            <?php foreach ($cl_new_entries as $rel):
+                $d = $rel['datum'] ?? '';
+                $datum_fmt = '';
+                if ($d && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $d, $m)) {
+                    $datum_fmt = intval($m[3]) . '. ' . ($cl_monate[intval($m[2])] ?? $m[2]) . ' ' . $m[1];
+                }
+            ?>
+            <div class="whatsnew-release">
+              <div class="whatsnew-rel-head">
+                <span class="whatsnew-version"><?php echo htmlspecialchars($rel['version']); ?></span>
+                <?php if ($datum_fmt): ?>
+                <span class="whatsnew-date"><i class="bi bi-calendar3 me-1"></i><?php echo $datum_fmt; ?></span>
+                <?php endif; ?>
+              </div>
+              <?php foreach (($rel['aenderungen'] ?? []) as $entry):
+                  $typ   = $entry['typ'] ?? 'info';
+                  $badge = $cl_badges[$typ] ?? $cl_badges['info'];
+              ?>
+              <div class="whatsnew-entry">
+                <span class="badge <?php echo $badge['class']; ?>"><?php echo $badge['label']; ?></span>
+                <div class="whatsnew-entry-content">
+                  <div class="whatsnew-entry-title"><?php echo htmlspecialchars($entry['titel'] ?? ''); ?></div>
+                  <?php if (!empty($entry['beschreibung'])): ?>
+                  <div class="whatsnew-entry-desc"><?php echo nl2br(htmlspecialchars($entry['beschreibung'])); ?></div>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <?php endforeach; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="whatsNewAck">
+              <i class="bi bi-check-lg me-1"></i>Verstanden
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+    #whatsNewModal .modal-header .btn-close { display: none; }
+    .whatsnew-release + .whatsnew-release { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid #e9ecef; }
+    .whatsnew-rel-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+    .whatsnew-version { background: #343a40; color: #fff; padding: .15rem .55rem; border-radius: 6px;
+        font-size: .78rem; font-weight: 600; font-family: monospace; }
+    .whatsnew-date { color: #868e96; font-size: .78rem; }
+    .whatsnew-entry { display: flex; align-items: flex-start; gap: .5rem; padding: .4rem 0; }
+    .whatsnew-entry + .whatsnew-entry { border-top: 1px solid #f1f3f5; }
+    .whatsnew-entry .badge { font-size: .65rem; padding: .2rem .45rem; flex-shrink: 0; margin-top: .15rem; }
+    .whatsnew-entry-title { font-weight: 600; font-size: .9rem; color: #212529; }
+    .whatsnew-entry-desc { color: #6c757d; font-size: .82rem; margin-top: .1rem; }
+    </style>
+    <script>
+    (function () {
+        var el = document.getElementById('whatsNewModal');
+        if (!el || typeof bootstrap === 'undefined') return;
+        var modal = new bootstrap.Modal(el);
+        modal.show();
+        var ack = document.getElementById('whatsNewAck');
+        ack.addEventListener('click', function () {
+            ack.disabled = true;
+            fetch('../api/changelog_seen.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': <?php echo json_encode($cl_csrf); ?>
+                }
+            }).then(function (r) { return r.json(); })
+              .then(function () { modal.hide(); })
+              .catch(function () { modal.hide(); });
+        });
+    })();
+    </script>
     <?php endif; ?>
 </body>
 </html>

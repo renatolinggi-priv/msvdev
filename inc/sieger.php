@@ -3,294 +3,139 @@ include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles definieren
 $page_specific_css = "
-/* Sieger-spezifische Styles - im Stil von wichtigetermine.php */
-
-/* CSS Variables für dynamische Höhen */
-:root {
-    --app-header: 76px; /* Standard navbar height */
-    --app-footer: 0px;
+/* === YEAR SELECTOR === */
+.year-selector {
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.year-selector label {
+    font-weight: 600; font-size: 0.9rem; color: #64748b; white-space: nowrap; margin-bottom: 0;
+}
+.year-selector select {
+    width: auto; min-width: 90px;
 }
 
-/* Flex-Layout für volle Höhennutzung */
-.main-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 0 !important;
-    height: calc(100vh - var(--app-header) - var(--app-footer) - 20px) !important;
-    margin-bottom: 0 !important;
+/* === CATEGORY GRID === */
+.desktop-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
 }
 
-.content-background {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
+/* === CATEGORY CARD === */
+.cat-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
     overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.cat-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.cat-card-head {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.cat-card-head h6 {
+    margin: 0; font-weight: 600; font-size: 0.9rem; color: #1e293b;
+}
+.cat-card-body {
+    padding: 0.25rem 0 0.5rem;
 }
 
-/* Sieger Container wird flex */
-#siegerListContainer {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+/* === CATEGORY ICON === */
+.cat-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+}
+.cat-icon.gold   { background: #fff8e1; color: #ffc107; border: 1px solid #ffe082; }
+.cat-icon.blue   { background: #dbeafe; color: #2563eb; border: 1px solid #bfdbfe; }
+.cat-icon.green  { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+.cat-icon.purple { background: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+
+/* === WINNER ROW === */
+.winner-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #f8fafc;
+    cursor: pointer; transition: background 0.15s;
+}
+.winner-row:hover { background: rgba(99,102,241,0.07); }
+.winner-row:last-child { border-bottom: none; }
+.winner-name {
+    flex: 1; font-weight: 500; color: #334155; font-size: 0.85rem;
+}
+.winner-score {
+    font-weight: 700; color: #1e293b; font-size: 0.85rem;
+    min-width: 40px; text-align: right;
+}
+.winner-action {
+    display: flex; gap: 0.2rem;
+}
+.winner-action .btn {
+    padding: 0.15rem 0.35rem; font-size: 0.75rem;
+    opacity: 0; transition: opacity 0.15s;
+}
+.winner-row:hover .winner-action .btn { opacity: 1; }
+
+/* === EMPTY STATE === */
+.empty-state {
+    text-align: center; padding: 3rem 1rem; color: #94a3b8;
+}
+.empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem; }
+
+/* === SLIDE PANEL === */
+.add-sieger-panel {
+    position: fixed; top: 0; right: -480px; width: 460px; height: 100vh;
+    background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12);
+    z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto; display: flex; flex-direction: column;
+}
+.add-sieger-panel.open { right: 0; }
+.panel-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s;
+}
+.panel-overlay.show { opacity: 1; visibility: visible; }
+.panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc; flex-shrink: 0;
+}
+.panel-header h6 { font-weight: 600; color: #1e293b; }
+.panel-body { padding: 1.25rem; flex: 1; }
+.panel-label {
+    font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 0.35rem; display: block;
 }
 
-/* Moderne Tabellen-Styles */
-.table {
-    border: none;
-    margin-bottom: 0;
-    table-layout: fixed; /* Verhindert Spaltenverschiebungen */
-}
-
-.table thead th {
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    position: relative; /* Entfernt sticky, das Probleme verursachen kann */
-}
-
-.table tbody tr {
-    transition: background-color 0.2s ease; /* Nur Hintergrundfarbe animieren */
-    border-bottom: 1px solid #f1f3f4;
-}
-
-.table tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.04);
-    /* transform entfernt - das verursacht das Springen */
-}
-
-.table tbody td {
-    padding: 0.75rem;
-    vertical-align: middle;
-    border: none;
-}
-
-/* Badge Styles */
-.badge {
-    font-weight: 500;
-    padding: 0.35em 0.65em;
-}
-
-/* Button Group in Tabelle */
-.btn-group-sm > .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    border-radius: 0.2rem;
-}
-
-/* Table Wrapper für Flex-Layout */
-.table-wrapper {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    margin-bottom: 0 !important;
-    overflow: hidden !important;
-}
-
-/* Responsive Table Container */
-.table-responsive {
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: auto !important;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    -webkit-overflow-scrolling: touch;
-    /* Höhe wird dynamisch per JS gesetzt */
-}
-
-/* Hover-Effekte für Action Buttons */
-.btn-outline-primary:hover,
-.btn-outline-danger:hover {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.add-sieger-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
-}
-
-/* Kompakte Buttons */
-.btn-compact { padding: .45rem .75rem; font-size: .875rem; }
-
-.add-sieger-card h5 {
-    color: var(--secondary-color);
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.filter-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
-}
-
-.filter-card h5 {
-    color: var(--secondary-color);
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.sieger-list-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    overflow: hidden;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-}
-
-.sieger-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
-    padding: 1.5rem;
-    border-bottom: 1px solid #dee2e6;
-    margin: 0;
-    color: var(--dark-color);
-    font-weight: 600;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-
-/* Custom Close Button */
+/* === CUSTOM CLOSE BUTTON === */
 .custom-close {
-    background: none;
-    border: none;
-    color: var(--secondary-color);
-    font-size: 1.5rem;
-    opacity: 0.7;
-    transition: all var(--transition-speed) ease;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: none; border: none; color: #64748b; font-size: 1.5rem;
+    opacity: 0.7; transition: all 0.15s; padding: 0;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
 }
-
 .custom-close:hover {
-    opacity: 1;
-    background-color: rgba(220, 53, 69, 0.1);
-    color: var(--danger-color);
-    transform: scale(1.1);
+    opacity: 1; background-color: rgba(220, 53, 69, 0.1); color: #dc3545;
 }
 
-/* Kompakte Form Layouts */
-.form-row-compact {
-    margin-bottom: 0.75rem;
-}
-
-.form-row-compact .form-label {
-    margin-bottom: 0.25rem;
-    font-size: 0.875rem;
-}
-
-/* === KOMPAKTE ACTION BUTTONS === */
-.btn-sm,
-.delete-sieger {
-    padding: 0.2rem 0.4rem !important;
-    font-size: 0.75rem !important;
-    border-radius: 0.25rem !important;
-    line-height: 1.2 !important;
-    height: 24px !important;
-    min-width: auto !important;
-}
-
-/* Nur Icon für Löschen-Button */
-.delete-sieger {
-    width: 28px !important;
-    padding: 0.2rem !important;
-}
-
-.delete-sieger i {
-    font-size: 0.8rem !important;
-}
-
-/* Loading states */
-.btn:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-/* Responsive für Sieger */
-@media (max-width: 576px) {
-    .add-sieger-card, .filter-card {
-        padding: 1rem;
-    }
-}
-
-.spinner-border {
-    color: var(--secondary-color) !important;
-}
-
-/* Animationen */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.add-sieger-card, .filter-card, .sieger-list-card {
-    animation: fadeIn 0.5s ease-out;
-}
-
-/* === MOBILE OPTIMIZATION === */
+/* === MOBILE === */
 @media (max-width: 767.98px) {
-    /* Desktop-Tabelle ausblenden */
-    .desktop-table-container {
-        display: none !important;
-    }
-
-    /* Mobile Cards anzeigen */
-    .mobile-cards-container {
-        display: block !important;
-    }
-
-    /* Formular-Anpassungen für Mobile */
-    .add-sieger-card, .filter-card {
-        padding: 0.875rem;
-    }
-
-    .add-sieger-card h5, .filter-card h5 {
-        font-size: 0.9rem;
-    }
-
-    /* Button-Anpassungen */
-    .btn-compact {
-        font-size: 0.8125rem;
-        padding: 0.5rem 0.625rem;
-    }
-
-    /* Container-Anpassungen */
-    .main-content-wrapper {
-        padding: 0.5rem;
-    }
-
-    .content-background {
-        padding: 0.5rem;
-    }
-}
-
-/* Desktop: Mobile Cards ausblenden */
-@media (min-width: 768px) {
-    .mobile-cards-container {
-        display: none !important;
-    }
+    .desktop-cards-container { grid-template-columns: 1fr; gap: 0.75rem; }
+    .add-sieger-panel { width: 100%; right: -100%; }
+    .year-selector { width: 100%; }
+    .year-selector select { flex: 1; }
+    .cat-card-head { padding: 0.4rem 0.625rem; }
+    .cat-card-head h6 { font-size: 0.85rem; }
+    .cat-icon { width: 28px; height: 28px; font-size: 0.8rem; border-radius: 6px; }
+    .cat-card-body { padding: 0.15rem 0 0.35rem; }
+    .winner-row { padding: 0.3rem 0.625rem; }
+    .winner-action .btn { opacity: 0.6; }
+    .winner-name { font-size: 0.85rem; }
+    .winner-score { font-size: 0.85rem; }
+    .winner-action .btn { opacity: 0.6; }
 }
 ";
 
@@ -307,79 +152,116 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-xl-10 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+                <!-- CSRF Token -->
+                <input type="hidden" id="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+
+                <!-- Header außerhalb des inneren Containers (nur Desktop) -->
                 <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-trophy me-2"></i>
                             Sieger der letzten Jahre
                         </h2>
-                        <p class="text-muted mb-0">Übersicht der Sieger nach Jahr</p>
                     </div>
                 </div>
 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
-                    <!-- CSRF Token für Lösch-Aktionen -->
-                    <input type="hidden" id="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-
-                    <div class="row">
-                        <!-- Jahr-Filter -->
-                        <div class="col-md-4">
-                            <div class="filter-card">
-                                <h5>
-                                    <i class="bi bi-funnel me-2"></i>
-                                    Filter
-                                </h5>
-
-                                <div class="form-row-compact">
-                                    <label for="filterYear" class="form-label">
-                                        <i class="bi bi-calendar-date me-1"></i>Jahr anzeigen:
-                                    </label>
-                                    <select id="filterYear" name="year" class="form-control form-control-sm">
-                                        <?php
-                                        // Distinct years aus der Tabelle sieger abrufen
-                                        $sql = "SELECT DISTINCT year FROM sieger ORDER BY year DESC";
-                                        $result = $conn->query($sql);
-
-                                        $currentYear = date("Y");
-                                        $lastYear = $currentYear - 1;
-
-                                        if ($result->num_rows > 0) {
-                                            while ($row = $result->fetch_assoc()) {
-                                                $selected = ($row['year'] == $lastYear) ? "selected" : "";
-                                                echo "<option value='" . $row['year'] . "' $selected>" . $row['year'] . "</option>";
-                                            }
-                                        } else {
-                                            echo "<option value='$currentYear'>$currentYear</option>";
-                                        }
-                                        ?>
-                                    </select>
-                                </div>
-
-                                <button type="button" id="filterButton" class="btn btn-compact btn-outline-info w-100 mt-2">
-                                    <i class="bi bi-search me-1"></i> Anzeigen
-                                </button>
-                            </div>
-                        </div>
+                    <!-- Jahr-Auswahl -->
+                    <div class="year-selector mb-3">
+                        <label><i class="bi bi-calendar3 me-1"></i>Jahr:</label>
+                        <select id="filterYear" class="form-select form-select-sm">
+                            <?php
+                            $sql = "SELECT DISTINCT year FROM sieger ORDER BY year DESC";
+                            $result = $conn->query($sql);
+                            $currentYear = date("Y");
+                            $lastYear = $currentYear - 1;
+                            if ($result->num_rows > 0) {
+                                while ($row = $result->fetch_assoc()) {
+                                    $selected = ($row['year'] == $lastYear) ? "selected" : "";
+                                    echo "<option value='{$row['year']}' {$selected}>{$row['year']}</option>";
+                                }
+                            } else {
+                                echo "<option value='{$currentYear}'>{$currentYear}</option>";
+                            }
+                            ?>
+                        </select>
+                        <button class="btn btn-sm btn-success" id="btnAddSieger">
+                            <i class="bi bi-plus-lg me-1"></i>Hinzufügen
+                        </button>
                     </div>
 
-                    <!-- Container für die Sieger Liste -->
-                    <div id="siegerListContainer">
-                        <div class="sieger-list-card">
-                            <div class="sieger-header">
-                                <i class="bi bi-trophy me-2"></i>
-                                <span id="siegerListTitle">Sieger Liste</span>
-                            </div>
-                            <div class="p-4 text-center">
-                                <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                                Lade Sieger...
-                            </div>
+                    <!-- Kategorie-Karten Container -->
+                    <div id="siegerContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border spinner-border-sm me-2"></div>
+                            Lade Sieger...
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Slide-Panel: Sieger hinzufügen -->
+<div class="panel-overlay" id="addPanelOverlay"></div>
+<div class="add-sieger-panel" id="addSiegerPanel">
+    <div class="panel-header">
+        <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Neuen Sieger hinzufügen</h6>
+        <button class="btn btn-sm btn-outline-secondary" id="addPanelClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="panel-body">
+        <form id="addSiegerForm">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+
+            <div class="mb-3">
+                <label class="panel-label"><i class="bi bi-person me-1"></i>Mitglied</label>
+                <select name="member_id" class="form-select" id="memberSelect">
+                    <option value="">– Mitglied wählen –</option>
+                    <?php
+                    $sql = "SELECT ID, Vorname, Name FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
+                    $result = $conn->query($sql);
+                    if ($result) while ($row = $result->fetch_assoc()) {
+                        echo "<option value='" . $row['ID'] . "'>" .
+                             htmlspecialchars($row['Name'] . ' ' . $row['Vorname']) .
+                             "</option>";
+                    }
+                    ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="panel-label"><i class="bi bi-trophy me-1"></i>Auszeichnung</label>
+                <select name="siegerdef" class="form-select" required>
+                    <option value="">– Kategorie wählen –</option>
+                    <?php
+                    $sql = "SELECT ID, Bezeichnung FROM siegerdef ORDER BY Bezeichnung";
+                    $result = $conn->query($sql);
+                    if ($result) while ($row = $result->fetch_assoc()) {
+                        echo "<option value='" . $row['ID'] . "'>" .
+                             htmlspecialchars($row['Bezeichnung']) .
+                             "</option>";
+                    }
+                    ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="panel-label"><i class="bi bi-123 me-1"></i>Resultat / Punkte</label>
+                <input type="number" name="wert" class="form-control" min="0" required placeholder="z.B. 98">
+            </div>
+
+            <div class="mb-3">
+                <label class="panel-label"><i class="bi bi-calendar3 me-1"></i>Jahr</label>
+                <input type="number" name="year" class="form-control" value="<?= date('Y') ?>" required>
+            </div>
+
+            <hr>
+            <button type="submit" class="btn btn-success w-100">
+                <i class="bi bi-plus-circle me-1"></i>Sieger hinzufügen
+            </button>
+        </form>
     </div>
 </div>
 
@@ -405,10 +287,10 @@ if (empty($_SESSION['csrf_token'])) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-compact btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-compact btn-outline-danger" id="confirmAction">
+                <button type="button" class="btn btn-sm btn-outline-danger" id="confirmAction">
                     <i class="bi bi-trash me-1"></i>Löschen
                 </button>
             </div>
@@ -417,106 +299,146 @@ if (empty($_SESSION['csrf_token'])) {
 </div>
 
 <script>
+// Kategorie-Konfiguration
+const CATEGORY_CONFIG = {
+    'Kunst':                { icon: 'bi-palette',    color: 'gold',   label: 'Kunst' },
+    'Glück':                { icon: 'bi-clover',     color: 'green',  label: 'Glück' },
+    'Zabigstich':           { icon: 'bi-bullseye',   color: 'purple', label: 'Zabigstich' },
+    'Endstich':             { icon: 'bi-crosshair',  color: 'blue',   label: 'Endstich' },
+    'Schwini':              { icon: 'bi-star',        color: 'purple', label: 'Schwini' },
+    'EndschiessenA':        { icon: 'bi-trophy',     color: 'gold',   label: 'Endschiessen Kat. A' },
+    'EndschiessenB':        { icon: 'bi-trophy',     color: 'gold',   label: 'Endschiessen Kat. B' },
+    'HeimmeisterschaftA':   { icon: 'bi-house',      color: 'blue',   label: 'Heimmeisterschaft Kat. A' },
+    'HeimmeisterschaftB':   { icon: 'bi-house',      color: 'blue',   label: 'Heimmeisterschaft Kat. B' },
+    'KantonalstichA':       { icon: 'bi-flag',       color: 'green',  label: 'Kantonalstich Kat. A' },
+    'KantonalstichB':       { icon: 'bi-flag',       color: 'green',  label: 'Kantonalstich Kat. B' },
+    'JahresmeisterschaftA': { icon: 'bi-award',      color: 'gold',   label: 'Jahresmeisterschaft Kat. A' },
+    'JahresmeisterschaftB': { icon: 'bi-award',      color: 'gold',   label: 'Jahresmeisterschaft Kat. B' },
+};
+const DEFAULT_CONFIG = { icon: 'bi-trophy', color: 'blue' };
+
+function enhanceCategoryCards() {
+    document.querySelectorAll('.cat-card').forEach(card => {
+        const catName = card.dataset.category;
+        const config = CATEGORY_CONFIG[catName] || DEFAULT_CONFIG;
+
+        // Icon setzen
+        const iconEl = card.querySelector('[data-cat-icon]');
+        if (iconEl) {
+            iconEl.className = `cat-icon ${config.color}`;
+            iconEl.innerHTML = `<i class="bi ${config.icon}"></i>`;
+        }
+
+        // Label aufhübschen
+        const labelEl = card.querySelector('[data-cat-label]');
+        if (labelEl && config.label) {
+            labelEl.textContent = config.label;
+        }
+    });
+}
+
+function loadSieger(year) {
+    const container = $('#siegerContainer');
+    container.html(`
+        <div class="text-center py-5">
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            Lade Sieger für ${year}...
+        </div>
+    `);
+
+    $.ajax({
+        url: 'sieger/load_sieger.php',
+        method: 'GET',
+        data: { year: year },
+        success: function(response) {
+            container.html(response);
+            enhanceCategoryCards();
+        },
+        error: function() {
+            container.html(`
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Fehler beim Laden der Sieger
+                </div>
+            `);
+            msvToast('Fehler beim Laden der Sieger', 'error');
+        }
+    });
+}
+
+// Panel öffnen/schliessen
+function openAddPanel() {
+    $('#addSiegerPanel').addClass('open');
+    $('#addPanelOverlay').addClass('show');
+}
+function closeAddPanel() {
+    $('#addSiegerPanel').removeClass('open').removeAttr('data-edit-id').removeAttr('data-edit-name');
+    $('#addPanelOverlay').removeClass('show');
+    $('#addSiegerForm')[0].reset();
+    // Zurück auf Add-Modus
+    $('#addSiegerPanel .panel-header h6').html('<i class="bi bi-plus-circle me-2"></i>Neuen Sieger hinzufügen');
+    $('#addSiegerForm button[type="submit"]').html('<i class="bi bi-plus-circle me-1"></i>Sieger hinzufügen');
+}
+
 $(document).ready(function() {
     var siegerId = null;
 
-    // Höhenberechnung für Tabelle
-    function calculateTableHeight() {
-        const tableResp = $('.table-responsive');
-        if (!tableResp.length) return;
+    // Jahr-Wechsel lädt sofort neu
+    $('#filterYear').on('change', function() {
+        loadSieger(this.value);
+    });
 
-        // Navbar Höhe
-        const navbar = $('.navbar');
-        const navbarHeight = navbar.length ? navbar.outerHeight() : 76;
+    // Sieger hinzufügen — Panel öffnen (Add-Modus)
+    $('#btnAddSieger').on('click', function() {
+        $('#addSiegerPanel').removeAttr('data-edit-id').removeAttr('data-edit-name');
+        $('#addSiegerPanel .panel-header h6').html('<i class="bi bi-plus-circle me-2"></i>Neuen Sieger hinzufügen');
+        $('#addSiegerForm button[type="submit"]').html('<i class="bi bi-plus-circle me-1"></i>Sieger hinzufügen');
+        openAddPanel();
+    });
 
-        // Position der Tabelle
-        const tableTop = tableResp.offset().top;
+    // Panel schliessen
+    $('#addPanelClose, #addPanelOverlay').on('click', closeAddPanel);
+    $(document).on('keydown', function(e) { if (e.key === 'Escape') closeAddPanel(); });
 
-        // Footer und Padding
-        const bottomPadding = 30;
+    // Bearbeiten — Klick auf Winner-Row öffnet Panel
+    $(document).on('click', '.winner-row', function(e) {
+        if ($(e.target).closest('.delete-sieger').length) return; // Lösch-Button ignorieren
+        var $row = $(this);
+        var id = $row.data('id');
+        var name = $row.data('name');
+        var wert = $row.data('wert');
+        var siegerdefId = $row.data('siegerdef');
+        var year = $('#filterYear').val();
 
-        // Verfügbare Höhe berechnen
-        const viewportHeight = window.innerHeight;
-        const availableHeight = viewportHeight - tableTop - bottomPadding;
-        const maxHeight = Math.max(300, availableHeight);
+        // Panel in Edit-Modus setzen
+        $('#addSiegerPanel').attr('data-edit-id', id).attr('data-edit-name', name);
+        $('#addSiegerPanel .panel-header h6').html('<i class="bi bi-pencil-square me-2"></i>Sieger bearbeiten');
+        var $form = $('#addSiegerForm');
+        $form.find('[name="wert"]').val(wert);
+        $form.find('[name="siegerdef"]').val(siegerdefId);
+        $form.find('[name="year"]').val(year);
 
-        // Höhe setzen
-        tableResp.css({
-            'max-height': maxHeight + 'px',
-            'overflow-y': 'auto'
-        });
-    }
-
-    // Sieger für Jahr laden
-    function loadSieger(year) {
-        $('#siegerListContainer').html(`
-            <div class="sieger-list-card">
-                <div class="sieger-header">
-                    <i class="bi bi-trophy me-2"></i>
-                    <span id="siegerListTitle">Sieger des Jahres ${year}</span>
-                </div>
-                <div class="p-4 text-center">
-                    <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                    Lade Sieger für ${year}...
-                </div>
-            </div>
-        `);
-
-        $.ajax({
-            url: 'sieger/load_sieger.php',
-            method: 'GET',
-            data: { year: year },
-            success: function(response) {
-                $('#siegerListContainer').html(response);
-                // Höhe nach dem Laden neu berechnen
-                setTimeout(calculateTableHeight, 100);
-                // Mobile Cards generieren
-                if (typeof buildMobileSiegerCards === 'function') {
-                    buildMobileSiegerCards();
-                }
-            },
-            error: function(xhr, status, error) {
-                $('#siegerListContainer').html(`
-                    <div class="sieger-list-card">
-                        <div class="sieger-header">
-                            <i class="bi bi-trophy me-2"></i>
-                            Sieger Liste
-                        </div>
-                        <div class="p-4 text-center text-danger">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            Fehler beim Laden der Sieger
-                        </div>
-                    </div>
-                `);
-                msvToast('Fehler beim Laden der Sieger', 'error');
+        // Member-Select: versuche nach Name zu matchen
+        var $memberSelect = $form.find('[name="member_id"]');
+        var matched = false;
+        $memberSelect.find('option').each(function() {
+            if (this.textContent.trim() === name) {
+                $(this).prop('selected', true);
+                matched = true;
+                return false;
             }
         });
-    }
+        if (!matched) $memberSelect.val('');
 
-    // Window Resize Handler
-    let resizeTimeout;
-    $(window).on('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(calculateTableHeight, 150);
+        // Submit-Button anpassen
+        $form.find('button[type="submit"]').html('<i class="bi bi-save me-1"></i>Änderungen speichern');
+
+        openAddPanel();
     });
 
-    // Global Scroll auf Tabelle umleiten
-    document.addEventListener('wheel', function(e) {
-        const tableContainer = $('.table-responsive')[0];
-        if (tableContainer && tableContainer.scrollHeight > tableContainer.clientHeight) {
-            tableContainer.scrollTop += e.deltaY;
-            e.preventDefault();
-        }
-    }, { passive: false });
-
-    // Filter Button
-    $('#filterButton').on('click', function() {
-        var selectedYear = $('#filterYear').val();
-        loadSieger(selectedYear);
-    });
-
-    // Sieger löschen
-    $(document).on('click', '.delete-sieger', function() {
+    // Löschen — Modal öffnen
+    $(document).on('click', '.delete-sieger', function(e) {
+        e.stopPropagation();
         siegerId = $(this).data('id');
         $('#confirmModal').modal('show');
     });
@@ -524,28 +446,22 @@ $(document).ready(function() {
     // Löschen bestätigen
     $('#confirmAction').on('click', function() {
         if (!siegerId) return;
-        
         var $btn = $(this);
-        var originalText = $btn.html();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
 
         $.ajax({
             url: 'sieger/delete_sieger.php',
             method: 'POST',
-            data: {
-                sieger_id: siegerId,
-                csrf_token: $('#csrf_token').val()
-            },
+            data: { sieger_id: siegerId, csrf_token: $('#csrf_token').val() },
             success: function(response) {
                 try {
-                    const jsonResponse = JSON.parse(response);
-                    if (jsonResponse.success) {
+                    const r = JSON.parse(response);
+                    if (r.success) {
                         $('#confirmModal').modal('hide');
                         msvToast('Sieger erfolgreich gelöscht', 'success');
                         setTimeout(() => loadSieger($('#filterYear').val()), 500);
                     } else {
-                        msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                        msvToast('Fehler: ' + (r.message || 'Unbekannter Fehler'), 'error');
                     }
                 } catch (e) {
                     $('#confirmModal').modal('hide');
@@ -553,71 +469,66 @@ $(document).ready(function() {
                     setTimeout(() => loadSieger($('#filterYear').val()), 500);
                 }
             },
-            error: function(xhr, status, error) {
-                msvToast('Fehler beim Löschen des Siegers', 'error');
-            },
+            error: function() { msvToast('Fehler beim Löschen', 'error'); },
             complete: function() {
-                $btn.prop('disabled', false).html(originalText);
+                $btn.prop('disabled', false).html('<i class="bi bi-trash me-1"></i>Löschen');
                 siegerId = null;
             }
         });
     });
 
-    // Mobile Cards für Sieger generieren
-    function buildMobileSiegerCards() {
-        const isMobile = window.matchMedia('(max-width: 767.98px)');
-        if (!isMobile.matches) return;
+    // Sieger hinzufügen/bearbeiten — Formular absenden
+    $('#addSiegerForm').on('submit', function(e) {
+        e.preventDefault();
+        var editId = $('#addSiegerPanel').attr('data-edit-id');
+        var isEdit = editId && editId !== '';
 
-        MSVMobileCards.buildCards('#siegerTable', '#mobileSiegerCards', {
-            customHtml: function(row, cells, headers, idx) {
-                const name = cells[0]?.textContent?.trim() || '';
-                const auszeichnung = cells[1]?.textContent?.trim() || '-';
-                const resultat = cells[2]?.textContent?.trim() || '-';
-                const jahr = cells[3]?.textContent?.trim() || '-';
-                const deleteBtn = cells[4]?.querySelector('.delete-sieger');
-                const siegerId = deleteBtn ? deleteBtn.getAttribute('data-id') : '';
+        // Beim Hinzufügen muss ein Mitglied gewählt sein
+        if (!isEdit && !$('#memberSelect').val()) {
+            msvToast('Bitte ein Mitglied wählen', 'warning');
+            $('#memberSelect').focus();
+            return;
+        }
+        var $btn = $(this).find('button[type="submit"]');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichern...');
 
-                return `
-                <div class="mobile-card" data-index="${idx}">
-                    <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
-                        <div class="fw-bold">${name}</div>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="mobile-card-body">
-                        <div class="mobile-card-detail-row">
-                            <span class="mobile-card-detail-label">Auszeichnung</span>
-                            <span class="mobile-card-detail-value">${auszeichnung}</span>
-                        </div>
-                        <div class="mobile-card-detail-row">
-                            <span class="mobile-card-detail-label">Resultat</span>
-                            <span class="mobile-card-detail-value"><strong>${resultat}</strong></span>
-                        </div>
-                        <div class="mobile-card-detail-row">
-                            <span class="mobile-card-detail-label">Jahr</span>
-                            <span class="mobile-card-detail-value">${jahr}</span>
-                        </div>
-                        <div class="mt-2 pt-1">
-                            <button class="btn btn-outline-danger btn-sm delete-sieger w-100" data-id="${siegerId}">
-                                <i class="bi bi-trash me-1"></i> Löschen
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
+        var url = isEdit ? 'sieger/update_sieger.php' : 'sieger/save_sieger.php';
+        var formData = $(this).serialize();
+        if (isEdit) {
+            formData += '&id=' + encodeURIComponent(editId);
+            // Name für Update mitsenden falls kein Member gewählt
+            var $memberSel = $(this).find('[name="member_id"]');
+            if (!$memberSel.val()) {
+                var origName = $('#addSiegerPanel').attr('data-edit-name') || '';
+                formData += '&name=' + encodeURIComponent(origName);
+            }
+        }
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(r) {
+                if (r.success) {
+                    msvToast(isEdit ? 'Sieger erfolgreich aktualisiert' : 'Sieger erfolgreich hinzugefügt', 'success');
+                    closeAddPanel();
+                    loadSieger($('#filterYear').val());
+                } else {
+                    msvToast('Fehler: ' + (r.message || 'Unbekannter Fehler'), 'error');
+                }
+            },
+            error: function() { msvToast('Fehler beim Speichern', 'error'); },
+            complete: function() {
+                $btn.prop('disabled', false).html(isEdit
+                    ? '<i class="bi bi-save me-1"></i>Änderungen speichern'
+                    : '<i class="bi bi-plus-circle me-1"></i>Sieger hinzufügen');
             }
         });
-    }
+    });
 
-    // Global filterMobileSieger function
-    window.filterMobileSieger = function(searchInput) {
-        MSVMobileCards.filterCards(searchInput, '#mobileSiegerCards');
-    };
-
-    // Initial laden des letzten Jahres
-    const initialYear = $('#filterYear').val();
-    loadSieger(initialYear);
-
-    // Initiale Höhenberechnung nach kurzer Verzögerung
-    setTimeout(calculateTableHeight, 200);
+    // Initial laden
+    loadSieger($('#filterYear').val());
 });
 </script>
 

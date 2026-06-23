@@ -170,8 +170,9 @@ foreach ($fragen as $f) {
         foreach ($frage_antworten as $a) {
             if (trim($a['antwort']) !== '') {
                 $result['texte'][] = [
-                    'mitglied' => $a['Vorname'] . ' ' . $a['Name'],
-                    'antwort'  => $a['antwort']
+                    'mitglied_id' => (int)$a['mitglied_id'],
+                    'mitglied'    => $a['Vorname'] . ' ' . $a['Name'],
+                    'antwort'     => $a['antwort']
                 ];
             }
         }
@@ -186,10 +187,14 @@ echo json_encode([
     'total_mitglieder'  => $total,
     'total_beantwortet' => count($beantwortet_ids),
     'ergebnisse'        => $ergebnisse,
-    'nicht_beantwortet' => $nicht_beantwortet
+    'nicht_beantwortet' => $nicht_beantwortet,
+    'beantwortet'       => array_map(function($name, $id) {
+        return ['mitglied_id' => (int)$id, 'name' => $name];
+    }, $beantwortet_ids, array_keys($beantwortet_ids))
 ]);
 
 } catch (Exception $e) {
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['success' => false, 'message' => 'DB-Fehler: ' . $e->getMessage()]);
+    error_log('umfrage_results: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten.']);
 }

@@ -1,13 +1,14 @@
 <?php
-// load_sieger.php
+// load_sieger.php — Kategorie-Karten
 require_once '../config.php';
 
-// Jahr aus GET-Parameter holen
 $selected_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 
 try {
-    // Daten aus der Tabelle sieger für das ausgewählte Jahr abrufen
-    $sql = "SELECT sieger.ID, sieger.Name, sieger.Wert, COALESCE(siegerdef.Bezeichnung, '–') as siegerdef, sieger.year
+    $sql = "SELECT sieger.ID, sieger.Name, sieger.Wert,
+                   COALESCE(siegerdef.Bezeichnung, '–') as siegerdef,
+                   sieger.siegerdef as siegerdef_id,
+                   sieger.year
             FROM sieger
             LEFT JOIN siegerdef ON sieger.siegerdef = siegerdef.ID
             WHERE sieger.year = ?
@@ -17,80 +18,62 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Äußere Card mit Header
-    echo "<div class='sieger-list-card'>";
-    echo "<div class='sieger-header'>";
-    echo "<i class='bi bi-trophy me-2'></i>";
-    echo "Sieger des Jahres " . htmlspecialchars($selected_year);
-    echo "</div>";
-
     if ($result->num_rows > 0) {
-        // Desktop: Tabelle
-        echo "<div class='desktop-table-container'>";
-        echo "<div class='table-responsive'>";
-        echo "<table class='table table-hover' id='siegerTable'>";
-        echo "<thead>";
-        echo "<tr>";
-        echo "<th>Name</th>";
-        echo "<th>Auszeichnung</th>";
-        echo "<th>Resultat</th>";
-        echo "<th>Jahr</th>";
-        echo "<th>Aktionen</th>";
-        echo "</tr>";
-        echo "</thead>";
-        echo "<tbody>";
-
+        // Daten nach Kategorie gruppieren
+        $grouped = [];
         while ($row = $result->fetch_assoc()) {
-            echo "<tr>";
-            echo "<td><strong>" . htmlspecialchars($row['Name']) . "</strong></td>";
-            echo "<td>" . htmlspecialchars($row['siegerdef']) . "</td>";
-            echo "<td><strong>" . htmlspecialchars($row['Wert']) . "</strong></td>";
-            echo "<td>" . htmlspecialchars($row['year']) . "</td>";
-            echo "<td>";
-            echo "<button class='btn btn-outline-danger btn-icon delete-sieger' data-id='" . $row['ID'] . "' title='Sieger löschen'>";
-            echo "<i class='bi bi-trash'></i>";
-            echo "</button>";
-            echo "</td>";
-            echo "</tr>";
+            $cat = $row['siegerdef'];
+            if (!isset($grouped[$cat])) {
+                $grouped[$cat] = [];
+            }
+            $grouped[$cat][] = $row;
         }
 
-        echo "</tbody>";
-        echo "</table>";
-        echo "</div>"; // Ende table-responsive
-        echo "</div>"; // Ende desktop-table-container
+        // Kategorie-Karten
+        echo "<div class='desktop-cards-container'>";
+        foreach ($grouped as $category => $entries) {
+            $catSafe = htmlspecialchars($category);
+            echo "<div class='cat-card' data-category='{$catSafe}'>";
+            echo "<div class='cat-card-head'>";
+            echo "<div class='cat-icon' data-cat-icon></div>";
+            echo "<h6 data-cat-label>{$catSafe}</h6>";
+            echo "</div>";
+            echo "<div class='cat-card-body'>";
 
-        // Mobile: Cards
-        echo "<div class='mobile-cards-container' id='mobileSiegerCards'>";
-        echo "<div class='mobile-search'>";
-        echo "<div class='position-relative'>";
-        echo "<i class='bi bi-search search-icon'></i>";
-        echo "<input type='text' class='form-control' placeholder='Suchen...' oninput='filterMobileSieger(this)'>";
-        echo "</div>";
-        echo "</div>";
-        echo "<div class='mobile-cards-scroll'>";
-        echo "<!-- Cards werden per JavaScript generiert -->";
-        echo "</div>";
-        echo "</div>";
+            foreach ($entries as $entry) {
+                $nameSafe = htmlspecialchars($entry['Name']);
+                $wertSafe = htmlspecialchars($entry['Wert']);
+                $id = intval($entry['ID']);
+
+                $siegerdefId = intval($entry['siegerdef_id'] ?? 0);
+                echo "<div class='winner-row' data-id='{$id}' data-name='{$nameSafe}' data-wert='{$wertSafe}' data-siegerdef='{$siegerdefId}'>";
+                echo "<div class='winner-name'>{$nameSafe}</div>";
+                echo "<div class='winner-score'>{$wertSafe}</div>";
+                echo "<div class='winner-action'>";
+                echo "<button class='btn btn-outline-danger btn-sm delete-sieger' data-id='{$id}' data-tooltip='Löschen'>";
+                echo "<i class='bi bi-trash'></i>";
+                echo "</button>";
+                echo "</div>";
+                echo "</div>";
+            }
+
+            echo "</div>"; // cat-card-body
+            echo "</div>"; // cat-card
+        }
+        echo "</div>"; // desktop-cards-container
+
     } else {
-        echo "<div class='p-4 text-center text-muted'>";
-        echo "<i class='bi bi-info-circle me-2'></i>";
-        echo "Keine Sieger für das Jahr " . htmlspecialchars($selected_year) . " gefunden.";
+        echo "<div class='empty-state'>";
+        echo "<i class='bi bi-trophy'></i>";
+        echo "<p>Keine Sieger für das Jahr " . htmlspecialchars($selected_year) . " erfasst.</p>";
         echo "</div>";
     }
 
-    echo "</div>"; // Ende sieger-list-card
-
     $stmt->close();
 } catch (Exception $e) {
-    echo "<div class='sieger-list-card'>";
-    echo "<div class='sieger-header'>";
-    echo "<i class='bi bi-trophy me-2'></i>";
-    echo "Sieger Liste";
-    echo "</div>";
-    echo "<div class='p-4 text-center text-danger'>";
+    echo "<div class='text-center py-4 text-danger'>";
     echo "<i class='bi bi-exclamation-triangle me-2'></i>";
-    echo "Fehler beim Laden der Daten: " . htmlspecialchars($e->getMessage());
-    echo "</div>";
+    echo "Fehler beim Laden: " . htmlspecialchars($e->getMessage());
     echo "</div>";
 }
 

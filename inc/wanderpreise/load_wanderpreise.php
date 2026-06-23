@@ -97,15 +97,15 @@ try {
             echo '<td>';
             echo '<div class="btn-group" role="group">';
             echo '<button type="button" class="btn btn-outline-primary btn-icon edit-wanderpreis" 
-                         data-id="' . $row['id'] . '" title="Bearbeiten">
+                         data-id="' . $row['id'] . '" data-tooltip="Bearbeiten">
                      <i class="bi bi-pencil"></i>
                   </button>';
             echo '<button type="button" class="btn btn-outline-info btn-icon view-gewinner" 
-                         data-id="' . $row['id'] . '" title="Gewinner anzeigen">
+                         data-id="' . $row['id'] . '" data-tooltip="Gewinner anzeigen">
                      <i class="bi bi-eye"></i>
                   </button>';
             echo '<button type="button" class="btn btn-outline-danger btn-icon delete-wanderpreis" 
-                         data-id="' . $row['id'] . '" title="Löschen">
+                         data-id="' . $row['id'] . '" data-tooltip="Löschen">
                      <i class="bi bi-trash"></i>
                   </button>';
             echo '</div>';

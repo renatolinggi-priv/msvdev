@@ -3,10 +3,10 @@
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 
-// Nur Admins
-requireRole('admin');
-
 header('Content-Type: application/json; charset=utf-8');
+
+// Nur Admins (JSON-Antwort bei Auth-Fehler)
+requireRoleJson('admin');
 
 // CSRF pruefen
 if (!validateCsrf($_POST['csrf_token'] ?? '')) {

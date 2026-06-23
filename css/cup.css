@@ -515,6 +515,51 @@ button.cup4-zone-remove:hover {
 .cup4-pair-card:hover .cup4-card-remove { opacity: 0.6; }
 .cup4-card-remove:hover { opacity: 1 !important; color: var(--cup4-danger); background: #fce4e4; }
 
+/* ── Kat.-B-Schalter im Finale ─────────── */
+.cup4-katb-switch {
+    border-bottom: 1px solid var(--cup4-border);
+    margin-bottom: 0.4rem;
+    color: var(--cup4-muted);
+}
+.cup4-katb-switch .form-check-input:checked {
+    background-color: var(--cup4-success);
+    border-color: var(--cup4-success);
+}
+
+/* ── Dreier-Gruppe: Anzahl Weiterkommende ─ */
+.cup4-adv-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--cup4-border);
+    font-size: 0.7rem;
+}
+.cup4-adv-toggle > .bi {
+    color: var(--cup4-muted);
+    font-size: 0.8rem;
+    margin-right: 0.1rem;
+}
+.cup4-adv-btn {
+    border: 1px solid var(--cup4-border);
+    background: var(--cup4-card-bg, #fff);
+    color: var(--cup4-muted);
+    font-size: 0.7rem;
+    line-height: 1;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--cup4-transition);
+}
+.cup4-adv-btn:hover { background: var(--cup4-light); }
+.cup4-adv-btn.active {
+    background: var(--cup4-success);
+    border-color: var(--cup4-success);
+    color: #fff;
+    font-weight: 600;
+}
+
 /* Generic small button (used in finale items) */
 .cup4-btn-sm {
     border: none;

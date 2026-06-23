@@ -113,7 +113,7 @@ $html = '<!DOCTYPE html>
         .table th, .table td {
             vertical-align: middle;
             padding: 4px;
-            border: 1px solid #000;
+            border: 1px solid #e2e8f0;
         }
         .table th:first-child, .table td:first-child {
             width: 40px;
@@ -134,8 +134,9 @@ $html = '<!DOCTYPE html>
             background-color: #fff;
         }
         .thead-dark th {
-            background-color: #343a40;
-            color: #fff;
+            background-color: #eef2f7;
+            color: #2d3748;
+            border-bottom: 2px solid #cbd5e0;
         }
     </style>
     <title>Ergebnisse</title>

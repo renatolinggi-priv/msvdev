@@ -146,7 +146,7 @@ function ladeHelferstunden() {
           <td>${event.isCustom ? `<i>${name}</i>` : name}</td>
           <td><input type="number" step="0.5" name="helferWilen[${helferKey}]" class="form-control form-control-sm" value="${wilen}"></td>
           <td><input type="number" step="0.5" name="helferWollerau[${helferKey}]" class="form-control form-control-sm" value="${wollerau}"></td>
-          <td><button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${event.helferID}" title="Löschen"><i class="bi bi-trash"></i></button></td>
+          <td><button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${event.helferID}" data-tooltip="Löschen"><i class="bi bi-trash"></i></button></td>
         </tr>`;
       });
 

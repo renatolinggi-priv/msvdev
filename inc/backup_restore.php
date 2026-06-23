@@ -381,15 +381,15 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
               <td class="text-end">${fmtSize(f.size)}</td>
               <td>${fmtDate(f.mtime)}</td>
               <td class="text-end">
-                <a class="btn btn-compact-standard btn-outline-primary me-1" href="${href}" title="Herunterladen">
+                <a class="btn btn-compact-standard btn-outline-primary me-1" href="${href}" data-tooltip="Herunterladen">
                   <i class="bi bi-download"></i>
                 </a>
                 <button class="btn btn-compact-standard btn-outline-warning me-1 btnRestoreExisting" 
-                        data-name="${f.name}" title="Wiederherstellen">
+                        data-name="${f.name}" data-tooltip="Wiederherstellen">
                   <i class="bi bi-arrow-counterclockwise"></i>
                 </button>
                 <button class="btn btn-compact-standard btn-outline-danger btnDel" 
-                        data-name="${f.name}" title="Löschen">
+                        data-name="${f.name}" data-tooltip="Löschen">
                   <i class="bi bi-trash"></i>
                 </button>
               </td>

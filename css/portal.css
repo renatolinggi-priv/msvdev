@@ -1,0 +1,385 @@
+/* ============================================================
+   Portal Design System — Tokens + wiederverwendbare Komponenten
+   Eingebunden in portal/portal_header.php (vor dem Inline-<style>).
+   Einzige Quelle der Wahrheit fuer Karten, Sektions-Header,
+   Icon-Chips, Formularfelder, Listen-Zeilen, Buttons.
+   ============================================================ */
+
+:root {
+    /* Marke */
+    --primary-color:   #3b5998;
+    --secondary-color: #6c757d;
+    --success-color:   #28a745;
+    --danger-color:    #dc3545;
+    --warning-color:   #ffc107;
+
+    /* Spacing-Skala (kompakt) */
+    --p-1: .25rem;
+    --p-2: .5rem;
+    --p-3: .75rem;
+    --p-4: 1rem;
+    --p-5: 1.5rem;
+
+    /* Radius — nur 2 Stufen */
+    --p-radius:    .6rem;   /* Karten */
+    --p-radius-sm: 8px;     /* Inputs, Chips, Buttons */
+
+    /* Eine Elevations-Familie */
+    --p-shadow:       0 1px 3px rgba(0,0,0,.06);
+    --p-shadow-hover: 0 4px 14px rgba(0,0,0,.10);
+
+    --p-border:      #eef0f3;
+    --p-text:        #2d3748;
+    --p-text-muted:  #718096;
+
+    /* Rueckwaertskompatibilitaet / vom Header genutzt */
+    --border-radius:    var(--p-radius);
+    --transition-speed: .3s;
+    --nav-height:       60px;
+}
+
+/* ---- Layout-Breiten ------------------------------------------------ */
+.portal-content {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: var(--p-4);
+    flex: 1 0 auto;   /* schiebt den Footer ans untere Ende (Sticky-Footer) */
+}
+/* Schmale Spalte fuer Formular-/Detailseiten (nur Desktop relevant) */
+.p-narrow {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* ---- Seiten-Header ------------------------------------------------- */
+.portal-page-header {
+    margin-bottom: var(--p-4);
+}
+.portal-page-header h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--p-text);
+    margin-bottom: .15rem;
+}
+.portal-page-header .subtitle {
+    color: var(--secondary-color);
+    font-size: .85rem;
+}
+
+/* ---- Karte --------------------------------------------------------- */
+.p-card,
+.portal-card {
+    background: #fff;
+    border-radius: var(--p-radius);
+    box-shadow: var(--p-shadow);
+    border: 1px solid var(--p-border);
+    overflow: hidden;
+}
+.p-card-body,
+.portal-card-body {
+    padding: .85rem 1rem;
+}
+/* Bestandsverhalten: .portal-card hebt beim Hover (wird oft als Link genutzt) */
+.portal-card {
+    transition: box-shadow var(--transition-speed) ease, transform var(--transition-speed) ease;
+}
+.portal-card:hover {
+    box-shadow: var(--p-shadow-hover);
+    transform: translateY(-2px);
+}
+/* .p-card ist standardmaessig statisch — Hover-Lift nur fuer klickbare Karten */
+.p-card.is-clickable,
+a.p-card {
+    transition: box-shadow var(--transition-speed) ease, transform var(--transition-speed) ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.p-card.is-clickable:hover,
+a.p-card:hover {
+    box-shadow: var(--p-shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* ---- Sektion (Karte mit Kopfzeile) --------------------------------- */
+.p-section {
+    background: #fff;
+    border-radius: var(--p-radius);
+    border: 1px solid var(--p-border);
+    box-shadow: var(--p-shadow);
+    padding: .85rem 1rem .8rem;
+    margin-bottom: var(--p-3);
+}
+.p-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--p-2);
+    margin-bottom: .7rem;
+}
+.p-section-title {
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--p-text);
+}
+
+/* ---- Icon-Chip ----------------------------------------------------- */
+.p-chip {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--p-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .95rem;
+    flex-shrink: 0;
+}
+.p-chip.lg { width: 38px; height: 38px; font-size: 1.05rem; }
+.p-chip.blue   { background: #e8f0fe; color: #3b5998; }
+.p-chip.green  { background: #e8f5e9; color: #2e7d32; }
+.p-chip.orange { background: #fff3e0; color: #e65100; }
+.p-chip.red    { background: #fce4ec; color: #c62828; }
+.p-chip.purple { background: #f3e8fd; color: #7b1fa2; }
+.p-chip.gray   { background: #eef0f3; color: #64748b; }
+
+/* ---- Formularfeld -------------------------------------------------- */
+.p-field { margin-bottom: var(--p-3); }
+.p-field > label {
+    display: block;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--p-text-muted);
+    margin-bottom: .2rem;
+}
+.p-field input,
+.p-field select,
+.p-field textarea {
+    width: 100%;
+    padding: .5rem .7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--p-radius-sm);
+    font-size: .88rem;
+    color: var(--p-text);
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+}
+.p-field input:focus,
+.p-field select:focus,
+.p-field textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59,89,152,.12);
+}
+.p-field input.is-invalid,
+.p-field select.is-invalid { border-color: var(--danger-color); }
+.p-field .invalid-feedback {
+    font-size: .75rem;
+    color: var(--danger-color);
+    margin-top: .15rem;
+}
+
+/* ---- Readonly Info-Zeile ------------------------------------------- */
+.p-info-row {
+    display: flex;
+    align-items: baseline;
+    padding: .28rem 0;
+    font-size: .85rem;
+}
+.p-info-label {
+    width: 100px;
+    flex-shrink: 0;
+    color: var(--p-text-muted);
+    font-weight: 500;
+}
+.p-info-value {
+    color: var(--p-text);
+    font-weight: 600;
+}
+
+/* ---- Listen-Zeile (Icon + Inhalt + Aktionen) ----------------------- */
+.p-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--p-2);
+}
+.p-list-row {
+    background: #fff;
+    border-radius: var(--p-radius);
+    border: 1px solid var(--p-border);
+    box-shadow: var(--p-shadow);
+    padding: .6rem .85rem;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+}
+.p-list-body { flex: 1; min-width: 0; }
+.p-list-title {
+    font-weight: 600;
+    color: var(--p-text);
+    font-size: .9rem;
+}
+.p-list-meta {
+    font-size: .78rem;
+    color: var(--p-text-muted);
+}
+.p-list-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--p-2);
+    flex-shrink: 0;
+}
+
+/* ---- Eyebrow / kleiner Sektionstitel ------------------------------- */
+.p-eyebrow {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--p-text-muted);
+    margin: var(--p-4) 0 var(--p-2);
+}
+.p-eyebrow:first-child { margin-top: 0; }
+
+/* ---- Stat-Grid ----------------------------------------------------- */
+.p-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--p-2);
+}
+.p-stat {
+    background: #fff;
+    border-radius: var(--p-radius);
+    border: 1px solid var(--p-border);
+    box-shadow: var(--p-shadow);
+    padding: .55rem;
+    text-align: center;
+}
+/* Stat-Inhalt (Zahl + Label) + Total-Akzent — einheitlich JM/Heim/Kanti */
+.p-stat .number { font-size: 1.15rem; font-weight: 700; line-height: 1.2; color: var(--p-text); }
+.p-stat .label { font-size: .7rem; color: var(--p-text-muted); }
+.p-stat .label i { color: var(--success-color); margin-right: var(--p-1); }
+.p-stat.total { border-top: 3px solid var(--success-color); background: #f0faf3; }
+.p-stat.total .number { color: #1a8c35; }
+
+/* ---- Resultat-Seiten (Heim/Kanti): schlanke Summary-Zeile + Passen-Liste ---- */
+.result-summary {
+    display: flex;
+    background: #fff;
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    box-shadow: var(--p-shadow);
+    padding: var(--p-2) 0;
+    margin-bottom: var(--p-3);
+}
+.result-summary .rs-item {
+    flex: 1;
+    text-align: center;
+    padding: .15rem var(--p-2);
+    border-left: 1px solid var(--p-border);
+}
+.result-summary .rs-item:first-child { border-left: none; }
+.result-summary .rs-num {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--p-text);
+    font-variant-numeric: tabular-nums;
+}
+.result-summary .rs-item.total .rs-num { color: #1a8c35; }
+.result-summary .rs-lbl {
+    display: block;
+    font-size: .68rem;
+    color: var(--p-text-muted);
+    margin-top: 1px;
+}
+
+.passe-list {
+    background: #fff;
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    box-shadow: var(--p-shadow);
+    overflow: hidden;
+}
+.passe-row {
+    display: flex;
+    align-items: center;
+    gap: var(--p-3);
+    padding: .55rem var(--p-3);
+    border-top: 1px solid var(--p-border);
+}
+.passe-row:first-child { border-top: none; }
+.passe-row .passe-label { font-weight: 600; color: var(--p-text); font-size: .9rem; }
+.passe-row .passe-score {
+    margin-left: auto;
+    min-width: 2.75rem;
+    text-align: right;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--p-text);
+    font-variant-numeric: tabular-nums;
+}
+.passe-row .passe-status {
+    flex-shrink: 0;
+    max-width: 7rem;
+    text-align: right;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--p-text-muted);
+}
+.passe-row.not-shot .passe-label,
+.passe-row.not-shot .passe-score { color: var(--p-text-muted); }
+.passe-row.best .passe-score,
+.passe-row.best .passe-status { color: var(--success-color); }
+.passe-row.kranz { background: linear-gradient(135deg, #fff9e6, #fff3cd); }
+.passe-row.kranz .passe-score { color: #b8860b; }
+.passe-row.kranz .passe-status { color: #8a6d1c; }
+
+/* ---- Buttons ------------------------------------------------------- */
+.p-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    border: none;
+    border-radius: var(--p-radius-sm);
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+    padding: .55rem .9rem;
+    transition: all .2s;
+    text-decoration: none;
+}
+.p-btn.block { width: 100%; }
+.p-btn.primary { background: var(--primary-color); color: #fff; }
+.p-btn.primary:hover {
+    background: #2d4373;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59,89,152,.3);
+}
+.p-btn.danger-outline {
+    background: #fff;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+}
+.p-btn.danger-outline:hover { background: var(--danger-color); color: #fff; }
+.p-btn.ghost { background: #f1f3f6; color: var(--p-text); }
+.p-btn.ghost:hover { background: #e6e9ef; }
+.p-btn:disabled,
+.p-btn.disabled { opacity: .55; cursor: not-allowed; }
+.p-btn:disabled:hover,
+.p-btn.disabled:hover { transform: none; box-shadow: none; }
+
+/* ---- Mobile -------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    .portal-content { padding: var(--p-3) .7rem; }
+    .portal-page-header h1 { font-size: 1.2rem; }
+    .p-narrow { max-width: none; }       /* volle Breite auf Mobile */
+    .p-list-row { flex-wrap: wrap; }
+    .p-list-actions { margin-left: auto; }
+    /* Touch-Target + iOS-Zoom verhindern */
+    .p-field input,
+    .p-field select,
+    .p-field textarea { min-height: 44px; font-size: 16px; }
+}

@@ -62,10 +62,10 @@ class EndschloesenReport extends PDFGenerator
             // Legende
             $html .= '<div style="margin: 10px 0; font-size: 9pt;">';
             $html .= '<strong>Legende:</strong> ';
-            $html .= '<span style="color: #28a745; font-weight: bold;">X</span> = Stich gelöst | ';
-            $html .= '<span style="color: #007bff; font-weight: bold; background-color: #e7f3ff; padding: 2px 4px;">P</span> = Partner-Stich (Zabig mit Partner, CHF 10.00) | ';
+            $html .= '<span style="color: #2f855a; font-weight: bold;">X</span> = Stich gelöst | ';
+            $html .= '<span style="color: #3b5998; font-weight: bold; background-color: #f1f5f9; padding: 2px 4px;">P</span> = Partner-Stich (Zabig mit Partner, CHF 10.00) | ';
             $html .= '<span style="color: #6c757d; font-weight: 600;">(Gast)</span> = Gast | ';
-            $html .= '<span style="color: #007bff; font-weight: 600;">(JS)</span> = JungschützeIn';
+            $html .= '<span style="color: #3b5998; font-weight: 600;">(JS)</span> = JungschützeIn';
             $html .= '</div>';
 
             // Zusammenfassung (links Stiche / rechts Munition)
@@ -395,7 +395,7 @@ class EndschloesenReport extends PDFGenerator
             $displayName = htmlspecialchars($entry['name']);
             if ($entry['typ'] === 'gast') {
                 if (!empty($entry['geburtsdatum'])) {
-                    $displayName .= ' <span style="color:#007bff; font-weight:600;">(JS)</span>';
+                    $displayName .= ' <span style="color:#3b5998; font-weight:600;">(JS)</span>';
                 } else {
                     $displayName .= ' <span style="color:#6c757d; font-weight:600;">(Gast)</span>';
                 }
@@ -413,8 +413,8 @@ class EndschloesenReport extends PDFGenerator
 
                 if ($has) {
                     $badge = $isPartner
-                        ? '<span style="color:#007bff; font-weight:bold; background:#e7f3ff; padding:2px 4px;">P</span>'
-                        : '<span style="color:#28a745; font-weight:bold;">X</span>';
+                        ? '<span style="color:#3b5998; font-weight:bold; background:#f1f5f9; padding:2px 4px;">P</span>'
+                        : '<span style="color:#2f855a; font-weight:bold;">X</span>';
                     $html .= '<td class="stich-cell" style="text-align:center;">' . $badge . '</td>';
                 } else {
                     $html .= '<td class="stich-cell" style="text-align:center;"><span style="color:#bbb;">â€“</span></td>';
@@ -516,7 +516,7 @@ class EndschloesenReport extends PDFGenerator
         $teilnehmerBox .= '<table style="width: 40%; border-collapse: collapse;">';
         $teilnehmerBox .= '<tr><td style="padding: 4px 8px; border-bottom: 1px solid #dee2e6;"><strong>Mitglieder:</strong></td><td style="padding: 4px 8px; text-align: right; border-bottom: 1px solid #dee2e6;">' . $countMitglieder . '</td></tr>';
         $teilnehmerBox .= '<tr><td style="padding: 4px 8px; border-bottom: 1px solid #dee2e6;"><strong>Gäste:</strong></td><td style="padding: 4px 8px; text-align: right; border-bottom: 1px solid #dee2e6;">' . $countGaeste . '</td></tr>';
-        $teilnehmerBox .= '<tr><td style="padding: 4px 8px; border-bottom: 1px solid #dee2e6;"><strong>JungschützenInnen:</strong></td><td style="padding: 4px 8px; text-align: right; border-bottom: 1px solid #dee2e6;"><span style="color: #007bff; font-weight: 600;">' . $countJS . '</span></td></tr>';
+        $teilnehmerBox .= '<tr><td style="padding: 4px 8px; border-bottom: 1px solid #dee2e6;"><strong>JungschützenInnen:</strong></td><td style="padding: 4px 8px; text-align: right; border-bottom: 1px solid #dee2e6;"><span style="color: #3b5998; font-weight: 600;">' . $countJS . '</span></td></tr>';
         $teilnehmerBox .= '<tr style="background: #e9ecef;"><td style="padding: 6px 8px;"><strong>Total Teilnehmer:</strong></td><td style="padding: 6px 8px; text-align: right;"><strong>' . $countTotal . '</strong></td></tr>';
         $teilnehmerBox .= '</table>';
         $teilnehmerBox .= '</div>';
@@ -589,7 +589,7 @@ class EndschloesenReport extends PDFGenerator
             $ein = $partnerCount * 1000; // CHF 10.00 pro Partner-Zabig
             $sumEinnahmen += $ein;
             $left .= '<tr>';
-            $left .= '<td>Zabig <span style="color:#007bff;">(Partner)</span></td>';
+            $left .= '<td>Zabig <span style="color:#3b5998;">(Partner)</span></td>';
             $left .= '<td style="text-align:right;">' . number_format($partnerCount, 0, ',', '\'') . '</td>';
             $left .= '<td style="text-align:right;">' . number_format($ein / 100, 2, '.', '\'') . '</td>';
             $left .= '</tr>';

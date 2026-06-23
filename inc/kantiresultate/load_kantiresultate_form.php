@@ -2,7 +2,7 @@
 /**
  * Load Kantiresultate Form
  * Lädt die Kantiresultate für das ausgewählte Jahr mit Sicherheitsverbesserungen
- * 
+ *
  * Security Features:
  * - SQL Injection Prevention mit prepared statements
  * - XSS Protection mit htmlspecialchars
@@ -33,29 +33,60 @@ function logError($message, $context = []) {
  */
 function generateMemberRow($mitglied, $resultate, $year) {
     $html = '<tr>';
-    
-    // Name mit Security-Scaping
+
+    // Serverseitig Summe, Beste und Filled berechnen
+    $sum = 0;
+    $best = 0;
+    $bestIdx = -1;
+    $filled = 0;
+    $values = [];
+    for ($i = 1; $i <= 5; $i++) {
+        $v = isset($resultate["Passe$i"]) ? (int)$resultate["Passe$i"] : 0;
+        $values[$i] = $v;
+        if (isset($resultate["Passe$i"]) && $resultate["Passe$i"] !== '' && $resultate["Passe$i"] != 0) {
+            $filled++;
+        }
+        $sum += $v;
+        if ($v > $best) { $best = $v; $bestIdx = $i; }
+    }
+
+    // Status-Dot Klasse
+    if ($filled === 5 && $filled > 0) $dotClass = 'complete';
+    elseif ($filled > 0) $dotClass = 'partial';
+    else $dotClass = 'empty';
+
+    // Name mit Security-Scaping + Status-Dot
     $vorname = sanitizeOutput($mitglied['Vorname']);
     $name = sanitizeOutput($mitglied['Name']);
     $html .= '<td class="text-start fw-semibold">';
+    $html .= '<span class="status-dot ' . $dotClass . '"></span>';
     $html .= $name . ' ' . $vorname;
     $html .= '</td>';
 
     // Resultate für jede Passe (1-5)
     for ($i = 1; $i <= 5; $i++) {
         $passe = isset($resultate["Passe$i"]) ? sanitizeOutput($resultate["Passe$i"]) : '';
+        $isBest = ($i === $bestIdx && $best > 0);
+        $classes = 'form-control form-control-sm small-input text-center';
+        if ($passe !== '' && $passe !== '0') $classes .= ' filled';
+        if ($isBest) $classes .= ' best-passe';
         $html .= '<td>';
         $html .= '<input type="text" ';
-        $html .= 'class="form-control form-control-sm small-input text-center" ';
+        $html .= 'class="' . $classes . '" ';
         $html .= 'name="passe[' . (int)$mitglied['ID'] . '][' . $i . ']" ';
         $html .= 'value="' . $passe . '" ';
         $html .= 'autocomplete="off" ';
         $html .= 'maxlength="2" ';
         $html .= 'pattern="[0-9]*" ';
-        $html .= 'title="Nur Zahlen erlaubt">';
+        $html .= 'data-tooltip="Nur Zahlen erlaubt">';
         $html .= '</td>';
     }
-    
+
+    // Summe-Spalte (serverseitig vorberechnet)
+    $sumText = $sum > 0 ? $sum : '&ndash;';
+    $sumClass = $sum > 0 ? 'sum-cell' : 'sum-cell empty';
+    $html .= '<td style="border-left:2px solid #e2e8f0;"><span class="' . $sumClass . '">' . $sumText . '</span></td>';
+
     $html .= '</tr>';
     return $html;
 }
@@ -74,7 +105,7 @@ try {
     }
 
     // Mitglieder mit prepared statement laden
-    $mitgliederSql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Verstorben = 0 ORDER BY Name ASC, Vorname ASC";
+    $mitgliederSql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Status = 1 AND Verstorben = 0 ORDER BY Name ASC, Vorname ASC";
     $mitgliederStmt = $conn->prepare($mitgliederSql);
     
     if (!$mitgliederStmt) {
@@ -129,7 +160,7 @@ try {
     
     // Falls keine Mitglieder gefunden
     if ($memberCount === 0) {
-        $output = '<tr><td colspan="6" class="text-center text-muted py-4">';
+        $output = '<tr><td colspan="7" class="text-center text-muted py-4">';
         $output .= '<i class="bi bi-info-circle me-2"></i>';
         $output .= 'Keine Mitglieder gefunden';
         $output .= '</td></tr>';
@@ -157,7 +188,7 @@ try {
     ]);
     
     // Benutzerfreundliche Fehlermeldung ausgeben
-    echo '<tr><td colspan="6" class="text-center text-danger py-4">';
+    echo '<tr><td colspan="7" class="text-center text-danger py-4">';
     echo '<i class="bi bi-exclamation-triangle me-2"></i>';
     echo 'Fehler beim Laden der Daten. Bitte versuchen Sie es erneut.';
     echo '</td></tr>';

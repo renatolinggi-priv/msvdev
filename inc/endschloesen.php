@@ -203,8 +203,13 @@ if (empty($_SESSION['csrf_token'])) {
                 <i class="bi bi-file-earmark-pdf"></i> Abrechnung
               </button>
             </div>
+            <div class="col-4 col-sm-4 col-md-auto">
+              <button type="button" id="btnStandblatt" class="btn btn-outline-success btn-sm w-100" disabled>
+                <i class="bi bi-file-earmark-spreadsheet"></i> Standblatt
+              </button>
+            </div>
             <div class="col-2 col-sm-4 col-md-auto ms-md-auto">
-              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center px-1" title="Zurücksetzen">
+              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center px-1" data-tooltip="Zurücksetzen">
                 <i class="bi bi-arrow-counterclockwise"></i>
                 <span class="d-none d-sm-inline ms-1">Zurücksetzen</span>
               </button>
@@ -452,9 +457,20 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
 <style>
+  /* Select2 Anpassungen */
+  .select2-container--bootstrap-5 .select2-selection--single {
+    font-size: 0.875rem;
+    min-height: calc(1.5em + 0.5rem + 2px);
+    padding: 0.25rem 0.5rem;
+  }
+
   /* Seiten-spezifisch; hält sich an bestehendes Layout */
-  #stichList .card { 
+  #stichList .card {
     cursor: pointer; 
     transition: all 0.2s;
     margin-bottom: 0;
@@ -604,6 +620,9 @@ if (empty($_SESSION['csrf_token'])) {
   }
 }
 </style>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
 (function(){
@@ -956,6 +975,10 @@ function recalcTotals(){
   } else {
     munitionBadge.style.display = 'none';
   }
+
+  // Standblatt-Button enable/disable
+  const hasPerson = document.getElementById('mitgliedSelect').value !== '' || document.getElementById('gastName').value.trim() !== '';
+  document.getElementById('btnStandblatt').disabled = !(hasPerson && count > 0);
 }
 
   // === Events ===
@@ -1184,7 +1207,7 @@ document.addEventListener('input', function(e){
   
   // Reset button
   document.getElementById('btnReset').addEventListener('click', function(){
-    document.getElementById('mitgliedSelect').value = '';
+    $('#mitgliedSelect').val('').trigger('change');
     document.getElementById('gastName').value = '';
     document.getElementById('gastGeburtsdatum').value = '';
     document.getElementById('gastWaffe').value = ''; // NEU
@@ -1380,7 +1403,7 @@ document.addEventListener('input', function(e){
         loadErfassteStiche();
         
         setTimeout(() => {
-          document.getElementById('mitgliedSelect').value = '';
+          $('#mitgliedSelect').val('').trigger('change');
           document.getElementById('gastName').value = '';
           document.getElementById('gastWaffe').value = ''; // NEU
           document.getElementById('gastWaffeContainer').style.display = 'none'; // NEU
@@ -1427,7 +1450,11 @@ document.addEventListener('input', function(e){
   // === Daten laden ===
   function loadMitglieder(){
     const sel = document.getElementById('mitgliedSelect');
-    sel.innerHTML = '<option value="">– bitte wählen –</option>';
+    // Select2 zerstören falls bereits initialisiert
+    if ($(sel).hasClass('select2-hidden-accessible')) {
+      $(sel).select2('destroy');
+    }
+    sel.innerHTML = '<option value="">– Mitglied suchen –</option>';
     fetch(`${API}?action=list_mitglieder`).then(r=>r.ok?r.json():null).then(j=>{
       if (!j || !j.success) return;
       j.data.forEach(m=>{
@@ -1436,6 +1463,15 @@ document.addEventListener('input', function(e){
         opt.value = m.id;
         opt.textContent = label;
         sel.appendChild(opt);
+      });
+      // Select2 initialisieren
+      $(sel).select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Mitglied suchen...',
+        allowClear: true,
+        width: '100%'
+      }).on('select2:open', function() {
+        document.querySelector('.select2-search__field').focus();
       });
     }).catch(()=>{});
   }
@@ -1574,8 +1610,8 @@ function loadGastSelection() {
     }).catch(()=>{});
 }
 
-  document.getElementById('mitgliedSelect').addEventListener('change', function() {
-    if (this.value) {
+  $('#mitgliedSelect').on('change', function() {
+    if ($(this).val()) {
       document.getElementById('gastName').value = '';
       document.getElementById('gastGeburtsdatum').value = '';
       document.getElementById('gastWaffe').value = ''; // NEU
@@ -1591,7 +1627,7 @@ function loadGastSelection() {
     const container = document.getElementById('gastWaffeContainer');
     if (this.value.trim()) {
       container.style.display = 'block';
-      document.getElementById('mitgliedSelect').value = '';
+      $('#mitgliedSelect').val('').trigger('change.select2');
       
       // Setze Stgw90 als Default wenn Container neu angezeigt wird
       const select = document.getElementById('gastWaffe');
@@ -1676,7 +1712,7 @@ function loadGastSelection() {
   stiche.forEach(stich => {
     const th = document.createElement('th');
     th.className = 'stich-header';
-    th.title = `${stich.name} (${stich.shots} Schuss, ${fmtCHF(stich.price_cents)})`;
+    th.setAttribute('data-tooltip', `${stich.name} (${stich.shots} Schuss, ${fmtCHF(stich.price_cents)})`);
     th.innerHTML = stich.name;
     headerRow.appendChild(th);
   });
@@ -1779,31 +1815,44 @@ html += `<td class="text-center small">${munHtml}</td>`;
 
     // Bezahlt
     let zahlungIcon = '<span class="text-muted">-</span>';
-    if (entry.zahlungsmethode === 'karte') zahlungIcon = '<i class="bi bi-credit-card-2-back text-primary" title="Karte"></i>';
-    if (entry.zahlungsmethode === 'bar')   zahlungIcon = '<i class="bi bi-cash text-success" title="Bar"></i>';
+    if (entry.zahlungsmethode === 'karte') zahlungIcon = '<i class="bi bi-credit-card-2-back text-primary" data-tooltip="Karte"></i>';
+    if (entry.zahlungsmethode === 'bar')   zahlungIcon = '<i class="bi bi-cash text-success" data-tooltip="Bar"></i>';
     html += `<td class="text-center">${zahlungIcon}</td>`;
 
     // Total
     html += `<td class="text-end total-cell">${fmtCHF(entry.total_price || 0)}</td>`;
 
+    // Gelöste Stich-Codes ermitteln (IDs → Codes)
+    const geloesteCodes = Array.isArray(entry.stiche)
+      ? entry.stiche.map(sid => { const s = stiche.find(x => parseInt(x.id) === sid); return s ? s.code : ''; }).filter(Boolean).join(',')
+      : '';
+
     // Aktionen
     html += `
       <td class="text-center">
         <div class="btn-group btn-group-sm" role="group">
-          <button class="btn btn-outline-secondary btn-edit-selection" 
+          <button class="btn btn-outline-success btn-download-standblatt"
                   data-entity-id="${entry.entity_id || entry.mitglied_id}"
                   data-entity-typ="${entry.typ || 'mitglied'}"
                   data-entity-name="${entry.name}"
-                  title="Bearbeiten">
+                  data-stiche="${geloesteCodes}"
+                  data-tooltip="Standblatt herunterladen">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-edit-selection"
+                  data-entity-id="${entry.entity_id || entry.mitglied_id}"
+                  data-entity-typ="${entry.typ || 'mitglied'}"
+                  data-entity-name="${entry.name}"
+                  data-tooltip="Bearbeiten">
             <i class="bi bi-pencil-square"></i>
           </button>
-          
-      <button class="btn btn-outline-danger btn-delete-selection"
-              data-entity-id="${entry.entity_id || entry.mitglied_id}"
-              data-entity-typ="${entry.typ || 'mitglied'}"
-              data-entity-name="${entry.name}"
-              title="Löschen">
-        <i class="bi bi-trash3"></i>
+          <button class="btn btn-outline-danger btn-delete-selection"
+                  data-entity-id="${entry.entity_id || entry.mitglied_id}"
+                  data-entity-typ="${entry.typ || 'mitglied'}"
+                  data-entity-name="${entry.name}"
+                  data-tooltip="Löschen">
+            <i class="bi bi-trash3"></i>
+          </button>
         </div>
       </td>`;
 
@@ -1818,6 +1867,46 @@ html += `<td class="text-center small">${munHtml}</td>`;
 }
 
   document.addEventListener('click', function(e) {
+    // Standblatt-Download aus Liste
+    if (e.target.closest('.btn-download-standblatt')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const btn = e.target.closest('.btn-download-standblatt');
+      const entityId = btn.dataset.entityId;
+      const entityTyp = btn.dataset.entityTyp;
+      const entityName = btn.dataset.entityName;
+      const sticheCodes = btn.dataset.stiche || '';
+      const jahr = document.getElementById('yearSelect').value;
+
+      let url = `endschloesen/generate_standblatt.php?jahr=${jahr}&stiche=${encodeURIComponent(sticheCodes)}`;
+      if (entityTyp === 'mitglied') {
+        url += `&mitglied_id=${entityId}`;
+      } else {
+        const cleanName = entityName.replace(' (Gast)', '').replace(' (JS)', '');
+        url += `&gast_name=${encodeURIComponent(cleanName)}`;
+      }
+
+      const origHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+      fetch(url)
+        .then(r => { if (!r.ok) throw new Error('Fehler'); return r.blob(); })
+        .then(blob => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `Endschiessen_${jahr}_${entityName.replace(/[^a-zA-ZäöüÄÖÜ0-9]/g, '_')}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(a.href);
+          msvToast('Standblatt heruntergeladen', 'success');
+        })
+        .catch(() => msvToast('Fehler beim Generieren', 'danger'))
+        .finally(() => { btn.disabled = false; btn.innerHTML = origHTML; });
+      return;
+    }
+
     if (e.target.closest('.btn-edit-selection')) {
       e.preventDefault();
       e.stopPropagation();
@@ -1828,12 +1917,12 @@ html += `<td class="text-center small">${munHtml}</td>`;
       const entityName = btn.dataset.entityName;
       
       if (entityTyp === 'mitglied') {
-        document.getElementById('mitgliedSelect').value = entityId;
+        $('#mitgliedSelect').val(entityId).trigger('change');
         document.getElementById('gastName').value = '';
         document.getElementById('gastWaffeContainer').style.display = 'none'; // NEU
         renderStiche();
       } else if (entityTyp === 'gast') {
-        document.getElementById('mitgliedSelect').value = '';
+        $('#mitgliedSelect').val('').trigger('change.select2');
         const gastName = entityName.replace(' (Gast)', '').replace(' (JS)', '');
         document.getElementById('gastName').value = gastName;
         document.getElementById('gastWaffeContainer').style.display = 'block'; // NEU
@@ -2227,6 +2316,53 @@ html += `<td class="text-center small">${munHtml}</td>`;
       });
   });
   
+  // --- Standblatt Download ---
+  document.getElementById('btnStandblatt').addEventListener('click', async function() {
+    const btn = this;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generiere...';
+
+    try {
+      const jahr = document.getElementById('yearSelect').value;
+      const mitglied_id = document.getElementById('mitgliedSelect').value;
+      const gast_name = document.getElementById('gastName').value.trim();
+      const stiche = [...document.querySelectorAll('.stich-check:checked')]
+        .map(cb => cb.dataset.code).join(',');
+
+      let url = `endschloesen/generate_standblatt.php?jahr=${jahr}&stiche=${encodeURIComponent(stiche)}`;
+      if (mitglied_id) {
+        url += `&mitglied_id=${mitglied_id}`;
+      } else if (gast_name) {
+        url += `&gast_name=${encodeURIComponent(gast_name)}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Fehler beim Generieren');
+
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : `Endschiessen_${jahr}.xlsx`;
+
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+
+      msvToast('Standblatt heruntergeladen', 'success');
+    } catch (err) {
+      console.error(err);
+      msvToast('Fehler beim Generieren des Standblatts', 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  });
+
   document.getElementById('yearCollapse').addEventListener('shown.bs.collapse', function() {
     document.getElementById('yearChevron').className = 'bi bi-chevron-down me-1';
   });
@@ -2314,7 +2450,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
         <div class="mobile-card-body">
           ${stichHtml}
           ${entityId ? `
-          <button type="button" class="btn btn-primary w-100 mt-3 btn-edit-selection"
+          <button type="button" class="btn btn-outline-primary w-100 mt-3 btn-edit-selection"
                   data-entity-id="${entityId}"
                   data-entity-typ="${entityTyp}"
                   data-entity-name="${name}"

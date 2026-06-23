@@ -1532,9 +1532,9 @@ function getCup($templateProcessor, $conn)
             $winner1 = $row['Result1'] > $row['Result2'] || 
                       ($row['Result1'] == $row['Result2'] && $row['LowShot1'] > $row['LowShot2']);
             $winner2 = !$winner1;
-            $loser = null;
+            $losers = [];
             if (!empty($row['Participant3'])) {
-                $loser = getLoserInThreePair($row);
+                $losers = getThreePairLosers($row);
             }
 
             // Zellstile definieren
@@ -1582,31 +1582,31 @@ function getCup($templateProcessor, $conn)
                 // Dreiergruppe
                 $cupTable->addRow();
                 $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant1']), 
-                    $loser == 1 ? $loserFontStyle : $winnerFontStyle
+                    getParticipantName($row['Participant1']),
+                    in_array(1, $losers) ? $loserFontStyle : $winnerFontStyle
                 );
                 $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result1'],  
-                    $loser == 1 ? $loserFontStyle : $winnerFontStyle
+                    $row['Result1'],
+                    in_array(1, $losers) ? $loserFontStyle : $winnerFontStyle
                 );
                 $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant2']), 
-                    $loser == 2 ? $loserFontStyle : $winnerFontStyle
+                    getParticipantName($row['Participant2']),
+                    in_array(2, $losers) ? $loserFontStyle : $winnerFontStyle
                 );
                 $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result2'],  
-                    $loser == 2 ? $loserFontStyle : $winnerFontStyle
+                    $row['Result2'],
+                    in_array(2, $losers) ? $loserFontStyle : $winnerFontStyle
                 );
 
                 // Zweite Zeile für dritten Teilnehmer
                 $cupTable->addRow();
                 $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant3']), 
-                    $loser == 3 ? $loserFontStyle : $winnerFontStyle
+                    getParticipantName($row['Participant3']),
+                    in_array(3, $losers) ? $loserFontStyle : $winnerFontStyle
                 );
                 $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result3'],  
-                    $loser == 3 ? $loserFontStyle : $winnerFontStyle
+                    $row['Result3'],
+                    in_array(3, $losers) ? $loserFontStyle : $winnerFontStyle
                 );
                 $cupTable->addCell(2000, $cellStyleName)->addText('', ['size' => 8, 'color' => 'ffffff']);
                 $cupTable->addCell(500, $cellStyleRes)->addText('', ['size' => 8, 'color' => 'ffffff']);
@@ -2317,6 +2317,54 @@ function getLoserInThreePair($row) {
         }
     }
     return $results[$loserIndex]['Participant'];
+}
+
+// Liefert die Positionen (1/2/3) der Verlierer einer Dreier-Paarung.
+// Berücksichtigt Advancers (1 oder 2 kommen weiter) und ManualWinner
+// (positiv = Gewinner, negativ = ausgeschiedener bei Dreier-Gleichstand).
+function getThreePairLosers($row) {
+    $advancers = (isset($row['Advancers']) && (int)$row['Advancers'] === 1) ? 1 : 2;
+    $manual = !empty($row['ManualWinner']) ? (int)$row['ManualWinner'] : 0;
+
+    $parts = [
+        1 => ['id' => (int)$row['Participant1'], 'r' => (int)$row['Result1'], 'ls' => (int)$row['LowShot1']],
+        2 => ['id' => (int)$row['Participant2'], 'r' => (int)$row['Result2'], 'ls' => (int)$row['LowShot2']],
+        3 => ['id' => (int)$row['Participant3'], 'r' => (int)$row['Result3'], 'ls' => (int)$row['LowShot3']],
+    ];
+
+    // Positionen nach Resultat (absteigend), dann Tiefschuss (absteigend) sortieren
+    $order = [1, 2, 3];
+    usort($order, function($a, $b) use ($parts) {
+        if ($parts[$a]['r'] === $parts[$b]['r']) {
+            return $parts[$b]['ls'] - $parts[$a]['ls'];
+        }
+        return $parts[$b]['r'] - $parts[$a]['r'];
+    });
+
+    // Gewinner-IDs bestimmen
+    $winnerIds = [];
+    if ($advancers === 1) {
+        $winnerIds = ($manual > 0) ? [$manual] : [$parts[$order[0]]['id']];
+    } else {
+        if ($manual < 0) {
+            $loserId = abs($manual);
+            foreach ($parts as $p) { if ($p['id'] !== $loserId) { $winnerIds[] = $p['id']; } }
+        } elseif ($manual > 0) {
+            $winnerIds = [$manual];
+            foreach ($order as $pos) {
+                if ($parts[$pos]['id'] !== $manual && count($winnerIds) < 2) { $winnerIds[] = $parts[$pos]['id']; }
+            }
+        } else {
+            $winnerIds = [$parts[$order[0]]['id'], $parts[$order[1]]['id']];
+        }
+    }
+
+    // Verlierer = Positionen, deren ID nicht zu den Gewinnern gehört
+    $losers = [];
+    foreach ($parts as $pos => $p) {
+        if (!in_array($p['id'], $winnerIds)) { $losers[] = $pos; }
+    }
+    return $losers;
 }
 
 function getParticipantData($kategorie, $conn) {

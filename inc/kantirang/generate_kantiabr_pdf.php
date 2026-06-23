@@ -1,6 +1,7 @@
 <?php
 require '../vendor/autoload.php'; // Pfad zu Composer's autoload Datei
 require '../config.php';
+require_once __DIR__ . '/../pdf/pdf_theme.php';
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -72,56 +73,19 @@ ob_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        @page {
-            margin: 20px;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            margin: 20px;
-        }
-        .container {
-            padding: 10px;
-        }
-        h2, h3, h4, h5 {
-            text-align: center;
-            margin: 10px 0;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .table th, .table td {
-            border: 1px solid black;
-            padding: 8px;
-        }
-        .left-align {
-            text-align: left;
-        }
-        .center-align {
-            text-align: center;
-        }
-        .total-spacing {
-            margin-top: 30px;
-        }
-        .footer {
-            text-align: center;
-            font-size: 10px;
-            padding: 10px 0;
-            border-top: 1px solid #000;
-            position: fixed;
-            bottom: -40px;
-            left: 0;
-            right: 0;
-            height: 30px;
-        }
-        .page-break {
-            page-break-after: always;
-        }
+        <?= pdf_theme_css() ?>
+        /* Kantonalstich-Abrechnung: Layout-Overrides */
+        @page { margin: 20px; }
+        body { font-size: 12px; margin: 20px; }
+        .container { padding: 10px; }
+        h2, h3, h4, h5 { text-align: center; margin: 10px 0; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .table th, .table td { padding: 8px; }
+        .left-align { text-align: left; }
+        .center-align { text-align: center; }
+        .total-spacing { margin-top: 30px; }
+        .footer { bottom: -40px; height: 30px; }
+        .page-break { page-break-after: always; }
     </style>
 </head>
 <body>

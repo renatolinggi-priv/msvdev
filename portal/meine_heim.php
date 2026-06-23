@@ -44,53 +44,55 @@ if ($mitglied_id) {
     }
 }
 
+// Hinweis "nächste Erfassungs-Moeglichkeit": ZSMM-Termin dynamisch suchen.
+// Schreibweise kann variieren -> LIKE '%ZSMM%'; naechster Termin ab heute = naechste Runde.
+// Nur zeigen, wenn noch nicht alle Passen erfasst sind.
+$zsmm_hint = null;
+if ($mitglied_id && $geschossen_count < 8) {
+    try {
+        $zstmt = $db->prepare("
+            SELECT name, date, time
+            FROM wichtige_termine
+            WHERE year = ? AND name LIKE '%ZSMM%' AND date >= CURDATE()
+            ORDER BY date ASC, time ASC
+            LIMIT 1
+        ");
+        $zstmt->execute([$selected_year]);
+        $z = $zstmt->fetch();
+        if ($z) {
+            $zsmm_hint = $z;
+        }
+    } catch (Exception $e) {
+        $zsmm_hint = null;  // Tabelle evtl. nicht vorhanden
+    }
+}
+
+// Deutsches Datum fuer den Hinweis ("Sa, 12. Oktober 2026")
+function heimFormatDatum(string $date): string {
+    $wd  = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+    $mon = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    $dt = new DateTime($date);
+    return $wd[(int)$dt->format('w')] . ', ' . (int)$dt->format('j') . '. ' . $mon[(int)$dt->format('n')] . ' ' . $dt->format('Y');
+}
+
 include 'portal_header.php';
 ?>
 
 <style>
-.heim-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+.heim-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--p-2);
+    background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    border: 1px solid #ffe082;
+    border-radius: var(--p-radius);
+    padding: var(--p-2) var(--p-3);
+    margin-bottom: var(--p-3);
+    font-size: .85rem;
+    color: #5d4200;
 }
-.heim-stat {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 0.6rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-.heim-stat .number { font-size: 1.15rem; font-weight: 700; color: #2d3748; }
-.heim-stat .label { font-size: 0.7rem; color: #718096; }
-.heim-stat .label i { color: #28a745; margin-right: 0.2rem; }
-.heim-stat.total { border-top: 3px solid #28a745; background: #f0faf3; }
-.heim-stat.total .number { color: #1a8c35; }
-.passe-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 0.5rem;
-}
-.passe-card {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 0.6rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-left: 4px solid #dee2e6;
-}
-.passe-card.shot { border-left-color: #28a745; }
-.passe-card.not-shot { border-left-color: #dee2e6; }
-.passe-card.best { border-left-color: #28a745; border-left-width: 4px; background: #f0faf3; }
-.passe-card .passe-nr { font-size: 0.7rem; color: #718096; font-weight: 600; }
-.passe-card .passe-nr .bi-star-fill { color: #28a745; font-size: 0.65rem; }
-.passe-card .passe-value { font-size: 1.3rem; font-weight: 700; }
-.passe-card .passe-value.shot { color: #28a745; }
-.passe-card .passe-value.not-shot { color: #999; }
-@media (max-width: 767.98px) {
-    .passe-grid { grid-template-columns: repeat(2, 1fr); }
-    .heim-summary { grid-template-columns: repeat(2, 1fr); }
-}
+.heim-hint i { font-size: 1.1rem; color: #e65100; flex-shrink: 0; margin-top: 1px; }
+.heim-hint strong { color: #4e3700; }
 </style>
 
 <div class="portal-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -111,40 +113,44 @@ include 'portal_header.php';
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Dein Account ist noch nicht mit einem Mitglied verknüpft.</div>
 <?php else: ?>
 
-<div class="heim-summary">
-    <div class="heim-stat total">
-        <div class="number"><?php echo $total; ?></div>
-        <div class="label"><i class="bi bi-bullseye"></i>Total</div>
+<?php if ($zsmm_hint):
+    $z_time = substr((string)$zsmm_hint['time'], 0, 5);
+?>
+<div class="heim-hint">
+    <i class="bi bi-clock-history"></i>
+    <div>
+        Noch <strong><?php echo 8 - $geschossen_count; ?> von 8 Passen</strong> offen — nächste Möglichkeit:
+        <strong><?php echo htmlspecialchars($zsmm_hint['name']); ?></strong>,
+        <?php echo heimFormatDatum($zsmm_hint['date']); ?><?php if ($z_time && $z_time !== '00:00'): ?> ab <?php echo htmlspecialchars($z_time); ?> Uhr<?php endif; ?>.
     </div>
-    <div class="heim-stat">
-        <div class="number"><?php echo $geschossen_count; ?> / 8</div>
-        <div class="label"><i class="bi bi-check2-all"></i>Passen geschossen</div>
+</div>
+<?php endif; ?>
+
+<div class="result-summary">
+    <div class="rs-item total">
+        <span class="rs-num"><?php echo $total; ?></span>
+        <span class="rs-lbl">Total</span>
     </div>
-    <div class="heim-stat">
-        <div class="number"><?php echo $geschossen_count > 0 ? round($total / $geschossen_count, 1) : '-'; ?></div>
-        <div class="label"><i class="bi bi-graph-up"></i>Durchschnitt</div>
+    <div class="rs-item">
+        <span class="rs-num"><?php echo $geschossen_count; ?> / 8</span>
+        <span class="rs-lbl">geschossen</span>
+    </div>
+    <div class="rs-item">
+        <span class="rs-num"><?php echo $geschossen_count > 0 ? round($total / $geschossen_count, 1) : '–'; ?></span>
+        <span class="rs-lbl">&empty; Schnitt</span>
     </div>
 </div>
 
-<div class="passe-grid">
+<div class="passe-list">
     <?php for ($i = 0; $i < 8; $i++):
         $val = $passen[$i];
         $shot = ($val !== null);
-        $is_best = ($shot && $val == $best_passe && $best_passe > 0);
-
-        $card_class = 'passe-card';
-        if ($is_best) $card_class .= ' best';
-        elseif ($shot) $card_class .= ' shot';
-        else $card_class .= ' not-shot';
+        $row_class = $shot ? 'passe-row' : 'passe-row not-shot';
     ?>
-    <div class="<?php echo $card_class; ?>">
-        <div class="passe-nr"><?php if ($is_best): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>Passe <?php echo $i + 1; ?></div>
-        <div class="passe-value <?php echo $shot ? 'shot' : 'not-shot'; ?>">
-            <?php echo $shot ? $val : '-'; ?>
-        </div>
-        <?php if (!$shot): ?>
-        <small class="text-muted">Nicht geschossen</small>
-        <?php endif; ?>
+    <div class="<?php echo $row_class; ?>">
+        <span class="passe-label">Passe <?php echo $i + 1; ?></span>
+        <span class="passe-score"><?php echo $shot ? $val : '–'; ?></span>
+        <span class="passe-status"><?php if (!$shot) echo 'nicht geschossen'; ?></span>
     </div>
     <?php endfor; ?>
 </div>

@@ -43,11 +43,11 @@ $page_specific_css = "
 .fragebogen-form select {
     font-size: 0.75rem;
     padding: 0.15rem 0.3rem;
-    max-width: 100px;
-    min-width: 70px;
+    min-width: 0;
+    width: auto;
     border: 1px solid #dee2e6;
     border-radius: var(--border-radius);
-    transition: all var(--transition-speed) ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .fragebogen-form select:focus {
@@ -82,27 +82,48 @@ $page_specific_css = "
     overflow: hidden;
     background: white;
     margin-bottom: 0;
+    width: auto !important;
+    table-layout: auto;
 }
 
 #fragebogenTabelle thead {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     color: #495057;
-    font-size: 0.7em;
+    font-size: 0.75em;
     font-weight: 600;
+    text-transform: none;
 }
 
 #fragebogenTabelle thead th {
     border: none;
-    padding: 0.6rem 0.4rem;
-    text-align: left;
+    padding: 0.5rem 0.5rem;
+    text-align: center;
     vertical-align: middle;
-    white-space: nowrap;
     position: sticky !important;
     top: 0 !important;
     z-index: 5 !important;
     background-color: #f8f9fa !important;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
     border-bottom: 2px solid #dee2e6 !important;
+    text-transform: none !important;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#fragebogenTabelle thead th:first-child,
+#fragebogenTabelle thead th:nth-child(2),
+#fragebogenTabelle thead th:nth-child(3),
+#fragebogenTabelle thead th:nth-child(4) {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+#fragebogenTabelle thead th:first-child {
+    text-align: left;
+    white-space: nowrap;
 }
 
 /* Sicherstellen, dass alle Table Headers sticky sind */
@@ -137,14 +158,26 @@ table thead th {
 
 #fragebogenTabelle tbody td {
     border: 1px solid #e9ecef;
-    padding: 0.4rem 0.3rem;
+    padding: 0.25rem 0.35rem;
     vertical-align: middle;
-    text-align: left;
+    text-align: center;
 }
 
 #fragebogenTabelle tbody td:first-child {
     font-weight: 500;
-    min-width: 140px;
+    text-align: left;
+    white-space: nowrap;
+    padding-right: 0.75rem;
+}
+
+#fragebogenTabelle tbody td:nth-child(2) {
+    text-align: left;
+}
+
+/* Dropdowns kompakt */
+#fragebogenTabelle tbody td select.form-control {
+    padding: 0.15rem 0.25rem;
+    font-size: 0.75rem;
 }
 
 #fragebogenTabelle tbody tr:nth-child(even) {
@@ -346,7 +379,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-12 col-lg-12 col-12 ps-0">
+        <div class="col-auto ps-0" style="max-width: 100%;">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
@@ -354,7 +387,7 @@ if (empty($_SESSION['csrf_token'])) {
                     <div class="col-md-12">
                         <h2 class="h4 mb-0" style="color: var(--secondary-color);">
                             <i class="bi bi-clipboard-check me-2"></i>
-                            Fragebogen erfassen
+                            Auswertung Fragebogen
                         </h2>
                         <p class="text-muted mb-0">Teilnahme und Verfügbarkeit verwalten</p>
                     </div>
@@ -413,6 +446,13 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
 
                         </div><!-- Ende flex-row Jahr+Aktionen -->
+
+                        <!-- Filter: Nicht-Teilnehmer -->
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <button type="button" id="toggleNichtTeilnehmer" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-eye me-1"></i>Nicht-Teilnehmer anzeigen <span id="nntCount" class="badge bg-secondary ms-1">0</span>
+                            </button>
+                        </div>
 
                         <!-- Tabelle -->
                         <div class="table-wrapper">
@@ -496,6 +536,45 @@ if (empty($_SESSION['csrf_token'])) {
     $(document).ready(function () {
         let currentYear = new Date().getFullYear();
         let basePath = ''; // Falls du einen Pfadprefix hast
+        let nntVisible = false; // Nicht-Teilnehmer sichtbar?
+
+        // Nicht-Teilnehmer filtern/anzeigen
+        function applyNntFilter() {
+            const $btn = $('#toggleNichtTeilnehmer');
+            // Desktop: Zeilen mit data-nimmt-nicht-teil oder Waffe-Dropdown = 0
+            let nntCount = 0;
+            $('#fragebogenTabelle tbody tr').each(function () {
+                const $row = $(this);
+                const waffeVal = $row.find('select[name*="[waffenID]"]').val();
+                if (waffeVal === '0') {
+                    nntCount++;
+                    $row.toggle(nntVisible);
+                }
+            });
+            // Mobile: Cards mit data-nimmt-nicht-teil oder Waffe-Dropdown = 0
+            $('#fragebogenMobileCards .mobile-card').each(function () {
+                const $card = $(this);
+                const waffeVal = $card.find('.mobile-fb-select[data-field="waffenID"]').val();
+                if (waffeVal === '0') {
+                    $card.toggle(nntVisible);
+                }
+            });
+            // Button-Text + Badge aktualisieren
+            $('#nntCount').text(nntCount);
+            if (nntVisible) {
+                $btn.html('<i class="bi bi-eye-slash me-1"></i>Nicht-Teilnehmer ausblenden <span id="nntCount" class="badge bg-secondary ms-1">' + nntCount + '</span>');
+                $btn.removeClass('btn-outline-secondary').addClass('btn-secondary');
+            } else {
+                $btn.html('<i class="bi bi-eye me-1"></i>Nicht-Teilnehmer anzeigen <span id="nntCount" class="badge bg-secondary ms-1">' + nntCount + '</span>');
+                $btn.removeClass('btn-secondary').addClass('btn-outline-secondary');
+            }
+        }
+
+        // Toggle-Button Handler
+        $('#toggleNichtTeilnehmer').on('click', function () {
+            nntVisible = !nntVisible;
+            applyNntFilter();
+        });
 
         // Funktion: Aktualisiert die Hintergrundfarbe der Teilnahme-Dropdowns
         function updateSelectColorForParticipation(el) {
@@ -554,6 +633,7 @@ if (empty($_SESSION['csrf_token'])) {
             $.ajax({
                 url: basePath + 'fragebogen/load_fragebogen_form.php',
                 type: 'GET',
+                cache: false,
                 data: { year: year },
                 dataType: 'json',
                 success: function (response) {
@@ -582,6 +662,10 @@ if (empty($_SESSION['csrf_token'])) {
                                 updateSelectColorForErweitert(this);
                             });
                         }
+
+                        // Nicht-Teilnehmer filtern
+                        nntVisible = false;
+                        applyNntFilter();
 
                         msvToast('Fragebogen erfolgreich geladen', 'success');
                     } else {
@@ -630,6 +714,11 @@ if (empty($_SESSION['csrf_token'])) {
         initializeYearDropdown();
         loadFragebogen(currentYear);
 
+        // 4a) Event-Listener: Waffe-Dropdown → Nicht-Teilnehmer-Filter aktualisieren
+        $(document).on('change', 'select[name*="[waffenID]"]', function () {
+            applyNntFilter();
+        });
+
         // 4) Event-Listener: Bei Änderung der Teilnahmefelder Hintergrundfarbe aktualisieren
         $(document).on('change', 'select[name*="[mannschaft]"], select[name*="[gruppen]"]', function () {
             updateSelectColorForParticipation(this);
@@ -650,6 +739,7 @@ if (empty($_SESSION['csrf_token'])) {
 
             if (field === 'waffenID') {
                 $('select[name="fragebogen[' + mid + '][waffenID]"]').val(val);
+                applyNntFilter();
             } else if (field === 'mannschaft') {
                 $('select[name="fragebogen[' + mid + '][mannschaft]"]').val(val);
                 updateSelectColorForParticipation(this);

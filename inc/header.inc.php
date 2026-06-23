@@ -4,6 +4,9 @@
 // Ausgabepuffer starten
 if (ob_get_level() === 0) ob_start();
 
+// Basepath für Assets (funktioniert aus jedem Unterverzeichnis)
+$incBase = str_replace($_SERVER['DOCUMENT_ROOT'], '', str_replace('\\', '/', __DIR__)) . '/';
+
 // HTTPS-Erkennung
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
            (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443) ||
@@ -71,7 +74,7 @@ if (!headers_sent()) {
     }
     
     // CSP mit cdn.jsdelivr.net für Source Maps
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net https://www.google.com https://api.pwnedpasswords.com; frame-src https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net https://www.google.com https://api.pwnedpasswords.com wss://localhost:* ws://localhost:*; frame-src https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';");
 }
 
 // Rollen-Session-Variablen setzen falls noetig (fuer bestehende Admins nach Migration)
@@ -91,9 +94,7 @@ if (isset($_SESSION['user_id']) && !isset($_SESSION['user_role'])) {
 
 // Mitglieder duerfen nicht auf Admin-Bereich zugreifen - Redirect zum Portal
 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'mitglied') {
-    $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-    $portalUrl = dirname($scriptDir) . '/portal/dashboard.php';
-    header('Location: ' . $portalUrl);
+    header('Location: /portal/dashboard.php');
     exit();
 }
 
@@ -139,9 +140,8 @@ function get_page_title($conn) {
 
         if ($result && $result->num_rows > 0) {
             $row = $result->fetch_assoc();
-            $parent = $row['Parent'] ?: 'Wilen';
             $stmt->close();
-            return "MSV " . $parent . " - " . $row['Text'];
+            return $row['Text'] . " - MSV Wilen";
         }
         $stmt->close();
         return $default_title;
@@ -152,7 +152,7 @@ function get_page_title($conn) {
 }
 
 $Seitentitel = get_page_title($conn);
-$navPageTitle = preg_replace('/^MSV\s+\S+\s+-\s+/', '', $Seitentitel);
+$navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -194,18 +194,16 @@ $navPageTitle = preg_replace('/^MSV\s+\S+\s+-\s+/', '', $Seitentitel);
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- MSV Toast System -->
-    <script src="js/msv-toast.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo $incBase; ?>js/msv-toast.js?v=<?php echo time(); ?>"></script>
+    <!-- MSV Tooltip System -->
+    <script src="<?php echo $incBase; ?>js/msv-tooltips.js?v=<?php echo time(); ?>"></script>
     <!-- MSV Mobile Cards Helper -->
-    <script src="js/mobile-cards.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo $incBase; ?>js/mobile-cards.js?v=<?php echo time(); ?>"></script>
 
     <style>
         /* Kompakte Basis-Styles */
         :root {
             --nav-height: 56px;
-        }
-        
-        body {
-            padding-top: var(--nav-height);
         }
         
         /* Kompakte Modals */
@@ -300,13 +298,22 @@ $navPageTitle = preg_replace('/^MSV\s+\S+\s+-\s+/', '', $Seitentitel);
 </head>
 
 <body<?php echo isset($body_class) ? ' class="' . escape_output($body_class) . '"' : ''; ?>>
+    <script>
+        // Navigation-Layout-Preference (Sidebar links / Topbar oben) VOR dem Rendern
+        // anwenden -> verhindert sichtbares Umspringen ("Flicker") beim Seitenaufbau.
+        try {
+            if (localStorage.getItem('msvNavSidebar') === '1') {
+                document.body.classList.add('nav-sidebar');
+            }
+        } catch (e) {}
+    </script>
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="<?php echo file_exists('home.php') ? 'home.php' : '../home.php'; ?>">
                 <img src="../icons/icon-32x32.png" alt="MSV" width="24" height="24" style="border-radius:4px;"><span class="navbar-brand-text"> MSV Wilen</span>
                 <?php if ($pending_registrations > 0): ?>
                     <span class="badge bg-warning text-dark" style="font-size: 0.65rem; vertical-align: top; margin-left: 4px;"
-                          title="<?php echo $pending_registrations; ?> neue Registrierung<?php echo $pending_registrations > 1 ? 'en' : ''; ?>">
+                          data-tooltip="<?php echo $pending_registrations; ?> neue Registrierung<?php echo $pending_registrations > 1 ? 'en' : ''; ?>">
                         <?php echo $pending_registrations; ?>
                     </span>
                 <?php endif; ?>

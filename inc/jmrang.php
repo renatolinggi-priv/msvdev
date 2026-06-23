@@ -28,10 +28,11 @@ $page_specific_css = '
     border-spacing: 0 !important;
 }
 
-/* Doppel-Borders vermeiden bei border-collapse:separate */
+/* Doppel-Borders vermeiden bei border-collapse:separate; keine vertikalen Linien (saubere Rangliste) */
 #JMA tbody td,
 #JMB tbody td {
     border-top: none !important;
+    border-right: none !important;
     border-bottom: 1px solid #dee2e6 !important;
 }
 
@@ -68,12 +69,21 @@ $page_specific_css = '
     box-shadow: inset 0 -2px 0 #dee2e6 !important;
 }
 
-/* Spaltenbreiten */
-.jm-th-rang { width: 55px !important; }
-.jm-th-name { min-width: 150px !important; }
-.jm-th-result { min-width: 70px !important; max-width: 120px !important; }
-.jm-th-total { width: 75px !important; }
-.jm-th-toggle { width: 36px !important; }
+/* Spaltenbreiten (width statt min-width, da #JMx thead th min-width:auto erzwingt) */
+.jm-th-rang  { width: 55px !important; }
+.jm-th-result{ width: 84px !important; }
+.jm-th-total { width: 90px !important; }
+.jm-th-toggle{ width: 40px !important; }
+
+/* Lange Anlass-Namen in der Kopfzeile kürzen (voller Name via Tooltip) */
+.jm-th-label {
+    display: block;
+    max-width: 78px;
+    margin: 0 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 /* Klickbare Hauptzeilen */
 .jm-main-row { cursor: pointer; }
@@ -83,23 +93,23 @@ $page_specific_css = '
     background-color: rgba(108, 117, 125, 0.06) !important;
 }
 
+/* Zellen: Resultate ausgerichtet, Total hervorgehoben, Streicher rot durchgestrichen */
+.jm-result-cell   { font-variant-numeric: tabular-nums; }
+.jm-cell-strichen { color: #dc3545; text-decoration: line-through; }
+.jm-total-cell    { color: #198754; font-variant-numeric: tabular-nums; font-size: 1rem; }
+.jm-rang-cell     { color: #334155; }
+
 /* Toggle-Button */
 .jm-toggle-btn {
     color: #6c757d !important;
     text-decoration: none !important;
     font-size: 1rem !important;
 }
-.jm-toggle-btn i {
-    transition: transform 0.2s ease;
-}
-.jm-toggle-btn.expanded i {
-    transform: rotate(180deg);
-}
-.jm-toggle-btn:hover {
-    color: var(--primary-color) !important;
-}
+.jm-toggle-btn i { transition: transform 0.2s ease; }
+.jm-toggle-btn.expanded i { transform: rotate(180deg); }
+.jm-toggle-btn:hover { color: var(--primary-color) !important; }
 
-/* ===== DETAIL-PANEL ===== */
+/* ===== DETAIL-PANEL (gruppiert) ===== */
 .jm-detail-row > td {
     padding: 0 !important;
     border-top: none !important;
@@ -114,92 +124,95 @@ $page_specific_css = '
     background: #f8fafb !important;
     border-top: 1px solid #e2e8f0 !important;
     border-bottom: 2px solid #dee2e6 !important;
-    padding: 0.75rem 1.25rem !important;
+    padding: 1rem 1.25rem !important;
     text-align: left !important;
 }
 
-/* Card-Grid für Detail-Panel */
-.jm-detail-list {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
-    gap: 0.5rem !important;
+/* Zwei Gruppen nebeneinander (Desktop) / gestapelt (Mobile) */
+.jm-detail-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    align-items: start;
 }
 
-.jm-detail-card {
+.jm-detail-group {
     background: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    padding: 0.5rem 0.65rem;
-    text-align: center;
-    transition: box-shadow 0.15s;
-}
-
-.jm-detail-card:hover {
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-/* Hauptwettbewerbe hervorheben */
-.jm-detail-card-main {
-    border-left: 3px solid var(--primary-color, #0d6efd);
-}
-
-/* Streicher-Card */
-.jm-detail-card-streicher {
-    opacity: 0.55;
-    border-style: dashed;
-}
-
-.jm-detail-card-name {
-    font-size: 0.72rem;
-    color: #6c757d;
-    margin-bottom: 0.2rem;
-    line-height: 1.2;
+    border: 1px solid #e7edf3;
+    border-radius: 0.6rem;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-.jm-detail-card-pts {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #212529;
+.jm-detail-group-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.5rem 0.85rem;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e7edf3;
+}
+.jm-detail-group-title { font-weight: 700; font-size: 0.82rem; color: #334155; }
+.jm-detail-group-meta  { font-size: 0.72rem; color: #94a3b8; }
+.jm-group-pflicht .jm-detail-group-title { color: #0f766e; }
+.jm-group-streich .jm-detail-group-title { color: #1d4ed8; }
+
+.jm-detail-lines { padding: 0.25rem 0.35rem; }
+
+.jm-detail-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.34rem 0.5rem;
+    border-radius: 0.35rem;
+    font-size: 0.85rem;
+}
+.jm-detail-line + .jm-detail-line { border-top: 1px solid #f1f5f9; }
+.jm-detail-line:hover { background: #f8fafc; }
+
+.jm-line-name { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jm-line-pts  { display: inline-flex; align-items: baseline; gap: 0.35rem; flex-shrink: 0; white-space: nowrap; }
+.jm-line-val  { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
+.jm-line-max  { font-size: 0.72rem; color: #94a3b8; }
+.jm-line-empty .jm-line-name,
+.jm-line-empty .jm-line-val { color: #adb5bd; font-weight: 400; }
+
+/* Gestrichene Resultate */
+.jm-detail-line.gestrichen { opacity: 0.7; }
+.jm-detail-line.gestrichen .jm-line-val { color: #dc3545; text-decoration: line-through; }
+.jm-line-tag {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.4px;
+    color: #b91c1c; background: #fee2e2; border-radius: 999px;
+    padding: 0.06rem 0.4rem; font-weight: 700;
 }
 
-.jm-detail-card-streicher .jm-detail-card-pts {
-    color: #dc3545;
-    text-decoration: line-through;
-}
-
-/* Kein Resultat */
-.jm-detail-card-empty .jm-detail-card-pts {
-    color: #adb5bd;
-    font-weight: 400;
-}
-
-/* Total-Zeile */
-.jm-detail-sum {
+/* Zwischentotal je Gruppe */
+.jm-detail-subtotal {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(40, 167, 69, 0.07);
-    border-radius: 0.3rem;
-    border: 1px solid rgba(40, 167, 69, 0.2);
-    font-weight: 700;
-    font-size: 0.9rem;
+    padding: 0.45rem 0.85rem;
+    border-top: 1px solid #e7edf3;
+    background: #fbfdff;
+    font-size: 0.8rem; font-weight: 600; color: #475569;
 }
+.jm-detail-subtotal span:last-child { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
 
-.jm-detail-sum-val {
-    color: #198754;
-    font-size: 1rem;
+/* Gesamttotal */
+.jm-detail-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    background: rgba(25, 135, 84, 0.08);
+    border: 1px solid rgba(25, 135, 84, 0.25);
+    border-radius: 0.5rem;
+    font-weight: 700; font-size: 0.95rem; color: #14532d;
 }
-
-/* Tablet */
-@media (max-width: 1199.98px) {
-    .jm-detail-list {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    }
+.jm-detail-total-val { color: #198754; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.jm-detail-total.jm-detail-total-offen {
+    background: #f1f5f9; border-color: #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.85rem;
 }
 
 /* Mobile */
@@ -214,14 +227,11 @@ $page_specific_css = '
         font-size: 16px !important;
         padding: 0.5rem 1rem !important;
     }
-    .jm-detail-list {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
+
+    .jm-detail-groups { grid-template-columns: 1fr !important; }
 
     /* JM Mobile Card Styles */
-    .jm-mobile-card .mobile-card-header {
-        padding: 0.75rem 1rem;
-    }
+    .jm-mobile-card .mobile-card-header { padding: 0.75rem 1rem; }
     .jm-mobile-rang {
         display: inline-flex;
         align-items: center;
@@ -247,22 +257,11 @@ $page_specific_css = '
     }
 
     /* Detail-Panel innerhalb Mobile Card Body */
-    .jm-mobile-card .mobile-card-body {
-        padding: 0 !important;
-    }
+    .jm-mobile-card .mobile-card-body { padding: 0 !important; }
     .jm-mobile-card .mobile-card-body .jm-detail-panel {
         border-top: none !important;
         border-bottom: none !important;
         padding: 0.75rem !important;
-    }
-    .jm-mobile-card .jm-detail-card {
-        padding: 0.4rem 0.5rem;
-    }
-    .jm-mobile-card .jm-detail-card-name {
-        font-size: 0.68rem;
-    }
-    .jm-mobile-card .jm-detail-card-pts {
-        font-size: 0.95rem;
     }
 }
 ';
@@ -272,7 +271,7 @@ include 'header.inc.php';
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-11 col-12 ps-0">
+        <div class="col-xxl-8 col-xl-9 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
@@ -290,52 +289,32 @@ include 'header.inc.php';
                 <form id="jmresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
-                    <div class="d-flex flex-wrap gap-3 align-items-start mb-3">
-                    <div class="d-flex align-items-center gap-2">
+                    <!-- Jahr-Auswahl -->
+                    <div class="d-flex align-items-center gap-2 mb-3">
                         <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
                             <i class="bi bi-calendar3 me-1"></i>Jahr:
                         </label>
                         <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
                     </div>
-
-                    <!-- Aktionsbereich (Bootstrap Collapse) -->
-                    <div class="card action-card mb-0">
-                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                             data-bs-toggle="collapse" data-bs-target="#jmrangActions"
-                             aria-expanded="false" aria-controls="jmrangActions">
-                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                            <i class="bi bi-chevron-down action-chevron"></i>
+                    <!-- Export-Toolbar (einheitlich mit endschrang.php) -->
+                    <div class="export-toolbar mb-3">
+                        <div class="export-toolbar-head">
+                            <i class="bi bi-file-earmark-arrow-down"></i>
+                            <span>Dokumente erstellen</span>
+                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
+                                <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
+                            </button>
                         </div>
-                        <div class="collapse" id="jmrangActions">
-                            <div class="card-body pt-2 pb-3 px-3">
-                                <div class="row g-2 mb-2">
-                                    <div class="col-12">
-                                        <button id="redirect-btn" type="button" class="btn btn-success w-100">
-                                            <i class="bi bi-pencil-square me-2"></i>Bearbeiten
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="border-top pt-2">
-                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <button class="pdfrang-btn btn btn-outline-danger btn-sm w-100">
-                                                <i class="bi bi-file-pdf me-1"></i>nach Rang
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button class="pdf-btn btn btn-outline-danger btn-sm w-100">
-                                                <i class="bi bi-file-pdf me-1"></i>nach Name
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="pdf-link" class="mt-2"></div>
-                                </div>
-                            </div>
+                        <div class="export-group-btns">
+                            <button class="btn btn-outline-info btn-sm pdfrang-btn">
+                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Rang)</span>
+                            </button>
+                            <button class="btn btn-outline-info btn-sm pdf-btn">
+                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Name)</span>
+                            </button>
                         </div>
+                        <div id="pdf-link" class="mt-2"></div>
                     </div>
-                    </div><!-- Ende flex-row Jahr+Aktionen -->
 
                     <div class="info-card mb-3">
                         <i class="bi bi-info-circle me-2"></i>
@@ -737,7 +716,7 @@ $(document).ready(function() {
         e.preventDefault();
         const name = $(this).find('td:nth-child(2)').text();
         const rang = $(this).find('td:first-child').text();
-        const total = $(this).find('td:last-child').text();
+        const total = $(this).find('.jm-total-cell').text();
 
         msvToast(`${name} - Rang: ${rang} - Total: ${total}`, 'info');
     });

@@ -1,5 +1,6 @@
 <?php
 include '../config.php';
+require_once __DIR__ . '/../changelog_helper.php';
 
 // CSRF-Schutz
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -32,15 +33,21 @@ try {
 
     $conn->begin_transaction();
 
+    // Vorstand-User-ID fuer Freigabe-Audit (kann NULL sein wenn Session fehlt)
+    $vorstandUserId = $_SESSION['user_id'] ?? null;
+
     // --- Prepared Statements (NORMAL: Info = '')
+    // Vorstand-Save setzt status='freigegeben' und Audit-Felder fuer ALLE beruehrten Zeilen
+    // (auch unveraenderte Werte gelten als bestaetigt durch das Speichern).
     $stmtUpdNorm = $conn->prepare("
         UPDATE jmresultate
-           SET Punkte = ?
+           SET Punkte = ?, status = 'freigegeben',
+               freigegeben_von = ?, freigegeben_am = NOW()
          WHERE mitgliederID = ? AND jmdefinitionID = ? AND (Info = '' OR Info IS NULL)
     ");
     $stmtInsNorm = $conn->prepare("
-        INSERT INTO jmresultate (mitgliederID, jmdefinitionID, Punkte, Info)
-        VALUES (?, ?, ?, '')
+        INSERT INTO jmresultate (mitgliederID, jmdefinitionID, Punkte, Info, status, freigegeben_von, freigegeben_am)
+        VALUES (?, ?, ?, '', 'freigegeben', ?, NOW())
     ");
     $stmtDelNorm = $conn->prepare("
         DELETE FROM jmresultate
@@ -55,12 +62,13 @@ try {
     // --- Prepared Statements (SSM: Info = 'runde 1' / 'runde 2')
     $stmtUpdSSM = $conn->prepare("
         UPDATE jmresultate
-           SET Punkte = ?
+           SET Punkte = ?, status = 'freigegeben',
+               freigegeben_von = ?, freigegeben_am = NOW()
          WHERE mitgliederID = ? AND jmdefinitionID = ? AND Info = ?
     ");
     $stmtInsSSM = $conn->prepare("
-        INSERT INTO jmresultate (mitgliederID, jmdefinitionID, Punkte, Info)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO jmresultate (mitgliederID, jmdefinitionID, Punkte, Info, status, freigegeben_von, freigegeben_am)
+        VALUES (?, ?, ?, ?, 'freigegeben', ?, NOW())
     ");
     $stmtDelSSM = $conn->prepare("
         DELETE FROM jmresultate
@@ -73,7 +81,7 @@ try {
     ");
 
     // Helpers
-    $saveOrDeleteNormal = function($mitgliedID, $definitionID, $raw) use ($stmtUpdNorm, $stmtInsNorm, $stmtDelNorm, $stmtExiNorm) {
+    $saveOrDeleteNormal = function($mitgliedID, $definitionID, $raw) use ($stmtUpdNorm, $stmtInsNorm, $stmtDelNorm, $stmtExiNorm, $vorstandUserId) {
         $mitgliedID   = (int)$mitgliedID;
         $definitionID = (int)$definitionID;
         $s = trim((string)$raw);
@@ -85,9 +93,10 @@ try {
         }
 
         $punkte = (int)$s;
+        $uid    = $vorstandUserId !== null ? (int)$vorstandUserId : null;
 
-        // UPDATE
-        $stmtUpdNorm->bind_param('iii', $punkte, $mitgliedID, $definitionID);
+        // UPDATE: Punkte, freigegeben_von, mitgliederID, jmdefinitionID
+        $stmtUpdNorm->bind_param('iiii', $punkte, $uid, $mitgliedID, $definitionID);
         $stmtUpdNorm->execute();
 
         // Wenn UPDATE nichts geändert hat, prüfen ob Datensatz existiert
@@ -97,12 +106,13 @@ try {
 
         // Falls es keinen Datensatz gibt, INSERT
         if (!$exists) {
-            $stmtInsNorm->bind_param('iii', $mitgliedID, $definitionID, $punkte);
+            // INSERT: mitgliederID, jmdefinitionID, Punkte, freigegeben_von
+            $stmtInsNorm->bind_param('iiii', $mitgliedID, $definitionID, $punkte, $uid);
             $stmtInsNorm->execute();
         }
     };
 
-    $saveOrDeleteSSM = function($mitgliedID, $definitionID, $raw, $label) use ($stmtUpdSSM, $stmtInsSSM, $stmtDelSSM, $stmtExiSSM) {
+    $saveOrDeleteSSM = function($mitgliedID, $definitionID, $raw, $label) use ($stmtUpdSSM, $stmtInsSSM, $stmtDelSSM, $stmtExiSSM, $vorstandUserId) {
         $mitgliedID   = (int)$mitgliedID;
         $definitionID = (int)$definitionID;
         $info         = $label;
@@ -115,9 +125,10 @@ try {
         }
 
         $punkte = (int)$s;
+        $uid    = $vorstandUserId !== null ? (int)$vorstandUserId : null;
 
-        // UPDATE
-        $stmtUpdSSM->bind_param('iiis', $punkte, $mitgliedID, $definitionID, $info);
+        // UPDATE: Punkte, freigegeben_von, mitgliederID, jmdefinitionID, Info
+        $stmtUpdSSM->bind_param('iiiis', $punkte, $uid, $mitgliedID, $definitionID, $info);
         $stmtUpdSSM->execute();
 
         // Existenz prüfen
@@ -126,7 +137,8 @@ try {
         $exists = $stmtExiSSM->get_result()->fetch_row() !== null;
 
         if (!$exists) {
-            $stmtInsSSM->bind_param('iiis', $mitgliedID, $definitionID, $punkte, $info);
+            // INSERT: mitgliederID, jmdefinitionID, Punkte, Info, freigegeben_von
+            $stmtInsSSM->bind_param('iiisi', $mitgliedID, $definitionID, $punkte, $info, $uid);
             $stmtInsSSM->execute();
         }
     };
@@ -160,6 +172,7 @@ try {
     }
 
     $conn->commit();
+    logChangelog('resultate', 'aktualisiert', "JM-Resultate aktualisiert", ['tabelle' => 'jmresultate', 'sichtbar' => 0]);
     echo json_encode(['success' => true, 'message' => 'Ergebnisse gespeichert / bereinigt']);
 } catch (Throwable $e) {
     if ($conn && $conn->errno === 0) {

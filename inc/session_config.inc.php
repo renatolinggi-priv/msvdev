@@ -19,9 +19,19 @@ if ($isHttps) ini_set('session.cookie_secure', 1);
 $host = $_SERVER['HTTP_HOST'] ?? '';
 if (preg_match('/\.msvwilen\.ch$/i', $host)) {
     ini_set('session.cookie_domain', '.msvwilen.ch');
-    // Alten subdomain-spezifischen PHPSESSID-Cookie löschen (z.B. mitglieder.msvwilen.ch ohne Punkt)
-    // Verhindert doppelte PHPSESSID-Cookies nach Migration zu cross-Subdomain-Sessions
+    // Alte host-spezifische PHPSESSID-Cookies löschen (doppelte Cookies verhindern)
+    // session_start() ohne session_config erzeugt host-only Cookies (ohne Domain-Attribut).
+    // Diese müssen OHNE Domain gelöscht werden (RFC 6265: host-only ≠ domain cookie).
     if (isset($_COOKIE[session_name()])) {
+        // 1) Host-only Cookie löschen (kein Domain-Attribut → matcht host-only Cookies)
+        setcookie(session_name(), '', [
+            'expires'  => 1,
+            'path'     => '/',
+            'secure'   => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        // 2) Domain-Cookie für exakten Host löschen (falls mit domain= gesetzt)
         setcookie(session_name(), '', [
             'expires'  => 1,
             'path'     => '/',

@@ -146,7 +146,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <div class="cup4-pool-header" style="border:none; padding:0; margin-bottom:0.5rem;">
                     <span class="cup4-pool-title" style="font-size:0.75rem;"><i class="bi bi-award me-1"></i>Gewinner R1</span>
                     <span style="display:flex; align-items:center; gap:0.35rem;">
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" title="Mitglied f&uuml;r Runde 2 nachnominieren">
+                        <button class="btn btn-outline-secondary btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
                             <i class="bi bi-plus-lg me-1"></i>Nachnominieren
                         </button>
                         <span class="cup4-counter" id="r2-pool-counter">0</span>
@@ -166,6 +166,10 @@ if (empty($_SESSION['csrf_token'])) {
             <div class="cup4-round-header">
                 <span class="cup4-round-title"><i class="bi bi-trophy-fill me-1"></i>Finale</span>
                 <span class="cup4-round-badge" id="final-badge">0 Finalisten</span>
+            </div>
+            <div class="form-check form-switch cup4-katb-switch px-3 py-2" data-tooltip="Qualifiziert sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale?">
+                <input class="form-check-input" type="checkbox" role="switch" id="katb-final-switch" checked>
+                <label class="form-check-label" for="katb-final-switch" style="font-size:0.8125rem;">Kat.&nbsp;B automatisch ins Finale</label>
             </div>
             <div id="final-list"></div>
             <div class="cup4-empty" id="final-empty">
@@ -226,8 +230,9 @@ $(document).ready(function() {
     /* ── Year Dropdown ────────────────────── */
     function initYearDropdown() {
         const $sel = $('#yearSelect').empty();
+        const selectedYear = <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'currentYear'; ?>;
         for (let y = currentYear; y >= currentYear - 3; y--) {
-            $sel.append($('<option>').val(y).text(y).prop('selected', y === currentYear));
+            $sel.append($('<option>').val(y).text(y).prop('selected', y === selectedYear));
         }
     }
 
@@ -396,7 +401,7 @@ $(document).ready(function() {
 
                         $zone.attr('data-id', newId)
                              .html('<span class="cup4-zone-name">' + newText + '</span>' +
-                                   '<button class="cup4-zone-remove" title="Entfernen" tabindex="-1">&times;</button>');
+                                   '<button class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button>');
                         $zone.addClass('drop-success');
                         setTimeout(function() { $zone.removeClass('drop-success'); }, 400);
 
@@ -478,6 +483,26 @@ $(document).ready(function() {
 
     /* ── Nachnominierung Hilfsfunktionen ── */
     let r1WinnerIds = {}; // Cache: R1-Gewinner-IDs { "id": true }
+    let cupKatBToFinal = true; // Kat.-B-Gewinner qualifiziert sich automatisch fürs Finale
+
+    // Cup-Einstellungen für das aktuelle Jahr laden (Schalter setzen)
+    function loadCupSettings(callback) {
+        $.ajax({
+            url: 'cup2/cup_settings.php',
+            data: { year: $('#yearSelect').val() },
+            dataType: 'json',
+            success: function(resp) {
+                cupKatBToFinal = !resp || resp.katb_to_final !== 0;
+                $('#katb-final-switch').prop('checked', cupKatBToFinal);
+                if (typeof callback === 'function') callback();
+            },
+            error: function() {
+                cupKatBToFinal = true;
+                $('#katb-final-switch').prop('checked', true);
+                if (typeof callback === 'function') callback();
+            }
+        });
+    }
 
     function addNominatedToPool(id, name) {
         if ($('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
@@ -615,7 +640,7 @@ $(document).ready(function() {
                     const name = zoneName($zone);
                     if (pid) {
                         $(this).append(
-                            '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + pid + '" title="' + name + ' als Gewinner w&auml;hlen">' +
+                            '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + pid + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
                             '<i class="bi bi-trophy"></i></button>'
                         );
                     }
@@ -641,9 +666,46 @@ $(document).ready(function() {
 
             if (scores.every(s => s.r === 0)) { updateProgress(); return; }
 
+            const advancers = parseInt($card.data('advancers'), 10) || 2;
             const mwVal = manualWinner ? parseInt(manualWinner) : 0;
 
-            if (mwVal < 0) {
+            if (advancers === 1) {
+                // ── Nur EINER kommt weiter (Dreier-Gruppe) ──
+                if (mwVal > 0) {
+                    const mwId = String(mwVal);
+                    scores.forEach(function(s) {
+                        $rows.eq(s.idx).addClass(String(s.id) === mwId ? 'winner' : 'loser');
+                    });
+                    $card.addClass('cup4-pair-complete');
+                } else {
+                    scores.sort((a, b) => b.r - a.r);
+                    const maxR = scores[0].r;
+                    const topTied = scores.filter(function(s) { return s.r === maxR; });
+                    if (topTied.length === 1) {
+                        // Eindeutiger Bester gewinnt, die anderen zwei scheiden aus
+                        $rows.eq(scores[0].idx).addClass('winner');
+                        $rows.eq(scores[1].idx).addClass('loser');
+                        $rows.eq(scores[2].idx).addClass('loser');
+                        $card.addClass('cup4-pair-complete');
+                    } else {
+                        // Gleichstand an der Spitze — den einen Gewinner manuell wählen
+                        scores.forEach(function(s) {
+                            const $row = $rows.eq(s.idx);
+                            if (s.r === maxR) {
+                                $row.addClass('cup4-tied');
+                                const nm = zoneName($row.find('.cup4-drop-zone'));
+                                $row.append(
+                                    '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + nm + ' als Gewinner w&auml;hlen">' +
+                                    '<i class="bi bi-trophy"></i></button>'
+                                );
+                            } else {
+                                $row.addClass('loser');
+                            }
+                        });
+                        $card.addClass('cup4-pair-tied');
+                    }
+                }
+            } else if (mwVal < 0) {
                 // Negative ManualWinner = allThreeTied-Auflösung: abs(ID) ist der Verlierer
                 const loserId = String(Math.abs(mwVal));
                 scores.forEach(function(s) {
@@ -686,7 +748,7 @@ $(document).ready(function() {
                                 $row.addClass('cup4-tied');
                                 const name = zoneName($row.find('.cup4-drop-zone'));
                                 $row.append(
-                                    '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" title="' + name + ' als 2. Gewinner w&auml;hlen">' +
+                                    '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 2. Gewinner w&auml;hlen">' +
                                     '<i class="bi bi-trophy"></i></button>'
                                 );
                             }
@@ -698,7 +760,7 @@ $(document).ready(function() {
                             $row.addClass('cup4-tied');
                             const name = zoneName($row.find('.cup4-drop-zone'));
                             $row.append(
-                                '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" title="' + name + ' als 1. Gewinner w&auml;hlen">' +
+                                '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 1. Gewinner w&auml;hlen">' +
                                 '<i class="bi bi-trophy"></i></button>'
                             );
                         });
@@ -718,7 +780,7 @@ $(document).ready(function() {
                         $row.addClass('cup4-tied');
                         const name = zoneName($row.find('.cup4-drop-zone'));
                         $row.append(
-                            '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" title="' + name + ' als Gewinner w&auml;hlen">' +
+                            '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
                             '<i class="bi bi-trophy"></i></button>'
                         );
                     });
@@ -845,7 +907,7 @@ $(document).ready(function() {
                     '<span class="cup4-final-name" data-id="' + f.id + '">' + f.name + '</span>' +
                     '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
                     '<input type="number" class="cup4-result form-control" min="0" max="100"></div>' +
-                    '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" title="Entfernen"><i class="bi bi-x-lg"></i></button>' +
+                    '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                     '</div>'
                 );
             }
@@ -927,9 +989,10 @@ $(document).ready(function() {
         const $rows = $card.find('.cup4-participant-row');
         const isThreeWay = $rows.length === 3;
         const firstWinner = $card.data('first-winner');
+        const advancers = parseInt($card.data('advancers'), 10) || 2;
 
-        // 3-Way allThreeTied: 2-Klick-Flow
-        if (isThreeWay && !firstWinner && !$card.data('manual-winner')) {
+        // 3-Way allThreeTied: 2-Klick-Flow (nur wenn 2 weiterkommen)
+        if (isThreeWay && advancers === 2 && !firstWinner && !$card.data('manual-winner')) {
             // Prüfe ob allThreeTied (alle Resultate gleich)
             const vals = [];
             $rows.each(function() { vals.push(parseInt($(this).find('.cup4-result').val()) || 0); });
@@ -1010,26 +1073,98 @@ $(document).ready(function() {
         });
     });
 
+    // Dreier-Gruppe: Umschalten wie viele weiterkommen (1 oder 2)
+    $(document).on('click', '.cup4-adv-btn', function(e) {
+        e.preventDefault();
+        const $btn = $(this);
+        const $card = $btn.closest('.cup4-pair-card');
+        const adv = parseInt($btn.data('adv'), 10);
+        if ((parseInt($card.data('advancers'), 10) || 2) === adv) return;
+
+        const isR1 = $card.closest('#r1-pairs').length > 0;
+
+        // Gewinner VOR dem Wechsel merken (um demovierte Teilnehmer zu finden)
+        const winnersBefore = {};
+        $card.find('.cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
+            winnersBefore[$(this).attr('data-id')] = true;
+        });
+
+        $card.attr('data-advancers', adv).data('advancers', adv);
+        $card.find('.cup4-adv-btn').removeClass('active');
+        $btn.addClass('active');
+
+        // Bisherige (Tie-)Auswahl wird durch den Wechsel ungültig → zurücksetzen
+        const hadManual = $card.data('manual-winner');
+        $card.removeData('first-winner').removeAttr('data-first-winner');
+        $card.removeData('manual-winner').removeAttr('data-manual-winner');
+
+        const pairId = $card.data('pair-id');
+        if (pairId && hadManual) {
+            // Manuellen Gewinner auch serverseitig löschen
+            $.ajax({
+                url: 'cup2/set_manual_winner.php',
+                method: 'POST',
+                data: { pair_id: pairId, winner_id: '', reason: 'Anzahl Weiterkommende geändert' },
+                dataType: 'json'
+            });
+        }
+
+        // Neu auswerten (aktualisiert bei R1-Cards auch den R2-Pool-Vorschau)
+        updateWinnerHighlight($card);
+
+        // Folgerunde anpassen: Teilnehmer, die nicht mehr weiterkommen, aus R2 entfernen
+        if (isR1) {
+            const winnersAfter = {};
+            $card.find('.cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
+                winnersAfter[$(this).attr('data-id')] = true;
+            });
+            let removedFromR2 = false;
+            Object.keys(winnersBefore).forEach(function(id) {
+                if (winnersAfter[id]) return; // kommt weiterhin weiter
+                // Aus platzierten R2-Paarungen entfernen
+                $('#r2-pairs .cup4-drop-zone[data-id="' + id + '"]').each(function() {
+                    $(this).removeAttr('data-id').empty().removeClass('cup4-nachnominiert');
+                    const $c = $(this).closest('.cup4-pair-card');
+                    $c.find('.cup4-participant-row').removeClass('winner loser');
+                    $c.removeClass('cup4-pair-complete cup4-pair-tied');
+                    removedFromR2 = true;
+                });
+                // Aus dem R2-Pool entfernen (auch gespeicherte Items)
+                $('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').remove();
+                if (r1WinnerIds) delete r1WinnerIds[String(id)];
+            });
+            if (removedFromR2) {
+                updateR2PoolCounter();
+                autoGenerateR2Pairs();
+            }
+        }
+
+        msvToast(adv === 1 ? 'Nur 1 kommt weiter — Folgerunde angepasst' : '2 kommen weiter', 'info');
+    });
+
     /* ── Generate Pair Slots ──────────────── */
     function generatePairSlots(count, target, size) {
         if (count <= 0) return;
         const $target = $(target);
 
         for (let i = 0; i < count; i++) {
-            let html = '<div class="cup4-pair-card">';
+            let html;
 
             if (size == 3) {
-                // 3-way
+                // 3-way — Default: 2 kommen weiter
+                html = '<div class="cup4-pair-card" data-advancers="2">';
                 html += buildParticipantRow() + '<div class="cup4-vs">vs</div>' +
                         buildParticipantRow() + '<div class="cup4-vs">vs</div>' +
                         buildParticipantRow();
+                html += advancersToggle(2);
             } else {
                 // 2-way
+                html = '<div class="cup4-pair-card">';
                 html += buildParticipantRow() + '<div class="cup4-vs">vs</div>' +
                         buildParticipantRow();
             }
 
-            html += '<button class="cup4-card-remove" tabindex="-1" title="Entfernen"><i class="bi bi-x-lg"></i></button>';
+            html += '<button class="cup4-card-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
             html += '</div>';
 
             $target.append(html);
@@ -1044,6 +1179,16 @@ $(document).ready(function() {
                '<div class="cup4-drop-zone"></div>' +
                '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
                '<input type="number" class="cup4-result form-control" min="0" max="100"></div>' +
+               '</div>';
+    }
+
+    // Segmented-Toggle für Dreier-Gruppen: wie viele kommen weiter (1 oder 2)
+    function advancersToggle(val) {
+        const v = (parseInt(val, 10) === 1) ? 1 : 2;
+        return '<div class="cup4-adv-toggle" data-tooltip="Wie viele kommen weiter?">' +
+               '<i class="bi bi-arrow-up-right-circle"></i>' +
+               '<button type="button" class="cup4-adv-btn' + (v === 1 ? ' active' : '') + '" data-adv="1" tabindex="-1">1 weiter</button>' +
+               '<button type="button" class="cup4-adv-btn' + (v === 2 ? ' active' : '') + '" data-adv="2" tabindex="-1">2 weiter</button>' +
                '</div>';
     }
 
@@ -1064,12 +1209,15 @@ $(document).ready(function() {
 
                 pairs.forEach(function(pair) {
                     let manualAttr = (pair.ManualWinner != null && pair.ManualWinner !== 0) ? ' data-manual-winner="' + pair.ManualWinner + '"' : '';
-                    let html = '<div class="cup4-pair-card" data-pair-id="' + pair.ID + '"' + manualAttr + '>';
+                    const isThree = pair.Participant3 && pair.Participant3 !== 'NULL' && pair.Participant3 !== '0';
+                    const advVal = (parseInt(pair.Advancers, 10) === 1) ? 1 : 2;
+                    let advAttr = isThree ? ' data-advancers="' + advVal + '"' : '';
+                    let html = '<div class="cup4-pair-card" data-pair-id="' + pair.ID + '"' + manualAttr + advAttr + '>';
 
                     function dropZoneHtml(id, name) {
                         return '<div class="cup4-drop-zone" data-id="' + id + '">' +
                                '<span class="cup4-zone-name">' + name + '</span>' +
-                               '<button class="cup4-zone-remove" title="Entfernen" tabindex="-1">&times;</button></div>';
+                               '<button class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button></div>';
                     }
 
                     // Participant 1
@@ -1089,16 +1237,17 @@ $(document).ready(function() {
                             '</div>';
 
                     // Participant 3 (3-way)
-                    if (pair.Participant3 && pair.Participant3 !== 'NULL' && pair.Participant3 !== '0') {
+                    if (isThree) {
                         html += '<div class="cup4-vs">vs</div>';
                         html += '<div class="cup4-participant-row">' +
                                 dropZoneHtml(pair.Participant3, pair.Name3 + ' ' + pair.Vorname3) +
                                 '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
                                 '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (pair.Result3 || '') + '"></div>' +
                                 '</div>';
+                        html += advancersToggle(advVal);
                     }
 
-                    html += '<button class="cup4-card-remove" tabindex="-1" data-pair-id="' + pair.ID + '" title="Entfernen"><i class="bi bi-x-lg"></i></button>';
+                    html += '<button class="cup4-card-remove" tabindex="-1" data-pair-id="' + pair.ID + '" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
                     html += '</div>';
 
                     $target.append(html);
@@ -1139,27 +1288,18 @@ $(document).ready(function() {
                 });
 
                 if (winners.length > 0) {
-                    // Prüfe ob es genau einen Kat. B Gewinner gibt
-                    const katBWinners = winners.filter(w => w.Kategorie === 'Kat. B');
-                    const hasSingleKatB = katBWinners.length === 1;
-
+                    // Kat. B spielt normal in Runde 2 mit; der beste Kat. B aus R2
+                    // (Fallback R1) wird erst nach R2 als Finalist nachgerückt (checkKatBFinalist)
                     winners.forEach(function(w) {
-                        const isKatBAutoQualifier = hasSingleKatB && w.Kategorie === 'Kat. B';
-                        const extraClass = isKatBAutoQualifier ? ' cup4-katb-qualifier' : '';
-                        const icon = isKatBAutoQualifier
-                            ? '<i class="bi bi-star-fill me-1" style="color:#6f42c1;font-size:0.7rem;" title="Kat. B &rarr; direkt ins Finale"></i>'
-                            : '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>';
-                        const badge = isKatBAutoQualifier
-                            ? ' <span class="cup4-katb-badge">B &rarr; Finale</span>'
-                            : '';
                         $pool.append(
-                            '<div class="cup4-pool-item cup4-winner-item' + extraClass + '" data-id="' + w.ID + '">' +
-                            icon + w.Name + ' ' + w.Vorname + badge + '</div>'
+                            '<div class="cup4-pool-item cup4-winner-item" data-id="' + w.ID + '">' +
+                            '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>' +
+                            w.Name + ' ' + w.Vorname + '</div>'
                         );
                     });
 
-                    // Nur nicht-KatB-Items draggable machen
-                    initDraggable('#r2-pool-list .cup4-pool-item:not(.cup4-katb-qualifier)');
+                    // Alle Gewinner draggable machen
+                    initDraggable('#r2-pool-list .cup4-pool-item');
 
                     // Remove already used in R2 pairings
                     $('#r2-pairs .cup4-drop-zone[data-id]').each(function() {
@@ -1237,7 +1377,7 @@ $(document).ready(function() {
                             '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
                             '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
                             '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (f.Result || '') + '"></div>' +
-                            '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" title="Entfernen"><i class="bi bi-x-lg"></i></button>' +
+                            '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                             '</div>'
                         );
                     });
@@ -1262,10 +1402,11 @@ $(document).ready(function() {
             success: function(resp) {
                 if (resp.has_single_katb_winner && resp.katb_finalist) {
                     const f = resp.katb_finalist;
+                    const roundTxt = (resp.source_round === 1) ? 'Runde 1' : 'Runde 2';
                     // Show info
                     if ($('#katb-info').length === 0) {
                         const info = '<div id="katb-info" class="alert alert-info alert-sm py-2 px-3 mb-2" style="font-size:0.8125rem;">' +
-                                     '<strong>Kat. B:</strong> ' + f.Name + ' ' + f.Vorname + ' qualifiziert sich automatisch f&uuml;r das Finale.</div>';
+                                     '<strong>Kat. B:</strong> ' + f.Name + ' ' + f.Vorname + ' (bester Kat. B aus ' + roundTxt + ') r&uuml;ckt ins Finale nach.</div>';
                         $('#final-col .cup4-round-header').after(info);
                     }
                     // Add to final list if not present
@@ -1275,7 +1416,7 @@ $(document).ready(function() {
                             '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
                             '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
                             '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (f.Result || '') + '"></div>' +
-                            '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" title="Entfernen"><i class="bi bi-x-lg"></i></button>' +
+                            '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                             '</div>'
                         );
                         updateProgress();
@@ -1429,10 +1570,14 @@ $(document).ready(function() {
             });
 
             if (ids.length >= 2) {
-                // Format: [id1, id2, (id3), r1, r2, (r3), ls1, ls2, (ls3)]
+                // Format: [id1, id2, (id3), r1, r2, (r3), ls1, ls2, (ls3), (advancers)]
                 // LowShot = null, aber Array-Positionen beibehalten für Backend
                 const nullLowshots = ids.map(() => null);
                 const pair = ids.concat(results).concat(nullLowshots);
+                // Bei Dreier-Gruppen die Anzahl Weiterkommende anhängen (Index 9)
+                if (ids.length === 3) {
+                    pair.push(parseInt($(this).data('advancers'), 10) || 2);
+                }
                 pairs.push(pair);
             }
         });
@@ -1525,13 +1670,13 @@ $(document).ready(function() {
     $(document).on('click', '.pdf-btn', function(e) {
         e.preventDefault();
         $.ajax({
-            url: 'cup2/rangcup.php',
+            url: 'cuprang/cuprang.php',
             data: { year: $('#yearSelect').val() },
             dataType: 'json',
             success: function(resp) {
                 if (resp.success) {
                     $('#pdf-link').html(
-                        '<a href="cup2/' + resp.pdf_link + '" target="_blank" class="btn btn-sm btn-success">' +
+                        '<a href="cuprang/' + resp.pdf_link + '" target="_blank" class="btn btn-sm btn-success">' +
                         '<i class="bi bi-download me-1"></i>PDF herunterladen</a>'
                     );
                 } else {
@@ -1626,15 +1771,43 @@ $(document).ready(function() {
         updateProgress();
     }
 
+    // Kat.-B-Schalter: ob sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale qualifiziert
+    $('#katb-final-switch').on('change', function() {
+        const on = $(this).is(':checked');
+        $.ajax({
+            url: 'cup2/cup_settings.php',
+            method: 'POST',
+            data: { year: $('#yearSelect').val(), katb_to_final: on ? 1 : 0 },
+            dataType: 'json',
+            success: function() {
+                cupKatBToFinal = on;
+                $('#katb-info').remove();
+                // R2-Pool + Finalliste neu aufbauen (Kat. B als Qualifier oder normaler Gewinner)
+                loadWinnersForRound2();
+                msvToast(on
+                    ? 'Kat. B qualifiziert sich automatisch fürs Finale'
+                    : 'Kat. B spielt normal in Runde 2 mit', 'info');
+            },
+            error: function() {
+                $('#katb-final-switch').prop('checked', !on);
+                msvToast('Einstellung konnte nicht gespeichert werden', 'error');
+            }
+        });
+    });
+
     $('#yearSelect').on('change', function() {
-        initializePage();
-        checkKatBFinalist();
+        loadCupSettings(function() {
+            initializePage();
+            checkKatBFinalist();
+        });
     });
 
     initYearDropdown();
-    initializePage();
-    checkKatBFinalist();
-    checkForFinalParticipants();
+    loadCupSettings(function() {
+        initializePage();
+        checkKatBFinalist();
+        checkForFinalParticipants();
+    });
 });
 </script>
 

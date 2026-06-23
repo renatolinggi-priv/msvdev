@@ -6,28 +6,34 @@ include 'dbconnect.inc.php';
 $page_specific_css = "
 /* Drag & Drop Styling */
 .draggable-member {
-    cursor: move;
-    margin: 3px;
-    padding: 8px 12px;
-    border: 2px solid #e9ecef;
+    cursor: grab;
+    margin: 2px;
+    padding: 4px 10px;
+    border: 1.5px solid #e9ecef;
     background: linear-gradient(135deg, var(--light-color) 0%, #ffffff 100%);
     border-radius: var(--border-radius);
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--dark-color);
-    transition: all var(--transition-speed) ease;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     box-shadow: var(--box-shadow);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
 .draggable-member:hover {
     border-color: var(--secondary-color);
     background: linear-gradient(135deg, #e9ecef 0%, #ffffff 100%);
-    transform: translateY(-1px);
     box-shadow: var(--box-shadow-hover);
 }
 
+.draggable-member:active {
+    cursor: grabbing;
+}
+
 .member-flex-item {
-    width: 48%;
+    width: 31%;
     box-sizing: border-box;
     margin: 1%;
 }
@@ -72,11 +78,13 @@ $page_specific_css = "
     width: 180px !important;
     box-sizing: border-box;
     z-index: 9999 !important;
-    transform: rotate(1deg) !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25) !important;
-    opacity: 0.9 !important;
+    opacity: 0.92 !important;
     border: 2px solid var(--secondary-color) !important;
     background: linear-gradient(135deg, #e9ecef 0%, #ffffff 100%) !important;
+    cursor: grabbing !important;
+    transition: none !important;
+    pointer-events: none;
 }
 
 /* Hover-States für Drop-Zonen */
@@ -244,6 +252,22 @@ $page_specific_css = "
     }
 }
 
+/* === Überarbeitung: kompakter, klickbar, Suche/Zähler === */
+.main-content-wrapper { max-width: 1200px; }
+.draggable-member { cursor: pointer; display: inline-block; }
+.draggable-member:hover { border-color: #3b5998; background: #eef2f7; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+.member-flex-item { width: auto; }
+.droppable-group { display: flex; flex-wrap: wrap; align-content: flex-start; }
+.droppable-group p.text-muted { width: 100%; text-align: center; font-style: italic; padding: 1.25rem 0; margin: 0; }
+.droppable-group { border-color: #cbd5e0; }
+.droppable-group.hovered, .droppable-group.ui-droppable-hover { background: #f1f7f2; border-color: #2f855a; box-shadow: none; }
+.ui-draggable-dragging { box-shadow: 0 6px 18px rgba(0,0,0,.18) !important; border: 1px solid #3b5998 !important; background: #eef2f7 !important; }
+.gr-col-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
+.gr-col-head .lbl { font-weight: 600; font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .3px; }
+.gr-count { background: #eef2f7; color: #3b5998; font-weight: 700; font-size: .72rem; border-radius: 999px; padding: 1px 9px; }
+.member-search { position: relative; margin-bottom: .5rem; }
+.member-search input { padding-left: 1.9rem; }
+.member-search .bi-search { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .85rem; }
 ";
 
 include 'header.inc.php';
@@ -256,7 +280,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-8 col-lg-11 col-12 ps-0">
+        <div class="col-xl-11 col-lg-12 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
@@ -334,14 +358,20 @@ if (empty($_SESSION['csrf_token'])) {
                                             <input type="text" id="gruppenname" class="form-control form-control-sm" style="max-width: 320px;" placeholder="Name der Gruppe" required>
                                         </div>
 
-                                        <!-- Desktop Drag & Drop Container -->
+                                        <!-- Desktop: Mitglieder zuteilen (Klick oder Drag & Drop) -->
                                         <div class="desktop-group-container">
+                                            <p class="text-muted small mb-2"><i class="bi bi-hand-index me-1"></i>Klicken oder ziehen, um Mitglieder zuzuteilen.</p>
                                             <div class="row g-3">
                                                 <!-- Verfügbare Mitglieder -->
-                                                <div class="col-md-5">
-                                                    <p class="fw-semibold small text-muted mb-2">
-                                                        <i class="bi bi-person-lines-fill me-1"></i>Verfügbare Mitglieder
-                                                    </p>
+                                                <div class="col-md-6">
+                                                    <div class="gr-col-head">
+                                                        <span class="lbl"><i class="bi bi-person-lines-fill me-1"></i>Verfügbar</span>
+                                                        <span class="gr-count" id="availCount">0</span>
+                                                    </div>
+                                                    <div class="member-search">
+                                                        <i class="bi bi-search"></i>
+                                                        <input type="text" id="memberSearch" class="form-control form-control-sm" placeholder="Mitglied suchen...">
+                                                    </div>
                                                     <div id="availableMembers" class="available-members-container">
                                                         <div class="text-center text-muted w-100 py-3">
                                                             <i class="bi bi-person-plus me-2"></i>
@@ -350,23 +380,16 @@ if (empty($_SESSION['csrf_token'])) {
                                                     </div>
                                                 </div>
 
-                                                <!-- Pfeil -->
-                                                <div class="col-md-2 d-flex align-items-center justify-content-center">
-                                                    <div class="text-center text-muted">
-                                                        <i class="bi bi-arrow-right" style="font-size: 2rem;"></i>
-                                                        <div class="small mt-1">Drag & Drop</div>
-                                                    </div>
-                                                </div>
-
                                                 <!-- Gruppe zusammenstellen -->
-                                                <div class="col-md-5">
-                                                    <p class="fw-semibold small text-muted mb-2">
-                                                        <i class="bi bi-people-fill me-1"></i>Gruppe zusammenstellen
-                                                    </p>
+                                                <div class="col-md-6">
+                                                    <div class="gr-col-head">
+                                                        <span class="lbl"><i class="bi bi-people-fill me-1"></i>Gruppe</span>
+                                                        <span class="gr-count" id="groupCount">0</span>
+                                                    </div>
                                                     <div id="groupMembers" class="droppable-group">
                                                         <p class="text-muted">
                                                             <i class="bi bi-cursor me-2"></i>
-                                                            Ziehe die Mitglieder hierher...
+                                                            Mitglieder hierher ziehen oder links anklicken...
                                                         </p>
                                                     </div>
                                                 </div>
@@ -520,143 +543,103 @@ $(document).ready(function() {
     /**
      * b) Drag & Drop Setup - Fehler-sicher
      */
-    function setupDragDrop() {
-        // Sicher prüfen und nur destroyen wenn bereits initialisiert
-        try {
-            $("#availableMembers .draggable-member").each(function() {
-                if ($(this).hasClass('ui-draggable')) {
-                    $(this).draggable("destroy");
-                }
-            });
-            $("#groupMembers .draggable-member").each(function() {
-                if ($(this).hasClass('ui-draggable')) {
-                    $(this).draggable("destroy");
-                }
-            });
-            if ($("#groupMembers").hasClass('ui-droppable')) {
-                $("#groupMembers").droppable("destroy");
-            }
-            if ($("#availableMembers").hasClass('ui-droppable')) {
-                $("#availableMembers").droppable("destroy");
-            }
-        } catch (e) {
-            console.log("Cleanup Fehler (kann ignoriert werden):", e);
+    // Gemeinsame Draggable-Optionen
+    var dragDefaults = {
+        revert: "invalid",
+        revertDuration: 150,
+        helper: "clone",
+        cursor: "grabbing",
+        zIndex: 9999,
+        appendTo: "body",
+        distance: 3,
+        delay: 0,
+        opacity: 0.9,
+        scroll: false,
+        start: function(event, ui) {
+            $(this).css('opacity', '0.4');
+            ui.helper.addClass('ui-draggable-dragging');
+        },
+        stop: function(event, ui) {
+            $(this).css('opacity', '');
         }
+    };
 
-        // Items in #availableMembers draggable machen
-        $("#availableMembers .draggable-member").draggable({
-            revert: "invalid",
-            helper: "clone",
-            cursor: "move",
-            zIndex: 9999,
-            appendTo: "body",
-            distance: 5,
-            delay: 100,
-            opacity: 0.8,
-            start: function(event, ui) {
-                $(this).addClass('ui-draggable-dragging');
-            },
-            stop: function(event, ui) {
-                $(this).removeClass('ui-draggable-dragging');
-            }
-        });
-
-        // Items in #groupMembers draggable machen
-        $("#groupMembers .draggable-member").draggable({
-            revert: "invalid",
-            helper: "clone",
-            cursor: "move",
-            zIndex: 9999,
-            appendTo: "body",
-            distance: 5,
-            delay: 100,
-            opacity: 0.8,
-            start: function(event, ui) {
-                $(this).addClass('ui-draggable-dragging');
-            },
-            stop: function(event, ui) {
-                $(this).removeClass('ui-draggable-dragging');
-            }
-        });
-
-        // Dropzone #groupMembers
-        $("#groupMembers").droppable({
-            accept: ".draggable-member",
-            tolerance: "pointer",
-            activeClass: "hovered",
-            drop: function(event, ui) {
-                var $member = $(ui.draggable);
-                var memberID = $member.data("id");
-                var memberText = $member.text();
-
-                // Prüfen ob Member bereits in der Gruppe ist
-                if ($(this).find('[data-id="' + memberID + '"]').length > 0) {
-                    return;
-                }
-
-                var $newMember = $("<div></div>")
-                    .addClass("draggable-member")
-                    .attr("data-id", memberID)
-                    .text(memberText);
-
-                $(this).find("p.text-muted").remove();
-                $(this).append($newMember);
-                $member.remove();
-
-                // Sofort draggable machen
-                $newMember.draggable({
-                    revert: "invalid",
-                    helper: "clone",
-                    cursor: "move",
-                    zIndex: 9999,
-                    appendTo: "body",
-                    distance: 5,
-                    delay: 100,
-                    opacity: 0.8
-                });
-            }
-        });
-
-        // Dropzone #availableMembers
-        $("#availableMembers").droppable({
-            accept: ".draggable-member",
-            tolerance: "pointer",
-            activeClass: "hovered",
-            drop: function(event, ui) {
-                var $member = $(ui.draggable);
-                var memberID = $member.data("id");
-                var memberText = $member.text();
-                
-                // Prüfen ob Member bereits verfügbar ist
-                if ($(this).find('[data-id="' + memberID + '"]').length > 0) {
-                    return;
-                }
-                
-                var $newMember = $("<div></div>")
-                    .addClass("member-flex-item draggable-member")
-                    .attr("data-id", memberID)
-                    .text(memberText);
-                
-                $(this).append($newMember);
-                $member.remove();
-                
-                // Sofort draggable machen
-                $newMember.draggable({
-                    revert: "invalid",
-                    helper: "clone",
-                    cursor: "move",
-                    zIndex: 9999,
-                    appendTo: "body",
-                    distance: 5,
-                    delay: 100,
-                    opacity: 0.8
-                });
+    function makeDraggable($elements) {
+        $elements.each(function() {
+            if (!$(this).hasClass('ui-draggable')) {
+                $(this).draggable(dragDefaults);
             }
         });
     }
 
+    function setupDragDrop() {
+        // Nur neue (noch nicht initialisierte) Elemente draggable machen
+        makeDraggable($("#availableMembers .draggable-member"));
+        makeDraggable($("#groupMembers .draggable-member"));
+
+        // Dropzones nur einmal initialisieren
+        if (!$("#groupMembers").hasClass('ui-droppable')) {
+            $("#groupMembers").droppable({
+                accept: ".draggable-member",
+                tolerance: "pointer",
+                activeClass: "hovered",
+                drop: function(event, ui) { moveToGroup($(ui.draggable)); }
+            });
+        }
+
+        if (!$("#availableMembers").hasClass('ui-droppable')) {
+            $("#availableMembers").droppable({
+                accept: ".draggable-member",
+                tolerance: "pointer",
+                activeClass: "hovered",
+                drop: function(event, ui) { moveToAvailable($(ui.draggable)); }
+            });
+        }
+    }
+
     // Einmal aufrufen
     setupDragDrop();
+
+    // --- Zuteilen per Klick + Suche + Zähler (Desktop) ---
+    function refreshCounts() {
+        $("#availCount").text($("#availableMembers .draggable-member").length);
+        $("#groupCount").text($("#groupMembers .draggable-member").length);
+    }
+    function applyMemberFilter() {
+        var q = ($("#memberSearch").val() || "").toLowerCase().trim();
+        $("#availableMembers .draggable-member").each(function() {
+            $(this).toggle(this.textContent.toLowerCase().indexOf(q) !== -1);
+        });
+    }
+    function moveToGroup($member) {
+        var id = $member.data("id");
+        if ($("#groupMembers [data-id='" + id + "']").length > 0) { $member.remove(); refreshCounts(); return; }
+        var $new = $("<div></div>").addClass("draggable-member").attr("data-id", id).text($member.text());
+        $("#groupMembers").find("p.text-muted").remove();
+        $("#groupMembers").append($new);
+        $member.remove();
+        makeDraggable($new);
+        refreshCounts();
+    }
+    function moveToAvailable($member) {
+        var id = $member.data("id");
+        if ($("#availableMembers [data-id='" + id + "']").length > 0) {
+            $member.remove();
+        } else {
+            var $new = $("<div></div>").addClass("member-flex-item draggable-member").attr("data-id", id).text($member.text());
+            $("#availableMembers").append($new);
+            $member.remove();
+            makeDraggable($new);
+        }
+        if ($("#groupMembers .draggable-member").length === 0) {
+            $("#groupMembers").html('<p class="text-muted"><i class="bi bi-cursor me-2"></i>Mitglieder hierher ziehen oder links anklicken...</p>');
+        }
+        refreshCounts();
+        applyMemberFilter();
+    }
+    $("#availableMembers").on("click", ".draggable-member", function() { moveToGroup($(this)); });
+    $("#groupMembers").on("click", ".draggable-member", function() { moveToAvailable($(this)); });
+    $("#memberSearch").on("input", applyMemberFilter);
 
     // Mobile Detection
     var isMobile = window.matchMedia('(max-width: 767.98px)').matches;
@@ -791,10 +774,8 @@ $(document).ready(function() {
                     data.forEach(function(ev) {
                         eventSelect.append($('<option></option>').val(ev.ID).text(ev.Bezeichnung));
                     });
-                    msvToast('Anlässe erfolgreich geladen', 'success');
                 } else {
                     eventSelect.append($('<option></option>').val('').text('Keine Anlässe gefunden'));
-                    msvToast('Keine Gruppen-Anlässe gefunden', 'warning');
                 }
             },
             error: function(xhr, status, error) {
@@ -832,10 +813,10 @@ $(document).ready(function() {
                                         <div class="text-muted" style="font-size:0.8rem;">Mitglieder: ${group.Mitglieder}</div>
                                     </div>
                                     <div class="d-flex gap-1">
-                                        <button class="btn btn-outline-primary btn-sm edit-group" title="Gruppe bearbeiten">
+                                        <button class="btn btn-outline-primary btn-sm edit-group" data-tooltip="Gruppe bearbeiten">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger btn-sm delete-group" title="Gruppe löschen">
+                                        <button class="btn btn-outline-danger btn-sm delete-group" data-tooltip="Gruppe löschen">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -854,7 +835,6 @@ $(document).ready(function() {
 
                         container.append(card);
                     });
-                    msvToast('Gruppen erfolgreich geladen', 'success');
                 } else {
                     container.html(`
                         <div class="text-center text-muted py-3">
@@ -918,8 +898,6 @@ $(document).ready(function() {
                         var members = document.querySelectorAll('#availableMembers .draggable-member');
                         buildMobileMemberList(members);
                     }
-
-                    msvToast('Mitglieder erfolgreich geladen', 'success');
                 } else {
                     availableContainer.html(`
                         <div class="text-center text-muted w-100 py-3">
@@ -957,7 +935,8 @@ $(document).ready(function() {
                 }
 
                 msvToast("Fehler beim Laden der Mitglieder: " + error, 'error');
-            }
+            },
+            complete: function() { refreshCounts(); applyMemberFilter(); }
         });
     }
 
@@ -990,7 +969,6 @@ $(document).ready(function() {
     //////////////////////////
 
     function editGroup(groupID) {
-        msvToast('Lade Gruppendaten...', 'info');
         $.ajax({
             url: 'jmdefinition/get_group_details.php',
             method: 'GET',
@@ -1002,7 +980,6 @@ $(document).ready(function() {
                     return;
                 }
                 fillGroupEditForm(groupData);
-                msvToast('Gruppe wird bearbeitet', 'success');
             },
             error: function(xhr, status, error) {
                 msvToast("Fehler beim Laden der Gruppe: " + error, 'error');
@@ -1069,6 +1046,7 @@ $(document).ready(function() {
         });
 
         setupDragDrop();
+        refreshCounts();
 
         // Mobile UI aktualisieren
         if (isMobile) {
@@ -1135,8 +1113,8 @@ $(document).ready(function() {
                         loadExistingGroups(eventID, jahr);
                         loadAvailableMembers(eventID, jahr);
                     }, 500);
-                } else if(response.error) {
-                    msvToast("Fehler: " + response.error, 'error');
+                } else {
+                    msvToast("Fehler: " + (response.error || response.message || 'Unbekannt'), 'error');
                 }
             },
             error: function(xhr, status, error) {
@@ -1155,27 +1133,26 @@ $(document).ready(function() {
         const result = await msvConfirmDelete('diese Gruppe');
         if (!result.isConfirmed) return;
 
-        msvToast('Lösche Gruppe...', 'info');
         $.ajax({
             url: 'jmdefinition/delete_gruppe.php',
             method: 'POST',
-            data: { 
+            data: {
                 groupID: groupId,
                 csrf_token: $('input[name="csrf_token"]').val()
             },
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    $('div.group-card[data-groupid="' + groupId + '"]').remove();
-                    msvToast("Gruppe wurde erfolgreich gelöscht.", 'success');
-                    // Mitglieder neu laden
+                    msvToast("Gruppe wurde gelöscht.", 'success');
+                    // Gruppenliste + Mitglieder neu laden
                     let eventID = $('#eventSelect').val();
                     let jahr = $('#yearSelect').val();
                     if (eventID) {
+                        loadExistingGroups(eventID, jahr);
                         loadAvailableMembers(eventID, jahr);
                     }
-                } else if (response.error) {
-                    msvToast("Fehler: " + response.error, 'error');
+                } else {
+                    msvToast("Fehler: " + (response.error || response.message || 'Unbekannt'), 'error');
                 }
             },
             error: function(xhr, status, error) {
@@ -1191,9 +1168,10 @@ $(document).ready(function() {
         $("#groupMembers").html(`
             <p class="text-muted">
                 <i class="bi bi-cursor me-2"></i>
-                Ziehe die Mitglieder hierher...
+                Mitglieder hierher ziehen oder links anklicken...
             </p>
         `);
+        refreshCounts();
 
         // Mobile zurücksetzen
         mobileGroupMembers = [];
@@ -1209,7 +1187,6 @@ $(document).ready(function() {
         if (eventID) {
             loadAvailableMembers(eventID, jahr);
         }
-        msvToast('Formular zurückgesetzt', 'info');
     });
 
     // Neuen Anlass hinzufügen

@@ -33,7 +33,7 @@ include 'header.inc.php';
 <!-- Heimrang.php HTML-Gerüst nach jmrang.php Vorbild -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-11 col-12 ps-0">
+        <div class="col-xxl-8 col-xl-9 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
@@ -51,47 +51,29 @@ include 'header.inc.php';
                 <form id="heimresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
-                    <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-                    <div class="d-flex align-items-center gap-2">
+                    <!-- Jahr-Auswahl -->
+                    <div class="d-flex align-items-center gap-2 mb-3">
                         <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
                             <i class="bi bi-calendar3 me-1"></i>Jahr:
                         </label>
                         <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
                     </div>
-
-                    <!-- Aktionsbereich (Bootstrap Collapse) -->
-                    <div class="card action-card mb-0">
-                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                             data-bs-toggle="collapse" data-bs-target="#heimrangActions"
-                             aria-expanded="false" aria-controls="heimrangActions">
-                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                            <i class="bi bi-chevron-down action-chevron"></i>
+                    <!-- Export-Toolbar (einheitlich mit endschrang.php) -->
+                    <div class="export-toolbar mb-4">
+                        <div class="export-toolbar-head">
+                            <i class="bi bi-file-earmark-arrow-down"></i>
+                            <span>Dokumente erstellen</span>
+                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
+                                <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
+                            </button>
                         </div>
-                        <div class="collapse" id="heimrangActions">
-                            <div class="card-body pt-2 pb-3 px-3">
-                                <div class="row g-2 mb-2">
-                                    <div class="col-12">
-                                        <button id="redirect-btn" type="button" class="btn btn-success w-100">
-                                            <i class="bi bi-pencil-square me-2"></i>Bearbeiten
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="border-top pt-2">
-                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
-                                    <div class="row g-2">
-                                        <div class="col-12">
-                                            <button class="pdf-btn btn btn-outline-danger btn-sm w-100">
-                                                <i class="bi bi-file-pdf me-1"></i>Rangliste PDF
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="pdf-link" class="mt-2"></div>
-                                </div>
-                            </div>
+                        <div class="export-group-btns">
+                            <button class="btn btn-outline-info btn-sm pdf-btn">
+                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
+                            </button>
                         </div>
+                        <div id="pdf-link" class="mt-2"></div>
                     </div>
-                    </div><!-- Ende flex-row Jahr+Aktionen -->
 
                     <!-- Kategorie A Tabelle -->
                     <div class="table-wrapper">

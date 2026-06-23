@@ -65,7 +65,7 @@ try {
         }
         
         $stmt->close();
-        
+
         echo json_encode([
             'success' => true,
             'id' => $id,
@@ -97,7 +97,7 @@ try {
         
         $newId = $stmt->insert_id;
         $stmt->close();
-        
+
         echo json_encode([
             'success' => true,
             'id' => $newId,

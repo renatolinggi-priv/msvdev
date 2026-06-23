@@ -3,7 +3,7 @@
 include '../config.php';
 
 // CSRF-Schutz
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../session_config.inc.php';
 $csrf = $_POST['csrf_token'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);

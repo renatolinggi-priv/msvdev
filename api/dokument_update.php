@@ -2,9 +2,9 @@
 // api/dokument_update.php - Dokument-Metadaten aktualisieren, optional neue Datei
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
-requireRole(['admin', 'vorstand']);
 
 header('Content-Type: application/json; charset=utf-8');
+requireRoleJson(['admin', 'vorstand']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -64,18 +64,18 @@ if (isset($_FILES['datei']) && $_FILES['datei']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['datei'];
 
     $allowed_mimes = [
-        'application/pdf',
-        'image/jpeg',
-        'image/png',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel',
+        'application/pdf'                                                            => 'pdf',
+        'image/jpeg'                                                                 => 'jpg',
+        'image/png'                                                                  => 'png',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'    => 'docx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'          => 'xlsx',
+        'application/vnd.ms-excel'                                                   => 'xls',
     ];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mime  = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
 
-    if (!in_array($mime, $allowed_mimes)) {
+    if (!isset($allowed_mimes[$mime])) {
         echo json_encode(['success' => false, 'message' => 'Dateityp nicht erlaubt (PDF, DOCX, XLSX, JPG, PNG)']);
         exit;
     }
@@ -90,7 +90,7 @@ if (isset($_FILES['datei']) && $_FILES['datei']['error'] === UPLOAD_ERR_OK) {
     }
 
     $safe_name  = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($file['name'], PATHINFO_FILENAME));
-    $extension  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $extension  = $allowed_mimes[$mime];
     $filename   = time() . '_' . $safe_name . '.' . $extension;
     $filepath   = $upload_base . $filename;
 

@@ -1,0 +1,14 @@
+{
+  "name": "msv-ui-audit",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "audit": "node audit.js",
+    "audit:desktop": "node audit.js --desktop-only",
+    "audit:mobile": "node audit.js --mobile-only",
+    "audit:page": "node audit.js --page"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}

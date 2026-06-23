@@ -55,10 +55,13 @@ if (!function_exists('cup_table_has_columns')) {
 
 if (!function_exists('cup_fetch_pairs')) {
     function cup_fetch_pairs(mysqli $conn, int $year): array {
+        // Advancers (Migration 018) nur selektieren, wenn vorhanden – sonst würde die Seite brechen.
+        $hasAdv = cup_table_has_columns($conn, 'cupPairs', ['Advancers'])['Advancers'] ?? false;
+        $advSel = $hasAdv ? 'Advancers,' : '';
         $sql = "SELECT ID, Participant1, Participant2, Participant3,
                        Result1, Result2, Result3,
                        LowShot1, LowShot2, LowShot3,
-                       ManualWinner, ManualWinnerReason,
+                       ManualWinner, ManualWinnerReason, $advSel
                        `Round`, `Year`
                 FROM cupPairs
                 WHERE `Year` = ?

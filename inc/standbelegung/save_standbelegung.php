@@ -93,7 +93,7 @@ try {
     
     $stmt->close();
     $conn->commit();
-    
+
     echo json_encode([
         'success' => true,
         'inserted' => $inserted,

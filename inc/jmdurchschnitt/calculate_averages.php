@@ -2,6 +2,7 @@
 // calculate_averages.php
 session_start();
 include '../config.php';
+require_once __DIR__ . '/config_helper.php';
 
 // Überprüfen der Datenbankverbindung
 if ($conn->connect_error) {
@@ -64,8 +65,12 @@ try {
         $teilnehmerAnzahl = count($teilnehmerResultate);
         
         if ($teilnehmerAnzahl > 0) {
+            // Konfigurierte Anzahl zaehlender Resultate fuer dieses Jahr laden
+            $config = getDurchschnittConfig($conn, $year);
+            $anzahlZaehlende = $config['anzahl_zaehlende'];
+
             // Berechnung: Wie viele Resultate werden verwendet?
-            $verwendeteResultate = calculateUsedResults($teilnehmerAnzahl);
+            $verwendeteResultate = calculateUsedResults($teilnehmerAnzahl, $anzahlZaehlende);
             
             // Die besten X Resultate nehmen (zählende)
             $zaehlendeResultate = array_slice($teilnehmerResultate, 0, $verwendeteResultate);
@@ -90,6 +95,7 @@ try {
                     'anlass_name' => $anlassName,
                     'teilnehmer_anzahl' => $teilnehmerAnzahl,
                     'verwendete_resultate' => $verwendeteResultate,
+                    'anzahl_zaehlende' => $anzahlZaehlende,
                     'durchschnitt' => number_format($durchschnitt, 2),
                     'zuschlag' => $zuschlag . '%',
                     'endergebnis' => number_format($endergebnis, 3),
@@ -123,21 +129,5 @@ try {
     ]);
 } finally {
     $conn->close();
-}
-
-/**
- * Berechnet die Anzahl der zu verwendenden Resultate basierend auf der Teilnehmerzahl
- * 
- * @param int $teilnehmerAnzahl Anzahl der Teilnehmer
- * @return int Anzahl der zu verwendenden besten Resultate
- */
-function calculateUsedResults($teilnehmerAnzahl) {
-    if ($teilnehmerAnzahl <= 13) {
-        // Bis 13 Teilnehmer: die besten 6 Resultate
-        return min(6, $teilnehmerAnzahl);
-    } else {
-        // Ab 14 Teilnehmer: die Hälfte der Resultate (abgerundet)
-        return intval(floor($teilnehmerAnzahl / 2));
-    }
 }
 ?>

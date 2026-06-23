@@ -5,11 +5,7 @@ require_once __DIR__ . '/../auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-function json_error($msg, $code = 400) {
-    http_response_code($code);
-    echo json_encode(['success' => false, 'message' => $msg]);
-    exit;
-}
+// json_error() wird zentral in auth.php bereitgestellt
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_error('Ungültige Anfrage', 405);
@@ -18,8 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 requireLogin();
 
 // CSRF-Token prüfen
-if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
-    || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+if (!validateCsrfRequest()) {
     json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
 }
 
@@ -45,11 +40,13 @@ if (!in_array($gruppen, $allowedParticipation, true)) {
 
 $db = getDB();
 
-// Waffe validieren
-$stmtW = $db->prepare("SELECT ID FROM Waffen WHERE ID = ?");
-$stmtW->execute([$waffenID]);
-if (!$stmtW->fetch()) {
-    json_error('Ungültige Waffe ausgewählt.');
+// Waffe validieren (0 = "Nehme nicht teil" ist erlaubt)
+if ($waffenID !== 0) {
+    $stmtW = $db->prepare("SELECT ID FROM Waffen WHERE ID = ?");
+    $stmtW->execute([$waffenID]);
+    if (!$stmtW->fetch()) {
+        json_error('Ungültige Waffe ausgewählt.');
+    }
 }
 
 // Mitglied prüfen
@@ -78,9 +75,11 @@ try {
         $fid = (int)$db->lastInsertId();
     }
 
-    // Mitglieder-Tabelle: WaffenID aktualisieren
-    $stmtMW = $db->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
-    $stmtMW->execute([$waffenID, $mitglied_id]);
+    // Mitglieder-Tabelle: WaffenID aktualisieren (nicht bei "Nehme nicht teil")
+    if ($waffenID !== 0) {
+        $stmtMW = $db->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
+        $stmtMW->execute([$waffenID, $mitglied_id]);
+    }
 
     // Erweiterte Antworten upserten
     foreach ($erweitert as $defID => $antwort) {
@@ -105,5 +104,6 @@ try {
 
 } catch (Exception $e) {
     $db->rollBack();
-    json_error('Fehler beim Speichern: ' . $e->getMessage(), 500);
+    error_log('portal_fragebogen_save: ' . $e->getMessage());
+    json_error('Fehler beim Speichern. Bitte versuche es erneut.', 500);
 }

@@ -117,14 +117,28 @@ if (empty($_SESSION['csrf_token'])) {
                     <form id="durchschnittForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                         
-                        <!-- Jahr-Auswahl -->
-                        <div class="d-flex align-items-center gap-2 mb-3">
+                        <!-- Jahr-Auswahl + Konfiguration -->
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
                             <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
                                 <i class="bi bi-calendar3 me-1"></i>Jahr:
                             </label>
                             <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
                                 <!-- Optionen werden per JavaScript eingefügt -->
                             </select>
+
+                            <span class="mx-1 text-muted d-none d-md-inline">|</span>
+
+                            <label for="zaehlendeInput" class="form-label fw-bold mb-0 text-nowrap"
+                                   data-bs-toggle="tooltip"
+                                   title="Anzahl der besten Resultate, die in den Durchschnitt einfließen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
+                                <i class="bi bi-list-ol me-1"></i>Zählende Resultate:
+                            </label>
+                            <input type="number" id="zaehlendeInput" class="form-control form-control-sm"
+                                   style="width: 80px;" min="1" max="99" step="1">
+                            <button type="button" id="saveConfigBtn" class="btn btn-compact-standard btn-outline-primary">
+                                <i class="bi bi-save me-1"></i>Speichern
+                            </button>
+                            <small id="configHint" class="text-muted ms-1"></small>
                         </div>
 
                         <!-- Berechnungslogik Info -->
@@ -263,6 +277,31 @@ $(document).ready(function () {
             }
             yearSelect.append(option);
         }
+    }
+
+    // Konfiguration (Anzahl zählende Resultate) für ein Jahr laden
+    function loadConfig(year) {
+        $('#configHint').text('');
+        $.ajax({
+            url: 'jmdurchschnitt/get_config.php',
+            type: 'GET',
+            data: { year: year },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    $('#zaehlendeInput').val(response.anzahl_zaehlende);
+                    if (response.inherited) {
+                        $('#configHint').text(
+                            response.source_year
+                                ? 'übernommen aus ' + response.source_year
+                                : 'Standardwert'
+                        );
+                    } else {
+                        $('#configHint').text('');
+                    }
+                }
+            }
+        });
     }
 
     // Verfügbare JM-Definitionen laden
@@ -431,9 +470,52 @@ $(document).ready(function () {
         });
     });
 
+    // Konfiguration speichern
+    $('#saveConfigBtn').on('click', function() {
+        const $btn = $(this);
+        const year = $('#yearSelect').val();
+        const anzahl = parseInt($('#zaehlendeInput').val(), 10);
+
+        if (isNaN(anzahl) || anzahl < 1 || anzahl > 99) {
+            msvToast('Bitte eine Anzahl zwischen 1 und 99 eingeben', 'error');
+            return;
+        }
+
+        $btn.prop('disabled', true);
+        $.ajax({
+            url: 'jmdurchschnitt/save_config.php',
+            type: 'POST',
+            data: {
+                year: year,
+                anzahl_zaehlende: anzahl,
+                csrf_token: $('input[name="csrf_token"]').val()
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#configHint').text('');
+                    msvToast('Einstellung gespeichert', 'success');
+                    // Bereits berechnetes Ergebnis mit neuem Wert aktualisieren
+                    if (selectedDefinition) {
+                        calculateAverages();
+                    }
+                } else {
+                    msvToast(response.message || 'Fehler beim Speichern', 'error');
+                }
+            },
+            error: function() {
+                msvToast('Fehler beim Speichern der Einstellung', 'error');
+            },
+            complete: function() {
+                $btn.prop('disabled', false);
+            }
+        });
+    });
+
     // Jahr-Änderung
     $('#yearSelect').on('change', function() {
         const selectedYear = $(this).val();
+        loadConfig(selectedYear);
         loadAvailableDefinitions(selectedYear);
         selectedDefinition = null;
         $('#exportPdfBtn').prop('disabled', true);
@@ -445,7 +527,15 @@ $(document).ready(function () {
 
     // Initialisierung
     initializeYearDropdown();
+    loadConfig(currentYear);
     loadAvailableDefinitions(currentYear);
+
+    // Tooltip aktivieren
+    if (window.bootstrap && bootstrap.Tooltip) {
+        $('[data-bs-toggle="tooltip"]').each(function () {
+            new bootstrap.Tooltip(this);
+        });
+    }
 });
 
     // Mobile Cards Builder für Durchschnittstabelle

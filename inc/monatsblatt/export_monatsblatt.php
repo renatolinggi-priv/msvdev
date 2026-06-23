@@ -351,12 +351,14 @@ class MonatsblattPDFExporter {
                 page-break-inside: avoid;
             }
             th, td {
-                border: 1px solid #333;
+                border: 1px solid #e2e8f0;
                 padding: 4px;
                 vertical-align: top;
             }
             th {
-                background-color: #f0f0f0;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 font-weight: bold;
             }
             .td-left {

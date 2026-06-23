@@ -1,5 +1,6 @@
 <?php
 include '../config.php';
+require_once __DIR__ . '/../changelog_helper.php';
 
 // CSRF-Schutz
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -32,6 +33,7 @@ try {
 
     // Transaktion erfolgreich abschließen
     $conn->commit();
+    logChangelog('resultate', 'geloescht', "JM-Resultate $selectedYear gelöscht", ['tabelle' => 'jmresultate', 'jahr' => $selectedYear, 'sichtbar' => 0]);
 
     // JSON-Antwort (Beispiel)
     echo json_encode([

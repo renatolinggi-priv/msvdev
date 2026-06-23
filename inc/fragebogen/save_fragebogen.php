@@ -52,11 +52,13 @@ try {
             $stmtIns->close();
         }
 
-        // *** Hier wird auch die Mitglieder-Tabelle aktualisiert ***
-        $stmtMember = $conn->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
-        $stmtMember->bind_param("ii", $waffenID, $mid);
-        $stmtMember->execute();
-        $stmtMember->close();
+        // *** Hier wird auch die Mitglieder-Tabelle aktualisiert (nicht bei "Nehme nicht teil") ***
+        if ($waffenID !== 0) {
+            $stmtMember = $conn->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
+            $stmtMember->bind_param("ii", $waffenID, $mid);
+            $stmtMember->execute();
+            $stmtMember->close();
+        }
 
         // 2) Erweitert – in Tabelle mitglieder_fragebogen_erweitert
         if (isset($data['erweitert']) && is_array($data['erweitert'])) {

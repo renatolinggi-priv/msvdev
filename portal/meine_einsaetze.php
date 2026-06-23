@@ -49,69 +49,23 @@ include 'portal_header.php';
 ?>
 
 <style>
-.einsaetze-section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #718096;
-    margin: 1.25rem 0 0.5rem;
-}
-.einsaetze-section-title:first-child {
-    margin-top: 0;
-}
-.einsatz-row {
-    background: white;
-    border-radius: 0.65rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.875rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    border: 1px solid #f0f0f0;
-}
-.einsatz-row.vergangen {
+/* Vergangen-Variante: gedaempfter Look auf .p-list-row */
+.p-list-row.vergangen {
     background: #fafafa;
     border-color: #ebebeb;
     opacity: 0.7;
-}
-.einsatz-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-.einsatz-row:not(.vergangen) .einsatz-icon {
-    background: linear-gradient(135deg, #fff8e1, #ffecb3);
-    color: #e65100;
-}
-.einsatz-row.vergangen .einsatz-icon {
-    background: #f0f0f0;
-    color: #999;
-}
-.einsatz-body {
-    flex: 1;
-    min-width: 0;
 }
 .einsatz-datum {
     font-size: 0.78rem;
     color: #718096;
     margin-bottom: 0.1rem;
 }
-.einsatz-name {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: #2d3748;
+.p-list-row .einsatz-name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.einsatz-row.vergangen .einsatz-name {
+.p-list-row.vergangen .einsatz-name {
     color: #718096;
 }
 .einsatz-funktion {
@@ -128,7 +82,7 @@ include 'portal_header.php';
     flex-shrink: 0;
     white-space: nowrap;
 }
-.einsatz-row:not(.vergangen) .einsatz-time-badge {
+.p-list-row:not(.vergangen) .einsatz-time-badge {
     background: #fff3e0;
     color: #e65100;
 }
@@ -188,9 +142,9 @@ include 'portal_header.php';
 .vergangene-toggle:hover { color: #4a5568; }
 </style>
 
-<h2 class="portal-page-title">
-    <i class="bi bi-person-badge me-2"></i>Meine Einsätze
-</h2>
+<div class="portal-page-header">
+    <h1><i class="bi bi-person-badge me-2"></i>Meine Einsätze</h1>
+</div>
 
 <?php
 $total = count($einsaetze_kommend) + count($einsaetze_vergangen);
@@ -223,22 +177,23 @@ if (!$mitglied_id): ?>
 
     <!-- Kommende Einsaetze -->
     <?php if (!empty($einsaetze_kommend)): ?>
-    <div class="einsaetze-section-title">Kommend</div>
+    <div class="p-eyebrow">Kommend</div>
     <?php if (array_filter($einsaetze_kommend, fn($e) => !empty($e['event_zeit']))): ?>
     <div class="alert alert-info py-2 px-3 small mb-2" role="alert">
         <i class="bi bi-info-circle me-1"></i>
         Bitte <strong>30 Minuten vor Arbeitsbeginn</strong> vor Ort erscheinen.
     </div>
     <?php endif; ?>
+    <div class="p-list">
     <?php foreach ($einsaetze_kommend as $i => $e): ?>
-    <div class="einsatz-row">
-        <div class="einsatz-icon"><i class="bi bi-person-badge"></i></div>
-        <div class="einsatz-body">
+    <div class="p-list-row">
+        <div class="p-chip lg orange"><i class="bi bi-person-badge"></i></div>
+        <div class="p-list-body">
             <div class="einsatz-datum">
                 <?php echo einsatzDatum($e['event_datum'], $weekdays, $months); ?>
                 <?php if ($i === 0): ?><span class="naechster-badge">Nächster</span><?php endif; ?>
             </div>
-            <div class="einsatz-name"><?php echo htmlspecialchars($e['bezeichnung']); ?></div>
+            <div class="p-list-title einsatz-name"><?php echo htmlspecialchars($e['bezeichnung']); ?></div>
             <?php if (!empty($e['funktion'])): ?>
             <div class="einsatz-funktion"><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($e['funktion']); ?></div>
             <?php endif; ?>
@@ -248,8 +203,9 @@ if (!$mitglied_id): ?>
         <?php endif; ?>
     </div>
     <?php endforeach; ?>
+    </div>
     <?php else: ?>
-    <div class="einsaetze-section-title">Kommend</div>
+    <div class="p-eyebrow">Kommend</div>
     <div class="empty-state" style="padding: 1.5rem; color: #a0aec0; font-size: 0.85rem; text-align: center;">
         <i class="bi bi-check-circle" style="font-size: 1.5rem; display: block; margin-bottom: 0.4rem;"></i>
         Keine kommenden Einsätze geplant.
@@ -258,19 +214,19 @@ if (!$mitglied_id): ?>
 
     <!-- Vergangene Einsaetze -->
     <?php if (!empty($einsaetze_vergangen)): ?>
-    <div class="einsaetze-section-title d-flex align-items-center justify-content-between">
+    <div class="p-eyebrow d-flex align-items-center justify-content-between">
         <span>Vergangen</span>
         <button class="vergangene-toggle" onclick="toggleVergangene(this)" data-open="0">
             <i class="bi bi-chevron-down"></i> Anzeigen
         </button>
     </div>
-    <div id="vergangene-list" style="display:none;">
+    <div id="vergangene-list" class="p-list" style="display:none;">
     <?php foreach ($einsaetze_vergangen as $e): ?>
-    <div class="einsatz-row vergangen">
-        <div class="einsatz-icon"><i class="bi bi-person-badge"></i></div>
-        <div class="einsatz-body">
+    <div class="p-list-row vergangen">
+        <div class="p-chip lg gray"><i class="bi bi-person-badge"></i></div>
+        <div class="p-list-body">
             <div class="einsatz-datum"><?php echo einsatzDatum($e['event_datum'], $weekdays, $months); ?></div>
-            <div class="einsatz-name"><?php echo htmlspecialchars($e['bezeichnung']); ?></div>
+            <div class="p-list-title einsatz-name"><?php echo htmlspecialchars($e['bezeichnung']); ?></div>
             <?php if (!empty($e['funktion'])): ?>
             <div class="einsatz-funktion"><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($e['funktion']); ?></div>
             <?php endif; ?>

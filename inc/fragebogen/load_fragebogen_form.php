@@ -61,13 +61,27 @@ while ($row = $resExt->fetch_assoc()) {
 }
 
 // 6) THEAD bauen
+// Hilfsfunktion: Lange Bezeichnungen abkürzen
+function truncateHeader($text, $maxLen = 14) {
+    if (mb_strlen($text) <= $maxLen) {
+        return htmlspecialchars($text);
+    }
+    // Auf letztes Leerzeichen vor maxLen kürzen
+    $short = mb_substr($text, 0, $maxLen);
+    $lastSpace = mb_strrpos($short, ' ');
+    if ($lastSpace > 6) {
+        $short = mb_substr($short, 0, $lastSpace);
+    }
+    return '<span title="' . htmlspecialchars($text) . '" style="cursor:help;border-bottom:1px dotted #999">' . htmlspecialchars($short) . '&hellip;</span>';
+}
+
 $thead = '<tr>
     <th>Mitglied</th>
     <th>Waffe</th>
     <th>ZSMM</th>
     <th>GM</th>';
 foreach ($defs as $df) {
-    $thead .= '<th>' . htmlspecialchars($df['Bezeichnung']) . '</th>';
+    $thead .= '<th>' . truncateHeader($df['Bezeichnung']) . '</th>';
 }
 $thead .= '</tr>';
 
@@ -76,13 +90,16 @@ $tbody = '';
 foreach ($members as $m) {
     $mid = $m['ID'];
     $fullname = htmlspecialchars($m['Name'].' '.$m['Vorname']);
-    $row  = '<tr>';
+    // Waffe vorselektieren, falls bereits gespeichert, ansonsten "Nehme nicht teil" (0)
+    $currentWaffe = isset($fragebogenData[$mid]['waffenID']) ? $fragebogenData[$mid]['waffenID'] : 0;
+    $nimmtNichtTeil = ($currentWaffe == 0) ? ' data-nimmt-nicht-teil="1"' : '';
+    $row  = '<tr'.$nimmtNichtTeil.'>';
     $row .= '<td>' . $fullname . '</td>';
 
     // Waffe-Dropdown
     $row .= '<td><select name="fragebogen['.$mid.'][waffenID]" class="form-control">';
-    // Waffe vorselektieren, falls bereits gespeichert, ansonsten Standardwert aus der Mitgliedstabelle
-    $currentWaffe = isset($fragebogenData[$mid]['waffenID']) ? $fragebogenData[$mid]['waffenID'] : $m['WaffenID'];
+    // "Nehme nicht teil" Option
+    $row .= '<option value="0" '.($currentWaffe == 0 ? 'selected' : '').'>Nehme nicht teil</option>';
     foreach ($waffen as $wf) {
         $wfID  = $wf['ID'];
         $wBez  = htmlspecialchars($wf['Bezeichnung']);
@@ -95,9 +112,9 @@ foreach ($members as $m) {
     $currentMannschaft = isset($fragebogenData[$mid]['mannschaft']) ? $fragebogenData[$mid]['mannschaft'] : 'nicht';
     $row .= '<td>
         <select name="fragebogen['.$mid.'][mannschaft]" class="form-control">
-          <option value="teil" '.($currentMannschaft==="teil" ? "selected" : "").'>Ich nehme teil</option>
-          <option value="nicht" '.($currentMannschaft==="nicht" ? "selected" : "").'>Ich nehme nicht teil</option>
-          <option value="evtl" '.($currentMannschaft==="evtl" ? "selected" : "").'>Ich nehme nur teil, wenn Gruppe füllt</option>
+          <option value="teil" '.($currentMannschaft==="teil" ? "selected" : "").'>Ja</option>
+          <option value="nicht" '.($currentMannschaft==="nicht" ? "selected" : "").'>Nein</option>
+          <option value="evtl" '.($currentMannschaft==="evtl" ? "selected" : "").'>Auffüllen</option>
         </select>
     </td>';
 
@@ -105,9 +122,9 @@ foreach ($members as $m) {
     $currentGruppen = isset($fragebogenData[$mid]['gruppen']) ? $fragebogenData[$mid]['gruppen'] : 'nicht';
     $row .= '<td>
         <select name="fragebogen['.$mid.'][gruppen]" class="form-control">
-          <option value="teil" '.($currentGruppen==="teil" ? "selected" : "").'>Ich nehme teil</option>
-          <option value="nicht" '.($currentGruppen==="nicht" ? "selected" : "").'>Ich nehme nicht teil</option>
-          <option value="evtl" '.($currentGruppen==="evtl" ? "selected" : "").'>Ich nehme nur teil, wenn Gruppe füllt</option>
+          <option value="teil" '.($currentGruppen==="teil" ? "selected" : "").'>Ja</option>
+          <option value="nicht" '.($currentGruppen==="nicht" ? "selected" : "").'>Nein</option>
+          <option value="evtl" '.($currentGruppen==="evtl" ? "selected" : "").'>Auffüllen</option>
         </select>
     </td>';
 
@@ -136,7 +153,7 @@ if (empty($members)) {
         $mid = $m['ID'];
         $fullname = htmlspecialchars($m['Name'].' '.$m['Vorname']);
 
-        $currentWaffe      = isset($fragebogenData[$mid]['waffenID'])  ? $fragebogenData[$mid]['waffenID']  : $m['WaffenID'];
+        $currentWaffe      = isset($fragebogenData[$mid]['waffenID'])  ? $fragebogenData[$mid]['waffenID']  : 0;
         $currentMannschaft = isset($fragebogenData[$mid]['mannschaft']) ? $fragebogenData[$mid]['mannschaft'] : 'nicht';
         $currentGruppen    = isset($fragebogenData[$mid]['gruppen'])    ? $fragebogenData[$mid]['gruppen']    : 'nicht';
 
@@ -146,7 +163,8 @@ if (empty($members)) {
         $mText  = $currentMannschaft === 'teil' ? 'MM ✓' : ($currentMannschaft === 'evtl' ? 'MM ?' : 'MM ✗');
         $gText  = $currentGruppen    === 'teil' ? 'GM ✓' : ($currentGruppen    === 'evtl' ? 'GM ?' : 'GM ✗');
 
-        $mobile_cards .= '<div class="mobile-card" data-mid="'.$mid.'">';
+        $nntMobile = ($currentWaffe == 0) ? ' data-nimmt-nicht-teil="1"' : '';
+        $mobile_cards .= '<div class="mobile-card" data-mid="'.$mid.'"'.$nntMobile.'>';
         $mobile_cards .= '<div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">';
         $mobile_cards .= '<span class="fw-semibold">'.$fullname.'</span>';
         $mobile_cards .= '<div class="d-flex align-items-center gap-1">';
@@ -163,6 +181,7 @@ if (empty($members)) {
         $mobile_cards .= '<label class="mobile-card-detail-label">Waffe</label>';
         $mobile_cards .= '<div class="mobile-card-detail-value">';
         $mobile_cards .= '<select class="form-select form-select-sm mobile-fb-select" data-mid="'.$mid.'" data-field="waffenID">';
+        $mobile_cards .= '<option value="0" '.($currentWaffe == 0 ? 'selected' : '').'>Nehme nicht teil</option>';
         foreach ($waffen as $wf) {
             $sel = ($wf['ID'] == $currentWaffe) ? 'selected' : '';
             $mobile_cards .= '<option value="'.$wf['ID'].'" '.$sel.'>'.htmlspecialchars($wf['Bezeichnung']).'</option>';

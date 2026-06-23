@@ -2,6 +2,9 @@
 //config.php
 // Basisverzeichnis der Anwendung definieren
 define('BASE_PATH', dirname(__DIR__));
+
+// Zentrale Session-Konfiguration (CSRF, Cross-Subdomain Cookies)
+require_once __DIR__ . '/session_config.inc.php';
 $config = require __DIR__ . '/../../msvjm_config.php';
 $dbConf = $config['db'];
 // Datenbankverbindungsinformationen

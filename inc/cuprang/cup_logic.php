@@ -79,6 +79,75 @@ if (!function_exists('cup_three_loser_index')) {
     }
 }
 
+if (!function_exists('cup_pair_states')) {
+    /**
+     * Bestimmt für eine Paarung den Status jedes Teilnehmers (Weiterkommen).
+     * Identische Logik wie inc/cup.php (Live-Editor):
+     *   - ManualWinner = Teilnehmer-ID (positiv = Gewinner, negativ = Verlierer bei 3er-Gleichstand)
+     *   - Advancers (1 oder 2) bestimmt bei 3er-Paarungen, wie viele weiterkommen (Default 2)
+     * Rückgabe: ['states' => [1=>'win'|'lose'|'', 2=>..., 3=>...], 'advCount' => int]
+     * (advCount = Anzahl Weiterkommender → 1 ⇒ Label "Gewinner", 2 ⇒ Label "Weiter")
+     */
+    function cup_pair_states(array $row): array {
+        $p1 = (int)($row['Participant1'] ?? 0);
+        $p2 = (int)($row['Participant2'] ?? 0);
+        $p3 = !empty($row['Participant3']) ? (int)$row['Participant3'] : 0;
+        $manual = (isset($row['ManualWinner']) && $row['ManualWinner'] !== '' && $row['ManualWinner'] !== null)
+                  ? (int)$row['ManualWinner'] : 0;
+        $states = [1 => '', 2 => '', 3 => ''];
+
+        if (!$p3) {
+            // 2er-Paarung
+            $r1 = is_numeric($row['Result1'] ?? null) ? (int)$row['Result1'] : null;
+            $r2 = is_numeric($row['Result2'] ?? null) ? (int)$row['Result2'] : null;
+            $winnerId = 0;
+            if ($manual > 0) {
+                $winnerId = $manual;
+            } elseif ($r1 !== null && $r2 !== null && $r1 !== $r2) {
+                $winnerId = ($r1 > $r2) ? $p1 : $p2;
+            }
+            if ($winnerId && $winnerId === $p1) { $states[1] = 'win'; $states[2] = 'lose'; }
+            elseif ($winnerId && $winnerId === $p2) { $states[2] = 'win'; $states[1] = 'lose'; }
+            return ['states' => $states, 'advCount' => 1];
+        }
+
+        // 3er-Paarung
+        $advancers = (isset($row['Advancers']) && (int)$row['Advancers'] === 1) ? 1 : 2;
+        $parts = [
+            ['id' => $p1, 'r' => (int)($row['Result1'] ?? 0), 'ls' => (int)($row['LowShot1'] ?? 0)],
+            ['id' => $p2, 'r' => (int)($row['Result2'] ?? 0), 'ls' => (int)($row['LowShot2'] ?? 0)],
+            ['id' => $p3, 'r' => (int)($row['Result3'] ?? 0), 'ls' => (int)($row['LowShot3'] ?? 0)],
+        ];
+        $anyResult = ($parts[0]['r'] > 0 || $parts[1]['r'] > 0 || $parts[2]['r'] > 0);
+        usort($parts, function ($a, $b) {
+            if ($a['r'] === $b['r']) return $b['ls'] <=> $a['ls'];
+            return $b['r'] <=> $a['r'];
+        });
+        $sortedIds = array_column($parts, 'id');
+
+        if ($advancers === 1) {
+            $winners = ($manual > 0) ? [$manual] : [$sortedIds[0]];
+        } else {
+            if ($manual < 0) {
+                $loserId = abs($manual);
+                $winners = array_values(array_filter($sortedIds, fn($id) => $id !== $loserId));
+            } elseif ($manual > 0) {
+                $winners = [$manual];
+                foreach ($sortedIds as $id) { if ($id !== $manual && count($winners) < 2) $winners[] = $id; }
+            } else {
+                $winners = [$sortedIds[0], $sortedIds[1]];
+            }
+        }
+
+        if (!$anyResult) return ['states' => $states, 'advCount' => $advancers];
+
+        foreach ([1 => $p1, 2 => $p2, 3 => $p3] as $slot => $id) {
+            $states[$slot] = in_array($id, $winners, true) ? 'win' : 'lose';
+        }
+        return ['states' => $states, 'advCount' => count($winners)];
+    }
+}
+
 if (!function_exists('cup_compute_ranking')) {
     /**
      * Erzeugt sortierte Rangliste mit RANG (ties mit gleichem Punkte+Tiefschuss gleich).

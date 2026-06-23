@@ -12,6 +12,8 @@ include_once 'function_date.php';
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
+require_once __DIR__ . '/../pdf/pdf_theme.php';
+
 class PDFGenerator {
     protected $conn;
     protected $selectedYear;
@@ -19,73 +21,12 @@ class PDFGenerator {
     protected $logoBase64;
     protected $useConfigPdf = false;
     
-    // Standard-CSS für alle PDFs
+    // Layout-Overrides der Basisklasse (Farben/Tabellen/Footer kommen aus pdf_theme.php)
     private $defaultStyles = '
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10px;
-        }
-        .container {
-            margin: 5px;
-            padding: 1px;
-        }
-        h2 {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-        h3 {
-            text-align: left;
-            margin-bottom: 10px;
-        }
-        h5 {
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .table th, .table td {
-            vertical-align: middle;
-            padding: 4px;
-            border: 0px solid #000;
-        }
-        .table-bordered th, .table-bordered td {
-            border: 1px solid #000;
-        }
-        .table th {
-            background-color: #343a40;
-            color: #fff;
-        }
-        .bold {
-            font-weight: bold;
-        }
-        .fixed-width {
-            width: 10%;
-        }
-        .name-width {
-            width: 20%;
-        }
-        .total-width {
-            width: 15%;
-        }
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            text-align: center;
-            font-size: 10px;
-            border-top: 1px;
-            background-color: #ffffff;
-        }
-        .footer hr {
-            border: none;
-            border-top: 1px solid #000;
-            margin: 0;
-        }
+        body { font-size: 10px; }
+        .fixed-width { width: 10%; }
+        .name-width { width: 20%; }
+        .total-width { width: 15%; }
     ';
     
     public function __construct($conn, $year = null) {
@@ -144,7 +85,7 @@ class PDFGenerator {
      * Erstellt den HTML-Header mit Logo und Titel
      */
     protected function createHTMLHeader($title, $customStyles = '', $bodyFontSize = 10) {
-        $styles = $this->defaultStyles . $customStyles;
+        $styles = pdf_theme_css() . $this->defaultStyles . $customStyles;
         
         // Überschreibe die body font-size wenn angegeben
         if ($bodyFontSize != 10) {
@@ -162,7 +103,7 @@ class PDFGenerator {
         <body>
         <div class="container">
             <div class="header">
-                <img src="' . $this->logoBase64 . '" alt="Logo" style="width:150px; height:auto;">
+                <img src="' . $this->logoBase64 . '" alt="Logo" style="width:120px; height:auto;">
             </div>';
     }
     

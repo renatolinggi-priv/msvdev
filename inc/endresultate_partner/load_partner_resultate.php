@@ -65,96 +65,53 @@ function generatePartnerResultRow($row) {
     $uniqueValues = array_unique($sieErValues);
     $sieErUniqueSum = array_sum($uniqueValues);
 
-    // Erstelle schöne Badge-Anzeige für Sie und Er mit Markierung
+    // Kompakte Dot-Anzeige für Sie und Er (Variante A)
     $sieErDisplay = '';
     if (!empty($sieErSchuesse)) {
-        $valueCount = array_count_values($sieErValues);
-        $sieErDisplay = '<div class="d-flex flex-wrap gap-1 justify-content-center align-items-center mb-1">';
+        // Tracke welche Werte bereits gezählt wurden (global über beide Quellen)
+        $seenValues = [];
 
-        // Zeige Partner-Schüsse (rosa/pink)
-        $hasPartnerShots = false;
-        foreach ($sieErSchuesse as $shotData) {
-            if ($shotData['source'] === 'partner') {
-                $hasPartnerShots = true;
-                $intShot = intval($shotData['value']);
+        $sieErDisplay = '<div class="dot-row">';
 
-                // Badge-Stil für Partner (rosa/pink)
-                if ($valueCount[$intShot] > 1) {
-
-                    // Duplikat prüfen
-                    if (isset($valueCount[$intShot . '_shown'])) {
-
-                        // Duplikat - durchgestrichen
-                        $sieErDisplay .= '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" style="font-size: 0.7rem; text-decoration: line-through; opacity: 0.5;" title="Partnerin (Duplikat - zählt nicht)">' . $shotData['value'] . '</span>';
-                    } else {
-
-                        // Erstes Vorkommen
-                        $sieErDisplay .= '<span class="badge bg-danger text-white" style="font-size: 0.7rem;" title="Partnerin">' . $shotData['value'] . '</span>';
-                        $valueCount[$intShot . '_shown'] = true;
-                    }
+        // Partner-Schüsse (1-5)
+        $partnerCount = 0;
+        for ($i = 1; $i <= 5; $i++) {
+            $value = $row['SieErSchuss' . $i] ?? 0;
+            if ($value > 0) {
+                $partnerCount++;
+                $intVal = intval($value);
+                $isUnique = !in_array($intVal, $seenValues);
+                if ($isUnique) {
+                    $seenValues[] = $intVal;
+                    $sieErDisplay .= '<span class="shot-dot dot-partner unique">' . $value . '</span>';
                 } else {
-
-                    // Einzigartiger Wert
-                    $sieErDisplay .= '<span class="badge bg-danger text-white" style="font-size: 0.7rem;" title="Partnerin">' . $shotData['value'] . '</span>';
+                    $sieErDisplay .= '<span class="shot-dot dot-partner dot-struck">' . $value . '</span>';
                 }
+            } else {
+                $sieErDisplay .= '<span class="shot-dot dot-empty">–</span>';
             }
         }
-        if ($hasPartnerShots) {
 
-            // Trennstrich zwischen Partner und Mitglied
-            $sieErDisplay .= '<span class="text-muted mx-1">|</span>';
-        }
+        $sieErDisplay .= '<span class="dot-sep">│</span>';
 
-        // Zeige Mitglied-Schüsse (blau)
-        // Reset für zweite Durchgang (falls gleiche Werte bei Partner und Mitglied)
-        $tempValueCount = array_count_values($sieErValues);
-        foreach ($sieErSchuesse as $shotData) {
-            if ($shotData['source'] === 'partner') {
-                $intShot = intval($shotData['value']);
-                if (isset($tempValueCount[$intShot . '_partner_shown'])) {
-                    continue;
-                }
-                $tempValueCount[$intShot . '_partner_shown'] = true;
-            }
-        }
-        foreach ($sieErSchuesse as $shotData) {
-            if ($shotData['source'] === 'mitglied') {
-                $intShot = intval($shotData['value']);
-
-                // Badge-Stil für Mitglied (blau)
-                if ($valueCount[$intShot] > 1) {
-
-                    // Prüfe ob dieser Wert schon vom Partner oder früher vom Mitglied kam
-                    if (isset($tempValueCount[$intShot . '_partner_shown']) || isset($tempValueCount[$intShot . '_mitglied_shown'])) {
-
-                        // Duplikat - durchgestrichen
-                        $sieErDisplay .= '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.7rem; text-decoration: line-through; opacity: 0.5;" title="Mitglied (Duplikat - zählt nicht)">' . $shotData['value'] . '</span>';
-                    } else {
-
-                        // Erstes Vorkommen beim Mitglied
-                        $sieErDisplay .= '<span class="badge bg-primary text-white" style="font-size: 0.7rem;" title="Mitglied">' . $shotData['value'] . '</span>';
-                        $tempValueCount[$intShot . '_mitglied_shown'] = true;
-                    }
+        // Mitglied-Schüsse (6-10)
+        for ($i = 6; $i <= 10; $i++) {
+            $value = $row['SieErSchuss' . $i] ?? 0;
+            if ($value > 0) {
+                $intVal = intval($value);
+                $isUnique = !in_array($intVal, $seenValues);
+                if ($isUnique) {
+                    $seenValues[] = $intVal;
+                    $sieErDisplay .= '<span class="shot-dot dot-mitglied unique">' . $value . '</span>';
                 } else {
-
-                    // Einzigartiger Wert
-                    if (isset($tempValueCount[$intShot . '_partner_shown'])) {
-
-                        // War schon beim Partner - durchstreichen
-                        $sieErDisplay .= '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.7rem; text-decoration: line-through; opacity: 0.5;" title="Mitglied (Duplikat vom Partner - zählt nicht)">' . $shotData['value'] . '</span>';
-                    } else {
-                        $sieErDisplay .= '<span class="badge bg-primary text-white" style="font-size: 0.7rem;" title="Mitglied">' . $shotData['value'] . '</span>';
-                    }
+                    $sieErDisplay .= '<span class="shot-dot dot-mitglied dot-struck">' . $value . '</span>';
                 }
+            } else {
+                $sieErDisplay .= '<span class="shot-dot dot-empty">–</span>';
             }
         }
-        $sieErDisplay .= '</div>';
 
-        // Legende und Total
-        $sieErDisplay .= '<div class="d-flex justify-content-center gap-2 align-items-center" style="font-size: 0.7rem;">';
-        $sieErDisplay .= '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="bi bi-heart-fill me-1"></i>Partner</span>';
-        $sieErDisplay .= '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-person-fill me-1"></i>Mitglied</span>';
-        $sieErDisplay .= '<span class="badge bg-secondary"><i class="bi bi-calculator me-1"></i>Total: ' . $sieErUniqueSum . '</span>';
+        $sieErDisplay .= '<span class="sie-er-total">' . $sieErUniqueSum . '</span>';
         $sieErDisplay .= '</div>';
     } else {
         $sieErDisplay = '<span class="text-muted">-</span>';
@@ -165,21 +122,15 @@ function generatePartnerResultRow($row) {
     }
 
     // Build HTML with proper escaping
-    $html = "<tr>";
-    $html .= "<td>" . htmlspecialchars($row['PartnerName'] ?? '', ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td><a href='#' class='edit-partner-btn' data-id='" . htmlspecialchars($row['PartnerID'], ENT_QUOTES, 'UTF-8') . "'>" .
-             htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8') . "</a></td>";
+    $id = htmlspecialchars($row['PartnerID'], ENT_QUOTES, 'UTF-8');
+    $name = htmlspecialchars($row['PartnerName'] ?? '', ENT_QUOTES, 'UTF-8');
+
+    $html = "<tr class='hybrid-row' data-partner-id='{$id}'>";
+    $html .= "<td>{$name}</td>";
+    $html .= "<td>" . htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8') . "</td>";
     $html .= "<td class='text-center'>" . number_format($endstichSumme, 1) . "</td>";
     $html .= "<td class='text-center'>" . $sieErDisplay . "</td>";
     $html .= "<td class='text-center'>" . number_format($schwiniSumme, 1) . "</td>";
-
-    // Actions column with icon-only buttons
-    $html .= "<td class='text-center'>";
-    $html .= "<button class='btn btn-outline-primary btn-sm me-1 edit-partner-btn' data-id='" . htmlspecialchars($row['PartnerID'], ENT_QUOTES, 'UTF-8') . "' title='Bearbeiten'>";
-    $html .= "<i class='bi bi-pencil'></i></button>";
-    $html .= "<button class='btn btn-outline-danger btn-sm delete-partner-btn' data-id='" . htmlspecialchars($row['PartnerID'], ENT_QUOTES, 'UTF-8') . "' title='Löschen'>";
-    $html .= "<i class='bi bi-trash'></i></button>";
-    $html .= "</td>";
     $html .= "</tr>";
     return $html;
 }
@@ -193,18 +144,12 @@ function generatePartnerResultRow($row) {
 
 function generateGuestWithoutResultRow($guest) {
     $guestName = htmlspecialchars($guest['GuestName'] ?? '', ENT_QUOTES, 'UTF-8');
-    $html = "<tr class='table-warning'>";
-    $html .= "<td>" . $guestName . " <span class='badge bg-warning text-dark ms-2'><i class='bi bi-clock-history me-1'></i>Gast (noch keine Resultate)</span></td>";
+    $html = "<tr class='hybrid-row table-warning' data-guest-name='{$guestName}'>";
+    $html .= "<td>" . $guestName . " <span class='badge bg-warning text-dark ms-2'>Gast</span></td>";
     $html .= "<td class='text-muted'><i class='bi bi-dash'></i></td>";
-    $html .= "<td class='text-center text-muted'><i class='bi bi-dash'></i></td>";
-    $html .= "<td class='text-center text-muted'><i class='bi bi-dash'></i></td>";
-    $html .= "<td class='text-center text-muted'><i class='bi bi-dash'></i></td>";
-
-    // Actions column - nur "Erfassen" Button für Gäste ohne Resultate
-    $html .= "<td class='text-center'>";
-    $html .= "<button class='btn btn-success btn-sm add-guest-result-btn' data-guest-name='" . $guestName . "' title='Resultate erfassen'>";
-    $html .= "<i class='bi bi-plus-circle me-1'></i>Erfassen</button>";
-    $html .= "</td>";
+    $html .= "<td class='text-center text-muted'>-</td>";
+    $html .= "<td class='text-center text-muted'>-</td>";
+    $html .= "<td class='text-center text-muted'>-</td>";
     $html .= "</tr>";
     return $html;
 }
@@ -215,7 +160,7 @@ include '../config.php';
 // Check database connection with proper error handling
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
-    echo "<tr><td colspan='6' class='text-center text-danger'>Datenbankverbindung fehlgeschlagen</td></tr>";
+    echo "<tr><td colspan='5' class='text-center text-danger'>Datenbankverbindung fehlgeschlagen</td></tr>";
     exit;
 }
 
@@ -223,7 +168,7 @@ if ($conn->connect_error) {
 $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
-    echo "<tr><td colspan='6' class='text-center text-warning'>
+    echo "<tr><td colspan='5' class='text-center text-warning'>
             <i class='bi bi-exclamation-triangle me-2'></i>
             Die Tabelle 'endresultate_partner' existiert noch nicht.<br>
             <small>Bitte führe zuerst das SQL-Setup-Skript aus: <code>inc/endresultate_partner/database_setup.sql</code></small>
@@ -339,13 +284,13 @@ try {
 
     // Wenn weder Partner noch Gäste vorhanden sind
     if (!$hasResults) {
-        echo "<tr><td colspan='6' class='text-center py-4'>Noch keine Partnerinnen oder Gäste erfasst für das Jahr $year.</td></tr>";
+        echo "<tr><td colspan='5' class='text-center py-4'>Noch keine Partnerinnen oder Gäste erfasst für das Jahr $year.</td></tr>";
     }
 } catch (Exception $e) {
 
     // Log error for debugging while showing user-friendly message
     error_log("Database error in load_partner_resultate.php: " . $e->getMessage());
-    echo "<tr><td colspan='6' class='text-center text-danger'>Fehler beim Laden der Daten. Bitte versuche es später erneut.</td></tr>";
+    echo "<tr><td colspan='5' class='text-center text-danger'>Fehler beim Laden der Daten. Bitte versuche es später erneut.</td></tr>";
 } finally {
 
     // Ensure connection is always closed

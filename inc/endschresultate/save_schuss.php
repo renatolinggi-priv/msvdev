@@ -29,7 +29,7 @@ function saveSchuss($conn, $mitgliedID, $jahr, $schussData, $table, $fields) {
     $checkResult = $checkStmt->get_result();
 
     $fieldValues = array_map(function($field) use ($schussData) {
-        return intval($schussData[$field]);
+        return intval($schussData[$field] ?? 0);
     }, $fields);
 
     if ($checkResult->num_rows > 0) {
@@ -87,7 +87,7 @@ function saveSieUnder($conn, $mitgliedID, $jahr, $schussData, $fields) {
     $checkResult = $checkStmt->get_result();
 
     $fieldValues = array_map(function($field) use ($schussData) {
-        return intval($schussData[$field]);
+        return intval($schussData[$field] ?? 0);
     }, $fields);
 
     if ($checkResult->num_rows > 0) {
@@ -121,6 +121,18 @@ function saveSieUnder($conn, $mitgliedID, $jahr, $schussData, $fields) {
     $stmt->close();
 }
 
+/**
+ * Prüft ob mindestens ein Feld im Datensatz einen Wert > 0 hat
+ */
+function hasNonZeroValues($schussData, $fields) {
+    foreach ($fields as $field) {
+        if (isset($schussData[$field]) && intval($schussData[$field]) > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Felder für die Tabellen
 $endstichFields = ['Schuss1', 'Schuss2', 'Schuss3', 'Schuss4', 'Schuss5', 'Schuss6', 'Schuss7', 'Schuss8', 'Schuss9', 'Schuss10', 'Tiefschuss', 'AbsendenAnmeldung'];
 $schwiniFields = ['P1Schuss1', 'P1Schuss2', 'P1Schuss3', 'P1Schuss4', 'P1Schuss5', 'P1Schuss6', 'P2Schuss1', 'P2Schuss2', 'P2Schuss3', 'P2Schuss4', 'P2Schuss5', 'P2Schuss6'];
@@ -129,15 +141,34 @@ $glueckFields = ['GSchuss1', 'GSchuss2', 'GSchuss3'];
 $zabigFields = ['ZSchuss1', 'ZSchuss2', 'ZSchuss3', 'ZSchuss4', 'ZSchuss5', 'ZSchuss6', 'Ansage'];
 $sieunderFields = ['SieErSchuss6', 'SieErSchuss7', 'SieErSchuss8', 'SieErSchuss9', 'SieErSchuss10'];
 
-// Daten speichern
+// Daten speichern – nur wenn mindestens ein Wert > 0 vorhanden ist (verhindert Phantom-Datensätze)
 try {
-    saveSchuss($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($endstichFields)), 'endstich', $endstichFields);
-    saveSchuss($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($schwiniFields)), 'schwini', $schwiniFields);
-    saveSchuss($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($kunstFields)), 'kunst', $kunstFields);
-    saveSchuss($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($glueckFields)), 'glueck', $glueckFields);
-    saveSchuss($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($zabigFields)), 'zabig', $zabigFields);
+    $endstichData = array_intersect_key($schussData, array_flip($endstichFields));
+    if (hasNonZeroValues($schussData, $endstichFields) || !empty($schussData['AbsendenAnmeldung'] ?? '')) {
+        saveSchuss($conn, $mitgliedID, $jahr, $endstichData, 'endstich', $endstichFields);
+    }
 
-    // Sie und Er speichern - NUR wenn Werte vorhanden sind
+    $schwiniData = array_intersect_key($schussData, array_flip($schwiniFields));
+    if (hasNonZeroValues($schussData, $schwiniFields)) {
+        saveSchuss($conn, $mitgliedID, $jahr, $schwiniData, 'schwini', $schwiniFields);
+    }
+
+    $kunstData = array_intersect_key($schussData, array_flip($kunstFields));
+    if (hasNonZeroValues($schussData, $kunstFields)) {
+        saveSchuss($conn, $mitgliedID, $jahr, $kunstData, 'kunst', $kunstFields);
+    }
+
+    $glueckData = array_intersect_key($schussData, array_flip($glueckFields));
+    if (hasNonZeroValues($schussData, $glueckFields)) {
+        saveSchuss($conn, $mitgliedID, $jahr, $glueckData, 'glueck', $glueckFields);
+    }
+
+    $zabigData = array_intersect_key($schussData, array_flip($zabigFields));
+    if (hasNonZeroValues($schussData, $zabigFields) || !empty($schussData['Ansage'] ?? '')) {
+        saveSchuss($conn, $mitgliedID, $jahr, $zabigData, 'zabig', $zabigFields);
+    }
+
+    // Sie und Er speichern – hat eigene Prüfung in saveSieUnder()
     saveSieUnder($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($sieunderFields)), $sieunderFields);
 
     $conn->close();

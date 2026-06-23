@@ -393,29 +393,29 @@ class MunitionskaufReport extends PDFGenerator {
             }
             
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 20pt;
                 margin: 15px 0;
                 text-align: center;
             }
             
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 14pt;
                 margin: 5px 0 20px 0;
                 text-align: center;
             }
             
             h3 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 14pt;
                 margin: 20px 0 10px 0;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 5px;
             }
             
             h4 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 12pt;
                 margin: 15px 0 10px 0;
             }
@@ -428,17 +428,18 @@ class MunitionskaufReport extends PDFGenerator {
             }
             
             .main-table th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
                 padding: 8px 5px;
                 text-align: left;
                 font-weight: bold;
-                border: 1px solid #003366;
+                border: 1px solid #e2e8f0;
+                border-bottom: 2px solid #cbd5e0;
             }
-            
+
             .main-table td {
                 padding: 6px 5px;
-                border: 1px solid #ddd;
+                border: 1px solid #e2e8f0;
             }
             
             .main-table tbody tr:nth-child(even) {
@@ -502,7 +503,7 @@ class MunitionskaufReport extends PDFGenerator {
             
             .totals-row td {
                 padding: 10px 5px;
-                border-top: 2px solid #003366;
+                border-top: 2px solid #3b5998;
             }
             
             .total-label {

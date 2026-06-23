@@ -105,17 +105,17 @@ if ($hersteller === 'Akura Einsiedeln') {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #003366;
+                border-bottom: 2px solid #3b5998;
                 padding-bottom: 15px;
             }
             h1 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 18pt;
                 margin: 10px 0;
                 font-weight: bold;
             }
             h2 {
-                color: #003366;
+                color: #3b5998;
                 font-size: 16pt;
                 margin: 5px 0;
             }
@@ -125,8 +125,9 @@ if ($hersteller === 'Akura Einsiedeln') {
                 margin: 20px 0;
             }
             th {
-                background-color: #003366;
-                color: white;
+                background-color: #eef2f7;
+                color: #2d3748;
+                border-bottom: 2px solid #cbd5e0;
                 padding: 10px;
                 text-align: left;
                 font-weight: bold;
@@ -140,7 +141,7 @@ if ($hersteller === 'Akura Einsiedeln') {
             }
             .wanderpreis-name {
                 font-weight: bold;
-                color: #003366;
+                color: #3b5998;
             }
             .gravur-info {
                 color: #666;
@@ -157,13 +158,13 @@ if ($hersteller === 'Akura Einsiedeln') {
             .rechnung-box {
                 background-color: #f0f0f0;
                 padding: 15px;
-                border-left: 4px solid #003366;
+                border-left: 4px solid #3b5998;
                 margin-top: 30px;
             }
             .rechnung-titel {
                 font-weight: bold;
                 font-size: 12pt;
-                color: #003366;
+                color: #3b5998;
                 margin-bottom: 10px;
             }
             .rechnung-adresse {
@@ -281,12 +282,12 @@ if ($hersteller === 'Akura Einsiedeln') {
             @page { margin: 2cm; }
             body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10pt; }
             .header { text-align: center; margin-bottom: 20px; }
-            h1 { color: #003366; font-size: 18pt; }
+            h1 { color: #3b5998; font-size: 18pt; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th { background-color: #003366; color: white; padding: 8px; text-align: left; }
-            td { padding: 6px; border-bottom: 1px solid #ddd; }
-            .status-definitiv { color: green; font-weight: bold; }
-            .status-wandernd { color: orange; font-weight: bold; }
+            th { background-color: #eef2f7; color: #2d3748; border-bottom: 2px solid #cbd5e0; padding: 8px; text-align: left; }
+            td { padding: 6px; border-bottom: 1px solid #e2e8f0; }
+            .status-definitiv { color: #2f855a; font-weight: bold; }
+            .status-wandernd { color: #b7791f; font-weight: bold; }
         </style>
     </head>
     <body>

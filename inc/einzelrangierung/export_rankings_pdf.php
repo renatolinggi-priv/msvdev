@@ -127,6 +127,13 @@ try {
  */
 function generatePdfHtml($rankings, $year) {
     $currentDate = date('d.m.Y H:i');
+
+    // Vereinslogo als Base64 einbetten (robuster als externe URL)
+    $logoBase64 = '';
+    $logoPath = __DIR__ . '/dat/MSVWilen_Logo.jpg';
+    if (file_exists($logoPath)) {
+        $logoBase64 = 'data:' . mime_content_type($logoPath) . ';base64,' . base64_encode(file_get_contents($logoPath));
+    }
     
     // Statistiken berechnen
     $totalRankings = count($rankings);
@@ -172,10 +179,16 @@ function generatePdfHtml($rankings, $year) {
             .header {
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 2px solid #333;
+                border-bottom: 2px solid #cbd5e0;
                 padding-bottom: 15px;
             }
-            
+
+            .header .logo {
+                width: 90px;
+                height: auto;
+                margin-bottom: 10px;
+            }
+
             .header h1 {
                 font-size: 20px;
                 margin: 0 0 10px 0;
@@ -227,7 +240,7 @@ function generatePdfHtml($rankings, $year) {
             .stats-value {
                 font-size: 16px;
                 font-weight: bold;
-                color: #007bff;
+                color: #3b5998;
             }
             
             .anlass-section {
@@ -239,7 +252,7 @@ function generatePdfHtml($rankings, $year) {
                 background-color: #e9ecef;
                 padding: 10px;
                 margin-bottom: 10px;
-                border-left: 4px solid #007bff;
+                border-left: 4px solid #3b5998;
                 font-weight: bold;
                 font-size: 12px;
             }
@@ -252,14 +265,15 @@ function generatePdfHtml($rankings, $year) {
             
             .rankings-table th,
             .rankings-table td {
-                border: 1px solid #000;
+                border: 1px solid #e2e8f0;
                 padding: 6px 8px;
                 text-align: left;
                 vertical-align: top;
             }
-            
+
             .rankings-table th {
-                background-color: #f0f0f0;
+                background-color: #eef2f7;
+                color: #2d3748;
                 font-weight: bold;
                 text-align: center;
                 font-size: 10px;
@@ -285,14 +299,14 @@ function generatePdfHtml($rankings, $year) {
                 min-width: 20px;
             }
             
-            .rang-1 { background-color: #ffd700; color: #333; }
-            .rang-2 { background-color: #c0c0c0; color: #333; }
-            .rang-3 { background-color: #cd7f32; color: white; }
-            .rang-other { background-color: #6c757d; }
-            
+            .rang-1 { background-color: #fdf6e3; color: #8a6d1c; }
+            .rang-2 { background-color: #f1f1f1; color: #6b7280; }
+            .rang-3 { background-color: #f7ede2; color: #9c6b3f; }
+            .rang-other { background-color: #eef2f7; color: #64748b; }
+
             .preis-amount {
                 font-weight: bold;
-                color: #28a745;
+                color: #2f855a;
             }
             
             .summary-section {
@@ -338,6 +352,7 @@ function generatePdfHtml($rankings, $year) {
     </head>
     <body>
         <div class="header">
+            ' . ($logoBase64 ? '<img src="' . $logoBase64 . '" class="logo" alt="MSV Wilen Logo">' : '') . '
             <h1>Einzelrangierungen ' . $year . '</h1>
             <h2>Militärschützenverein Wilen</h2>
             <p style="font-size: 10px; color: #666;">Erstellt am: ' . $currentDate . '</p>

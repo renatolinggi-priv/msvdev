@@ -2,14 +2,11 @@
 // api/portal_umfrage_save.php - Antworten für eine Umfrage speichern
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/_umfrage_antwort.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-function json_error($msg, $code = 400) {
-    http_response_code($code);
-    echo json_encode(['success' => false, 'message' => $msg]);
-    exit;
-}
+// json_error() wird zentral in auth.php bereitgestellt
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_error('Ungültige Anfrage', 405);
@@ -18,8 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 requireLogin();
 
 // CSRF prüfen
-if (empty($_POST['csrf_token']) || empty($_SESSION['csrf_token'])
-    || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+if (!validateCsrfRequest()) {
     json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
 }
 
@@ -36,12 +32,17 @@ if ($umfrage_id < 1) {
 $db = getDB();
 
 // Umfrage prüfen
-$stmt = $db->prepare("SELECT id, status FROM umfragen WHERE id = ?");
+$stmt = $db->prepare("SELECT id, status, zielgruppe FROM umfragen WHERE id = ?");
 $stmt->execute([$umfrage_id]);
 $umfrage = $stmt->fetch();
 
 if (!$umfrage || $umfrage['status'] !== 'aktiv') {
     json_error('Diese Umfrage ist nicht mehr aktiv.');
+}
+// Zielgruppen-Check: Vorstand-interne Umfragen nur für Vorstand/Admin beantwortbar
+if (($umfrage['zielgruppe'] ?? 'alle') === 'vorstand'
+    && !in_array($_SESSION['user_role'] ?? 'mitglied', ['admin', 'vorstand'])) {
+    json_error('Kein Zugriff auf diese Umfrage.', 403);
 }
 
 // Fragen laden (für Validierung)
@@ -94,22 +95,11 @@ try {
         // Nur speichern wenn Wert vorhanden (oder Pflichtfeld, was oben schon geprüft wurde)
         if ($val === '' && !$f['pflichtfeld']) {
             // Optionales Feld ohne Antwort: bestehende Antwort löschen falls vorhanden
-            $db->prepare("DELETE FROM umfragen_antworten WHERE frage_id = ? AND mitglied_id = ?")->execute([$frage_id, $mitglied_id]);
+            deleteUmfrageAntwort($db, $frage_id, $mitglied_id);
             continue;
         }
 
-        // Upsert
-        $stmtCheck = $db->prepare("SELECT id FROM umfragen_antworten WHERE frage_id = ? AND mitglied_id = ? LIMIT 1");
-        $stmtCheck->execute([$frage_id, $mitglied_id]);
-        $existing = $stmtCheck->fetch();
-
-        if ($existing) {
-            $db->prepare("UPDATE umfragen_antworten SET antwort = ?, beantwortet_am = NOW() WHERE id = ?")
-                ->execute([$val, $existing['id']]);
-        } else {
-            $db->prepare("INSERT INTO umfragen_antworten (umfrage_id, frage_id, mitglied_id, antwort) VALUES (?, ?, ?, ?)")
-                ->execute([$umfrage_id, $frage_id, $mitglied_id, $val]);
-        }
+        upsertUmfrageAntwort($db, $umfrage_id, $frage_id, $mitglied_id, $val);
     }
 
     $db->commit();
@@ -117,5 +107,6 @@ try {
 
 } catch (Exception $e) {
     $db->rollBack();
-    json_error('Fehler beim Speichern: ' . $e->getMessage(), 500);
+    error_log('portal_umfrage_save: ' . $e->getMessage());
+    json_error('Fehler beim Speichern. Bitte versuche es erneut.', 500);
 }

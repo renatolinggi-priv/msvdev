@@ -74,63 +74,31 @@ include 'portal_header.php';
 ?>
 
 <style>
-.doc-list { list-style: none; padding: 0; }
-.doc-item {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 1rem 1.25rem;
-    margin-bottom: 0.75rem;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: all 0.2s;
-}
-.doc-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.1); }
-.doc-icon {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3rem;
-    flex-shrink: 0;
-}
-.doc-icon.pdf { background: #fce4ec; color: #c62828; }
-.doc-icon.img { background: #e8f5e9; color: #2e7d32; }
-.doc-icon.doc { background: #e3f2fd; color: #1565c0; }
-.doc-icon.xls { background: #e8f5e9; color: #1b5e20; }
-.doc-info { flex: 1; min-width: 0; }
-.doc-info .title { font-weight: 600; color: #2d3748; }
-.doc-info .meta { font-size: 0.8rem; color: #718096; }
-.doc-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+/* Generische Doku-Liste nutzt jetzt .p-list / .p-list-row / .p-chip aus portal.css.
+   Hier bleibt nur Seitenspezifisches: Upload-Bereich, Badges, Import-Ansicht. */
 .upload-area {
     background: #f8f9fa;
     border: 2px dashed #dee2e6;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    border-radius: var(--p-radius);
+    padding: var(--p-4);
+    margin-bottom: var(--p-4);
 }
 .visibility-badge {
     font-size: 0.7rem;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
 }
-@media (max-width: 767.98px) {
-    .doc-item { flex-wrap: wrap; }
-    .doc-actions { width: 100%; justify-content: flex-end; margin-top: 0.5rem; }
-}
-/* Import-Modal */
+/* Import-Modal (seitenspezifisch, JS-getrieben) */
 #importModal .modal-dialog { max-width: 900px; }
 #importPreview { max-height: 400px; overflow-y: auto; }
 #importPreview table { font-size: 0.85rem; }
-.match-exact { color: #28a745; }
+.match-exact { color: var(--success-color); }
 .match-fuzzy { color: #e67e00; }
-.match-none { color: #dc3545; }
+.match-none { color: var(--danger-color); }
 .import-stats {
-    display: flex; gap: 1rem; flex-wrap: wrap;
-    padding: 0.75rem 1rem; background: #f8f9fa;
-    border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;
+    display: flex; gap: var(--p-4); flex-wrap: wrap;
+    padding: var(--p-3) var(--p-4); background: #f8f9fa;
+    border-radius: var(--p-radius-sm); margin-bottom: var(--p-4); font-size: 0.9rem;
 }
 .import-stats .stat-item { display: flex; align-items: center; gap: 0.3rem; }
 </style>
@@ -178,41 +146,56 @@ include 'portal_header.php';
         <input type="hidden" name="typ" value="einsatzplan">
         <div class="row g-2">
             <div class="col-md-4">
-                <div class="input-group">
-                    <select class="form-select" name="titel_typ" id="uploadTitelTyp" required>
-                        <option value="">– Typ wählen –</option>
-                        <option value="Obligatorisch">Obligatorisch</option>
-                        <option value="Feldschiessen">Feldschiessen</option>
-                        <option value="Schlossturm">Schlossturm</option>
-                        <option value="Wyler Chilbi">Wyler Chilbi</option>
-                        <option value="Diverse">Diverse...</option>
-                    </select>
-                    <input type="text" class="form-control d-none" id="uploadTitelDiverse" placeholder="Name eingeben">
+                <div class="p-field mb-0">
+                    <label>Typ</label>
+                    <div class="input-group">
+                        <select class="form-select" name="titel_typ" id="uploadTitelTyp" required>
+                            <option value="">– Typ wählen –</option>
+                            <option value="Obligatorisch">Obligatorisch</option>
+                            <option value="Feldschiessen">Feldschiessen</option>
+                            <option value="Schlossturm">Schlossturm</option>
+                            <option value="Wyler Chilbi">Wyler Chilbi</option>
+                            <option value="Diverse">Diverse...</option>
+                        </select>
+                        <input type="text" class="form-control d-none" id="uploadTitelDiverse" placeholder="Name eingeben">
+                    </div>
                 </div>
                 <input type="hidden" name="titel" id="uploadTitel">
             </div>
             <div class="col-md-2">
-                <input type="date" class="form-control" name="datum" value="<?php echo date('Y-m-d'); ?>" required>
+                <div class="p-field mb-0">
+                    <label>Datum</label>
+                    <input type="date" class="form-control" name="datum" value="<?php echo date('Y-m-d'); ?>" required>
+                </div>
             </div>
             <div class="col-md-3">
-                <select class="form-select" name="sichtbar_fuer">
-                    <?php if (isAdmin()): ?>
-                    <option value="admin">Nur Admin</option>
-                    <?php endif; ?>
-                    <option value="vorstand" selected>Vorstand</option>
-                    <option value="alle_mitglieder">Alle Mitglieder</option>
-                </select>
+                <div class="p-field mb-0">
+                    <label>Sichtbar für</label>
+                    <select class="form-select" name="sichtbar_fuer">
+                        <?php if (isAdmin()): ?>
+                        <option value="admin">Nur Admin</option>
+                        <?php endif; ?>
+                        <option value="vorstand" selected>Vorstand</option>
+                        <option value="alle_mitglieder">Alle Mitglieder</option>
+                    </select>
+                </div>
             </div>
             <div class="col-md-4">
-                <input type="file" class="form-control" name="datei" accept=".pdf,.docx,.xlsx,.xls,.jpg,.jpeg,.png" required>
+                <div class="p-field mb-0">
+                    <label>Datei</label>
+                    <input type="file" class="form-control" name="datei" accept=".pdf,.docx,.xlsx,.xls,.jpg,.jpeg,.png" required>
+                </div>
             </div>
         </div>
         <div class="row g-2 mt-1">
             <div class="col-md-10">
-                <input type="text" class="form-control" name="beschreibung" placeholder="Beschreibung (optional)">
+                <div class="p-field mb-0">
+                    <label>Beschreibung</label>
+                    <input type="text" class="form-control" name="beschreibung" placeholder="Optional">
+                </div>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-success w-100" id="uploadBtn">
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success w-100" id="uploadBtn">
                     <i class="bi bi-upload me-1"></i>Hochladen
                 </button>
             </div>
@@ -228,7 +211,7 @@ include 'portal_header.php';
     <p class="text-muted mt-3">Keine Einsatzpläne für <?php echo $selected_year; ?> vorhanden</p>
 </div>
 <?php else: ?>
-<div class="doc-list">
+<div class="p-list">
     <?php foreach ($dokumente as $doc):
         $ext = strtolower(pathinfo($doc['dateiname'], PATHINFO_EXTENSION));
         $icon_class = 'doc';
@@ -236,14 +219,16 @@ include 'portal_header.php';
         elseif (in_array($ext, ['xlsx','xls'])) $icon_class = 'xls';
         elseif (in_array($ext, ['jpg','jpeg','png'])) $icon_class = 'img';
         $icon_name = match($icon_class) { 'pdf' => 'pdf', 'xls' => 'excel', 'img' => 'image', default => 'word' };
+        // Chip-Farbvariante (portal.css): PDF=rot, IMG/XLS=grün, DOC=blau
+        $chip_color = match($icon_class) { 'pdf' => 'red', 'img' => 'green', 'xls' => 'green', default => 'blue' };
         $size_kb = round(($doc['dateigroesse'] ?? 0) / 1024);
     ?>
-    <div class="doc-item" id="doc-<?php echo $doc['id']; ?>">
-        <div class="doc-icon <?php echo $icon_class; ?>">
+    <div class="p-list-row" id="doc-<?php echo $doc['id']; ?>">
+        <div class="p-chip lg <?php echo $chip_color; ?>">
             <i class="bi bi-file-earmark-<?php echo $icon_name; ?>"></i>
         </div>
-        <div class="doc-info">
-            <div class="title">
+        <div class="p-list-body">
+            <div class="p-list-title">
                 <?php echo htmlspecialchars($doc['titel']); ?>
                 <?php if ($doc['sichtbar_fuer'] == 'admin'): ?>
                     <span class="badge bg-danger visibility-badge">Nur Admin</span>
@@ -253,7 +238,7 @@ include 'portal_header.php';
                     <span class="badge bg-success visibility-badge">Alle</span>
                 <?php endif; ?>
             </div>
-            <div class="meta">
+            <div class="p-list-meta">
                 <?php if ($doc['datum']): ?>
                     <i class="bi bi-calendar me-1"></i><?php echo date('d.m.Y', strtotime($doc['datum'])); ?> &middot;
                 <?php endif; ?>
@@ -263,30 +248,31 @@ include 'portal_header.php';
                 <?php endif; ?>
             </div>
             <?php if (!empty($doc['beschreibung'])): ?>
-            <div class="meta mt-1"><?php echo htmlspecialchars($doc['beschreibung']); ?></div>
+            <div class="p-list-meta mt-1"><?php echo htmlspecialchars($doc['beschreibung']); ?></div>
             <?php endif; ?>
         </div>
-        <div class="doc-actions">
-            <button class="btn btn-sm btn-outline-primary" onclick="openPortalDoc(<?php echo $doc['id']; ?>, <?php echo htmlspecialchars(json_encode($doc['dateiname'])); ?>)">
-                <i class="bi bi-eye"></i>
+        <div class="p-list-actions">
+            <button class="btn btn-sm btn-outline-primary" title="Öffnen" aria-label="Dokument öffnen" onclick="openPortalDoc(<?php echo $doc['id']; ?>, <?php echo htmlspecialchars(json_encode($doc['dateiname'])); ?>)">
+                <i class="bi bi-eye" aria-hidden="true"></i>
             </button>
             <?php if ($can_manage && in_array($ext, ['docx', 'pdf', 'xlsx', 'xls'])): ?>
-            <button class="btn btn-sm btn-outline-info btn-import-einsatz" data-id="<?php echo $doc['id']; ?>" data-titel="<?php echo htmlspecialchars($doc['titel'], ENT_QUOTES); ?>" title="Einsätze importieren">
-                <i class="bi bi-table"></i>
+            <button class="btn btn-sm btn-outline-info btn-import-einsatz" data-id="<?php echo $doc['id']; ?>" data-titel="<?php echo htmlspecialchars($doc['titel'], ENT_QUOTES); ?>" title="Einsätze importieren" aria-label="Einsätze importieren">
+                <i class="bi bi-table" aria-hidden="true"></i>
             </button>
             <?php endif; ?>
             <?php if ($can_manage && ($doc['hochgeladen_von'] == $_SESSION['user_id'] || isAdmin())): ?>
             <button class="btn btn-sm btn-outline-secondary btn-edit-doc"
+                title="Bearbeiten" aria-label="Dokument bearbeiten"
                 data-id="<?php echo $doc['id']; ?>"
                 data-titel="<?php echo htmlspecialchars($doc['titel'], ENT_QUOTES); ?>"
                 data-beschreibung="<?php echo htmlspecialchars($doc['beschreibung'] ?? '', ENT_QUOTES); ?>"
                 data-datum="<?php echo htmlspecialchars($doc['datum'] ?? '', ENT_QUOTES); ?>"
                 data-sichtbar="<?php echo htmlspecialchars($doc['sichtbar_fuer'], ENT_QUOTES); ?>"
                 data-dateiname="<?php echo htmlspecialchars($doc['dateiname'], ENT_QUOTES); ?>">
-                <i class="bi bi-pencil"></i>
+                <i class="bi bi-pencil" aria-hidden="true"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteDoc(<?php echo $doc['id']; ?>, '<?php echo htmlspecialchars($doc['titel']); ?>')">
-                <i class="bi bi-trash"></i>
+            <button class="btn btn-sm btn-outline-danger" title="Löschen" aria-label="Dokument löschen" onclick="deleteDoc(<?php echo $doc['id']; ?>, '<?php echo htmlspecialchars($doc['titel']); ?>')">
+                <i class="bi bi-trash" aria-hidden="true"></i>
             </button>
             <?php endif; ?>
         </div>
@@ -523,7 +509,7 @@ include 'portal_header.php';
             </div>
             <div class="modal-footer" id="importFooter" style="display:none;">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-outline-success btn-sm" id="importSaveBtn">
+                <button type="button" class="btn btn-success btn-sm" id="importSaveBtn">
                     <i class="bi bi-check-lg me-1"></i>Importieren
                 </button>
             </div>

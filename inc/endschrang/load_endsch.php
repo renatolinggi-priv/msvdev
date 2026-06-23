@@ -92,7 +92,8 @@ if ($result && $result->num_rows > 0) {
     foreach ($result as $row) {
         // Nur Zeilen mit einem Endstichwert > 0 ausgeben
         //if ($row['EndstichTotal'] > 0) {
-            echo '<tr>';
+            $rankClass = $i <= 3 ? ' class="rank-' . $i . '"' : '';
+            echo '<tr' . $rankClass . '>';
             echo '<td>' . $i . ".</td>";
             echo '<td>' . htmlspecialchars($row["Name"] . " " . $row["Vorname"]) . '</td>';
             echo '<td>' . $row["EndstichTotal"] . '</td>';

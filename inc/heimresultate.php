@@ -373,11 +373,196 @@ $page_specific_css = "
     .button-toolbar { flex-direction: column; }
     .button-toolbar .btn { width: 100%; }
 }
+
+/* === Summe & Status Features === */
+.sum-cell {
+    font-weight: 700;
+    color: #6366f1;
+    text-align: center;
+}
+.sum-cell.empty { color: #cbd5e1; }
+
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 6px;
+}
+.status-dot.complete { background: #22c55e; }
+.status-dot.partial { background: #f59e0b; }
+.status-dot.empty { background: #e2e8f0; }
+
+input.small-input.filled {
+    background: #f0fdf4;
+    border-color: #86efac;
+}
+
+/* =========================================
+   Erfassen Slide-Panel (Schütze um Schütze)
+   ========================================= */
+.hybrid-edit-panel {
+    position: fixed; top: 0; right: -560px; width: 540px; height: 100vh;
+    background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,.12);
+    z-index: 1060; transition: right .3s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+}
+.hybrid-edit-panel.open { right: 0; }
+
+.panel-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.3);
+    z-index: 1055; opacity: 0; visibility: hidden; transition: all .3s;
+}
+.panel-overlay.show { opacity: 1; visibility: visible; }
+
+.panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc; flex-shrink: 0;
+}
+.panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+.panel-footer {
+    padding: .75rem 1.25rem; border-top: 1px solid #e2e8f0;
+    background: #f8fafc; flex-shrink: 0;
+}
+
+.panel-progress { height: 6px; background: #eef2f7; }
+.panel-progress-bar {
+    height: 100%; width: 0;
+    background: linear-gradient(90deg,#22c55e,#16a34a);
+    transition: width .3s ease;
+}
+
+.entry-passen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px,1fr));
+    gap: .75rem;
+}
+.entry-passe-field { display: flex; flex-direction: column; }
+.entry-passe-field label {
+    font-size: .72rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .5px; color: #64748b; margin-bottom: .25rem;
+}
+.entry-passe-field input {
+    text-align: center; font-size: 1.35rem; font-weight: 600;
+    padding: .6rem .4rem; border: 1.5px solid #dee2e6; border-radius: .5rem;
+    -moz-appearance: textfield; transition: border-color .2s, box-shadow .2s;
+}
+.entry-passe-field input:focus {
+    border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,.15); outline: none;
+}
+.entry-passe-field input.filled { background: #f0fdf4; border-color: #86efac; }
+
+/* Klickbare Namen-Zelle + ausgewählte Zeile */
+#heimresultateTabelle tbody td:first-child { cursor: pointer; }
+#heimresultateTabelle tbody tr.panel-selected {
+    background: rgba(74,144,217,.08) !important;
+    box-shadow: inset 3px 0 0 #4a90d9;
+}
+
+@media (max-width: 767.98px) {
+    .hybrid-edit-panel { width: 100vw; right: -100vw; }
+    .panel-overlay { display: none !important; }
+    .entry-passe-field input { font-size: 1.25rem; min-height: 52px; }
+}
+
+/* =========================================
+   Kompaktere Desktop-Tabelle (nicht zu breit)
+   ========================================= */
+@media (min-width: 768px) {
+    /* Karte auf Inhaltsbreite begrenzen statt voll auszudehnen.
+       Prefix #desktopTableContainer erhöht Spezifität, damit diese Breiten
+       die !important-Regeln aus css/fixes/resultate-unified.css schlagen. */
+    #desktopTableContainer .results-list-card { max-width: 900px; }
+
+    /* Passe-Spalten schmaler */
+    #desktopTableContainer #heimresultateTabelle th:not(:first-child),
+    #desktopTableContainer #heimresultateTabelle td:not(:first-child) {
+        width: 70px !important;
+        min-width: 70px !important;
+        max-width: 70px !important;
+    }
+    /* Kopfzeile darf nicht umbrechen (PASSE 8 etc.) */
+    #desktopTableContainer #heimresultateTabelle thead th {
+        font-size: 0.72rem;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    /* Namens-Spalte */
+    #desktopTableContainer #heimresultateTabelle th:first-child,
+    #desktopTableContainer #heimresultateTabelle td:first-child {
+        width: 200px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+    }
+    /* Total-Spalte */
+    #desktopTableContainer #heimresultateTabelle th:last-child,
+    #desktopTableContainer #heimresultateTabelle td:last-child {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+    }
+    /* Eingabefelder zentriert, etwas grösser als 45px */
+    #desktopTableContainer #heimresultateTabelle input.small-input {
+        width: 52px !important;
+        height: 34px !important;
+        margin: 0 auto;
+    }
+    /* Kompaktere Kopf- und Zeilenhöhe */
+    #desktopTableContainer #heimresultateTabelle thead th { padding: 0.6rem 0.4rem; }
+    #desktopTableContainer #heimresultateTabelle tbody td { padding: 0.35rem 0.4rem; }
+
+    /* ---- Natürlicher Seiten-Scroll statt internem Tabellen-Scroll ----
+       Wrapper und Karte wachsen mit dem Inhalt; die ganze Seite scrollt.
+       resultate-unified.css erzwingt auf .table-responsive min-height:300px,
+       max-height:calc(100vh-350px) und overflow (alle !important) -> das
+       verursachte Leerraum bzw. eine Karte, die nicht so hoch wie die Tabelle
+       ist. Hier alles aufgehoben: die Karte ist exakt so gross wie die Tabelle. */
+    /* Äussere weisse Rahmen (main-content-wrapper + content-background) auf
+       Desktop entfernen -> nur die results-list-card umschliesst die Tabelle,
+       kein weisser Rest darunter. Seite scrollt natürlich. */
+    .main-content-wrapper {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin-bottom: 1.5rem !important;
+    }
+    .content-background {
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    /* overflow:visible über die ganze Kette, sonst bricht position:sticky
+       (ein overflow:hidden-Vorfahre würde die Kopfzeile mitscrollen) */
+    #desktopTableContainer .results-list-card { overflow: visible !important; }
+    #desktopTableContainer .table-wrapper { overflow: visible !important; }
+    #desktopTableContainer .table-responsive {
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    /* Sticky-Kopfzeile beim Seiten-Scroll unter der fixierten Navbar halten */
+    #desktopTableContainer #heimresultateTabelle thead th {
+        top: var(--app-header) !important;
+    }
+}
 ";
 
 include 'header.inc.php';
 ?>
 <style><?= $page_specific_css ?></style>
+<!-- Select2 (für Schnellerfassung-Schützensuche) -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+.select2-container { z-index: 1065; }
+#entryMemberSelect + .select2-container { width: 100% !important; }
+.select2-container--bootstrap-5 .select2-selection { min-height: calc(1.5em + 0.75rem + 2px); }
+</style>
 <?php
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -425,21 +610,31 @@ if (empty($_SESSION['csrf_token'])) {
                             <div class="collapse" id="heimresultateActions">
                                 <div class="card-body pt-2 pb-3 px-3">
                                     <div class="row g-2">
-                                        <div class="col-12">
-                                            <button type="submit" class="btn btn-primary w-100">
-                                                <i class="bi bi-save me-2"></i>Ergebnisse speichern
+                                        <div class="col-6 d-none d-md-block">
+                                            <button type="button" class="btn btn-primary btn-sm w-100" id="startEntryBtn">
+                                                <i class="bi bi-pencil-square me-1"></i>Schnellerfassung
                                             </button>
                                         </div>
                                         <div class="col-6">
-                                            <button id="redirect-btn" type="button" class="btn btn-outline-success w-100">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                                                <i class="bi bi-save me-1"></i>Speichern
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm w-100">
                                                 <i class="bi bi-trophy me-1"></i>Rangliste
                                             </button>
                                         </div>
                                         <div class="col-6">
-                                            <button id="delete-btn" type="button" class="btn btn-outline-danger w-100">
-                                                <i class="bi bi-trash me-1"></i>Löschen
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="publishChangelogBtn">
+                                                <i class="bi bi-megaphone me-1"></i>Publizieren
                                             </button>
                                         </div>
+                                    </div>
+                                    <div class="border-top mt-2 pt-2 text-end">
+                                        <button id="delete-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
+                                            <i class="bi bi-trash me-1"></i>Alle Resultate löschen
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -450,9 +645,6 @@ if (empty($_SESSION['csrf_token'])) {
                         <!-- ====== DESKTOP: Tabelle ====== -->
                         <div id="desktopTableContainer">
                             <div class="results-list-card">
-                                <div class="results-header">
-                                    <i class="bi bi-table me-2"></i>Resultate
-                                </div>
                                 <div class="table-wrapper">
                                     <div class="table-responsive">
                                         <table class="table table-hover mb-0" id="heimresultateTabelle">
@@ -469,11 +661,12 @@ if (empty($_SESSION['csrf_token'])) {
                                                     <th scope="col" class="text-center" style="width: 75px;">Passe 6</th>
                                                     <th scope="col" class="text-center" style="width: 75px;">Passe 7</th>
                                                     <th scope="col" class="text-center" style="width: 75px;">Passe 8</th>
+                                                    <th scope="col" class="text-center" style="width: 65px; border-left: 2px solid #e2e8f0;">Total</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td colspan="9" class="text-center py-4">
+                                                    <td colspan="10" class="text-center py-4">
                                                         <div class="spinner-border spinner-border-sm me-2"></div>
                                                         Lade Resultate...
                                                     </td>
@@ -548,6 +741,49 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
+<!-- Erfassen Slide-Panel -->
+<div class="panel-overlay" id="entryOverlay"></div>
+<div class="hybrid-edit-panel" id="entryPanel">
+    <div class="panel-header">
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryPrev" data-tooltip="Vorheriger">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div>
+                <h6 class="mb-0"><i class="bi bi-person me-2"></i><span id="entryName">Erfassen</span></h6>
+                <small class="text-muted" id="entrySubtitle"></small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryNext" data-tooltip="Nächster">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="entryClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="panel-progress"><div class="panel-progress-bar" id="entryProgressBar"></div></div>
+    <div class="panel-body">
+        <div class="mb-3">
+            <select id="entryMemberSelect" style="width:100%"></select>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted small" id="entryProgressText"></span>
+            <span class="badge bg-light text-dark border" id="entryTotalBadge"><i class="bi bi-calculator me-1"></i>Total: 0</span>
+        </div>
+        <div class="entry-passen-grid" id="entryPassenGrid"></div>
+    </div>
+    <div class="panel-footer">
+        <div class="d-flex gap-2 w-100">
+            <button type="button" class="btn btn-outline-success flex-fill" id="entrySaveBtn">
+                <i class="bi bi-save me-1"></i>Speichern
+            </button>
+            <button type="button" class="btn btn-success flex-fill" id="entrySaveNextBtn">
+                Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 $(document).ready(function() {
 
@@ -578,7 +814,7 @@ $(document).ready(function() {
         // Desktop Loading
         var $tbody = $('#heimresultateTabelle tbody');
         $tbody.html(
-            '<tr><td colspan="9" class="text-center py-4">' +
+            '<tr><td colspan="10" class="text-center py-4">' +
             '<div class="spinner-border spinner-border-sm me-2"></div>' +
             'Lade Resultate...</td></tr>'
         );
@@ -592,16 +828,19 @@ $(document).ready(function() {
         $.ajax({
             url: 'heimresultate/load_heimresultate_form.php',
             method: 'GET',
+            cache: false,
             data: { year: year },
             success: function(response) {
                 $tbody.html(response);
                 bindDesktopInputs();
+                updateHeimRowStats();
+                EntryPanel.buildIndex();
                 buildMobileCards();
                 setTimeout(calculateTableHeight, 100);
             },
             error: function() {
                 $tbody.html(
-                    '<tr><td colspan="9" class="text-center text-danger py-4">' +
+                    '<tr><td colspan="10" class="text-center text-danger py-4">' +
                     '<i class="bi bi-exclamation-triangle me-2"></i>' +
                     'Fehler beim Laden der Daten</td></tr>'
                 );
@@ -614,6 +853,46 @@ $(document).ready(function() {
             }
         });
     }
+
+    // ==========================================================
+    //  SUMME, STATUS-DOTS, FORTSCHRITT
+    // ==========================================================
+
+    function updateHeimRowStats() {
+        $('#heimresultateTabelle tbody tr').each(function() {
+            const $inputs = $(this).find('input.small-input');
+            let sum = 0, filled = 0, total = $inputs.length;
+
+            $inputs.each(function() {
+                $(this).removeClass('filled');
+                const val = parseInt(this.value) || 0;
+                if (this.value.trim() !== '' && this.value !== '0') {
+                    filled++;
+                    $(this).addClass('filled');
+                }
+                sum += val;
+            });
+
+            const $sumCell = $(this).find('.sum-cell');
+            if ($sumCell.length) {
+                $sumCell.text(sum > 0 ? sum : '\u2013').toggleClass('empty', sum === 0);
+            }
+
+            const $dot = $(this).find('.status-dot');
+            if ($dot.length) {
+                $dot.removeClass('complete partial empty');
+                if (filled === total && filled > 0) $dot.addClass('complete');
+                else if (filled > 0) $dot.addClass('partial');
+                else $dot.addClass('empty');
+            }
+        });
+
+    }
+
+    // Input-Listener für Echtzeit-Updates
+    $(document).on('input', '#heimresultateTabelle input.small-input', function() {
+        updateHeimRowStats();
+    });
 
     // ==========================================================
     //  MOBILE CARD VIEW – aus Tabellendaten generieren
@@ -635,17 +914,22 @@ $(document).ready(function() {
             var $inputs = $tr.find('input');
             if ($inputs.length === 0) return;
 
-            // Prüfe ob Werte vorhanden
+            // Prüfe ob Werte vorhanden + Summe berechnen
             var hasValues = false;
             var summaryParts = [];
+            var totalSum = 0;
             $inputs.each(function(idx) {
                 var val = $(this).val();
                 if (val && val !== '' && val !== '0') {
                     hasValues = true;
                     summaryParts.push('P' + (idx + 1) + ':' + val);
+                    totalSum += parseInt(val) || 0;
                 }
             });
-            if (hasValues) membersWithValues++;
+            if (hasValues) {
+                membersWithValues++;
+                summaryParts.push('\u03A3 ' + totalSum);
+            }
 
             // Card HTML bauen
             var cardHtml = '<div class="member-card' + (hasValues ? ' has-values' : '') + '" data-name="' + name.toLowerCase() + '">';
@@ -682,7 +966,7 @@ $(document).ready(function() {
                 cardHtml += '    value="' + escapeHtml(val) + '"';
                 cardHtml += '    inputmode="numeric"';
                 cardHtml += '    pattern="[0-9]*"';
-                cardHtml += '    maxlength="2"';
+                cardHtml += '    maxlength="3"';
                 cardHtml += '    autocomplete="off">';
                 cardHtml += '</div>';
             });
@@ -713,7 +997,8 @@ $(document).ready(function() {
             var $this = $(this);
             var syncName = $this.data('sync');
             var value = $this.val().replace(/[^0-9]/g, '');
-            if (value.length > 2) value = value.substring(0, 2);
+            if (value.length > 3) value = value.substring(0, 3);
+            if (value !== '' && parseInt(value, 10) > 100) value = '100';
             $this.val(value);
 
             // Wert in Desktop-Tabelle synchronisieren
@@ -774,13 +1059,16 @@ $(document).ready(function() {
     function updateCardSummary($card) {
         var parts = [];
         var hasValues = false;
+        var totalSum = 0;
         $card.find('.mobile-passe-input').each(function(idx) {
             var val = $(this).val();
             if (val && val !== '' && val !== '0') {
                 hasValues = true;
                 parts.push('P' + (idx + 1) + ':' + val);
+                totalSum += parseInt(val) || 0;
             }
         });
+        if (hasValues) parts.push('\u03A3 ' + totalSum);
 
         $card.toggleClass('has-values', hasValues);
         var $summary = $card.find('.member-summary');
@@ -862,7 +1150,8 @@ $(document).ready(function() {
 
         $inputs.off('input.heim').on('input.heim', function() {
             var value = $(this).val().replace(/[^0-9]/g, '');
-            if (value.length > 2) value = value.substring(0, 2);
+            if (value.length > 3) value = value.substring(0, 3);
+            if (value !== '' && parseInt(value, 10) > 100) value = '100';
             $(this).val(value);
         });
     }
@@ -958,6 +1247,7 @@ $(document).ready(function() {
     // ===== Global Scroll (nur Desktop) =====
     document.addEventListener('wheel', function(e) {
         if (isMobile()) return;
+        if ($('#entryPanel').hasClass('open')) return;
         var tableContainer = $('.table-responsive')[0];
         if (tableContainer && tableContainer.scrollHeight > tableContainer.clientHeight) {
             tableContainer.scrollTop += e.deltaY;
@@ -984,6 +1274,286 @@ $(document).ready(function() {
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
+
+    // ===== Veröffentlichen =====
+    $('#publishChangelogBtn').on('click', async function() {
+        const r = await msvConfirm('Änderung veröffentlichen?', 'Ein Eintrag wird auf der Website angezeigt.', 'Veröffentlichen');
+        if (!r.isConfirmed) return;
+        var selectedYear = $('#yearSelect').val();
+        $.post('changelog_publish.php', {
+            kategorie: 'resultate',
+            tabelle: 'heimresultate',
+            jahr: selectedYear,
+            beschreibung: 'Heimresultate ' + selectedYear + ' aktualisiert',
+            csrf_token: $('input[name="csrf_token"]').val()
+        }).done(function(res) {
+            if (res.success) msvToast(res.message, 'success');
+            else msvToast(res.message || 'Fehler', 'error');
+        }).fail(function() {
+            msvToast('Veröffentlichung fehlgeschlagen', 'error');
+        });
+    });
+
+    // =========================================
+    //  Erfassen-Panel – Schütze um Schütze
+    // =========================================
+    const EntryPanel = {
+        rows: [],
+        idx: -1,
+        _silent: false,
+        maxLen: 3,       // Heim: 3-stellig
+        clampMax: 100,   // max 100
+        saveUrl: 'heimresultate/save_heimresultate.php',
+
+        buildIndex() {
+            this.rows = [];
+            const self = this;
+            $('#heimresultateTabelle tbody tr').each(function() {
+                const $tr = $(this);
+                const $inputs = $tr.find('input.small-input');
+                if (!$inputs.length) return;
+                const nm = $inputs.first().attr('name') || '';
+                const m = nm.match(/passe\[(\d+)\]/);
+                if (!m) return;
+                self.rows.push({
+                    id: m[1],
+                    name: $tr.find('td:first').text().trim(),
+                    $tr: $tr,
+                    $inputs: $inputs
+                });
+            });
+        },
+
+        isComplete(row) {
+            let all = true;
+            row.$inputs.each(function() {
+                const v = $(this).val();
+                if (v === '' || v === '0') all = false;
+            });
+            return all;
+        },
+
+        firstIncomplete() {
+            for (let i = 0; i < this.rows.length; i++) {
+                if (!this.isComplete(this.rows[i])) return i;
+            }
+            return 0;
+        },
+
+        nextIncomplete(from) {
+            for (let i = from + 1; i < this.rows.length; i++) {
+                if (!this.isComplete(this.rows[i])) return i;
+            }
+            return -1;
+        },
+
+        open(idx) {
+            if (idx < 0 || idx >= this.rows.length) return;
+            this.idx = idx;
+            const row = this.rows[idx];
+
+            const $grid = $('#entryPassenGrid').empty();
+            row.$inputs.each(function(i) {
+                const v = $(this).val() || '';
+                const $field = $(
+                    '<div class="entry-passe-field" data-pi="' + i + '">' +
+                    '<label>Passe ' + (i + 1) + '</label>' +
+                    '<input type="text" inputmode="numeric" autocomplete="off" maxlength="' + EntryPanel.maxLen + '">' +
+                    '</div>'
+                );
+                $field.find('input').val(v);
+                $grid.append($field);
+            });
+
+            $('#entryName').text(row.name);
+            $('#entrySubtitle').text('Schütze ' + (idx + 1) + ' / ' + this.rows.length);
+            this.rows.forEach(r => r.$tr.removeClass('panel-selected'));
+            row.$tr.addClass('panel-selected');
+
+            this.refreshFields();
+            this.updateProgress();
+            this._silent = true;
+            this.populateSelect();
+            this._silent = false;
+
+            $('#entryOverlay').addClass('show');
+            $('#entryPanel').addClass('open');
+            setTimeout(function() { $('#entryPassenGrid input').first().focus().select(); }, 150);
+        },
+
+        // Schützen-Suche (Select2) befüllen + aktuellen markieren
+        populateSelect() {
+            const $sel = $('#entryMemberSelect');
+            if ($sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+            $sel.empty();
+            const self = this;
+            this.rows.forEach(function(r, i) {
+                const done = self.isComplete(r);
+                $sel.append(new Option((done ? '✓ ' : '') + r.name, i, false, i === self.idx));
+            });
+            $sel.select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#entryPanel'),
+                width: '100%',
+                placeholder: 'Schütze suchen…'
+            }).off('select2:open.entry').on('select2:open.entry', function() {
+                setTimeout(function() {
+                    const f = document.querySelector('.select2-container--open .select2-search__field');
+                    if (f) f.focus();
+                }, 0);
+            });
+        },
+
+        close() {
+            $('#entryPanel').removeClass('open');
+            $('#entryOverlay').removeClass('show');
+            this.rows.forEach(r => r.$tr.removeClass('panel-selected'));
+            this.idx = -1;
+        },
+
+        navigate(dir) {
+            const n = this.idx + dir;
+            if (n >= 0 && n < this.rows.length) this.open(n);
+        },
+
+        syncField(pi, value) {
+            if (this.idx < 0) return;
+            const row = this.rows[this.idx];
+            row.$inputs.eq(pi).val(value).trigger('input');
+        },
+
+        refreshFields() {
+            let sum = 0;
+            $('#entryPassenGrid .entry-passe-field').each(function() {
+                const v = parseInt($(this).find('input').val(), 10) || 0;
+                const raw = $(this).find('input').val().trim();
+                $(this).find('input').toggleClass('filled', raw !== '' && raw !== '0');
+                sum += v;
+            });
+            $('#entryTotalBadge').html('<i class="bi bi-calculator me-1"></i>Total: ' + sum);
+        },
+
+        updateProgress() {
+            const total = this.rows.length;
+            let done = 0;
+            this.rows.forEach(r => { if (this.isComplete(r)) done++; });
+            const pct = total ? Math.round(done / total * 100) : 0;
+            $('#entryProgressBar').css('width', pct + '%');
+            $('#entryProgressText').text(done + ' / ' + total + ' vollständig erfasst');
+        },
+
+        collectPayload(row) {
+            const vals = [];
+            row.$inputs.each(function() { vals.push($(this).val().trim()); });
+            let hasLater = false;
+            for (let i = vals.length - 1; i >= 0; i--) {
+                if (vals[i] !== '' && vals[i] !== '0') hasLater = true;
+                else if (hasLater && vals[i] === '') vals[i] = '0';
+            }
+            row.$inputs.each(function(i) {
+                if ($(this).val().trim() === '' && vals[i] === '0') $(this).val('0').trigger('input');
+            });
+            const passe = {};
+            for (let i = 0; i < vals.length; i++) passe[i + 1] = vals[i];
+            const obj = {};
+            obj[row.id] = passe;
+            return obj;
+        },
+
+        save(onDone) {
+            if (this.idx < 0) return;
+            const row = this.rows[this.idx];
+            const $btns = $('#entrySaveBtn, #entrySaveNextBtn').prop('disabled', true);
+            $.ajax({
+                url: this.saveUrl,
+                type: 'POST',
+                data: {
+                    csrf_token: $('input[name="csrf_token"]').first().val(),
+                    jahr: $('#yearSelect').val(),
+                    year: $('#yearSelect').val(),
+                    passe: this.collectPayload(row)
+                },
+                success: function() {
+                    EntryPanel.updateProgress();
+                    if (typeof onDone === 'function') onDone();
+                    else msvToast('Gespeichert', 'success');
+                },
+                error: function() { msvToast('Fehler beim Speichern', 'error'); },
+                complete: function() { $btns.prop('disabled', false); }
+            });
+        },
+
+        saveAndNext() {
+            const fromIdx = this.idx;
+            this.save(function() {
+                const n = EntryPanel.nextIncomplete(fromIdx);
+                if (n >= 0) {
+                    EntryPanel.open(n);
+                } else {
+                    msvToast('Alle Schützen erfasst', 'success');
+                    EntryPanel.close();
+                }
+            });
+        }
+    };
+
+    // Panel-Feld-Eingabe (delegiert): validieren + syncen
+    $(document).on('input', '#entryPassenGrid input', function() {
+        let value = $(this).val().replace(/[^0-9]/g, '');
+        if (value.length > EntryPanel.maxLen) value = value.substring(0, EntryPanel.maxLen);
+        if (EntryPanel.clampMax !== null && value !== '' && parseInt(value, 10) > EntryPanel.clampMax) {
+            value = String(EntryPanel.clampMax);
+        }
+        $(this).val(value);
+        const pi = parseInt($(this).closest('.entry-passe-field').data('pi'), 10);
+        EntryPanel.syncField(pi, value);
+        EntryPanel.refreshFields();
+    });
+
+    $(document).on('focus', '#entryPassenGrid input', function() {
+        if ($(this).val() === '0') $(this).val('');
+        $(this).select();
+    });
+
+    // Enter: nächstes Feld, letztes Feld → Speichern & Weiter
+    $(document).on('keydown', '#entryPassenGrid input', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const $inputs = $('#entryPassenGrid input');
+            const i = $inputs.index(this);
+            if (i < $inputs.length - 1) $inputs.eq(i + 1).focus().select();
+            else EntryPanel.saveAndNext();
+        }
+    });
+
+    $('#startEntryBtn').on('click', function() {
+        EntryPanel.buildIndex();
+        if (!EntryPanel.rows.length) { msvToast('Keine Mitglieder geladen', 'error'); return; }
+        EntryPanel.open(EntryPanel.firstIncomplete());
+    });
+
+    // Klick auf Namen-Zelle öffnet Panel bei diesem Schützen
+    $(document).on('click', '#heimresultateTabelle tbody td:first-child', function() {
+        const $tr = $(this).closest('tr');
+        const i = EntryPanel.rows.findIndex(r => r.$tr.is($tr));
+        if (i >= 0) EntryPanel.open(i);
+    });
+
+    // Select2-Auswahl springt zum Schützen
+    $(document).on('change', '#entryMemberSelect', function() {
+        if (EntryPanel._silent) return;
+        const i = parseInt($(this).val(), 10);
+        if (!isNaN(i) && i !== EntryPanel.idx) EntryPanel.open(i);
+    });
+
+    $('#entryPrev').on('click', function() { EntryPanel.navigate(-1); });
+    $('#entryNext').on('click', function() { EntryPanel.navigate(1); });
+    $('#entryClose, #entryOverlay').on('click', function() { EntryPanel.close(); });
+    $('#entrySaveBtn').on('click', function() { EntryPanel.save(); });
+    $('#entrySaveNextBtn').on('click', function() { EntryPanel.saveAndNext(); });
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $('#entryPanel').hasClass('open') && !$('.select2-container--open').length) EntryPanel.close();
+    });
 
     // ===== Init =====
     initializeYearDropdown();

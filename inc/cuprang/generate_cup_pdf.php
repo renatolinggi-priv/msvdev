@@ -13,6 +13,7 @@ try {
     // Includes
     require '../vendor/autoload.php';
     include '../config.php';
+    require_once __DIR__ . '/../pdf/pdf_theme.php';
     
     if (!isset($conn) && function_exists('get_db_connection')) {
         $conn = get_db_connection();
@@ -163,13 +164,13 @@ h1 {
 h2 { 
     font-size: 12px;
     margin: 10px 0 5px 0;
-    color: #1e3a8a;
+    color: #3b5998;
     font-weight: bold;
 }
 h3 {
     font-size: 12px;
     margin: 10px 0 5px 0;
-    color: #1e3a8a;
+    color: #3b5998;
     font-weight: bold;
 }
 
@@ -214,7 +215,7 @@ tbody tr:hover {
     text-align: center; 
     font-weight: bold;
     font-size: 11px;
-    color: #1e3a8a;
+    color: #3b5998;
 }
 .lowshot {
     width: 50px;
@@ -229,24 +230,24 @@ tbody tr:hover {
     margin-top: 1px;
 }
 
-/* Medaillen-Farben */
-.gold { 
-    background: linear-gradient(to right, #fff9e6, #ffeb99) !important;
+/* Medaillen-Farben (ruhige Pastelltöne, einheitlich mit pdf_theme.php) */
+.gold {
+    background: #fdf6e3 !important;
 }
 .gold .rank {
-    color: #d4a017;
+    color: #8a6d1c;
 }
-.silver { 
-    background: linear-gradient(to right, #f5f5f5, #e8e8e8) !important;
+.silver {
+    background: #f1f1f1 !important;
 }
 .silver .rank {
-    color: #71706e;
+    color: #6b7280;
 }
-.bronze { 
-    background: linear-gradient(to right, #fef5ed, #f5ddc4) !important;
+.bronze {
+    background: #f7ede2 !important;
 }
 .bronze .rank {
-    color: #cd7f32;
+    color: #9c6b3f;
 }
 
 /* Paarungen */
@@ -272,7 +273,7 @@ tbody tr:hover {
     width: 20%;
     text-align: right;
     font-weight: bold;
-    color: #1e3a8a;
+    color: #3b5998;
 }
 .pairing-lowshot {
     display: table-cell;
@@ -283,10 +284,10 @@ tbody tr:hover {
 }
 .winner {
     font-weight: bold;
-    color: #16a34a;
+    color: #2f855a;
 }
 .loser {
-    color: #dc2626;
+    color: #c0392b;
     text-decoration: line-through;
 }
 
@@ -323,7 +324,7 @@ tbody tr:hover {
 <body>
 
 <div class="header">
-    <img src="https://jahresmeisterschaft.msvwilen.ch/images/MSVWilen_Logo.jpg" class="logo" alt="MSV Wilen Logo">
+    <img src="' . pdf_logo_src() . '" class="logo" alt="MSV Wilen Logo">
     <h1>MSV Wilen Vereinscup ' . $selectedYear . '</h1>
 </div>';
 

@@ -39,21 +39,28 @@ $today = date('Y-m-d');
 $months_de = ['Januar'=>1,'Februar'=>2,'März'=>3,'April'=>4,'Mai'=>5,'Juni'=>6,
               'Juli'=>7,'August'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Dezember'=>12];
 foreach ($events as $ev) {
-    // Versuche Monat aus Schiesstage zu extrahieren
-    $month_num = 0;
+    // Alle Datumsvorkommen aus Schiesstage extrahieren und das späteste nehmen
+    // Format: "06. März 2026" oder "06. März" (ohne Jahr)
+    $latest_date = null;
     foreach ($months_de as $name => $num) {
-        if (stripos($ev['Schiesstage'], $name) !== false) {
-            $month_num = $num;
-            break;
+        // Mit Jahr: "06. März 2026"
+        if (preg_match_all('/(\d{1,2})\.\s+' . preg_quote($name, '/') . '\s+(\d{4})/iu', $ev['Schiesstage'], $m)) {
+            foreach ($m[1] as $i => $day) {
+                $d = $m[2][$i] . '-' . str_pad($num, 2, '0', STR_PAD_LEFT) . '-' . str_pad((int)$day, 2, '0', STR_PAD_LEFT);
+                if ($latest_date === null || $d > $latest_date) $latest_date = $d;
+            }
+        }
+        // Ohne Jahr: "06. März"
+        if (preg_match_all('/(\d{1,2})\.\s+' . preg_quote($name, '/') . '(?!\s+\d{4})/iu', $ev['Schiesstage'], $m)) {
+            foreach ($m[1] as $day) {
+                $d = $current_year . '-' . str_pad($num, 2, '0', STR_PAD_LEFT) . '-' . str_pad((int)$day, 2, '0', STR_PAD_LEFT);
+                if ($latest_date === null || $d > $latest_date) $latest_date = $d;
+            }
         }
     }
-    if ($month_num > 0) {
-        // Erstelle approx Datum (letzter Tag des Monats)
-        $approx = $current_year . '-' . str_pad($month_num, 2, '0', STR_PAD_LEFT) . '-28';
-        if ($approx >= $today) {
-            $next_event = $ev;
-            break;
-        }
+    if ($latest_date !== null && $latest_date >= $today) {
+        $next_event = $ev;
+        break;
     }
 }
 
@@ -98,150 +105,415 @@ if ($mitglied_id) {
     }
 }
 
+
+// Push-Benachrichtigungen: eingeschaltet, aber kein Geraet registriert?
+// -> Dashboard-Hinweis, sonst wuerde der User trotz aktiver Themen nichts erhalten.
+$push_setup_noetig = false;
+try {
+    $uid = (int) ($_SESSION['user_id'] ?? 0);
+    if ($uid) {
+        $pstmt = $db->prepare("SELECT push_aktiv, einsaetze, jm, umfragen, termine FROM benachrichtigung_prefs WHERE user_id = ?");
+        $pstmt->execute([$uid]);
+        $prefs = $pstmt->fetch();
+        // Fehlende Zeile = alles an
+        $push_aktiv = $prefs ? ((int) $prefs['push_aktiv'] === 1) : true;
+        $themen_an  = $prefs
+            ? ((int) $prefs['einsaetze'] || (int) $prefs['jm'] || (int) $prefs['umfragen'] || (int) $prefs['termine'])
+            : true;
+
+        $dstmt = $db->prepare("SELECT COUNT(*) FROM push_abos WHERE benutzer_id = ?");
+        $dstmt->execute([$uid]);
+        $geraete = (int) $dstmt->fetchColumn();
+
+        $push_setup_noetig = ($push_aktiv && $themen_an && $geraete === 0);
+    }
+} catch (Exception $e) {
+    // Tabellen (Migration 021) evtl. noch nicht vorhanden
+    $push_setup_noetig = false;
+}
+
 include 'portal_header.php';
 ?>
+<script src="../inc/js/ssv-barcode.js?v=<?php echo @filemtime(__DIR__ . '/../inc/js/ssv-barcode.js'); ?>"></script>
 
 <style>
+/* Begruessung — bewusster Marken-Akzent (Gradient), nur kompakter + Tokens */
 .dashboard-greeting {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 0.75rem;
-    padding: 0.875rem 1rem;
-    margin-bottom: 1rem;
+    border-radius: var(--p-radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--p-3) var(--p-4);
+    margin-bottom: var(--p-3);
 }
 .dashboard-greeting h1 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 0.15rem;
+    color: var(--p-text);
+    margin-bottom: var(--p-1);
 }
 .dashboard-greeting .date {
-    color: #718096;
+    color: var(--p-text-muted);
     font-size: 0.8rem;
 }
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--p-2);
+    margin-bottom: var(--p-4);
 }
+/* Kachel: Icon links, Titel + Beschreibung rechts gestapelt — kompakt & aufgeraeumt.
+   Eigene Kartenflaeche (kein .p-card, da eigenes Grid-Layout). */
 .dash-card {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid #f0f0f0;
-    transition: all 0.3s ease;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+        "icon title"
+        "icon desc";
+    align-items: center;
+    column-gap: var(--p-3);
+    padding: var(--p-3);
+    background: #fff;
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    box-shadow: var(--p-shadow);
     text-decoration: none;
     color: inherit;
-    display: block;
+    transition: box-shadow var(--transition-speed) ease, transform var(--transition-speed) ease;
 }
 .dash-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    color: inherit;
+    box-shadow: var(--p-shadow-hover);
+    transform: translateY(-2px);
 }
+/* Gradient-Icon = bewusster Marken-Akzent (seitenspezifisch), kompakter */
 .dash-card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    grid-area: icon;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
-    margin-bottom: 0.75rem;
+    font-size: 1.15rem;
 }
 .dash-card-title {
+    grid-area: title;
+    align-self: end;
+    min-width: 0;
+    overflow-wrap: break-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
     font-weight: 600;
-    font-size: 1rem;
-    color: #2d3748;
-    margin-bottom: 0.25rem;
+    font-size: 0.92rem;
+    line-height: 1.2;
+    color: var(--p-text);
 }
 .dash-card-desc {
-    color: #718096;
-    font-size: 0.85rem;
+    grid-area: desc;
+    align-self: start;
+    color: var(--p-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.25;
 }
-.next-event-card {
-    background: linear-gradient(135deg, #e8f4fd, #d1ecf9);
-    border: 1px solid #bee5eb;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-}
-.next-event-card h5 {
-    color: #0c5460;
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-}
-.next-event-card .event-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: #155724;
-}
+/* Event-/Einsatz-Banner — farbige Marken-Akzente, kompakt */
+.next-event-card,
 .next-einsatz-card {
-    background: linear-gradient(135deg, #fff8e1, #ffecb3);
-    border: 1px solid #ffe082;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
+    border-radius: var(--p-radius);
+    padding: var(--p-2) var(--p-3);
+    margin-bottom: var(--p-3);
 }
+.next-event-card { background: linear-gradient(135deg, #e8f4fd, #d1ecf9); border: 1px solid #bee5eb; }
+.next-einsatz-card { background: linear-gradient(135deg, #fff8e1, #ffecb3); border: 1px solid #ffe082; }
+.next-event-card h5,
 .next-einsatz-card h5 {
-    color: #e65100;
     font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.82rem;
+    margin-bottom: 2px;
 }
-.next-einsatz-card .einsatz-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: #bf360c;
+.next-event-card h5 { color: #0c5460; }
+.next-einsatz-card h5 { color: #e65100; }
+.next-event-card .event-name { font-weight: 700; font-size: 0.88rem; color: #155724; }
+.next-einsatz-card .einsatz-name { font-weight: 700; font-size: 0.88rem; color: #bf360c; }
+.next-event-card small,
+.next-einsatz-card small {
+    font-size: 0.76rem;
+    line-height: 1.3;
 }
 @media (max-width: 767.98px) {
     .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.65rem;
-        margin-bottom: 1rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--p-2);
+        margin-bottom: var(--p-3);
     }
     .dashboard-greeting {
-        padding: 0.75rem 0.875rem;
-        margin-bottom: 0.75rem;
-        border-radius: 0.625rem;
+        padding: var(--p-2) var(--p-3);
+        margin-bottom: var(--p-2);
     }
     .dashboard-greeting h1 { font-size: 1rem; }
+    /* Banner kompakter */
     .next-event-card, .next-einsatz-card {
-        padding: 0.625rem 0.875rem;
-        margin-bottom: 0.625rem;
+        padding: var(--p-2) var(--p-3);
+        margin-bottom: var(--p-3);
     }
+    .next-event-card h5, .next-einsatz-card h5 { font-size: 0.78rem; }
+    .next-event-card .event-name, .next-einsatz-card .einsatz-name { font-size: 0.84rem; }
+    /* Kacheln: 2 Spalten, kompakt — nur Icon + Titel */
     .dash-card {
-        padding: 0.875rem;
+        grid-template-areas: "icon title";
+        align-items: center;
+        column-gap: var(--p-2);
+        padding: var(--p-2);
     }
     .dash-card-icon {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+        border-radius: 8px;
     }
     .dash-card-title {
-        font-size: 0.875rem;
-        margin-bottom: 0.15rem;
+        align-self: center;
+        font-size: 0.75rem;
+        line-height: 1.15;
     }
-    .dash-card-desc {
-        font-size: 0.76rem;
-    }
+    .dash-card-desc { display: none; }
+}
+
+/* Barcode Icon Button */
+.barcode-icon-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    font-size: 1.4rem;
+    padding: var(--p-1) 0.4rem;
+    border-radius: var(--p-radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.barcode-icon-btn:hover {
+    color: var(--primary-color);
+    background: rgba(59, 89, 152, 0.08);
+}
+
+/* Barcode Modal */
+.barcode-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 9000;
+    justify-content: center;
+    align-items: center;
+}
+.barcode-modal-overlay.show {
+    display: flex;
+}
+.barcode-modal-close {
+    position: absolute;
+    top: var(--p-3);
+    right: var(--p-3);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    color: #333;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--p-shadow-hover);
+    transition: transform 0.2s;
+}
+.barcode-modal-close:hover {
+    transform: scale(1.1);
+}
+.barcode-modal-overlay.show { background: #ffffff; }
+.barcode-modal-card {
+    background: white;
+    border-radius: var(--p-radius);
+    padding: var(--p-5) var(--p-3);
+    max-width: 540px;
+    width: 96%;
+    text-align: center;
+}
+.barcode-modal-card .lizenznummer {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--p-text);
+    margin-bottom: var(--p-3);
+    letter-spacing: 1px;
+}
+.barcode-modal-card .barcode-label {
+    font-size: 0.75rem;
+    color: var(--secondary-color);
+    margin-bottom: var(--p-1);
+}
+.barcode-canvas-wrap {
+    position: relative;
+    margin: 0 auto;
+    overflow: visible;
+}
+.barcode-modal-card canvas {
+    display: block;
+    background: #ffffff;
+}
+.barcode-canvas-wrap.rotated canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg);
+    transform-origin: center center;
+}
+.barcode-modal-card .barcode-nummer {
+    font-size: 0.85rem;
+    color: var(--p-text);
+    margin-top: var(--p-2);
+    letter-spacing: 2px;
+    font-family: monospace;
+    font-weight: 600;
+}
+.barcode-modal-card .barcode-hint {
+    font-size: 0.7rem;
+    color: var(--secondary-color);
+    margin-top: var(--p-3);
+}
+.barcode-rotate-btn {
+    position: absolute;
+    top: var(--p-3);
+    left: var(--p-3);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid #dee2e6;
+    color: #333;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--p-shadow);
 }
 </style>
 
 <!-- Begruessung -->
 <div class="dashboard-greeting">
-    <h1>Hallo <?php echo htmlspecialchars($vorname); ?>!</h1>
-    <p class="date mb-0"><?php
-        $weekdays = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-        $months = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-        echo $weekdays[date('w')] . ', ' . date('j') . '. ' . $months[date('n')] . ' ' . date('Y');
-        ?>
-    </p>
+    <div>
+        <h1>Hallo <?php echo htmlspecialchars($vorname); ?>!</h1>
+        <p class="date mb-0"><?php
+            $weekdays = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+            $months = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+            echo $weekdays[date('w')] . ', ' . date('j') . '. ' . $months[date('n')] . ' ' . date('Y');
+            ?>
+        </p>
+    </div>
+    <?php if ($mitglied_id): ?>
+    <button class="barcode-icon-btn" id="barcodeBtn" title="SSV Lizenz-Barcode"><i class="bi bi-upc-scan"></i></button>
+    <?php endif; ?>
 </div>
+
+<?php if ($mitglied_id): ?>
+<!-- Barcode Modal -->
+<div class="barcode-modal-overlay" id="barcodeModal" role="dialog" aria-modal="true" aria-label="SSV Lizenz-Barcode">
+    <button class="barcode-rotate-btn" id="barcodeRotate" title="Drehen" aria-label="Barcode drehen"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+    <button class="barcode-modal-close" id="barcodeClose" aria-label="Schliessen"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    <div class="barcode-modal-card">
+        <div class="barcode-label">SSV Lizenznummer</div>
+        <div class="lizenznummer"><?php echo htmlspecialchars($mitglied_id); ?></div>
+        <div class="barcode-canvas-wrap" id="barcodeWrap"><canvas id="barcodeCanvas"></canvas></div>
+        <div class="barcode-nummer" id="barcodeNummer"></div>
+        <div class="barcode-hint">Tipp: Helligkeit hoch, Handy flach halten. Button oben links = Querformat.</div>
+    </div>
+</div>
+<script>
+(function() {
+    var btn = document.getElementById('barcodeBtn');
+    var modal = document.getElementById('barcodeModal');
+    var canvas = document.getElementById('barcodeCanvas');
+    var nummerEl = document.getElementById('barcodeNummer');
+    var rotateBtn = document.getElementById('barcodeRotate');
+    var lnr = <?php echo json_encode((string)$mitglied_id); ?>;
+    var bnr = ssvBarcodeNummer(lnr);
+    var rotated = false;
+    var wakeLock = null;
+
+    var wrap = document.getElementById('barcodeWrap');
+
+    function render() {
+        var vpW = window.innerWidth;
+        var vpH = window.innerHeight;
+        var cssW, cssH;
+        if (rotated) {
+            // Querformat: Barcode nutzt die lange Bildschirmseite
+            cssW = Math.min(vpH * 0.85, 600);
+            cssH = Math.min(vpW * 0.35, 160);
+            wrap.classList.add('rotated');
+            wrap.style.width = cssH + 'px';
+            wrap.style.height = cssW + 'px';
+        } else {
+            cssW = Math.min(vpW * 0.92, 520);
+            cssH = Math.min(vpH * 0.22, 140);
+            wrap.classList.remove('rotated');
+            wrap.style.width = cssW + 'px';
+            wrap.style.height = cssH + 'px';
+        }
+        var ctx = prepareBarcodeCanvas(canvas, cssW, cssH);
+        drawItfBarcode(ctx, bnr, 0, 8, cssW, cssH - 16);
+        nummerEl.textContent = bnr;
+    }
+
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
+        } catch (e) { /* ignoriert — nicht unterstützt */ }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock) { wakeLock.release().catch(function(){}); wakeLock = null; }
+    }
+
+    function open() {
+        modal.classList.add('show');
+        render();
+        requestWakeLock();
+    }
+
+    function close() {
+        modal.classList.remove('show');
+        releaseWakeLock();
+    }
+
+    btn.addEventListener('click', open);
+    document.getElementById('barcodeClose').addEventListener('click', close);
+    rotateBtn.addEventListener('click', function() { rotated = !rotated; render(); });
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) close();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) close();
+    });
+
+    window.addEventListener('resize', function() {
+        if (modal.classList.contains('show')) render();
+    });
+
+    // Wake Lock nach Tab-Wechsel neu anfordern
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && modal.classList.contains('show')) {
+            requestWakeLock();
+        }
+    });
+})();
+</script>
+<?php endif; ?>
 
 <!-- Naechster Termin -->
 <?php if ($next_event): ?>
@@ -286,13 +558,21 @@ include 'portal_header.php';
 </a>
 <?php endif; ?>
 
+<!-- Push-Benachrichtigungen einrichten (Themen an, aber kein Geraet) -->
+<?php if (!empty($push_setup_noetig)): ?>
+<a href="benachrichtigungen.php" class="next-einsatz-card d-block text-decoration-none" style="background: linear-gradient(135deg, #ede7f6, #d1c4e9); border-color: #b39ddb;">
+    <h5 style="color: #4527a0;"><i class="bi bi-bell me-2"></i>Benachrichtigungen aktivieren <i class="bi bi-arrow-right-short float-end"></i></h5>
+    <small class="text-muted">Du hast Benachrichtigungen eingeschaltet, aber noch kein Gerät aktiviert — so erhältst du keine. Jetzt auf diesem Gerät aktivieren.</small>
+</a>
+<?php endif; ?>
+
 <!-- Dashboard-Kacheln -->
 <div class="dashboard-grid">
     <a href="meine_jm.php" class="dash-card">
         <div class="dash-card-icon" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: #28a745;">
             <i class="bi bi-bullseye"></i>
         </div>
-        <div class="dash-card-title">Jahresmeisterschaft</div>
+        <div class="dash-card-title">JM</div>
         <div class="dash-card-desc">Alle JM-Schiessen mit Streicher</div>
     </a>
 

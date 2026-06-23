@@ -118,12 +118,14 @@ $html = '<!DOCTYPE html>
       margin-top: 20px;
     }
     th, td {
-      border: 1px solid #333;
+      border: 1px solid #e2e8f0;
       padding: 8px;
       text-align: left;
     }
     th {
-      background-color: #f0f0f0;
+      background-color: #eef2f7;
+      color: #2d3748;
+      border-bottom: 2px solid #cbd5e0;
     }
 
     /* Footer-Styles */
@@ -133,7 +135,7 @@ $html = '<!DOCTYPE html>
       left: 0;
       right: 0;
       height: 40px;
-      border-top: 1px solid #000;
+      border-top: 1px solid #cbd5e0;
       text-align: center;
       font-size: 10px;
       padding-top: 5px;

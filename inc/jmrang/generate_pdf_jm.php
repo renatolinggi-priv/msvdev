@@ -409,27 +409,42 @@ function buildJMRangliste($year, $kategorie, $conn) {
     $html = '<div class="container">';
     $html .= '<h2>Kategorie ' . str_replace('Kat. ', '', $kategorie) . '</h2>';
     
-    $html .= '<table class="table">';
-    $html .= '<thead><tr style="height: 120px;">'; // Erhöhte Header-Zeile wie bei all_results
-    $html .= '<th style="width: 40px; vertical-align: bottom; text-align: center;">Rang</th>';
-    $html .= '<th style="width: 140px; max-width: 140px; text-align: left; vertical-align: bottom;">Name</th>'; // Breiter wie bei all_results
-
-    // Spaltenüberschriften mit 90-Grad-Rotation - OHNE KÜRZUNGEN
+    // Kopfhöhe dynamisch an die längste Bezeichnung anpassen, damit die rotierten
+    // Labels vollständig in den Kopf passen und nicht nach oben in den Titel ausbrechen.
+    $maxLen = 1;
     foreach ($definitions as $d) {
-        $bez = $d['Bezeichnung'];
-        
-        // Keine Kürzungen mehr - verwende Original-Bezeichnung
-        $bez = trim($bez);
-        
-        // Rotation mit div-Container für bessere Unterstützung
-        $html .= '<th class="result-col" style="width: 35px; height: 120px; vertical-align: bottom; position: relative; padding: 0;">';
-        $html .= '<div style="position: absolute; bottom: 5px; left: 20px; transform: rotate(-90deg); transform-origin: left bottom; white-space: nowrap; font-size: 6.5px; width: 110px;">';
+        $b = trim($d['Bezeichnung']);
+        $len = function_exists('mb_strlen') ? mb_strlen($b) : strlen($b);
+        if ($len > $maxLen) { $maxLen = $len; }
+    }
+    $headFont = 8; // px
+    $headH    = min(230, max(96, (int)ceil($maxLen * $headFont * 0.62) + 12)); // Textlänge + Polster
+
+    // Volle Seitenbreite über PROZENTUALE Spaltenbreiten im normalen Auto-Layout
+    // (Dompdf setzt das zuverlässig um; Namen werden nie abgeschnitten). Rang 4% +
+    // Name 13% + Total 5%, die Resultat-Spalten teilen sich die restlichen 78%.
+    $nCols  = count($definitions);
+    $colPct = $nCols > 0 ? round(78 / $nCols, 4) : 78;
+
+    $html .= '<table class="table" style="width: 100%;">';
+    $html .= '<thead><tr style="height: ' . $headH . 'px;">';
+    $html .= '<th style="width: 4%; vertical-align: bottom; text-align: center;">Rang</th>';
+    // Name-Spalte: schmal, aber breit genug für die längsten Namen auf einer Zeile
+    $html .= '<th style="width: 13%; text-align: left; vertical-align: bottom; padding-right: 8px;">Name</th>';
+
+    // Spaltenüberschriften mit 90-Grad-Rotation - OHNE KÜRZUNGEN; gleichmässig verteilt
+    foreach ($definitions as $d) {
+        $bez = trim($d['Bezeichnung']);
+
+        // Rotation mit div-Container; Kopf hoch genug für volle Bezeichnung
+        $html .= '<th class="result-col" style="width: ' . $colPct . '%; height: ' . $headH . 'px; vertical-align: bottom; position: relative; padding: 0;">';
+        $html .= '<div style="position: absolute; bottom: 6px; left: 19px; transform: rotate(-90deg); transform-origin: left bottom; white-space: nowrap; font-size: ' . $headFont . 'px; width: ' . ($headH - 12) . 'px;">';
         $html .= htmlspecialchars($bez);
         $html .= '</div>';
         $html .= '</th>';
     }
 
-    $html .= '<th style="width: 50px; vertical-align: bottom;">Total</th>';
+    $html .= '<th style="width: 5%; vertical-align: bottom; text-align: right;">Total</th>';
     $html .= '</tr></thead><tbody>';
 
     // Inhalt
@@ -455,10 +470,10 @@ function buildJMRangliste($year, $kategorie, $conn) {
         if ($currRank <= 3) {
             $rankClass = "rank-$currRank";
             $html .= "<td style='text-align: center;' class='$rankClass'><strong>$currRank</strong></td>";
-            $html .= "<td style='text-align: left; font-size: 7px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;'>$fullname</td>";
+            $html .= "<td style='text-align: left; font-size: 11px; font-weight: bold; white-space: nowrap; padding-right: 8px;'>$fullname</td>";
         } else {
             $html .= "<td style='text-align: center;'><strong>$currRank</strong></td>";
-            $html .= "<td style='text-align: left; font-size: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;'>$fullname</td>";
+            $html .= "<td style='text-align: left; font-size: 11px; white-space: nowrap; padding-right: 8px;'>$fullname</td>";
         }
 
         foreach ($definitions as $def) {
@@ -469,9 +484,11 @@ function buildJMRangliste($year, $kategorie, $conn) {
                 $pointArr = $entry['wettbewerbe'][$dID];
                 $vals     = [];
                 foreach ($pointArr as $pItem) {
-                    $pVal = number_format($pItem['punkte'], 2, '.', '');
+                    // Ganzzahlige (nicht hochgerechnete) Resultate ohne Nachkommastellen
+                    $pDec = (abs($pItem['punkte'] - round($pItem['punkte'])) < 0.005) ? 0 : 2;
+                    $pVal = number_format($pItem['punkte'], $pDec, '.', '');
                     if ($pItem['strichen']) {
-                        $vals[] = "<span style='color:red; text-decoration:line-through;'>$pVal</span>";
+                        $vals[] = "<span class='struck'>$pVal</span>";
                     } else {
                         // Erste 3 Ränge fett
                         if ($currRank <= 3) {
@@ -486,11 +503,13 @@ function buildJMRangliste($year, $kategorie, $conn) {
             $html .= "<td class='result-col'>$cellContent</td>";
         }
         
-        // Total - erste 3 Ränge fett
+        // Total - erste 3 Ränge fett; ganzzahlig ohne Nachkommastellen
+        $totDec = (abs($sumTotal - round($sumTotal)) < 0.005) ? 0 : 2;
+        $totStr = number_format($sumTotal, $totDec, '.', '');
         if ($currRank <= 3) {
-            $html .= "<td style='font-weight: bold;'><strong>" . number_format($sumTotal, 2, '.', '') . "</strong></td>";
+            $html .= "<td style='font-weight: bold;'><strong>$totStr</strong></td>";
         } else {
-            $html .= "<td><strong>" . number_format($sumTotal, 2, '.', '') . "</strong></td>";
+            $html .= "<td><strong>$totStr</strong></td>";
         }
         $html .= '</tr>';
     }

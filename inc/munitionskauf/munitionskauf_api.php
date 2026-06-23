@@ -9,15 +9,8 @@ ini_set('log_errors', 1);
 // Set timezone to Swiss time - WICHTIG!
 date_default_timezone_set('Europe/Zurich');
 
-// Session-Konfiguration VOR session_start()
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Lax');
-
-// IMMER Session starten für CSRF validation - BEVOR Headers gesendet werden
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Zentrale Session-Konfiguration (Cross-Subdomain Cookies, CSRF)
+require_once __DIR__ . '/../session_config.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');

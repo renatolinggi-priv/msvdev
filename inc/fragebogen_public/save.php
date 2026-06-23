@@ -78,15 +78,17 @@ if (!in_array($gruppen, $allowedParticipation, true)) {
     json_error('Ungültiger Wert für Gruppenmeisterschaft.');
 }
 
-// Waffe validieren
-$stmtW = $conn->prepare("SELECT ID FROM Waffen WHERE ID = ?");
-$stmtW->bind_param('i', $waffenID);
-$stmtW->execute();
-if ($stmtW->get_result()->num_rows === 0) {
+// Waffe validieren (0 = "Nehme nicht teil" ist erlaubt)
+if ($waffenID !== 0) {
+    $stmtW = $conn->prepare("SELECT ID FROM Waffen WHERE ID = ?");
+    $stmtW->bind_param('i', $waffenID);
+    $stmtW->execute();
+    if ($stmtW->get_result()->num_rows === 0) {
+        $stmtW->close();
+        json_error('Ungültige Waffe ausgewählt.');
+    }
     $stmtW->close();
-    json_error('Ungültige Waffe ausgewählt.');
 }
-$stmtW->close();
 
 // Mitglied existiert und ist aktiv
 $stmtM = $conn->prepare("SELECT ID FROM mitglieder WHERE ID = ? AND Status = 1");
@@ -125,11 +127,13 @@ try {
         $stmtIns->close();
     }
 
-    // 2) Mitglieder-Tabelle: WaffenID aktualisieren
-    $stmtMW = $conn->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
-    $stmtMW->bind_param('ii', $waffenID, $mitgliedId);
-    $stmtMW->execute();
-    $stmtMW->close();
+    // 2) Mitglieder-Tabelle: WaffenID aktualisieren (nicht bei "Nehme nicht teil")
+    if ($waffenID !== 0) {
+        $stmtMW = $conn->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
+        $stmtMW->bind_param('ii', $waffenID, $mitgliedId);
+        $stmtMW->execute();
+        $stmtMW->close();
+    }
 
     // 3) Erweiterte Antworten upserten
     foreach ($erweitert as $defID => $antwort) {

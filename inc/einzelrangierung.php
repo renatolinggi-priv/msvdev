@@ -4,116 +4,112 @@ include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles
 $page_specific_css = "
-/* === EINZELRANGIERUNGEN STYLES === */
-.ranking-card {
+/* === RANGIERUNGEN – modernes, einheitliches Design === */
+.ranking-shell {
     background: #ffffff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #e9eef5;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
 }
 
-.ranking-table {
-    font-size: 0.9rem;
-}
+.ranking-table { font-size: .9rem; margin-bottom: 0; }
 
-.ranking-table th {
-    background-color: var(--light-color);
+.ranking-table thead th {
+    background: #f8fafc;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    padding: 1rem 0.75rem;
-    color: var(--secondary-color);
-    border-bottom: 2px solid #dee2e6;
+    font-size: .72rem;
+    letter-spacing: .4px;
+    color: #64748b;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid #e9eef5;
+    white-space: nowrap;
 }
 
-/* Spaltenbreiten für Einzelrangierungen */
-.ranking-table .anlass-col { width: 25%; text-align: left; }
-.ranking-table .mitglied-col { width: 20%; text-align: left; }
-.ranking-table .rang-col { width: 8%; }
-.ranking-table .resultat-col { width: 15%; }
-.ranking-table .preis-col { width: 12%; }
-.ranking-table .aktionen-col { width: 20%; }
+.ranking-table tbody td {
+    padding: .7rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
+}
+.ranking-table tbody tr:last-child td { border-bottom: none; }
 
-/* Explizite Linksbündigkeit für erste Spalte */
 .ranking-table td:first-child,
-.ranking-table th:first-child {
-    text-align: left !important;
+.ranking-table th:first-child { text-align: left !important; }
+
+.ranking-table .ranking-row { cursor: pointer; transition: background .15s ease; }
+.ranking-table .ranking-row:hover { background: #f6faff; }
+
+/* Globale .table-Regeln aus msv-styles/resultate-unified neutralisieren:
+   keine vertikalen Gitterlinien, kein erzwungener Leerraum, keine 1.-Spalte-Tönung */
+.ranking-table th, .ranking-table td { border-right: 0 !important; }
+.ranking-table th:first-child, .ranking-table td:first-child {
+    width: auto !important; background: transparent !important; font-weight: inherit;
+}
+.ranking-shell .table-responsive {
+    min-height: 0 !important; max-height: none !important; overflow-y: visible !important;
 }
 
+/* Spaltenbreiten */
+.ranking-table .anlass-col   { width: 32%; }
+.ranking-table .mitglied-col { width: 24%; }
+.ranking-table .rang-col     { width: 80px; }
+.ranking-table .resultat-col { width: 14%; }
+.ranking-table .preis-col    { width: 16%; }
+.ranking-table .aktionen-col { width: 70px; }
+
+/* Rang-Badge mit Medaillen-Farben */
+.rang-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 30px; padding: 0 .55rem;
+    border-radius: 999px; font-weight: 700; font-size: .82rem;
+    background: #eef2f7; color: #475569;
+}
+.rang-badge.r1 { background: linear-gradient(135deg,#fde68a,#f59e0b); color: #7c2d12; box-shadow: 0 1px 2px rgba(245,158,11,.35); }
+.rang-badge.r2 { background: linear-gradient(135deg,#e8edf3,#aab6c5); color: #1e293b; }
+.rang-badge.r3 { background: linear-gradient(135deg,#fed7aa,#fb923c); color: #7c2d12; }
+
+/* Preis-Zelle */
+.preis-cell { font-weight: 700; color: #0f766e; white-space: nowrap; }
+
+/* Aktionen: Löschen erst bei Hover deutlich sichtbar */
+.ranking-table .row-actions .btn {
+    opacity: .5; transition: opacity .15s ease;
+    padding: .25rem .45rem; font-size: .8rem;
+}
+.ranking-table .ranking-row:hover .row-actions .btn { opacity: 1; }
+
+/* Leer-/Lade-Zustand */
+.ranking-empty { padding: 3rem 1rem; text-align: center; color: #94a3b8; }
+.ranking-empty i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .6; }
+
+/* Karte für neue Rangierung */
 .add-ranking-card {
-    background: #f8f9fa;
-    border: 2px dashed #dee2e6;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    transition: all 0.2s ease;
+    background: #f8fafc;
+    border: 1px solid #e9eef5;
+    border-radius: .85rem;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.add-ranking-card h6 { color: #334155; }
+
+/* Mobile */
+@media (max-width: 767.98px) {
+    .ranking-table { font-size: .82rem; min-width: 720px; }
+    .ranking-table thead th, .ranking-table tbody td { padding: .55rem .6rem; white-space: nowrap; }
 }
 
-.add-ranking-card:hover {
-    border-color: #007bff;
-    background: #f0f8ff;
-}
-
-/* Mobile Anpassungen - Verbessert */
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Erst bei sehr kleinen Bildschirmen responsiv werden */
-@media (max-width: 576px) {
-    .ranking-card {
-        padding: 1rem;
-        margin-left: -15px;
-        margin-right: -15px;
-        border-radius: 0;
-    }
-    
-    .ranking-table {
-        font-size: 0.8rem;
-        min-width: 800px; /* Verhindert vorzeitiges Umbrechen - breiter wegen mehr Spalten */
-    }
-    
-    .ranking-table th,
-    .ranking-table td {
-        padding: 0.5rem 0.25rem;
-        white-space: nowrap;
-    }
-}
-
-/* Mittlere Bildschirme - mehr Platz nutzen */
-@media (min-width: 769px) and (max-width: 1200px) {
-    .ranking-table .anlass-col { width: 22%; }
-    .ranking-table .mitglied-col { width: 18%; }
-    .ranking-table .rang-col { width: 8%; }
-    .ranking-table .resultat-col { width: 12%; }
-    .ranking-table .preis-col { width: 10%; }
-    .ranking-table .aktionen-col { width: 30%; }
-}
-
-/* Große Bildschirme - optimale Verteilung */
-@media (min-width: 1201px) {
-    .ranking-table .anlass-col { width: 25%; }
-    .ranking-table .mitglied-col { width: 20%; }
-    .ranking-table .rang-col { width: 8%; }
-    .ranking-table .resultat-col { width: 15%; }
-    .ranking-table .preis-col { width: 12%; }
-    .ranking-table .aktionen-col { width: 20%; }
-}
-
-/* Action Buttons Styling - gleiche Größe wie in Endresultate */
-.ranking-table td:last-child .btn {
-    margin: 1px !important;
-    padding: 0.25rem 0.4rem !important;
-    font-size: 0.8rem !important;
-}
-
-.ranking-table td:last-child {
-    white-space: nowrap !important;
-}
+/* === EDIT SLIDE PANEL === */
+.edit-panel { position: fixed; top: 0; right: -460px; width: 440px; height: 100vh; background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
+.edit-panel.open { right: 0; }
+.edit-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s; }
+.edit-panel-overlay.show { opacity: 1; visibility: visible; }
+.edit-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0; }
+.edit-panel-header h6 { margin: 0; font-weight: 600; color: #1e293b; }
+.edit-panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+.edit-panel-label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.35rem; }
+@media (max-width: 767.98px) { .edit-panel { width: 100%; right: -100%; } }
 ";
 
 include 'header.inc.php';
@@ -126,7 +122,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xxl-6 col-xl-8 col-lg-10 col-md-12 col-12 ps-0">
+        <div class="col-xxl-8 col-xl-10 col-lg-12 col-md-12 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
@@ -145,15 +141,43 @@ if (empty($_SESSION['csrf_token'])) {
                     <form id="rankingForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                         
-                        <!-- Jahr-Auswahl -->
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
-                                <!-- Optionen werden per JavaScript eingefügt -->
-                            </select>
-                        </div>
+                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
+                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
+                                    <i class="bi bi-calendar3 me-1"></i>Jahr:
+                                </label>
+                                <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                                    <!-- Optionen werden per JavaScript eingefügt -->
+                                </select>
+                            </div>
+
+                            <!-- Aktionsbereich (Bootstrap Collapse) -->
+                            <div class="card action-card mb-0">
+                                <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+                                     data-bs-toggle="collapse" data-bs-target="#einzelrangActions"
+                                     aria-expanded="false" aria-controls="einzelrangActions">
+                                    <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
+                                    <i class="bi bi-chevron-down action-chevron"></i>
+                                </div>
+                                <div class="collapse" id="einzelrangActions">
+                                    <div class="card-body pt-2 pb-3 px-3">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <button type="button" id="addNewBtn" class="btn btn-outline-success btn-sm w-100" disabled>
+                                                    <i class="bi bi-plus-circle me-1"></i>Hinzufügen
+                                                </button>
+                                            </div>
+                                            <div class="col-6">
+                                                <button type="button" id="exportPdfBtn" class="btn btn-outline-danger btn-sm w-100" style="display: none;">
+                                                    <i class="bi bi-file-pdf me-1"></i>PDF
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Neue Rangierung hinzufügen -->
                         <div class="add-ranking-card" id="addRankingCard" style="display: none;">
@@ -161,78 +185,45 @@ if (empty($_SESSION['csrf_token'])) {
                                 <i class="bi bi-plus-circle me-2"></i>
                                 Neue Einzelrangierung hinzufügen
                             </h6>
-                            
-                            <div class="row">
-                                <div class="col-md-2">
+
+                            <div class="row g-2">
+                                <div class="col-md-3">
                                     <label for="anlassSelect" class="form-label">Anlass:</label>
                                     <select id="anlassSelect" class="form-select">
                                         <option value="">-- Anlass auswählen --</option>
-                                        <!-- Optionen werden per JavaScript eingefügt -->
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label for="mitgliedSelect" class="form-label">Mitglied:</label>
                                     <select id="mitgliedSelect" class="form-select">
                                         <option value="">-- Mitglied auswählen --</option>
-                                        <!-- Optionen werden per JavaScript eingefügt -->
                                     </select>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <label for="rangInput" class="form-label">Rang:</label>
                                     <input type="number" id="rangInput" class="form-control" min="1" max="999" placeholder="z.B. 1">
                                 </div>
                                 <div class="col-md-2">
                                     <label for="resultatInput" class="form-label">Resultat:</label>
-                                    <input type="text" id="resultatInput" class="form-control" placeholder="z.B. 95.5 Pkt">
+                                    <input type="text" id="resultatInput" class="form-control" placeholder="z.B. 95.5">
                                 </div>
                                 <div class="col-md-2">
                                     <label for="preisInput" class="form-label">Preis (CHF):</label>
-                                    <input type="number" id="preisInput" class="form-control" min="0" step="0.05" placeholder="z.B. 100.00">
+                                    <input type="number" id="preisInput" class="form-control" min="0" step="0.05" placeholder="z.B. 100">
                                 </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="button" id="saveRankingBtn" class="btn btn-compact-standard btn-primary w-100">
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="button" id="saveRankingBtn" class="btn btn-primary btn-sm">
                                         <i class="bi bi-save me-1"></i>Speichern
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Aktionsbereich (Bootstrap Collapse) -->
-                        <div class="card mb-3 action-card">
-                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                                 data-bs-toggle="collapse" data-bs-target="#einzelrangActions"
-                                 aria-expanded="false" aria-controls="einzelrangActions">
-                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                                <i class="bi bi-chevron-down action-chevron"></i>
-                            </div>
-                            <div class="collapse" id="einzelrangActions">
-                                <div class="card-body pt-2 pb-3 px-3">
-                                    <div class="row g-2">
-                                        <div class="col-12">
-                                            <button type="button" id="addNewBtn" class="btn btn-primary w-100" disabled>
-                                                <i class="bi bi-plus-circle me-2"></i>Neue Rangierung
-                                            </button>
-                                        </div>
-                                        <div class="col-12">
-                                            <button type="button" id="exportPdfBtn" class="btn btn-outline-danger w-100" style="display: none;">
-                                                <i class="bi bi-file-pdf me-1"></i>PDF Export
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Vorhandene Rangierungen -->
-                        <div id="rankingsContainer">
-                            <div class="ranking-card">
-                                <h5 class="mb-3">
-                                    <i class="bi bi-list-ul me-2"></i>
-                                    Vorhandene Einzelrangierungen
-                                </h5>
-                                <div class="desktop-table-container">
+                        <div id="rankingsContainer" class="ranking-shell">
+                            <div class="desktop-table-container">
                                 <div class="table-responsive">
-                                    <table class="table table-hover ranking-table" id="einzelrangTable">
+                                    <table class="table ranking-table align-middle" id="einzelrangTable">
                                         <thead>
                                             <tr>
                                                 <th class="anlass-col">Anlass</th>
@@ -240,7 +231,7 @@ if (empty($_SESSION['csrf_token'])) {
                                                 <th class="rang-col text-center">Rang</th>
                                                 <th class="resultat-col text-center">Resultat</th>
                                                 <th class="preis-col text-end">Preis (CHF)</th>
-                                                <th class="aktionen-col text-center">Aktionen</th>
+                                                <th class="aktionen-col text-center"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="rankingsList">
@@ -248,16 +239,16 @@ if (empty($_SESSION['csrf_token'])) {
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                            <!-- Mobile Cards Container -->
+                            <div class="mobile-cards-container" id="mobileCardsEinzelrang">
+                                <div class="mobile-search-container">
+                                    <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
                                 </div>
-                                <!-- Mobile Cards Container -->
-                                <div class="mobile-cards-container" id="mobileCardsEinzelrang">
-                                    <div class="mobile-search-container">
-                                        <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
-                                    </div>
-                                    <div class="mobile-scroll-container">
-                                        <!-- Cards werden hier eingefügt -->
-                                    </div>
+                                <div class="mobile-scroll-container">
+                                    <!-- Cards werden hier eingefügt -->
                                 </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -266,85 +257,45 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Edit Rangierung Modal -->
-<div class="modal fade" id="editRankingModal" tabindex="-1" aria-labelledby="editRankingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editRankingModalLabel">
-                    <i class="bi bi-pencil-square me-2"></i>
-                    Einzelrangierung bearbeiten
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editRankingForm">
-                    <input type="hidden" id="editRankingId" value="">
-                    
-                    <div class="mb-3">
-                        <label for="editAnlassName" class="form-label fw-bold">Anlass:</label>
-                        <input type="text" class="form-control" id="editAnlassName" readonly>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editMitgliedName" class="form-label fw-bold">Mitglied:</label>
-                        <input type="text" class="form-control" id="editMitgliedName" readonly>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="editRangInput" class="form-label fw-bold">
-                                    <i class="bi bi-trophy me-1"></i>Rang:
-                                </label>
-                                <input type="number" class="form-control" id="editRangInput"
-                                       min="1" max="999" placeholder="z.B. 1" required>
-                                <div class="invalid-feedback">
-                                    Bitte geben Sie einen gültigen Rang ein.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="editResultatInput" class="form-label fw-bold">
-                                    <i class="bi bi-bullseye me-1"></i>Resultat:
-                                </label>
-                                <input type="text" class="form-control" id="editResultatInput"
-                                       placeholder="z.B. 95.5 Pkt">
-                                <div class="invalid-feedback">
-                                    Bitte geben Sie ein gültiges Resultat ein.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="editPreisInput" class="form-label fw-bold">
-                                    <i class="bi bi-cash me-1"></i>Preis (CHF):
-                                </label>
-                                <input type="number" class="form-control" id="editPreisInput"
-                                       min="0" step="0.05" placeholder="z.B. 100.00" required>
-                                <div class="invalid-feedback">
-                                    Bitte geben Sie einen gültigen Preis ein.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info d-none" id="editModalAlert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <span id="editModalAlertText"></span>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-primary" id="saveEditRankingBtn">
-                    <i class="bi bi-check-circle me-1"></i>Speichern
-                </button>
-            </div>
+<!-- Edit Slide-Panel -->
+<div class="edit-panel-overlay" id="editPanelOverlay"></div>
+<div class="edit-panel" id="editPanel">
+    <div class="edit-panel-header">
+        <h6><i class="bi bi-pencil-square me-2"></i>Einzelrangierung bearbeiten</h6>
+        <button class="btn btn-sm btn-outline-secondary" id="editPanelClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="edit-panel-body">
+        <input type="hidden" id="editRankingId" value="">
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-calendar-event me-1"></i>Anlass</label>
+            <input type="text" class="form-control" id="editAnlassName" readonly>
         </div>
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-person me-1"></i>Mitglied</label>
+            <input type="text" class="form-control" id="editMitgliedName" readonly>
+        </div>
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-trophy me-1"></i>Rang</label>
+            <input type="number" class="form-control" id="editRangInput" min="1" max="999" placeholder="z.B. 1" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-bullseye me-1"></i>Resultat</label>
+            <input type="text" class="form-control" id="editResultatInput" placeholder="z.B. 95.5 Pkt">
+        </div>
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-cash me-1"></i>Preis (CHF)</label>
+            <input type="number" class="form-control" id="editPreisInput" min="0" step="0.05" placeholder="z.B. 100.00" required>
+        </div>
+
+        <hr>
+        <button type="button" class="btn btn-primary w-100" id="saveEditRankingBtn">
+            <i class="bi bi-check-circle me-1"></i>Speichern
+        </button>
     </div>
 </div>
 
@@ -429,10 +380,10 @@ $(document).ready(function () {
     // Vorhandene Rangierungen laden
     function loadExistingRankings(year) {
         $('#rankingsList').html(`
-            <div class="text-center py-4">
+            <tr><td colspan="6" class="ranking-empty">
                 <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
                 Lade Rangierungen...
-            </div>
+            </td></tr>
         `);
 
         $.ajax({
@@ -447,21 +398,22 @@ $(document).ready(function () {
                     $('#exportPdfBtn').show();
                 } else {
                     $('#rankingsList').html(`
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-info-circle me-2"></i>
+                        <tr><td colspan="6" class="ranking-empty">
+                            <i class="bi bi-trophy"></i>
                             Noch keine Einzelrangierungen für das Jahr ${year} erfasst.
-                        </div>
+                        </td></tr>
                     `);
+                    buildMobileCardsEinzelrang();
                     // PDF Export Button verstecken
                     $('#exportPdfBtn').hide();
                 }
             },
             error: function () {
                 $('#rankingsList').html(`
-                    <div class="text-center py-4 text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
+                    <tr><td colspan="6" class="ranking-empty text-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
                         Fehler beim Laden der Rangierungen.
-                    </div>
+                    </td></tr>
                 `);
                 msvToast('Fehler beim Laden der Rangierungen', 'error');
             }
@@ -473,23 +425,21 @@ $(document).ready(function () {
         let html = '';
         
         rankings.forEach(function(ranking) {
+            const r = parseInt(ranking.rang, 10);
+            const rcls = r === 1 ? 'r1' : r === 2 ? 'r2' : r === 3 ? 'r3' : '';
             html += `
-                <tr>
-                    <td class="fw-medium">${ranking.anlass_bezeichnung}</td>
+                <tr class="ranking-row" data-id="${ranking.id}" data-rang="${ranking.rang}" data-preis="${ranking.preis}"
+                    data-resultat="${ranking.resultat || ''}" data-anlass="${ranking.anlass_bezeichnung}"
+                    data-mitglied="${ranking.mitglied_name}">
+                    <td class="fw-semibold">${ranking.anlass_bezeichnung}</td>
                     <td>${ranking.mitglied_name}</td>
                     <td class="text-center">
-                        <span class="badge bg-primary">${ranking.rang}</span>
+                        <span class="rang-badge ${rcls}">${ranking.rang}</span>
                     </td>
-                    <td class="text-center">${ranking.resultat || '-'}</td>
-                    <td class="text-end fw-bold">CHF ${parseFloat(ranking.preis).toFixed(2)}</td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-outline-primary me-1 edit-ranking"
-                                data-id="${ranking.id}" data-rang="${ranking.rang}" data-preis="${ranking.preis}"
-                                data-resultat="${ranking.resultat || ''}" data-anlass="${ranking.anlass_bezeichnung}"
-                                data-mitglied="${ranking.mitglied_name}">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-danger delete-ranking"
+                    <td class="text-center">${ranking.resultat || '<span class="text-muted">–</span>'}</td>
+                    <td class="text-end"><span class="preis-cell">CHF ${parseFloat(ranking.preis).toFixed(2)}</span></td>
+                    <td class="text-center row-actions">
+                        <button type="button" class="btn btn-outline-danger delete-ranking" data-tooltip="Löschen"
                                 data-id="${ranking.id}" data-anlass="${ranking.anlass_bezeichnung}"
                                 data-mitglied="${ranking.mitglied_name}">
                             <i class="bi bi-trash"></i>
@@ -502,6 +452,12 @@ $(document).ready(function () {
         $('#rankingsList').html(html);
         buildMobileCardsEinzelrang();
     }
+
+    // "Hinzufügen" öffnet das Eingabeformular
+    $('#addNewBtn').on('click', function() {
+        $('#addRankingCard').slideDown();
+        $(this).prop('disabled', true);
+    });
 
     $('#saveRankingBtn').on('click', function() {
         const anlassId = $('#anlassSelect').val();
@@ -561,62 +517,44 @@ $(document).ready(function () {
         });
     });
 
-    // Edit-Button Event Handler - Modal öffnen
-    $(document).on('click', '.edit-ranking', function() {
-        const id = $(this).data('id');
-        const currentRang = $(this).data('rang');
-        const currentResultat = $(this).data('resultat');
-        const currentPreis = $(this).data('preis');
-        const anlassName = $(this).data('anlass');
-        const mitgliedName = $(this).data('mitglied');
-        
-        // Modal mit aktuellen Werten füllen
-        $('#editRankingId').val(id);
-        $('#editAnlassName').val(anlassName);
-        $('#editMitgliedName').val(mitgliedName);
-        $('#editRangInput').val(currentRang);
-        $('#editResultatInput').val(currentResultat);
-        $('#editPreisInput').val(currentPreis);
-        
-        // Validation-Klassen zurücksetzen
-        $('#editRankingForm')[0].classList.remove('was-validated');
-        $('#editRangInput, #editResultatInput, #editPreisInput').removeClass('is-invalid');
-        $('#editModalAlert').addClass('d-none');
-        
-        // Modal öffnen
-        $('#editRankingModal').modal('show');
+    // Edit-Panel öffnen/schliessen
+    function openEditPanel() { $('#editPanel').addClass('open'); $('#editPanelOverlay').addClass('show'); }
+    function closeEditPanel() { $('#editPanel').removeClass('open'); $('#editPanelOverlay').removeClass('show'); }
+    $('#editPanelClose, #editPanelOverlay').on('click', closeEditPanel);
+    $(document).on('keydown', function(e) { if (e.key === 'Escape') closeEditPanel(); });
+
+    // Zeilen-Klick öffnet Edit-Panel (nicht bei Klick auf Buttons)
+    $(document).on('click', '.ranking-row', function(e) {
+        if ($(e.target).closest('button').length) return;
+
+        const $row = $(this);
+        $('#editRankingId').val($row.data('id'));
+        $('#editAnlassName').val($row.data('anlass'));
+        $('#editMitgliedName').val($row.data('mitglied'));
+        $('#editRangInput').val($row.data('rang'));
+        $('#editResultatInput').val($row.data('resultat'));
+        $('#editPreisInput').val($row.data('preis'));
+
+        openEditPanel();
     });
 
-    // Modal Save Button Event Handler
+    // Panel Save Button Event Handler
     $('#saveEditRankingBtn').on('click', function() {
-        const form = $('#editRankingForm')[0];
         const id = $('#editRankingId').val();
         const newRang = $('#editRangInput').val();
         const newResultat = $('#editResultatInput').val();
         const newPreis = $('#editPreisInput').val();
-        
-        // Form validieren
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
+
+        if (!newRang || !newPreis) {
+            msvToast('Bitte alle Felder ausfüllen', 'warning');
             return;
         }
-        
-        // Zusätzliche Validierung
-        if (!newRang || !newPreis || isNaN(newRang) || isNaN(newPreis)) {
-            $('#editModalAlert')
-                .removeClass('d-none alert-info')
-                .addClass('alert-danger')
-                .find('#editModalAlertText')
-                .text('Bitte geben Sie gültige Werte für Rang und Preis ein.');
-            return;
-        }
-        
+
         const $btn = $(this);
         const originalText = $btn.html();
         $btn.prop('disabled', true)
             .html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
-        
-        // Update durchführen
+
         $.ajax({
             url: 'einzelrangierung/update_ranking.php',
             type: 'POST',
@@ -631,34 +569,19 @@ $(document).ready(function () {
             success: function(response) {
                 if (response.success) {
                     msvToast('Einzelrangierung erfolgreich aktualisiert', 'success');
-                    $('#editRankingModal').modal('hide');
+                    closeEditPanel();
                     loadExistingRankings(selectedYear);
                 } else {
-                    $('#editModalAlert')
-                        .removeClass('d-none alert-info')
-                        .addClass('alert-danger')
-                        .find('#editModalAlertText')
-                        .text('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'));
+                    msvToast('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'), 'error');
                 }
             },
             error: function() {
-                $('#editModalAlert')
-                    .removeClass('d-none alert-info')
-                    .addClass('alert-danger')
-                    .find('#editModalAlertText')
-                    .text('Fehler beim Aktualisieren der Rangierung');
+                msvToast('Fehler beim Aktualisieren der Rangierung', 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
             }
         });
-    });
-
-    // Modal Reset beim Schließen
-    $('#editRankingModal').on('hidden.bs.modal', function() {
-        $('#editRankingForm')[0].classList.remove('was-validated');
-        $('#editRangInput, #editResultatInput, #editPreisInput').removeClass('is-invalid');
-        $('#editModalAlert').addClass('d-none');
     });
 
     // Delete-Button Event Handler

@@ -9,24 +9,109 @@ if (empty($_SESSION['csrf_token'])) {
 }
 ?>
 <style>
-/* Sektionsrangierungen - Desktop Styles */
-
-/* Flex-Layout für Form */
-#rankingForm {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
+/* === RANGIERUNGEN – modernes, einheitliches Design === */
+.ranking-shell {
+    background: #ffffff;
+    border: 1px solid #e9eef5;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
 }
 
-/* Sticky Header */
-#sektionsrangTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.ranking-table { font-size: .9rem; margin-bottom: 0; }
+
+.ranking-table thead th {
+    background: #f8fafc;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: .72rem;
+    letter-spacing: .4px;
+    color: #64748b;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid #e9eef5;
+    white-space: nowrap;
 }
+
+.ranking-table tbody td {
+    padding: .7rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ranking-table td:first-child,
+.ranking-table th:first-child { text-align: left !important; }
+
+.ranking-table .ranking-row { cursor: pointer; transition: background .15s ease; }
+.ranking-table .ranking-row:hover { background: #f6faff; }
+
+/* Globale .table-Regeln aus msv-styles/resultate-unified neutralisieren:
+   keine vertikalen Gitterlinien, kein erzwungener Leerraum, keine 1.-Spalte-Tönung */
+.ranking-table th, .ranking-table td { border-right: 0 !important; }
+.ranking-table th:first-child, .ranking-table td:first-child {
+    width: auto !important; background: transparent !important; font-weight: inherit;
+}
+.ranking-shell .table-responsive {
+    min-height: 0 !important; max-height: none !important; overflow-y: visible !important;
+}
+
+/* Total-Zeile */
+.ranking-table tr.total-row td {
+    background: #f8fafc;
+    border-top: 2px solid #e2e8f0;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Rang-Badge mit Medaillen-Farben */
+.rang-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 30px; padding: 0 .55rem;
+    border-radius: 999px; font-weight: 700; font-size: .82rem;
+    background: #eef2f7; color: #475569;
+}
+.rang-badge.r1 { background: linear-gradient(135deg,#fde68a,#f59e0b); color: #7c2d12; box-shadow: 0 1px 2px rgba(245,158,11,.35); }
+.rang-badge.r2 { background: linear-gradient(135deg,#e8edf3,#aab6c5); color: #1e293b; }
+.rang-badge.r3 { background: linear-gradient(135deg,#fed7aa,#fb923c); color: #7c2d12; }
+
+/* Preis-Zelle */
+.preis-cell { font-weight: 700; color: #0f766e; white-space: nowrap; }
+
+/* Aktionen: Löschen erst bei Hover deutlich sichtbar */
+.ranking-table .row-actions .btn {
+    opacity: .5; transition: opacity .15s ease;
+    padding: .25rem .45rem; font-size: .8rem;
+}
+.ranking-table .ranking-row:hover .row-actions .btn { opacity: 1; }
+
+/* Leer-/Lade-Zustand */
+.ranking-empty { padding: 3rem 1rem; text-align: center; color: #94a3b8; }
+.ranking-empty i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .6; }
+
+/* Karte für neue Rangierung */
+.add-ranking-card {
+    background: #f8fafc;
+    border: 1px solid #e9eef5;
+    border-radius: .85rem;
+    padding: 1.25rem;
+}
+.add-ranking-card h6 { color: #334155; }
+
+/* Mobile */
+@media (max-width: 767.98px) {
+    .ranking-table { font-size: .82rem; min-width: 480px; }
+    .ranking-table thead th, .ranking-table tbody td { padding: .55rem .6rem; white-space: nowrap; }
+}
+
+/* === EDIT SLIDE PANEL === */
+.edit-panel { position: fixed; top: 0; right: -460px; width: 440px; height: 100vh; background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
+.edit-panel.open { right: 0; }
+.edit-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s; }
+.edit-panel-overlay.show { opacity: 1; visibility: visible; }
+.edit-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0; }
+.edit-panel-header h6 { margin: 0; font-weight: 600; color: #1e293b; }
+.edit-panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+.edit-panel-label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.35rem; }
+@media (max-width: 767.98px) { .edit-panel { width: 100%; right: -100%; } }
 </style>
 <div class="container-fluid">
     <div class="row">
@@ -73,14 +158,14 @@ if (empty($_SESSION['csrf_token'])) {
                             <div class="collapse" id="sektionsrangActions">
                                 <div class="card-body pt-2 pb-3 px-3">
                                     <div class="row g-2">
-                                        <div class="col-12">
-                                            <button type="button" id="addNewBtn" class="btn btn-primary w-100" disabled>
-                                                <i class="bi bi-plus-circle me-2"></i>Neue Rangierung
+                                        <div class="col-6">
+                                            <button type="button" id="addNewBtn" class="btn btn-outline-success btn-sm w-100" disabled>
+                                                <i class="bi bi-plus-circle me-1"></i>Hinzufügen
                                             </button>
                                         </div>
-                                        <div class="col-12">
-                                            <button type="button" id="exportPdfBtn" class="btn btn-outline-danger w-100" style="display: none;">
-                                                <i class="bi bi-file-pdf me-1"></i>PDF Export
+                                        <div class="col-6">
+                                            <button type="button" id="exportPdfBtn" class="btn btn-outline-danger btn-sm w-100" style="display: none;">
+                                                <i class="bi bi-file-pdf me-1"></i>PDF
                                             </button>
                                         </div>
                                     </div>
@@ -120,26 +205,26 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
                         </div>
 
-                        <!-- Tabelle (einheitlich wie heimresultate.php) -->
-                        <div class="table-wrapper">
+                        <!-- Vorhandene Rangierungen -->
+                        <div class="ranking-shell">
                             <div class="desktop-table-container">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="sektionsrangTable">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style="min-width: 200px;">
-                                                <i class="bi bi-calendar-event me-1"></i>Anlass
-                                            </th>
-                                            <th scope="col" class="text-center">Rang</th>
-                                            <th scope="col" class="text-center">Preis (CHF)</th>
-                                            <th scope="col" class="text-center text-nowrap">Aktionen</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rankingsList">
-                                        <!-- Wird per JavaScript gefüllt -->
-                                    </tbody>
-                                </table>
-                            </div>
+                                <div class="table-responsive">
+                                    <table class="table ranking-table align-middle" id="sektionsrangTable">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col" style="min-width: 220px;">
+                                                    <i class="bi bi-calendar-event me-1"></i>Anlass
+                                                </th>
+                                                <th scope="col" class="text-center" style="width: 90px;">Rang</th>
+                                                <th scope="col" class="text-center" style="width: 150px;">Preis (CHF)</th>
+                                                <th scope="col" class="text-center" style="width: 70px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rankingsList">
+                                            <!-- Wird per JavaScript gefüllt -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <!-- Mobile Cards Container -->
                             <div class="mobile-cards-container" id="mobileCardsSektionsrang">
@@ -151,7 +236,6 @@ if (empty($_SESSION['csrf_token'])) {
                                 </div>
                             </div>
                         </div>
-                        </div>
                     </form>
                 </div><!-- /content-background -->
             </div><!-- /main-content-wrapper -->
@@ -159,57 +243,35 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Edit Rangierung Modal -->
-<div class="modal fade" id="editRankingModal" tabindex="-1" aria-labelledby="editRankingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editRankingModalLabel">
-                    <i class="bi bi-pencil-square me-2"></i>
-                    Rangierung bearbeiten
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editRankingForm">
-                    <input type="hidden" id="editRankingId" value="">
-                    
-                    <div class="mb-3">
-                        <label for="editAnlassName" class="form-label fw-bold">Anlass:</label>
-                        <input type="text" class="form-control" id="editAnlassName" readonly>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="editRangInput" class="form-label fw-bold">
-                                    <i class="bi bi-trophy me-1"></i>Rang:
-                                </label>
-                                <input type="number" class="form-control" id="editRangInput"
-                                       min="1" max="999" placeholder="z.B. 1" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="editPreisInput" class="form-label fw-bold">
-                                    <i class="bi bi-cash me-1"></i>Preis (CHF):
-                                </label>
-                                <input type="number" class="form-control" id="editPreisInput"
-                                       min="0" step="0.05" placeholder="z.B. 100.00" required>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-primary" id="saveEditRankingBtn">
-                    <i class="bi bi-check-circle me-1"></i>Speichern
-                </button>
-            </div>
+<!-- Edit Slide-Panel -->
+<div class="edit-panel-overlay" id="editPanelOverlay"></div>
+<div class="edit-panel" id="editPanel">
+    <div class="edit-panel-header">
+        <h6><i class="bi bi-pencil-square me-2"></i>Rangierung bearbeiten</h6>
+        <button class="btn btn-sm btn-outline-secondary" id="editPanelClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="edit-panel-body">
+        <input type="hidden" id="editRankingId" value="">
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-calendar-event me-1"></i>Anlass</label>
+            <input type="text" class="form-control" id="editAnlassName" readonly>
         </div>
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-trophy me-1"></i>Rang</label>
+            <input type="number" class="form-control" id="editRangInput" min="1" max="999" placeholder="z.B. 1" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="edit-panel-label"><i class="bi bi-cash me-1"></i>Preis (CHF)</label>
+            <input type="number" class="form-control" id="editPreisInput" min="0" step="0.05" placeholder="z.B. 100.00" required>
+        </div>
+
+        <hr>
+        <button type="button" class="btn btn-primary w-100" id="saveEditRankingBtn">
+            <i class="bi bi-check-circle me-1"></i>Speichern
+        </button>
     </div>
 </div>
 
@@ -277,10 +339,10 @@ $(document).ready(function () {
     // Vorhandene Rangierungen laden
     function loadExistingRankings(year) {
         $('#rankingsList').html(`
-            <div class="text-center py-4">
+            <tr><td colspan="4" class="ranking-empty">
                 <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
                 Lade Rangierungen...
-            </div>
+            </td></tr>
         `);
 
         $.ajax({
@@ -294,20 +356,21 @@ $(document).ready(function () {
                     $('#exportPdfBtn').show();
                 } else {
                     $('#rankingsList').html(`
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-info-circle me-2"></i>
+                        <tr><td colspan="4" class="ranking-empty">
+                            <i class="bi bi-trophy"></i>
                             Noch keine Rangierungen für das Jahr ${year} erfasst.
-                        </div>
+                        </td></tr>
                     `);
+                    buildMobileCardsSektionsrang();
                     $('#exportPdfBtn').hide();
                 }
             },
             error: function () {
                 $('#rankingsList').html(`
-                    <div class="text-center py-4 text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
+                    <tr><td colspan="4" class="ranking-empty text-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
                         Fehler beim Laden der Rangierungen.
-                    </div>
+                    </td></tr>
                 `);
                 msvToast('Fehler beim Laden der Rangierungen', 'error');
             }
@@ -322,23 +385,19 @@ $(document).ready(function () {
         rankings.forEach(function(ranking) {
             const preisNum = Number(ranking.preis) || 0;
             totalPrize += preisNum;
+            const r = parseInt(ranking.rang, 10);
+            const rcls = r === 1 ? 'r1' : r === 2 ? 'r2' : r === 3 ? 'r3' : '';
             html += `
-                <tr>
-                    <td class="text-start">${ranking.bezeichnung}</td>
+                <tr class="ranking-row" data-id="${ranking.id}" data-rang="${ranking.rang}"
+                    data-preis="${preisNum}" data-anlass="${ranking.bezeichnung}">
+                    <td class="text-start fw-semibold">${ranking.bezeichnung}</td>
                     <td class="text-center">
-                        <span class="badge bg-primary">${ranking.rang}</span>
+                        <span class="rang-badge ${rcls}">${ranking.rang}</span>
                     </td>
-                    <td class="text-center">CHF ${preisNum.toFixed(2)}</td>
-                    <td class="text-center text-nowrap">
-                        <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-ranking"
-                                data-id="${ranking.id}" 
-                                data-rang="${ranking.rang}" 
-                                data-preis="${preisNum}"
-                                data-anlass="${ranking.bezeichnung}">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger delete-ranking"
-                                data-id="${ranking.id}" 
+                    <td class="text-center"><span class="preis-cell">CHF ${preisNum.toFixed(2)}</span></td>
+                    <td class="text-center row-actions">
+                        <button type="button" class="btn btn-outline-danger delete-ranking" data-tooltip="Löschen"
+                                data-id="${ranking.id}"
                                 data-anlass="${ranking.bezeichnung}">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -349,11 +408,11 @@ $(document).ready(function () {
 
         // Total-Zeile
         html += `
-                <tr class="table-secondary fw-bold">
-                    <td>TOTAL</td>
-                    <td class="text-center">-</td>
-                    <td class="text-center">CHF ${totalPrize.toFixed(2)}</td>
-                    <td class="text-center">-</td>
+                <tr class="total-row">
+                    <td class="text-start"><i class="bi bi-cash-stack me-2"></i>Total</td>
+                    <td class="text-center">–</td>
+                    <td class="text-center"><span class="preis-cell">CHF ${totalPrize.toFixed(2)}</span></td>
+                    <td></td>
                 </tr>
         `;
 
@@ -418,19 +477,23 @@ $(document).ready(function () {
         });
     });
 
-    // Edit-Button Event Handler
-    $(document).on('click', '.edit-ranking', function() {
-        const id = $(this).data('id');
-        const currentRang = $(this).data('rang');
-        const currentPreis = $(this).data('preis');
-        const anlassName = $(this).data('anlass');
+    // Edit-Panel öffnen/schliessen
+    function openEditPanel() { $('#editPanel').addClass('open'); $('#editPanelOverlay').addClass('show'); }
+    function closeEditPanel() { $('#editPanel').removeClass('open'); $('#editPanelOverlay').removeClass('show'); }
+    $('#editPanelClose, #editPanelOverlay').on('click', closeEditPanel);
+    $(document).on('keydown', function(e) { if (e.key === 'Escape') closeEditPanel(); });
 
-        $('#editRankingId').val(id);
-        $('#editAnlassName').val(anlassName);
-        $('#editRangInput').val(currentRang);
-        $('#editPreisInput').val(currentPreis);
+    // Zeilen-Klick öffnet Edit-Panel (nicht bei Klick auf Buttons)
+    $(document).on('click', '.ranking-row', function(e) {
+        if ($(e.target).closest('button').length) return;
 
-        $('#editRankingModal').modal('show');
+        const $row = $(this);
+        $('#editRankingId').val($row.data('id'));
+        $('#editAnlassName').val($row.data('anlass'));
+        $('#editRangInput').val($row.data('rang'));
+        $('#editPreisInput').val($row.data('preis'));
+
+        openEditPanel();
     });
 
     // Modal Save Button
@@ -462,7 +525,7 @@ $(document).ready(function () {
             success: function(response) {
                 if (response.success) {
                     msvToast('Rangierung erfolgreich aktualisiert', 'success');
-                    $('#editRankingModal').modal('hide');
+                    closeEditPanel();
                     loadExistingRankings(selectedYear);
                 } else {
                     msvToast('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'), 'error');

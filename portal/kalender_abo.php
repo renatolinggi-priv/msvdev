@@ -5,8 +5,12 @@ require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 requireLogin();
 
-$calendarUrl = "https://jahresmeisterschaft.msvwilen.ch/termine";
-$webcalUrl   = "webcal://jahresmeisterschaft.msvwilen.ch/termine";
+// Host dynamisch ableiten — funktioniert auf mitglieder.* / admin.* / localhost
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host   = $_SERVER['HTTP_HOST'] ?? 'jahresmeisterschaft.msvwilen.ch';
+// Vereinskalender wird per .htaccess-Rewrite von /termine bedient (termine.php im Root)
+$calendarUrl = $scheme . '://' . $host . '/termine';
+$webcalUrl   = 'webcal://' . $host . '/termine';
 
 // Aktuelles Einsatz-Token laden
 $einsatz_token      = null;
@@ -20,8 +24,6 @@ if ($user_id) {
     $row = $stmt->fetch();
     if ($row && !empty($row['calendar_token'])) {
         $einsatz_token      = $row['calendar_token'];
-        $scheme             = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host               = $_SERVER['HTTP_HOST'];
         $einsatz_feed_url   = $scheme . '://' . $host . '/einsatz_feed.php?token=' . $einsatz_token;
         $einsatz_webcal_url = 'webcal://' . $host . '/einsatz_feed.php?token=' . $einsatz_token;
     }
@@ -33,85 +35,30 @@ include 'portal_header.php';
 ?>
 
 <style>
-/* Karten-Container für die zwei Abschnitte */
-.abo-card {
-    background: white;
-    border-radius: 0.85rem;
-    padding: 1.1rem 1.2rem 1rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    border: 1px solid #f0f0f0;
-    margin-bottom: 1.1rem;
-}
-.abo-card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    margin-bottom: 0.85rem;
-}
-.abo-card-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-.abo-card-icon.personal { background: #fff8e1; color: #e65100; }
-.abo-card-icon.club     { background: #e8f0fe; color: #3b5998; }
-.abo-card-icon.help     { background: #f0f4f8; color: #718096; }
-.abo-card-title {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #2d3748;
-}
+/* Untertitel unter dem Sektions-Titel — seitenspezifisch (.p-section-title liefert nur den Titel) */
 .abo-card-subtitle {
-    font-size: 0.75rem;
-    color: #718096;
-    margin-top: 0.05rem;
+    font-size: .75rem;
+    color: var(--p-text-muted);
+    margin-top: .05rem;
 }
 
-/* Primär-Subscribe-Button */
-.abo-subscribe-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    width: 100%;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 0.65rem;
-    padding: 0.8rem;
-    font-size: 0.97rem;
-    font-weight: 600;
-    text-decoration: none;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 0.75rem;
-}
-.abo-subscribe-btn:hover {
-    background: #2d4373;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59,89,152,0.3);
-}
+/* Subscribe-Button: volle Breite + Abstand zur darunterliegenden URL-Zeile.
+   Visuals/Hover kommen von .p-btn.primary.block — hier nur Layout-Ergaenzung. */
+.abo-subscribe-btn { margin-bottom: var(--p-3); }
 
-/* URL-Zeile */
+/* URL-Zeile (Code-Feld + Kopier-Button) — seitenspezifisch */
 .abo-url-row {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.5rem;
+    gap: var(--p-1);
+    margin-bottom: var(--p-2);
 }
 .abo-url-row code {
     flex: 1;
     background: #f5f6fa;
-    padding: 0.45rem 0.7rem;
-    border-radius: 6px;
-    font-size: 0.7rem;
+    padding: .4rem .65rem;
+    border-radius: var(--p-radius-sm);
+    font-size: .7rem;
     word-break: break-all;
     border: 1px solid #e0e4e8;
     color: #4a5568;
@@ -121,68 +68,56 @@ include 'portal_header.php';
     background: #edf2f7;
     color: #4a5568;
     border: none;
-    border-radius: 6px;
-    padding: 0.45rem 0.65rem;
-    font-size: 0.8rem;
+    border-radius: var(--p-radius-sm);
+    padding: .4rem .6rem;
+    font-size: .8rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s;
+    transition: background .15s;
     flex-shrink: 0;
 }
-.abo-copy-btn:hover  { background: #e2e8f0; color: #2d3748; }
+.abo-copy-btn:hover  { background: #e2e8f0; color: var(--p-text); }
 .abo-copy-btn.copied { background: #c6f6d5; color: #276749; }
 
-/* Neu-generieren-Link */
+/* Neu-generieren-Link — seitenspezifisch */
 .abo-regen-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
+    gap: var(--p-1);
+    font-size: .75rem;
     color: #a0aec0;
-    margin-top: 0.5rem;
+    margin-top: var(--p-2);
 }
 .abo-regen-row button {
     background: none;
     border: none;
     color: #a0aec0;
-    font-size: 0.75rem;
+    font-size: .75rem;
     cursor: pointer;
     padding: 0;
     text-decoration: underline;
     text-underline-offset: 2px;
 }
-.abo-regen-row button:hover { color: #718096; }
-
-/* Info-Chip */
-.abo-info-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.73rem;
-    color: #718096;
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    padding: 0.2rem 0.6rem;
-    margin-bottom: 0.75rem;
-}
+.abo-regen-row button:hover { color: var(--p-text-muted); }
 </style>
+
+<div class="p-narrow">
 
 <!-- ============================================================
      KARTE 1: VEREINSKALENDER — öffentlicher Feed
      ============================================================ -->
-<div class="abo-card">
-    <div class="abo-card-header">
-        <div class="abo-card-icon club"><i class="bi bi-calendar-event"></i></div>
+<div class="p-section">
+    <div class="p-section-header">
+        <div class="p-chip blue"><i class="bi bi-calendar-event"></i></div>
         <div>
-            <div class="abo-card-title">Vereinskalender</div>
+            <div class="p-section-title">Vereinskalender</div>
             <div class="abo-card-subtitle">Schiesstage, Wettkämpfe &amp; Vereinstermine</div>
         </div>
     </div>
 
     <!-- Primär: webcal-Button -->
-    <a href="<?php echo $webcalUrl; ?>" class="abo-subscribe-btn">
+    <a href="<?php echo htmlspecialchars($webcalUrl); ?>" class="p-btn primary block abo-subscribe-btn">
         <i class="bi bi-calendar-plus"></i> Kalender abonnieren
     </a>
 
@@ -198,11 +133,11 @@ include 'portal_header.php';
 <!-- ============================================================
      KARTE 2: MEINE EINSÄTZE — persönlicher Feed
      ============================================================ -->
-<div class="abo-card">
-    <div class="abo-card-header">
-        <div class="abo-card-icon personal"><i class="bi bi-person-badge"></i></div>
+<div class="p-section">
+    <div class="p-section-header">
+        <div class="p-chip orange"><i class="bi bi-person-badge"></i></div>
         <div>
-            <div class="abo-card-title">Meine Einsätze</div>
+            <div class="p-section-title">Meine Einsätze</div>
             <div class="abo-card-subtitle">Persönliche Arbeitseinsätze — nur für dich</div>
         </div>
     </div>
@@ -210,7 +145,7 @@ include 'portal_header.php';
     <?php if ($einsatz_feed_url): ?>
 
         <!-- Primär: webcal-Button für iOS -->
-        <a href="<?php echo htmlspecialchars($einsatz_webcal_url); ?>" id="einsatzWebcalBtn" class="abo-subscribe-btn">
+        <a href="<?php echo htmlspecialchars($einsatz_webcal_url); ?>" id="einsatzWebcalBtn" class="p-btn primary block abo-subscribe-btn">
             <i class="bi bi-calendar-plus"></i> Kalender abonnieren
         </a>
 
@@ -231,13 +166,13 @@ include 'portal_header.php';
     <?php else: ?>
 
         <!-- Noch kein Token: Generieren-Button -->
-        <button class="abo-subscribe-btn" onclick="generateEinsatzToken()" type="button" id="einsatzGenerateBtn">
+        <button class="p-btn primary block abo-subscribe-btn" onclick="generateEinsatzToken()" type="button" id="einsatzGenerateBtn">
             <i class="bi bi-calendar-plus"></i> Abo-Link erstellen
         </button>
 
         <!-- Wird nach Generierung eingeblendet -->
         <div id="einsatzUrlSection" style="display:none;">
-            <a href="#" id="einsatzWebcalBtn" class="abo-subscribe-btn">
+            <a href="#" id="einsatzWebcalBtn" class="p-btn primary block abo-subscribe-btn">
                 <i class="bi bi-calendar-plus"></i> Kalender abonnieren
             </a>
             <div class="abo-url-row">
@@ -259,11 +194,11 @@ include 'portal_header.php';
 <!-- ============================================================
      KARTE 3: MANUELLE EINRICHTUNG — gilt für beide Kalender
      ============================================================ -->
-<div class="abo-card">
-    <div class="abo-card-header">
-        <div class="abo-card-icon help"><i class="bi bi-question-circle"></i></div>
+<div class="p-section">
+    <div class="p-section-header">
+        <div class="p-chip gray"><i class="bi bi-question-circle"></i></div>
         <div>
-            <div class="abo-card-title">Manuelle Einrichtung</div>
+            <div class="p-section-title">Manuelle Einrichtung</div>
             <div class="abo-card-subtitle">Gilt für Einsätze- und Vereinskalender</div>
         </div>
     </div>
@@ -303,6 +238,8 @@ include 'portal_header.php';
         </div>
     </div>
 </div>
+
+</div><!-- /.p-narrow -->
 
 <script>
 function copyUrl(btn) {

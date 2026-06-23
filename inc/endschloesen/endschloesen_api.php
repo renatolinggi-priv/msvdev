@@ -57,9 +57,7 @@ try {
     }
 
     // Session für CSRF
-    if (!isset($_SESSION)) {
-        session_start();
-    }
+    require_once __DIR__ . '/../session_config.inc.php';
 
     // CSRF Check für POST requests
     function checkCSRF()
@@ -170,6 +168,7 @@ try {
   w.Kategorie       AS waffe_kat
 FROM mitglieder m
 LEFT JOIN Waffen w ON w.ID = m.WaffenID
+WHERE COALESCE(m.Verstorben, 0) != 1
 ORDER BY m.Name, m.Vorname"
             ;
 

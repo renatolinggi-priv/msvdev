@@ -18,9 +18,12 @@ class NavigationManager {
         
         if (self::$navigationCache !== null) return self::$navigationCache;
 
-        $sql = "SELECT ID, Text, Link, ParentID, SortOrder FROM navigation ORDER BY ParentID, SortOrder, ID";
+        // SELECT * statt fixer Spaltenliste, damit optionale Spalten (Icon,
+        // IstTrennlinie aus Migration 023) auch bei aelterem Schema nicht zum
+        // SQL-Fehler fuehren. Fehlende Felder werden unten mit ?? abgefangen.
+        $sql = "SELECT * FROM navigation ORDER BY ParentID, SortOrder, ID";
         $result = $conn->query($sql);
-        
+
         if (!$result) {
             error_log("Navigation Query Error: " . $conn->error);
             return [];
@@ -29,6 +32,8 @@ class NavigationManager {
         $byParent = [];
         $flat = [];
         while ($row = $result->fetch_assoc()) {
+            $row['Icon'] = $row['Icon'] ?? null;
+            $row['IstTrennlinie'] = (int)($row['IstTrennlinie'] ?? 0);
             $parentId = (int)$row['ParentID'];
             if (!isset($byParent[$parentId])) $byParent[$parentId] = [];
             $byParent[$parentId][] = $row;
@@ -116,7 +121,7 @@ class NavigationManager {
             $icon = $userMenuIcons[$link] ?? 'bi-circle';
             $colorClass = $link === 'backup_restore.php' ? ' text-warning' : '';
             echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link '.($isActive?'active':'').'" href="'.$this->escape($link).'">';
+            echo '<a class="mobile-user-menu-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
             echo '<i class="bi '.$icon.$colorClass.' me-2"></i>';
             echo $this->escape($item['Text']);
             echo '</a></li>';
@@ -127,6 +132,22 @@ class NavigationManager {
             echo '<li class="mobile-nav-item">';
             echo '<a class="mobile-user-menu-link" href="benutzerverwaltung.php">';
             echo '<i class="bi bi-people-fill text-warning me-2"></i>Benutzerverwaltung';
+            echo '</a></li>';
+            $aktHrefM = file_exists('admin/aktualisierung.php') ? 'admin/aktualisierung.php' : '../admin/aktualisierung.php';
+            echo '<li class="mobile-nav-item">';
+            echo '<a class="mobile-user-menu-link" href="'.$this->escape($aktHrefM).'">';
+            echo '<i class="bi bi-database-gear text-secondary me-2"></i>Datenbank aktualisieren';
+            echo '</a></li>';
+        }
+        // Admin + Vorstand
+        if ($isAdmin || ($_SESSION['user_role'] ?? '') === 'vorstand') {
+            echo '<li class="mobile-nav-item">';
+            echo '<a class="mobile-user-menu-link" href="drucksteuerung.php">';
+            echo '<i class="bi bi-printer text-info me-2"></i>Drucksteuerung';
+            echo '</a></li>';
+            echo '<li class="mobile-nav-item">';
+            echo '<a class="mobile-user-menu-link" href="csv_schnittstelle.php">';
+            echo '<i class="bi bi-arrow-left-right text-success me-2"></i>CSV Schiessanlage';
             echo '</a></li>';
         }
 
@@ -164,6 +185,13 @@ class NavigationManager {
         // Links die nur im Usermenu erscheinen sollen, nicht in der mobilen Hauptnavigation
         if (in_array($link, $this->userMenuOnlyLinks)) return;
 
+        // Trennlinie als horizontale Linie
+        if (!empty($item['IstTrennlinie'])) {
+            echo '<li class="mobile-nav-item"><hr style="margin:0;border:0;border-top:1px solid #e9ecef;"></li>';
+            return;
+        }
+
+        $icon = $this->iconHtml($item);
         $hasChildren = isset($byParent[$id]) && count($byParent[$id]) > 0;
         $isActive = $this->isActiveDeep($id, $link, $currentPage, $byParent);
 
@@ -172,20 +200,28 @@ class NavigationManager {
         if ($hasChildren) {
             // Has submenu - accordion toggle
             echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="#" data-has-submenu>';
-            echo $text;
+            echo '<span>'.$icon.$text.'</span>';
             echo '<i class="bi bi-chevron-down"></i>';
             echo '</a>';
 
             // Submenu
             echo '<ul class="mobile-submenu">';
+            // Wenn der Eltern-Eintrag selbst einen Link hat, als ersten Submenu-Eintrag einfuegen
+            if (!empty($link) && $link !== '#') {
+                $parentIsActive = (basename($currentPage) === basename($link));
+                echo '<li class="mobile-submenu-item">';
+                echo '<a class="mobile-submenu-link '.($parentIsActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+                echo $icon.$text;
+                echo '</a></li>';
+            }
             foreach ($byParent[$id] as $child) {
                 $this->renderMobileSubmenuItem($child, $byParent, $currentPage, 1);
             }
             echo '</ul>';
         } else {
             // No submenu - direct link
-            echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="'.$this->escape($link).'">';
-            echo $text;
+            echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+            echo $icon.$text;
             echo '</a>';
         }
 
@@ -200,6 +236,13 @@ class NavigationManager {
         // Links die nur im Usermenu erscheinen sollen, nicht in der mobilen Hauptnavigation
         if (in_array($link, $this->userMenuOnlyLinks)) return;
 
+        // Trennlinie als horizontale Linie
+        if (!empty($item['IstTrennlinie'])) {
+            echo '<li class="mobile-submenu-item"><hr style="margin:0;border:0;border-top:1px solid #e2e8f0;"></li>';
+            return;
+        }
+
+        $icon = $this->iconHtml($item);
         $hasChildren = isset($byParent[$id]) && count($byParent[$id]) > 0;
         $isActive = $this->isActiveDeep($id, $link, $currentPage, $byParent);
 
@@ -208,21 +251,44 @@ class NavigationManager {
         if ($hasChildren) {
             // Nested submenu
             echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="#" data-has-submenu>';
-            echo $text;
+            echo $icon.$text;
             echo '<i class="bi bi-chevron-down ms-auto"></i>';
             echo '</a>';
             echo '<ul class="mobile-submenu mobile-nested-submenu">';
+            // Wenn der Eltern-Eintrag selbst einen Link hat, als ersten Eintrag einfuegen
+            if (!empty($link) && $link !== '#') {
+                $parentIsActive = (basename($currentPage) === basename($link));
+                echo '<li class="mobile-submenu-item">';
+                echo '<a class="mobile-submenu-link '.($parentIsActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+                echo $icon.$text;
+                echo '</a></li>';
+            }
             foreach ($byParent[$id] as $child) {
                 $this->renderMobileSubmenuItem($child, $byParent, $currentPage, $depth + 1);
             }
             echo '</ul>';
         } else {
-            echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="'.$this->escape($link).'">';
-            echo $text;
+            echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+            echo $icon.$text;
             echo '</a>';
         }
 
         echo '</li>';
+    }
+
+    // Icon-HTML fuer einen Eintrag (leerer String wenn kein Icon gesetzt)
+    private function iconHtml($item) {
+        $icon = trim((string)($item['Icon'] ?? ''));
+        if ($icon === '') return '';
+        return '<i class="bi '.$this->escape($icon).' me-1"></i>';
+    }
+
+    // Zusatz-Attribute fuer externe Links: oeffnet http(s)://-Ziele in neuem Tab.
+    // Gibt fuer interne Links (Dateinamen/relative Pfade) einen leeren String zurueck.
+    private function externalAttrs($link) {
+        return preg_match('#^https?://#i', trim((string)$link))
+            ? ' target="_blank" rel="noopener noreferrer"'
+            : '';
     }
 
     private function renderItemRecursive($item, &$byParent, $currentPage, $depth = 0) {
@@ -233,6 +299,13 @@ class NavigationManager {
         // Links die nur im Usermenu erscheinen sollen, nicht in der Hauptnavigation
         if (in_array($link, $this->userMenuOnlyLinks)) return;
 
+        // Trennlinie: nur innerhalb von Dropdowns sinnvoll, auf Root-Ebene ueberspringen
+        if (!empty($item['IstTrennlinie'])) {
+            if ($depth > 0) echo '<li><hr class="dropdown-divider"></li>';
+            return;
+        }
+
+        $icon = $this->iconHtml($item);
         $hasChildren = isset($byParent[$id]) && count($byParent[$id]) > 0;
         $isActive = $this->isActiveDeep($id, $link, $currentPage, $byParent);
 
@@ -241,7 +314,7 @@ class NavigationManager {
             if ($hasChildren) {
                 echo '<li class="nav-item dropdown">';
                 echo '<a class="nav-link dropdown-toggle '.($isActive?'active':'').'" href="#" id="nav_'.$id.'" role="button" data-bs-toggle="dropdown">';
-                echo $text;
+                echo $icon.$text;
                 echo '</a>';
                 echo '<ul class="dropdown-menu">';
                 foreach ($byParent[$id] as $child) {
@@ -251,7 +324,7 @@ class NavigationManager {
                 echo '</li>';
             } else {
                 echo '<li class="nav-item">';
-                echo '<a class="nav-link '.($isActive?'active':'').'" href="'.$this->escape($link).'">'.$text.'</a>';
+                echo '<a class="nav-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
                 echo '</li>';
             }
         } else {
@@ -259,18 +332,18 @@ class NavigationManager {
             if ($hasChildren) {
                 echo '<li class="dropdown-submenu">';
                 echo '<div class="dropdown-item-wrapper">';
-                
+
                 if (!empty($link) && $link !== '#') {
-                    echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'">'.$text.'</a>';
+                    echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
                 } else {
-                    echo '<span class="dropdown-item dropdown-text '.($isActive?'active':'').'">'.$text.'</span>';
+                    echo '<span class="dropdown-item dropdown-text '.($isActive?'active':'').'">'.$icon.$text.'</span>';
                 }
-                
+
                 echo '<button class="dropdown-submenu-toggle" type="button">';
                 echo '<i class="bi bi-chevron-right"></i>';
                 echo '</button>';
                 echo '</div>';
-                
+
                 echo '<ul class="dropdown-menu dropdown-submenu-menu">';
                 foreach ($byParent[$id] as $child) {
                     $this->renderItemRecursive($child, $byParent, $currentPage, $depth + 1);
@@ -278,7 +351,7 @@ class NavigationManager {
                 echo '</ul>';
                 echo '</li>';
             } else {
-                echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'">'.$text.'</a></li>';
+                echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a></li>';
             }
         }
     }
@@ -332,7 +405,16 @@ class NavigationManager {
     private function renderUserDropdown(&$byParent) {
         $username = $_SESSION['username'] ?? 'Benutzer';
 
-        echo '<li class="nav-item dropdown ms-auto">';
+        // Layout-Toggle (Topbar <-> Sidebar) direkt LINKS vom Benutzermenu.
+        // ms-auto liegt auf dem Toggle -> schiebt die Gruppe (Toggle + Benutzermenu) nach rechts.
+        // Im Sidebar-Modus bleibt das Benutzermenu via .nav-user-item sichtbar (siehe CSS-Hide-Regel).
+        echo '<li class="nav-item ms-auto nav-layout-item">';
+        echo '<button type="button" id="navLayoutToggle" class="nav-layout-toggle d-none d-lg-inline-flex" title="Navigation links anzeigen" aria-pressed="false" aria-label="Navigation zwischen oben und links umschalten">';
+        echo '<span class="nav-layout-toggle-track"><span class="nav-layout-toggle-thumb"><i class="bi bi-layout-sidebar-inset"></i></span></span>';
+        echo '</button>';
+        echo '</li>';
+
+        echo '<li class="nav-item dropdown nav-user-item">';
         echo '<a class="nav-link dropdown-toggle user-menu" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">';
         echo '<i class="bi bi-person-circle me-1"></i><span class="d-none d-lg-inline">'.$this->escape($username).'</span></a>';
         echo '<ul class="dropdown-menu dropdown-menu-end">';
@@ -360,7 +442,14 @@ class NavigationManager {
             echo '<li><a class="dropdown-item" href="benutzerverwaltung.php"><i class="bi bi-people-fill me-2 text-warning"></i>Benutzerverwaltung</a></li>';
             $adminHref = file_exists('admin/nav_admin.php') ? 'admin/nav_admin.php' : '../admin/nav_admin.php';
             echo '<li><a class="dropdown-item" href="'.$this->escape($adminHref).'"><i class="bi bi-menu-button-wide me-2"></i>Navigation verwalten</a></li>';
+            $aktHref = file_exists('admin/aktualisierung.php') ? 'admin/aktualisierung.php' : '../admin/aktualisierung.php';
+            echo '<li><a class="dropdown-item" href="'.$this->escape($aktHref).'"><i class="bi bi-database-gear me-2 text-secondary"></i>Datenbank aktualisieren</a></li>';
             echo '<li><hr class="dropdown-divider"></li>';
+        }
+        // Drucksteuerung: Admin + Vorstand
+        if (in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
+            echo '<li><a class="dropdown-item" href="drucksteuerung.php"><i class="bi bi-printer me-2 text-info"></i>Drucksteuerung</a></li>';
+            echo '<li><a class="dropdown-item" href="csv_schnittstelle.php"><i class="bi bi-arrow-left-right me-2 text-success"></i>CSV Schiessanlage</a></li>';
         }
 
         // Portal-Link fuer Admin/Vorstand
@@ -422,6 +511,7 @@ class NavigationManager {
     --nav-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --nav-active-color: #2563eb;
     --nav-active-bg: rgba(52, 152, 219, 0.12);
+    --nav-sidebar-w: 280px;
 }
 
 .navbar {
@@ -452,6 +542,7 @@ class NavigationManager {
 }
 
 .ios-pwa .navbar-page-title {
+    display: inline;
     opacity: 1;
     max-width: 65vw;
 }
@@ -521,7 +612,8 @@ class NavigationManager {
     to { left: 20%; right: 20%; }
 }
 
-.navbar-nav .nav-item.ms-auto {
+.navbar-nav .nav-item.ms-auto,
+.navbar-nav .nav-item.nav-user-item {
     flex-shrink: 0;
 }
 
@@ -707,6 +799,11 @@ class NavigationManager {
         opacity: 1;
         visibility: visible;
     }
+}
+/* === Vertikales Menue (Off-Canvas-Items) ===
+   Bewusst NICHT in der max-width-Media-Query: diese Item-Styles werden sowohl vom
+   mobilen Off-Canvas-Menue als auch von der Desktop-Sidebar (body.nav-sidebar) genutzt.
+   Auf normalem Desktop ohne .nav-sidebar ist .offcanvas-nav display:none -> kein Effekt. */
 
     /* Off-Canvas Header */
     .offcanvas-header {
@@ -910,7 +1007,6 @@ class NavigationManager {
         width: 20px;
         flex-shrink: 0;
     }
-}
 
 /* Desktop: Off-Canvas Elemente komplett ausblenden */
 @media (min-width: 992px) {
@@ -930,6 +1026,157 @@ class NavigationManager {
 .breadcrumb-item + .breadcrumb-item::before {
     content: "\203A";
 }
+
+/* ===== Navigation-Layout-Toggle (Slider, Design analog Jungschuetzen) ===== */
+.nav-layout-toggle {
+    align-items: center;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-right: 0.6rem;
+    cursor: pointer;
+    outline: none;
+    flex-shrink: 0;
+}
+.nav-layout-toggle:focus-visible .nav-layout-toggle-track {
+    box-shadow: 0 0 0 3px rgba(59, 108, 206, 0.25);
+}
+.nav-layout-toggle-track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 44px;
+    height: 22px;
+    background: #e9e9eb;
+    border: none;
+    border-radius: 999px;
+    transition: background 0.25s ease;
+}
+.nav-layout-toggle-thumb {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    color: #8b95a5;
+    font-size: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s ease;
+}
+.nav-layout-toggle[aria-pressed="true"] .nav-layout-toggle-track {
+    background: #34c759;
+}
+.nav-layout-toggle[aria-pressed="true"] .nav-layout-toggle-thumb {
+    left: calc(100% - 21px);
+    color: #34c759;
+}
+
+/* ===== Sidebar-Modus (Desktop): Off-Canvas-Menue als permanente linke Sidebar =====
+   Item-Look ist dem Jungschuetzen-Projekt nachempfunden (Farbpalette, Padding,
+   helle Trenner, Accent-Hover/Active). */
+@media (min-width: 992px) {
+    /* Inhalt nach rechts schieben (fixe Navbar/Sidebar ignorieren body-padding) */
+    body.nav-sidebar {
+        padding-left: var(--nav-sidebar-w, 280px);
+    }
+    /* Horizontale Hauptmenue-Items ausblenden -> Toggle (.ms-auto) + Benutzermenu (.nav-user-item) bleiben oben rechts */
+    body.nav-sidebar .navbar-nav > .nav-item:not(.ms-auto):not(.nav-user-item) {
+        display: none !important;
+    }
+    /* Off-Canvas-Menue als fixe Sidebar links anzeigen */
+    body.nav-sidebar .offcanvas-nav {
+        display: block !important;
+        position: fixed;
+        top: var(--nav-h, 76px);
+        left: 0;
+        width: var(--nav-sidebar-w, 280px);
+        height: calc(100vh - var(--nav-h, 76px));
+        overflow-y: auto;
+        background: #fff;
+        z-index: 1020;
+        border-right: 1px solid #e8ecf1;
+        box-shadow: 1px 0 3px rgba(0,0,0,0.06);
+        transition: none;
+        /* Jungschuetzen-Palette (nur in der Sidebar gueltig) */
+        --sb-accent-light: #e8f0fe;
+        --sb-accent-dark: #2b52a0;
+        --sb-text: #1a2332;
+        --sb-border: #f1f4f8;
+    }
+    body.nav-sidebar .offcanvas-overlay {
+        display: none !important;
+    }
+    /* Off-Canvas-Header in permanenter Sidebar ausblenden (Brand steht in der Topbar) */
+    body.nav-sidebar .offcanvas-header {
+        display: none !important;
+    }
+
+    /* --- Hauptmenue-Items --- */
+    body.nav-sidebar .offcanvas-nav .mobile-nav-item {
+        border-bottom: none;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-nav-link {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--sb-text);
+        border-bottom: 1px solid var(--sb-border);
+        min-height: 44px;
+        white-space: nowrap;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-nav-link:hover,
+    body.nav-sidebar .offcanvas-nav .mobile-nav-link.active {
+        background: var(--sb-accent-light);
+        color: var(--sb-accent-dark);
+        border-left: 0;
+        padding-left: 1.25rem;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-nav-link i.bi-chevron-down {
+        font-size: 0.7rem;
+    }
+
+    /* --- Untermenues (Children) ---
+       Standard-<ul>-Aufzaehlungszeichen + Default-Einrueckung entfernen
+       (verursachten Bullet + grossen Abstand zum Text). */
+    body.nav-sidebar .offcanvas-nav .mobile-submenu,
+    body.nav-sidebar .offcanvas-nav .mobile-nested-submenu {
+        background: #fff;
+        list-style: none;
+        margin: 0;
+        padding-left: 0;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-submenu-item {
+        border-bottom: none;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-submenu-link {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem 0.5rem 1.75rem;
+        min-height: 38px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--sb-text);
+        white-space: nowrap;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-nested-submenu .mobile-submenu-link {
+        padding-left: 2.5rem;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-submenu-link:hover,
+    body.nav-sidebar .offcanvas-nav .mobile-submenu-link.active {
+        background: var(--sb-accent-light);
+        color: var(--sb-accent-dark);
+    }
+
+    /* User-Bereich in der Sidebar ausblenden -> Benutzermenu bleibt oben rechts in der Topbar */
+    body.nav-sidebar .offcanvas-nav .mobile-user-section {
+        display: none;
+    }
+}
 </style>';
     }
 
@@ -940,6 +1187,69 @@ document.addEventListener("DOMContentLoaded", function() {
     if (window.navigator.standalone === true) {
         document.body.classList.add("ios-pwa");
     }
+
+    // === Navigation-Layout-Toggle (Topbar <-> linke Sidebar) ===
+    (function initNavLayoutToggle() {
+        var STORAGE_KEY = "msvNavSidebar";
+        var navbar = document.querySelector("nav.navbar");
+        var btn = document.getElementById("navLayoutToggle");
+
+        // Tatsaechliche Navbar-Hoehe als CSS-Variable -> Sidebar startet exakt darunter
+        function updateNavHeight() {
+            if (!navbar) return;
+            var h = Math.round(navbar.getBoundingClientRect().height);
+            document.documentElement.style.setProperty("--nav-h", h + "px");
+        }
+        updateNavHeight();
+        window.addEventListener("resize", updateNavHeight);
+
+        if (!btn) return;
+
+        function reflect(on) {
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+            btn.setAttribute("title", on ? "Navigation oben anzeigen" : "Navigation links anzeigen");
+        }
+
+        // In der Sidebar den Zweig mit der aktiven Seite aufklappen
+        function expandActiveSection() {
+            var sidebar = document.querySelector(".offcanvas-nav");
+            if (!sidebar) return;
+            var active = sidebar.querySelector(".mobile-submenu-link.active, .mobile-nav-link.active");
+            if (!active) return;
+            var sub = active.closest(".mobile-submenu");
+            while (sub) {
+                sub.classList.add("show");
+                var toggle = sub.previousElementSibling;
+                if (toggle && toggle.hasAttribute("data-has-submenu")) toggle.classList.add("expanded");
+                sub = sub.parentElement ? sub.parentElement.closest(".mobile-submenu") : null;
+            }
+        }
+
+        function apply(on, persist) {
+            document.body.classList.toggle("nav-sidebar", on);
+            reflect(on);
+            if (on) {
+                // evtl. offenes mobiles Off-Canvas + Overlay schliessen
+                document.querySelectorAll(".offcanvas-nav.show, .offcanvas-overlay.show")
+                    .forEach(function (el) { el.classList.remove("show"); });
+                document.body.style.overflow = "";
+                updateNavHeight();
+                expandActiveSection();
+            }
+            if (persist) {
+                try { localStorage.setItem(STORAGE_KEY, on ? "1" : "0"); } catch (e) {}
+            }
+        }
+
+        // Initialzustand (Pre-Render-Script im Header hat ggf. body.nav-sidebar gesetzt)
+        var initial = document.body.classList.contains("nav-sidebar");
+        reflect(initial);
+        if (initial) expandActiveSection();
+
+        btn.addEventListener("click", function () {
+            apply(!document.body.classList.contains("nav-sidebar"), true);
+        });
+    })();
 
     // Scroll-Effekt
     window.addEventListener("scroll", function() {
@@ -1074,15 +1384,17 @@ document.addEventListener("DOMContentLoaded", function() {
             let timeout;
             const toggle = dropdown.querySelector(".dropdown-toggle");
             const menu = dropdown.querySelector(".dropdown-menu");
-            
+
+            // Bootstrap Click-Toggle auf Desktop deaktivieren — Hover steuert alles
+            toggle.removeAttribute("data-bs-toggle");
+
             // Mouseenter auf dem gesamten Dropdown-Bereich
             dropdown.addEventListener("mouseenter", function() {
                 clearTimeout(timeout);
-                // Bootstrap Dropdown programmatisch öffnen
                 const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(toggle);
                 bsDropdown.show();
             });
-            
+
             // Mouseleave mit kleiner Verzögerung
             dropdown.addEventListener("mouseleave", function() {
                 timeout = setTimeout(() => {
@@ -1090,18 +1402,17 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (bsDropdown) {
                         bsDropdown.hide();
                     }
-                }, 100); // 100ms Verzögerung für bessere Usability
+                }, 100);
             });
-            
-            // Click-Toggle bleibt für Touch-Geräte erhalten
+
+            // Click: nur navigieren wenn echte Seite vorhanden
             toggle.addEventListener("click", function(e) {
-                if (window.innerWidth >= 992) {
-                    e.preventDefault();
-                    // Bei Click navigieren wenn Link vorhanden
-                    if (this.href && this.href !== "#") {
-                        window.location.href = this.href;
-                    }
+                e.preventDefault();
+                const attr = this.getAttribute("href") || "#";
+                if (attr !== "#" && attr !== "") {
+                    window.location.href = this.href;
                 }
+                // Kein Link → nichts tun, Dropdown bleibt offen via Hover
             });
         });
         

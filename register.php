@@ -52,8 +52,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if (!$mitglied) {
                 $errors[] = "Diese Mitgliedernummer ist nicht bekannt.";
-            } elseif ($mitglied['Status'] != 1) {
-                $errors[] = "Dieses Mitglied ist nicht aktiv.";
             } else {
                 // 2. Vorname + Nachname pruefen (case-insensitive)
                 if (mb_strtolower($vorname) != mb_strtolower($mitglied['Vorname']) ||

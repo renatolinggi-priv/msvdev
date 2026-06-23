@@ -21,7 +21,7 @@ if ($id < 1) {
 $db = getDB();
 
 // Umfrage laden
-$stmt = $db->prepare("SELECT id, titel, beschreibung, gueltig_bis, status, zielgruppe FROM umfragen WHERE id = ?");
+$stmt = $db->prepare("SELECT id, titel, beschreibung, gueltig_bis, status, zielgruppe, kategorie FROM umfragen WHERE id = ?");
 $stmt->execute([$id]);
 $umfrage = $stmt->fetch();
 
@@ -31,23 +31,24 @@ if (!$umfrage) {
 }
 
 // Zugriffskontrolle
-if ($umfrage['status'] === 'entwurf') {
+$role = $_SESSION['user_role'] ?? 'mitglied';
+if ($umfrage['status'] === 'entwurf' && !in_array($role, ['admin', 'vorstand'])) {
     echo json_encode(['success' => false, 'message' => 'Diese Umfrage ist noch nicht veröffentlicht']);
     exit;
 }
-$role = $_SESSION['user_role'] ?? 'mitglied';
 if ($umfrage['zielgruppe'] === 'vorstand' && !in_array($role, ['admin', 'vorstand'])) {
     echo json_encode(['success' => false, 'message' => 'Kein Zugriff auf diese Umfrage']);
     exit;
 }
 
 // Fragen laden
-$stmtF = $db->prepare("SELECT id, frage_text, frage_typ, pflichtfeld, optionen FROM umfragen_fragen WHERE umfrage_id = ? ORDER BY reihenfolge");
+$stmtF = $db->prepare("SELECT id, frage_text, frage_typ, pflichtfeld, min_auswahl, optionen FROM umfragen_fragen WHERE umfrage_id = ? ORDER BY reihenfolge");
 $stmtF->execute([$id]);
 $fragen = $stmtF->fetchAll();
 foreach ($fragen as &$f) {
     $f['optionen'] = $f['optionen'] ? json_decode($f['optionen'], true) : [];
     $f['pflichtfeld'] = (bool)$f['pflichtfeld'];
+    $f['min_auswahl'] = $f['min_auswahl'] ? (int)$f['min_auswahl'] : null;
 }
 unset($f);
 
@@ -59,8 +60,8 @@ foreach ($stmtA->fetchAll() as $a) {
     $antworten[$a['frage_id']] = $a['antwort'];
 }
 
-// Readonly wenn geschlossen
-$readonly = ($umfrage['status'] === 'geschlossen');
+// Readonly wenn geschlossen oder Entwurf (Vorschau)
+$readonly = in_array($umfrage['status'], ['geschlossen', 'entwurf']);
 
 echo json_encode([
     'success'   => true,

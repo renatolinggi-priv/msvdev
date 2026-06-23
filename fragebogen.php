@@ -542,6 +542,7 @@ $(function() {
         html += '<div class="question-group">';
         html += '<label><i class="bi bi-crosshair me-1"></i>Mit welcher Waffe nimmst du an der Jahresmeisterschaft teil?</label>';
         html += '<select name="waffenID" class="form-select">';
+        html += '<option value="0"' + (existing.waffenID === 0 ? ' selected' : '') + '>Nehme nicht teil</option>';
         waffen.forEach(function(w) {
             const sel = (w.id === existing.waffenID) ? 'selected' : '';
             html += '<option value="' + w.id + '" ' + sel + '>' + escapeHtml(w.bezeichnung) + '</option>';

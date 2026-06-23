@@ -3,6 +3,8 @@
 session_start();
 include '../config.php';
 require_once '../vendor/autoload.php';
+require_once __DIR__ . '/config_helper.php';
+require_once __DIR__ . '/../pdf/pdf_theme.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -68,7 +70,8 @@ try {
         $teilnehmerAnzahl = count($teilnehmerResultate);
         
         if ($teilnehmerAnzahl > 0) {
-            $verwendeteResultate = calculateUsedResults($teilnehmerAnzahl);
+            $config = getDurchschnittConfig($conn, $year);
+            $verwendeteResultate = calculateUsedResults($teilnehmerAnzahl, $config['anzahl_zaehlende']);
             
             // Die besten X Resultate nehmen (zählende)
             $zaehlendeResultate = array_slice($teilnehmerResultate, 0, $verwendeteResultate);
@@ -112,7 +115,7 @@ try {
     
     // PDF-Optionen konfigurieren
     $options = new Options();
-    $options->set('defaultFont', 'Arial');
+    $options->set('defaultFont', 'Helvetica');
     $options->set('isRemoteEnabled', true);
     $options->set('isHtml5ParserEnabled', true);
     
@@ -162,248 +165,306 @@ try {
 }
 
 /**
- * Berechnet die Anzahl der zu verwendenden Resultate
- */
-function calculateUsedResults($teilnehmerAnzahl) {
-    if ($teilnehmerAnzahl <= 13) {
-        return min(6, $teilnehmerAnzahl);
-    } else {
-        // Ab 14 Teilnehmer: die Hälfte der Resultate (abgerundet)
-        return intval(floor($teilnehmerAnzahl / 2));
-    }
-}
-
-/**
  * Generiert das HTML für das PDF im Stil der Vereinsabrechnung
  */
 function generatePdfHtml($result, $year) {
-    $currentDate = date('d.m.Y H:i');
-    
+    $currentDate = date('d.m.Y \u\m H:i');
+
     // Pflichtteilnehmer und Nicht-Pflichtteilnehmer trennen
     $pflichtteilnehmer = array_slice($result['alle_resultate'], 0, $result['verwendete_resultate']);
     $nichtPflichtteilnehmer = array_slice($result['alle_resultate'], $result['verwendete_resultate']);
-    
-    // Summen berechnen
+
+    // Summen weiterhin für die Berechnungsformel benötigt
     $summePflicht = array_sum(array_column($pflichtteilnehmer, 'punkte'));
     $summeNichtPflicht = array_sum(array_column($nichtPflichtteilnehmer, 'punkte'));
-    
-    $html = '
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>' . htmlspecialchars($result['anlass_name']) . ' - Vereinsabrechnung</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                font-size: 11px;
-                margin: 15px;
-                line-height: 1.3;
-            }
-            
-            .header {
-                text-align: center;
-                margin-bottom: 40px;
-            }
-            
-            .header h1 {
-                font-size: 18px;
-                margin: 0 0 5px 0;
-                font-weight: bold;
-            }
-            
-            .header h2 {
-                font-size: 14px;
-                margin: 0 0 20px 0;
-                font-weight: normal;
-            }
-            
-            .vereinsabrechnung {
-                margin: 30px 0 20px 0;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            
-            .wettkampf-info {
-                margin-bottom: 15px;
-            }
-            
-            .wettkampf-info table {
-                border: none;
-                margin-left: 20px;
-            }
-            
-            .wettkampf-info td {
-                padding: 2px 30px 2px 0;
-                border: none;
-                vertical-align: top;
-            }
-            
-            .section-title {
-                font-weight: bold;
-                margin: 20px 0 10px 20px;
-                text-decoration: underline;
-            }
-            
-            .results-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 10px 0;
-                font-size: 10px;
-            }
-            
-            .results-table th,
-            .results-table td {
-                border: 1px solid #000;
-                padding: 4px 6px;
-                text-align: left;
-            }
-            
-            .results-table th {
-                background-color: #f0f0f0;
-                font-weight: bold;
-                text-align: center;
-            }
-            
-            .results-table .name-col { width: 70%; }
-            .results-table .points-col { width: 30%; text-align: right; }
-            
-            .total-row {
-                font-weight: bold;
-                border-top: 2px solid #000;
-            }
-            
-            .calculation {
-                margin: 30px 0;
-                text-align: center;
-                font-size: 12px;
-            }
-            
-            .calculation-line {
-                margin: 5px 0;
-                padding: 5px;
-                border: 1px solid #ccc;
-                background-color: #f9f9f9;
-            }
-            
-            .final-result {
-                font-weight: bold;
-                font-size: 14px;
-                background-color: #e0e0e0;
-                padding: 8px;
-                border: 2px solid #000;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>' . htmlspecialchars($result['anlass_name']) . '</h1>
-            <h2>Militärschützenverein Wilen</h2>
+
+    $html = '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>' . htmlspecialchars($result['anlass_name']) . ' - Vereinsabrechnung</title>
+<style>
+@page {
+    margin: 1.5cm 1.5cm 2cm 1.5cm;
+    size: A4;
+}
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+/* Header */
+.header {
+    position: relative;
+    margin-bottom: 120px;
+    padding-bottom: 10px;
+}
+.logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: auto;
+}
+h1 {
+    text-align: center;
+    font-size: 24px;
+    margin: 10px 0 0 0;
+    color: #2d3748;
+    font-weight: bold;
+}
+.subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 15px;
+    page-break-inside: avoid;
+}
+h2 {
+    font-size: 12px;
+    margin: 10px 0 5px 0;
+    color: #3b5998;
+    font-weight: bold;
+}
+
+/* Info-Box Wettkampf */
+.info-box {
+    margin-top: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: #f8f9fa;
+    padding: 8px 12px;
+}
+.info-box .info-row {
+    display: table;
+    width: 100%;
+    padding: 2px 0;
+}
+.info-box .info-label {
+    display: table-cell;
+    color: #495057;
+}
+.info-box .info-value {
+    display: table-cell;
+    text-align: right;
+    font-weight: bold;
+    color: #3b5998;
+}
+
+/* Tabellen */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+thead th {
+    background: #f8f9fa;
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: bold;
+    font-size: 10px;
+    color: #495057;
+}
+tbody td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Spalten */
+.rank {
+    width: 40px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 11px;
+}
+.name {
+    width: auto;
+    font-size: 10px;
+}
+.points {
+    width: 60px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 11px;
+    color: #3b5998;
+}
+
+/* Medaillen-Farben (ruhige Pastelltöne, einheitlich mit pdf_theme.php) */
+.gold { background: #fdf6e3 !important; }
+.gold .rank { color: #8a6d1c; }
+.silver { background: #f1f1f1 !important; }
+.silver .rank { color: #6b7280; }
+.bronze { background: #f7ede2 !important; }
+.bronze .rank { color: #9c6b3f; }
+
+/* Berechnung */
+.calculation {
+    margin: 18px 0;
+}
+.calculation-line {
+    margin: 5px 0;
+    padding: 7px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: #f8f9fa;
+    font-size: 10px;
+}
+.calculation-line.title {
+    font-weight: bold;
+    color: #3b5998;
+    background: #f1f5f9;
+}
+.final-result {
+    margin-top: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #fff;
+    background: #3b5998;
+    padding: 10px 12px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* Footer */
+.footer {
+    position: fixed;
+    bottom: 10px;
+    left: 1.5cm;
+    right: 1.5cm;
+    text-align: center;
+    font-size: 8px;
+    color: #6c757d;
+    padding-top: 10px;
+    border-top: 1px solid #dee2e6;
+    background: white;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <img src="' . pdf_logo_src() . '" class="logo" alt="MSV Wilen Logo">
+    <h1>' . htmlspecialchars($result['anlass_name']) . ' ' . $year . '</h1>
+    <div class="subtitle">Vereinsabrechnung &middot; Militärschützenverein Wilen</div>
+</div>
+
+<div class="section">
+    <h2>Vereinswettkampf</h2>
+    <div class="info-box">
+        <div class="info-row">
+            <span class="info-label">Vereinskategorie</span>
+            <span class="info-value">4</span>
         </div>
-        
-        <div class="vereinsabrechnung">Vereinsabrechnung</div>
-        
-        <div class="wettkampf-info">
-            <strong>Vereinswettkampf</strong>
-            <table>
-                <tr>
-                    <td>Vereinskategorie</td>
-                    <td>4</td>
-                </tr>
-                <tr>
-                    <td>Vereinsschützen / Pflichtteilnehmer</td>
-                    <td>' . $result['teilnehmer_anzahl'] . ' / ' . $result['verwendete_resultate'] . '</td>
-                </tr>
-            </table>
-        </div>';
-    
+        <div class="info-row">
+            <span class="info-label">Vereinsschützen / Pflichtteilnehmer</span>
+            <span class="info-value">' . $result['teilnehmer_anzahl'] . ' / ' . $result['verwendete_resultate'] . '</span>
+        </div>
+    </div>
+</div>';
+
     // Pflichtteilnehmer Tabelle
     if (!empty($pflichtteilnehmer)) {
         $html .= '
-        <div class="section-title">Pflichtteilnehmer</div>
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th class="name-col">Name</th>
-                    <th class="points-col">Punkte</th>
-                </tr>
-            </thead>
-            <tbody>';
-        
+<div class="section">
+    <h2>Pflichtteilnehmer</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="rank">Rang</th>
+                <th class="name">Name</th>
+                <th class="points">Punkte</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+        $rang = 0;
         foreach ($pflichtteilnehmer as $teilnehmer) {
+            $rang++;
+            $rowClass = '';
+            if ($rang == 1) $rowClass = 'gold';
+            elseif ($rang == 2) $rowClass = 'silver';
+            elseif ($rang == 3) $rowClass = 'bronze';
+
             $html .= '
-                <tr>
-                    <td>' . htmlspecialchars($teilnehmer['name']) . '</td>
-                    <td class="points-col">' . number_format($teilnehmer['punkte'], 0) . '</td>
-                </tr>';
+            <tr class="' . $rowClass . '">
+                <td class="rank">' . $rang . '.</td>
+                <td class="name">' . htmlspecialchars($teilnehmer['name']) . '</td>
+                <td class="points">' . number_format($teilnehmer['punkte'], 0) . '</td>
+            </tr>';
         }
-        
+
         $html .= '
-                <tr class="total-row">
-                    <td>Summe Pflichtteilnehmer</td>
-                    <td class="points-col">' . number_format($summePflicht, 0) . '</td>
-                </tr>
-            </tbody>
-        </table>';
+        </tbody>
+    </table>
+</div>';
     }
-    
+
     // Nicht-Pflichtteilnehmer Tabelle
     if (!empty($nichtPflichtteilnehmer)) {
         $html .= '
-        <div class="section-title">Nicht-Pflichtteilnehmer</div>
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th class="name-col">Name</th>
-                    <th class="points-col">Punkte</th>
-                </tr>
-            </thead>
-            <tbody>';
-        
+<div class="section">
+    <h2>Nicht-Pflichtteilnehmer</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="rank">Rang</th>
+                <th class="name">Name</th>
+                <th class="points">Punkte</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+        $rang = count($pflichtteilnehmer);
         foreach ($nichtPflichtteilnehmer as $teilnehmer) {
+            $rang++;
             $html .= '
-                <tr>
-                    <td>' . htmlspecialchars($teilnehmer['name']) . '</td>
-                    <td class="points-col">' . number_format($teilnehmer['punkte'], 0) . '</td>
-                </tr>';
+            <tr>
+                <td class="rank">' . $rang . '.</td>
+                <td class="name">' . htmlspecialchars($teilnehmer['name']) . '</td>
+                <td class="points">' . number_format($teilnehmer['punkte'], 0) . '</td>
+            </tr>';
         }
-        
+
         $html .= '
-                <tr class="total-row">
-                    <td>Summe Nicht-Pflichtteilnehmer</td>
-                    <td class="points-col">' . number_format($summeNichtPflicht, 0) . '</td>
-                </tr>
-            </tbody>
-        </table>';
+        </tbody>
+    </table>
+</div>';
     }
-    
+
     // Berechnung - Formel
     $zuschlagsProzent = str_replace('%', '', $result['zuschlag']); // % entfernen für Berechnung
-    $zuschlagsBonus = ($zuschlagsProzent * $summeNichtPflicht) / 100;
-    $gesamtsumme = $summePflicht + $zuschlagsBonus;
-    
+
     $html .= '
-        <div class="calculation">
-            <div class="calculation-line" style="font-weight: bold; background-color: #f0f0f0; margin-bottom: 10px;">
-                Berechnungsformel:
-            </div>
-            <div class="calculation-line">
-                Endergebnis = (Summe Pflichtteilnehmer + Beteiligungszuschlag × Summe Nicht-Pflichtteilnehmer ÷ 100) ÷ Anzahl Pflichtteilnehmer
-            </div>
-            <div class="calculation-line">
-                Endergebnis = (' . number_format($summePflicht, 0) . ' + ' . $zuschlagsProzent . '% × ' . number_format($summeNichtPflicht, 0) . ' ÷ 100) ÷ ' . $result['verwendete_resultate'] . '
-            </div>
-            <div class="final-result">
-                Endergebnis: ' . number_format($result['endergebnis'], 3) . ' Punkte
-            </div>
-        </div>
-        
-        <div style="margin-top: 40px; font-size: 9px; color: #666;">
-            Generiert am ' . $currentDate . ' - MSV Wilen
-        </div>
-    </body>
-    </html>';
-    
+<div class="section calculation">
+    <h2>Berechnung</h2>
+    <div class="calculation-line title">
+        Endergebnis = (Summe Pflichtteilnehmer + Beteiligungszuschlag × Summe Nicht-Pflichtteilnehmer ÷ 100) ÷ Anzahl Pflichtteilnehmer
+    </div>
+    <div class="calculation-line">
+        Endergebnis = (' . number_format($summePflicht, 0) . ' + ' . $zuschlagsProzent . '% × ' . number_format($summeNichtPflicht, 0) . ' ÷ 100) ÷ ' . $result['verwendete_resultate'] . '
+    </div>
+    <div class="final-result">
+        Endergebnis: ' . number_format($result['endergebnis'], 3) . ' Punkte
+    </div>
+</div>
+
+<div class="footer">
+    MSV Wilen - Generiert am ' . $currentDate . ' Uhr
+</div>
+</body>
+</html>';
+
     return $html;
 }
 ?>

@@ -23,7 +23,7 @@ $conn->begin_transaction();
 
 try {
     // Array mit allen zu löschenden Tabellen
-    $tables = ['endstich', 'schwini', 'zabig', 'kunst', 'glueck'];
+    $tables = ['endstich', 'schwini', 'zabig', 'kunst', 'glueck', 'endresultate_partner'];
     $deletedTotal = 0;
     
     // Prepared Statement für alle Tabellen vorbereiten

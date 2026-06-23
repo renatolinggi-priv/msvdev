@@ -137,14 +137,14 @@ try {
                          data-rang="' . htmlspecialchars($row['rang']) . '"
                          data-resultat="' . htmlspecialchars($row['resultat']) . '"
                          data-bemerkung="' . htmlspecialchars($row['bemerkung']) . '"
-                         title="Bearbeiten">
+                         data-tooltip="Bearbeiten">
                      <i class="bi bi-pencil"></i>
                   </button>';
             echo '<button type="button" class="btn btn-outline-danger btn-sm delete-gewinner" 
                          data-id="' . $row['id'] . '" 
                          data-jahr="' . $row['jahr'] . '"
                          data-gewinner="' . htmlspecialchars($row['gewinner_name']) . '"
-                         title="Löschen">
+                         data-tooltip="Löschen">
                      <i class="bi bi-trash"></i>
                   </button>';
             echo '</div>';

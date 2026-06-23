@@ -1,5 +1,5 @@
 <?php
-// endresultate.php – Neuaufbau nach wichtigetermine-Pattern
+// endresultate.php – Slide-Panel Pattern (wie jmdefinition.php)
 try {
     include 'dbconnect.inc.php';
 } catch (Exception $e) {
@@ -9,7 +9,9 @@ try {
 
 // Seitenspezifische Styles
 $page_specific_css = "
-/* Endresultate-spezifische Styles */
+/* =========================================
+   Endresultate – Slide-Panel Layout
+   ========================================= */
 
 :root {
     --app-header: 76px;
@@ -37,6 +39,20 @@ $page_specific_css = "
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0 !important;
+}
+
+#resultateContainer {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.desktop-table-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .table-wrapper {
@@ -74,15 +90,6 @@ $page_specific_css = "
     z-index: 10;
 }
 
-.table tbody tr {
-    transition: background-color 0.2s ease;
-    border-bottom: 1px solid #f1f3f4;
-}
-
-.table tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.04);
-}
-
 .table tbody td {
     padding: 0.5rem;
     vertical-align: middle;
@@ -92,20 +99,6 @@ $page_specific_css = "
 
 .table tbody td:first-child {
     text-align: left;
-}
-
-.button-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    align-items: center;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
-    flex-shrink: 0;
 }
 
 .results-list-card {
@@ -130,53 +123,129 @@ $page_specific_css = "
     flex-shrink: 0;
 }
 
-.btn-compact { padding: .45rem .75rem; font-size: .875rem; }
-
-.custom-close {
-    background: none;
-    border: none;
-    color: var(--secondary-color);
-    font-size: 1.5rem;
-    opacity: 0.7;
-    transition: all var(--transition-speed) ease;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.custom-close:hover {
-    opacity: 1;
-    background-color: rgba(220, 53, 69, 0.1);
-    color: var(--danger-color);
-    transform: scale(1.1);
-}
-
 .spinner-border { color: var(--secondary-color) !important; }
 
-/* Shooting Category Cards im Modal */
-.shooting-category {
-    background: #f8f9fa;
+/* =========================================
+   Hybrid Rows (klickbare Tabelle)
+   ========================================= */
+#mitgliederTabelle tbody tr.hybrid-row {
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    border-bottom: 1px solid #f1f3f4;
+}
+#mitgliederTabelle tbody tr.hybrid-row:hover {
+    background: rgba(99,102,241,0.05);
+}
+#mitgliederTabelle tbody tr.hybrid-row.selected {
+    background: rgba(0,123,255,0.08);
+    box-shadow: inset 4px 0 0 #007bff;
+}
+#mitgliederTabelle tbody tr.hybrid-row[data-has-data='1'] td:first-child {
+    box-shadow: inset 4px 0 0 #28a745;
+}
+#mitgliederTabelle tbody tr.hybrid-row[data-has-data='0'] td:first-child {
+    box-shadow: inset 4px 0 0 #dee2e6;
+}
+#mitgliederTabelle tbody tr.hybrid-row.selected td:first-child {
+    box-shadow: inset 4px 0 0 #007bff;
+}
+
+/* =========================================
+   Fortschrittsbalken
+   ========================================= */
+.progress-card {
+    background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--box-shadow);
+    flex-shrink: 0;
 }
 
-.shooting-category h6 {
-    color: var(--secondary-color);
-    font-size: 0.85rem;
+/* =========================================
+   Slide-Panel (aus jmdefinition.php Pattern)
+   ========================================= */
+.hybrid-edit-panel {
+    position: fixed;
+    top: 0;
+    right: -560px;
+    width: 540px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -8px 0 30px rgba(0,0,0,0.12);
+    z-index: 1060;
+    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    flex-direction: column;
+}
+.hybrid-edit-panel.open { right: 0; }
+
+.panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 1055;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+.panel-overlay.show { opacity: 1; visibility: visible; }
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
 }
 
-.shooting-category.disabled {
+.panel-body {
+    padding: 1rem 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.panel-footer {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+
+/* =========================================
+   Stich-Karten im Panel
+   ========================================= */
+.panel-stich-card {
+    background: transparent;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0;
+    padding: 0.625rem 0 0.375rem;
+    margin-bottom: 0.25rem;
+}
+
+.row > .col-6 > .panel-stich-card {
+    border-top: none;
+    padding-top: 0;
+}
+
+.panel-stich-card h6 {
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+}
+
+.panel-stich-card.disabled {
     opacity: 0.4;
     pointer-events: none;
     position: relative;
 }
 
-.shooting-category.disabled::after {
+.panel-stich-card.disabled::after {
     content: 'Nicht gelöst';
     position: absolute;
     top: 50%;
@@ -238,37 +307,22 @@ $page_specific_css = "
     text-align: center;
 }
 
-/* Action Buttons */
-.action-group .btn {
-    padding: 0.25rem 0.5rem;
-}
-
 @media (max-width: 576px) {
     .button-toolbar { flex-direction: column; }
     .button-toolbar .btn { width: 100%; }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.results-list-card {
-    animation: fadeIn 0.5s ease-out;
-}
-
 /* =========================================
-   Mobile Cards Optimierung
+   Mobile
    ========================================= */
 @media (max-width: 767.98px) {
-    /* WCAG AAA Touch Targets: Alle Form-Elemente */
     .form-control,
     .form-select,
     input[type=\"text\"],
     input[type=\"number\"],
     select {
         min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
+        font-size: 16px !important;
     }
 
     .btn {
@@ -280,7 +334,6 @@ $page_specific_css = "
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
 
-    /* Mobile Scroll Fix: fixe Höhe aufheben */
     .main-content-wrapper {
         height: auto !important;
         min-height: calc(100vh - var(--app-header) - 10px) !important;
@@ -292,6 +345,28 @@ $page_specific_css = "
 
     .table-wrapper {
         overflow: visible !important;
+    }
+
+    /* Panel wird Fullscreen auf Mobile */
+    .hybrid-edit-panel {
+        width: 100vw;
+        right: -100vw;
+    }
+    .panel-overlay { display: none !important; }
+
+    .panel-footer {
+        position: sticky;
+        bottom: 0;
+    }
+    .panel-footer .btn {
+        min-height: 48px;
+        font-size: 0.9rem;
+    }
+
+    .panel-stich-card .small-input {
+        width: 38px !important;
+        min-height: 38px !important;
+        font-size: 14px !important;
     }
 
     .mobile-card-detail-row {
@@ -314,12 +389,10 @@ $page_specific_css = "
         min-height: 48px !important;
         font-size: 1rem !important;
     }
+}
 
-    .button-toolbar .btn {
-        min-height: 48px !important;
-        font-size: 0.95rem !important;
-    }
-
+@media (min-width: 768px) {
+    .mobile-cards-container { display: none !important; }
 }
 ";
 
@@ -372,21 +445,34 @@ if (empty($_SESSION['csrf_token'])) {
                             <div class="collapse" id="endresultateActions">
                                 <div class="card-body pt-2 pb-3 px-3">
                                     <div class="row g-2">
-                                        <div class="col-12">
-                                            <button id="redirect-btn" type="button" class="btn btn-success w-100">
+                                        <div class="col-6">
+                                            <button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm w-100">
                                                 <i class="bi bi-trophy me-1"></i>Rangliste
                                             </button>
                                         </div>
-                                        <div class="col-12">
-                                            <button id="delall-btn" type="button" class="btn btn-outline-danger w-100">
-                                                <i class="bi bi-trash me-1"></i>Alle Daten löschen
-                                            </button>
-                                        </div>
+                                    </div>
+                                    <div class="border-top mt-2 pt-2 text-end">
+                                        <button id="delall-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
+                                            <i class="bi bi-trash me-1"></i>Alle Resultate löschen
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         </div><!-- Ende flex-row Jahr+Aktionen -->
+
+                        <!-- Fortschrittsbalken -->
+                        <div class="progress-card">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="fw-semibold small">
+                                    <i class="bi bi-people me-1"></i>Erfassungsfortschritt
+                                </span>
+                                <span class="badge bg-success" id="progressBadge">0 / 0</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
 
                         <!-- Tabelle Container -->
                         <div id="resultateContainer">
@@ -410,12 +496,11 @@ if (empty($_SESSION['csrf_token'])) {
                                                         <th scope="col" class="text-center">Zabig</th>
                                                         <th scope="col" class="text-center">Sie und Er</th>
                                                         <th scope="col" class="text-center">Ansage</th>
-                                                        <th scope="col" class="text-center">Aktionen</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td colspan="9" class="text-center py-4">
+                                                        <td colspan="8" class="text-center py-4">
                                                             <div class="spinner-border spinner-border-sm me-2"></div>
                                                             Lade Daten...
                                                         </td>
@@ -448,176 +533,154 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Schuss-Modal -->
-<div class="modal fade" id="schussModal" tabindex="-1" aria-labelledby="schussModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="schussModalLabel">
-                    <i class="bi bi-target me-2"></i> Erfassen
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panelOverlay"></div>
+
+<!-- Slide-Panel -->
+<div class="hybrid-edit-panel" id="editPanel">
+    <div class="panel-header">
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorheriger">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div>
+                <h6 class="mb-0" id="panelTitle"><i class="bi bi-target me-2"></i>Erfassen</h6>
+                <small class="text-muted" id="panelSubtitle"></small>
             </div>
-            <div class="modal-body">
-                <form id="schussForm" style="display: contents;">
-                    <input type="hidden" id="mitgliedID" name="mitgliedID">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+            <button class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächster">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" id="panelClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
 
-                    <div class="row g-2">
-                        <!-- Zeile 1: Absenden + Ansage -->
-                        <div class="col-md-4">
-                            <div id="Absendenanmeldung" class="shooting-category mb-0">
-                                <h6 class="mb-1"><i class="bi bi-calendar-check me-1"></i> Absenden</h6>
-                                <input type="text" class="form-control form-control-sm focusable-input" id="AbsendenAnmeldung" name="AbsendenAnmeldung" placeholder="Anmeldung">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div id="Differenzler" class="shooting-category mb-0">
-                                <h6 class="mb-1"><i class="bi bi-chat-square-text me-1"></i> Ansage</h6>
-                                <input type="number" class="form-control form-control-sm focusable-input" id="Ansage" name="Ansage" min="0" max="999" placeholder="Differenzler">
-                            </div>
-                        </div>
-                        <div class="col-md-4"></div>
+    <div class="panel-body" id="panelBody">
+        <input type="hidden" id="mitgliedID" name="mitgliedID">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Zeile 2: Endstich (volle Breite) -->
-                        <div class="col-12">
-                            <div id="endstichSchuesse" class="shooting-category mb-0" data-stich="END">
-                                <h6 class="mb-1"><i class="bi bi-bullseye me-1"></i> Endstich</h6>
-                                <div class="d-flex align-items-center gap-1 flex-wrap">
-                                    <?php for ($i=1; $i<=10; $i++): ?>
-                                        <input type="number" class="small-input endschuss focusable-input" id="Schuss<?= $i ?>" name="Schuss<?= $i ?>" min="0" max="10">
-                                    <?php endfor; ?>
-                                    <div class="d-flex align-items-center">
-                                        <label for="Tiefschuss" class="small me-1 mb-0">TS:</label>
-                                        <input type="number" class="small-input focusable-input" id="Tiefschuss" name="Tiefschuss" min="0" max="100" style="width: 50px;">
-                                    </div>
-                                    <span id="endstichSumme" class="total-display ms-auto">0</span>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Absenden + Ansage -->
+        <div class="row g-2 mb-2">
+            <div class="col-6">
+                <div class="panel-stich-card" id="Absendenanmeldung">
+                    <h6><i class="bi bi-calendar-check me-1"></i>Absenden</h6>
+                    <input type="text" class="form-control form-control-sm focusable-input" id="AbsendenAnmeldung" name="AbsendenAnmeldung" placeholder="Anmeldung">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="panel-stich-card" id="Differenzler">
+                    <h6><i class="bi bi-chat-square-text me-1"></i>Ansage</h6>
+                    <input type="number" class="form-control form-control-sm focusable-input" id="Ansage" name="Ansage" min="0" max="999" placeholder="Differenzler" inputmode="numeric">
+                </div>
+            </div>
+        </div>
 
-                        <!-- Zeile 3: Schwini + Zabig -->
-                        <div class="col-md-6">
-                            <div id="schwiniSchuesse" class="shooting-category mb-0" data-stich="SCHWINI">
-                                <h6 class="mb-1"><i class="bi bi-piggy-bank me-1"></i> Schwini</h6>
-                                <div class="mb-1 schwini-passe-1">
-                                    <label class="small mb-0" style="font-size: 0.75rem;">Passe 1:</label>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <?php for ($i=1; $i<=6; $i++): ?>
-                                            <input type="number" class="small-input schwini-schuss1 focusable-input" id="P1Schuss<?= $i ?>" name="P1Schuss<?= $i ?>" min="0" max="10">
-                                        <?php endfor; ?>
-                                        <span id="schwiniSumme1" class="total-display ms-1">0</span>
-                                    </div>
-                                </div>
-                                <div class="schwini-passe-2">
-                                    <label class="small mb-0" style="font-size: 0.75rem;">Passe 2:</label>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <?php for ($i=1; $i<=6; $i++): ?>
-                                            <input type="number" class="small-input schwini-schuss2 focusable-input" id="P2Schuss<?= $i ?>" name="P2Schuss<?= $i ?>" min="0" max="10">
-                                        <?php endfor; ?>
-                                        <span id="schwiniSumme2" class="total-display ms-1">0</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div id="zabigSchuesse" class="shooting-category mb-0" data-stich="ZABIG">
-                                <h6 class="mb-1"><i class="bi bi-moon-stars me-1"></i> Zabig</h6>
-                                <div class="d-flex align-items-center gap-1 flex-wrap">
-                                    <?php for ($i=1; $i<=6; $i++): ?>
-                                        <input type="number" class="small-input zabig focusable-input" id="ZSchuss<?= $i ?>" name="ZSchuss<?= $i ?>" min="0" max="100">
-                                    <?php endfor; ?>
-                                    <span id="zabigsum" class="total-display ms-1">0</span>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Endstich -->
+        <div class="panel-stich-card" id="endstichSchuesse" data-stich="END">
+            <h6><i class="bi bi-bullseye me-1"></i>Endstich <span id="endstichSumme" class="total-display float-end">0</span></h6>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+                <?php for ($i=1; $i<=10; $i++): ?>
+                    <input type="number" class="small-input endschuss focusable-input" id="Schuss<?= $i ?>" name="Schuss<?= $i ?>" min="0" max="10" inputmode="numeric">
+                <?php endfor; ?>
+                <div class="d-flex align-items-center ms-1">
+                    <label for="Tiefschuss" class="small me-1 mb-0">TS:</label>
+                    <input type="number" class="small-input focusable-input" id="Tiefschuss" name="Tiefschuss" min="0" max="100" style="width: 50px;" inputmode="numeric">
+                </div>
+            </div>
+        </div>
 
-                        <!-- Zeile 4: Sie und Er + Kunst + Glück -->
-                        <div class="col-md-6">
-                            <div id="sieunderSchuesse" class="shooting-category mb-0" data-stich="SIEUNDER">
-                                <h6 class="mb-1">
-                                    <i class="bi bi-people me-1"></i>"Sie und Er"
-                                    <span class="badge bg-info ms-1" style="font-size: 0.65rem;">Unique</span>
-                                </h6>
-                                <div class="d-flex align-items-center gap-1 flex-wrap mb-1">
-                                    <?php for ($i=6; $i<=10; $i++): ?>
-                                        <input type="number"
-                                               class="small-input sie-er-schuss sie-er-mitglied focusable-input"
-                                               id="SieErSchuss<?= $i ?>"
-                                               name="SieErSchuss<?= $i ?>"
-                                               data-position="<?= $i ?>"
-                                               data-source="mitglied"
-                                               min="0" max="10" step="0.1"
-                                               style="border-bottom: 3px solid #007bff;"
-                                               placeholder="<?= $i ?>">
-                                    <?php endfor; ?>
-                                    <span class="badge bg-success ms-auto" id="uniqueTotal" style="font-size: 0.7rem;">
-                                        <i class="bi bi-calculator me-1"></i>Total: 0
-                                    </span>
-                                </div>
-                                <div id="previewBadges" class="d-flex gap-1 flex-wrap" style="font-size: 0.75rem;"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div id="kunstSchuesse" class="shooting-category mb-0" data-stich="KUNST">
-                                <h6 class="mb-1"><i class="bi bi-palette me-1"></i> Kunst</h6>
-                                <div class="d-flex align-items-center gap-1 flex-wrap">
-                                    <?php for ($i=1; $i<=5; $i++): ?>
-                                        <input type="number" class="small-input kunst focusable-input" id="KSchuss<?= $i ?>" name="KSchuss<?= $i ?>" min="0" max="100">
-                                    <?php endfor; ?>
-                                    <span id="kunstSum" class="total-display ms-1">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div id="glueckSchuesse" class="shooting-category mb-0" data-stich="GLUECK">
-                                <h6 class="mb-1"><i class="bi bi-clover me-1"></i> Glück</h6>
-                                <div class="d-flex align-items-center gap-1 flex-wrap">
-                                    <input type="number" class="small-input glueck focusable-input" id="GSchuss1" name="GSchuss1" min="0" max="100">
-                                    <input type="number" class="small-input glueck focusable-input" id="GSchuss2" name="GSchuss2" min="0" max="100">
-                                    <input type="number" class="small-input glueck focusable-input" id="GSchuss3" name="GSchuss3" min="0" max="100">
-                                </div>
-                            </div>
-                        </div>
+        <!-- Schwini -->
+        <div class="panel-stich-card" id="schwiniSchuesse" data-stich="SCHWINI">
+            <h6><i class="bi bi-piggy-bank me-1"></i>Schwini</h6>
+            <div class="mb-1 schwini-passe-1">
+                <label class="small mb-0" style="font-size: 0.7rem;">Passe 1: <span id="schwiniSumme1" class="total-display">0</span></label>
+                <div class="d-flex align-items-center gap-1">
+                    <?php for ($i=1; $i<=6; $i++): ?>
+                        <input type="number" class="small-input schwini-schuss1 focusable-input" id="P1Schuss<?= $i ?>" name="P1Schuss<?= $i ?>" min="0" max="10" inputmode="numeric">
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <div class="schwini-passe-2">
+                <label class="small mb-0" style="font-size: 0.7rem;">Passe 2: <span id="schwiniSumme2" class="total-display">0</span></label>
+                <div class="d-flex align-items-center gap-1">
+                    <?php for ($i=1; $i<=6; $i++): ?>
+                        <input type="number" class="small-input schwini-schuss2 focusable-input" id="P2Schuss<?= $i ?>" name="P2Schuss<?= $i ?>" min="0" max="10" inputmode="numeric">
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zabig -->
+        <div class="panel-stich-card" id="zabigSchuesse" data-stich="ZABIG">
+            <h6><i class="bi bi-moon-stars me-1"></i>Zabig <span id="zabigsum" class="total-display float-end">0</span></h6>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+                <?php for ($i=1; $i<=6; $i++): ?>
+                    <input type="number" class="small-input zabig focusable-input" id="ZSchuss<?= $i ?>" name="ZSchuss<?= $i ?>" min="0" max="100" inputmode="numeric">
+                <?php endfor; ?>
+            </div>
+        </div>
+
+        <!-- Sie und Er -->
+        <div class="panel-stich-card" id="sieunderSchuesse" data-stich="SIEUNDER">
+            <h6>
+                <i class="bi bi-people me-1"></i>"Sie und Er"
+                <span class="badge bg-info ms-1" style="font-size: 0.6rem;">Unique</span>
+                <span class="badge bg-success float-end" id="uniqueTotal" style="font-size: 0.65rem;"><i class="bi bi-calculator me-1"></i>Total: 0</span>
+            </h6>
+            <div class="d-flex align-items-center gap-1 flex-wrap mb-1">
+                <?php for ($i=6; $i<=10; $i++): ?>
+                    <input type="number"
+                           class="small-input sie-er-schuss sie-er-mitglied focusable-input"
+                           id="SieErSchuss<?= $i ?>"
+                           name="SieErSchuss<?= $i ?>"
+                           data-position="<?= $i ?>"
+                           data-source="mitglied"
+                           min="0" max="10" step="0.1"
+                           style="border-bottom: 3px solid #007bff;"
+                           placeholder="<?= $i ?>"
+                           inputmode="decimal">
+                <?php endfor; ?>
+            </div>
+            <div id="previewBadges" class="d-flex gap-1 flex-wrap" style="font-size: 0.7rem;"></div>
+        </div>
+
+        <!-- Kunst + Glück nebeneinander -->
+        <div class="row g-2">
+            <div class="col-7">
+                <div class="panel-stich-card" id="kunstSchuesse" data-stich="KUNST">
+                    <h6><i class="bi bi-palette me-1"></i>Kunst <span id="kunstSum" class="total-display float-end">0</span></h6>
+                    <div class="d-flex align-items-center gap-1">
+                        <?php for ($i=1; $i<=5; $i++): ?>
+                            <input type="number" class="small-input kunst focusable-input" id="KSchuss<?= $i ?>" name="KSchuss<?= $i ?>" min="0" max="100" inputmode="numeric">
+                        <?php endfor; ?>
                     </div>
-                </form>
+                </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="submit" form="schussForm" class="btn btn-outline-success">
-                    <i class="bi bi-save me-2"></i>Speichern
-                </button>
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-2"></i>Abbrechen
-                </button>
+            <div class="col-5">
+                <div class="panel-stich-card" id="glueckSchuesse" data-stich="GLUECK">
+                    <h6><i class="bi bi-clover me-1"></i>Glück</h6>
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="number" class="small-input glueck focusable-input" id="GSchuss1" name="GSchuss1" min="0" max="100" inputmode="numeric">
+                        <input type="number" class="small-input glueck focusable-input" id="GSchuss2" name="GSchuss2" min="0" max="100" inputmode="numeric">
+                        <input type="number" class="small-input glueck focusable-input" id="GSchuss3" name="GSchuss3" min="0" max="100" inputmode="numeric">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Lösch-Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="confirmModalLabel">
-                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
-                    Bestätigung erforderlich
-                </h5>
-                <button type="button" class="custom-close" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-            <div class="modal-body text-center py-4" id="confirmModalBody">
-                Sind Sie sicher?
-            </div>
-            <div class="modal-footer border-0 justify-content-center">
-                <button type="button" class="btn btn-compact btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-compact btn-outline-danger" id="confirmAction">
-                    <i class="bi bi-check-circle me-1"></i>Bestätigen
-                </button>
-            </div>
+    <div class="panel-footer">
+        <div class="d-flex gap-2 w-100">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn">
+                <i class="bi bi-trash"></i>
+            </button>
+            <button type="button" class="btn btn-outline-success flex-fill" id="panelSaveBtn">
+                <i class="bi bi-save me-1"></i>Speichern
+            </button>
+            <button type="button" class="btn btn-success flex-fill" id="panelSaveNextBtn">
+                Speichern & Nächster <i class="bi bi-arrow-right ms-1"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -625,34 +688,258 @@ if (empty($_SESSION['csrf_token'])) {
 <script>
 $(document).ready(function() {
 
-    // ===== State =====
-    var deleteType = '';
-    var itemToDelete = null;
+    // =========================================
+    //  EndEditPanel – Slide-Panel Steuerung
+    // =========================================
+    const EndEditPanel = {
+        currentMitgliedId: null,
+        allRows: [],
+        currentIndex: -1,
+        _loadingXhr: null,
 
-    // ===== Höhenberechnung =====
-    function calculateTableHeight() {
-        var tableResp = $('.table-responsive');
-        if (!tableResp.length) return;
-        var availableHeight = window.innerHeight - tableResp.offset().top - 30;
-        tableResp.css({ 'max-height': Math.max(300, availableHeight) + 'px', 'overflow-y': 'auto' });
-    }
+        open(mitgliedId) {
+            this.currentMitgliedId = mitgliedId;
+            this.currentIndex = this.allRows.findIndex(r => r.id == mitgliedId);
 
-    // ===== Jahr-Dropdown =====
+            // Zeile markieren
+            $('.hybrid-row').removeClass('selected');
+            if (this.currentIndex >= 0) {
+                const $row = $(this.allRows[this.currentIndex].tr);
+                $row.addClass('selected');
+                this.allRows[this.currentIndex].tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+
+            // Titel setzen
+            const name = this.currentIndex >= 0
+                ? $(this.allRows[this.currentIndex].tr).find('td:first').text().trim()
+                : '';
+            $('#panelTitle').html('<i class="bi bi-target me-2"></i>' + name);
+            $('#panelSubtitle').text((this.currentIndex + 1) + ' / ' + this.allRows.length);
+
+            // Navigation
+            $('#panelPrev').prop('disabled', this.currentIndex <= 0);
+            $('#panelNext').prop('disabled', this.currentIndex >= this.allRows.length - 1);
+
+            // Hidden Field
+            $('#mitgliedID').val(mitgliedId);
+
+            // Form zurücksetzen
+            this.resetForm();
+
+            // Panel öffnen
+            $('#editPanel').addClass('open');
+            $('#panelOverlay').addClass('show');
+
+            // Panel-Body nach oben scrollen
+            $('#panelBody').scrollTop(0);
+
+            // Daten laden
+            this.loadSchussdaten(mitgliedId);
+        },
+
+        close() {
+            $('#editPanel').removeClass('open');
+            $('#panelOverlay').removeClass('show');
+            $('.hybrid-row').removeClass('selected');
+            this.currentMitgliedId = null;
+            this.currentIndex = -1;
+            if (this._loadingXhr) {
+                this._loadingXhr.abort();
+                this._loadingXhr = null;
+            }
+        },
+
+        resetForm() {
+            // Alle Inputs leeren
+            $('#editPanel .focusable-input').val('');
+            $('#editPanel .small-input').val('');
+            $('.total-display').text('0');
+            $('#previewBadges').html('');
+            $('#uniqueTotal').html('<i class="bi bi-calculator me-1"></i>Total: 0');
+
+            // Alle Stiche deaktivieren
+            $('.panel-stich-card[data-stich], .panel-stich-card#Differenzler').addClass('disabled')
+                .find('input').prop('disabled', true).val('');
+
+            // Absenden immer aktiv
+            $('#Absendenanmeldung').removeClass('disabled')
+                .find('input').prop('disabled', false);
+            // Absenden-Feld selbst (falls es kein Kind-Input hat, sondern selbst das Feld ist)
+            $('#AbsendenAnmeldung').prop('disabled', false);
+        },
+
+        loadSchussdaten(mitgliedId) {
+            const year = $('#yearSelect').val();
+
+            // Vorherigen Request abbrechen
+            if (this._loadingXhr) this._loadingXhr.abort();
+
+            this._loadingXhr = $.ajax({
+                url: 'endschresultate/load_schussdaten.php',
+                type: 'GET',
+                data: { mitgliedID: mitgliedId, year: year },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.geloesteStiche && data.geloesteStiche.length > 0) {
+                        updateStichAvailability(data.geloesteStiche);
+                    }
+
+                    for (var key in data) {
+                        if (key !== 'geloesteStiche') {
+                            var $field = $('#' + key);
+                            if ($field.length) $field.val(data[key]);
+                        }
+                    }
+
+                    calculateAllSums();
+                    updateSieErUniqueVisualization();
+
+                    setTimeout(function() {
+                        $('#editPanel .focusable-input:not(:disabled):first').focus().select();
+                    }, 300);
+                },
+                error: function(xhr) {
+                    if (xhr.statusText !== 'abort') {
+                        msvToast('Fehler beim Laden der Schussdaten', 'error');
+                    }
+                },
+                complete: function() {
+                    EndEditPanel._loadingXhr = null;
+                }
+            });
+        },
+
+        navigate(direction) {
+            const newIndex = this.currentIndex + direction;
+            if (newIndex < 0 || newIndex >= this.allRows.length) return;
+            this.open(this.allRows[newIndex].id);
+        },
+
+        save(callback) {
+            const $saveBtn = $('#panelSaveBtn');
+            const $saveNextBtn = $('#panelSaveNextBtn');
+            const originalSave = $saveBtn.html();
+            const originalNext = $saveNextBtn.html();
+
+            $saveBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>...');
+            $saveNextBtn.prop('disabled', true);
+
+            const formData = this.collectFormData();
+
+            $.ajax({
+                url: 'endschresultate/save_schuss.php',
+                type: 'POST',
+                data: formData,
+                success: function() {
+                    msvToast('Resultate gespeichert!', 'success');
+
+                    // Zeile als "hat Daten" markieren
+                    if (EndEditPanel.currentIndex >= 0) {
+                        EndEditPanel.allRows[EndEditPanel.currentIndex].hasData = true;
+                        $(EndEditPanel.allRows[EndEditPanel.currentIndex].tr).attr('data-has-data', '1');
+                    }
+                    EndEditPanel.updateProgress();
+
+                    if (callback) {
+                        callback();
+                    } else {
+                        // Tabelle neu laden
+                        loadData($('#yearSelect').val());
+                    }
+                },
+                error: function() {
+                    msvToast('Fehler beim Speichern', 'error');
+                },
+                complete: function() {
+                    $saveBtn.prop('disabled', false).html(originalSave);
+                    $saveNextBtn.prop('disabled', false).html(originalNext);
+                }
+            });
+        },
+
+        saveAndNext() {
+            this.save(function() {
+                // Nächsten Schützen ohne Daten finden
+                for (let i = EndEditPanel.currentIndex + 1; i < EndEditPanel.allRows.length; i++) {
+                    if (!EndEditPanel.allRows[i].hasData) {
+                        EndEditPanel.open(EndEditPanel.allRows[i].id);
+                        return;
+                    }
+                }
+                // Auch vor dem aktuellen suchen
+                for (let i = 0; i < EndEditPanel.currentIndex; i++) {
+                    if (!EndEditPanel.allRows[i].hasData) {
+                        EndEditPanel.open(EndEditPanel.allRows[i].id);
+                        return;
+                    }
+                }
+                // Alle erfasst
+                msvToast('Alle Schützen erfasst!', 'success');
+                EndEditPanel.close();
+                loadData($('#yearSelect').val());
+            });
+        },
+
+        collectFormData() {
+            const data = {
+                mitgliedID: $('#mitgliedID').val(),
+                jahr: $('#yearSelect').val(),
+                csrf_token: $('#editPanel input[name="csrf_token"]').val()
+            };
+
+            // Alle benannten Inputs aus dem Panel sammeln
+            $('#editPanel input[name]:not([type="hidden"])').each(function() {
+                if (!this.disabled) {
+                    data[this.name] = $(this).val() || '';
+                }
+            });
+
+            return data;
+        },
+
+        buildRowIndex() {
+            this.allRows = [];
+            $('#mitgliederTabelle tbody tr.hybrid-row').each((_, tr) => {
+                this.allRows.push({
+                    id: $(tr).data('mitglied-id'),
+                    hasData: String($(tr).data('has-data')) === '1',
+                    tr: tr
+                });
+            });
+        },
+
+        updateProgress() {
+            const total = this.allRows.length;
+            const withData = this.allRows.filter(r => r.hasData).length;
+            const pct = total > 0 ? Math.round((withData / total) * 100) : 0;
+            $('#progressBadge').text(withData + ' / ' + total);
+            $('#progressBar').css('width', pct + '%');
+        }
+    };
+
+    // =========================================
+    //  Jahr-Dropdown
+    // =========================================
     function initializeYearDropdown() {
         var $yearSelect = $('#yearSelect').empty();
         var currentYear = new Date().getFullYear();
+        var selectedYear = <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'currentYear'; ?>;
         for (var year = currentYear; year >= currentYear - 3; year--) {
             var $option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) $option.prop('selected', true);
+            if (year === selectedYear) $option.prop('selected', true);
             $yearSelect.append($option);
         }
     }
 
-    // ===== Daten laden =====
+    // =========================================
+    //  Daten laden
+    // =========================================
     function loadData(year) {
+        EndEditPanel.close();
+
         var $tbody = $('#mitgliederTabelle tbody');
         $tbody.html(
-            '<tr><td colspan="9" class="text-center py-4">' +
+            '<tr><td colspan="8" class="text-center py-4">' +
             '<div class="spinner-border spinner-border-sm me-2"></div>' +
             'Lade Daten...</td></tr>'
         );
@@ -663,12 +950,13 @@ $(document).ready(function() {
             data: { year: year },
             success: function(response) {
                 $tbody.html(response);
-                setTimeout(calculateTableHeight, 100);
+                EndEditPanel.buildRowIndex();
+                EndEditPanel.updateProgress();
                 buildMobileEndCards();
             },
             error: function() {
                 $tbody.html(
-                    '<tr><td colspan="9" class="text-center text-danger py-4">' +
+                    '<tr><td colspan="8" class="text-center text-danger py-4">' +
                     '<i class="bi bi-exclamation-triangle me-2"></i>' +
                     'Fehler beim Laden der Daten</td></tr>'
                 );
@@ -677,7 +965,9 @@ $(document).ready(function() {
         });
     }
 
-    // ===== Summen berechnen =====
+    // =========================================
+    //  Summen berechnen
+    // =========================================
     function calculateSum(selector, sumId) {
         var sum = 0;
         $(selector).each(function() { sum += parseInt($(this).val()) || 0; });
@@ -692,9 +982,11 @@ $(document).ready(function() {
         calculateSum('.zabig', 'zabigsum');
     }
 
-    // ===== Enter-Navigation im Modal =====
+    // =========================================
+    //  Enter-Navigation im Panel
+    // =========================================
     function setupEnterNavigation() {
-        var $inputs = $('#schussModal .focusable-input:not(:disabled)');
+        var $inputs = $('#editPanel .focusable-input:not(:disabled)');
         $inputs.off('keydown.nav').on('keydown.nav', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -703,13 +995,15 @@ $(document).ready(function() {
                 if (nextIndex < $inputs.length) {
                     $inputs.eq(nextIndex).focus().select();
                 } else {
-                    $('#schussModal button[type="submit"]').focus();
+                    $('#panelSaveBtn').focus();
                 }
             }
         });
     }
 
-    // ===== Stich-Verfügbarkeit =====
+    // =========================================
+    //  Stich-Verfügbarkeit
+    // =========================================
     function updateStichAvailability(geloesteStiche) {
         var stichElements = {
             'END': '#endstichSchuesse',
@@ -723,8 +1017,8 @@ $(document).ready(function() {
         };
 
         var activateElements = {};
-        var hasSchiwiniP1 = geloesteStiche.indexOf('SCHWINI_P1') !== -1;
-        var hasSchiwiniP2 = geloesteStiche.indexOf('SCHWINI_P2') !== -1;
+        var hasSchwiniP1 = geloesteStiche.indexOf('SCHWINI_P1') !== -1;
+        var hasSchwiniP2 = geloesteStiche.indexOf('SCHWINI_P2') !== -1;
 
         geloesteStiche.forEach(function(stichCode) {
             if (stichElements[stichCode]) {
@@ -732,7 +1026,7 @@ $(document).ready(function() {
             }
         });
 
-        $('.shooting-category[data-stich], .shooting-category#Differenzler, .shooting-category#Absendenanmeldung').each(function() {
+        $('.panel-stich-card[data-stich], .panel-stich-card#Differenzler, .panel-stich-card#Absendenanmeldung').each(function() {
             var $element = $(this);
             var elementId = '#' + $element.attr('id');
 
@@ -745,15 +1039,15 @@ $(document).ready(function() {
 
             // Schwini Spezialbehandlung
             if (elementId === '#schwiniSchuesse') {
-                if (hasSchiwiniP1 || hasSchiwiniP2) {
+                if (hasSchwiniP1 || hasSchwiniP2) {
                     $element.removeClass('disabled');
                     $('.schwini-passe-1, .schwini-passe-2').removeClass('schwini-pass-disabled');
 
-                    if (hasSchiwiniP1 && !hasSchiwiniP2) {
+                    if (hasSchwiniP1 && !hasSchwiniP2) {
                         $('.schwini-schuss1').prop('disabled', false);
                         $('.schwini-schuss2').prop('disabled', true).val('');
                         $('.schwini-passe-2').addClass('schwini-pass-disabled');
-                    } else if (!hasSchiwiniP1 && hasSchiwiniP2) {
+                    } else if (!hasSchwiniP1 && hasSchwiniP2) {
                         $('.schwini-schuss1').prop('disabled', true).val('');
                         $('.schwini-schuss2').prop('disabled', false);
                         $('.schwini-passe-1').addClass('schwini-pass-disabled');
@@ -781,7 +1075,9 @@ $(document).ready(function() {
         setupEnterNavigation();
     }
 
-    // ===== Sie und Er Unique Visualisierung =====
+    // =========================================
+    //  Sie und Er Unique Visualisierung
+    // =========================================
     function updateSieErUniqueVisualization() {
         var valuePositions = {};
 
@@ -847,157 +1143,101 @@ $(document).ready(function() {
         $('#uniqueTotal').html('<i class="bi bi-calculator me-1"></i>Total: ' + uniqueSum);
     }
 
-    // ===== Edit Modal öffnen =====
-    function openEditModal(mitgliedID) {
-        var selectedYear = $('#yearSelect').val();
-        var name = $('[data-id="' + mitgliedID + '"]').closest('tr').find('td:first').text();
+    // =========================================
+    //  Event-Handler
+    // =========================================
 
-        $('#schussModalLabel').html('<i class="bi bi-target me-2"></i> Erfassen - ' + name);
-        $('#mitgliedID').val(mitgliedID);
-        $('#schussForm')[0].reset();
-        $('.total-display').text('0');
+    // Jahr-Auswahl
+    $('#yearSelect').on('change', function() {
+        loadData($(this).val());
+    });
 
-        // Alle Stiche erstmal deaktivieren
-        $('.shooting-category[data-stich], .shooting-category#Differenzler')
-            .addClass('disabled')
-            .find('input').prop('disabled', true).val('');
+    // Rangliste
+    $('#redirect-btn').on('click', function() { window.location.href = 'endschrang.php'; });
 
-        // Absenden immer aktiv
-        $('.shooting-category#Absendenanmeldung')
-            .removeClass('disabled')
-            .find('input').prop('disabled', false);
+    // Alle löschen
+    $('#delall-btn').on('click', async function(e) {
+        e.preventDefault();
+        const r = await msvConfirm(
+            'Möchtest du wirklich ALLE Resultate des aktuellen Jahres löschen?',
+            'Alle Daten löschen',
+            'Ja, alles löschen'
+        );
+        if (!r.isConfirmed) return;
 
-        $('#schussModal').modal('show');
-
+        const selectedYear = $('#yearSelect').val();
         $.ajax({
-            url: 'endschresultate/load_schussdaten.php',
-            type: 'GET',
-            data: { mitgliedID: mitgliedID, year: selectedYear },
-            dataType: 'json',
-            success: function(data) {
-                if (data.geloesteStiche && data.geloesteStiche.length > 0) {
-                    updateStichAvailability(data.geloesteStiche);
-                }
-
-                for (var key in data) {
-                    if (key !== 'geloesteStiche') {
-                        var $field = $('#' + key);
-                        if ($field.length) $field.val(data[key]);
-                    }
-                }
-
-                calculateAllSums();
-                updateSieErUniqueVisualization();
-
-                setTimeout(function() {
-                    $('#schussModal .focusable-input:not(:disabled):first').focus().select();
-                }, 300);
-            },
-            error: function() {
-                msvToast('Fehler beim Laden der Schussdaten', 'error');
-            }
-        });
-    }
-
-    // ===== Delete Bestätigung anzeigen =====
-    function showDeleteConfirmation(type, name) {
-        var message;
-        if (type === 'all') {
-            message = '<div class="d-flex align-items-center">' +
-                '<i class="bi bi-exclamation-triangle text-danger me-3" style="font-size: 2rem;"></i>' +
-                '<div><strong>Möchtest du wirklich ALLE Resultate des aktuellen Jahres löschen?</strong>' +
-                '<br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden!</small></div></div>';
-        } else {
-            message = '<div class="d-flex align-items-center">' +
-                '<i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>' +
-                '<div><strong>Möchtest du die Resultate von "' + name + '" wirklich löschen?</strong>' +
-                '<br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small></div></div>';
-        }
-        $('#confirmModalBody').html(message);
-        $('#confirmModal').modal('show');
-    }
-
-    // ===== Delete ausführen =====
-    function executeDelete() {
-        var $btn = $('#confirmAction');
-        var originalText = $btn.html();
-        var selectedYear = $('#yearSelect').val();
-
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Verarbeite...');
-
-        var ajaxConfig = {
+            url: 'endschresultate/delete_endschresultate.php',
             method: 'POST',
             data: {
                 jahr: selectedYear,
                 year: selectedYear,
                 csrf_token: $('input[name="csrf_token"]').val()
             },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-                $('#confirmModal').modal('hide');
-            }
-        };
-
-        if (deleteType === 'all') {
-            ajaxConfig.url = 'endschresultate/delete_endschresultate.php';
-            ajaxConfig.success = function() {
+            success: function() {
                 msvToast('Alle Resultate erfolgreich gelöscht', 'success');
-                setTimeout(function() { loadData(selectedYear); }, 500);
-            };
-            ajaxConfig.error = function() { msvToast('Fehler beim Löschen', 'error'); };
-        } else if (deleteType === 'single' && itemToDelete !== null) {
-            ajaxConfig.url = 'endschresultate/delete_endschresultat.php';
-            ajaxConfig.data.mitgliedID = itemToDelete;
-            ajaxConfig.success = function() {
-                msvToast('Resultate erfolgreich gelöscht', 'success');
-                setTimeout(function() { loadData(selectedYear); }, 500);
-            };
-            ajaxConfig.error = function() { msvToast('Fehler beim Löschen', 'error'); };
+                EndEditPanel.close();
+                loadData(selectedYear);
+            },
+            error: function() { msvToast('Fehler beim Löschen', 'error'); }
+        });
+    });
+
+    // Klick auf Tabellenzeile → Panel öffnen
+    $(document).on('click', '.hybrid-row', function() {
+        const mitgliedId = $(this).data('mitglied-id');
+        if (mitgliedId) EndEditPanel.open(mitgliedId);
+    });
+
+    // Panel schliessen
+    $('#panelClose, #panelOverlay').on('click', function() { EndEditPanel.close(); });
+
+    // Escape schliesst Panel
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $('#editPanel').hasClass('open')) {
+            EndEditPanel.close();
+            e.stopImmediatePropagation();
         }
-
-        $.ajax(ajaxConfig);
-    }
-
-    // ===== Event-Handler =====
-
-    // Jahr-Auswahl
-    $('#yearSelect').on('change', function() { loadData($(this).val()); });
-
-    // Rangliste
-    $('#redirect-btn').on('click', function() { window.location.href = 'endschrang.php'; });
-
-    // Alle löschen
-    $('#delall-btn').on('click', function(e) {
-        e.preventDefault();
-        deleteType = 'all';
-        showDeleteConfirmation('all');
     });
 
-    // Einzeln löschen (dynamisch)
-    $(document).on('click', '.delete-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        deleteType = 'single';
-        itemToDelete = $(this).data('id');
-        var name = $(this).closest('tr').find('td:first').text();
-        showDeleteConfirmation('single', name);
-    });
+    // Panel Navigation
+    $('#panelPrev').on('click', function() { EndEditPanel.navigate(-1); });
+    $('#panelNext').on('click', function() { EndEditPanel.navigate(1); });
 
-    // Bestätigung
-    $('#confirmAction').on('click', function() { executeDelete(); });
+    // Speichern
+    $('#panelSaveBtn').on('click', function() { EndEditPanel.save(); });
 
-    // Confirm Modal Reset
-    $('#confirmModal').on('hidden.bs.modal', function() {
-        deleteType = '';
-        itemToDelete = null;
-    });
+    // Speichern & Nächster
+    $('#panelSaveNextBtn').on('click', function() { EndEditPanel.saveAndNext(); });
 
-    // Edit-Button (dynamisch)
-    $(document).on('click', '.edit-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        openEditModal($(this).data('id'));
+    // Löschen aus Panel
+    $('#panelDeleteBtn').on('click', async function() {
+        const mitgliedId = EndEditPanel.currentMitgliedId;
+        if (!mitgliedId) return;
+
+        const name = $('#panelTitle').text().replace('Erfassen', '').replace('–', '').trim();
+        const r = await msvConfirm(
+            'Möchtest du die Resultate von "' + name + '" wirklich löschen?',
+            'Resultate löschen',
+            'Ja, löschen'
+        );
+        if (!r.isConfirmed) return;
+
+        $.ajax({
+            url: 'endschresultate/delete_endschresultat.php',
+            method: 'POST',
+            data: {
+                mitgliedID: mitgliedId,
+                jahr: $('#yearSelect').val(),
+                csrf_token: $('#editPanel input[name="csrf_token"]').val()
+            },
+            success: function() {
+                msvToast('Resultate gelöscht', 'success');
+                EndEditPanel.close();
+                loadData($('#yearSelect').val());
+            },
+            error: function() { msvToast('Fehler beim Löschen', 'error'); }
+        });
     });
 
     // Summen-Berechnung bei Input
@@ -1010,56 +1250,9 @@ $(document).ready(function() {
         updateSieErUniqueVisualization();
     });
 
-    // Enter-Navigation bei Modal-Öffnung
-    $('#schussModal').on('shown.bs.modal', function() { setupEnterNavigation(); });
-
-    // Schuss-Form Submit
-    $('#schussForm').on('submit', function(e) {
-        e.preventDefault();
-
-        var $btn = $('#schussModal button[type="submit"]');
-        var originalText = $btn.html();
-        $btn.prop('disabled', true)
-            .html('<i class="bi bi-hourglass-split me-2"></i>Speichere...');
-
-        var selectedYear = $('#yearSelect').val();
-        var formData = $(this).serialize() + '&jahr=' + selectedYear;
-
-        $.ajax({
-            url: 'endschresultate/save_schuss.php',
-            type: 'POST',
-            data: formData,
-            success: function() {
-                msvToast('Resultate erfolgreich gespeichert!', 'success');
-                $('#schussModal').modal('hide');
-                setTimeout(function() { loadData(selectedYear); }, 500);
-            },
-            error: function() {
-                msvToast('Fehler beim Speichern der Resultate', 'error');
-            },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-            }
-        });
-    });
-
-    // Global Scroll
-    document.addEventListener('wheel', function(e) {
-        var tableContainer = $('.table-responsive')[0];
-        if (tableContainer && tableContainer.scrollHeight > tableContainer.clientHeight) {
-            tableContainer.scrollTop += e.deltaY;
-            e.preventDefault();
-        }
-    }, { passive: false });
-
-    // Resize
-    var resizeTimeout;
-    $(window).on('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(calculateTableHeight, 150);
-    });
-
-    // ===== Mobile Cards =====
+    // =========================================
+    //  Mobile Cards
+    // =========================================
     function buildMobileEndCards() {
         const isMobile = window.matchMedia('(max-width: 767.98px)');
         if (!isMobile.matches) return;
@@ -1074,7 +1267,7 @@ $(document).ready(function() {
             return;
         }
 
-        const rows = tbody.querySelectorAll('tr');
+        const rows = tbody.querySelectorAll('tr.hybrid-row');
         if (rows.length === 0) {
             container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
             return;
@@ -1083,8 +1276,10 @@ $(document).ready(function() {
         let html = '';
         rows.forEach((row, idx) => {
             const cells = Array.from(row.querySelectorAll('td'));
-            if (cells.length < 9) return;
+            if (cells.length < 8) return;
 
+            const mitgliedId = row.dataset.mitgliedId;
+            const hasData = row.dataset.hasData === '1';
             const memberName = cells[0]?.textContent?.trim() || 'Unbekannt';
             const endstich = cells[1]?.textContent?.trim() || '-';
             const schwini = cells[2]?.textContent?.trim() || '-';
@@ -1094,15 +1289,15 @@ $(document).ready(function() {
             const sieUndEr = cells[6]?.textContent?.trim() || '-';
             const ansage = cells[7]?.textContent?.trim() || '-';
 
-            // Extract Mitglied-ID from action button
-            const actionBtn = cells[8]?.querySelector('button[data-id]');
-            const mitgliedId = actionBtn ? actionBtn.getAttribute('data-id') : '';
+            const statusDot = hasData
+                ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px;"></span>'
+                : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#cbd5e1;margin-right:6px;"></span>';
 
             html += `
             <div class="mobile-card" data-index="${idx}">
                 <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
-                        <div class="fw-bold">${memberName}</div>
+                        <div class="fw-bold">${statusDot}${memberName}</div>
                         <small class="text-muted">Endstich: ${endstich} | Schwini: ${schwini}</small>
                     </div>
                     <i class="bi bi-chevron-down"></i>
@@ -1136,8 +1331,8 @@ $(document).ready(function() {
                         <span class="mobile-card-detail-label">Ansage</span>
                         <span class="mobile-card-detail-value"><strong>${ansage}</strong></span>
                     </div>
-                    <button type="button" class="btn btn-primary w-100 mt-3"
-                            onclick="openSchussModal(${mitgliedId})"
+                    <button type="button" class="btn btn-outline-primary w-100 mt-3"
+                            onclick="EndEditPanel.open(${mitgliedId})"
                             style="min-height: 48px;">
                         <i class="bi bi-pencil me-2"></i>Bearbeiten
                     </button>
@@ -1173,6 +1368,7 @@ $(document).ready(function() {
         }
     };
 
+    // Responsive Rebuild
     let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
     window.addEventListener('resize', function() {
         const isNowDesktop = window.matchMedia('(min-width: 768px)').matches;
@@ -1182,10 +1378,14 @@ $(document).ready(function() {
         wasDesktop = isNowDesktop;
     });
 
-    // ===== Init =====
+    // EndEditPanel global verfügbar machen für Mobile-Cards onclick
+    window.EndEditPanel = EndEditPanel;
+
+    // =========================================
+    //  Init
+    // =========================================
     initializeYearDropdown();
-    loadData(new Date().getFullYear());
-    setTimeout(calculateTableHeight, 200);
+    loadData($('#yearSelect').val());
 });
 </script>
 

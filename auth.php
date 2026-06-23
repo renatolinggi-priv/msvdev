@@ -93,5 +93,61 @@ function ensureCsrfToken() {
  * CSRF-Token validieren
  */
 function validateCsrf($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], (string)$token);
+}
+
+/**
+ * CSRF-Token aus der Anfrage lesen (POST-Feld 'csrf_token' oder Header 'X-CSRF-TOKEN')
+ * und validieren. Deckt klassische Formular-Posts und fetch()/AJAX mit JSON-Body ab.
+ */
+function validateCsrfRequest() {
+    $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    return validateCsrf($token);
+}
+
+/**
+ * Wie requireRole(), antwortet bei Fehlschlag aber mit JSON statt HTML/Redirect.
+ * Für AJAX-/JSON-Endpoints gedacht.
+ * @param string|array $roles
+ */
+function requireRoleJson($roles) {
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    // iOS PWA: Session ggf. aus Remember-Cookie wiederherstellen
+    if (!isset($_SESSION['user_id']) && function_exists('restoreSessionFromToken') && restoreSessionFromToken()) {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+    }
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt']);
+        exit;
+    }
+    if (!empty($_SESSION['user_status']) && $_SESSION['user_status'] != 'approved') {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Konto nicht freigegeben']);
+        exit;
+    }
+    if (!in_array($_SESSION['user_role'] ?? '', (array) $roles)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Zugriff verweigert']);
+        exit;
+    }
+}
+
+/**
+ * Einheitliche JSON-Fehlerantwort für AJAX-Endpoints + sofortiger Abbruch.
+ * Zentralisiert die zuvor pro Datei duplizierte json_error()-Definition.
+ */
+if (!function_exists('json_error')) {
+    function json_error($msg, $code = 400) {
+        if (!headers_sent()) {
+            http_response_code($code);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode(['success' => false, 'message' => $msg]);
+        exit;
+    }
 }

@@ -127,15 +127,15 @@ try {
              VALUES (?, ?, NULL, ?, NULL, ?, NULL, NULL, NULL, ?, ?)"
         );
         $stmt_insert_3 = $conn->prepare(
-            "INSERT INTO cupPairs (Participant1, Participant2, Participant3, Result1, LowShot1, Result2, LowShot2, Result3, LowShot3, Round, Year)
-             VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, ?)"
+            "INSERT INTO cupPairs (Participant1, Participant2, Participant3, Advancers, Result1, LowShot1, Result2, LowShot2, Result3, LowShot3, Round, Year)
+             VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, ?)"
         );
         $stmt_update_2 = $conn->prepare(
-            "UPDATE cupPairs SET Result1 = ?, Result2 = ?, Participant3 = NULL, Result3 = NULL, LowShot1 = NULL, LowShot2 = NULL, LowShot3 = NULL
+            "UPDATE cupPairs SET Result1 = ?, Result2 = ?, Participant3 = NULL, Advancers = NULL, Result3 = NULL, LowShot1 = NULL, LowShot2 = NULL, LowShot3 = NULL
              WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?"
         );
         $stmt_update_3 = $conn->prepare(
-            "UPDATE cupPairs SET Result1 = ?, Result2 = ?, Result3 = ?, Participant3 = ?, LowShot1 = NULL, LowShot2 = NULL, LowShot3 = NULL
+            "UPDATE cupPairs SET Result1 = ?, Result2 = ?, Result3 = ?, Participant3 = ?, Advancers = ?, LowShot1 = NULL, LowShot2 = NULL, LowShot3 = NULL
              WHERE Participant1 = ? AND Participant2 = ? AND Round = ? AND Year = ?"
         );
 
@@ -167,6 +167,8 @@ try {
                 $r1 = isset($pair[3]) && is_numeric($pair[3]) ? (int)$pair[3] : null;
                 $r2 = isset($pair[4]) && is_numeric($pair[4]) ? (int)$pair[4] : null;
                 $r3 = isset($pair[5]) && is_numeric($pair[5]) ? (int)$pair[5] : null;
+                // Anzahl Weiterkommende (Index 9, nach den 3 LowShots) - nur 1 oder 2
+                $advancers = (isset($pair[9]) && (int)$pair[9] === 1) ? 1 : 2;
             } else {
                 $r1 = isset($pair[2]) && is_numeric($pair[2]) ? (int)$pair[2] : null;
                 $r2 = isset($pair[3]) && is_numeric($pair[3]) ? (int)$pair[3] : null;
@@ -181,10 +183,10 @@ try {
             $ok = false;
             if ($is_three_pair) {
                 if ($exists) {
-                    $stmt_update_3->bind_param("iiiiiiii", $r1, $r2, $r3, $p3, $p1, $p2, $round, $year);
+                    $stmt_update_3->bind_param("iiiiiiiii", $r1, $r2, $r3, $p3, $advancers, $p1, $p2, $round, $year);
                     $ok = $stmt_update_3->execute();
                 } else {
-                    $stmt_insert_3->bind_param("iiiiiiii", $p1, $p2, $p3, $r1, $r2, $r3, $round, $year);
+                    $stmt_insert_3->bind_param("iiiiiiiii", $p1, $p2, $p3, $advancers, $r1, $r2, $r3, $round, $year);
                     $ok = $stmt_insert_3->execute();
                 }
             } else {

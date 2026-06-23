@@ -124,77 +124,67 @@ if (WANDERPREISE_DEBUG) {
                                 <small class="text-muted d-block mb-2"><i class="bi bi-tools me-1"></i>Verwaltung</small>
                                 <div class="row g-2 mb-3">
                                     <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                        <button class="btn btn-compact btn-primary w-100" data-bs-toggle="modal"
+                                        <button class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal"
                                             data-bs-target="#addWanderpreisModal">
-                                            <i class="bi bi-plus-circle me-1"></i>
-                                            <span>Neuer Wanderpreis</span>
+                                            <i class="bi bi-plus-circle me-1"></i>Hinzufügen
                                         </button>
                                     </div>
                                     <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                        <button type="button" id="zuordnungButton" class="btn btn-compact btn-success w-100"
+                                        <button type="button" id="zuordnungButton" class="btn btn-outline-primary btn-sm w-100"
                                             data-bs-toggle="modal" data-bs-target="#zuordnungModal">
-                                            <i class="bi bi-link-45deg me-1"></i>
-                                            <span>Gewinner zuordnen</span>
+                                            <i class="bi bi-link-45deg me-1"></i>Zuordnen
                                         </button>
                                     </div>
                                     <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                        <button type="button" id="autoZuordnungButton" class="btn btn-compact btn-warning w-100">
-                                            <i class="bi bi-magic me-1"></i>
-                                            <span>Auto-Zuordnung</span>
+                                        <button type="button" id="autoZuordnungButton" class="btn btn-outline-warning btn-sm w-100">
+                                            <i class="bi bi-magic me-1"></i>Auto
                                         </button>
                                     </div>
                                     <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                        <button type="button" id="vergangeneGewinnerButton" class="btn btn-compact btn-info w-100"
+                                        <button type="button" id="vergangeneGewinnerButton" class="btn btn-outline-info btn-sm w-100"
                                             data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal">
-                                            <i class="bi bi-calendar-plus me-1"></i>
-                                            <span>Vergangene Gewinner</span>
+                                            <i class="bi bi-clock-history me-1"></i>Historie
                                         </button>
                                     </div>
                                 </div>
                                 <!-- Export-Buttons -->
                                 <div class="border-top pt-2">
-                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Export & Berichte</small>
+                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                                     <div class="row g-2">
                                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-compact btn-success w-100 export-btn"
+                                            <button type="button" class="btn btn-outline-success btn-sm w-100 export-btn"
                                                 data-export-type="csv">
-                                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>
-                                                <span>CSV Export</span>
+                                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
                                             </button>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-compact btn-danger w-100 export-btn"
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
                                                 data-export-type="pdf-all">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                                <span>PDF Alle</span>
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>PDF Alle
                                             </button>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-compact btn-warning w-100 export-btn"
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
                                                 data-export-type="pdf-schnitzerei">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                                <span>PDF Schnitzerei</span>
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>Schnitzerei
                                             </button>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-compact btn-info w-100 export-btn"
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
                                                 data-export-type="pdf-akura">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                                <span>PDF Akura</span>
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>Akura
                                             </button>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-compact btn-primary w-100 export-btn"
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
                                                 data-export-type="pdf-jm">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>
-                                                <span>JM Preise</span>
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>JM Preise
                                             </button>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-compact btn-secondary w-100 export-btn"
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 export-btn"
                                                 data-export-type="pdf-mitglieder-info">
-                                                <i class="bi bi-people-fill me-1"></i>
-                                                <span>PDF Mitglieder-Info</span>
+                                                <i class="bi bi-people-fill me-1"></i>Mitglieder
                                             </button>
                                         </div>
                                     </div>
@@ -1523,7 +1513,7 @@ $('#startExport').on('click', function () {
                                                     data-jahr="${gewinner.jahr}"
                                                     data-name="${gewinner.name}"
                                                     data-wpid="${data.wanderpreis.id}"
-                                                    title="Löschen">
+                                                    data-tooltip="Löschen">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </td>

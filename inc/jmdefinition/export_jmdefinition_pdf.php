@@ -3,6 +3,7 @@
 
 require '../vendor/autoload.php'; // Pfad zu Composer's Autoload Datei
 include '../config.php'; // Datenbankverbindung
+require_once __DIR__ . '/../pdf/pdf_theme.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -55,8 +56,8 @@ function extractDaysAndMonths($schiesstage)
     ];
 }
 
-// Lade das Logo (optional)
-$logoBase64 = imgToBase64('../dat/SKSG_Logo.jpg'); // Passe den Pfad zum Logo an
+// Lade das Logo (zentrales MSV-Wilen-Logo)
+$logoBase64 = pdf_logo_src();
 
 // Aktuelles Jahr (oder spezifisches Jahr aus GET-Parameter)
 $currentYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
@@ -174,20 +175,22 @@ ob_start();
 }
 .table th,
 .table td {
-    border: 1px solid #000;
+    border: 1px solid #e2e8f0;
     padding: 5px; /* Weniger Platz zwischen Text */
     text-align: left;
 }
 
         .table th {
-            background-color: #f2f2f2;
+            background-color: #eef2f7;
+            color: #2d3748;
+            border-bottom: 2px solid #cbd5e0;
         }
 
         .footer {
             text-align: center;
             font-size: 9px;
             padding: 10px 0;
-            border-top: 1px solid #000;
+            border-top: 1px solid #cbd5e0;
             position: fixed;
             bottom: -10px;
             left: 0;

@@ -20,13 +20,21 @@ if (!$doc) {
     die('Dokument nicht gefunden');
 }
 
-// Berechtigungspruefung
+// Berechtigungspruefung (fail-closed: nur bekannte Sichtbarkeits-Werte freigeben)
 $user_role = $_SESSION['user_role'] ?? 'mitglied';
-if ($doc['sichtbar_fuer'] == 'admin' && $user_role !== 'admin') {
-    http_response_code(403);
-    die('Zugriff verweigert');
+$visible = false;
+switch ($doc['sichtbar_fuer']) {
+    case 'alle_mitglieder':
+        $visible = true;
+        break;
+    case 'vorstand':
+        $visible = in_array($user_role, ['admin', 'vorstand']);
+        break;
+    case 'admin':
+        $visible = ($user_role === 'admin');
+        break;
 }
-if ($doc['sichtbar_fuer'] == 'vorstand' && !in_array($user_role, ['admin', 'vorstand'])) {
+if (!$visible) {
     http_response_code(403);
     die('Zugriff verweigert');
 }

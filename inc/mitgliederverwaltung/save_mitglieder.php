@@ -29,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $orte = $_POST['ort'] ?? [];
         $emails = $_POST['email'] ?? [];
         $telefone = $_POST['telefon'] ?? [];
+        $anreden = $_POST['anrede'] ?? [];
+        $vereinsaufnahmen = $_POST['vereinsaufnahme'] ?? [];
+        $kommunikationen = $_POST['kommunikation'] ?? [];
 
         foreach ($namen as $old_id => $name) {
             $new_id = $conn->real_escape_string($ids[$old_id]);
@@ -46,14 +49,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $ort = $conn->real_escape_string($orte[$old_id] ?? '');
             $email = $conn->real_escape_string($emails[$old_id] ?? '');
             $telefon = $conn->real_escape_string($telefone[$old_id] ?? '');
+            $anrede = $conn->real_escape_string($anreden[$old_id] ?? '');
+            $vereinsaufnahme = !empty($vereinsaufnahmen[$old_id]) ? intval($vereinsaufnahmen[$old_id]) : 'NULL';
+            $kommunikation = $conn->real_escape_string($kommunikationen[$old_id] ?? '');
 
             // Update oder Insert je nach ID-Änderung
             if ($new_id != $old_id) {
                 // Erst neuen Eintrag erstellen
-                $sql = "INSERT INTO mitglieder (id, vorname, name, waffenid, status, Geburtsdatum, Ehrenmitglied,
-                        Strasse, PLZ, Ort, Email, Telefon, Verstorben)
-                        VALUES ('$new_id', '$vorname', '$name', '$waffenid', $isActive, '$birthday', '$isEhrenmitglied',
-                        '$strasse', '$plz', '$ort', '$email', '$telefon', $isVerstorben)";
+                $anredeSQL = $anrede !== '' ? "'$anrede'" : "NULL";
+                $kommSQL = $kommunikation !== '' ? "'$kommunikation'" : "NULL";
+                $sql = "INSERT INTO mitglieder (id, Anrede, vorname, name, waffenid, status, Geburtsdatum, Ehrenmitglied,
+                        Strasse, PLZ, Ort, Email, Telefon, Verstorben, Vereinsaufnahme, Kommunikation)
+                        VALUES ('$new_id', $anredeSQL, '$vorname', '$name', '$waffenid', $isActive, '$birthday', '$isEhrenmitglied',
+                        '$strasse', '$plz', '$ort', '$email', '$telefon', $isVerstorben, $vereinsaufnahme, $kommSQL)";
 
                 if ($conn->query($sql) === TRUE) {
                     // Dann alten Eintrag löschen
@@ -65,8 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
             } else {
                 // Normales Update - KORRIGIERTE SPALTENNAMEN
+                $anredeSQL = $anrede !== '' ? "'$anrede'" : "NULL";
+                $kommSQL = $kommunikation !== '' ? "'$kommunikation'" : "NULL";
                 $sql = "UPDATE mitglieder SET
                         id='$new_id',
+                        Anrede=$anredeSQL,
                         vorname='$vorname',
                         name='$name',
                         waffenid='$waffenid',
@@ -78,7 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         PLZ='$plz',
                         Ort='$ort',
                         Email='$email',
-                        Telefon='$telefon'
+                        Telefon='$telefon',
+                        Vereinsaufnahme=$vereinsaufnahme,
+                        Kommunikation=$kommSQL
                         WHERE id=$old_id";
             }
 

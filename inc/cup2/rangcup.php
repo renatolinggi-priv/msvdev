@@ -36,13 +36,18 @@ function getParticipantName($conn, $id) {
 }
 
 // Funktion zur Ermittlung der Gewinner bei 3er-Paarungen
+// Berücksichtigt Advancers (1 oder 2 kommen weiter) und ManualWinner
+// (positiv = Gewinner, negativ = ausgeschiedener bei Dreier-Gleichstand)
 function getThreeWayWinners($row) {
+    $advancers = (isset($row['Advancers']) && (int)$row['Advancers'] === 1) ? 1 : 2;
+    $manual = !empty($row['ManualWinner']) ? (int)$row['ManualWinner'] : 0;
+
     $participants = [
-        ['id' => $row['Participant1'], 'result' => $row['Result1'], 'lowshot' => $row['LowShot1']],
-        ['id' => $row['Participant2'], 'result' => $row['Result2'], 'lowshot' => $row['LowShot2']],
-        ['id' => $row['Participant3'], 'result' => $row['Result3'], 'lowshot' => $row['LowShot3']]
+        ['id' => (int)$row['Participant1'], 'result' => $row['Result1'], 'lowshot' => $row['LowShot1']],
+        ['id' => (int)$row['Participant2'], 'result' => $row['Result2'], 'lowshot' => $row['LowShot2']],
+        ['id' => (int)$row['Participant3'], 'result' => $row['Result3'], 'lowshot' => $row['LowShot3']]
     ];
-    
+
     // Sortiere nach Ergebnis (absteigend) und dann nach Tiefschuss (absteigend)
     usort($participants, function($a, $b) {
         if ($a['result'] == $b['result']) {
@@ -50,12 +55,30 @@ function getThreeWayWinners($row) {
         }
         return $b['result'] - $a['result'];
     });
-    
-    // Die ersten zwei sind die Gewinner
-    return [
-        'winners' => [$participants[0]['id'], $participants[1]['id']],
-        'loser' => $participants[2]['id']
-    ];
+
+    $ids = array_column($participants, 'id');
+
+    if ($advancers === 1) {
+        // Nur einer kommt weiter
+        $winners = ($manual > 0) ? [$manual] : [$ids[0]];
+    } else {
+        // Zwei kommen weiter
+        if ($manual < 0) {
+            // abs(ManualWinner) ist der Verlierer, die anderen zwei kommen weiter
+            $loserId = abs($manual);
+            $winners = array_values(array_filter($ids, function($id) use ($loserId) { return $id !== $loserId; }));
+        } elseif ($manual > 0) {
+            // ManualWinner ist gesetzter Gewinner + bester der Übrigen
+            $winners = [$manual];
+            foreach ($ids as $id) {
+                if ($id !== $manual && count($winners) < 2) { $winners[] = $id; }
+            }
+        } else {
+            $winners = [$ids[0], $ids[1]];
+        }
+    }
+
+    return ['winners' => $winners];
 }
 
 // Logo und Header vorbereiten
@@ -226,23 +249,13 @@ while ($row = $pairsResult->fetch_assoc()) {
         $html .= '<td style="text-align: center;">' . htmlspecialchars($row['LowShot2']) . '</td>';
         $html .= '</tr>';
     } else {
-        // 3er-Paarung
+        // 3er-Paarung (getThreeWayWinners berücksichtigt Advancers + ManualWinner)
         $threeWayResult = getThreeWayWinners($row);
         $winners = $threeWayResult['winners'];
-        $loser = $threeWayResult['loser'];
-        
-        // Wenn manueller Gewinner gesetzt ist, füge ihn zu den Gewinnern hinzu
-        if ($hasManualWinner && !in_array($row['ManualWinner'], $winners)) {
-            $winners[] = $row['ManualWinner'];
-            // Entferne einen der ursprünglichen Gewinner
-            if (($key = array_search($loser, $winners)) === false) {
-                array_pop($winners);
-            }
-        }
-        
+
         // Erste Zeile
-        $isWinner1 = in_array($row['Participant1'], $winners);
-        $isWinner2 = in_array($row['Participant2'], $winners);
+        $isWinner1 = in_array((int)$row['Participant1'], $winners);
+        $isWinner2 = in_array((int)$row['Participant2'], $winners);
         
         $html .= '<tr' . $manualWinnerClass . '>';
         $html .= '<td>' . ($isWinner1 ? '<span class="winner">' : '<span class="strike-through">') . 
@@ -256,7 +269,7 @@ while ($row = $pairsResult->fetch_assoc()) {
         $html .= '</tr>';
         
         // Zweite Zeile für dritten Teilnehmer
-        $isWinner3 = in_array($row['Participant3'], $winners);
+        $isWinner3 = in_array((int)$row['Participant3'], $winners);
         $html .= '<tr' . $manualWinnerClass . '>';
         $html .= '<td>' . ($isWinner3 ? '<span class="winner">' : '<span class="strike-through">') . 
                  htmlspecialchars($participant3) . '</span></td>';
