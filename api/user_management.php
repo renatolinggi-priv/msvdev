@@ -68,7 +68,7 @@ switch ($action) {
 
     case 'change_role':
         $new_role = $_POST['role'] ?? '';
-        if (!in_array($new_role, ['admin', 'vorstand', 'mitglied'])) {
+        if (!in_array($new_role, ['admin', 'vorstand', 'mitglied', 'jungschuetze'])) {
             echo json_encode(['success' => false, 'message' => 'Ungültige Rolle']);
             break;
         }

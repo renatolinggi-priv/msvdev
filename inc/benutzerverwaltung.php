@@ -20,11 +20,13 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Alle Benutzer laden (erweitert mit Rolle, Status, Mitglied)
 $result = $conn->query("
-    SELECT u.id, u.username, u.full_name, u.email, u.role, u.status, u.mitglied_id,
+    SELECT u.id, u.username, u.full_name, u.email, u.role, u.status, u.mitglied_id, u.jungschuetze_id,
            u.created_at, u.approved_at,
-           m.Vorname AS m_vorname, m.Name AS m_name
+           m.Vorname AS m_vorname, m.Name AS m_name,
+           j.Vorname AS j_vorname, j.Name AS j_name
     FROM users u
     LEFT JOIN mitglieder m ON u.mitglied_id = m.ID
+    LEFT JOIN jungschuetzen j ON u.jungschuetze_id = j.id
     ORDER BY
         CASE u.status WHEN 'pending' THEN 0 ELSE 1 END,
         u.created_at DESC, u.id
@@ -49,7 +51,7 @@ while ($row = $mitglieder_result->fetch_assoc()) {
     $freie_mitglieder[] = $row;
 }
 
-$role_labels = ['admin' => 'Admin', 'vorstand' => 'Vorstand', 'mitglied' => 'Mitglied'];
+$role_labels = ['admin' => 'Admin', 'vorstand' => 'Vorstand', 'mitglied' => 'Mitglied', 'jungschuetze' => 'Jungschütze'];
 $status_labels = ['pending' => 'Ausstehend', 'approved' => 'Aktiv', 'rejected' => 'Abgelehnt', 'disabled' => 'Deaktiviert'];
 $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger', 'disabled' => 'secondary'];
 ?>
@@ -78,6 +80,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
 .initial-admin { background: linear-gradient(135deg, #dc3545, #c82333); }
 .initial-vorstand { background: linear-gradient(135deg, #ffc107, #e0a800); color: #343a40; }
 .initial-mitglied { background: linear-gradient(135deg, #667eea, #764ba2); }
+.initial-jungschuetze { background: linear-gradient(135deg, #14b8a6, #0d9488); }
 .info-card {
     background-color: #f8f9fa;
     border-left: 4px solid var(--secondary-color);
@@ -190,7 +193,17 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                         </span>
                                     </td>
                                     <td>
-                                        <?php if ($user['mitglied_id']): ?>
+                                        <?php if (($user['role'] ?? '') === 'jungschuetze'): ?>
+                                            <?php if ($user['jungschuetze_id']): ?>
+                                                <small class="text-info">
+                                                    <i class="bi bi-person-bounding-box me-1"></i>
+                                                    <?php echo htmlspecialchars(($user['j_vorname'] ?? '') . ' ' . ($user['j_name'] ?? '')); ?>
+                                                    <span class="text-muted">(JSK)</span>
+                                                </small>
+                                            <?php else: ?>
+                                                <small class="text-muted"><i class="bi bi-dash me-1"></i>kein JSK</small>
+                                            <?php endif; ?>
+                                        <?php elseif ($user['mitglied_id']): ?>
                                             <small class="text-success">
                                                 <i class="bi bi-link-45deg me-1"></i>
                                                 <?php echo htmlspecialchars(($user['m_vorname'] ?? '') . ' ' . ($user['m_name'] ?? '')); ?>

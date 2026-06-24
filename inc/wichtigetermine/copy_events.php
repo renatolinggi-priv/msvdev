@@ -21,7 +21,7 @@ if ($targetYear < 2000 || $targetYear > 2100 || empty($events)) {
 
 $conn->begin_transaction();
 try {
-    $stmt = $conn->prepare("INSERT INTO wichtige_termine (name, date, time, year) VALUES (?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO wichtige_termine (name, date, time, year, fuer_jsk) VALUES (?, ?, ?, ?, ?)");
     if (!$stmt) {
         throw new Exception('Prepare fehlgeschlagen: ' . $conn->error);
     }
@@ -31,9 +31,10 @@ try {
         $name = trim((string)($ev['name'] ?? ''));
         $date = trim((string)($ev['date'] ?? ''));
         $time = trim((string)($ev['time'] ?? ''));
+        $fuerJsk = !empty($ev['fuer_jsk']) ? 1 : 0;
         if ($name === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { continue; }
 
-        $stmt->bind_param("sssi", $name, $date, $time, $targetYear);
+        $stmt->bind_param("sssii", $name, $date, $time, $targetYear, $fuerJsk);
         if (!$stmt->execute()) {
             throw new Exception('Insert fehlgeschlagen: ' . $stmt->error);
         }

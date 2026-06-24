@@ -65,6 +65,10 @@ $portal_page_css = '
 .bn-lead-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59,89,152,0.12); }
 ';
 
+// Diese Seite zeigt im Geraete-Status einen eigenen, kontextbezogenen iOS-Installations-
+// Hinweis -> die globale "Als App installieren"-Karte hier unterdruecken (keine Dopplung).
+$portal_hide_pwa_install = true;
+
 include 'portal_header.php';
 
 $csrf_token = ensureCsrfToken();
@@ -110,6 +114,7 @@ $csrf_token = ensureCsrfToken();
         </div>
 
         <div class="bn-topics" id="bnTopics">
+            <?php if (!isJungschuetze()): ?>
             <div class="bn-toggle">
                 <div class="bn-toggle-label">
                     <div class="ti"><i class="bi bi-person-badge"></i></div>
@@ -180,8 +185,34 @@ $csrf_token = ensureCsrfToken();
                     <option value="14">14 Tage vorher</option>
                 </select>
             </div>
+            <?php endif; ?>
+            <?php if (isJungschuetze()): ?>
+            <div class="bn-hint"><i class="bi bi-info-circle"></i>Du wirst automatisch benachrichtigt, sobald dich ein Mitglied für einen Termin übernimmt. Stelle sicher, dass Push oben aktiviert ist.</div>
+            <?php endif; ?>
         </div>
     </div>
+
+    <?php if (!isJungschuetze() && jskFeatureAktiv()): ?>
+    <!-- Jungschützen-Betreuung -->
+    <div class="p-section">
+        <div class="p-section-header">
+            <div class="p-chip" style="background:#ccfbf1;color:#0d9488;"><i class="bi bi-people"></i></div>
+            <div class="p-section-title">Jungschützen-Betreuung</div>
+        </div>
+        <div class="bn-toggle">
+            <div class="bn-toggle-label">
+                <div class="ti" style="background:#ccfbf1;color:#0d9488;"><i class="bi bi-person-hearts"></i></div>
+                <div class="bn-toggle-text">
+                    <div class="t1">Jungschützen betreuen</div>
+                    <div class="t2">Board anzeigen & benachrichtigt werden, wenn ein Jungschütze einen Schiess-Termin sucht</div>
+                </div>
+            </div>
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="prefJsk">
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <script src="js/push.js"></script>
@@ -211,32 +242,43 @@ $csrf_token = ensureCsrfToken();
         fetch(PREFS_API).then(function (r) { return r.json(); }).then(function (data) {
             if (!data.success) return;
             var p = data.prefs;
+            function setChk(id, v) { var e = document.getElementById(id); if (e) e.checked = !!v; }
             elMaster.checked = !!p.push_aktiv;
-            document.getElementById('prefEinsaetze').checked = !!p.einsaetze;
-            document.getElementById('prefJm').checked         = !!p.jm;
-            document.getElementById('prefUmfragen').checked   = !!p.umfragen;
-            document.getElementById('prefTermine').checked    = !!p.termine;
+            setChk('prefEinsaetze', p.einsaetze);
+            setChk('prefJm',        p.jm);
+            setChk('prefUmfragen',  p.umfragen);
+            setChk('prefTermine',   p.termine);
+            setChk('prefJsk',       p.jsk_betreuung);
 
-            // Vorlaufzeit: null (noch nicht angepasst) -> Default 3 anzeigen
-            var lead = (p.lead_tage === null || typeof p.lead_tage === 'undefined') ? 3 : p.lead_tage;
+            // Vorlaufzeit: null (noch nicht angepasst) -> Default 3 anzeigen (nur falls Element vorhanden)
             var leadSel = document.getElementById('prefLead');
-            leadSel.value = String(lead);
-            if (leadSel.selectedIndex < 0) leadSel.value = '3'; // Fallback, falls Wert nicht in der Liste
+            if (leadSel) {
+                var lead = (p.lead_tage === null || typeof p.lead_tage === 'undefined') ? 3 : p.lead_tage;
+                leadSel.value = String(lead);
+                if (leadSel.selectedIndex < 0) leadSel.value = '3';
+            }
 
             applyMasterState();
         }).catch(function () {});
     }
 
     function savePrefs() {
+        function chk(id) { var e = document.getElementById(id); return (e && e.checked) ? 1 : 0; }
         var payload = {
             csrf_token: csrfToken,
-            push_aktiv: elMaster.checked ? 1 : 0,
-            einsaetze:  document.getElementById('prefEinsaetze').checked ? 1 : 0,
-            jm:         document.getElementById('prefJm').checked ? 1 : 0,
-            umfragen:   document.getElementById('prefUmfragen').checked ? 1 : 0,
-            termine:    document.getElementById('prefTermine').checked ? 1 : 0,
-            lead_tage:  parseInt(document.getElementById('prefLead').value, 10)
+            push_aktiv: elMaster.checked ? 1 : 0
         };
+        var elEins = document.getElementById('prefEinsaetze');
+        if (elEins) {
+            payload.einsaetze = chk('prefEinsaetze');
+            payload.jm        = chk('prefJm');
+            payload.umfragen  = chk('prefUmfragen');
+            payload.termine   = chk('prefTermine');
+        }
+        var elLead = document.getElementById('prefLead');
+        if (elLead) payload.lead_tage = parseInt(elLead.value, 10);
+        var elJsk = document.getElementById('prefJsk');
+        if (elJsk) payload.jsk_betreuung = elJsk.checked ? 1 : 0;
         fetch(PREFS_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -249,7 +291,13 @@ $csrf_token = ensureCsrfToken();
 
     elMaster.addEventListener('change', function () { applyMasterState(); savePrefs(); });
     topicInputs.forEach(function (inp) { inp.addEventListener('change', savePrefs); });
-    document.getElementById('prefLead').addEventListener('change', savePrefs);
+    var elLeadSel = document.getElementById('prefLead');
+    if (elLeadSel) elLeadSel.addEventListener('change', savePrefs);
+    var elJskToggle = document.getElementById('prefJsk');
+    if (elJskToggle) elJskToggle.addEventListener('change', function () {
+        savePrefs();
+        toast(this.checked ? 'Board wird nach dem Neuladen angezeigt.' : 'Jungschützen-Board deaktiviert.', 'info');
+    });
 
     // ---------- Geraete-Status / Push ----------
     function setStatus(on, text) {

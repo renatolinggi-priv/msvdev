@@ -1,5 +1,79 @@
 [
   {
+    "version": "1.16.0",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Jungschützen-Portal: eigene Inhalte",
+        "beschreibung": "Das Jungschützen-Portal hat jetzt eigene Inhalte. Auf der Übersicht erscheinen ein Info-/Willkommensblock (z.B. Trainingszeiten und Kontakt zum Jungschützenleiter) sowie die nächsten Jungschützen-Termine. Unter „Meine Resultate“ sehen Jungschützen ihre eigenen Schiessergebnisse (Endschiessen, Schwingen, Zabigstich) pro Jahr. Im neuen Bereich „Dokumente“ stehen für Jungschützen abgelegte Unterlagen (z.B. Standblätter) zum Ansehen bereit. Das Mitglieder-Portal bleibt für Jungschützen weiterhin ausgeblendet – sie sehen nur ihre eigenen Seiten.",
+        "typ": "neu"
+      },
+      {
+        "titel": "Wichtige Termine als „für Jungschützen“ markieren + JSK-Dokumente (Admin)",
+        "beschreibung": "Bei den Wichtigen Terminen gibt es neu das Häkchen „Für Jungschützen“ (im Bearbeiten-Panel und beim Hinzufügen). So markierte Termine erscheinen automatisch im Jungschützen-Portal – es braucht kein separates Termin-System. Zusätzlich kann der Info-Text fürs JSK-Dashboard direkt in der Jungschützen-Verwaltung gepflegt werden, und Vorstand/Admin können unter „Dokumente → JSK-Dokumente“ Unterlagen für Jungschützen hochladen (sichtbar im JSK-Portal). Die Auswertung der Resultate selbst bleibt unverändert.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.15.1",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Push-Benachrichtigungen: automatische Selbstheilung",
+        "beschreibung": "Push-Abos können – besonders auf dem iPhone – nach einem App- oder Systemupdate still ausfallen, ohne dass es jemandem auffällt: Der Versand meldet Erfolg, am Gerät kommt aber nichts an. Bisher half nur, Push in den Einstellungen aus- und wieder einzuschalten. Neu prüft die App das bei jedem Öffnen automatisch und stellt ein verloren gegangenes Abo selbstständig wieder her – ohne dass du etwas tun musst. Zusätzlich versucht die App, ein im Hintergrund gewechseltes Abo schon vor dem nächsten Öffnen zu reparieren. Wichtig auf dem iPhone: Push funktioniert nur, wenn die Seite über „Zum Home-Bildschirm“ als App installiert ist.",
+        "typ": "verbesserung"
+      },
+      {
+        "titel": "Portal als App installieren – mit Anleitung",
+        "beschreibung": "Oben im Portal erscheint neu ein Hinweis, wie du das Mitgliederportal als App auf deinem Gerät installierst (solange es noch nicht installiert ist). Auf Android/Chrome genügt ein Tippen auf „App installieren“. Auf dem iPhone/iPad zeigt der Hinweis die nötigen Schritte (Teilen → „Zum Home-Bildschirm“). Das lohnt sich besonders für Push-Benachrichtigungen, die auf dem iPhone nur in der installierten App funktionieren. Den Hinweis kannst du jederzeit ausblenden; ist die App installiert, verschwindet er von selbst.",
+        "typ": "verbesserung"
+      }
+    ]
+  },
+  {
+    "version": "1.15.0",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Jungschützen-Betreuung: Termin melden & übernehmen",
+        "beschreibung": "Neu können sich Jungschützen mit einem eigenen Login im Portal für ein konkretes Schiess-Datum anmelden („Ich möchte am … schiessen“). Mitglieder, die in ihren Einstellungen unter „Benachrichtigungen“ die neue Option „Jungschützen betreuen“ aktivieren, erhalten dann eine Push-Benachrichtigung und sehen im Portal das Board „Jungschützen“. Dort lässt sich ein Termin mit einem Klick übernehmen („Ich kümmere mich“) – wer zuerst klickt, betreut den Jungschützen. Alle anderen Betreuer sehen danach, dass der Termin vergeben ist und von wem; der Jungschütze wird ebenfalls benachrichtigt, sobald sich jemand kümmert. Jungschützen registrieren sich über „Bist du Jungschütze?“ auf der Anmeldeseite mit ihrer hinterlegten E-Mail-Adresse; das Konto wird vom Vorstand freigeschaltet.",
+        "typ": "neu"
+      },
+      {
+        "titel": "Jungschützen-Verwaltung & globaler Schalter (Admin)",
+        "beschreibung": "Im Admin-Bereich gibt es die neue Seite „Jungschützen-Verwaltung“: Jungschützen können manuell erfasst/bearbeitet oder per Excel-Import aus dem SSV-Mitgliederverzeichnis übernommen werden (mit Vorschlag-Filter auf plausible Jahrgänge und Spalten-Zuordnung inkl. E-Mail). Ein Konto-Status zeigt, wer sich bereits registriert hat; die Freischaltung der Login-Konten kann neu direkt in der Jungschützen-Verwaltung erfolgen (auch durch den Vorstand, nicht nur Admin) – alternativ wie gewohnt in der Benutzerverwaltung (neue Rolle „Jungschütze“). Über einen Master-Schalter oben auf der Seite kann die ganze Funktion „Jungschützen-Betreuung“ jederzeit global aktiviert oder deaktiviert werden – ist sie aus, sind Registrierung, Anmeldung und Board gesperrt.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.8",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Wanderpreise-Regeln: Bedingungs-Baukasten",
+        "beschreibung": "Der geführte Regel-Editor hat einen neuen Modus „Baukasten“. Damit lassen sich Regeln ganz ohne SQL zusammenklicken: Wettbewerb und Kategorie wie gewohnt wählen, zusätzlich beliebige Bedingungen (Spalte / Operator / Wert, mit UND verknüpft) und die Sortier-Reihenfolge per Klick festlegen – der Sieger ist die erste Zeile. Das passende SQL wird laufend als Vorschau erzeugt und kann direkt getestet werden. Jahr und der Ausschluss von Leertreffern werden automatisch ergänzt; als Werte sind Zahlen oder der Platzhalter {jahr} erlaubt. Der einfache Modus „Geführt“ und der „Experte“-Modus (freies SQL, z.B. für Jahresmeister) bleiben unverändert bestehen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.14.7",
+    "datum": "2026-06-23",
+    "aenderungen": [
+      {
+        "titel": "Wanderpreise-Regeln: Geführter Modus statt SQL",
+        "beschreibung": "Das Anlegen von Zuordnungsregeln für Wanderpreise ist deutlich einfacher geworden. Statt von Hand SQL zu schreiben, gibt es im Bearbeiten-Panel neu einen Regel-Typ: Im Modus „Geführt“ wählt man einfach einen Wettbewerb (z.B. Glückstich, Kunststich, Heim-/Kantonalstich, Endstich, Zabigstich oder Vereinscup), die Kategorie (Alle / Kat. A / Kat. B) und ob das höchste oder niedrigste Resultat gewinnt – das passende SQL wird automatisch erzeugt und als Vorschau angezeigt. Für Sonderfälle (z.B. Jahresmeister) bleibt der Modus „Experte“ mit frei editierbarem SQL erhalten; bestehende Regeln öffnen unverändert im Experten-Modus. Zusätzlich: „SQL testen“ zeigt das Ergebnis jetzt als Tabelle (mit Namen) statt nur als Textzeile, im Panel gibt es eine Referenz der verfügbaren Tabellen & Spalten, und über „Vorlage aus bestehender Regel“ lässt sich das SQL einer vorhandenen Regel als Startpunkt übernehmen. Die früheren Beispiel-Vorlagen, die auf nicht vorhandene Tabellen verwiesen, wurden entfernt. Die automatische Zuordnung selbst funktioniert unverändert weiter.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.14.6",
     "datum": "2026-06-23",
     "aenderungen": [

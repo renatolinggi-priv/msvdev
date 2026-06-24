@@ -73,10 +73,46 @@ function isMitglied() { return isset($_SESSION['user_id']); }
 function isLoggedIn() { return isset($_SESSION['user_id']); }
 
 /**
+ * Jungschuetze (eigene Rolle mit eingeschraenktem Portal-Zugang).
+ */
+function isJungschuetze() { return hasRole('jungschuetze'); }
+
+/**
  * Gibt die Mitglieder-ID des eingeloggten Users zurueck
  */
 function getMitgliedId() {
     return $_SESSION['mitglied_id'] ?? null;
+}
+
+/**
+ * Gibt die Jungschuetzen-ID des eingeloggten Users zurueck (nur Rolle jungschuetze).
+ */
+function getJungschuetzeId() {
+    return $_SESSION['jungschuetze_id'] ?? null;
+}
+
+/**
+ * Globaler Admin-Schalter: ist die Jungschuetzen-Betreuung ueberhaupt aktiv?
+ * Liest settings.jsk_betreuung_aktiv ('1' = an). Default aus.
+ * Pro Request gecacht; faellt bei DB-Problemen sicher auf false zurueck.
+ */
+function jskFeatureAktiv(): bool {
+    static $cached = null;
+    if ($cached !== null) return $cached;
+    if (!function_exists('getDB')) {
+        $__db = __DIR__ . '/inc/dbconnect.inc.php';
+        if (file_exists($__db)) require_once $__db;
+    }
+    if (!function_exists('getDB')) return $cached = false;
+    try {
+        $stmt = getDB()->prepare("SELECT setting_value FROM settings WHERE setting_key = 'jsk_betreuung_aktiv'");
+        $stmt->execute();
+        $v = $stmt->fetchColumn();
+        $cached = ($v === '1' || $v === 1);
+    } catch (Throwable $e) {
+        $cached = false;
+    }
+    return $cached;
 }
 
 /**

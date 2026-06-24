@@ -22,7 +22,7 @@ if (!validateCsrf($_POST['csrf_token'] ?? '')) {
 }
 
 $typ = $_POST['typ'] ?? '';
-if (!in_array($typ, ['einsatzplan', 'protokoll'])) {
+if (!in_array($typ, ['einsatzplan', 'protokoll', 'jsk'])) {
     echo json_encode(['success' => false, 'message' => 'Ungültiger Dokumenttyp']);
     exit;
 }

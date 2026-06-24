@@ -11,7 +11,7 @@ if (!isset($_GET['year']) || !is_numeric($_GET['year'])) {
 
 $year = intval($_GET['year']);
 
-$sql = "SELECT ID, name, date, time FROM wichtige_termine WHERE year = ? ORDER BY date, time";
+$sql = "SELECT ID, name, date, time, fuer_jsk FROM wichtige_termine WHERE year = ? ORDER BY date, time";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $year);
 $stmt->execute();
@@ -20,10 +20,11 @@ $result = $stmt->get_result();
 $events = [];
 while ($row = $result->fetch_assoc()) {
     $events[] = [
-        'ID'   => $row['ID'],
-        'name' => $row['name'],
-        'date' => $row['date'],
-        'time' => $row['time']
+        'ID'       => $row['ID'],
+        'name'     => $row['name'],
+        'date'     => $row['date'],
+        'time'     => $row['time'],
+        'fuer_jsk' => (int) $row['fuer_jsk']
     ];
 }
 

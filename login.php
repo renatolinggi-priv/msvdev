@@ -28,13 +28,14 @@ function checkUserStatus($status) {
     }
 }
 
-function setLoginSession($id, $username, $full_name, $role, $status, $mitglied_id) {
+function setLoginSession($id, $username, $full_name, $role, $status, $mitglied_id, $jungschuetze_id = null) {
     $_SESSION['user_id'] = $id;
     $_SESSION['username'] = $username;
     $_SESSION['user_name'] = $full_name;
     $_SESSION['user_role'] = $role ?? 'admin';
     $_SESSION['user_status'] = $status ?: 'approved'; // '' und NULL → 'approved' (Legacy-Admins)
     $_SESSION['mitglied_id'] = $mitglied_id;
+    $_SESSION['jungschuetze_id'] = $jungschuetze_id;
     $_SESSION['last_activity'] = time();
     $_SESSION['regenerated'] = time();
 }
@@ -45,6 +46,8 @@ function getLoginRedirect($role) {
     // Admin-Domains: admin., jm., jahresmeisterschaft. → Admin-Bereich (nur für Admins/Vorstand)
     $isAdminDomain = (bool)preg_match('/^(admin|jm|jahresmeisterschaft)\./i', $host);
     if ($role == 'admin' && $isAdminDomain) return $basePath . '/index.php';
+    // Jungschuetzen haben ein eigenes, eingeschraenktes Portal-Dashboard
+    if ($role == 'jungschuetze') return $basePath . '/portal/jsk_dashboard.php';
     return $basePath . '/portal/dashboard.php';
 }
 
@@ -91,6 +94,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_result($id, $username_db, $password_hash, $full_name, $user_role, $user_status, $mitglied_id);
             $stmt->fetch();
 
+            // jungschuetze_id defensiv nachladen (Spalte existiert erst ab Migration 028).
+            // Nur fuer Rolle jungschuetze noetig; try/catch verhindert Login-Lockout,
+            // falls die Migration noch nicht eingespielt wurde.
+            $jungschuetze_id = null;
+            if (($user_role ?? '') === 'jungschuetze') {
+                try {
+                    $jsStmt = $conn->prepare("SELECT jungschuetze_id FROM users WHERE id = ?");
+                    $jsStmt->bind_param("i", $id);
+                    $jsStmt->execute();
+                    $jsStmt->bind_result($jungschuetze_id);
+                    $jsStmt->fetch();
+                    $jsStmt->close();
+                } catch (\Throwable $e) {
+                    $jungschuetze_id = null;
+                }
+            }
+
             // Prüfen, ob der Passwort-Hash ein MD5-Hash ist (32 Zeichen)
             if (strlen($password_hash) == 32) {
                 if (md5($password) == $password_hash) {
@@ -109,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     } else {
                         // Erfolgreiche Anmeldung
                         session_regenerate_id(true);
-                        setLoginSession($id, $username_db, $full_name, $user_role, $user_status, $mitglied_id);
+                        setLoginSession($id, $username_db, $full_name, $user_role, $user_status, $mitglied_id, $jungschuetze_id);
                         setRememberToken($id); // iOS PWA: persistenter Token
 
                         header("Location: " . getLoginRedirect($user_role ?? 'admin'));
@@ -130,7 +150,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     } else {
                         // Erfolgreiche Anmeldung
                         session_regenerate_id(true);
-                        setLoginSession($id, $username_db, $full_name, $user_role, $user_status, $mitglied_id);
+                        setLoginSession($id, $username_db, $full_name, $user_role, $user_status, $mitglied_id, $jungschuetze_id);
                         setRememberToken($id); // iOS PWA: persistenter Token
 
                         header("Location: " . getLoginRedirect($user_role ?? 'admin'));
@@ -632,6 +652,11 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
                     <a href="register.php" style="color: #3b5998; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                         <i class="bi bi-person-plus me-1"></i>Registrieren
                     </a>
+                    <div class="mt-2">
+                        <a href="register_jsk.php" style="color: #0d9488; text-decoration: none; font-weight: 500; font-size: 0.85rem;">
+                            <i class="bi bi-person-bounding-box me-1"></i>Bist du Jungschütze? Hier registrieren
+                        </a>
+                    </div>
                 </div>
                 <?php if (!empty($recaptcha_site_key)): ?>
                 <div class="recaptcha-info">

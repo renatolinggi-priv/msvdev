@@ -28,14 +28,12 @@ $eventId   = (int)$_POST['event_id'];
 $eventName = trim($_POST['event_name']);
 $eventDate = trim($_POST['event_date']);
 $eventTime = trim($_POST['event_time']);
-
-// Einfacher Check, ob Datum in gültigem Format ist, optional
-// if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $eventDate)) { ... }
+$fuerJsk   = !empty($_POST['fuer_jsk']) ? 1 : 0;
 
 // 2. Update in der Datenbank
-$sql = "UPDATE wichtige_termine SET name=?, date=?, time=? WHERE ID=?";
+$sql = "UPDATE wichtige_termine SET name=?, date=?, time=?, fuer_jsk=? WHERE ID=?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssi", $eventName, $eventDate, $eventTime, $eventId);
+$stmt->bind_param("sssii", $eventName, $eventDate, $eventTime, $fuerJsk, $eventId);
 
 if ($stmt->execute()) {
   echo json_encode([

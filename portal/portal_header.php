@@ -9,6 +9,17 @@ requireLogin();
 // CSRF-Token sicherstellen
 ensureCsrfToken();
 
+// Jungschuetzen haben einen eingeschraenkten Portal-Zugang: nur ihre eigenen Seiten.
+// Member-Seiten (mit mitglied_id-Bezug) wuerden sonst brechen -> zentrale Weiche.
+if (isJungschuetze()) {
+    $jsAllowed = ['jsk_dashboard.php', 'jsk_termin.php', 'jsk_resultate.php', 'jsk_dokumente.php', 'benachrichtigungen.php', 'changelog.php', 'check_session.php'];
+    $curScript = basename($_SERVER['SCRIPT_NAME'] ?? ($_SERVER['PHP_SELF'] ?? ''));
+    if (!in_array($curScript, $jsAllowed, true)) {
+        header('Location: jsk_dashboard.php');
+        exit;
+    }
+}
+
 $portal_user_name = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'Mitglied';
 $portal_user_role = $_SESSION['user_role'] ?? 'mitglied';
 $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
@@ -38,6 +49,16 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="MSV Wilen">
+
+    <!-- PWA: 'beforeinstallprompt' so frueh wie moeglich abfangen (feuert oft vor dem
+         Install-Hinweis weiter unten). Das Event wird geparkt -> inc_pwa_install.php nutzt es. -->
+    <script>
+    window.addEventListener('beforeinstallprompt', function(e){
+        e.preventDefault();
+        window.__msvPWAprompt = e;
+        try { window.dispatchEvent(new Event('msv-pwa-available')); } catch(_){}
+    });
+    </script>
 
     <!-- Bootstrap CSS + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -434,32 +455,60 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <?php
     $current_page = basename($_SERVER['PHP_SELF']);
 
-    // Desktop: Gruppierte Navigation (Dropdowns)
-    $nav_groups = [
-        ['type' => 'link', 'link' => 'dashboard.php', 'text' => 'Dashboard', 'icon' => 'bi-house'],
-        ['type' => 'dropdown', 'text' => 'Resultate', 'icon' => 'bi-trophy', 'items' => [
-            ['link' => 'meine_jm.php', 'text' => 'Jahresmeisterschaft', 'icon' => 'bi-bullseye'],
-            ['link' => 'meine_heim.php', 'text' => 'Heimmeisterschaft', 'icon' => 'bi-house-heart'],
-            ['link' => 'meine_kanti.php', 'text' => 'Kantonalstich', 'icon' => 'bi-geo-alt'],
-        ]],
-        ['type' => 'dropdown', 'text' => 'Persönliches', 'icon' => 'bi-person', 'items' => [
-            ['link' => 'mein_fragebogen.php', 'text' => 'Umfragen', 'icon' => 'bi-clipboard-check'],
-            ['link' => 'meine_wanderpreise.php', 'text' => 'Wanderpreise', 'icon' => 'bi-award'],
-            ['link' => 'meine_einsaetze.php', 'text' => 'Meine Einsätze', 'icon' => 'bi-person-badge'],
-            ['link' => 'kalender_abo.php', 'text' => 'Kalender-Abo', 'icon' => 'bi-calendar-plus'],
-        ]],
-    ];
+    if (isJungschuetze()) {
+        // Eingeschraenkte Navigation fuer Jungschuetzen
+        $nav_groups = [
+            ['type' => 'link', 'link' => 'jsk_dashboard.php', 'text' => 'Übersicht', 'icon' => 'bi-house'],
+            ['type' => 'link', 'link' => 'jsk_termin.php', 'text' => 'Schiess-Termin melden', 'icon' => 'bi-calendar-plus'],
+            ['type' => 'link', 'link' => 'jsk_resultate.php', 'text' => 'Meine Resultate', 'icon' => 'bi-graph-up'],
+            ['type' => 'link', 'link' => 'jsk_dokumente.php', 'text' => 'Dokumente', 'icon' => 'bi-mortarboard'],
+        ];
+    } else {
+        // Desktop: Gruppierte Navigation (Dropdowns)
+        $nav_groups = [
+            ['type' => 'link', 'link' => 'dashboard.php', 'text' => 'Dashboard', 'icon' => 'bi-house'],
+            ['type' => 'dropdown', 'text' => 'Resultate', 'icon' => 'bi-trophy', 'items' => [
+                ['link' => 'meine_jm.php', 'text' => 'Jahresmeisterschaft', 'icon' => 'bi-bullseye'],
+                ['link' => 'meine_heim.php', 'text' => 'Heimmeisterschaft', 'icon' => 'bi-house-heart'],
+                ['link' => 'meine_kanti.php', 'text' => 'Kantonalstich', 'icon' => 'bi-geo-alt'],
+            ]],
+            ['type' => 'dropdown', 'text' => 'Persönliches', 'icon' => 'bi-person', 'items' => [
+                ['link' => 'mein_fragebogen.php', 'text' => 'Umfragen', 'icon' => 'bi-clipboard-check'],
+                ['link' => 'meine_wanderpreise.php', 'text' => 'Wanderpreise', 'icon' => 'bi-award'],
+                ['link' => 'meine_einsaetze.php', 'text' => 'Meine Einsätze', 'icon' => 'bi-person-badge'],
+                ['link' => 'kalender_abo.php', 'text' => 'Kalender-Abo', 'icon' => 'bi-calendar-plus'],
+            ]],
+        ];
 
-    // Vorstand/Admin/Mitglied: Dokumente-Dropdown
-    if (isVorstand() || isMitglied()) {
-        $nav_groups[] = ['type' => 'dropdown', 'text' => 'Dokumente', 'icon' => 'bi-folder', 'items' => [
-            ['link' => 'einsatzplaene.php', 'text' => 'Einsatzpläne', 'icon' => 'bi-calendar-check'],
-            ['link' => 'protokolle.php', 'text' => 'Protokolle', 'icon' => 'bi-file-text'],
-        ]];
+        // Vorstand/Admin/Mitglied: Dokumente-Dropdown
+        if (isVorstand() || isMitglied()) {
+            $dokItems = [
+                ['link' => 'einsatzplaene.php', 'text' => 'Einsatzpläne', 'icon' => 'bi-calendar-check'],
+                ['link' => 'protokolle.php', 'text' => 'Protokolle', 'icon' => 'bi-file-text'],
+            ];
+            // JSK-Dokumente verwalten: nur Vorstand/Admin
+            if (isVorstand()) {
+                $dokItems[] = ['link' => 'jsk_dokumente.php', 'text' => 'JSK-Dokumente', 'icon' => 'bi-mortarboard'];
+            }
+            $nav_groups[] = ['type' => 'dropdown', 'text' => 'Dokumente', 'icon' => 'bi-folder', 'items' => $dokItems];
+        }
+
+        // Jungschuetzen-Betreuung: Board nur fuer aktivierte Betreuer + global aktive Funktion
+        if (jskFeatureAktiv()) {
+            $__jsBetreuer = false;
+            try {
+                $__st = getDB()->prepare('SELECT jsk_betreuung FROM benachrichtigung_prefs WHERE user_id = ?');
+                $__st->execute([(int) ($_SESSION['user_id'] ?? 0)]);
+                $__jsBetreuer = ((int) $__st->fetchColumn() === 1);
+            } catch (Throwable $e) { $__jsBetreuer = false; }
+            if ($__jsBetreuer) {
+                $nav_groups[] = ['type' => 'link', 'link' => 'jsk_betreuung.php', 'text' => 'Jungschützen', 'icon' => 'bi-people'];
+            }
+        }
+
+        // Meine Daten — nach Dokumente/Protokolle
+        $nav_groups[] = ['type' => 'link', 'link' => 'meine_daten.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'];
     }
-
-    // Meine Daten — nach Dokumente/Protokolle
-    $nav_groups[] = ['type' => 'link', 'link' => 'meine_daten.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'];
 
     // Mobile: Flache Liste (für Off-Canvas)
     $nav_items = [];
@@ -704,3 +753,5 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <a href="dashboard.php" class="portal-back-link"><i class="bi bi-arrow-left me-1"></i><span class="back-label">Dashboard</span></a>
     <a href="dashboard.php" class="portal-back-fab"><i class="bi bi-house"></i></a>
     <?php endif; ?>
+
+    <?php if (empty($portal_hide_pwa_install)) include __DIR__ . '/inc_pwa_install.php'; /* "Als App installieren"-Hinweis (iOS-Anleitung / Android-Button); zeigt sich nur, wenn noch nicht installiert. Opt-out via $portal_hide_pwa_install (z.B. benachrichtigungen.php mit eigenem Hinweis) */ ?>

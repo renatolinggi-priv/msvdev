@@ -53,6 +53,8 @@ $page_specific_css = <<<'CSS'
 .h-title { font-weight: 500; }
 .h-date { font-size: 0.8rem; white-space: nowrap; color: #64748b; }
 .h-time { text-align: center; font-size: 0.8rem; }
+.jsk-toggle { cursor: pointer; user-select: none; vertical-align: middle; transition: filter .15s, transform .15s; }
+.jsk-toggle:hover { filter: brightness(0.95); transform: translateY(-1px); }
 
 /* Kompakter Delete-Button */
 .btn-delete-sm {
@@ -301,7 +303,7 @@ if (empty($_SESSION['csrf_token'])) {
                     <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                     <div class="row g-2">
                       <div class="col-6">
-                        <button type="button" id="generatePDFButton" class="btn btn-outline-danger btn-sm w-100">
+                        <button type="button" id="generatePDFButton" class="btn btn-outline-info btn-sm w-100">
                           <i class="bi bi-file-pdf me-1"></i>PDF
                         </button>
                       </div>
@@ -371,6 +373,10 @@ if (empty($_SESSION['csrf_token'])) {
       <label class="panel-label"><i class="bi bi-clock me-1"></i>Zeit</label>
       <input type="text" class="form-control form-control-sm" id="panelTime" placeholder="z.B. 18.00 - 20.00" required>
     </div>
+    <div class="mb-3 form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="panelJsk">
+      <label class="form-check-label" for="panelJsk"><i class="bi bi-person-bounding-box me-1"></i>Für Jungschützen</label>
+    </div>
     <hr>
     <div class="d-flex gap-2">
       <button class="btn btn-outline-primary btn-sm flex-fill" id="panelSaveBtn">
@@ -405,6 +411,10 @@ if (empty($_SESSION['csrf_token'])) {
             <label for="newEventTime" class="form-label">Zeit *</label>
             <input type="text" class="form-control" id="newEventTime" placeholder="z.B. 18.00 - 20.00" required>
           </div>
+        </div>
+        <div class="form-check form-switch mt-3">
+          <input class="form-check-input" type="checkbox" id="newEventJsk">
+          <label class="form-check-label" for="newEventJsk"><i class="bi bi-person-bounding-box me-1"></i>Für Jungschützen</label>
         </div>
       </div>
       <div class="modal-footer">
@@ -501,6 +511,7 @@ $(function() {
       $('#panelName').val(d.name);
       $('#panelDate').val(d.date);
       $('#panelTime').val(d.time);
+      $('#panelJsk').prop('checked', d.jsk === '1');
 
       $('.hybrid-row').removeClass('selected');
       $('.mobile-event-card').removeClass('selected');
@@ -530,7 +541,8 @@ $(function() {
       $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>...');
 
       $.post('wichtigetermine/update_event.php', {
-        event_id: this.currentId, event_name: name, event_date: date, event_time: time, csrf_token: csrfToken
+        event_id: this.currentId, event_name: name, event_date: date, event_time: time,
+        fuer_jsk: $('#panelJsk').is(':checked') ? 1 : 0, csrf_token: csrfToken
       })
       .done(resp => {
         const r = typeof resp === 'object' ? resp : JSON.parse(resp);
@@ -613,7 +625,7 @@ $(function() {
       const iso = dateToIso(shiftDateToYear(ev.date, targetYear));
       const preview = fmtShort(isoToDate(ev.date)) + ' → ' + fmtShort(isoToDate(iso));
       const dup = targetNames.has(copyNorm(newName)) || targetNames.has(copyNorm(ev.name));
-      return { name: newName, date: iso, time: ev.time, preview, dup };
+      return { name: newName, date: iso, time: ev.time, preview, dup, fuer_jsk: parseInt(ev.fuer_jsk, 10) === 1 ? 1 : 0 };
     });
     if (!copyData.length) {
       $('#copyList').html('<div class="text-muted py-3 text-center">Keine Termine im Quelljahr.</div>');
@@ -625,6 +637,7 @@ $(function() {
         '<input class="form-check-input flex-shrink-0 mt-1 copy-cb" type="checkbox" data-i="' + i + '"' + (e.dup ? '' : ' checked') + '>' +
         '<span class="flex-grow-1">' +
           '<span class="fw-semibold">' + escapeHtml(e.name) + '</span>' +
+          (e.fuer_jsk ? ' <span class="badge bg-info text-dark">JSK</span>' : '') +
           (e.dup ? ' <span class="badge bg-warning text-dark">bereits vorhanden</span>' : '') +
           '<br><small class="text-muted">' + escapeHtml(e.preview) + ' · ' + escapeHtml(e.time) + '</small>' +
         '</span>' +
@@ -672,7 +685,7 @@ $(function() {
     const chosen = [];
     $('#copyList .copy-cb:checked').each(function () { chosen.push(copyData[$(this).data('i')]); });
     if (!chosen.length) { msvToast('Bitte mindestens einen Termin auswählen', 'warning'); return; }
-    const events = chosen.map(e => ({ name: e.name, date: e.date, time: e.time }));
+    const events = chosen.map(e => ({ name: e.name, date: e.date, time: e.time, fuer_jsk: e.fuer_jsk }));
     const $b = $(this), t = $b.html();
     $b.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Übernehme…');
     $.post('wichtigetermine/copy_events.php', {
@@ -736,8 +749,10 @@ $(function() {
       const wd = weekdayNames[d.getDay()];
       const dateFmt = String(d.getDate()).padStart(2,'0') + '.' + String(month).padStart(2,'0') + '.' + d.getFullYear();
 
-      html += `<tr class="hybrid-row" id="row${ev.ID}" data-id="${ev.ID}" data-name="${esc(ev.name)}" data-date="${ev.date}" data-time="${esc(ev.time)}">
-        <td class="h-title">${esc(ev.name)}</td>
+      const jskFlag = (parseInt(ev.fuer_jsk, 10) === 1) ? '1' : '0';
+      const jskPill = `<span class="jsk-toggle badge ${jskFlag === '1' ? 'bg-info text-dark' : 'bg-light text-muted border'}" role="button" data-id="${ev.ID}" data-jsk="${jskFlag}" data-tooltip="Für Jungschützen ein-/ausschalten">JSK</span>`;
+      html += `<tr class="hybrid-row" id="row${ev.ID}" data-id="${ev.ID}" data-name="${esc(ev.name)}" data-date="${ev.date}" data-time="${esc(ev.time)}" data-jsk="${jskFlag}">
+        <td class="h-title">${esc(ev.name)} ${jskPill}</td>
         <td class="h-date"><span class="wd-badge">${wd}</span>${dateFmt}</td>
         <td class="h-time"><span class="time-badge">${esc(ev.time)}</span></td>
         <td class="text-center"><button class="btn-delete-sm delete-event" data-id="${ev.ID}" data-name="${esc(ev.name)}" data-tooltip="Löschen"><i class="bi bi-trash3"></i></button></td>
@@ -768,10 +783,10 @@ $(function() {
       const wd = weekdayNames[dt.getDay()];
       const ds = String(dt.getDate()).padStart(2,'0') + '.' + String(dt.getMonth()+1).padStart(2,'0') + '.' + dt.getFullYear();
 
-      html += `<div class="mobile-event-card" data-id="${d.id}" data-name="${d.name}" data-date="${d.date}" data-time="${d.time}">
+      html += `<div class="mobile-event-card" data-id="${d.id}" data-name="${d.name}" data-date="${d.date}" data-time="${d.time}" data-jsk="${d.jsk || '0'}">
         <div class="d-flex justify-content-between align-items-center">
           <div style="min-width:0;">
-            <div style="font-weight:600; font-size:0.85rem;">${d.name}</div>
+            <div style="font-weight:600; font-size:0.85rem;">${d.name} <span class="jsk-toggle badge ${d.jsk === '1' ? 'bg-info text-dark' : 'bg-light text-muted border'}" role="button" data-id="${d.id}" data-jsk="${d.jsk || '0'}" data-tooltip="Für Jungschützen ein-/ausschalten">JSK</span></div>
             <div class="d-flex align-items-center gap-1" style="font-size:0.8rem; color:#6c757d; margin-top:0.15rem;">
               <span class="wd-badge">${wd}</span><span>${ds}</span>
               <span style="color:#ced4da;">·</span>
@@ -793,18 +808,43 @@ $(function() {
     const $btn = $(this), orig = $btn.html();
     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>...');
 
-    $.post('wichtigetermine/add_event.php', { event_name: name, event_date: date, event_time: time, year: $('#eventYear').val(), csrf_token: csrfToken })
+    $.post('wichtigetermine/add_event.php', { event_name: name, event_date: date, event_time: time, year: $('#eventYear').val(), fuer_jsk: $('#newEventJsk').is(':checked') ? 1 : 0, csrf_token: csrfToken })
     .done(resp => {
       const r = typeof resp === 'object' ? resp : JSON.parse(resp);
       if (r.success) {
         $('#newEventModal').modal('hide');
         $('#newEventName, #newEventDate, #newEventTime').val('');
+        $('#newEventJsk').prop('checked', false);
         msvToast('Termin hinzugefügt', 'success');
         loadEvents($('#eventYear').val());
       } else { msvToast('Fehler: ' + (r.message || 'Unbekannt'), 'error'); }
     })
     .fail(() => msvToast('Fehler beim Hinzufügen', 'error'))
     .always(() => $btn.prop('disabled', false).html(orig));
+  });
+
+  // ========== JSK-Flag inline umschalten ==========
+  $(document).on('click', '.jsk-toggle', function(e) {
+    e.stopPropagation();
+    const $el = $(this);
+    const id = $el.data('id');
+    const newVal = ($el.attr('data-jsk') === '1') ? 0 : 1;
+    $.post('wichtigetermine/toggle_jsk.php', { event_id: id, fuer_jsk: newVal, csrf_token: csrfToken })
+    .done(resp => {
+      const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+      if (r.success) {
+        const v = String(r.fuer_jsk);
+        // Zeile + Mobile-Card-Datensatz aktualisieren (fuer spaeteres Panel-Oeffnen)
+        $('#row' + id).attr('data-jsk', v);
+        $('.mobile-event-card[data-id="' + id + '"]').attr('data-jsk', v);
+        // Alle Pillen dieses Termins (Desktop + Mobile) optisch umschalten
+        $('.jsk-toggle[data-id="' + id + '"]').attr('data-jsk', v)
+          .toggleClass('bg-info text-dark', v === '1')
+          .toggleClass('bg-light text-muted border', v === '0');
+        msvToast(v === '1' ? 'Als JSK-Termin markiert' : 'JSK-Markierung entfernt', 'success');
+      } else { msvToast(r.message || 'Fehler', 'error'); }
+    })
+    .fail(() => msvToast('Fehler beim Umschalten', 'error'));
   });
 
   // ========== Löschen ==========
