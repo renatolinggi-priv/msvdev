@@ -1,5 +1,82 @@
 [
   {
+    "version": "1.21.0",
+    "datum": "2026-06-25",
+    "aenderungen": [
+      {
+        "titel": "Zentrale Dokumente-Verwaltung im Admin-Bereich",
+        "beschreibung": "Einsatzpläne, Protokolle und JSK-Dokumente werden neu zentral im Admin-Bereich verwaltet – unter «Definitionen / Ausdrucke» → «Dokumente verwalten», mit je einem Reiter pro Dokumenttyp zum Hochladen, Bearbeiten und Löschen. Im Einsatzpläne-Reiter sind zusätzlich der Einsatz-Import, die Zuweisungs-Verwaltung und die Tausch-Übersicht integriert. Im Mitgliederportal sind die Seiten «Einsatzpläne», «Protokolle» und «JSK-Dokumente» dadurch nur noch zum Ansehen da – nichts wird mehr über die PWA hochgeladen oder importiert. Der bisherige Portal-Menüeintrag «JSK-Dokumente» entfällt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.20.0",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Neue Seite «Termine»",
+        "beschreibung": "Im Portal gibt es jetzt eine eigene Seite «Termine» mit allen wichtigen Vereinsterminen. Du findest sie als neuen Menüpunkt zuoberst (Kalender-Symbol). Die kommenden Termine stehen zuoberst – der nächste ist hervorgehoben –, darunter die bereits vergangenen des Jahres; mit der Jahresauswahl kannst du auch frühere Jahre ansehen. Über «Abonnieren» landen alle Termine direkt in deinem Handy-Kalender. Auf dem Dashboard sind die nächsten Schiessanlässe und die nächsten Vereinstermine neu in einer gemeinsamen Karte zusammengefasst. Und sobald ein neuer Termin erfasst wird, bekommst du eine Push-Benachrichtigung – das lässt sich unter «Benachrichtigungen» beim Thema «Vereinstermine» ein- oder ausschalten.",
+        "typ": "neu"
+      },
+      {
+        "titel": "«Meine Daten» neu im Benutzer-Menü",
+        "beschreibung": "Der Punkt «Meine Daten» ist aus der Hauptnavigation in das Menü hinter deinem Namen (oben rechts) gewandert – dort, wo auch «Benachrichtigungen» und «Abmelden» stehen. So bleibt die obere Navigation übersichtlicher und macht Platz für den neuen Punkt «Termine».",
+        "typ": "verbesserung"
+      }
+    ]
+  },
+  {
+    "version": "1.19.0",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Einsätze tauschen & übergeben",
+        "beschreibung": "Du kannst einen Arbeitseinsatz jetzt direkt im Portal abtauschen. Unter «Meine Einsätze» findest du bei jedem kommenden Einsatz den Knopf «Abtauschen»: Wähle entweder eine Übernahme (jemand macht deinen Einsatz, du gibst nichts zurück) oder einen Tausch (du gibst deinen Einsatz ab und übernimmst dafür einen Einsatz des anderen – auch aus einem anderen Anlass). Das andere Mitglied erhält eine Push-Benachrichtigung und bestätigt die Anfrage in der App; erst dann wird der Einsatz automatisch umgeschrieben und erscheint bei der richtigen Person. Offene Anfragen siehst du zuoberst auf der Seite und im Dashboard – mit «Akzeptieren», «Ablehnen» oder «Zurückziehen». Ob du Benachrichtigungen rund um den Einsatz-Tausch erhältst, kannst du unter «Benachrichtigungen» ein- oder ausschalten.",
+        "typ": "neu"
+      }
+    ]
+  },
+  {
+    "version": "1.18.0",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Portal funktioniert jetzt teilweise offline",
+        "beschreibung": "Das Portal merkt sich zuletzt geöffnete Seiten und Inhalte. Bist du unterwegs ohne Empfang (z.B. im Schützenhaus), kannst du bereits besuchte Seiten weiterhin anschauen – besonders praktisch für den SSV-Lizenz-Barcode und deine Einsätze. Sobald du wieder online bist, werden die Inhalte automatisch aktualisiert. Bei einer Seite, die noch nie geladen wurde, erscheint offline ein freundlicher Hinweis statt einer Fehlerseite. Aktionen wie Speichern oder Abstimmen brauchen weiterhin eine Internetverbindung.",
+        "typ": "verbesserung"
+      }
+    ]
+  },
+  {
+    "version": "1.17.0",
+    "datum": "2026-06-24",
+    "aenderungen": [
+      {
+        "titel": "Chat im Portal (WhatsApp-Stil)",
+        "beschreibung": "Neu gibt es einen Chat im Portal – im Look von WhatsApp mit Unterhaltungs-Liste und Sprechblasen. Jungschützen können mit der Jungschützenleitung schreiben, und sobald ein Mitglied einen Schiess-Termin übernimmt, entsteht automatisch ein Chat zwischen dem Jungschützen und dem betreuenden Mitglied (durchgehender Verlauf). Neue Nachrichten lösen eine Push-Benachrichtigung aus (Antippen öffnet direkt die Unterhaltung) und werden mit einem Zähler im Menüpunkt «Chat» angezeigt. Ob man Chat-Pushes erhält, lässt sich unter «Benachrichtigungen» ein-/ausschalten. Match-Chats sind privat zwischen den beiden Beteiligten.",
+        "typ": "neu"
+      },
+      {
+        "titel": "Jungschützenleiter in der Mitgliederverwaltung festlegen (Admin)",
+        "beschreibung": "In der Mitgliederverwaltung gibt es ein neues Flag «Jungschützenleiter». Damit markierte Mitglieder (mit Portal-Login) sind die Ansprechpersonen im Jungschützen-Chat: Schreibt ein Jungschütze «an die Leitung», landet die Nachricht bei allen markierten Leitern; Leiter können umgekehrt jeden Jungschützen anschreiben. Match-Chats (Mitglied ↔ Jungschütze) bleiben für die Leitung bewusst nicht einsehbar.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Mobiles Menü: unterste Einträge nicht mehr verdeckt",
+        "beschreibung": "Auf dem Smartphone – besonders in Safari auf dem iPhone – wurden im ausgeklappten Menü die untersten Einträge (Benutzerbereich und «Abmelden») von der unteren Adressleiste des Browsers verdeckt und waren nicht erreichbar. Das Menü nutzt jetzt die tatsächlich sichtbare Bildschirmhöhe, sodass alle Einträge sichtbar und antippbar bleiben. Gilt für das Mitgliederportal und den Admin-Bereich.",
+        "typ": "verbesserung"
+      },
+      {
+        "titel": "App-Installations-Hinweis schon auf der Login-Seite",
+        "beschreibung": "Der Hinweis «als App installieren» erscheint auf dem Smartphone neu schon direkt auf der Anmeldeseite – nicht erst nach dem Einloggen im Portal. Auf dem iPhone zeigt er die Schritte (Teilen → «Zum Home-Bildschirm»), auf Android genügt ein Tippen auf «Jetzt installieren». Der Hinweis lässt sich wegklicken und erscheint dann nicht erneut; über den kleinen Button «Als App installieren» unter dem Login kann man ihn jederzeit wieder öffnen.",
+        "typ": "verbesserung"
+      }
+    ]
+  },
+  {
     "version": "1.16.0",
     "datum": "2026-06-24",
     "aenderungen": [

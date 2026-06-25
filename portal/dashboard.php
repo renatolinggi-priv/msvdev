@@ -105,6 +105,18 @@ if ($mitglied_id) {
     }
 }
 
+// Offene Einsatz-Tausch-Anfragen an mich (Migration 034 evtl. noch nicht vorhanden)
+$offene_tausch = 0;
+if ($mitglied_id) {
+    try {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM einsatz_tausch WHERE an_mitglied_id = ? AND status = 'offen'");
+        $stmt->execute([$mitglied_id]);
+        $offene_tausch = (int) $stmt->fetchColumn();
+    } catch (Exception $e) {
+        $offene_tausch = 0;
+    }
+}
+
 
 // Push-Benachrichtigungen: eingeschaltet, aber kein Geraet registriert?
 // -> Dashboard-Hinweis, sonst wuerde der User trotz aktiver Themen nichts erhalten.
@@ -130,6 +142,15 @@ try {
 } catch (Exception $e) {
     // Tabellen (Migration 021) evtl. noch nicht vorhanden
     $push_setup_noetig = false;
+}
+
+// Naechste Vereinstermine (wichtige_termine) — kompakte Vorschau, Vollansicht: termine.php
+$next_termine = [];
+try {
+    $stmt = $db->query("SELECT name, `date`, `time` FROM wichtige_termine WHERE `date` >= CURDATE() ORDER BY `date` ASC, `time` ASC LIMIT 3");
+    $next_termine = $stmt->fetchAll();
+} catch (Exception $e) {
+    $next_termine = [];
 }
 
 include 'portal_header.php';
@@ -240,6 +261,40 @@ include 'portal_header.php';
     font-size: 0.76rem;
     line-height: 1.3;
 }
+/* Kombinierte Termin-Karte: "Nächste Schiessanlässe" (oben) + "Nächste Termine" (Liste) */
+.dash-events-card {
+    background: linear-gradient(135deg, #e8f4fd, #d1ecf9);
+    border: 1px solid #bee5eb;
+    border-radius: var(--p-radius);
+    padding: var(--p-2) var(--p-3);
+    margin-bottom: var(--p-3);
+}
+.dash-events-section { display: block; color: inherit; text-decoration: none; }
+.dash-events-link { border-radius: var(--p-radius-sm); transition: opacity var(--transition-speed) ease; }
+.dash-events-link:hover { opacity: 0.82; }
+.dash-events-head {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #0c5460;
+    margin-bottom: 3px;
+}
+.dash-event-name { font-weight: 700; font-size: 0.88rem; color: #155724; }
+.dash-event-meta { font-size: 0.76rem; color: #155724; line-height: 1.3; opacity: 0.92; }
+.dash-events-divider { margin: 0.6rem 0; border: 0; border-top: 1px solid rgba(12,84,96,0.18); }
+.dash-termine-list { margin-top: 4px; }
+.dash-termine-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    padding: 2px 0;
+}
+.dash-termine-row + .dash-termine-row { border-top: 1px solid rgba(12,84,96,0.15); }
+.dash-termine-date { flex-shrink: 0; font-weight: 700; color: #0c5460; min-width: 64px; }
+.dash-termine-name { flex: 1; min-width: 0; color: #155724; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-termine-time { flex-shrink: 0; color: #0c5460; font-size: 0.74rem; opacity: 0.85; }
 @media (max-width: 767.98px) {
     .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -515,17 +570,38 @@ include 'portal_header.php';
 </script>
 <?php endif; ?>
 
-<!-- Naechster Termin -->
-<?php if ($next_event): ?>
-<div class="next-event-card">
-    <h5><i class="bi bi-calendar-event me-2"></i>Nächster Termin</h5>
-    <div class="event-name"><?php echo htmlspecialchars($next_event['Bezeichnung']); ?></div>
-    <small class="text-muted">
-        <?php echo nl2br(htmlspecialchars($next_event['Schiesstage'])); ?>
-        <?php if (!empty($next_event['Adresse'])): ?>
-            <br><i class="bi bi-geo-alt me-1"></i><?php echo htmlspecialchars($next_event['Adresse']); ?>
-        <?php endif; ?>
-    </small>
+<!-- Naechste Schiessanlaesse + Vereinstermine (kombinierte Karte) -->
+<?php if ($next_event || $next_termine): ?>
+<div class="dash-events-card">
+    <?php if ($next_event): ?>
+    <div class="dash-events-section">
+        <div class="dash-events-head"><i class="bi bi-bullseye me-2"></i>Nächste Schiessanlässe</div>
+        <div class="dash-event-name"><?php echo htmlspecialchars($next_event['Bezeichnung']); ?></div>
+        <div class="dash-event-meta">
+            <?php echo nl2br(htmlspecialchars($next_event['Schiesstage'])); ?>
+            <?php if (!empty($next_event['Adresse'])): ?>
+                <br><i class="bi bi-geo-alt me-1"></i><?php echo htmlspecialchars($next_event['Adresse']); ?>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($next_event && $next_termine): ?><hr class="dash-events-divider"><?php endif; ?>
+
+    <?php if ($next_termine): ?>
+    <a href="termine.php" class="dash-events-section dash-events-link">
+        <div class="dash-events-head"><i class="bi bi-calendar3 me-2"></i>Nächste Termine<i class="bi bi-arrow-right-short ms-auto"></i></div>
+        <div class="dash-termine-list">
+            <?php foreach ($next_termine as $nt): $nts = strtotime($nt['date']); ?>
+            <div class="dash-termine-row">
+                <span class="dash-termine-date"><?php echo substr($weekdays[date('w', $nts)], 0, 2); ?> <?php echo date('d.m.', $nts); ?></span>
+                <span class="dash-termine-name"><?php echo htmlspecialchars($nt['name']); ?></span>
+                <?php if (!empty($nt['time'])): ?><span class="dash-termine-time"><?php echo htmlspecialchars(substr($nt['time'], 0, 5)); ?></span><?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </a>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -547,6 +623,14 @@ include 'portal_header.php';
         <?php endif; ?>
         <br><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($next_einsatz['funktion']); ?>
     </small>
+</a>
+<?php endif; ?>
+
+<!-- Offene Einsatz-Tausch-Anfragen -->
+<?php if ($offene_tausch > 0): ?>
+<a href="meine_einsaetze.php" class="next-einsatz-card d-block text-decoration-none" style="background: linear-gradient(135deg, #e0f2f1, #b2dfdb); border-color: #80cbc4;">
+    <h5 style="color: #00695c;"><i class="bi bi-arrow-left-right me-2"></i><?php echo $offene_tausch; ?> offene Tausch-Anfrage<?php echo $offene_tausch > 1 ? 'n' : ''; ?> <i class="bi bi-arrow-right-short float-end"></i></h5>
+    <small class="text-muted"><?php echo $offene_tausch > 1 ? 'warten auf deine Antwort' : 'wartet auf deine Antwort'; ?></small>
 </a>
 <?php endif; ?>
 

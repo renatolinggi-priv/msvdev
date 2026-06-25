@@ -9,10 +9,33 @@ requireLogin();
 // CSRF-Token sicherstellen
 ensureCsrfToken();
 
+// Chat-Zugriff + Ungelesen-Zähler (best-effort, bricht nie die Seite).
+// Zugriff: Jungschützen + Jungschützenleiter immer; Mitglieder nur mit aktivierter
+// „Jungschützen betreuen"-Einstellung.
+$chatUnread = 0;
+$chatAccess = false;
+try {
+    require_once __DIR__ . '/../inc/chat.inc.php';
+    $__cdb = getDB();
+    $__cuid = (int) ($_SESSION['user_id'] ?? 0);
+    if (isJungschuetze()) {
+        $chatAccess = true;
+    } else {
+        try {
+            $__cs = $__cdb->prepare('SELECT jsk_betreuung FROM benachrichtigung_prefs WHERE user_id = ?');
+            $__cs->execute([$__cuid]);
+            $chatAccess = ((int) $__cs->fetchColumn() === 1);
+        } catch (Throwable $e) { /* prefs evtl. n/a */ }
+        if (!$chatAccess) { try { $chatAccess = isJskLeiter($__cdb, $__cuid); } catch (Throwable $e) {} }
+    }
+    // Ungelesen-Zähler getrennt absichern: ein Fehler hier darf den Chat-Zugriff NICHT aufheben
+    if ($chatAccess) { try { $chatUnread = chatUnreadCount($__cdb, $__cuid); } catch (Throwable $e) { $chatUnread = 0; } }
+} catch (Throwable $e) { $chatUnread = 0; }
+
 // Jungschuetzen haben einen eingeschraenkten Portal-Zugang: nur ihre eigenen Seiten.
 // Member-Seiten (mit mitglied_id-Bezug) wuerden sonst brechen -> zentrale Weiche.
 if (isJungschuetze()) {
-    $jsAllowed = ['jsk_dashboard.php', 'jsk_termin.php', 'jsk_resultate.php', 'jsk_dokumente.php', 'benachrichtigungen.php', 'changelog.php', 'check_session.php'];
+    $jsAllowed = ['jsk_dashboard.php', 'jsk_termin.php', 'jsk_termine.php', 'jsk_dokumente.php', 'jsk_profil.php', 'chat.php', 'benachrichtigungen.php', 'changelog.php', 'check_session.php'];
     $curScript = basename($_SERVER['SCRIPT_NAME'] ?? ($_SERVER['PHP_SELF'] ?? ''));
     if (!in_array($curScript, $jsAllowed, true)) {
         header('Location: jsk_dashboard.php');
@@ -196,7 +219,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             .portal-back-fab {
                 display: flex;
                 position: fixed;
-                bottom: 1.25rem;
+                bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
                 right: 1.25rem;
                 width: 48px;
                 height: 48px;
@@ -244,7 +267,8 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                 top: 0;
                 left: -280px;
                 width: 280px;
-                height: 100vh;
+                height: 100vh;       /* Fallback fuer aeltere Browser */
+                height: 100dvh;      /* iOS Safari: sichtbare Hoehe OHNE untere Adressleiste -> letzte Eintraege/Abmelden bleiben sichtbar */
                 background: white;
                 z-index: 9999;
                 transition: left 0.3s ease;
@@ -451,7 +475,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
         <?php echo $portal_page_css ?? ''; ?>
     </style>
 </head>
-<body>
+<body class="<?php echo htmlspecialchars($portal_body_class ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php
     $current_page = basename($_SERVER['PHP_SELF']);
 
@@ -459,14 +483,17 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
         // Eingeschraenkte Navigation fuer Jungschuetzen
         $nav_groups = [
             ['type' => 'link', 'link' => 'jsk_dashboard.php', 'text' => 'Übersicht', 'icon' => 'bi-house'],
-            ['type' => 'link', 'link' => 'jsk_termin.php', 'text' => 'Schiess-Termin melden', 'icon' => 'bi-calendar-plus'],
-            ['type' => 'link', 'link' => 'jsk_resultate.php', 'text' => 'Meine Resultate', 'icon' => 'bi-graph-up'],
+            ['type' => 'link', 'link' => 'chat.php', 'text' => 'Jungschützenchat', 'icon' => 'bi-chat-dots'],
+            ['type' => 'link', 'link' => 'jsk_termin.php', 'text' => 'Schiessanfrage', 'icon' => 'bi-calendar-plus'],
+            ['type' => 'link', 'link' => 'jsk_termine.php', 'text' => 'Termine', 'icon' => 'bi-calendar3'],
             ['type' => 'link', 'link' => 'jsk_dokumente.php', 'text' => 'Dokumente', 'icon' => 'bi-mortarboard'],
+            ['type' => 'link', 'link' => 'jsk_profil.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'],
         ];
     } else {
         // Desktop: Gruppierte Navigation (Dropdowns)
         $nav_groups = [
             ['type' => 'link', 'link' => 'dashboard.php', 'text' => 'Dashboard', 'icon' => 'bi-house'],
+            ['type' => 'link', 'link' => 'termine.php', 'text' => 'Termine', 'icon' => 'bi-calendar3'],
             ['type' => 'dropdown', 'text' => 'Resultate', 'icon' => 'bi-trophy', 'items' => [
                 ['link' => 'meine_jm.php', 'text' => 'Jahresmeisterschaft', 'icon' => 'bi-bullseye'],
                 ['link' => 'meine_heim.php', 'text' => 'Heimmeisterschaft', 'icon' => 'bi-house-heart'],
@@ -480,16 +507,20 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             ]],
         ];
 
+        // Jungschützenchat-Link nur, wenn der User Zugriff hat (Betreuer/Leiter)
+        if ($chatAccess) {
+            array_splice($nav_groups, 1, 0, [
+                ['type' => 'link', 'link' => 'chat.php', 'text' => 'Jungschützenchat', 'icon' => 'bi-chat-dots'],
+            ]);
+        }
+
         // Vorstand/Admin/Mitglied: Dokumente-Dropdown
+        // (JSK-Dokumente werden NICHT über die PWA verwaltet -> kein Portal-Menüeintrag)
         if (isVorstand() || isMitglied()) {
             $dokItems = [
                 ['link' => 'einsatzplaene.php', 'text' => 'Einsatzpläne', 'icon' => 'bi-calendar-check'],
                 ['link' => 'protokolle.php', 'text' => 'Protokolle', 'icon' => 'bi-file-text'],
             ];
-            // JSK-Dokumente verwalten: nur Vorstand/Admin
-            if (isVorstand()) {
-                $dokItems[] = ['link' => 'jsk_dokumente.php', 'text' => 'JSK-Dokumente', 'icon' => 'bi-mortarboard'];
-            }
             $nav_groups[] = ['type' => 'dropdown', 'text' => 'Dokumente', 'icon' => 'bi-folder', 'items' => $dokItems];
         }
 
@@ -506,8 +537,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             }
         }
 
-        // Meine Daten — nach Dokumente/Protokolle
-        $nav_groups[] = ['type' => 'link', 'link' => 'meine_daten.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'];
+        // "Meine Daten" wandert ins Benutzer-Dropdown (siehe unten) — kein Top-Level-Link mehr.
     }
 
     // Mobile: Flache Liste (für Off-Canvas)
@@ -527,7 +557,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <nav class="navbar navbar-expand-lg fixed-top portal-navbar">
         <div class="container-fluid" style="max-width: 1200px;">
             <a class="navbar-brand" href="dashboard.php">
-                <img src="../icons/icon-32x32.png" alt="MSV" width="22" height="22" style="border-radius:4px; vertical-align:-3px;"> <?php echo htmlspecialchars($portal_page_title); ?>
+                <img src="../icons/icon-32x32.png" alt="MSV" width="22" height="22" style="border-radius:4px; vertical-align:-3px;"> MSV Wilen
             </a>
 
             <button class="navbar-toggler border-0" type="button" id="portalMenuToggler"
@@ -586,6 +616,13 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
+                            <?php if (!isJungschuetze()): ?>
+                            <li>
+                                <a class="dropdown-item <?php echo $current_page == 'meine_daten.php' ? 'active' : ''; ?>" href="meine_daten.php">
+                                    <i class="bi bi-person-vcard me-2 text-muted"></i>Meine Daten
+                                </a>
+                            </li>
                             <?php endif; ?>
                             <li>
                                 <a class="dropdown-item <?php echo $current_page == 'benachrichtigungen.php' ? 'active' : ''; ?>" href="benachrichtigungen.php">
@@ -651,6 +688,14 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                     </div>
                 </div>
                 <ul class="mobile-nav-list">
+                    <?php if (!isJungschuetze()): ?>
+                    <li class="mobile-nav-item">
+                        <a class="mobile-nav-link <?php echo $current_page == 'meine_daten.php' ? 'active' : ''; ?>" href="meine_daten.php">
+                            <i class="bi bi-person-vcard"></i>
+                            Meine Daten
+                        </a>
+                    </li>
+                    <?php endif; ?>
                     <li class="mobile-nav-item">
                         <a class="mobile-nav-link <?php echo $current_page == 'benachrichtigungen.php' ? 'active' : ''; ?>" href="benachrichtigungen.php">
                             <i class="bi bi-bell"></i>

@@ -404,13 +404,61 @@ if (!empty($_SESSION['user_id'])) {
     <script><?php echo $portal_page_js; ?></script>
     <?php endif; ?>
 
-    <!-- Web-Push: Service Worker global registrieren (relativ -> deployment-unabhaengig).
-         Der Subscribe-Flow laeuft nur auf benachrichtigungen.php (User-Geste). -->
+    <!-- Web-Push: Launch-Re-Sync (Selbstheilung) bei JEDEM Seitenaufruf.
+         registriert den SW, gleicht das Abo mit dem Server ab und legt ein still
+         (v.a. iOS) verworfenes Abo automatisch neu an. Der Permission-Prompt
+         laeuft weiterhin nur auf benachrichtigungen.php (User-Geste). -->
+    <script>window.MSV_CSRF = <?php echo json_encode(ensureCsrfToken()); ?>;</script>
     <script>
     (function () {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function () {});
+        if (!('serviceWorker' in navigator)) return;
+        function startReSync() {
+            if (window.MSVPush && typeof MSVPush.pushReSync === 'function') {
+                MSVPush.pushReSync();
+            } else {
+                // Fallback: wenigstens den Service Worker registrieren.
+                navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function () {});
+            }
         }
+        // push.js ist auf benachrichtigungen.php schon geladen -> nicht doppelt laden.
+        if (window.MSVPush) {
+            startReSync();
+        } else {
+            var s = document.createElement('script');
+            s.src = 'js/push.js';
+            s.onload = startReSync;
+            s.onerror = function () {
+                navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function () {});
+            };
+            document.head.appendChild(s);
+        }
+    })();
+    </script>
+
+    <!-- Native App (Capacitor): FCM-Token registrieren + Push-Tap-Routing.
+         Im Browser/PWA passiert nichts (window.Capacitor ist dort undefined). -->
+    <script src="js/native_bridge.js"></script>
+
+    <!-- Chat: Ungelesen-Badge in der Navigation (Initialwert serverseitig + Polling) -->
+    <script>
+    (function () {
+        var initial = <?php echo (int) ($chatUnread ?? 0); ?>;
+        function renderChatBadge(n) {
+            document.querySelectorAll('a[href="chat.php"]').forEach(function (a) {
+                var b = a.querySelector('.chat-navbadge');
+                if (n > 0) {
+                    if (!b) { b = document.createElement('span'); b.className = 'chat-navbadge badge bg-danger'; b.style.marginLeft = '6px'; a.appendChild(b); }
+                    b.textContent = n > 99 ? '99+' : n; b.style.display = '';
+                } else if (b) { b.style.display = 'none'; }
+            });
+        }
+        renderChatBadge(initial);
+        function pollChat() {
+            fetch('../api/chat.php?action=unread').then(function (r) { return r.json(); })
+                .then(function (d) { if (d && d.success) renderChatBadge(d.unread); }).catch(function () {});
+        }
+        setInterval(function () { if (document.visibilityState === 'visible') pollChat(); }, 30000);
+        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') pollChat(); });
     })();
     </script>
 
@@ -510,5 +558,30 @@ if (!empty($_SESSION['user_id'])) {
     })();
     </script>
     <?php endif; ?>
+
+    <!-- Floating "Zurück"-Button (.portal-back-fab) am SICHTBAREN unteren Rand halten.
+         Auf iOS Safari / Android Chrome verschiebt das Ein-/Ausblenden der Browser-Toolbar
+         beim Scrollen sonst alle 'bottom'-fixierten Elemente. VisualViewport gleicht die
+         Differenz zwischen Layout- und sichtbarem Viewport aus. Ohne VisualViewport-Support
+         (oder bei Pinch-Zoom) bleibt das normale position:fixed-Verhalten erhalten. -->
+    <script>
+    (function () {
+        var vv = window.visualViewport;
+        var fab = document.querySelector('.portal-back-fab');
+        if (!vv || !fab) return;
+        function pin() {
+            // Bei Pinch-Zoom (scale != 1) nicht eingreifen.
+            if (vv.scale && Math.abs(vv.scale - 1) > 0.01) { fab.style.bottom = ''; return; }
+            var gap = document.documentElement.clientHeight - (vv.offsetTop + vv.height);
+            // gap = wie weit der Layout-Boden unter dem sichtbaren Boden liegt (Toolbar etc.)
+            if (gap < 1) { fab.style.bottom = ''; return; } // kein Versatz -> CSS-Standard
+            fab.style.bottom = 'calc(1.25rem + env(safe-area-inset-bottom, 0px) + ' + Math.round(gap) + 'px)';
+        }
+        vv.addEventListener('resize', pin);
+        vv.addEventListener('scroll', pin);
+        window.addEventListener('orientationchange', pin);
+        pin();
+    })();
+    </script>
 </body>
 </html>
