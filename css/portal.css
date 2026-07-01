@@ -5,6 +5,13 @@
    Icon-Chips, Formularfelder, Listen-Zeilen, Buttons.
    ============================================================ */
 
+/* Zentrale Inhalts-Schriftgroesse fuers GANZE Portal: portal.css wird nur in
+   portal/portal_header.php geladen -> Admin-Bereich (inc/header.inc.php) bleibt
+   unberuehrt. Alle Komponenten sind rem-basiert und skalieren proportional mit.
+   Standard waere 16px; 15px = ~6% kompakter. Wert hier zentral anpassbar.
+   (Mobile-Inputs setzen bewusst 16px gegen iOS-Auto-Zoom -> nicht betroffen.) */
+html { font-size: 15px; }
+
 :root {
     /* Marke */
     --primary-color:   #3b5998;
@@ -57,15 +64,14 @@
     margin-bottom: var(--p-4);
 }
 .portal-page-header h1 {
-    font-size: 1.35rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--p-text);
-    margin-bottom: .15rem;
+    margin-bottom: 0;
 }
-.portal-page-header .subtitle {
-    color: var(--secondary-color);
-    font-size: .85rem;
-}
+/* Seitentitel bewusst schlicht: Icons & Untertitel portalweit ausgeblendet (zentral, reversibel) */
+.portal-page-header h1 i { display: none; }
+.portal-page-header .subtitle { display: none; }
 
 /* ---- Karte --------------------------------------------------------- */
 .p-card,
@@ -358,6 +364,13 @@ a.p-card:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59,89,152,.3);
 }
+
+/* Vereinsfarben-Helfer (v.a. Jungschützen-Portal, additiv) */
+.text-club { color: var(--primary-color) !important; }
+.btn-club { background: var(--primary-color); border: 1px solid var(--primary-color); color: #fff; }
+.btn-club:hover, .btn-club:focus { background: #2d4373; border-color: #2d4373; color: #fff; }
+.btn-outline-club { color: var(--primary-color); border: 1px solid var(--primary-color); background: transparent; }
+.btn-outline-club:hover, .btn-outline-club:focus { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
 .p-btn.danger-outline {
     background: #fff;
     border: 1px solid var(--danger-color);
@@ -374,7 +387,7 @@ a.p-card:hover {
 /* ---- Mobile -------------------------------------------------------- */
 @media (max-width: 767.98px) {
     .portal-content { padding: var(--p-3) .7rem; }
-    .portal-page-header h1 { font-size: 1.2rem; }
+    .portal-page-header h1 { font-size: 0.95rem; }
     .p-narrow { max-width: none; }       /* volle Breite auf Mobile */
     .p-list-row { flex-wrap: wrap; }
     .p-list-actions { margin-left: auto; }

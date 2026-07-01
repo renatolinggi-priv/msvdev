@@ -182,7 +182,7 @@
 
 .cup4-bracket {
     display: grid;
-    grid-template-columns: 200px minmax(0, 340px) minmax(0, 340px) minmax(0, 300px);
+    grid-template-columns: 200px minmax(0, 300px) minmax(0, 300px) minmax(0, 300px);
     gap: 1.25rem;
     align-items: start;
     min-height: 400px;
@@ -517,9 +517,38 @@ button.cup4-zone-remove:hover {
 
 /* ── Kat.-B-Schalter im Finale ─────────── */
 .cup4-katb-switch {
-    border-bottom: 1px solid var(--cup4-border);
-    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--cup4-border);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.65);
+}
+.cup4-katb-label {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.25;
     color: var(--cup4-muted);
+    cursor: pointer;
+}
+/* Toggle rechtsbündig — ohne Bootstrap-Float/Negativ-Margin */
+.cup4-katb-toggle {
+    flex-shrink: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+.cup4-katb-toggle .form-check-input {
+    float: none;
+    margin: 0;
+    cursor: pointer;
 }
 .cup4-katb-switch .form-check-input:checked {
     background-color: var(--cup4-success);
@@ -730,34 +759,75 @@ button.cup4-zone-remove:hover {
     white-space: nowrap;
 }
 
+/* ── Finale + Standcup Spalte ─────────── */
+
+.cup4-final-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
 /* ── Standcup Section ─────────────────── */
 
 .cup4-standcup {
-    background: var(--cup4-card-bg);
-    border: 1px solid var(--cup4-border);
+    background: #fdf2f6;
+    border: 1px solid #f6d3e0;
     border-radius: var(--cup4-radius);
     padding: 1rem;
-    margin-top: 1.25rem;
     box-shadow: var(--cup4-shadow-sm);
-    max-width: 560px;
+}
+
+.cup4-standcup-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cup4-primary);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--cup4-border);
 }
 
 .cup4-standcup-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dashed var(--cup4-border);
+}
+
+.cup4-standcup-row:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
 }
 
 .cup4-standcup-label {
-    width: 110px;
+    width: 100%;
     font-weight: 600;
-    font-size: 0.875rem;
-    flex-shrink: 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--cup4-muted);
+    margin-bottom: 0.1rem;
 }
 
 .cup4-standcup-row .form-control {
     font-size: 0.875rem;
+}
+
+.cup4-standcup-name {
+    flex: 1;
+    min-width: 0;
+}
+
+.cup4-standcup-res {
+    width: 72px;
+    flex-shrink: 0;
+    text-align: center;
 }
 
 /* ── Empty State ──────────────────────── */

@@ -180,10 +180,10 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     <!-- jQuery UI CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/themes/ui-lightness/jquery-ui.css">
     
-    <!-- MSV Styles -->
-    <link rel="stylesheet" href="../css/msv-styles.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="../css/fixes/resultate-unified.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="../css/mobile-cards.css?v=<?php echo time(); ?>">
+    <!-- MSV Styles (?v=filemtime: cachebar, bricht Cache nur bei Datei-Aenderung) -->
+    <link rel="stylesheet" href="../css/msv-styles.css?v=<?php echo @filemtime(__DIR__ . '/../css/msv-styles.css') ?: '1'; ?>">
+    <link rel="stylesheet" href="../css/fixes/resultate-unified.css?v=<?php echo @filemtime(__DIR__ . '/../css/fixes/resultate-unified.css') ?: '1'; ?>">
+    <link rel="stylesheet" href="../css/mobile-cards.css?v=<?php echo @filemtime(__DIR__ . '/../css/mobile-cards.css') ?: '1'; ?>">
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -194,11 +194,11 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- MSV Toast System -->
-    <script src="<?php echo $incBase; ?>js/msv-toast.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo $incBase; ?>js/msv-toast.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-toast.js') ?: '1'; ?>"></script>
     <!-- MSV Tooltip System -->
-    <script src="<?php echo $incBase; ?>js/msv-tooltips.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo $incBase; ?>js/msv-tooltips.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-tooltips.js') ?: '1'; ?>"></script>
     <!-- MSV Mobile Cards Helper -->
-    <script src="<?php echo $incBase; ?>js/mobile-cards.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo $incBase; ?>js/mobile-cards.js?v=<?php echo @filemtime(__DIR__ . '/js/mobile-cards.js') ?: '1'; ?>"></script>
 
     <style>
         /* Kompakte Basis-Styles */
@@ -228,13 +228,26 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
             border-radius: 0 0 15px 15px;
         }
         
+        /* Einheitliche, kompakte Button-Höhe (~33px). ACHTUNG: Dieser Inline-<style>
+           lädt NACH css/msv-styles.css und gewinnt daher die Kaskade – Button-Grösse
+           hier pflegen, nicht (nur) in msv-styles.css. .btn-sm MUSS separat gesetzt
+           werden (Bootstrap nutzt dafür nur CSS-Variablen, die hier wirkungslos sind). */
         .btn {
-            padding: 0.4rem 1.2rem;
+            padding: 0.3rem 0.85rem;
             border-radius: 8px;
             font-weight: 500;
+            font-size: 0.875rem;
+            line-height: 1.5;
             transition: all 0.3s ease;
         }
-        
+        .btn-sm,
+        .btn-group-sm > .btn {
+            padding: 0.2rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            line-height: 1.5;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
@@ -351,11 +364,11 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
                     <p class="mt-3 mb-0">Wirklich abmelden?</p>
                 </div>
                 <div class="modal-footer border-0 justify-content-center">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i>Abbrechen
                     </button>
-                    <a href="<?php echo file_exists('user_logout.php') ? 'user_logout.php' : '../user_logout.php'; ?>" 
-                       class="btn btn-danger btn-sm">
+                    <a href="<?php echo file_exists('user_logout.php') ? 'user_logout.php' : '../user_logout.php'; ?>"
+                       class="btn btn-outline-danger btn-sm">
                         <i class="bi bi-box-arrow-right me-1"></i>Abmelden
                     </a>
                 </div>

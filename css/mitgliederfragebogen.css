@@ -1,0 +1,363 @@
+/* Fragebogen-spezifische Styles */
+.main-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.controls-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.table-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    border-left: 4px solid var(--info-color);
+}
+
+.card-title {
+    color: var(--secondary-color);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Spezielle Fragebogen-Styles */
+.fragebogen-form select {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.3rem;
+    min-width: 0;
+    width: auto;
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fragebogen-form select:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.1);
+}
+
+.fragebogen-form label {
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.fragebogen-form .form-row {
+    margin-bottom: 0.3rem;
+}
+
+/* Tabellen-Header */
+.table-header {
+    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    margin: 0;
+    color: var(--dark-color);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* Tabellen-Styling */
+#fragebogenTabelle {
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+    background: white;
+    margin-bottom: 0;
+    width: auto !important;
+    table-layout: auto;
+}
+
+#fragebogenTabelle thead {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: none;
+}
+
+#fragebogenTabelle thead th {
+    border: none;
+    padding: 0.5rem 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background-color: #f8f9fa !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    text-transform: none !important;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#fragebogenTabelle thead th:first-child,
+#fragebogenTabelle thead th:nth-child(2),
+#fragebogenTabelle thead th:nth-child(3),
+#fragebogenTabelle thead th:nth-child(4) {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+#fragebogenTabelle thead th:first-child {
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* Sicherstellen, dass alle Table Headers sticky sind */
+.table-wrapper .table thead th,
+.table-responsive .table thead th,
+.table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background-color: #f8f9fa !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    color: #495057 !important;
+    font-weight: 600 !important;
+}
+
+/* Generelle Regel für alle Tabellen - Sticky Headers */
+table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background-color: #f8f9fa !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    color: #495057 !important;
+    font-weight: 600 !important;
+}
+
+#fragebogenTabelle tbody {
+    font-size: 0.75em;
+}
+
+#fragebogenTabelle tbody td {
+    border: 1px solid #e9ecef;
+    padding: 0.25rem 0.35rem;
+    vertical-align: middle;
+    text-align: center;
+}
+
+#fragebogenTabelle tbody td:first-child {
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    padding-right: 0.75rem;
+}
+
+#fragebogenTabelle tbody td:nth-child(2) {
+    text-align: left;
+}
+
+/* Dropdowns kompakt */
+#fragebogenTabelle tbody td select.form-control {
+    padding: 0.15rem 0.25rem;
+    font-size: 0.75rem;
+}
+
+#fragebogenTabelle tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+#fragebogenTabelle tbody tr:hover {
+    background-color: #e3f2fd;
+    transform: scale(1.001);
+    transition: all var(--transition-speed) ease;
+}
+
+/* Dropdown-Farben für Teilnahme */
+select[name*="[mannschaft]"], 
+select[name*="[gruppen]"] {
+    font-weight: 500;
+    border-width: 1px;
+    font-size: 0.75rem;
+}
+
+select[name*="[mannschaft]"][style*="rgb(212, 237, 218)"], 
+select[name*="[gruppen]"][style*="rgb(212, 237, 218)"] {
+    background-color: #d4edda !important;
+    border-color: var(--success-color) !important;
+    color: #155724 !important;
+}
+
+select[name*="[mannschaft]"][style*="rgb(248, 215, 218)"], 
+select[name*="[gruppen]"][style*="rgb(248, 215, 218)"] {
+    background-color: #f8d7da !important;
+    border-color: var(--danger-color) !important;
+    color: #721c24 !important;
+}
+
+select[name*="[mannschaft]"][style*="rgb(255, 243, 205)"], 
+select[name*="[gruppen]"][style*="rgb(255, 243, 205)"] {
+    background-color: #fff3cd !important;
+    border-color: var(--warning-color) !important;
+    color: #856404 !important;
+}
+
+/* Dropdown-Farben für Erweitert (Ja/Nein) */
+select[name*="[erweitert]"] {
+    font-weight: 500;
+    border-width: 1px;
+    font-size: 0.75rem;
+}
+
+select[name*="[erweitert]"][style*="rgb(212, 237, 218)"] {
+    background-color: #d4edda !important;
+    border-color: var(--success-color) !important;
+    color: #155724 !important;
+}
+
+select[name*="[erweitert]"][style*="rgb(248, 215, 218)"] {
+    background-color: #f8d7da !important;
+    border-color: var(--danger-color) !important;
+    color: #721c24 !important;
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    color: var(--secondary-color);
+}
+
+.spinner-border-custom {
+    width: 2rem;
+    height: 2rem;
+    border: 0.25em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+/* PDF Link Styling */
+#pdf-link {
+    margin-top: 1rem;
+}
+
+#pdf-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--success-color), #1e7e34);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    transition: all var(--transition-speed) ease;
+    box-shadow: var(--box-shadow);
+}
+
+#pdf-link a:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--box-shadow-hover);
+    text-decoration: none;
+    color: white;
+}
+
+#pdf-link a i {
+    font-size: 1.1rem;
+}
+
+/* Mobile: Fragebogen-spezifische Card-Styles */
+@media (max-width: 767.98px) {
+    .mobile-fb-select {
+        font-size: 0.85rem;
+        max-width: 170px;
+    }
+
+    .mobile-card-detail-row {
+        align-items: center;
+    }
+
+    /* PDF-Link auf Mobile full-width */
+    #pdf-link a {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Animationen */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.main-card, .controls-card, .table-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Accessibility */
+.btn:focus {
+    outline: 2px solid var(--secondary-color);
+    outline-offset: 2px;
+}
+
+/* Action Button Group */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.action-buttons .btn {
+    min-width: 140px;
+}
+
+/* Success/Error Messages */
+.alert {
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    box-shadow: var(--box-shadow);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    color: #155724;
+    border-left: 4px solid var(--success-color);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    color: #721c24;
+    border-left: 4px solid var(--danger-color);
+}
