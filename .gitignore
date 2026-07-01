@@ -1,3 +1,7 @@
 # Zentrale Konfiguration mit Credentials (liegt eine Ebene ueber dem Projekt)
 msvjm_config.php
 ../msvjm_config.php
+
+# Rohdaten (PDFs, Mitglieder-XLSX = Personendaten) - nicht versionieren
+rohdaten/
+~$*
