@@ -111,23 +111,23 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root { --primary-color:#14b8a6; --secondary-color:#0d9488; --success-color:#28a745; --danger-color:#dc3545;
+        :root { --primary-color:#3b5998; --secondary-color:#2d4373; --success-color:#28a745; --danger-color:#dc3545;
             --border-radius:0.375rem; --transition-speed:0.3s; --box-shadow-hover:0 0.5rem 1rem rgba(0,0,0,0.15); }
         body { background:white; min-height:100vh; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
         .register-container { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem 1rem; }
         .register-card { background:white; border-radius:20px; box-shadow:0 20px 40px rgba(0,0,0,0.1); overflow:hidden;
             width:100%; max-width:480px; border:1px solid #e9ecef; }
-        .register-header { background:linear-gradient(135deg,#5eead4,#14b8a6); color:#0f3d38; padding:2rem; text-align:center; }
+        .register-header { background:linear-gradient(135deg,#3b5998,#2d4373); color:#fff; padding:2rem; text-align:center; }
         .logo { max-height:80px; max-width:200px; height:auto; width:auto; }
         .register-header h1 { font-size:1.6rem; font-weight:700; margin-bottom:0.5rem; }
         .register-header p { opacity:0.9; margin:0; font-size:0.9rem; }
         .register-body { padding:2rem; }
         .form-floating { margin-bottom:1rem; }
         .form-floating .form-control { border:2px solid #e9ecef; border-radius:var(--border-radius); transition:all var(--transition-speed) ease; }
-        .form-floating .form-control:focus { border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(20,184,166,0.1); }
-        .btn-register { background:linear-gradient(135deg,#5eead4,#14b8a6); border:none; border-radius:var(--border-radius);
-            color:#0f3d38; font-weight:600; padding:0.75rem 2rem; width:100%; margin-top:0.5rem; transition:all var(--transition-speed) ease; }
-        .btn-register:hover { transform:translateY(-2px); box-shadow:var(--box-shadow-hover); color:#0f3d38; background:linear-gradient(135deg,#2dd4bf,#0d9488); }
+        .form-floating .form-control:focus { border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(59,89,152,0.15); }
+        .btn-register { background:linear-gradient(135deg,#3b5998,#2d4373); border:none; border-radius:var(--border-radius);
+            color:#fff; font-weight:600; padding:0.75rem 2rem; width:100%; margin-top:0.5rem; transition:all var(--transition-speed) ease; }
+        .btn-register:hover { transform:translateY(-2px); box-shadow:var(--box-shadow-hover); color:#fff; background:linear-gradient(135deg,#34528c,#23355c); }
         .alert { border:none; border-radius:var(--border-radius); font-weight:500; margin-bottom:1rem; }
         .alert-danger { background:linear-gradient(135deg,#f8d7da,#f5c6cb); color:#721c24; border-left:4px solid var(--danger-color); }
         .alert-warning { background:linear-gradient(135deg,#fff3cd,#ffe69c); color:#664d03; border-left:4px solid #ffc107; }
@@ -150,7 +150,7 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
                         Bitte wende dich an den Jungschützenleiter.
                     </div>
                     <div class="text-center mt-3">
-                        <a href="login.php" style="color:#0d9488; text-decoration:none; font-weight:500;">
+                        <a href="login.php" style="color:#3b5998; text-decoration:none; font-weight:500;">
                             <i class="bi bi-arrow-left me-1"></i>Zurück zur Anmeldung
                         </a>
                     </div>
@@ -212,7 +212,7 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
                 </form>
 
                 <div class="text-center mt-3" style="border-top:1px solid #e9ecef; padding-top:1rem;">
-                    <a href="login.php" style="color:#0d9488; text-decoration:none; font-weight:500; font-size:0.9rem;">
+                    <a href="login.php" style="color:#3b5998; text-decoration:none; font-weight:500; font-size:0.9rem;">
                         <i class="bi bi-arrow-left me-1"></i>Zurück zur Anmeldung
                     </a>
                 </div>

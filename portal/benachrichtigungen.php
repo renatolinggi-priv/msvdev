@@ -76,6 +76,11 @@ $csrf_token = ensureCsrfToken();
 
 <div class="p-narrow">
 
+    <div class="portal-page-header">
+        <h1><i class="bi bi-bell me-2"></i>Benachrichtigungen</h1>
+        <p class="subtitle">Push-Einstellungen für dieses Gerät</p>
+    </div>
+
     <!-- Dieses Geraet -->
     <div class="p-section">
         <div class="p-section-header">
@@ -113,6 +118,20 @@ $csrf_token = ensureCsrfToken();
             </div>
         </div>
 
+        <!-- Chat-Push (für alle relevant, auch Jungschützen) -->
+        <div class="bn-toggle">
+            <div class="bn-toggle-label">
+                <div class="ti"><i class="bi bi-chat-dots"></i></div>
+                <div class="bn-toggle-text">
+                    <div class="t1">Chat-Nachrichten</div>
+                    <div class="t2">Benachrichtigung, wenn dir jemand schreibt</div>
+                </div>
+            </div>
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="prefChat">
+            </div>
+        </div>
+
         <div class="bn-topics" id="bnTopics">
             <?php if (!isJungschuetze()): ?>
             <div class="bn-toggle">
@@ -125,6 +144,19 @@ $csrf_token = ensureCsrfToken();
                 </div>
                 <div class="form-check form-switch m-0">
                     <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefEinsaetze" data-field="einsaetze">
+                </div>
+            </div>
+
+            <div class="bn-toggle">
+                <div class="bn-toggle-label">
+                    <div class="ti"><i class="bi bi-arrow-left-right"></i></div>
+                    <div class="bn-toggle-text">
+                        <div class="t1">Einsatz-Tausch</div>
+                        <div class="t2">Anfragen & Bestätigungen, wenn Einsätze getauscht werden</div>
+                    </div>
+                </div>
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefEinsatzTausch" data-field="einsatz_tausch">
                 </div>
             </div>
 
@@ -164,6 +196,19 @@ $csrf_token = ensureCsrfToken();
                 </div>
                 <div class="form-check form-switch m-0">
                     <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefTermine" data-field="termine">
+                </div>
+            </div>
+
+            <div class="bn-toggle">
+                <div class="bn-toggle-label">
+                    <div class="ti"><i class="bi bi-images"></i></div>
+                    <div class="bn-toggle-text">
+                        <div class="t1">Foto-Galerien</div>
+                        <div class="t2">Hinweis, wenn zu einem Anlass eine Galerie freigeschaltet wird</div>
+                    </div>
+                </div>
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefFotos" data-field="fotos">
                 </div>
             </div>
 
@@ -244,11 +289,14 @@ $csrf_token = ensureCsrfToken();
             var p = data.prefs;
             function setChk(id, v) { var e = document.getElementById(id); if (e) e.checked = !!v; }
             elMaster.checked = !!p.push_aktiv;
-            setChk('prefEinsaetze', p.einsaetze);
-            setChk('prefJm',        p.jm);
-            setChk('prefUmfragen',  p.umfragen);
-            setChk('prefTermine',   p.termine);
-            setChk('prefJsk',       p.jsk_betreuung);
+            setChk('prefEinsaetze',     p.einsaetze);
+            setChk('prefEinsatzTausch', p.einsatz_tausch);
+            setChk('prefJm',            p.jm);
+            setChk('prefUmfragen',      p.umfragen);
+            setChk('prefTermine',       p.termine);
+            setChk('prefFotos',         p.fotos);
+            setChk('prefJsk',           p.jsk_betreuung);
+            setChk('prefChat',          p.chat);
 
             // Vorlaufzeit: null (noch nicht angepasst) -> Default 3 anzeigen (nur falls Element vorhanden)
             var leadSel = document.getElementById('prefLead');
@@ -270,23 +318,28 @@ $csrf_token = ensureCsrfToken();
         };
         var elEins = document.getElementById('prefEinsaetze');
         if (elEins) {
-            payload.einsaetze = chk('prefEinsaetze');
-            payload.jm        = chk('prefJm');
-            payload.umfragen  = chk('prefUmfragen');
-            payload.termine   = chk('prefTermine');
+            payload.einsaetze      = chk('prefEinsaetze');
+            payload.einsatz_tausch = chk('prefEinsatzTausch');
+            payload.jm             = chk('prefJm');
+            payload.umfragen       = chk('prefUmfragen');
+            payload.termine        = chk('prefTermine');
+            payload.fotos          = chk('prefFotos');
         }
         var elLead = document.getElementById('prefLead');
         if (elLead) payload.lead_tage = parseInt(elLead.value, 10);
         var elJsk = document.getElementById('prefJsk');
         if (elJsk) payload.jsk_betreuung = elJsk.checked ? 1 : 0;
-        fetch(PREFS_API, {
+        var elChat = document.getElementById('prefChat');
+        if (elChat) payload.chat = elChat.checked ? 1 : 0;
+        return fetch(PREFS_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         }).then(function (r) { return r.json(); }).then(function (data) {
             if (data.success) { toast('Gespeichert', 'success'); }
             else { toast(data.message || 'Fehler beim Speichern', 'error'); }
-        }).catch(function () { toast('Verbindungsfehler', 'error'); });
+            return data;
+        }).catch(function () { toast('Verbindungsfehler', 'error'); return { success: false }; });
     }
 
     elMaster.addEventListener('change', function () { applyMasterState(); savePrefs(); });
@@ -295,9 +348,14 @@ $csrf_token = ensureCsrfToken();
     if (elLeadSel) elLeadSel.addEventListener('change', savePrefs);
     var elJskToggle = document.getElementById('prefJsk');
     if (elJskToggle) elJskToggle.addEventListener('change', function () {
-        savePrefs();
-        toast(this.checked ? 'Board wird nach dem Neuladen angezeigt.' : 'Jungschützen-Board deaktiviert.', 'info');
+        // Das Menü (Jungschützenchat + Board) hängt serverseitig an "Jungschützen betreuen".
+        // Nach dem Speichern neu laden, damit die Einträge sofort erscheinen bzw. verschwinden.
+        savePrefs().then(function (data) {
+            if (data && data.success) { location.reload(); }
+        });
     });
+    var elChatToggle = document.getElementById('prefChat');
+    if (elChatToggle) elChatToggle.addEventListener('change', savePrefs);
 
     // ---------- Geraete-Status / Push ----------
     function setStatus(on, text) {
@@ -322,6 +380,16 @@ $csrf_token = ensureCsrfToken();
 
     function renderDevice(status) {
         elDeviceArea.innerHTML = '';
+
+        // Native App (Capacitor): Push laeuft ueber die App (FCM), nicht ueber Web-Push.
+        if (window.MSVPush && MSVPush.isNativeApp && MSVPush.isNativeApp()) {
+            setStatus(true, 'Über die App aktiv');
+            var hi = document.createElement('div');
+            hi.className = 'bn-hint';
+            hi.innerHTML = '<i class="bi bi-info-circle"></i>Du nutzt die MSV-Wilen-App – Benachrichtigungen kommen automatisch über die App. Die Themen unten gelten weiterhin; die System-Berechtigung verwaltest du in den Geräte-Einstellungen.';
+            elDeviceArea.appendChild(hi);
+            return;
+        }
 
         // Nicht unterstuetzt
         if (!status.supported) {

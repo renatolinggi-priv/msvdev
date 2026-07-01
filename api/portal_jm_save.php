@@ -68,6 +68,10 @@ $blocked = ['Endstich', 'Bester Kantonalstich', 'Sektionsmeisterschaft'];
 if (in_array($def['Bezeichnung'], $blocked, true)) {
     json_error('Dieser Wettbewerb wird vom Vorstand erfasst.');
 }
+// Vereinscup: Resultat stammt aus der Cup-Erfassung (inc/cup.php), keine Selbsteingabe.
+if (preg_match('/Vereins[- ]?cup/i', (string)$def['Bezeichnung'])) {
+    json_error('Das Cup-Resultat wird über die Cup-Erfassung geführt und kann hier nicht erfasst werden.');
+}
 // Teilnahme-Anlaesse (Maxpunkte == 20): Teilnahme = immer volle Punktzahl, der Vorstand
 // traegt diese ein. Im Portal nicht selbst erfassbar (analog zu jmIsTeilnahme in meine_jm.php).
 if ((int)$def['Maxpunkte'] === 20) {

@@ -45,11 +45,12 @@ const PUSH_MAX_WINDOW = 30;
  *  'lead' = persoenliche Vorlaufzeit in Tagen (null = globaler Standard verwenden). */
 function eligibleUsers(PDO $db, string $topicCol): array {
     // $topicCol stammt aus festem Whitelist-Set -> Interpolation unkritisch.
+    // push_aktiv steuert nur den Push-Versand (in benachrichtigungZustellen), NICHT die
+    // In-App-Glocke -> hier bewusst kein push_aktiv-Filter.
     $sql = "SELECT u.id, u.role, u.mitglied_id, p.lead_tage
             FROM users u
             LEFT JOIN benachrichtigung_prefs p ON p.user_id = u.id
             WHERE u.status = 'approved'
-              AND COALESCE(p.push_aktiv, 1) = 1
               AND COALESCE(p.$topicCol, 1) = 1";
     $out = [];
     foreach ($db->query($sql) as $r) {
@@ -83,35 +84,24 @@ function markiere(PDO $db, int $userId, string $kategorie, string $refTyp, int $
 
 /**
  * Stellt einem Benutzer ein Vorkommnis zu (idempotent).
- * Marker wird gesetzt bei Erfolg ODER wenn nichts zuzustellen ist (kein Geraet).
- * Bei transientem Sendefehler KEIN Marker -> naechster Lauf versucht erneut.
+ * In-App-Eintrag (Glocke) entsteht IMMER, Push nur bei push_aktiv (benachrichtigungZustellen).
+ * Der Marker wird NACH der Zustellung gesetzt -> verhindert doppelte Inbox-Eintraege beim
+ * naechsten Lauf. Nur bei hartem Fehler kein Marker (-> Retry).
  */
 function zustellen(PDO $db, int $userId, string $kategorie, string $refTyp, int $refId,
                    string $termin, string $titel, string $text, string $url, array &$stats): void {
     if (bereitsGemeldet($db, $userId, $refTyp, $refId, $termin)) { $stats['skipped']++; return; }
 
-    if (!hatGeraete($db, $userId)) {
-        // Nichts zuzustellen -> als erledigt markieren (kein Dauer-Retry)
-        markiere($db, $userId, $kategorie, $refTyp, $refId, $termin);
-        $stats['no_device']++;
-        return;
-    }
-
     try {
-        $n = sendePushAnBenutzer($userId, $titel, $text, $url);
+        $n = benachrichtigungZustellen($userId, $titel, $text, $url, $kategorie);
     } catch (\Throwable $e) {
         error_log('cron benachrichtigungen: Sendefehler user ' . $userId . ': ' . $e->getMessage());
         $stats['failed']++;
         return; // kein Marker -> Retry
     }
 
-    if ($n > 0) {
-        markiere($db, $userId, $kategorie, $refTyp, $refId, $termin);
-        $stats['sent']++;
-    } else {
-        // Hatte Geraete, aber alle Zustellungen fehlgeschlagen -> Retry beim naechsten Lauf
-        $stats['failed']++;
-    }
+    markiere($db, $userId, $kategorie, $refTyp, $refId, $termin);
+    if ($n > 0) { $stats['sent']++; } else { $stats['no_device']++; } // no_device = nur In-App (kein Push)
 }
 
 function fmtDatum(?string $ymd): string {
@@ -141,7 +131,7 @@ try {
             JOIN users u ON u.mitglied_id = ez.mitglied_id AND u.status = 'approved'
             LEFT JOIN benachrichtigung_prefs p ON p.user_id = u.id
             WHERE ez.event_datum BETWEEN CURDATE() AND (CURDATE() + INTERVAL $win DAY)
-              AND COALESCE(p.push_aktiv, 1) = 1 AND COALESCE(p.einsaetze, 1) = 1
+              AND COALESCE(p.einsaetze, 1) = 1
             HAVING tage_bis <= lead";
     $n0 = $stats['sent'];
     foreach ($db->query($sql)->fetchAll() as $r) {
@@ -268,6 +258,15 @@ try {
     $db->exec('DELETE FROM benachrichtigung_log WHERE termin_datum < (CURDATE() - INTERVAL 90 DAY)');
 } catch (\Throwable $e) {
     error_log('cron benachrichtigungen [purge]: ' . $e->getMessage());
+}
+
+// Aufraeumen: In-App-Glocke. Gelesene > 30 Tage, ungelesene > 90 Tage entfernen.
+try {
+    $db->exec("DELETE FROM benachrichtigungen_inbox
+               WHERE (gelesen_am IS NOT NULL AND gelesen_am  < (NOW() - INTERVAL 30 DAY))
+                  OR (gelesen_am IS NULL     AND erstellt_am < (NOW() - INTERVAL 90 DAY))");
+} catch (\Throwable $e) {
+    error_log('cron benachrichtigungen [purge inbox]: ' . $e->getMessage());
 }
 
 // =====================  Ausgabe  =============================================

@@ -115,11 +115,14 @@ $portal_page_css = "
 .umfrage-accordion .accordion-button .btn-title {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Voller Titel sichtbar: umbrechen statt einzeilig kürzen */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.3;
     text-align: left;
 }
+.umfrage-accordion .accordion-button { align-items: flex-start; }
 .status-badge {
     font-size: 0.7rem;
     font-weight: 600;

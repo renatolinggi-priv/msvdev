@@ -1,0 +1,79 @@
+/* portal/css/foto-slideshow.css – Vollbild-Slideshow fuer Anlass-Galerien */
+.ss-overlay {
+  position: fixed; inset: 0; z-index: 20000;
+  background: #0b0b0d; display: none;
+  opacity: 0; transition: opacity .3s ease;
+}
+.ss-overlay.show { display: block; opacity: 1; }
+
+.ss-stage { position: absolute; inset: 0; overflow: hidden; }
+.ss-layer {
+  position: absolute; inset: 0;
+  background-position: center; background-repeat: no-repeat; background-size: cover;
+  opacity: 0; transition: opacity .8s ease; will-change: opacity, transform;
+}
+.ss-layer.active { opacity: 1; }
+.ss-layer.kb { animation: ssKenBurns 6.5s ease-out forwards; }
+
+@keyframes ssKenBurns {
+  from { transform: scale(1.001) translate(0, 0); }
+  to   { transform: scale(1.10) translate(-1.5%, -1.5%); }
+}
+
+/* Tages-Titel (erscheint beim Tageswechsel) */
+.ss-daytitle {
+  position: absolute; left: 0; right: 0; top: 42%;
+  text-align: center; pointer-events: none;
+  opacity: 0; transition: opacity .5s ease; z-index: 3;
+}
+.ss-daytitle.show { opacity: 1; }
+.ss-daytitle span {
+  display: inline-block; padding: .6rem 1.4rem;
+  background: rgba(0,0,0,.45); color: #fff; border-radius: 999px;
+  font-size: clamp(1rem, 3.5vw, 1.7rem); font-weight: 700; letter-spacing: .02em;
+  backdrop-filter: blur(4px);
+}
+
+/* obere Leiste: Tages-Label (links) + Zähler/Schliessen (rechts) */
+.ss-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 4;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem;
+  padding: calc(.6rem + env(safe-area-inset-top, 0px)) .8rem .8rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
+}
+.ss-day span {
+  display: inline-block; max-width: 68vw; color: #fff;
+  background: rgba(0,0,0,.5); border-radius: 999px; padding: .32rem .8rem;
+  font-size: .82rem; font-weight: 700; line-height: 1.2; backdrop-filter: blur(4px);
+}
+.ss-day span:empty { display: none; }
+.ss-topright { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.ss-counter {
+  color: #fff; background: rgba(0,0,0,.5); border-radius: 999px;
+  padding: .28rem .65rem; font-size: .8rem; font-weight: 600; backdrop-filter: blur(4px);
+}
+
+/* Steuerung */
+.ss-controls {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
+  padding: .6rem 1rem calc(.6rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,0));
+}
+.ss-btn {
+  border: none; background: rgba(0,0,0,.5); color: #fff;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; transition: background .15s, transform .15s;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 5px rgba(0,0,0,.45);
+}
+.ss-btn:hover { background: rgba(0,0,0,.72); transform: scale(1.06); }
+.ss-btn.ss-close { width: 40px; height: 40px; font-size: 1.3rem; }
+.ss-btn-lg { width: 54px; height: 54px; font-size: 1.4rem; background: rgba(0,0,0,.62); }
+
+@media (max-width: 575.98px) {
+  .ss-btn { width: 40px; height: 40px; }
+  .ss-btn-lg { width: 48px; height: 48px; }
+  .ss-day span { max-width: 60vw; font-size: .78rem; }
+}

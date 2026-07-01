@@ -4,6 +4,7 @@
 
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
+require_once __DIR__ . '/../inc/chat.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 requireRoleJson(['mitglied', 'vorstand', 'admin']);
@@ -94,8 +95,10 @@ if ($action === 'claim') {
         $info->execute([$id]);
         if ($row = $info->fetch()) {
             if (!empty($row['js_user_id'])) {
+                // Match-Chat zwischen Jungschütze und betreuendem Mitglied sicherstellen
+                chatEnsureMatchConversation($db, (int) $row['js_user_id'], $userId);
                 $datumDe = date('d.m.Y', strtotime($row['datum']));
-                jskSendPush((int) $row['js_user_id'], 'Begleitung gefunden',
+                jskSendPush((int) $row['js_user_id'], 'Betreuer gefunden',
                     ($row['betreuer_name'] ?: 'Ein Mitglied') . ' betreut dich am ' . $datumDe . '.',
                     'portal/jsk_dashboard.php');
             }
@@ -128,7 +131,7 @@ function jskSendPush(int $userId, string $titel, string $text, string $url): voi
     $helper = __DIR__ . '/../inc/push_helper.php';
     if (!file_exists($helper)) return;
     require_once $helper;
-    if (function_exists('sendePushAnBenutzer')) {
-        sendePushAnBenutzer($userId, $titel, $text, $url);
+    if (function_exists('benachrichtigungZustellen')) {
+        benachrichtigungZustellen($userId, $titel, $text, $url, 'jsk_betreuung');
     }
 }

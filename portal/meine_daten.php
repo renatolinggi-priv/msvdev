@@ -117,6 +117,11 @@ $csrf_token = ensureCsrfToken();
 
 <div class="p-narrow">
 
+    <div class="portal-page-header">
+        <h1><i class="bi bi-person-vcard me-2"></i>Meine Daten</h1>
+        <p class="subtitle">Persönliche Angaben und Login-Daten</p>
+    </div>
+
     <!-- Persönliche Angaben (readonly) -->
     <div class="p-section">
         <div class="p-section-header">

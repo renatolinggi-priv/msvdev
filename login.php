@@ -243,11 +243,11 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
         }
         .login-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             width: 100%;
-            max-width: 400px;
+            max-width: 360px;
             animation: fadeInUp 0.6s ease-out;
             border: 1px solid #e9ecef;
         }
@@ -264,32 +264,33 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
         .login-header {
             background: linear-gradient(135deg, #dee2e6, #adb5bd);
             color: #343a40;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
         }
         .logo-container {
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
         .logo {
-            max-height: 80px;
-            max-width: 200px;
+            max-height: 60px;
+            max-width: 160px;
             height: auto;
             width: auto;
         }
         .login-header h1 {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
         .login-header p {
             opacity: 0.9;
             margin: 0;
+            font-size: 0.9rem;
         }
         .login-body {
-            padding: 2rem;
+            padding: 1.5rem;
         }
         .form-floating {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
         .form-floating .form-control {
             border: 2px solid #e9ecef;
@@ -316,11 +317,11 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
             border-radius: var(--border-radius);
             color: #343a40;
             font-weight: 600;
-            padding: 0.75rem 2rem;
+            padding: 0.6rem 2rem;
             font-size: 1rem;
             transition: all var(--transition-speed) ease;
             width: 100%;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
         .btn-login:hover {
             transform: translateY(-2px);
@@ -813,7 +814,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
     </script>
 
     <script>
-    // PWA Install Banner – nur auf Mobilgeräten, nur auf Benutzeranfrage
+    // PWA Install Banner – auf Mobilgeräten automatisch als Hinweis einblenden
     (function() {
         var isStandalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
         // Cookie setzen damit PHP beim Login-Redirect den PWA-Modus erkennt
@@ -835,21 +836,28 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
         var triggerBtn  = document.getElementById('pwa-trigger-btn');
         var deferredPrompt = null;
 
+        // Hinweis nur EINMAL automatisch zeigen – wer ihn wegklickt, wird nicht erneut belästigt.
+        var DISMISS_KEY = 'msv_pwa_login_dismissed';
+        function isDismissed(){ try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch(e){ return false; } }
+        function autoShow(){ if (banner && !isDismissed()) banner.classList.add('show'); }
+
         if (isIos) {
             // Nur in Safari möglich (nicht Chrome/Firefox auf iOS)
             var isSafari = /safari/i.test(navigator.userAgent) && !/crios|fxios|opios/i.test(navigator.userAgent);
             if (!isSafari) return;
             banner.querySelector('.pwa-steps-ios').style.display = 'block';
             if (trigger) trigger.style.display = 'block';
+            autoShow();
         }
 
         if (isAndroid) {
-            // Trigger-Button erst zeigen wenn Browser bereit ist
+            // Trigger-Button + Auto-Hinweis erst zeigen wenn der Browser die Installation anbietet
             window.addEventListener('beforeinstallprompt', function(e) {
                 e.preventDefault();
                 deferredPrompt = e;
                 banner.querySelector('.pwa-steps-android').style.display = 'block';
                 if (trigger) trigger.style.display = 'block';
+                autoShow();
             });
 
             // Klick im Banner → nativer Install-Dialog
@@ -883,11 +891,12 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
             });
         }
 
-        // Schliessen-Button
+        // Schliessen-Button – merkt sich die Entscheidung (kein erneutes Auto-Einblenden)
         var closeBtn = document.getElementById('pwa-banner-close');
         if (closeBtn) {
             closeBtn.addEventListener('click', function() {
                 banner.classList.remove('show');
+                try { localStorage.setItem(DISMISS_KEY, '1'); } catch(e){}
             });
         }
     })();

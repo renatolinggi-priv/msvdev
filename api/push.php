@@ -3,23 +3,26 @@
 // Vorlage: benachrichtigungs-konzept.md (Abschnitt 2.4)
 //
 // Aktionen (?action=...):
-//   public_key  GET   -> liefert VAPID Public Key (kein CSRF, nicht geheim)
-//   subscribe   POST  -> Abo speichern (CSRF)
-//   unsubscribe POST  -> Abo dieses Geraets loeschen (CSRF)
-//   test        POST  -> Test-Push an alle eigenen Geraete (CSRF)
+//   public_key       GET   -> liefert VAPID Public Key (kein CSRF, nicht geheim)
+//   subscribe        POST  -> Web-Push-Abo speichern (CSRF)
+//   unsubscribe      POST  -> Web-Push-Abo dieses Geraets loeschen (CSRF)
+//   register_native  POST  -> FCM-Token der nativen App speichern (CSRF)
+//   unregister_native POST -> FCM-Token der nativen App loeschen (CSRF)
+//   test             POST  -> Test-Push an alle eigenen Geraete (CSRF)
 
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
-requireRoleJson(['admin', 'vorstand', 'mitglied']); // alle eingeloggten, freigegebenen User
 
 $action = $_GET['action'] ?? '';
-$db     = getDB();
-$userId = (int) ($_SESSION['user_id'] ?? 0);
 
-// --- public_key: GET, kein CSRF (Public Key ist nicht geheim) ----------------
+// --- public_key: GET, OEFFENTLICH (kein Login, kein CSRF) --------------------
+// Der VAPID Public Key ist nicht geheim und muss auch fuer den Service Worker
+// (pushsubscriptionchange / Selbstheilung bei evtl. abgelaufener Session)
+// erreichbar sein. Daher VOR requireRoleJson.
 if ($action === 'public_key') {
+    $db = getDB();
     $stmt = $db->prepare('SELECT setting_value FROM settings WHERE setting_key = ?');
     $stmt->execute(['vapid_public_key']);
     $pub = $stmt->fetchColumn();
@@ -29,6 +32,11 @@ if ($action === 'public_key') {
     echo json_encode(['success' => true, 'public_key' => $pub]);
     exit;
 }
+
+requireRoleJson(['admin', 'vorstand', 'mitglied']); // alle eingeloggten, freigegebenen User
+
+$db     = getDB();
+$userId = (int) ($_SESSION['user_id'] ?? 0);
 
 // --- list: GET, eigene abonnierte Geraete (nur Anzeige, kein CSRF) -----------
 if ($action === 'list') {
@@ -85,6 +93,43 @@ switch ($action) {
             $del->execute([$endpoint, $userId]);
         }
         echo json_encode(['success' => true, 'message' => 'Benachrichtigungen auf diesem Gerät deaktiviert.']);
+        break;
+
+    // --- Native App (Capacitor): FCM-Token registrieren -----------------------
+    case 'register_native':
+        $token    = trim((string) ($input['fcm_token'] ?? ''));
+        $platform = (string) ($input['platform'] ?? '');
+        $platform = in_array($platform, ['ios', 'android'], true) ? $platform : null;
+        $appVer   = mb_substr(trim((string) ($input['app_version'] ?? '')), 0, 20);
+        if ($token === '') {
+            json_error('Kein Token übermittelt.');
+        }
+
+        // Token evtl. anderem Benutzer wegnehmen (Geraet hat Account gewechselt) - wie bei subscribe.
+        $db->prepare('DELETE FROM push_geraete_native WHERE fcm_token = ? AND benutzer_id <> ?')
+           ->execute([$token, $userId]);
+
+        $ins = $db->prepare(
+            'INSERT INTO push_geraete_native (benutzer_id, fcm_token, platform, app_version)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE benutzer_id = VALUES(benutzer_id), platform = VALUES(platform),
+                                     app_version = VALUES(app_version)'
+        );
+        $ins->execute([$userId, $token, $platform, ($appVer !== '' ? $appVer : null)]);
+
+        // Prefs-Zeile sicherstellen (Defaults = alles an) - identisch zu subscribe.
+        $db->prepare('INSERT IGNORE INTO benachrichtigung_prefs (user_id) VALUES (?)')->execute([$userId]);
+
+        echo json_encode(['success' => true, 'message' => 'Gerät für Benachrichtigungen registriert.']);
+        break;
+
+    case 'unregister_native':
+        $token = trim((string) ($input['fcm_token'] ?? ''));
+        if ($token !== '') {
+            $db->prepare('DELETE FROM push_geraete_native WHERE fcm_token = ? AND benutzer_id = ?')
+               ->execute([$token, $userId]);
+        }
+        echo json_encode(['success' => true, 'message' => 'Gerät abgemeldet.']);
         break;
 
     case 'test':

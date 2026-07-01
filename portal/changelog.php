@@ -50,6 +50,17 @@ include 'portal_header.php';
     color: var(--p-text-muted);
     font-size: .8rem;
 }
+.version-badges {
+    margin-left: auto;
+    display: flex;
+    gap: var(--p-1);
+    flex-shrink: 0;
+}
+.version-card-header .badge {
+    font-size: .65rem;
+    padding: .15rem .45rem;
+    flex-shrink: 0;
+}
 .cl-entry {
     display: flex;
     align-items: flex-start;
@@ -58,18 +69,6 @@ include 'portal_header.php';
 }
 .cl-entry + .cl-entry {
     border-top: 1px solid #f7fafc;
-}
-.cl-entry .badge {
-    font-size: .65rem;
-    padding: .15rem .45rem;
-    flex-shrink: 0;
-    margin-top: .15rem;
-}
-.cl-entry .badge-intern {
-    background: #fef3cd;
-    color: #856404;
-    font-size: .6rem;
-    padding: .1rem .35rem;
 }
 .cl-entry-content { flex: 1; }
 .cl-entry-title {
@@ -125,17 +124,25 @@ include 'portal_header.php';
             <?php if ($datum_fmt): ?>
             <span class="version-date"><i class="bi bi-calendar3 me-1"></i><?php echo $datum_fmt; ?></span>
             <?php endif; ?>
+            <?php
+            // Distinkte Typ-Badges dieses Releases neben Version/Datum anzeigen (rechtsbündig)
+            $seen_typen = [];
+            $badges_html = '';
+            foreach (($release['aenderungen'] ?? []) as $e) {
+                $t = $e['typ'] ?? 'info';
+                if (!isset($seen_typen[$t])) {
+                    $b = $typ_badges[$t] ?? $typ_badges['info'];
+                    $seen_typen[$t] = true;
+                    $badges_html .= '<span class="badge ' . $b['class'] . '">' . $b['label'] . '</span>';
+                }
+            }
+            if ($badges_html !== '') {
+                echo '<span class="version-badges">' . $badges_html . '</span>';
+            }
+            ?>
         </div>
-        <?php foreach (($release['aenderungen'] ?? []) as $entry):
-            $typ = $entry['typ'] ?? 'info';
-            $badge = $typ_badges[$typ] ?? $typ_badges['info'];
-            $is_intern = empty($entry['portal']);
-        ?>
+        <?php foreach (($release['aenderungen'] ?? []) as $entry): ?>
         <div class="cl-entry">
-            <span class="badge <?php echo $badge['class']; ?>"><?php echo $badge['label']; ?></span>
-            <?php if ($is_intern && $show_intern): ?>
-            <span class="badge badge-intern">Intern</span>
-            <?php endif; ?>
             <div class="cl-entry-content">
                 <div class="cl-entry-title"><?php echo htmlspecialchars($entry['titel'] ?? ''); ?></div>
                 <?php if (!empty($entry['beschreibung'])): ?>

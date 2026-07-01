@@ -3,6 +3,7 @@
 $portal_page_title = 'Jungschützen';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../inc/chat.inc.php';
 requireLogin();
 
 // Nur Jungschuetzen (Admin zum Testen erlaubt)
@@ -13,12 +14,13 @@ if (!isJungschuetze() && !isAdmin()) {
 
 $db   = getDB();
 $jsId = (int) (getJungschuetzeId() ?? 0);
+$jsUserId = (int) ($_SESSION['user_id'] ?? 0);
 $featureAktiv = jskFeatureAktiv();
 
 $anfragen = [];
 if ($jsId > 0) {
     $stmt = $db->prepare(
-        "SELECT a.id, a.datum, a.zeit, a.bemerkung, a.status, a.betreut_am,
+        "SELECT a.id, a.datum, a.zeit, a.bemerkung, a.status, a.betreut_am, a.betreut_von_user_id,
                 bu.full_name AS betreuer_name
            FROM jsk_betreuung_anfragen a
            LEFT JOIN users bu ON bu.id = a.betreut_von_user_id
@@ -53,8 +55,8 @@ $csrf_token = ensureCsrfToken();
 
 $statusBadge = function ($s) {
     switch ($s) {
-        case 'offen':    return '<span class="badge bg-warning text-dark">Sucht Begleitung</span>';
-        case 'vergeben': return '<span class="badge bg-success">Begleitung gefunden</span>';
+        case 'offen':    return '<span class="badge bg-warning text-dark">Sucht Betreuer</span>';
+        case 'vergeben': return '<span class="badge bg-success">Betreuer gefunden</span>';
         case 'abgesagt': return '<span class="badge bg-secondary">Abgesagt</span>';
         case 'erledigt': return '<span class="badge bg-info text-dark">Erledigt</span>';
         default:         return '<span class="badge bg-light text-dark">' . htmlspecialchars($s) . '</span>';
@@ -63,7 +65,7 @@ $statusBadge = function ($s) {
 ?>
 
 <style>
-.jsk-hero { background: linear-gradient(135deg,#5eead4,#14b8a6); color:#0f3d38; border-radius:1rem; padding:1.5rem; margin-bottom:1.5rem; }
+.jsk-hero { background: linear-gradient(135deg,#3b5998,#2d4373); color:#ffffff; border-radius:1rem; padding:1.5rem; margin-bottom:1.5rem; }
 .jsk-card { border:1px solid #e2e8f0; border-radius:0.85rem; padding:1rem 1.25rem; margin-bottom:0.75rem; background:#fff; }
 .jsk-card .datum { font-size:1.1rem; font-weight:700; }
 .jsk-empty { text-align:center; color:#94a3b8; padding:2rem 1rem; }
@@ -76,9 +78,9 @@ $statusBadge = function ($s) {
   </div>
 
   <?php if (trim($infoTitel) !== '' || trim($infoText) !== ''): ?>
-    <div class="jsk-card" style="border-left:4px solid #14b8a6;">
+    <div class="jsk-card" style="border-left:4px solid #3b5998;">
       <?php if (trim($infoTitel) !== ''): ?>
-        <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1 text-info"></i><?= htmlspecialchars($infoTitel) ?></div>
+        <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1 text-club"></i><?= htmlspecialchars($infoTitel) ?></div>
       <?php endif; ?>
       <div class="text-muted"><?= nl2br(htmlspecialchars($infoText)) ?></div>
     </div>
@@ -86,7 +88,7 @@ $statusBadge = function ($s) {
 
   <?php if ($termine): ?>
     <div class="jsk-card">
-      <div class="fw-bold mb-2"><i class="bi bi-calendar3 me-1 text-info"></i>Nächste Jungschützen-Termine</div>
+      <div class="fw-bold mb-2"><i class="bi bi-calendar3 me-1 text-club"></i>Nächste Jungschützen-Termine</div>
       <?php foreach ($termine as $i => $t): ?>
         <div class="d-flex justify-content-between py-2<?= $i ? ' border-top' : '' ?>">
           <span><i class="bi bi-calendar-event me-1 text-muted"></i><?= htmlspecialchars($t['name']) ?></span>
@@ -101,7 +103,7 @@ $statusBadge = function ($s) {
   <?php else: ?>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Meine Anmeldungen</h5>
-      <a href="jsk_termin.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Termin melden</a>
+      <a href="jsk_termin.php" class="btn btn-club btn-sm"><i class="bi bi-plus-lg me-1"></i>Termin melden</a>
     </div>
 
     <?php if ($jsId <= 0): ?>
@@ -128,6 +130,10 @@ $statusBadge = function ($s) {
                   <span class="ms-1 small text-success"><i class="bi bi-person-check me-1"></i><?= htmlspecialchars($a['betreuer_name']) ?></span>
                 <?php endif; ?>
               </div>
+              <?php if ($a['status'] === 'vergeben' && !empty($a['betreut_von_user_id'])):
+                $matchConv = chatEnsureMatchConversation($db, $jsUserId, (int) $a['betreut_von_user_id']); ?>
+                <a href="chat.php?c=<?= (int) $matchConv ?>" class="btn btn-outline-club btn-sm mt-2"><i class="bi bi-chat-dots me-1"></i>Chat mit Betreuer</a>
+              <?php endif; ?>
             </div>
             <?php if ($kannAbsagen): ?>
               <button class="btn btn-outline-danger btn-sm js-cancel" data-id="<?= (int) $a['id'] ?>"><i class="bi bi-x-lg"></i></button>

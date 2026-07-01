@@ -1,5 +1,76 @@
 [
   {
+    "version": "1.24.0",
+    "datum": "2026-06-30",
+    "aenderungen": [
+      {
+        "titel": "Neu: Foto-Galerien & Slideshow zu Anlässen",
+        "beschreibung": "Zu Vereinsanlässen gibt es neu Foto-Galerien – im Menü unter «Fotos» und als Kachel auf dem Dashboard. Sobald der Vorstand zu einem Anlass eine Galerie freischaltet, kannst du über den runden Knopf unten rechts deine eigenen Fotos hochladen (auch mehrere auf einmal; der Bildschirm bleibt während des Uploads an). Die Bilder werden automatisch nach den Tagen des Anlasses gruppiert. Mit «Slideshow» läuft daraus eine Vollbild-Diashow mit sanften Überblendungen – ideal für den Beamer am Vereinsabend. Je nach Anlass müssen hochgeladene Fotos zuerst vom Vorstand freigegeben werden; deine noch nicht freigegebenen erkennst du am Hinweis «wartet auf Freigabe». Ob du eine Mitteilung erhältst, wenn eine neue Galerie freigeschaltet wird, stellst du unter «Benachrichtigungen» beim Thema «Foto-Galerien» ein.",
+        "typ": "neu"
+      },
+      {
+        "titel": "Foto-Galerien verwalten",
+        "beschreibung": "Unter «Definitionen / Ausdrucke» → «Foto-Galerien» schaltest du über ein durchsuchbares Auswahlfeld pro JM-Anlass eine Galerie frei. In der «Details»-Ansicht jeder Galerie kannst du alles an einem Ort erledigen: Einstellungen bearbeiten (sichtbar, Upload offen, Moderation), optional eine Programm-PDF anhängen, die Uploader-Übersicht sehen (wer wie viele Fotos), die Fotos nach Tagen gruppiert mit Name und Aufnahmedatum prüfen, freigeben oder ablehnen, mit «Alle freigeben» bzw. «Tage neu zuordnen» arbeiten – und die Reihenfolge der Fotos für die Slideshow per Ziehen (Drag & Drop) festlegen.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "PDF-Ranglisten-Import: Verbandsschiessen-Ranglisten werden erkannt",
+        "beschreibung": "Beim Import externer Einzelranglisten («PDF importieren» in der JM-Resultaterfassung) wurden Ranglisten im Format des Verbandsschiessens (Regionalschützenverband March-Höfe) bisher nicht erkannt – es kamen keine Treffer zurück. Grund war, dass in diesen PDFs das Resultat technisch direkt hinter dem Rang steht und nur optisch in die rechte Spalte gerückt wird. Der Import erkennt diese Anordnung jetzt zusätzlich; alle Vereinsmitglieder samt Rang und Resultat sowie die Sektionsplatzierung werden korrekt eingelesen. Die bisherigen Ranglisten-Formate (Vereinsstich, Etzelbundschiessen) funktionieren unverändert.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Resultaterfassung: Mitglieder nach «schon erfasst» gruppiert",
+        "beschreibung": "Bei der Heim- und Kantonalstich-Resultaterfassung sind die Mitglieder neu in zwei Gruppen geteilt: zuerst alle mit bereits erfassten Resultaten, danach die noch offenen – beide alphabetisch sortiert, mit Zwischentitel und Anzahl. In der Jahresmeisterschaft gilt das im Anlass-Erfassungsfenster: oben stehen die Schützen, die dieses Jahr in einem «richtigen» JM-Anlass schon ein Resultat haben (Cup, SSM/Sektionsmeisterschaft, Feldschiessen und Obligatorisch zählen dafür bewusst nicht mit), darunter die übrigen. So sind die aktiven Schützen in jedem Anlass zuoberst, auch wenn der Anlass selbst noch leer ist. Dieselbe Aufteilung gibt es jetzt auch in der JM-Rangliste: Schützen mit gewertetem Resultat werden nach den normalen Regeln gerankt, Schützen ganz ohne Resultat erscheinen als separate Gruppe «Ohne gewertetes JM-Resultat» darunter (alphabetisch, ohne Rang).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Munitionskauf: Erfassung und Bezugsliste nebeneinander",
+        "beschreibung": "Auf breiten Bildschirmen steht die Liste der vergangenen Bezüge (früher «Munitionskäufe») neu direkt rechts neben dem Erfassungsformular statt darunter – so sieht man beim Erfassen sofort die bisherigen Bezüge. Der separate «Käufe»-Reiter entfällt damit auf dem Desktop (auf dem Handy bleibt er bestehen). Das Mitglied-Auswahlfeld ist jetzt ein durchsuchbares Select2-Feld, und das Formular sowie die kompaktere Tabelle nutzen die volle Breite besser aus.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.23.0",
+    "datum": "2026-06-29",
+    "aenderungen": [
+      {
+        "titel": "Durchschnittsresultate JM: Darstellung auf Handy und Desktop korrigiert",
+        "beschreibung": "Auf der Seite «Sektionsabrechnungen» (Durchschnittsresultate JM) wurde nach der Auswahl eines Schiessanlasses auf dem Handy nichts mehr angezeigt – die Resultate erscheinen jetzt korrekt als Karten samt Suchfeld, wobei die zählenden Resultate grün markiert sind. Auf dem Desktop nutzt die Ansicht mehr Breite und der störende interne Scrollbalken rund um die Tabelle ist verschwunden.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Durchschnittsresultate JM: durchsuchbare Anlass-Auswahl",
+        "beschreibung": "Das Dropdown «Schiessanlass auswählen» ist neu ein Select2-Feld mit Suchfeld – bei vielen Anlässen kann der gewünschte Eintrag direkt getippt statt gescrollt werden.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Schlichtere, einheitliche Seitentitel im Admin-Bereich",
+        "beschreibung": "Die Überschriften der Admin-Seiten sind neu durchgehend etwas kleiner, einheitlich formatiert und ohne das dekorative Symbol davor – für ein ruhigeres, weniger verspieltes Erscheinungsbild. Die Seite «CSV-Schnittstelle» nutzte als einzige noch ein abweichend grosses Titel-Format und wurde an den gemeinsamen Standard angeglichen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.22.0",
+    "datum": "2026-06-25",
+    "aenderungen": [
+      {
+        "titel": "Kompaktere Karte auf den Ranglisten-Seiten",
+        "beschreibung": "Auf allen Ranglisten-Seiten (Endschiessen, Jahresmeisterschaft, Kantonalstich, Heimmeisterschaft und Vereinscup) ist die Jahresauswahl neu direkt in die Karte «Dokumente erstellen» integriert – statt einer separaten Zeile darüber. Zusammen mit etwas weniger Innenabstand wirkt der obere Bereich dadurch kompakter. Bei der Jahresmeisterschaft wurde zudem der Hinweistext zu den durchgestrichenen Streicher-Werten entfernt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.21.0",
     "datum": "2026-06-25",
     "aenderungen": [

@@ -462,6 +462,109 @@ if (!empty($_SESSION['user_id'])) {
     })();
     </script>
 
+    <!-- Benachrichtigungs-Glocke: Badge-Polling + Dropdown-Inhalt -->
+    <script>
+    (function () {
+        var API   = '../api/benachrichtigungen.php';
+        var csrf  = window.MSV_CSRF || '';
+        var btn   = document.getElementById('portalBellBtn');
+        var badge = btn ? btn.querySelector('.bn-badge') : null;
+        var list  = document.getElementById('bnDropdownList');
+        var markAll = document.getElementById('bnMarkAll');
+        if (!btn || !badge || !list) return;
+
+        var ICONS = {
+            chat: 'bi-chat-dots', einsaetze: 'bi-person-badge', einsatz_tausch: 'bi-arrow-left-right',
+            jm: 'bi-bullseye', umfragen: 'bi-clipboard-check', termine: 'bi-calendar-event',
+            fotos: 'bi-images', jsk_betreuung: 'bi-people', mitteilung: 'bi-megaphone', allgemein: 'bi-bell'
+        };
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+        function fmtTime(s) {
+            if (!s) return '';
+            var d = new Date(s.replace(' ', 'T'));
+            if (isNaN(d.getTime())) return s;
+            var diff = Math.round((new Date() - d) / 60000);
+            if (diff < 1) return 'gerade eben';
+            if (diff < 60) return 'vor ' + diff + ' Min.';
+            if (diff < 1440) return 'vor ' + Math.round(diff / 60) + ' Std.';
+            return d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' });
+        }
+
+        function renderBadge(n) {
+            if (n > 0) { badge.textContent = n > 99 ? '99+' : n; badge.hidden = false; }
+            else { badge.hidden = true; }
+        }
+
+        function loadList() {
+            list.innerHTML = '<div class="bn-dd-empty text-muted">Wird geladen…</div>';
+            fetch(API + '?action=list&limit=8&offset=0')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d || !d.success) { list.innerHTML = '<div class="bn-dd-empty text-muted">Fehler beim Laden.</div>'; return; }
+                    renderBadge(d.unread);
+                    if (!d.items || !d.items.length) {
+                        list.innerHTML = '<div class="bn-dd-empty text-muted">Keine Benachrichtigungen.</div>';
+                        return;
+                    }
+                    list.innerHTML = '';
+                    d.items.forEach(function (it) {
+                        var unread = !it.gelesen_am;
+                        var a = document.createElement(it.url ? 'a' : 'div');
+                        a.className = 'bn-item' + (unread ? ' unread' : '');
+                        if (it.url) a.href = '../' + String(it.url).replace(/^\/+/, '');
+                        a.innerHTML =
+                            '<i class="bi ' + (ICONS[it.kategorie] || ICONS.allgemein) + ' bn-item-icon"></i>' +
+                            '<div class="bn-item-body">' +
+                                '<div class="bn-item-title">' + esc(it.titel) + '</div>' +
+                                '<div class="bn-item-text">' + esc(it.text) + '</div>' +
+                                '<div class="bn-item-time">' + fmtTime(it.erstellt_am) + '</div>' +
+                            '</div>';
+                        if (unread) {
+                            a.addEventListener('click', function () {
+                                fetch(API + '?action=mark_read', {
+                                    method: 'POST', keepalive: true,
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                                    body: JSON.stringify({ id: it.id })
+                                }).catch(function () {});
+                            });
+                        }
+                        list.appendChild(a);
+                    });
+                }).catch(function () { list.innerHTML = '<div class="bn-dd-empty text-muted">Fehler beim Laden.</div>'; });
+        }
+
+        // Dropdown oeffnet -> Liste laden
+        var wrap = btn.closest('.portal-bell');
+        if (wrap) wrap.addEventListener('show.bs.dropdown', loadList);
+
+        if (markAll) {
+            markAll.addEventListener('click', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                fetch(API + '?action=mark_all_read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }
+                }).then(function (r) { return r.json(); }).then(function (d) {
+                    if (d && d.success) {
+                        renderBadge(0);
+                        Array.prototype.forEach.call(list.querySelectorAll('.bn-item.unread'), function (el) { el.classList.remove('unread'); });
+                    }
+                }).catch(function () {});
+            });
+        }
+
+        function pollBadge() {
+            fetch(API + '?action=unread_count').then(function (r) { return r.json(); })
+                .then(function (d) { if (d && d.success) renderBadge(d.count); }).catch(function () {});
+        }
+        setInterval(function () { if (document.visibilityState === 'visible') pollBadge(); }, 30000);
+        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') pollBadge(); });
+    })();
+    </script>
+
     <?php if (!empty($cl_new_entries)):
         $cl_csrf = ensureCsrfToken();
         $cl_badges = [

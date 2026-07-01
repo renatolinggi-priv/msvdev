@@ -130,8 +130,8 @@ function jskSendPush(int $userId, string $titel, string $text, string $url): voi
     $helper = __DIR__ . '/../inc/push_helper.php';
     if (!file_exists($helper)) return;
     require_once $helper;
-    if (function_exists('sendePushAnBenutzer')) {
-        sendePushAnBenutzer($userId, $titel, $text, $url);
+    if (function_exists('benachrichtigungZustellen')) {
+        benachrichtigungZustellen($userId, $titel, $text, $url, 'jsk_betreuung');
     }
 }
 

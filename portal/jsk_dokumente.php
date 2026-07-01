@@ -6,12 +6,14 @@ require_once __DIR__ . '/../auth.php';
 requireLogin();
 $db = getDB();
 
-$can_manage    = isVorstand();           // Vorstand/Admin duerfen hochladen/loeschen
+// Verwaltung (Upload/Löschen) läuft jetzt zentral im Admin-Bereich
+// (inc/dokumente_verwaltung.php). Das Portal ist nur noch Ansicht.
+$can_manage    = false;
 $user_role     = $_SESSION['user_role'] ?? 'mitglied';
 $selected_year = intval($_GET['year'] ?? date('Y'));
 
-// Dokumente laden (Manager sehen alle; alle anderen nur 'alle_mitglieder')
-if ($can_manage) {
+// Dokumente laden (Vorstand/Admin sehen alle; alle anderen nur 'alle_mitglieder')
+if (isVorstand()) {
     $stmt = $db->prepare("
         SELECT d.*, u.full_name AS uploader_name
         FROM vorstand_dokumente d

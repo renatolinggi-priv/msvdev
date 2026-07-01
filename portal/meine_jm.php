@@ -38,6 +38,7 @@ function jmIsEditable(array $s, int $year, int $current_year, ?int $mitglied_id,
     if (!$mitglied_id) return false;
     if ($year !== $current_year) return false;  // nur aktuelles Jahr
     if (in_array($s['Bezeichnung'] ?? '', $blocked, true)) return false;
+    if (jmIsVereinscup($s)) return false;       // Cup-Resultat kommt aus inc/cup.php, nicht selbst eingebbar
     if (jmIsTeilnahme($s)) return false;        // Maxpunkte==20: Vorstand traegt ein, nur Ja/Nein-Anzeige
     if (trim((string)($s['Schiesstage'] ?? '')) === '') return false;
     return true;
@@ -47,6 +48,13 @@ function jmIsEditable(array $s, int $year, int $current_year, ?int $mitglied_id,
 // Im Portal wird daher nur Ja/Nein angezeigt/erfasst, nie der konkrete Wert.
 function jmIsTeilnahme(array $s): bool {
     return (int)($s['Maxpunkte'] ?? 0) === 20;
+}
+
+// Vereinscup: Das zaehlende Resultat wird ueber die Cup-Erfassung (inc/cup.php -> cupPairs)
+// gefuehrt, nicht per Selbsteingabe. Es wird daher nur read-only angezeigt.
+// Bewusst NICHT auf "Standcup ..."-Auswaertsschiessen matchen.
+function jmIsVereinscup(array $s): bool {
+    return (bool)preg_match('/Vereins[- ]?cup/i', (string)($s['Bezeichnung'] ?? ''));
 }
 
 // Rendert den Mitglied-Eingabebereich fuer einen selbst eingebbaren JM-Anlass (Zahlenfeld).
@@ -94,6 +102,29 @@ function renderJmEingabe(array $s): string {
     return ob_get_clean();
 }
 
+// Read-only Anzeige des Vereinscup-Resultats. Der Wert stammt aus der Cup-Erfassung
+// (inc/cup.php -> cupPairs, 1. Runde) und ist im Portal nicht editierbar.
+function renderCupInfo(array $s): string {
+    $maxpunkte = (int)($s['Maxpunkte'] ?? 0);
+    $has_value = ($s['Punkte'] !== null && (int)$s['Punkte'] > 0);
+    $val       = $has_value ? (int)$s['Punkte'] : null;
+
+    ob_start();
+    ?>
+    <div class="jm-eingabe jm-cup-info" onclick="event.stopPropagation()">
+        <label>Mein Cup-Resultat:</label>
+        <?php if ($val !== null): ?>
+            <span class="jm-punkte-display"><strong><?php echo $val; ?></strong></span>
+            <span class="jm-eingabe-max">/ <?php echo $maxpunkte; ?></span>
+        <?php else: ?>
+            <span class="jm-punkte-display text-muted">&ndash;</span>
+        <?php endif; ?>
+        <span class="jm-status-badge jm-status-cup"><i class="bi bi-trophy"></i> Resultat aus dem Vereinscup</span>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 // Verfuegbare Jahre laden
 $years_stmt = $db->query("SELECT DISTINCT year FROM JMDefinition WHERE year IS NOT NULL ORDER BY year DESC");
 $available_years = $years_stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -134,11 +165,14 @@ unset($s);
 $endstich_def_id = null;
 $kanti_def_id    = null;
 $sektion_def_id  = null;
+$cup_def_ids     = [];   // Vereinscup -> Resultat aus cupPairs (inc/cup.php)
 foreach ($schiessen_list as $s) {
     if ($s['Bezeichnung'] === 'Endstich')             $endstich_def_id = (int)$s['ID'];
     if ($s['Bezeichnung'] === 'Bester Kantonalstich')  $kanti_def_id    = (int)$s['ID'];
     if ($s['Bezeichnung'] === 'Sektionsmeisterschaft') $sektion_def_id  = (int)$s['ID'];
+    if (jmIsVereinscup($s))                            $cup_def_ids[]   = (int)$s['ID'];
 }
+$cup_def_ids = array_values(array_unique($cup_def_ids));
 
 if ($endstich_def_id && $mitglied_id) {
     $es = $db->prepare("
@@ -198,6 +232,41 @@ if ($sektion_def_id && $mitglied_id) {
     unset($s);
 }
 
+// Vereinscup: zaehlendes Resultat = Punktzahl aus der 1. Cup-Runde (cupPairs.Round=1),
+// analog zu Endstich/Kanti. Das Resultat stammt aus der Cup-Erfassung (inc/cup.php) und
+// nicht aus einer Selbsteingabe. Ist das Mitglied in Runde 1 nicht (mit Resultat) erfasst,
+// bleibt der bestehende jmresultate-Wert als Fallback erhalten.
+// Hinweis (PDO ATTR_EMULATE_PREPARES=false): positionsbasierte Platzhalter, da mitglied_id
+// mehrfach gebunden wird.
+if ($cup_def_ids && $mitglied_id) {
+    $cp = $db->prepare("
+        SELECT CASE
+                   WHEN Participant1 = ? THEN Result1
+                   WHEN Participant2 = ? THEN Result2
+                   WHEN Participant3 = ? THEN Result3
+               END AS Punkte
+        FROM cupPairs
+        WHERE `Year` = ? AND `Round` = 1
+          AND (Participant1 = ? OR Participant2 = ? OR Participant3 = ?)
+        LIMIT 1
+    ");
+    $cp->execute([
+        $mitglied_id, $mitglied_id, $mitglied_id,
+        $selected_year,
+        $mitglied_id, $mitglied_id, $mitglied_id,
+    ]);
+    $cprow = $cp->fetch();
+    if ($cprow && $cprow['Punkte'] !== null) {
+        $cup_punkte = (int)$cprow['Punkte'];
+        foreach ($schiessen_list as &$s) {
+            if (in_array((int)$s['ID'], $cup_def_ids, true)) {
+                $s['Punkte'] = $cup_punkte;
+            }
+        }
+        unset($s);
+    }
+}
+
 // Normalisierte Punkte berechnen (Hochrechnung auf 100 wenn Maxpunkte < 100)
 // Punkte=0 wird als "nicht teilgenommen" behandelt (DB speichert 0 statt NULL)
 foreach ($schiessen_list as &$s) {
@@ -232,6 +301,14 @@ if (!empty($all_streicher_def_ids)) {
         $chk3 = $db->prepare("SELECT 1 FROM kantiresultate WHERE Jahr = ? LIMIT 1");
         $chk3->execute([$selected_year]);
         if ($chk3->fetch()) $active_streicher_ids[] = $kanti_def_id;
+    }
+    // Vereinscup: kommt aus cupPairs (nicht jmresultate) -> separat als aktiv markieren,
+    // sobald die 1. Cup-Runde des Jahres erfasst ist.
+    foreach ($cup_def_ids as $cdid) {
+        if (!in_array($cdid, $all_streicher_def_ids, true)) continue;
+        $chk4 = $db->prepare("SELECT 1 FROM cupPairs WHERE `Year` = ? AND `Round` = 1 LIMIT 1");
+        $chk4->execute([$selected_year]);
+        if ($chk4->fetch()) $active_streicher_ids[] = $cdid;
     }
 }
 
@@ -454,6 +531,7 @@ include 'portal_header.php';
 .jm-status-leer       { background: #e9ecef; color: var(--p-text-muted); }
 .jm-status-entwurf    { background: #fff3cd; color: #856404; }
 .jm-status-freigegeben { background: #d4edda; color: #155724; }
+.jm-status-cup        { background: #cfe2ff; color: #084298; }
 .jm-save-spinner i { animation: jm-spin 0.8s linear infinite; }
 .jm-save-ok { color: var(--success-color); font-size: 0.78rem; font-weight: 600; }
 @keyframes jm-spin { to { transform: rotate(360deg); } }
@@ -541,12 +619,14 @@ include 'portal_header.php';
         }
 
         $is_editable = jmIsEditable($s, $selected_year, $current_year, $mitglied_id, $NON_EDITABLE_BEZ);
+        $is_cup        = jmIsVereinscup($s);   // Resultat aus cup.php, read-only
         // Resultat ist erfassbar, solange der Vorstand es noch nicht freigegeben hat.
         $result_locked = (($s['jr_status'] ?? null) === 'freigegeben');
         $can_enter     = $is_editable && !$result_locked;
         // Aufklappbar: nicht-vergangene wegen Terminen/Adresse; vergangene nur, solange
-        // das Resultat noch erfassbar ist (Vorstand hat noch nicht freigegeben).
-        $has_details = ($show_dates && (count($all_lines) > 1 || !empty($s['Adresse']))) || $can_enter;
+        // das Resultat noch erfassbar ist (Vorstand hat noch nicht freigegeben). Der
+        // Vereinscup ist immer aufklappbar (zeigt den read-only Cup-Hinweis).
+        $has_details = ($show_dates && (count($all_lines) > 1 || !empty($s['Adresse']))) || $can_enter || $is_cup;
         $detail_id   = 'jmr-' . $s['_idx'];
     ?>
     <div class="jm-row<?php echo ($is_future && !$geschossen) ? ' future' : ''; ?>"<?php if ($has_details): ?> onclick="toggleJmDetail('<?php echo $detail_id; ?>', this)" style="cursor:pointer"<?php endif; ?>>
@@ -554,7 +634,6 @@ include 'portal_header.php';
             <div class="jm-row-info">
                 <div class="jm-row-title">
                     <span><?php echo htmlspecialchars($s['Bezeichnung']); ?></span>
-                    <?php if ($is_streicher): ?><span class="badge-streicher">Streicher</span><?php endif; ?>
                 </div>
                 <?php if ($datum_kurz !== ''): ?>
                 <div class="jm-row-meta card-meta"><?php echo htmlspecialchars($datum_kurz); ?></div>
@@ -611,6 +690,7 @@ include 'portal_header.php';
             </div>
             <?php endif; ?>
             <?php if ($is_editable) echo renderJmEingabe($s); ?>
+            <?php if ($is_cup) echo renderCupInfo($s); ?>
         </div>
         <?php endif; ?>
     </div>

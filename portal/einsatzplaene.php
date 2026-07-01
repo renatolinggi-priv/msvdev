@@ -6,7 +6,11 @@ require_once __DIR__ . '/../auth.php';
 requireLogin();
 $db = getDB();
 
-$can_manage = isVorstand(); // Vorstand + Admin koennen verwalten
+// Gesamte Verwaltung (Upload, Bearbeiten, Löschen, Einsatz-Import, Zuweisungen, Tausch-Log)
+// läuft jetzt zentral im Admin-Bereich (inc/dokumente_verwaltung.php).
+// Das Portal zeigt Einsatzplan-Dokumente nur noch an – für alle Rollen.
+$can_manage = false;
+$can_manage_docs = false;
 $user_role = $_SESSION['user_role'] ?? 'mitglied';
 $selected_year = intval($_GET['year'] ?? date('Y'));
 
@@ -44,7 +48,8 @@ if ($user_role === 'admin') {
 $stmt->execute([$selected_year]);
 $dokumente = $stmt->fetchAll();
 
-// Importierte Einsätze laden (für Admin/Vorstand)
+// Importierte Einsätze: Verwaltung jetzt im Admin-Bereich – im Portal nicht mehr geladen.
+$einsaetze = [];
 $einsaetze_grouped = [];
 if ($can_manage) {
     $ez_stmt = $db->prepare("
@@ -61,6 +66,32 @@ if ($can_manage) {
     foreach ($einsaetze as $e) {
         $key = $e['event_datum'] . '|' . $e['bezeichnung'];
         $einsaetze_grouped[$key][] = $e;
+    }
+}
+
+// Tausch-/Übernahme-Log (read-only; Migration 034 evtl. noch nicht vorhanden)
+$tausch_log = [];
+if ($can_manage) {
+    try {
+        $tl = $db->prepare("
+            SELECT t.id, t.typ, t.status, t.erstellt_am, t.entschieden_am,
+                   vm.Vorname AS von_vorname, vm.Name AS von_name,
+                   am.Vorname AS an_vorname, am.Name AS an_name,
+                   ea.bezeichnung AS a_bez, ea.event_datum AS a_datum,
+                   eb.bezeichnung AS b_bez, eb.event_datum AS b_datum
+              FROM einsatz_tausch t
+              JOIN mitglieder vm ON vm.ID = t.von_mitglied_id
+              JOIN mitglieder am ON am.ID = t.an_mitglied_id
+              LEFT JOIN einsatz_zuweisungen ea ON ea.id = t.einsatz_a_id
+              LEFT JOIN einsatz_zuweisungen eb ON eb.id = t.einsatz_b_id
+             WHERE YEAR(t.erstellt_am) = ?
+             ORDER BY t.erstellt_am DESC
+             LIMIT 100
+        ");
+        $tl->execute([$selected_year]);
+        $tausch_log = $tl->fetchAll();
+    } catch (Exception $e) {
+        $tausch_log = [];
     }
 }
 
@@ -137,7 +168,7 @@ include 'portal_header.php';
 <div class="tab-pane fade show active" id="pane-dokumente" role="tabpanel">
 <?php endif; ?>
 
-<?php if ($can_manage): ?>
+<?php if ($can_manage_docs): ?>
 <!-- Upload-Bereich -->
 <div class="upload-area">
     <h6 class="mb-3"><i class="bi bi-cloud-upload me-2"></i>Neuen Einsatzplan hochladen</h6>
@@ -260,7 +291,7 @@ include 'portal_header.php';
                 <i class="bi bi-table" aria-hidden="true"></i>
             </button>
             <?php endif; ?>
-            <?php if ($can_manage && ($doc['hochgeladen_von'] == $_SESSION['user_id'] || isAdmin())): ?>
+            <?php if ($can_manage_docs && ($doc['hochgeladen_von'] == $_SESSION['user_id'] || isAdmin())): ?>
             <button class="btn btn-sm btn-outline-secondary btn-edit-doc"
                 title="Bearbeiten" aria-label="Dokument bearbeiten"
                 data-id="<?php echo $doc['id']; ?>"
@@ -412,8 +443,8 @@ include 'portal_header.php';
 </div>
 <?php endif; ?>
 
-<!-- Edit Modal -->
-<?php if ($can_manage): ?>
+<!-- Edit Modal (Dokument) -->
+<?php if ($can_manage_docs): ?>
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -475,6 +506,8 @@ include 'portal_header.php';
         </div>
     </div>
 </div>
+<?php endif; ?>
+<?php if ($can_manage): ?>
 <!-- Import-Modal -->
 <div class="modal fade" id="importModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -519,7 +552,7 @@ include 'portal_header.php';
 <?php endif; ?>
 
 <script>
-<?php if ($can_manage): ?>
+<?php if ($can_manage_docs): ?>
 // Einsatzplan-Typ Dropdown: "Diverse" zeigt Textfeld
 $('#uploadTitelTyp').on('change', function() {
     var $diverse = $('#uploadTitelDiverse');
@@ -940,5 +973,45 @@ $(document).on('click', '.btn-delete-all-ez', function() {
     });
 });
 </script>
+
+<?php if ($can_manage && !empty($tausch_log)): ?>
+<div class="mt-4">
+    <h5 class="mb-1"><i class="bi bi-arrow-left-right me-2"></i>Einsatz-Tausche &amp; Übernahmen <?php echo $selected_year; ?></h5>
+    <p class="text-muted small mb-2">Von den Mitgliedern selbst abgewickelt. Bei Bedarf über die Einsatz-Bearbeitung korrigierbar.</p>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover" style="font-size:0.85rem;">
+            <thead class="table-light">
+                <tr><th>Datum</th><th>Art</th><th>Von → An</th><th>Einsatz</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            <?php
+            $tauschStatusMap = [
+                'offen'          => ['Offen', 'bg-warning text-dark'],
+                'bestaetigt'     => ['Bestätigt', 'bg-success'],
+                'abgelehnt'      => ['Abgelehnt', 'bg-secondary'],
+                'zurueckgezogen' => ['Zurückgezogen', 'bg-light text-dark border'],
+            ];
+            foreach ($tausch_log as $r):
+                $st = $tauschStatusMap[$r['status']] ?? [$r['status'], 'bg-secondary'];
+                $datumRef = $r['entschieden_am'] ?: $r['erstellt_am'];
+            ?>
+                <tr>
+                    <td><?php echo $datumRef ? date('d.m.Y', strtotime($datumRef)) : ''; ?></td>
+                    <td><?php echo $r['typ'] === 'tausch' ? 'Tausch' : 'Übernahme'; ?></td>
+                    <td><?php echo htmlspecialchars(trim($r['von_vorname'] . ' ' . $r['von_name'])); ?> &rarr; <?php echo htmlspecialchars(trim($r['an_vorname'] . ' ' . $r['an_name'])); ?></td>
+                    <td>
+                        <?php echo htmlspecialchars($r['a_bez'] ?? '—'); ?><?php if (!empty($r['a_datum'])): ?> <span class="text-muted">(<?php echo date('d.m.Y', strtotime($r['a_datum'])); ?>)</span><?php endif; ?>
+                        <?php if ($r['typ'] === 'tausch' && !empty($r['b_bez'])): ?>
+                        <br><span class="text-muted">&harr; <?php echo htmlspecialchars($r['b_bez']); ?><?php if (!empty($r['b_datum'])): ?> (<?php echo date('d.m.Y', strtotime($r['b_datum'])); ?>)<?php endif; ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td><span class="badge <?php echo $st[1]; ?>"><?php echo $st[0]; ?></span></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php include 'portal_footer.php'; ?>

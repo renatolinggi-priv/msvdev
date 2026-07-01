@@ -72,8 +72,11 @@ include 'portal_header.php';
 </style>
 
 <div class="container py-2">
-  <div class="tm-toolbar">
-    <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Wichtige Termine</h4>
+  <div class="portal-page-header tm-toolbar">
+    <div>
+      <h1 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Termine</h1>
+      <p class="subtitle mb-0">Vereinstermine und Schiessanlässe</p>
+    </div>
     <div class="d-flex align-items-center gap-2 ms-auto">
       <?php if (count($jahre) > 1): ?>
       <select class="form-select form-select-sm tm-year-select" onchange="location.href='termine.php?year=' + this.value">

@@ -32,10 +32,18 @@ try {
     if ($chatAccess) { try { $chatUnread = chatUnreadCount($__cdb, $__cuid); } catch (Throwable $e) { $chatUnread = 0; } }
 } catch (Throwable $e) { $chatUnread = 0; }
 
+// Benachrichtigungs-Glocke: Ungelesen-Zähler (best-effort, bricht nie die Seite).
+$bnUnread = 0;
+try {
+    $__bs = getDB()->prepare('SELECT COUNT(*) FROM benachrichtigungen_inbox WHERE user_id = ? AND gelesen_am IS NULL');
+    $__bs->execute([(int) ($_SESSION['user_id'] ?? 0)]);
+    $bnUnread = (int) $__bs->fetchColumn();
+} catch (Throwable $e) { $bnUnread = 0; }
+
 // Jungschuetzen haben einen eingeschraenkten Portal-Zugang: nur ihre eigenen Seiten.
 // Member-Seiten (mit mitglied_id-Bezug) wuerden sonst brechen -> zentrale Weiche.
 if (isJungschuetze()) {
-    $jsAllowed = ['jsk_dashboard.php', 'jsk_termin.php', 'jsk_termine.php', 'jsk_dokumente.php', 'jsk_profil.php', 'chat.php', 'benachrichtigungen.php', 'changelog.php', 'check_session.php'];
+    $jsAllowed = ['jsk_dashboard.php', 'jsk_termin.php', 'jsk_termine.php', 'jsk_dokumente.php', 'jsk_profil.php', 'chat.php', 'benachrichtigungen.php', 'mitteilungen.php', 'changelog.php', 'check_session.php'];
     $curScript = basename($_SERVER['SCRIPT_NAME'] ?? ($_SERVER['PHP_SELF'] ?? ''));
     if (!in_array($curScript, $jsAllowed, true)) {
         header('Location: jsk_dashboard.php');
@@ -66,7 +74,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <link rel="icon" type="image/png" sizes="16x16" href="../icons/icon-16x16.png">
 
     <!-- PWA -->
-    <link rel="manifest" href="../manifest.json">
+    <link rel="manifest" href="../manifest-portal.json">
     <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -88,7 +96,8 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <!-- Portal Design-System (Tokens + Komponenten) -->
-    <link rel="stylesheet" href="../css/portal.css">
+    <!-- ?v=filemtime: bricht den Service-Worker-Cache (cache-first auf .css) bei jeder Aenderung auf -->
+    <link rel="stylesheet" href="../css/portal.css?v=<?php echo @filemtime(__DIR__ . '/../css/portal.css') ?: '1'; ?>">
 
     <!-- jQuery + Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -176,18 +185,100 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             font-weight: 500;
         }
 
-        /* .portal-content, .portal-card(-body), .portal-page-header: siehe css/portal.css */
+        /* ---- Benachrichtigungs-Glocke ---- */
+        .portal-bell .portal-bell-btn {
+            color: #495057;
+            line-height: 1;
+            padding: 0.3rem 0.5rem !important;
+            text-decoration: none;
+        }
+        /* Icon-Groesse am <i> setzen -> sonst gewinnt .portal-navbar .nav-link i (0.9rem) */
+        .portal-bell .portal-bell-btn i { font-size: 1.5rem; }
+        .portal-bell .portal-bell-btn:hover { color: var(--primary-color); }
+        .portal-bell .bn-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.65rem;
+            padding: 0.2em 0.42em;
+            min-width: 1.15em;
+        }
+        .bn-dropdown {
+            width: 340px;
+            max-width: calc(100vw - 1.5rem);
+            padding: 0;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .bn-dd-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.85rem;
+            border-bottom: 1px solid #f1f3f5;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #212529;
+        }
+        .bn-dd-head .bn-mark-all {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0;
+        }
+        .bn-dd-head .bn-mark-all:hover { text-decoration: underline; }
+        .bn-dd-list { max-height: 60vh; overflow-y: auto; }
+        .bn-item {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0.6rem 0.85rem;
+            border-bottom: 1px solid #f5f6f8;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .bn-item:hover { background: #f8f9fb; }
+        .bn-item.unread { background: rgba(59, 89, 152, 0.06); }
+        .bn-item.unread .bn-item-title { font-weight: 700; }
+        .bn-item-icon { color: var(--primary-color); font-size: 1rem; flex-shrink: 0; margin-top: 0.1rem; }
+        .bn-item-body { min-width: 0; flex: 1; }
+        .bn-item-title { font-size: 0.85rem; color: #212529; }
+        .bn-item-text { font-size: 0.78rem; color: #6c757d; word-break: break-word; }
+        .bn-item-time { font-size: 0.7rem; color: #adb5bd; margin-top: 0.1rem; }
+        .bn-dd-empty { padding: 1.1rem 0.85rem; text-align: center; font-size: 0.82rem; }
+        .bn-dd-foot {
+            display: block;
+            text-align: center;
+            padding: 0.6rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--primary-color);
+            text-decoration: none;
+            border-top: 1px solid #f1f3f5;
+        }
+        .bn-dd-foot:hover { background: #f8f9fb; color: var(--primary-color); }
 
-        /* PWA Standalone: Nur Seitentitel ausblenden (Navbar zeigt ihn bereits), Jahresauswahl bleibt */
-        @media (display-mode: standalone) {
-            .portal-page-header > div:first-child {
-                display: none !important;
-            }
-            .portal-page-header {
-                justify-content: flex-end !important;
-                margin-bottom: 0.75rem;
+        /* Mobile: Dropdown mittig statt am rechten Rand (data-bs-display="static"
+           verhindert Popper-Positionierung -> CSS gewinnt). */
+        @media (max-width: 575.98px) {
+            .portal-bell { position: static; }
+            .bn-dropdown.dropdown-menu {
+                position: fixed !important;
+                top: calc(var(--nav-height) + 6px) !important;
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%) !important;
+                width: calc(100vw - 1.5rem);
+                max-width: 380px;
             }
         }
+
+        /* .portal-content, .portal-card(-body), .portal-page-header: siehe css/portal.css */
 
         /* Responsive (Content-/Header-Abstaende: siehe css/portal.css) */
         @media (max-width: 767.98px) {
@@ -494,6 +585,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
         $nav_groups = [
             ['type' => 'link', 'link' => 'dashboard.php', 'text' => 'Dashboard', 'icon' => 'bi-house'],
             ['type' => 'link', 'link' => 'termine.php', 'text' => 'Termine', 'icon' => 'bi-calendar3'],
+            ['type' => 'link', 'link' => 'anlaesse.php', 'text' => 'Fotos', 'icon' => 'bi-images'],
             ['type' => 'dropdown', 'text' => 'Resultate', 'icon' => 'bi-trophy', 'items' => [
                 ['link' => 'meine_jm.php', 'text' => 'Jahresmeisterschaft', 'icon' => 'bi-bullseye'],
                 ['link' => 'meine_heim.php', 'text' => 'Heimmeisterschaft', 'icon' => 'bi-house-heart'],
@@ -560,10 +652,33 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                 <img src="../icons/icon-32x32.png" alt="MSV" width="22" height="22" style="border-radius:4px; vertical-align:-3px;"> MSV Wilen
             </a>
 
-            <button class="navbar-toggler border-0" type="button" id="portalMenuToggler"
-                    aria-label="Menü öffnen" aria-controls="portalOffcanvas" aria-expanded="false">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <!-- Glocke + Hamburger: rechts gruppiert. Glocke immer sichtbar (neben dem
+                 Hamburger auf Mobile, rechts auf Desktop). -->
+            <div class="d-flex align-items-center ms-auto order-lg-last">
+                <div class="dropdown portal-bell">
+                    <button class="btn btn-link nav-link position-relative portal-bell-btn" type="button"
+                            id="portalBellBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            data-bs-display="static" aria-expanded="false" aria-label="Benachrichtigungen">
+                        <i class="bi bi-bell"></i>
+                        <span class="bn-badge badge rounded-pill bg-danger"<?php echo $bnUnread > 0 ? '' : ' hidden'; ?>><?php echo $bnUnread > 99 ? '99+' : (int) $bnUnread; ?></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end bn-dropdown" aria-labelledby="portalBellBtn">
+                        <div class="bn-dd-head">
+                            <span>Benachrichtigungen</span>
+                            <button type="button" class="bn-mark-all" id="bnMarkAll">Alle gelesen</button>
+                        </div>
+                        <div class="bn-dd-list" id="bnDropdownList">
+                            <div class="bn-dd-empty text-muted">Wird geladen…</div>
+                        </div>
+                        <a class="bn-dd-foot" href="mitteilungen.php">Alle anzeigen</a>
+                    </div>
+                </div>
+
+                <button class="navbar-toggler border-0 ms-1" type="button" id="portalMenuToggler"
+                        aria-label="Menü öffnen" aria-controls="portalOffcanvas" aria-expanded="false">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
 
             <div class="collapse navbar-collapse" id="portalNav">
                 <ul class="navbar-nav me-auto">

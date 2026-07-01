@@ -3,6 +3,7 @@
 $portal_page_title = 'Jungschützen betreuen';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../inc/chat.inc.php';
 requireLogin();
 
 // Jungschuetzen haben hier nichts zu suchen (Rollenweiche faengt sie ohnehin ab)
@@ -23,7 +24,7 @@ try {
 $anfragen = [];
 if ($featureAktiv && $istBetreuer) {
     $stmt = $db->prepare(
-        "SELECT a.id, a.datum, a.zeit, a.bemerkung, a.status, a.betreut_von_user_id,
+        "SELECT a.id, a.datum, a.zeit, a.bemerkung, a.status, a.betreut_von_user_id, a.jungschuetze_id,
                 j.Vorname, j.Name, bu.full_name AS betreuer_name
            FROM jsk_betreuung_anfragen a
            JOIN jungschuetzen j ON j.id = a.jungschuetze_id
@@ -45,13 +46,16 @@ $csrf_token = ensureCsrfToken();
 .jsk-tile:hover { box-shadow:0 6px 18px rgba(0,0,0,0.10); }
 .jsk-tile.vergeben { opacity:0.7; background:#f8fafc; }
 .jsk-tile .name { font-weight:700; font-size:1.05rem; }
-.jsk-tile .datum { color:#0d9488; font-weight:600; }
+.jsk-tile .datum { color:#2d4373; font-weight:600; }
 .jsk-tile .bem { font-size:.85rem; color:#64748b; margin-top:.4rem; }
 .jsk-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; }
 </style>
 
 <div class="container py-4" style="max-width:920px;">
-  <h4 class="mb-3"><i class="bi bi-people me-2"></i>Jungschützen betreuen</h4>
+  <div class="portal-page-header">
+    <h1><i class="bi bi-people me-2"></i>Jungschützen betreuen</h1>
+    <p class="subtitle">Offene Anfragen ansehen und übernehmen</p>
+  </div>
 
   <?php if (!$featureAktiv): ?>
     <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert.</div>
@@ -81,9 +85,16 @@ $csrf_token = ensureCsrfToken();
           <?php if ($a['bemerkung']): ?><div class="bem"><i class="bi bi-chat-left-text me-1"></i><?= htmlspecialchars($a['bemerkung']) ?></div><?php endif; ?>
           <div class="mt-3">
             <?php if ($offen): ?>
-              <button class="btn btn-primary btn-sm w-100 js-claim" data-id="<?= (int) $a['id'] ?>"><i class="bi bi-hand-thumbs-up me-1"></i>Ich kümmere mich</button>
+              <button class="btn btn-club btn-sm w-100 js-claim" data-id="<?= (int) $a['id'] ?>"><i class="bi bi-hand-thumbs-up me-1"></i>Ich kümmere mich</button>
             <?php elseif ($mine): ?>
               <div class="small text-success mb-2"><i class="bi bi-check-circle me-1"></i>Du betreust diesen Jungschützen</div>
+              <?php
+                $jsUserId = chatJsUserIdFromJungschuetze($db, (int) $a['jungschuetze_id']);
+                if ($jsUserId > 0):
+                  $matchConv = chatEnsureMatchConversation($db, $jsUserId, $userId);
+              ?>
+                <a href="chat.php?c=<?= (int) $matchConv ?>" class="btn btn-outline-club btn-sm w-100 mb-2"><i class="bi bi-chat-dots me-1"></i>Chat</a>
+              <?php endif; ?>
               <button class="btn btn-outline-secondary btn-sm w-100 js-release" data-id="<?= (int) $a['id'] ?>"><i class="bi bi-arrow-counterclockwise me-1"></i>Freigeben</button>
             <?php else: ?>
               <div class="small text-muted"><i class="bi bi-person-check me-1"></i>Betreut von <strong><?= htmlspecialchars($a['betreuer_name'] ?? 'einem Mitglied') ?></strong></div>

@@ -1,6 +1,6 @@
 <?php
-// portal/jsk_termin.php - Jungschuetze meldet einen konkreten Schiess-Termin an
-$portal_page_title = 'Schiess-Termin melden';
+// portal/jsk_termin.php - Jungschuetze stellt eine Schiessanfrage (konkretes Datum)
+$portal_page_title = 'Schiessanfrage';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 requireLogin();
@@ -10,7 +10,15 @@ if (!isJungschuetze() && !isAdmin()) {
     exit;
 }
 
+$db = getDB();
 $featureAktiv = jskFeatureAktiv();
+
+// Geflaggte Jungschützen-Termine (aus „Wichtige Termine") für die Schnellauswahl
+$jskTermine = [];
+try {
+    $tt = $db->query("SELECT name, `date`, `time` FROM wichtige_termine WHERE fuer_jsk = 1 AND `date` >= CURDATE() ORDER BY `date` ASC, `time` ASC LIMIT 12");
+    $jskTermine = $tt->fetchAll();
+} catch (Throwable $e) { $jskTermine = []; }
 
 // Kommende Mittwoche fuer die Schnellauswahl berechnen
 $mittwoche = [];
@@ -35,7 +43,10 @@ $csrf_token = ensureCsrfToken();
 </style>
 
 <div class="container py-4" style="max-width:620px;">
-  <h4 class="mb-3"><i class="bi bi-calendar-plus me-2"></i>Schiess-Termin melden</h4>
+  <div class="portal-page-header">
+    <h1><i class="bi bi-calendar-plus me-2"></i>Schiessanfrage</h1>
+    <p class="subtitle">Termin für ein Schiesstraining anfragen</p>
+  </div>
 
   <?php if (!$featureAktiv): ?>
     <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert.</div>
@@ -44,10 +55,26 @@ $csrf_token = ensureCsrfToken();
     <div class="termin-card">
       <p class="text-muted">Wähle ein Datum, an dem du schiessen möchtest. Mitglieder werden benachrichtigt und können die Begleitung übernehmen.</p>
 
+      <?php if ($jskTermine): ?>
+        <label class="form-label fw-semibold">Geplante Jungschützen-Termine</label>
+        <div class="mb-3" id="quickTermine">
+          <?php foreach ($jskTermine as $t): $td = date('d.m.Y', strtotime($t['date'])); ?>
+            <button type="button" class="btn btn-outline-club btn-sm w-100 text-start mb-1 quick-date"
+                    data-date="<?= htmlspecialchars($t['date'], ENT_QUOTES) ?>"
+                    data-zeit="<?= htmlspecialchars($t['time'] ?? '', ENT_QUOTES) ?>">
+              <i class="bi bi-calendar-event me-1"></i><strong><?= $td ?></strong>
+              <?= $t['time'] ? ' · ' . htmlspecialchars($t['time']) : '' ?>
+              · <?= htmlspecialchars($t['name']) ?>
+            </button>
+          <?php endforeach; ?>
+        </div>
+        <div class="text-muted small mb-1">oder ein anderes Datum:</div>
+      <?php endif; ?>
+
       <label class="form-label fw-semibold">Schnellauswahl (Mittwoch)</label>
       <div class="wd-quick" id="quickDates">
         <?php foreach ($mittwoche as $m): ?>
-          <button type="button" class="btn btn-outline-info btn-sm" data-date="<?= $m['iso'] ?>"><?= $m['label'] ?></button>
+          <button type="button" class="btn btn-outline-club btn-sm quick-date" data-date="<?= $m['iso'] ?>"><?= $m['label'] ?></button>
         <?php endforeach; ?>
       </div>
 
@@ -66,7 +93,7 @@ $csrf_token = ensureCsrfToken();
 
       <div class="d-flex gap-2">
         <a href="jsk_dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Zurück</a>
-        <button type="button" class="btn btn-primary flex-grow-1" id="submitBtn"><i class="bi bi-send me-1"></i>Anmelden</button>
+        <button type="button" class="btn btn-club flex-grow-1" id="submitBtn"><i class="bi bi-send me-1"></i>Anmelden</button>
       </div>
     </div>
   <?php endif; ?>
@@ -77,10 +104,12 @@ $csrf_token = ensureCsrfToken();
   var csrf = <?php echo json_encode($csrf_token); ?>;
   var dateInput = document.getElementById('datum');
 
-  document.querySelectorAll('#quickDates button').forEach(function (b) {
+  document.querySelectorAll('.quick-date').forEach(function (b) {
     b.addEventListener('click', function () {
       dateInput.value = this.getAttribute('data-date');
-      document.querySelectorAll('#quickDates button').forEach(function (x) { x.classList.remove('active'); });
+      var z = this.getAttribute('data-zeit');
+      if (z) document.getElementById('zeit').value = z;
+      document.querySelectorAll('.quick-date').forEach(function (x) { x.classList.remove('active'); });
       this.classList.add('active');
     });
   });

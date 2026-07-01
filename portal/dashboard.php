@@ -700,6 +700,14 @@ include 'portal_header.php';
         <div class="dash-card-desc">Alle Termine im Handy-Kalender</div>
     </a>
 
+    <a href="anlaesse.php" class="dash-card">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, #ede7f6, #d1c4e9); color: #6a1b9a;">
+            <i class="bi bi-images"></i>
+        </div>
+        <div class="dash-card-title">Fotos</div>
+        <div class="dash-card-desc">Fotos hochladen &amp; Slideshow</div>
+    </a>
+
     <?php if (isVorstand()): ?>
     <a href="einsatzplaene.php" class="dash-card">
         <div class="dash-card-icon" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1565c0;">

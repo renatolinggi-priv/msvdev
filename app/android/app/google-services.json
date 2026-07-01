@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "257020656389",
+    "project_id": "msv-wilen-vereinsapp",
+    "storage_bucket": "msv-wilen-vereinsapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:257020656389:android:4b7d34939aae64de8f156c",
+        "android_client_info": {
+          "package_name": "ch.msvwilen.portal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDeAduVQHAk9RMI1cwe7CBlqhAScRGLPE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,16 @@
+{
+  "appId": "ch.msvwilen.portal",
+  "appName": "MSV Wilen",
+  "webDir": "www",
+  "server": {
+    "url": "https://mitglieder.msvwilen.ch",
+    "allowNavigation": ["mitglieder.msvwilen.ch"],
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "plugins": {
+    "FirebaseMessaging": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

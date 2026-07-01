@@ -61,15 +61,18 @@ include 'portal_header.php';
 <style>
 .res-card { border:1px solid #e2e8f0; border-radius:1rem; padding:1.25rem; margin-bottom:1rem; background:#fff; }
 .res-card h6 { font-weight:700; margin-bottom:0.75rem; }
-.res-total { font-size:1.4rem; font-weight:800; color:#14b8a6; }
+.res-total { font-size:1.4rem; font-weight:800; color:#3b5998; }
 .shot-grid { display:flex; flex-wrap:wrap; gap:0.4rem; }
 .shot { min-width:34px; text-align:center; padding:0.3rem 0.4rem; border-radius:0.5rem; background:#f1f5f9; font-weight:600; font-variant-numeric:tabular-nums; }
 .res-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; }
 </style>
 
 <div class="container py-4" style="max-width:760px;">
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><i class="bi bi-graph-up me-2"></i>Meine Resultate</h4>
+  <div class="portal-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h1><i class="bi bi-graph-up me-2"></i>Meine Resultate</h1>
+      <p class="subtitle mb-0">Deine Schiessresultate</p>
+    </div>
     <?php if (count($jahre) > 0): ?>
     <form method="get" class="d-flex align-items-center gap-2">
       <label class="text-muted small mb-0">Jahr</label>
@@ -94,7 +97,7 @@ include 'portal_header.php';
     <?php if ($endstich): ?>
     <div class="res-card">
       <div class="d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-bullseye me-1 text-info"></i>Endschiessen</h6>
+        <h6 class="mb-0"><i class="bi bi-bullseye me-1 text-club"></i>Endschiessen</h6>
         <?php if ($endstichTotal !== null): ?><span class="res-total"><?= $endstichTotal ?></span><?php endif; ?>
       </div>
       <div class="shot-grid mt-2">
@@ -111,7 +114,7 @@ include 'portal_header.php';
     <?php if ($schwini): ?>
     <div class="res-card">
       <div class="d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-arrow-repeat me-1 text-info"></i>Schwingen</h6>
+        <h6 class="mb-0"><i class="bi bi-arrow-repeat me-1 text-club"></i>Schwingen</h6>
         <?php if ($schwiniBest !== null): ?><span class="res-total"><?= $schwiniBest ?></span><?php endif; ?>
       </div>
       <div class="mt-2">
@@ -134,7 +137,7 @@ include 'portal_header.php';
     <?php if ($zabig): ?>
     <div class="res-card">
       <div class="d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-clock me-1 text-info"></i>Zabigstich</h6>
+        <h6 class="mb-0"><i class="bi bi-clock me-1 text-club"></i>Zabigstich</h6>
         <?php if ($zabigTotal !== null): ?><span class="res-total"><?= $zabigTotal ?></span><?php endif; ?>
       </div>
       <div class="shot-grid mt-2">

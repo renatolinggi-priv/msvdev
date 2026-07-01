@@ -104,6 +104,11 @@ include 'portal_header.php';
 
 <div class="p-narrow">
 
+<div class="portal-page-header">
+    <h1><i class="bi bi-calendar-week me-2"></i>Kalender-Abo</h1>
+    <p class="subtitle">Vereinstermine im eigenen Kalender abonnieren</p>
+</div>
+
 <!-- ============================================================
      KARTE 1: VEREINSKALENDER — öffentlicher Feed
      ============================================================ -->

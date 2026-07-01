@@ -1,0 +1,14 @@
+# Capacitor / Node
+node_modules/
+*.log
+.DS_Store
+
+# Build-Artefakte (Android-Ordner selbst wird committet, Builds nicht)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+
+# Secrets niemals committen (Server-Service-Account; gehoert ohnehin NICHT hierher)
+*serviceAccount*.json
+*service-account*.json
