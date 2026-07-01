@@ -1,12 +1,14 @@
 <?php
 include '../config.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
 // CSRF-Schutz
 if (session_status() === PHP_SESSION_NONE) session_start();
 $csrf = $_POST['csrf_token'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);
-    die('Ungültige Anfrage');
+    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
 }
 
 // Sicherstellen, dass die Event-ID übergeben wurde
@@ -29,7 +31,7 @@ if (isset($_POST['event_id']) && is_numeric($_POST['event_id'])) {
         $stmt->bind_param("i", $eventId);
 
         if ($stmt->execute()) {
-            echo json_encode(['success' => true]); // Erfolgreiches Löschen
+            echo json_encode(['success' => true, 'message' => 'Termin gelöscht']); // Erfolgreiches Löschen
         } else {
             echo json_encode(['success' => false, 'message' => 'Fehler beim Löschen']);
         }

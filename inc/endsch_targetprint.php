@@ -2,7 +2,7 @@
 // endsch_targetprint.php - Zielscheiben-Ausdruck für Wettkämpfe
 require_once 'config.php';
 
-$page_specific_css = '<link rel="stylesheet" href="endsch_targetprint/targetprint-styles.css?v=' . time() . '">';
+$page_specific_css = '<link rel="stylesheet" href="endsch_targetprint/targetprint-styles.css?v=' . (@filemtime(__DIR__ . '/endsch_targetprint/targetprint-styles.css') ?: '1') . '">';
 include 'header.inc.php';
 
 // Session-Kontrolle (nach header.inc.php, da dort die Session gestartet wird)
@@ -164,15 +164,7 @@ try {
         <div class="col-xl-9 col-lg-10 col-md-12 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-bullseye me-2"></i>
-                            Zielscheiben-Ausdruck
-                        </h2>
-                        <p class="text-muted mt-1">CSV hochladen → Vorschau → PDF generieren</p>
-                    </div>
-                </div>
+                <?php $page_title = 'Zielscheiben-Ausdruck'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     
@@ -265,10 +257,10 @@ try {
                         
                         <!-- Actions -->
                         <div class="text-center mt-4">
-                            <button type="button" class="btn btn-outline-secondary me-2" onclick="resetUpload()">
+                            <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="resetUpload()">
                                 <i class="bi bi-arrow-left me-2"></i>Zurück
                             </button>
-                            <button type="button" class="btn btn-success btn-generate-pdf" id="generatePdfBtn" 
+                            <button type="button" class="btn btn-outline-info btn-sm btn-generate-pdf" id="generatePdfBtn"
                                     onclick="generatePDF()" disabled>
                                 <i class="bi bi-file-earmark-pdf me-2"></i>PDF Generieren
                             </button>
@@ -301,10 +293,10 @@ try {
                 <!-- Wird dynamisch gefüllt -->
             </div>
             <div class="modal-footer border-0 justify-content-center">
-                <button type="button" class="btn btn-success btn-lg" id="downloadPdfBtn">
+                <button type="button" class="btn btn-outline-info btn-sm" id="downloadPdfBtn">
                     <i class="bi bi-download me-2"></i>PDF Herunterladen
                 </button>
-                <button type="button" class="btn btn-outline-primary btn-lg" data-bs-dismiss="modal" onclick="resetUpload();">
+                <button type="button" class="btn btn-outline-success btn-sm" data-bs-dismiss="modal" onclick="resetUpload();">
                     <i class="bi bi-arrow-clockwise me-2"></i>Neue CSV laden
                 </button>
             </div>
@@ -326,7 +318,7 @@ console.log('[TARGETPRINT] Programmnummer-Mapping:', PROGRAMM_NUMMER_MAPPING);
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- JavaScript Module einbinden -->
-<script src="endsch_targetprint/targetprint_handler.js?v=<?php echo time(); ?>"></script>
+<script src="endsch_targetprint/targetprint_handler.js?v=<?php echo @filemtime(__DIR__ . '/endsch_targetprint/targetprint_handler.js') ?: '1'; ?>"></script>
 
 <script>
 // Globale Variable für geparste Daten

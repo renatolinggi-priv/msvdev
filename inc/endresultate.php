@@ -81,9 +81,8 @@ $page_specific_css = "
     border-bottom: 2px solid #dee2e6;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.85rem;
     letter-spacing: 0.5px;
-    padding: 1rem;
+    padding: 0.75rem;
     background-color: #f8f9fa;
     position: sticky;
     top: 0;
@@ -91,7 +90,7 @@ $page_specific_css = "
 }
 
 .table tbody td {
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     vertical-align: middle;
     border: none;
     text-align: center;
@@ -164,50 +163,9 @@ $page_specific_css = "
 }
 
 /* =========================================
-   Slide-Panel (aus jmdefinition.php Pattern)
+   Slide-Panel: Container/Overlay/Header/Body zentral in css/msv-styles.css
+   (Breite via panel-width Custom-Property am Panel-Element)
    ========================================= */
-.hybrid-edit-panel {
-    position: fixed;
-    top: 0;
-    right: -560px;
-    width: 540px;
-    height: 100vh;
-    background: #fff;
-    box-shadow: -8px 0 30px rgba(0,0,0,0.12);
-    z-index: 1060;
-    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-    display: flex;
-    flex-direction: column;
-}
-.hybrid-edit-panel.open { right: 0; }
-
-.panel-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.3);
-    z-index: 1055;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s;
-}
-.panel-overlay.show { opacity: 1; visibility: visible; }
-
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
-    flex-shrink: 0;
-}
-
-.panel-body {
-    padding: 1rem 1.25rem;
-    overflow-y: auto;
-    flex: 1;
-}
-
 .panel-footer {
     padding: 0.75rem 1.25rem;
     border-top: 1px solid #e2e8f0;
@@ -316,21 +274,7 @@ $page_specific_css = "
    Mobile
    ========================================= */
 @media (max-width: 767.98px) {
-    .form-control,
-    .form-select,
-    input[type=\"text\"],
-    input[type=\"number\"],
-    select {
-        min-height: 48px !important;
-        font-size: 16px !important;
-    }
-
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
+    /* Touch-Target-Grössen (form-controls/.btn) zentral in css/msv-styles.css */
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
 
@@ -393,6 +337,15 @@ $page_specific_css = "
 
 @media (min-width: 768px) {
     .mobile-cards-container { display: none !important; }
+    /* Kompakte Tabellen-Kopfzeile wie auf den anderen Resultate-Seiten
+       (kanti/heim) – vorher 0.85rem/1rem -> wirkte viel zu gross. */
+    #resultateContainer #mitgliederTabelle thead th {
+        font-size: 0.72rem !important;
+        padding: 0.6rem 0.4rem !important;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    #resultateContainer #mitgliederTabelle tbody td { padding: 0.35rem 0.4rem !important; }
 }
 ";
 
@@ -411,15 +364,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-xl-10 col-lg-12 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-target me-2"></i>
-                            Endschiessen Resultaterfassung
-                        </h2>
-                        <p class="text-muted mb-0">Resultate erfassen und verwalten</p>
-                    </div>
-                </div>
+                <?php $page_title = 'Endschiessen Resultaterfassung'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="endresultateForm">
@@ -435,15 +380,10 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
 
                         <!-- Aktionsbereich (Bootstrap Collapse) -->
-                        <div class="card action-card mb-0">
-                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                                 data-bs-toggle="collapse" data-bs-target="#endresultateActions"
-                                 aria-expanded="false" aria-controls="endresultateActions">
-                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                                <i class="bi bi-chevron-down action-chevron"></i>
-                            </div>
-                            <div class="collapse" id="endresultateActions">
-                                <div class="card-body pt-2 pb-3 px-3">
+<?php
+                        $ac_id = 'endresultateActions';
+                        ob_start();
+                        ?>
                                     <div class="row g-2">
                                         <div class="col-6">
                                             <button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm w-100">
@@ -456,9 +396,10 @@ if (empty($_SESSION['csrf_token'])) {
                                             <i class="bi bi-trash me-1"></i>Alle Resultate löschen
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                        <?php
+                        $ac_body = ob_get_clean();
+                        include 'partials/action_card.inc.php';
+                        ?>
                         </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Fortschrittsbalken -->
@@ -477,10 +418,6 @@ if (empty($_SESSION['csrf_token'])) {
                         <!-- Tabelle Container -->
                         <div id="resultateContainer">
                             <div class="results-list-card">
-                                <div class="results-header">
-                                    <i class="bi bi-table me-2"></i>
-                                    Resultate
-                                </div>
                                 <div class="table-wrapper">
                                     <!-- Desktop: Tabelle -->
                                     <div class="desktop-table-container">
@@ -537,7 +474,7 @@ if (empty($_SESSION['csrf_token'])) {
 <div class="panel-overlay" id="panelOverlay"></div>
 
 <!-- Slide-Panel -->
-<div class="hybrid-edit-panel" id="editPanel">
+<div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 540px;">
     <div class="panel-header">
         <div class="d-flex align-items-center gap-2">
             <button class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorheriger">
@@ -675,10 +612,10 @@ if (empty($_SESSION['csrf_token'])) {
             <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn">
                 <i class="bi bi-trash"></i>
             </button>
-            <button type="button" class="btn btn-outline-success flex-fill" id="panelSaveBtn">
+            <button type="button" class="btn btn-outline-primary flex-fill" id="panelSaveBtn">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
-            <button type="button" class="btn btn-success flex-fill" id="panelSaveNextBtn">
+            <button type="button" class="btn btn-outline-primary flex-fill" id="panelSaveNextBtn">
                 Speichern & Nächster <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>

@@ -2,7 +2,8 @@
 // standbelegung.php - Import, Übersicht und Export Standbelegungsplan
 require_once 'config.php';
 
-$page_specific_css = '';
+// Seiten-CSS ausgelagert nach css/standbelegung.css (wird vom Header in <style> gewrappt)
+$page_specific_css = @file_get_contents(__DIR__ . '/../css/standbelegung.css') ?: '';
 include 'header.inc.php';
 
 // Session-Kontrolle
@@ -71,325 +72,18 @@ $artCodes = [
     'AND' => 'Anderes'
 ];
 ?>
-<style>
-
-/* =========================================================
-   Upload Area
-   ========================================================= */
-.upload-area {
-    border: 2px dashed #dee2e6;
-    border-radius: 0.75rem;
-    padding: 3rem;
-    text-align: center;
-    background-color: #f8f9fa;
-    cursor: pointer;
-    margin-bottom: 1.5rem;
-    transition: all 0.25s ease-in-out;
-}
-
-.upload-area:hover {
-    border-color: #6c757d;
-    background-color: #e9ecef;
-}
-
-.upload-area.dragover {
-    border-color: #0d6efd;
-    background-color: #e7f1ff;
-}
-
-/* =========================================================
-   Loading Overlay
-   ========================================================= */
-.loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
-
-.loading-spinner {
-    background: #fff;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    text-align: center;
-    color: #333;
-}
-
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
-    border: 0.3rem solid #f3f3f3;
-    border-top-color: #0d6efd;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* =========================================================
-   Preview Table
-   ========================================================= */
-.preview-table {
-    font-size: 0.85rem;
-}
-
-.preview-table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.preview-table-wrapper {
-    max-height: 500px;
-    overflow-y: auto;
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-}
-
-/* =========================================================
-   Stat Cards
-   ========================================================= */
-.stat-card {
-    background: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    text-align: center;
-}
-
-.stat-card .stat-number {
-    font-size: 1.75rem;
-    font-weight: 700;
-}
-
-.stat-card .stat-label {
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-
-/* =========================================================
-   Tabs
-   ========================================================= */
-.nav-tabs .nav-link {
-    font-weight: 500;
-}
-
-.nav-tabs .nav-link.active {
-    background-color: #f8f9fa;
-    border-bottom-color: #f8f9fa;
-}
-
-/* =========================================================
-   Filter Chips (Bootstrap Outline Style)
-   ========================================================= */
-.filter-chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 0.85rem;
-    margin: 0.2rem;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    background-color: transparent;
-    border: 1px solid currentColor;
-    transition: all 0.15s ease-in-out;
-}
-
-.filter-chip:hover,
-.filter-chip.active {
-    color: #fff;
-}
-
-.filter-chip.active {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-/* Farbvarianten */
-.filter-chip-300m { color: #dc3545; }
-.filter-chip-300m:hover,
-.filter-chip-300m.active { background-color: #dc3545; }
-
-.filter-chip-50m { color: #28a745; }
-.filter-chip-50m:hover,
-.filter-chip-50m.active { background-color: #28a745; }
-
-.filter-chip-25m { color: #007bff; }
-.filter-chip-25m:hover,
-.filter-chip-25m.active { background-color: #007bff; }
-
-.filter-chip-10m { color: #6f42c1; }
-.filter-chip-10m:hover,
-.filter-chip-10m.active { background-color: #6f42c1; }
-
-.filter-chip-sonstiges { color: #6c757d; }
-.filter-chip-sonstiges:hover,
-.filter-chip-sonstiges.active { background-color: #6c757d; }
-
-.existing-count {
-    font-size: 0.75rem;
-    opacity: 0.8;
-}
-
-/* =========================================================
-   Keyword Tags
-   ========================================================= */
-.keyword-tag {
-    display: inline-flex;
-    align-items: center;
-    background: #e9ecef;
-    padding: 0.3rem 0.6rem;
-    border-radius: 0.25rem;
-    margin: 0.2rem;
-    font-size: 0.85rem;
-}
-
-.keyword-tag .badge {
-    margin-right: 0.4rem;
-    font-size: 0.7rem;
-}
-
-.keyword-tag .btn-remove {
-    background: none;
-    border: none;
-    color: #dc3545;
-    padding: 0 0.3rem;
-    margin-left: 0.3rem;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-}
-
-.keyword-tag .btn-remove:hover {
-    color: #a71d2a;
-}
-
-/* =========================================================
-   Badge Farben (Art)
-   ========================================================= */
-.badge-300m { background-color: #dc3545; }
-.badge-50m  { background-color: #28a745; }
-.badge-25m  { background-color: #007bff; }
-.badge-10m  { background-color: #6f42c1; }
-.badge-sonstiges { background-color: #6c757d; }
-
-.badge-SF  { background-color: #fd7e14; }
-.badge-FS  { background-color: #20c997; }
-.badge-OP  { background-color: #198754; }
-.badge-WK  { background-color: #6610f2; }
-.badge-JSK { background-color: #e83e8c; }
-.badge-TR  { background-color: #17a2b8; }
-.badge-VS  { background-color: #6c757d; }
-.badge-AND { background-color: #343a40; }
-
-/* =========================================================
-   Art Select
-   ========================================================= */
-.art-select {
-    width: 80px;
-    font-size: 0.8rem;
-    padding: 0.2rem 0.4rem;
-}
-
-/* =========================================================
-   Kalender Toggle
-   ========================================================= */
-.kalender-toggle {
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: opacity 0.15s;
-}
-
-.kalender-toggle.active {
-    color: #28a745;
-}
-
-.kalender-toggle:not(.active) {
-    color: #dee2e6;
-}
-
-.kalender-toggle:hover {
-    opacity: 0.7;
-}
-
-/* Mobile-Optimierung */
-@media (max-width: 767.98px) {
-    /* WCAG AAA Touch Targets: Alle Form-Elemente & Buttons */
-    .form-control,
-    .form-select,
-    input[type="text"],
-    input[type="number"],
-    select {
-        min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-    }
-
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
-    /* Filter-Chips responsiv */
-    .filter-chip {
-        flex: 1 1 calc(50% - 0.4rem);
-        justify-content: center;
-        min-height: 48px; /* WCAG AAA Touch Target */
-    }
-
-
-    /* Stat Cards - 2 Spalten */
-    #overviewStatsRow .col-auto {
-        flex: 0 0 calc(50% - 0.5rem);
-        max-width: calc(50% - 0.5rem);
-    }
-
-    /* Kalender-Toggle in Mobile Cards größer */
-    .mobile-card .kalender-toggle {
-        font-size: 1.5rem;
-        min-width: 48px;
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Checkbox in Mobile Cards */
-    .mobile-card .form-check-input {
-        width: 1.2rem;
-        height: 1.2rem;
-    }
-}
-
-/* =========================================================
-   Import Kalender
-   ========================================================= */
-.import-kalender-cell {
-    text-align: center;
-}
-
-</style>
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-11 col-lg-12 col-md-12 col-12 ps-0">
+        <div class="col-xl-12 col-lg-11 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
                 <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12 d-flex justify-content-between align-items-start">
                         <div>
-                            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                                <i class="bi bi-calendar-week me-2"></i>
+                            <h2 class="h4 mb-0 page-title">
                                 Standbelegungsplan
                             </h2>
-                            <p class="text-muted mt-1">Import, Übersicht und Export der Standbelegungen</p>
                         </div>
                         <button type="button" class="btn btn-outline-success btn-sm" id="publishChangelogBtn">
                             <i class="bi bi-megaphone me-1"></i>Veröffentlichen
@@ -565,14 +259,14 @@ $artCodes = [
                                 </div>
                                 
                                 <div class="d-flex justify-content-between align-items-center mt-3">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="resetImport()">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetImport()">
                                         <i class="bi bi-arrow-left me-1"></i> Zurück
                                     </button>
                                     <div class="d-flex align-items-center">
-                                        <button type="button" class="btn btn-success me-2" onclick="saveImport()">
+                                        <button type="button" class="btn btn-outline-success btn-sm me-2" onclick="saveImport()">
                                             <i class="bi bi-database-add me-1"></i> <span id="saveImportCount">0</span> Einträge importieren
                                         </button>
-                                        <button type="button" class="btn btn-primary" onclick="showExportPreviewFromImport()">
+                                        <button type="button" class="btn btn-outline-info btn-sm" onclick="showExportPreviewFromImport()">
                                             <i class="bi bi-file-earmark-excel me-1"></i> Direkt exportieren
                                         </button>
                                     </div>
@@ -601,7 +295,7 @@ $artCodes = [
                                     <a href="standbelegung/pdf/standbelegung_<?= $overviewYear ?>.pdf" target="_blank" class="btn btn-outline-primary btn-sm me-2">
                                         <i class="bi bi-eye me-1"></i>Anzeigen
                                     </a>
-                                    <a href="standbelegung/pdf/standbelegung_<?= $overviewYear ?>.pdf" download class="btn btn-outline-success btn-sm">
+                                    <a href="standbelegung/pdf/standbelegung_<?= $overviewYear ?>.pdf" download class="btn btn-outline-info btn-sm">
                                         <i class="bi bi-download me-1"></i>Download
                                     </a>
                                 </div>
@@ -695,15 +389,11 @@ $artCodes = [
                             </div>
                             
                             <!-- Aktionsbereich (Bootstrap Collapse) -->
-                            <div class="card mb-3 action-card">
-                                <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                                     data-bs-toggle="collapse" data-bs-target="#standbelegungActions"
-                                     aria-expanded="false" aria-controls="standbelegungActions">
-                                    <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                                    <i class="bi bi-chevron-down action-chevron"></i>
-                                </div>
-                                <div class="collapse" id="standbelegungActions">
-                                    <div class="card-body pt-2 pb-3 px-3">
+<?php
+                            $ac_id = 'standbelegungActions';
+                            $ac_card_class = 'mb-3';
+                            ob_start();
+                            ?>
                                         <div class="row g-2 mb-2">
                                             <div class="col-6">
                                                 <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="openAddModal()">
@@ -720,23 +410,24 @@ $artCodes = [
                                             <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                                             <div class="row g-2">
                                                 <div class="col-6">
-                                                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="exportJskPdf()">
+                                                    <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="exportJskPdf()">
                                                         <i class="bi bi-file-pdf me-1"></i>JSK PDF
                                                     </button>
                                                 </div>
                                                 <div class="col-6">
-                                                    <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="showExportPreview()">
+                                                    <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="showExportPreview()">
                                                         <i class="bi bi-file-earmark-excel me-1"></i>Schiesstage
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
+                            <?php
+                            $ac_body = ob_get_clean();
+                            include 'partials/action_card.inc.php';
+                            ?>
+
                         </div>
-                        
+
                         <!-- ==================== TAB: ART-ERKENNUNG ==================== -->
                         <div class="tab-pane fade" id="settings" role="tabpanel">
                             
@@ -765,7 +456,7 @@ $artCodes = [
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2">
-                                                    <button type="button" class="btn btn-primary w-100" onclick="addKeyword()">
+                                                    <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="addKeyword()">
                                                         <i class="bi bi-plus-lg"></i> Hinzufügen
                                                     </button>
                                                 </div>
@@ -862,81 +553,59 @@ $artCodes = [
     </div>
 </div>
 
-<!-- Edit/Add Entry Modal -->
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editModalTitle"><i class="bi bi-pencil me-2"></i>Eintrag bearbeiten</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Edit/Add Entry Slide-Panel (ersetzt Bootstrap-Modal) -->
+<div class="panel-overlay" id="editPanelOverlay"></div>
+<div class="hybrid-edit-panel" id="editPanel" aria-hidden="true">
+    <div class="panel-header">
+        <h5 id="editModalTitle"><i class="bi bi-pencil me-2"></i>Eintrag bearbeiten</h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="closeEditPanel" aria-label="Schließen">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        <input type="hidden" id="editId">
+        <div class="mb-3">
+            <label for="editDatum" class="form-label fw-semibold small">Datum *</label>
+            <input type="date" class="form-control" id="editDatum" required>
+        </div>
+        <div class="mb-3">
+            <label for="editKategorie" class="form-label fw-semibold small">Kategorie *</label>
+            <select class="form-select" id="editKategorie" required>
+                <option value="300m">300m</option>
+                <option value="50m">50m</option>
+                <option value="25m">25m</option>
+                <option value="10m">10m</option>
+                <option value="Sonstiges">Sonstiges</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="editBezeichnung" class="form-label fw-semibold small">Bezeichnung *</label>
+            <input type="text" class="form-control" id="editBezeichnung" required>
+        </div>
+        <div class="row mb-3">
+            <div class="col-6">
+                <label for="editStartZeit" class="form-label fw-semibold small">Von</label>
+                <input type="time" class="form-control" id="editStartZeit">
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="editId">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="editDatum" class="form-label">Datum *</label>
-                        <input type="date" class="form-control" id="editDatum" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="editKategorie" class="form-label">Kategorie *</label>
-                        <select class="form-select" id="editKategorie" required>
-                            <option value="300m">300m</option>
-                            <option value="50m">50m</option>
-                            <option value="25m">25m</option>
-                            <option value="10m">10m</option>
-                            <option value="Sonstiges">Sonstiges</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="editBezeichnung" class="form-label">Bezeichnung *</label>
-                    <input type="text" class="form-control" id="editBezeichnung" required>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="editStartZeit" class="form-label">Von</label>
-                        <input type="time" class="form-control" id="editStartZeit">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="editEndZeit" class="form-label">Bis</label>
-                        <input type="time" class="form-control" id="editEndZeit">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="editInKalender">
-                        <label class="form-check-label" for="editInKalender">
-                            <i class="bi bi-calendar-check me-1"></i> Im Kalender anzeigen
-                        </label>
-                    </div>
-                </div>
+            <div class="col-6">
+                <label for="editEndZeit" class="form-label fw-semibold small">Bis</label>
+                <input type="time" class="form-control" id="editEndZeit">
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-primary" onclick="saveEntry()">
-                    <i class="bi bi-check-lg me-1"></i> Speichern
-                </button>
+        </div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="editInKalender">
+                <label class="form-check-label" for="editInKalender">
+                    <i class="bi bi-calendar-check me-1"></i> Im Kalender anzeigen
+                </label>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Löschen bestätigen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Möchtest du <strong id="deleteCount">0</strong> Einträge wirklich löschen?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Löschen</button>
-            </div>
-        </div>
+    <div class="panel-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="cancelEditPanel">Abbrechen</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="saveEntry()">
+            <i class="bi bi-save me-1"></i> Speichern
+        </button>
     </div>
 </div>
 
@@ -972,8 +641,8 @@ $artCodes = [
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-success" onclick="executeExport()">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-outline-info btn-sm" onclick="executeExport()">
                     <i class="bi bi-download me-1"></i> Excel herunterladen
                 </button>
             </div>
@@ -1551,25 +1220,20 @@ async function deleteSingle(id) {
     }
 }
 
-function deleteSelected() {
+async function deleteSelected() {
     const ids = [];
     $('#overviewTableBody .row-checkbox:checked').each(function() {
         ids.push($(this).data('id'));
     });
-    
+
     if (ids.length === 0) {
         msvToast('Bitte Einträge auswählen', 'warning');
         return;
     }
-    
-    $('#deleteCount').text(ids.length);
-    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
-    
-    $('#confirmDeleteBtn').off('click').on('click', function() {
-        modal.hide();
-        deleteEntries(ids);
-    });
+
+    const result = await msvConfirmDelete(ids.length + ' Einträge');
+    if (!result.isConfirmed) return;
+    deleteEntries(ids);
 }
 
 function deleteEntries(ids) {
@@ -1856,9 +1520,8 @@ function openAddModal() {
     $('#editEndZeit').val('');
     $('#editKategorie').val('300m');
     $('#editInKalender').prop('checked', true);
-    
-    const modal = new bootstrap.Modal(document.getElementById('editModal'));
-    modal.show();
+
+    openEditPanel();
 }
 
 function openEditModal(id) {
@@ -1877,10 +1540,30 @@ function openEditModal(id) {
     $('#editEndZeit').val(entry.EndZeit ? entry.EndZeit.substring(0, 5) : '');
     $('#editKategorie').val(entry.Kategorie);
     $('#editInKalender').prop('checked', parseInt(entry.InKalender) === 1);
-    
-    const modal = new bootstrap.Modal(document.getElementById('editModal'));
-    modal.show();
+
+    openEditPanel();
 }
+
+// ==================== EDIT-PANEL Steuerung ====================
+function openEditPanel() {
+    $('#editPanelOverlay').addClass('show');
+    $('#editPanel').addClass('open').attr('aria-hidden', 'false');
+    setTimeout(function() { $('#editDatum').trigger('focus'); }, 350);
+}
+function closeEditPanel() {
+    $('#editPanel').removeClass('open').attr('aria-hidden', 'true');
+    $('#editPanelOverlay').removeClass('show');
+}
+$(function() {
+    $('#closeEditPanel, #cancelEditPanel, #editPanelOverlay').on('click', closeEditPanel);
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $('#editPanel').hasClass('open')) closeEditPanel();
+    });
+    // Enter in einem Eingabefeld speichert (ausser Checkbox)
+    $('#editPanel').on('keydown', 'input:not([type=checkbox])', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveEntry(); }
+    });
+});
 
 function saveEntry() {
     const id = $('#editId').val();
@@ -1922,7 +1605,7 @@ function saveEntry() {
             hideLoading();
             if (response.success) {
                 msvToast(id ? 'Eintrag aktualisiert' : 'Eintrag hinzugefügt', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                closeEditPanel();
                 
                 // Lokale Daten aktualisieren
                 if (id) {

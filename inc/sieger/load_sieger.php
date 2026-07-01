@@ -29,38 +29,60 @@ try {
             $grouped[$cat][] = $row;
         }
 
-        // Kategorie-Karten
-        echo "<div class='desktop-cards-container'>";
+        // Kategorien in übergeordnete Gruppen einteilen
+        // Jahresmeisterschaft: JM + Kantonalstich (Kanti) + Heimmeisterschaft (Heim)
+        // Endschiessen: alles Übrige (Endstich, Schwini, Kunst, Glück, Zabig, Endschiessen A/B)
+        $superGroups = ['Jahresmeisterschaft' => [], 'Endschiessen' => []];
         foreach ($grouped as $category => $entries) {
-            $catSafe = htmlspecialchars($category);
-            echo "<div class='cat-card' data-category='{$catSafe}'>";
-            echo "<div class='cat-card-head'>";
-            echo "<div class='cat-icon' data-cat-icon></div>";
-            echo "<h6 data-cat-label>{$catSafe}</h6>";
-            echo "</div>";
-            echo "<div class='cat-card-body'>";
+            $group = 'Endschiessen';
+            foreach (['Jahresmeisterschaft', 'Kantonalstich', 'Heim'] as $kw) {
+                if (stripos($category, $kw) !== false) { $group = 'Jahresmeisterschaft'; break; }
+            }
+            $superGroups[$group][$category] = $entries;
+        }
 
-            foreach ($entries as $entry) {
-                $nameSafe = htmlspecialchars($entry['Name']);
-                $wertSafe = htmlspecialchars($entry['Wert']);
-                $id = intval($entry['ID']);
+        $groupIcons = ['Jahresmeisterschaft' => 'bi-trophy', 'Endschiessen' => 'bi-bullseye'];
 
-                $siegerdefId = intval($entry['siegerdef_id'] ?? 0);
-                echo "<div class='winner-row' data-id='{$id}' data-name='{$nameSafe}' data-wert='{$wertSafe}' data-siegerdef='{$siegerdefId}'>";
-                echo "<div class='winner-name'>{$nameSafe}</div>";
-                echo "<div class='winner-score'>{$wertSafe}</div>";
-                echo "<div class='winner-action'>";
-                echo "<button class='btn btn-outline-danger btn-sm delete-sieger' data-id='{$id}' data-tooltip='Löschen'>";
-                echo "<i class='bi bi-trash'></i>";
-                echo "</button>";
+        foreach ($superGroups as $groupName => $cats) {
+            if (empty($cats)) continue;
+            $icon = $groupIcons[$groupName] ?? 'bi-collection';
+            echo "<div class='sieger-group'>";
+            echo "<h5 class='sieger-group-title'><i class='bi {$icon}'></i>" . htmlspecialchars($groupName) . "</h5>";
+            echo "<div class='desktop-cards-container'>";
+
+            foreach ($cats as $category => $entries) {
+                $catSafe = htmlspecialchars($category);
+                echo "<div class='cat-card' data-category='{$catSafe}'>";
+                echo "<div class='cat-card-head'>";
+                echo "<div class='cat-icon' data-cat-icon></div>";
+                echo "<h6 data-cat-label>{$catSafe}</h6>";
                 echo "</div>";
-                echo "</div>";
+                echo "<div class='cat-card-body'>";
+
+                foreach ($entries as $entry) {
+                    $nameSafe = htmlspecialchars($entry['Name']);
+                    $wertSafe = htmlspecialchars($entry['Wert']);
+                    $id = intval($entry['ID']);
+
+                    $siegerdefId = intval($entry['siegerdef_id'] ?? 0);
+                    echo "<div class='winner-row' data-id='{$id}' data-name='{$nameSafe}' data-wert='{$wertSafe}' data-siegerdef='{$siegerdefId}'>";
+                    echo "<div class='winner-name'>{$nameSafe}</div>";
+                    echo "<div class='winner-score'>{$wertSafe}</div>";
+                    echo "<div class='winner-action'>";
+                    echo "<button class='btn btn-outline-danger btn-sm delete-sieger' data-id='{$id}' data-tooltip='Löschen'>";
+                    echo "<i class='bi bi-trash'></i>";
+                    echo "</button>";
+                    echo "</div>";
+                    echo "</div>";
+                }
+
+                echo "</div>"; // cat-card-body
+                echo "</div>"; // cat-card
             }
 
-            echo "</div>"; // cat-card-body
-            echo "</div>"; // cat-card
+            echo "</div>"; // desktop-cards-container
+            echo "</div>"; // sieger-group
         }
-        echo "</div>"; // desktop-cards-container
 
     } else {
         echo "<div class='empty-state'>";

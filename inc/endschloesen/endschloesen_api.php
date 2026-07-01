@@ -58,22 +58,13 @@ try {
 
     // Session für CSRF
     require_once __DIR__ . '/../session_config.inc.php';
+    require_once __DIR__ . '/../csrf.inc.php';
 
-    // CSRF Check für POST requests
+    // CSRF Check für POST requests (zentraler Helfer)
     function checkCSRF()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Bei JSON Content-Type aus Header lesen
-            $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
-
-            // Debug logging
-            error_log("CSRF Check - Received token: " . substr($token, 0, 10) . "...");
-            error_log("CSRF Check - Session token: " . substr($_SESSION['csrf_token'] ?? 'none', 0, 10) . "...");
-
-            if (empty($_SESSION['csrf_token']) || empty($token) || !hash_equals($_SESSION['csrf_token'], $token)) {
-                error_log("CSRF validation failed");
-                jsonResponse(false, null, 'CSRF token validation failed');
-            }
+            csrf_require(true);
         }
     }
 

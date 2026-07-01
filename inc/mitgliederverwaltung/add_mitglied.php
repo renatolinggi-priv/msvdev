@@ -1,8 +1,11 @@
 <?php
 // add_mitglied.php - ERWEITERTE VERSION
 require_once '../config.php';
+require_once __DIR__ . '/../csrf.inc.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    csrf_require();
+    if (empty($_SESSION['user_id'])) { http_response_code(403); exit('Nicht angemeldet'); }
     $id = $conn->real_escape_string($_POST['id']);
     $vorname = $conn->real_escape_string($_POST['vorname']);
     $name = $conn->real_escape_string($_POST['name']);

@@ -1,6 +1,10 @@
 <?php
 // wanderpreise_regeln.php - Wanderpreise Zuordnungsregeln (Hybrid-Pattern)
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/wanderpreise/regel_builder.inc.php'; // Registry + Schema-Referenz fuer den Builder
+
+$wp_wettbewerbe = wp_wettbewerb_registry();
+$wp_schema_ref  = wp_regel_schema_reference();
 
 // CSRF Token generieren
 if (empty($_SESSION['csrf_token'])) {
@@ -44,12 +48,12 @@ $page_specific_css = "
 }
 
 /* --- Hybrid-Tabelle --- */
-.hybrid-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.hybrid-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 
 .hybrid-table thead th {
-    padding: 0.85rem 1rem; font-size: 0.75rem; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-    background: linear-gradient(180deg, #f8fafc, #eef2f7);
+    padding: 0.75rem; font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
+    background-color: #f8f9fa;
     border-bottom: 2px solid #e2e8f0;
     position: sticky; top: 0; z-index: 6;
 }
@@ -68,38 +72,27 @@ $page_specific_css = "
 }
 
 .hybrid-table tbody td {
-    padding: 0.85rem 1rem; vertical-align: middle;
+    padding: 0.5rem 0.75rem; vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
 }
 
-/* --- Code-Badge --- */
-.code-badge {
-    font-family: 'Courier New', monospace;
-    background: #eff6ff; color: #1e40af;
-    padding: 3px 10px; border-radius: 6px;
-    font-size: 0.82rem; font-weight: 500;
-    letter-spacing: 0.3px; white-space: nowrap;
-}
+/* Code-Badge (.code-badge) jetzt zentral in css/msv-styles.css. */
 
 /* --- Spalten --- */
 .regel-name { font-weight: 500; color: #1e293b; }
 
 .regel-desc {
+    display: block;
     color: #64748b; font-size: 0.85rem;
-    max-width: 250px; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap;
+    white-space: normal;            /* mehrzeilig umbrechen statt abschneiden */
+    overflow-wrap: anywhere; word-break: break-word;
+    line-height: 1.35;
 }
 
 /* --- Flag-Dot --- */
-.flag-dot {
-    width: 28px; height: 28px; border-radius: 50%;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 0.7rem; cursor: default; transition: transform 0.15s;
-}
-
-.flag-dot:hover { transform: scale(1.15); }
+/* Base/off/hover (.flag-dot/.flag-dot:hover/.flag-dot.off) zentral in css/msv-styles.css.
+   Nur grüne .on-Variante als Seiten-Override (zentral ist blau). */
 .flag-dot.on  { background: #22c55e; color: #fff; }
-.flag-dot.off { background: #f1f5f9; color: #cbd5e1; }
 
 /* --- Aktions-Buttons in Tabelle --- */
 .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
@@ -121,42 +114,13 @@ $page_specific_css = "
     padding: 0.75rem 1.25rem; border-top: 1px solid #f1f5f9;
 }
 
-/* --- Action-Card --- */
-.action-card { border-color: #e2e8f0; }
-.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; }
-.action-card-header:hover { background-color: #f1f5f9; }
-.action-chevron { transition: transform .2s ease; }
-.action-card-header[aria-expanded=\"true\"] .action-chevron { transform: rotate(180deg); }
+/* Aktions-Card (.action-card/.action-card-header/.action-chevron) jetzt zentral in css/msv-styles.css. */
 
-/* === SLIDE PANEL === */
-.hybrid-edit-panel {
-    position: fixed; top: 0; right: -520px; width: 500px; height: 100vh;
-    background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12);
-    z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-    display: flex; flex-direction: column;
-}
-
-.hybrid-edit-panel.open { right: 0; }
-
-.panel-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-    z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s;
-}
-
-.panel-overlay.show { opacity: 1; visibility: visible; }
-
-.panel-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc; flex-shrink: 0;
-}
-
+/* === SLIDE PANEL ===
+   Container/.panel-overlay/.panel-header/.panel-body jetzt zentral in css/msv-styles.css.
+   Breite = Default 500px. .panel-footer + .panel-header h5 + .panel-label (mit uppercase)
+   bleiben seitenspezifisch (Footer bzw. abweichende Label-Optik). */
 .panel-header h5 { margin: 0; font-size: 1rem; font-weight: 600; color: #1e293b; }
-
-.panel-body {
-    padding: 1.25rem; overflow-y: auto; flex: 1;
-    -webkit-overflow-scrolling: touch;
-}
 
 .panel-footer {
     padding: 1rem 1.25rem; border-top: 1px solid #e2e8f0;
@@ -192,23 +156,13 @@ $page_specific_css = "
     background: #eff6ff; border-color: #3b82f6; color: #1e40af;
 }
 
-/* Skeleton */
-.skeleton {
-    height: 20px; border-radius: 4px;
-    background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
-    background-size: 200% 100%; animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
+/* Skeleton (.skeleton/@keyframes) jetzt zentral in css/msv-styles.css. */
 
 /* === MOBILE === */
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
     .mobile-cards-container  { display: block !important; }
-    .hybrid-edit-panel { width: 100vw; right: -100vw; }
+    /* Slide-Panel Mobile-Vollbreite jetzt zentral in css/msv-styles.css */
     .table-title .title-search { display: none; }
 
     .mobile-search {
@@ -284,12 +238,7 @@ $page_specific_css = "
     .mobile-regel-card .card-actions .btn-del  { border-color: #ef4444; color: #ef4444; }
     .mobile-regel-card .card-actions button:active { transform: scale(0.9); background: #f8fafc; }
 
-    /* Touch-Targets */
-    .form-control, .form-control-sm, input, select {
-        min-height: 48px !important; font-size: 16px !important;
-    }
-
-    .btn { min-height: 48px !important; font-size: 16px !important; }
+    /* Touch-Targets (form-control/select/.btn min-height 48px) jetzt zentral in css/msv-styles.css */
 }
 
 @media (min-width: 768px) {
@@ -304,24 +253,19 @@ include 'header.inc.php';
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-7 col-lg-9 col-md-11 col-12 ps-0">
+    <div class="col-12 ps-0">
       <div class="main-content-wrapper">
 
-        <!-- Header (Desktop) -->
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-gear me-2"></i> Wanderpreise Zuordnungsregeln
-            </h2>
-            <p class="text-muted mb-0" style="font-size: 0.85rem;">SQL-Regeln f&uuml;r automatische Gewinnerzuordnung</p>
-          </div>
-        </div>
+        <?php
+        $page_title = 'Wanderpreise Zuordnungsregeln';
+        include 'partials/page_header.inc.php';
+        ?>
 
         <div class="content-background">
 
           <!-- Neue Regel Button -->
           <div class="mb-4 d-none d-md-block">
-            <button type="button" class="btn btn-success" id="btnNeueRegel">
+            <button type="button" class="btn btn-outline-success btn-sm" id="btnNeueRegel">
               <i class="bi bi-plus-lg me-2"></i>Neue Regel
             </button>
           </div>
@@ -386,113 +330,10 @@ include 'header.inc.php';
             <div class="mobile-cards-scroll" id="mobileCardsScroll"></div>
           </div>
 
-          <!-- Beispiel-Regeln (Collapsible, dezent unten) -->
-          <div class="mt-4 d-none d-md-block">
-            <button class="btn btn-link text-muted p-0 small" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#beispielRegeln">
-              <i class="bi bi-lightbulb me-1"></i> Beispiel-Regeln anzeigen
-            </button>
-            <div class="collapse mt-2" id="beispielRegeln">
-              <div class="accordion" id="beispielAccordion">
-                <!-- Jahresmeister -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#beispiel1">
-                      Jahresmeister (H&ouml;chste Gesamtpunktzahl)
-                    </button>
-                  </h2>
-                  <div id="beispiel1" class="accordion-collapse collapse" data-bs-parent="#beispielAccordion">
-                    <div class="accordion-body">
-                      <pre class="sql-editor mb-0">SELECT
-    m.ID AS gewinner_id,
-    'Test-Resultat' AS resultat,
-    '1. Rang' AS rang
-FROM mitglieder m
-WHERE m.Status = 1
-ORDER BY m.ID DESC
-LIMIT 1</pre>
-                    </div>
-                  </div>
-                </div>
-                <!-- Bester Endstich -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#beispiel2">
-                      Bester Endstich
-                    </button>
-                  </h2>
-                  <div id="beispiel2" class="accordion-collapse collapse" data-bs-parent="#beispielAccordion">
-                    <div class="accordion-body">
-                      <pre class="sql-editor mb-0">SELECT
-    e.MitgliedID AS gewinner_id,
-    CONCAT(e.Total, ' Punkte') AS resultat,
-    '1. Rang Endstich' AS rang
-FROM endresultate e
-WHERE e.Jahr = {jahr}
-    AND e.Total = (
-        SELECT MAX(Total)
-        FROM endresultate
-        WHERE Jahr = {jahr}
-    )
-LIMIT 1</pre>
-                    </div>
-                  </div>
-                </div>
-                <!-- Bester Gruppenstich -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#beispiel3">
-                      Bester Gruppenstich (spezifische Kategorie)
-                    </button>
-                  </h2>
-                  <div id="beispiel3" class="accordion-collapse collapse" data-bs-parent="#beispielAccordion">
-                    <div class="accordion-body">
-                      <pre class="sql-editor mb-0">SELECT
-    g.MitgliedID AS gewinner_id,
-    CONCAT(g.Resultat, ' Punkte') AS resultat,
-    CONCAT('1. Rang ', g.Kategorie) AS rang
-FROM gruppenstiche g
-INNER JOIN mitglieder m ON g.MitgliedID = m.ID
-WHERE g.Jahr = {jahr}
-    AND g.Kategorie = 'Gewehr 300m'
-ORDER BY g.Resultat DESC
-LIMIT 1</pre>
-                    </div>
-                  </div>
-                </div>
-                <!-- Fleissigster -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#beispiel4">
-                      Fleissigster Sch&uuml;tze (meiste Teilnahmen)
-                    </button>
-                  </h2>
-                  <div id="beispiel4" class="accordion-collapse collapse" data-bs-parent="#beispielAccordion">
-                    <div class="accordion-body">
-                      <pre class="sql-editor mb-0">SELECT
-    MitgliedID AS gewinner_id,
-    CONCAT(COUNT(*), ' Teilnahmen') AS resultat,
-    'Fleisspreis' AS rang
-FROM (
-    SELECT MitgliedID FROM gruppenstiche WHERE Jahr = {jahr}
-    UNION ALL
-    SELECT MitgliedID FROM endresultate WHERE Jahr = {jahr}
-    UNION ALL
-    SELECT MitgliedID FROM feldschiessen WHERE Jahr = {jahr}
-) AS teilnahmen
-GROUP BY MitgliedID
-ORDER BY COUNT(*) DESC
-LIMIT 1</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Hinweis: Beispiele/Vorlagen sind jetzt direkt im Bearbeiten-Panel
+               (Regel-Typ "Geführt" + "Vorlage aus bestehender Regel"). Die alte
+               Beispiel-Akkordeon-Liste verwies auf nicht existierende Tabellen
+               und wurde entfernt. -->
 
         </div>
       </div>
@@ -536,12 +377,93 @@ LIMIT 1</pre>
                   rows="2" placeholder="Was macht diese Regel..."></textarea>
       </div>
 
+      <!-- Regel-Typ: gefuehrt vs. Experte -->
       <div class="mb-3">
-        <label class="panel-label">SQL-Query <span class="text-danger">*</span></label>
-        <div class="form-text mb-2" style="font-size:0.75rem;">
+        <label class="panel-label">Regel-Typ</label>
+        <select name="regel_typ" id="regelTyp" class="form-select">
+          <option value="einzelwettbewerb">Gef&uuml;hrt: Bester in einem Wettbewerb</option>
+          <option value="baukasten">Baukasten: Bedingungen &amp; Sortierung selbst zusammenstellen</option>
+          <option value="custom">Experte: eigenes SQL</option>
+        </select>
+        <div class="form-text" style="font-size:0.75rem;">
+          &bdquo;Gef&uuml;hrt&ldquo; und &bdquo;Baukasten&ldquo; erzeugen das SQL automatisch. &bdquo;Experte&ldquo; f&uuml;r Sonderf&auml;lle (z.&nbsp;B. Jahresmeister).
+        </div>
+      </div>
+
+      <!-- Builder-Felder (nur bei "Geführt") -->
+      <div id="builderFields">
+        <div class="mb-3">
+          <label class="panel-label">Wettbewerb <span class="text-danger">*</span></label>
+          <select name="wettbewerb" id="builderWettbewerb" class="form-select">
+            <?php foreach ($wp_wettbewerbe as $wpKey => $wpDef): ?>
+            <option value="<?= htmlspecialchars($wpKey) ?>" data-cat="<?= !empty($wpDef['category']) ? '1' : '0' ?>"><?= htmlspecialchars($wpDef['label']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="mb-3" id="builderKategorieRow">
+          <label class="panel-label">Kategorie</label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="kategorie" id="katAlle" value="" checked>
+              <label class="form-check-label" for="katAlle">Alle</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="kategorie" id="katA" value="A">
+              <label class="form-check-label" for="katA">Kat. A</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="kategorie" id="katB" value="B">
+              <label class="form-check-label" for="katB">Kat. B</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nur einfacher Modus -->
+        <div class="mb-3" id="einzelOnlyFields">
+          <label class="panel-label">Sieger ist</label>
+          <select name="richtung" id="builderRichtung" class="form-select">
+            <option value="DESC">H&ouml;chstes Resultat (Standard)</option>
+            <option value="ASC">Niedrigstes Resultat</option>
+          </select>
+        </div>
+
+        <!-- Baukasten: frei klickbare Bedingungen & Sortierung -->
+        <div id="baukastenFields">
+          <div class="mb-3">
+            <label class="panel-label">Bedingungen
+              <span class="text-muted" style="font-weight:400; text-transform:none;">(optional, mit UND verkn&uuml;pft)</span>
+            </label>
+            <div id="builderFilterRows"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="btnAddFilter">
+              <i class="bi bi-plus-lg me-1"></i> Bedingung
+            </button>
+            <div class="form-text" style="font-size:0.72rem;">
+              Jahr (= {jahr}) und &bdquo;kein Leertreffer&ldquo; werden automatisch erg&auml;nzt. Werte: Zahl oder <code>{jahr}</code>.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="panel-label">Sortierung
+              <span class="text-muted" style="font-weight:400; text-transform:none;">(Sieger = erste Zeile)</span>
+            </label>
+            <div id="builderSortRows"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="btnAddSort">
+              <i class="bi bi-plus-lg me-1"></i> Sortierung
+            </button>
+          </div>
+          <input type="hidden" name="filter_json" id="builderFilterJson" value="[]">
+          <input type="hidden" name="sort_json" id="builderSortJson" value="[]">
+        </div>
+      </div>
+
+      <!-- SQL: Experte = editierbar, Geführt = read-only Vorschau -->
+      <div class="mb-3" id="sqlBlock">
+        <label class="panel-label" id="sqlLabel">SQL-Query <span class="text-danger">*</span></label>
+        <div class="form-text mb-2" id="sqlCustomHelp" style="font-size:0.75rem;">
           Muss <code>gewinner_id</code> zur&uuml;ckgeben. Optional: <code>resultat</code>, <code>rang</code><br>
           Platzhalter:
           <span class="code-badge" style="font-size:0.75rem;">{jahr}</span>
+          <span class="code-badge" style="font-size:0.75rem;">{kategorie}</span>
           <span class="code-badge" style="font-size:0.75rem;">{wanderpreis_id}</span>
         </div>
         <textarea name="sql_query" id="regelSql" class="form-control sql-editor"
@@ -566,26 +488,49 @@ LIMIT 1</pre>
       </div>
     </form>
 
-    <!-- Vorlagen-Buttons im Panel -->
-    <hr class="my-3" style="border-color: #e2e8f0;">
-    <div>
-      <label class="panel-label">
-        <i class="bi bi-clipboard me-1"></i> Vorlage einf&uuml;gen
-      </label>
-      <div class="d-flex flex-wrap gap-1 mt-1">
-        <button class="vorlage-btn" data-vorlage="jahresmeister">Jahresmeister</button>
-        <button class="vorlage-btn" data-vorlage="endstich">Bester Endstich</button>
-        <button class="vorlage-btn" data-vorlage="gruppenstich">Gruppenstich</button>
-        <button class="vorlage-btn" data-vorlage="fleissigster">Fleissigster</button>
+    <!-- Experten-Werkzeuge: Vorlage aus bestehender Regel + Tabellen-Referenz -->
+    <div id="expertenTools">
+      <hr class="my-3" style="border-color: #e2e8f0;">
+      <label class="panel-label"><i class="bi bi-clipboard me-1"></i> Vorlage aus bestehender Regel</label>
+      <select id="vorlagePicker" class="form-select form-select-sm">
+        <option value="">&ndash; Regel w&auml;hlen, um ihr SQL zu &uuml;bernehmen &ndash;</option>
+      </select>
+      <div class="form-text" style="font-size:0.72rem;">&Uuml;bernimmt das SQL einer bestehenden Regel als Startpunkt.</div>
+
+      <div class="mt-3">
+        <button class="btn btn-link text-muted p-0 small" type="button"
+                data-bs-toggle="collapse" data-bs-target="#schemaRef">
+          <i class="bi bi-table me-1"></i> Verf&uuml;gbare Tabellen &amp; Spalten
+        </button>
+        <div class="collapse mt-2" id="schemaRef">
+          <div class="form-text mb-1" style="font-size:0.72rem;">
+            Ausgabe: <code>gewinner_id</code> (Pflicht), optional <code>resultat</code>, <code>rang</code>, <code>bemerkung</code>.
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm" style="font-size:0.72rem;">
+              <thead><tr><th>Tabelle</th><th>Mitglied</th><th>Jahr</th><th>Spalten</th></tr></thead>
+              <tbody>
+                <?php foreach ($wp_schema_ref as $t): ?>
+                <tr>
+                  <td><code><?= htmlspecialchars($t['table']) ?></code></td>
+                  <td><?= htmlspecialchars($t['member']) ?></td>
+                  <td><?= htmlspecialchars($t['year']) ?></td>
+                  <td><?= htmlspecialchars($t['cols']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="panel-footer">
-    <button type="button" class="btn btn-success" id="btnSaveRegel">
-      <i class="bi bi-check-lg me-1"></i> Speichern
+    <button type="button" class="btn btn-outline-primary btn-sm" id="btnSaveRegel">
+      <i class="bi bi-save me-1"></i> Speichern
     </button>
-    <button type="button" class="btn btn-outline-danger d-none" id="btnDeleteRegel">
+    <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btnDeleteRegel">
       <i class="bi bi-trash me-1"></i> L&ouml;schen
     </button>
   </div>
@@ -599,6 +544,9 @@ $(document).ready(function() {
     // ============================================
     let regelnData = [];
 
+    // Wettbewerbs-/Spalten-Registry fuer den Baukasten (serverseitig erzeugt)
+    const WP_WETTBEWERBE = <?= json_encode(wp_wettbewerbe_client(), JSON_UNESCAPED_UNICODE) ?>;
+
     // ============================================
     // LADEN
     // ============================================
@@ -607,6 +555,7 @@ $(document).ready(function() {
             regelnData = data;
             renderDesktopTable();
             renderMobileCards();
+            populateVorlagePicker();
             $('#regelnCount').html(
                 '<i class="bi bi-info-circle me-1"></i> ' + data.length + ' Regeln definiert'
             );
@@ -650,7 +599,7 @@ $(document).ready(function() {
                 '  <div class="row-actions">' +
                 '    <button class="btn btn-outline-primary btn-test-sql" data-tooltip="SQL testen" onclick="event.stopPropagation()">' +
                 '      <i class="bi bi-play-fill"></i></button>' +
-                '    <button class="btn btn-outline-secondary btn-edit-regel" data-tooltip="Bearbeiten" onclick="event.stopPropagation()">' +
+                '    <button class="btn btn-outline-primary btn-edit-regel" data-tooltip="Bearbeiten" onclick="event.stopPropagation()">' +
                 '      <i class="bi bi-pencil"></i></button>' +
                 '    <button class="btn btn-outline-danger btn-delete-regel" data-tooltip="L\u00f6schen" onclick="event.stopPropagation()">' +
                 '      <i class="bi bi-trash"></i></button>' +
@@ -733,7 +682,16 @@ $(document).ready(function() {
             $('#regelId').val('');
             $('#regelAktiv').prop('checked', true);
             $('#btnDeleteRegel').addClass('d-none');
-            $('#btnSaveRegel').html('<i class="bi bi-check-lg me-1"></i> Erstellen');
+            $('#btnSaveRegel').html('<i class="bi bi-save me-1"></i> Erstellen');
+            // Builder-Defaults: gefuehrt, erster Wettbewerb, alle Kategorien
+            $('#regelTyp').val('einzelwettbewerb');
+            $('#builderWettbewerb').prop('selectedIndex', 0);
+            $('#katAlle').prop('checked', true);
+            $('#builderRichtung').val('DESC');
+            $('#regelSql').val('');
+            $('#builderFilterRows').empty();
+            $('#builderSortRows').empty();
+            applyRegelTyp('einzelwettbewerb');
         } else {
             $('#panelTitle').html('<i class="bi bi-pencil me-2"></i> Regel bearbeiten');
             $('#regelId').val(regel.id);
@@ -743,7 +701,27 @@ $(document).ready(function() {
             $('#regelSql').val(regel.sql_query || '');
             $('#regelAktiv').prop('checked', regel.aktiv == 1);
             $('#btnDeleteRegel').removeClass('d-none');
-            $('#btnSaveRegel').html('<i class="bi bi-check-lg me-1"></i> Speichern');
+            $('#btnSaveRegel').html('<i class="bi bi-save me-1"></i> Speichern');
+
+            // Regel-Typ + Builder-Felder aus gespeicherten Parametern rekonstruieren
+            const typ = regel.regel_typ || 'custom';
+            $('#regelTyp').val(typ);
+            $('#builderFilterRows').empty();
+            $('#builderSortRows').empty();
+            if (typ !== 'custom') {
+                let p = {};
+                try { p = regel.regel_params ? JSON.parse(regel.regel_params) : {}; } catch (e) { p = {}; }
+                if (p.wettbewerb) $('#builderWettbewerb').val(p.wettbewerb);
+                const kat = (p.kategorie || '').replace('Kat. ', '');
+                $('input[name="kategorie"][value="' + kat + '"]').prop('checked', true);
+                $('#builderRichtung').val(p.richtung === 'ASC' ? 'ASC' : 'DESC');
+                if (typ === 'baukasten') {
+                    // Wettbewerb muss gesetzt sein, bevor Spalten-Selects befuellt werden
+                    (p.filter || []).forEach(function(f) { addFilterRow(f.col, f.op, f.val); });
+                    (p.sort   || []).forEach(function(s) { addSortRow(s.col, s.dir); });
+                }
+            }
+            applyRegelTyp(typ);
 
             // Zeile in Tabelle markieren
             $('.hybrid-row').removeClass('selected');
@@ -777,6 +755,7 @@ $(document).ready(function() {
     // ============================================
     $('#btnSaveRegel').on('click', function() {
         const $form = $('#regelForm');
+        if ($('#regelTyp').val() === 'baukasten') collectBaukasten();
         if (!$form[0].checkValidity()) { $form[0].reportValidity(); return; }
 
         const $btn = $(this);
@@ -842,14 +821,14 @@ $(document).ready(function() {
         $.post('wanderpreise/test_regel_sql.php', {
             sql: sql,
             jahr: new Date().getFullYear(),
+            kategorie: $('input[name="kategorie"]:checked').val() || '',
             csrf_token: $('input[name="csrf_token"]').val()
         }, function(response) {
             if (response.success) {
-                $result.html('<div class="alert alert-success mb-0 py-2 px-3" style="font-size:0.85rem;">' +
-                    '<i class="bi bi-check-circle me-2"></i>' + response.message + '</div>');
+                $result.html(renderTestResult(response));
             } else {
                 $result.html('<div class="alert alert-danger mb-0 py-2 px-3" style="font-size:0.85rem;">' +
-                    '<i class="bi bi-x-circle me-2"></i>' + response.message + '</div>');
+                    '<i class="bi bi-x-circle me-2"></i>' + escHtml(response.message || 'Fehler') + '</div>');
             }
         }, 'json').fail(function() {
             $result.html('<div class="alert alert-danger mb-0 py-2 px-3" style="font-size:0.85rem;">Fehler beim Testen</div>');
@@ -863,21 +842,203 @@ $(document).ready(function() {
     };
 
     // ============================================
-    // VORLAGEN
+    // REGEL-TYP / GEFUEHRTER BUILDER
     // ============================================
-    const vorlagen = {
-        jahresmeister: "SELECT\n    m.ID AS gewinner_id,\n    'Test-Resultat' AS resultat,\n    '1. Rang' AS rang\nFROM mitglieder m\nWHERE m.Status = 1\nORDER BY m.ID DESC\nLIMIT 1",
-        endstich: "SELECT\n    e.MitgliedID AS gewinner_id,\n    CONCAT(e.Total, ' Punkte') AS resultat,\n    '1. Rang Endstich' AS rang\nFROM endresultate e\nWHERE e.Jahr = {jahr}\n    AND e.Total = (SELECT MAX(Total) FROM endresultate WHERE Jahr = {jahr})\nLIMIT 1",
-        gruppenstich: "SELECT\n    g.MitgliedID AS gewinner_id,\n    CONCAT(g.Resultat, ' Punkte') AS resultat,\n    CONCAT('1. Rang ', g.Kategorie) AS rang\nFROM gruppenstiche g\nINNER JOIN mitglieder m ON g.MitgliedID = m.ID\nWHERE g.Jahr = {jahr}\n    AND g.Kategorie = 'Gewehr 300m'\nORDER BY g.Resultat DESC\nLIMIT 1",
-        fleissigster: "SELECT\n    MitgliedID AS gewinner_id,\n    CONCAT(COUNT(*), ' Teilnahmen') AS resultat,\n    'Fleisspreis' AS rang\nFROM (\n    SELECT MitgliedID FROM gruppenstiche WHERE Jahr = {jahr}\n    UNION ALL\n    SELECT MitgliedID FROM endresultate WHERE Jahr = {jahr}\n) AS teilnahmen\nGROUP BY MitgliedID\nORDER BY COUNT(*) DESC\nLIMIT 1"
+    const CSRF = $('input[name="csrf_token"]').val();
+    let previewTimer = null;
+
+    // Kategorie-Zeile nur zeigen, wenn der Wettbewerb sie unterstuetzt
+    function syncKategorieVisibility() {
+        const cat = $('#builderWettbewerb option:selected').data('cat');
+        if (String(cat) === '1') {
+            $('#builderKategorieRow').show();
+        } else {
+            $('#builderKategorieRow').hide();
+            $('#katAlle').prop('checked', true); // ohne Kategorie -> alle
+        }
+    }
+
+    // UI je nach Regel-Typ umschalten (gefuehrt / baukasten / Experte)
+    window.applyRegelTyp = function(typ) {
+        const builder = (typ !== 'custom');
+        $('#builderFields').toggle(builder);
+        $('#expertenTools').toggle(!builder);
+        $('#sqlCustomHelp').toggle(!builder);
+        $('#einzelOnlyFields').toggle(typ === 'einzelwettbewerb');
+        $('#baukastenFields').toggle(typ === 'baukasten');
+        $('#sqlLabel').html(builder
+            ? 'SQL-Vorschau <span class="text-muted" style="font-weight:400;">(automatisch erzeugt)</span>'
+            : 'SQL-Query <span class="text-danger">*</span>');
+        $('#regelSql').prop('readonly', builder).prop('required', !builder);
+        if (builder) {
+            syncKategorieVisibility();
+            if (typ === 'baukasten') {
+                if ($('#builderSortRows .bk-row').length === 0) addSortRow('score', 'DESC');
+                bkRefreshColumns();
+                collectBaukasten();
+            }
+            refreshPreview();
+        }
     };
 
-    $(document).on('click', '.vorlage-btn', function() {
-        const key = $(this).data('vorlage');
-        if (vorlagen[key]) {
-            $('#regelSql').val(vorlagen[key]);
-            msvToast('Vorlage eingef\u00fcgt', 'info');
+    // SQL-Vorschau vom Server holen (einzige Quelle der SQL-Generierung)
+    function refreshPreview() {
+        if ($('#regelTyp').val() === 'custom') return;
+        $.post('wanderpreise/build_regel_preview.php', {
+            regel_typ:   $('#regelTyp').val(),
+            wettbewerb:  $('#builderWettbewerb').val(),
+            kategorie:   $('input[name="kategorie"]:checked').val() || '',
+            richtung:    $('#builderRichtung').val(),
+            filter_json: $('#builderFilterJson').val(),
+            sort_json:   $('#builderSortJson').val(),
+            csrf_token:  CSRF
+        }, function(resp) {
+            $('#regelSql').val(resp.success ? resp.sql : ('-- Vorschau-Fehler: ' + (resp.message || 'unbekannt')));
+        }, 'json');
+    }
+
+    function debouncedPreview() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(refreshPreview, 150);
+    }
+
+    $('#regelTyp').on('change', function() { applyRegelTyp($(this).val()); });
+    $('#builderWettbewerb').on('change', function() {
+        syncKategorieVisibility();
+        bkRefreshColumns();
+        collectBaukasten();
+        debouncedPreview();
+    });
+    $('input[name="kategorie"]').on('change', debouncedPreview);
+    $('#builderRichtung').on('change', debouncedPreview);
+
+    // ============================================
+    // BEDINGUNGS-BAUKASTEN (Filter & Sortierung)
+    // ============================================
+    const BK_OPS = [
+        { v: '=',  t: '= (gleich)' },
+        { v: '!=', t: '≠ (ungleich)' },
+        { v: '>',  t: '> (grösser)' },
+        { v: '>=', t: '≥ (grösser/gleich)' },
+        { v: '<',  t: '< (kleiner)' },
+        { v: '<=', t: '≤ (kleiner/gleich)' },
+        { v: 'IS NOT NULL', t: 'ist erfasst' },
+        { v: 'IS NULL',     t: 'ist leer' }
+    ];
+
+    function bkColOptions(wkey, selected) {
+        const cols = (WP_WETTBEWERBE[wkey] && WP_WETTBEWERBE[wkey].columns) || [];
+        return cols.map(function(c) {
+            return '<option value="' + c.key + '"' + (c.key === selected ? ' selected' : '') + '>' + escHtml(c.label) + '</option>';
+        }).join('');
+    }
+    function bkOpOptions(selected) {
+        return BK_OPS.map(function(o) {
+            return '<option value="' + o.v + '"' + (o.v === selected ? ' selected' : '') + '>' + o.t + '</option>';
+        }).join('');
+    }
+
+    function bkToggleValInput($row) {
+        const op = $row.find('.bk-op').val();
+        const isNull = (op === 'IS NULL' || op === 'IS NOT NULL');
+        $row.find('.bk-val').toggle(!isNull).prop('disabled', isNull);
+    }
+
+    function addFilterRow(col, op, val) {
+        const wkey = $('#builderWettbewerb').val();
+        const $row = $(
+            '<div class="bk-row d-flex gap-1 align-items-center mb-1">' +
+            '  <select class="form-select form-select-sm bk-col">' + bkColOptions(wkey, col || 'score') + '</select>' +
+            '  <select class="form-select form-select-sm bk-op" style="max-width:11rem;">' + bkOpOptions(op || '>=') + '</select>' +
+            '  <input type="text" class="form-control form-control-sm bk-val" style="max-width:6.5rem;" value="' + escHtml(val || '') + '" placeholder="Zahl / {jahr}">' +
+            '  <button type="button" class="btn btn-sm btn-outline-danger bk-del" tabindex="-1" title="Entfernen">&times;</button>' +
+            '</div>'
+        );
+        $('#builderFilterRows').append($row);
+        bkToggleValInput($row);
+    }
+
+    function addSortRow(col, dir) {
+        const wkey = $('#builderWettbewerb').val();
+        const $row = $(
+            '<div class="bk-row d-flex gap-1 align-items-center mb-1">' +
+            '  <select class="form-select form-select-sm bk-col">' + bkColOptions(wkey, col || 'score') + '</select>' +
+            '  <select class="form-select form-select-sm bk-dir" style="max-width:13rem;">' +
+            '    <option value="DESC"' + ((dir || 'DESC') === 'DESC' ? ' selected' : '') + '>absteigend (höchste zuerst)</option>' +
+            '    <option value="ASC"'  + (dir === 'ASC' ? ' selected' : '') + '>aufsteigend (niedrigste zuerst)</option>' +
+            '  </select>' +
+            '  <button type="button" class="btn btn-sm btn-outline-danger bk-del" tabindex="-1" title="Entfernen">&times;</button>' +
+            '</div>'
+        );
+        $('#builderSortRows').append($row);
+    }
+
+    // Spalten-Selects bei Wettbewerb-Wechsel neu befuellen (Auswahl wenn moeglich behalten)
+    function bkRefreshColumns() {
+        const wkey = $('#builderWettbewerb').val();
+        $('#baukastenFields .bk-col').each(function() {
+            const cur = $(this).val();
+            $(this).html(bkColOptions(wkey, cur));
+            if ($(this).val() === null) $(this).html(bkColOptions(wkey, 'score')); // Spalte fehlt -> score
+        });
+    }
+
+    // Zeilen -> Hidden-JSON-Felder
+    function collectBaukasten() {
+        const filter = [];
+        $('#builderFilterRows .bk-row').each(function() {
+            const col = $(this).find('.bk-col').val();
+            const op  = $(this).find('.bk-op').val();
+            const isNull = (op === 'IS NULL' || op === 'IS NOT NULL');
+            const val = isNull ? '' : ($(this).find('.bk-val').val() || '').trim();
+            if (col && op) filter.push({ col: col, op: op, val: val });
+        });
+        const sort = [];
+        $('#builderSortRows .bk-row').each(function() {
+            const col = $(this).find('.bk-col').val();
+            const dir = $(this).find('.bk-dir').val();
+            if (col) sort.push({ col: col, dir: dir });
+        });
+        $('#builderFilterJson').val(JSON.stringify(filter));
+        $('#builderSortJson').val(JSON.stringify(sort));
+    }
+
+    $('#btnAddFilter').on('click', function() { addFilterRow(); collectBaukasten(); debouncedPreview(); });
+    $('#btnAddSort').on('click',   function() { addSortRow();   collectBaukasten(); debouncedPreview(); });
+    $('#builderFilterRows, #builderSortRows').on('change', '.bk-col, .bk-op, .bk-dir', function() {
+        bkToggleValInput($(this).closest('.bk-row'));
+        collectBaukasten(); debouncedPreview();
+    });
+    $('#builderFilterRows').on('input', '.bk-val', function() { collectBaukasten(); debouncedPreview(); });
+    $('#builderFilterRows, #builderSortRows').on('click', '.bk-del', function() {
+        $(this).closest('.bk-row').remove();
+        collectBaukasten(); debouncedPreview();
+    });
+
+    // ============================================
+    // VORLAGE AUS BESTEHENDER REGEL (Experten-Modus)
+    // ============================================
+    function populateVorlagePicker() {
+        const $sel = $('#vorlagePicker');
+        $sel.find('option:gt(0)').remove();
+        regelnData.forEach(function(r) {
+            $sel.append('<option value="' + r.id + '">' +
+                escHtml(r.regel_name) + ' (' + escHtml(r.regel_code) + ')</option>');
+        });
+    }
+
+    $('#vorlagePicker').on('change', function() {
+        const id = $(this).val();
+        if (id) {
+            const r = regelnData.find(function(x) { return String(x.id) === String(id); });
+            if (r) {
+                $('#regelTyp').val('custom');
+                applyRegelTyp('custom');
+                $('#regelSql').val(r.sql_query || '');
+                msvToast('Vorlage \u00fcbernommen (Experten-Modus)', 'info');
+            }
         }
+        $(this).val('');
     });
 
     // ============================================
@@ -904,6 +1065,34 @@ $(document).ready(function() {
         if (!str) return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
                   .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Test-Ergebnis als kompakte Tabelle rendern (statt nur einer Textzeile)
+    function renderTestResult(resp) {
+        if (!resp.rows || resp.rows.length === 0) {
+            return '<div class="alert alert-warning mb-0 py-2 px-3" style="font-size:0.85rem;">' +
+                   '<i class="bi bi-info-circle me-2"></i>' + escHtml(resp.message || 'Kein Ergebnis') + '</div>';
+        }
+        const cols = resp.columns && resp.columns.length ? resp.columns : Object.keys(resp.rows[0]);
+        let h = '<div class="alert alert-success mb-2 py-2 px-3" style="font-size:0.85rem;">' +
+                '<i class="bi bi-check-circle me-2"></i>' + escHtml(resp.message) + '</div>';
+        h += '<div class="table-responsive"><table class="table table-sm table-striped mb-1" style="font-size:0.78rem;">';
+        h += '<thead><tr>';
+        cols.forEach(function(c) { h += '<th>' + escHtml(c) + '</th>'; });
+        h += '</tr></thead><tbody>';
+        resp.rows.forEach(function(row) {
+            h += '<tr>';
+            cols.forEach(function(c) {
+                const v = row[c];
+                h += '<td>' + escHtml(v === null || v === undefined ? '' : String(v)) + '</td>';
+            });
+            h += '</tr>';
+        });
+        h += '</tbody></table></div>';
+        if (resp.total && resp.total > resp.rows.length) {
+            h += '<div class="form-text" style="font-size:0.72rem;">Zeige ' + resp.rows.length + ' von ' + resp.total + ' Zeilen.</div>';
+        }
+        return h;
     }
 
     // ============================================

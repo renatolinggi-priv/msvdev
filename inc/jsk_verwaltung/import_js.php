@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/import_js.php
+// inc/jsk_verwaltung/import_js.php
 // Excel-Import fuer Jungschuetzen (SSV-Mitgliederverzeichnis o.ae.).
 //   action=preview : hochgeladene Datei parsen, Spalten mappen, nach JSK-Jahrgang
 //                    filtern -> JSON-Vorschau (nur Vorschlaege).

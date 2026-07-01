@@ -10,9 +10,9 @@ include 'header.inc.php';
   <h5>Helfereinsätze Jungschützenkurs â€“ <?= date('Y') ?></h5>
   <form id="helferstundenForm">
     <div id="helferstundenTabelle" class="col-4"></div>
-    <button type="submit" class="btn btn-outline-primary mt-3"><i class="bi bi-save me-1"></i>Speichern</button>
-    <button type="button" class="btn btn-outline-success mt-3" data-bs-toggle="modal" data-bs-target="#freierEintragModal">âž• Zusätzlicher Helfereinsatz</button>
-    <button type="button" id="pdfExportBtn" class="btn btn-outline-secondary mt-3"><i class="bi bi-file-pdf me-1"></i>Helferstunden als PDF exportieren</button>
+    <button type="submit" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-save me-1"></i>Speichern</button>
+    <button type="button" class="btn btn-outline-success btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#freierEintragModal">âž• Zusätzlicher Helfereinsatz</button>
+    <button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm mt-3"><i class="bi bi-file-pdf me-1"></i>Helferstunden als PDF exportieren</button>
   </form>
 </div>
 <div class="row mt-3">
@@ -31,7 +31,7 @@ include 'header.inc.php';
       </div>
       <div class="modal-body" id="feedbackMessage"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">OK</button>
       </div>
     </div>
   </div>
@@ -41,6 +41,7 @@ include 'header.inc.php';
 <div class="modal fade" id="freierEintragModal" tabindex="-1" aria-labelledby="freierEintragLabel" aria-hidden="true">
   <div class="modal-dialog">
     <form id="freierEintragForm" class="modal-content">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
       <div class="modal-header">
         <h5 class="modal-title" id="freierEintragLabel">Freier Helfereinsatz erfassen</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
@@ -60,32 +61,14 @@ include 'header.inc.php';
         </div>
       </div>
       <div class="modal-footer">
-      <button type="button" class="btn btn-primary" id="freierSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="freierSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>
 
       </div>
     </form>
   </div>
 </div>
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="confirmDeleteLabel">Eintrag löschen</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-      </div>
-      <div class="modal-body">
-        Möchtest du diesen Eintrag wirklich löschen?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn"><i class="bi bi-trash me-1"></i>Löschen</button>
-      </div>
-    </div>
-  </div>
-</div>
 <script>
 
-let deleteId = null;
 // Freier Helfereinsatz: Speichern-Klick löst das Formular-Submit aus
 $('#freierSpeichernBtn').on('click', function () {
   $('#freierEintragForm').trigger('submit');
@@ -94,12 +77,7 @@ $('#freierSpeichernBtn').on('click', function () {
 $(document).on('keydown', function (e) {
   if (e.key === 'Enter' && $('.modal.show').length > 0) {
     const activeModal = $('.modal.show');
-
-    if (activeModal.attr('id') === 'confirmDeleteModal') {
-      $('#confirmDeleteBtn').trigger('click');
-    } else {
-      activeModal.find('.btn-primary, .btn[data-bs-dismiss="modal"]').first().trigger('click');
-    }
+    activeModal.find('.btn-primary, .btn[data-bs-dismiss="modal"]').first().trigger('click');
   }
 });
 
@@ -203,42 +181,31 @@ $('#pdfExportBtn').on('click', function () {
   });
 });
 
-// Öffnet das Lösch-Bestätigungsmodal
+// Öffnet die Lösch-Bestätigung
 $('#helferstundenTabelle').on('click', '.delete-btn', function (e) {
   e.preventDefault();
-  deleteId = $(this).data('id');
-
-  if (deleteId) {
-    const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-    modal.show();
-  }
-});
-
-// Bestätigt das Löschen
-$('#confirmDeleteBtn').on('click', function () {
+  const deleteId = $(this).data('id');
   if (!deleteId) return;
 
-  $.ajax({
-    url: 'jshelfer/delete_jshelfer.php',
-    method: 'POST',
-    data: { id: deleteId },
-    dataType: 'json',
-    success: function(response) {
-      showModalMessage(response.success || response.error);
-      ladeHelferstunden();
-    },
-    error: function(xhr, status, error) {
-      showModalMessage('Fehler beim Löschen: ' + error);
-    }
+  const name = ($(this).closest('tr').find('td').eq(1).text().trim()) || 'diesen Eintrag';
+
+  msvConfirmDelete(name).then(function (res) {
+    if (!res.isConfirmed) return;
+
+    $.ajax({
+      url: 'jshelfer/delete_jshelfer.php',
+      method: 'POST',
+      data: { id: deleteId },
+      dataType: 'json',
+      success: function(response) {
+        showModalMessage(response.success || response.error);
+        ladeHelferstunden();
+      },
+      error: function(xhr, status, error) {
+        showModalMessage('Fehler beim Löschen: ' + error);
+      }
+    });
   });
-
-  const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal'));
-  confirmModal.hide();
-  deleteId = null;
-
-  // Sicherstellen, dass Backdrop verschwindet
-  $('.modal-backdrop').remove();
-  $('body').removeClass('modal-open').css('padding-right', '');
 });
 
 $(document).ready(function() {

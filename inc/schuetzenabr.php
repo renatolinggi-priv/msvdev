@@ -19,14 +19,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
-                            Schützenabrechnung
-                        </h2>
-                    </div>
-                </div>
+                <?php $page_title = 'Schützenabrechnung'; include 'partials/page_header.inc.php'; ?>
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
                 <form id="schuetzenabr-form">
@@ -40,26 +33,22 @@ include 'header.inc.php';
                         <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
                     </div>
                     <!-- Aktionsbereich (Bootstrap Collapse) -->
-                    <div class="card action-card mb-0">
-                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                             data-bs-toggle="collapse" data-bs-target="#schuetzenabrActions"
-                             aria-expanded="false" aria-controls="schuetzenabrActions">
-                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                            <i class="bi bi-chevron-down action-chevron"></i>
-                        </div>
-                        <div class="collapse" id="schuetzenabrActions">
-                            <div class="card-body pt-2 pb-3 px-3">
+<?php
+                    $ac_id = 'schuetzenabrActions';
+                    ob_start();
+                    ?>
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <button class="xlsx-btn btn btn-outline-success btn-sm w-100" type="button">
+                                        <button class="xlsx-btn btn btn-outline-info btn-sm w-100" type="button">
                                             <i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel
                                         </button>
                                     </div>
                                 </div>
                                 <div id="excel-link" class="mt-2"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <?php
+                    $ac_body = ob_get_clean();
+                    include 'partials/action_card.inc.php';
+                    ?>
                     </div><!-- Ende flex-row Jahr+Aktionen -->
                     <!-- Info-Bereich -->
                     <div class="table-wrapper">

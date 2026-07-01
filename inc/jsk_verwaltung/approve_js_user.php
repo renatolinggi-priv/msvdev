@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/approve_js_user.php
+// inc/jsk_verwaltung/approve_js_user.php
 // Konto eines Jungschuetzen freischalten/ablehnen/(de)aktivieren - direkt aus der
 // Jungschuetzen-Verwaltung, damit auch der Vorstand (nicht nur Admin) freigeben kann.
 // Streng auf users mit role='jungschuetze' beschraenkt -> keine Rechte-Eskalation.

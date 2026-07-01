@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/delete_js.php
+// inc/jsk_verwaltung/delete_js.php
 // Jungschuetzen loeschen. PDO, CSRF, Vorstand/Admin.
 // Verknuepfte Betreuungs-Anfragen werden via FK (ON DELETE CASCADE) mitentfernt;
 // ein evtl. verknuepftes users-Konto behaelt jungschuetze_id=NULL (ON DELETE SET NULL).

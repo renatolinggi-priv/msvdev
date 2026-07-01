@@ -10,21 +10,24 @@ if (empty($_SESSION['csrf_token'])) {
 }
 ?>
 
-<link rel="stylesheet" href="../css/cup.css?v=<?php echo time(); ?>">
+<link rel="stylesheet" href="../css/cup.css?v=<?php echo @filemtime(__DIR__ . '/../css/cup.css') ?: '1'; ?>">
 <script src="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/jquery-ui.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/themes/base/jquery-ui.min.css">
 <script>const CUP4_CSRF = '<?php echo $_SESSION['csrf_token']; ?>';</script>
 
 <div class="container-fluid">
+    <div class="main-content-wrapper">
 
     <!-- Titel (nur Desktop) -->
     <div class="row mb-3 d-none d-md-flex">
         <div class="col-auto">
-            <h4 class="mb-0" style="color: var(--cup4-primary);">
-                <i class="bi bi-trophy me-2"></i>CUP Resultaterfassung
-            </h4>
+            <h2 class="h4 mb-0" style="color: var(--cup4-primary);">CUP Resultaterfassung
+            </h2>
         </div>
     </div>
+
+    <!-- Inhalt in weisser Karte (einheitlich mit den uebrigen Seiten) -->
+    <div class="content-background">
 
     <!-- Fortschrittsanzeige -->
     <div class="cup4-progress" id="progress-section">
@@ -88,10 +91,10 @@ if (empty($_SESSION['csrf_token'])) {
             </button>
             <div class="cup4-toolbar-spacer"></div>
             <div class="cup4-toolbar-actions">
-                <button id="save-all" class="btn btn-primary btn-sm">
+                <button id="save-all" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-save me-1"></i>Speichern
                 </button>
-                <button class="btn btn-outline-secondary btn-sm pdf-btn">
+                <button class="btn btn-outline-info btn-sm pdf-btn">
                     <i class="bi bi-file-pdf me-1"></i>PDF
                 </button>
                 <button id="delete-btn" class="btn btn-outline-danger btn-sm">
@@ -146,7 +149,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <div class="cup4-pool-header" style="border:none; padding:0; margin-bottom:0.5rem;">
                     <span class="cup4-pool-title" style="font-size:0.75rem;"><i class="bi bi-award me-1"></i>Gewinner R1</span>
                     <span style="display:flex; align-items:center; gap:0.35rem;">
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
+                        <button class="btn btn-outline-success btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
                             <i class="bi bi-plus-lg me-1"></i>Nachnominieren
                         </button>
                         <span class="cup4-counter" id="r2-pool-counter">0</span>
@@ -161,49 +164,57 @@ if (empty($_SESSION['csrf_token'])) {
             </div>
         </div>
 
-        <!-- Finale -->
-        <div class="cup4-round cup4-final-section" id="final-col">
-            <div class="cup4-round-header">
-                <span class="cup4-round-title"><i class="bi bi-trophy-fill me-1"></i>Finale</span>
-                <span class="cup4-round-badge" id="final-badge">0 Finalisten</span>
+        <!-- Finale + Standcup (4. Spalte) -->
+        <div class="cup4-final-wrap" id="final-wrap">
+            <!-- Finale -->
+            <div class="cup4-round cup4-final-section" id="final-col">
+                <div class="cup4-round-header">
+                    <span class="cup4-round-title"><i class="bi bi-trophy-fill me-1"></i>Finale</span>
+                    <span class="cup4-round-badge" id="final-badge">0 Finalisten</span>
+                </div>
+                <div class="cup4-katb-switch" data-tooltip="Qualifiziert sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale?">
+                    <label class="cup4-katb-label" for="katb-final-switch">Kat.&nbsp;B automatisch ins Finale</label>
+                    <div class="form-check form-switch cup4-katb-toggle">
+                        <input class="form-check-input" type="checkbox" role="switch" id="katb-final-switch" checked>
+                    </div>
+                </div>
+                <div id="final-list"></div>
+                <div class="cup4-empty" id="final-empty">
+                    <div class="cup4-empty-icon"><i class="bi bi-flag"></i></div>
+                    <div class="cup4-empty-text">Noch keine Finalisten.</div>
+                </div>
+                <div id="pdf-link" class="mt-2"></div>
             </div>
-            <div class="form-check form-switch cup4-katb-switch px-3 py-2" data-tooltip="Qualifiziert sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale?">
-                <input class="form-check-input" type="checkbox" role="switch" id="katb-final-switch" checked>
-                <label class="form-check-label" for="katb-final-switch" style="font-size:0.8125rem;">Kat.&nbsp;B automatisch ins Finale</label>
+
+            <!-- Standcup Final (unter der Finale-Card) -->
+            <div class="cup4-standcup" id="standcup-section" style="display:none;">
+                <h6 class="cup4-standcup-title"><i class="bi bi-award me-2"></i>Standcup Final</h6>
+                <div class="cup4-standcup-row">
+                    <span class="cup4-standcup-label">MSV Wilen</span>
+                    <input type="text" id="sc-name-1" class="form-control cup4-standcup-name" placeholder="Teilnehmer">
+                    <input type="number" id="sc-result-1" class="form-control cup4-standcup-res" placeholder="Res">
+                </div>
+                <div class="cup4-standcup-row">
+                    <span class="cup4-standcup-label">SV Wollerau</span>
+                    <input type="text" id="sc-name-2" class="form-control cup4-standcup-name" placeholder="Teilnehmer">
+                    <input type="number" id="sc-result-2" class="form-control cup4-standcup-res" placeholder="Res">
+                </div>
+                <div class="cup4-standcup-row">
+                    <span class="cup4-standcup-label">SV Freienbach</span>
+                    <input type="text" id="sc-name-3" class="form-control cup4-standcup-name" placeholder="Teilnehmer">
+                    <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Res">
+                </div>
+                <div class="text-end mt-2">
+                    <button id="save-standcup" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-save me-1"></i>Standcup speichern
+                    </button>
+                </div>
             </div>
-            <div id="final-list"></div>
-            <div class="cup4-empty" id="final-empty">
-                <div class="cup4-empty-icon"><i class="bi bi-flag"></i></div>
-                <div class="cup4-empty-text">Noch keine Finalisten.</div>
-            </div>
-            <div id="pdf-link" class="mt-2"></div>
         </div>
     </div>
 
-    <!-- Standcup Final (unter dem Bracket) -->
-    <div class="cup4-standcup" id="standcup-section" style="display:none;">
-        <h6 class="mb-3"><i class="bi bi-award me-2"></i>Standcup Final</h6>
-        <div class="cup4-standcup-row">
-            <span class="cup4-standcup-label">MSV Wilen</span>
-            <input type="text" id="sc-name-1" class="form-control" placeholder="Teilnehmer">
-            <input type="number" id="sc-result-1" class="form-control" placeholder="Res" style="width:80px;">
-        </div>
-        <div class="cup4-standcup-row">
-            <span class="cup4-standcup-label">SV Wollerau</span>
-            <input type="text" id="sc-name-2" class="form-control" placeholder="Teilnehmer">
-            <input type="number" id="sc-result-2" class="form-control" placeholder="Res" style="width:80px;">
-        </div>
-        <div class="cup4-standcup-row">
-            <span class="cup4-standcup-label">SV Freienbach</span>
-            <input type="text" id="sc-name-3" class="form-control" placeholder="Teilnehmer">
-            <input type="number" id="sc-result-3" class="form-control" placeholder="Res" style="width:80px;">
-        </div>
-        <div class="text-end mt-2">
-            <button id="save-standcup" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-save me-1"></i>Standcup speichern
-            </button>
-        </div>
-    </div>
+    </div><!-- content-background -->
+    </div><!-- main-content-wrapper -->
 </div>
 
 <script>
@@ -1032,7 +1043,7 @@ $(document).ready(function() {
             $.ajax({
                 url: 'cup2/set_manual_winner.php',
                 method: 'POST',
-                data: { pair_id: pairId, winner_id: negativeId, reason: 'Dreier-Gleichstand - manuell' },
+                data: { pair_id: pairId, winner_id: negativeId, reason: 'Dreier-Gleichstand - manuell', csrf_token: CUP4_CSRF },
                 dataType: 'json',
                 success: function(resp) {
                     if (resp.success) {
@@ -1060,7 +1071,7 @@ $(document).ready(function() {
         $.ajax({
             url: 'cup2/set_manual_winner.php',
             method: 'POST',
-            data: { pair_id: pairId, winner_id: winnerId, reason: 'Gleichstand - manuell' },
+            data: { pair_id: pairId, winner_id: winnerId, reason: 'Gleichstand - manuell', csrf_token: CUP4_CSRF },
             dataType: 'json',
             success: function(resp) {
                 if (resp.success) {
@@ -1104,7 +1115,7 @@ $(document).ready(function() {
             $.ajax({
                 url: 'cup2/set_manual_winner.php',
                 method: 'POST',
-                data: { pair_id: pairId, winner_id: '', reason: 'Anzahl Weiterkommende geändert' },
+                data: { pair_id: pairId, winner_id: '', reason: 'Anzahl Weiterkommende geändert', csrf_token: CUP4_CSRF },
                 dataType: 'json'
             });
         }
@@ -1526,7 +1537,7 @@ $(document).ready(function() {
                 $.ajax({
                     url: 'cup2/set_manual_winner.php',
                     method: 'POST',
-                    data: { pair_id: w.pairId, winner_id: w.winnerId, reason: w.reason },
+                    data: { pair_id: w.pairId, winner_id: w.winnerId, reason: w.reason, csrf_token: CUP4_CSRF },
                     complete: checkDone
                 });
             } else {
@@ -1543,7 +1554,7 @@ $(document).ready(function() {
                             $.ajax({
                                 url: 'cup2/set_manual_winner.php',
                                 method: 'POST',
-                                data: { pair_id: match.ID, winner_id: w.winnerId, reason: w.reason },
+                                data: { pair_id: match.ID, winner_id: w.winnerId, reason: w.reason, csrf_token: CUP4_CSRF },
                                 complete: checkDone
                             });
                         } else {
@@ -1676,7 +1687,7 @@ $(document).ready(function() {
             success: function(resp) {
                 if (resp.success) {
                     $('#pdf-link').html(
-                        '<a href="cuprang/' + resp.pdf_link + '" target="_blank" class="btn btn-sm btn-success">' +
+                        '<a href="cuprang/' + resp.pdf_link + '" target="_blank" class="btn btn-sm btn-outline-info">' +
                         '<i class="bi bi-download me-1"></i>PDF herunterladen</a>'
                     );
                 } else {

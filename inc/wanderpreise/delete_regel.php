@@ -3,6 +3,7 @@
 session_start();
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../csrf.inc.php';
 
 // Datenbankverbindung herstellen
 $conn = get_db_connection();
@@ -16,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // CSRF Token prüfen
-wanderpreise_check_csrf();
+csrf_require(true);
 
 header('Content-Type: application/json; charset=utf-8');
 

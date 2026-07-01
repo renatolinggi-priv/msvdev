@@ -57,13 +57,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
 ?>
 
 <style>
-.table > thead > tr > th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
-    padding: 0.75rem;
-    font-size: 0.85rem;
-}
+/* Tabellen-Header kommt zentral (.table thead th: 0.75rem, uppercase) */
 .table > tbody > tr:hover { background-color: #f8f9fa; }
 .row-pending { background-color: #fff9e6 !important; }
 .row-pending:hover { background-color: #fff3cd !important; }
@@ -112,13 +106,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     <div class="row">
         <div class="col-xl-11 col-lg-12 col-md-12 col-12 ps-0">
             <div class="main-content-wrapper">
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-people-fill me-2"></i>Benutzerverwaltung
-                        </h2>
-                    </div>
-                </div>
+                <?php $page_title = 'Benutzerverwaltung'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <!-- Info Card -->
@@ -128,7 +116,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                 <div class="count"><?php echo count($users); ?></div>
                                 <small class="text-muted">Registrierte Benutzer</small>
                             </div>
-                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
+                            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
                                 <i class="bi bi-person-plus me-2"></i>Neuer Benutzer
                             </button>
                         </div>
@@ -210,7 +198,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                                 <span class="text-muted">(<?php echo $user['mitglied_id']; ?>)</span>
                                             </small>
                                         <?php else: ?>
-                                            <button class="btn btn-sm btn-outline-warning" onclick="openAssignModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')">
+                                            <button class="btn btn-sm btn-outline-success" onclick="openAssignModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')">
                                                 <i class="bi bi-link me-1"></i>Zuordnen
                                             </button>
                                         <?php endif; ?>
@@ -218,10 +206,10 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                     <td class="text-center">
                                         <div class="btn-action-group">
                                             <?php if ($is_pending): ?>
-                                                <button class="btn btn-sm btn-success btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'approve')" data-tooltip="Freischalten">
+                                                <button class="btn btn-sm btn-outline-success btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'approve')" data-tooltip="Freischalten">
                                                     <i class="bi bi-check-lg"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'reject')" data-tooltip="Ablehnen">
+                                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="userAction(<?php echo $user['id']; ?>, 'reject')" data-tooltip="Ablehnen">
                                                     <i class="bi bi-x-lg"></i>
                                                 </button>
                                             <?php else: ?>
@@ -236,7 +224,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                                 <?php endif; ?>
                                             <?php endif; ?>
 
-                                            <button class="btn btn-sm btn-outline-secondary btn-action"
+                                            <button class="btn btn-sm btn-outline-primary btn-action"
                                                     onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)" data-tooltip="Bearbeiten">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
@@ -282,8 +270,8 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                 </div>
                                 <div class="mt-2 btn-action-group">
                                     <?php if ($is_pending): ?>
-                                        <button class="btn btn-sm btn-success" onclick="userAction(<?php echo $user['id']; ?>, 'approve')"><i class="bi bi-check-lg me-1"></i>Freischalten</button>
-                                        <button class="btn btn-sm btn-danger" onclick="userAction(<?php echo $user['id']; ?>, 'reject')"><i class="bi bi-x-lg me-1"></i>Ablehnen</button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="userAction(<?php echo $user['id']; ?>, 'approve')"><i class="bi bi-check-lg me-1"></i>Freischalten</button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="userAction(<?php echo $user['id']; ?>, 'reject')"><i class="bi bi-x-lg me-1"></i>Ablehnen</button>
                                     <?php else: ?>
                                         <?php if (($user['status'] ?? 'approved') == 'approved' && $user['id'] != $_SESSION['user_id']): ?>
                                             <button class="btn btn-sm btn-outline-secondary" onclick="userAction(<?php echo $user['id']; ?>, 'disable')"><i class="bi bi-pause-circle me-1"></i>Deaktivieren</button>
@@ -292,7 +280,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                         <?php endif; ?>
                                     <?php endif; ?>
                                     <?php if (!$user['mitglied_id']): ?>
-                                        <button class="btn btn-sm btn-outline-warning" onclick="openAssignModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')"><i class="bi bi-link me-1"></i>Zuordnen</button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="openAssignModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')"><i class="bi bi-link me-1"></i>Zuordnen</button>
                                     <?php endif; ?>
                                     <button class="btn btn-sm btn-outline-primary" onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)"><i class="bi bi-pencil me-1"></i>Bearbeiten</button>
                                     <?php if ($user['id'] != $_SESSION['user_id'] && $user['id'] != 1): ?>
@@ -341,8 +329,8 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Abbrechen</button>
-                    <button type="submit" name="save_user" class="btn btn-outline-success"><i class="bi bi-check-circle me-2"></i>Speichern</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Abbrechen</button>
+                    <button type="submit" name="save_user" class="btn btn-outline-primary btn-sm"><i class="bi bi-save me-2"></i>Speichern</button>
                 </div>
             </form>
         </div>
@@ -371,8 +359,8 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-outline-success" onclick="assignMitglied()"><i class="bi bi-check-circle me-2"></i>Zuordnen</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="assignMitglied()"><i class="bi bi-check-circle me-2"></i>Zuordnen</button>
             </div>
         </div>
     </div>
@@ -536,8 +524,6 @@ function editUser(user) {
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
     #mobileBenutzerverwaltungCards { display: block !important; }
-    .form-control, .form-select, input, select, textarea { min-height: 48px !important; font-size: 16px !important; }
-    .btn { min-height: 44px !important; }
 }
 @media (min-width: 768px) {
     #mobileBenutzerverwaltungCards { display: none !important; }

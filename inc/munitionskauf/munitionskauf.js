@@ -41,14 +41,6 @@
         this.classList.add('active');
         var pane = document.getElementById(tabId);
         if (pane) pane.classList.add('active');
-
-        // Wenn Käufe-Tab auf Desktop: zeige Erfassung mit Tabelle
-        if (tabId === 'tab-kaeufe') {
-          document.getElementById('tab-erfassung').classList.add('active');
-          // Scroll zur Tabelle
-          var tableWrapper = document.getElementById('desktopKaeufeContainer');
-          if (tableWrapper) tableWrapper.scrollIntoView({ behavior: 'smooth' });
-        }
       });
     });
   }
@@ -124,8 +116,33 @@
             sel.appendChild(opt);
           });
         }
+        applyMitgliedSelect2();
       })
       .catch(function(err) { console.error('Mitglieder laden:', err); });
+  }
+
+  // Select2 auf dem Mitglied-Dropdown aufsetzen (nach dem Befüllen)
+  function applyMitgliedSelect2() {
+    if (!window.jQuery || !jQuery.fn.select2) return;
+    var $sel = jQuery('#mitgliedSelect');
+    if ($sel.hasClass('select2-hidden-accessible')) {
+      $sel.select2('destroy');
+    }
+    $sel.select2({
+      theme: 'bootstrap-5',
+      width: '100%',
+      placeholder: '– Mitglied wählen –',
+      allowClear: true,
+      dropdownCssClass: 'select2-mitglied-dropdown',
+      language: {
+        noResults: function () { return 'Keine Treffer'; },
+        searching: function () { return 'Suche…'; }
+      }
+    });
+    // Gegenseitiger Ausschluss mit Gast – Select2 feuert ein jQuery-change-Event
+    $sel.on('change', function() {
+      if (this.value) document.getElementById('gastName').value = '';
+    });
   }
 
   // === Event Listeners ===
@@ -144,7 +161,12 @@
       if (this.value) document.getElementById('gastName').value = '';
     });
     document.getElementById('gastName').addEventListener('input', function() {
-      if (this.value.trim()) document.getElementById('mitgliedSelect').value = '';
+      if (this.value.trim()) {
+        document.getElementById('mitgliedSelect').value = '';
+        if (window.jQuery && jQuery.fn.select2) {
+          jQuery('#mitgliedSelect').val('').trigger('change.select2');
+        }
+      }
     });
 
     // Year change
@@ -225,6 +247,10 @@
     initDateField();
     document.querySelectorAll('.custom-preis').forEach(function(el) { el.textContent = 'CHF 0'; });
     recalcTotal();
+    // Select2-Anzeige nach reset() nachziehen (native reset aktualisiert Select2 nicht)
+    if (window.jQuery && jQuery.fn.select2) {
+      jQuery('#mitgliedSelect').val('').trigger('change.select2');
+    }
   }
 
   function saveBestellung() {

@@ -13,6 +13,7 @@ ini_set('display_errors', 0);
 try {
     require '../vendor/autoload.php';
     include '../config.php';
+    require_once '../pdf/pdf_theme.php';  // zentrales PDF-Theme (Palette/Logo)
 
     // Verbindung prüfen
     if ($conn->connect_error) {
@@ -136,118 +137,37 @@ try {
         return $html;
     }
 
+    // Zentrales Logo eingebettet (fixt veralteten Remote-Domain-Link)
+    $logoSrc = pdf_logo_src();
+
+    // JSK-spezifische Layout-Overrides (Farben/Typo kommen aus dem Theme)
+    $jskOverrides = '
+        @page { margin: 1.5cm 1.5cm 0.8cm 1.5cm; }
+        /* Generische Tabelle: Rang-/Total-Spalten-Styling des Themes neutralisieren */
+        .table td:first-child, .table td:last-child { text-align: left; font-weight: normal; background-color: transparent; color: inherit; }
+        /* Kopf: absolut positioniertes Logo + zentrierter Titel */
+        .header { position: relative; margin-bottom: 40px; min-height: 100px; display: block; }
+        .logo { position: absolute; top: 0; left: 0; width: 100px; height: auto; margin: 0; }
+        h1 { text-align: center; font-size: 20px; margin: 0; padding-top: 20px; }
+        .subtitle { text-align: center; font-size: 14px; margin-top: 5px; }
+        .container { margin-bottom: 25px; page-break-inside: avoid; clear: both; }
+        h2 { font-size: 14px; margin-bottom: 10px; padding-bottom: 5px; }
+        .datum { width: 90px; } .tag { width: 80px; } .zeit { width: 120px; } .bezeichnung { width: auto; }
+        .no-data { font-style: italic; padding: 10px; }
+        .highlight td { background-color: #fff3cd !important; }
+    ';
+
     // HTML generieren
     $html = '<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <style>
-        @page { margin: 1.5cm 1.5cm 0.8cm 1.5cm; }
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            position: relative;
-            margin-bottom: 40px;
-            min-height: 100px;
-        }
-        .logo {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100px;
-            height: auto;
-        }
-        h1 {
-            text-align: center;
-            font-size: 20px;
-            margin: 0;
-            padding-top: 20px;
-        }
-        .subtitle {
-            text-align: center;
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .container {
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-            clear: both;
-        }
-        h2 {
-            font-size: 14px;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #2c5282;
-            padding-bottom: 5px;
-            color: #2c5282;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        .table th, .table td {
-            border: 1px solid #ccc;
-            padding: 6px 8px;
-            text-align: left;
-        }
-        .table th {
-            background-color: #eef2f7;
-            color: #2d3748;
-            border-bottom: 2px solid #cbd5e0;
-            font-weight: bold;
-        }
-        .datum { width: 90px; }
-        .tag { width: 80px; }
-        .zeit { width: 120px; }
-        .bezeichnung { width: auto; }
-        .table tr:nth-child(even) {
-            background-color: #f5f7fa;
-        }
-        .table tr:hover {
-            background-color: #e8f0fe;
-        }
-        .no-data {
-            color: #999;
-            font-style: italic;
-            padding: 10px;
-        }
-        .highlight td {
-            background-color: #fff3cd !important;
-        }
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 9px;
-            color: #666;
-            padding: 10px 0;
-            border-top: 1px solid #ccc;
-            background-color: #fff;
-        }
-        .info-box {
-            background-color: #e8f4fd;
-            border: 1px solid #b8daff;
-            border-radius: 4px;
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            font-size: 10px;
-        }
-        .info-box strong {
-            color: #004085;
-        }
-    </style>
+    <style>' . pdf_theme_css() . $jskOverrides . '</style>
     <title>JSK-Termine ' . $year . '</title>
 </head>
 <body>
     <div class="header">
-        <img src="https://jahresmeisterschaft.msvwilen.ch/images/MSVWilen_Logo.jpg" class="logo" alt="MSV Wilen Logo">
+        <img src="' . $logoSrc . '" class="logo" alt="MSV Wilen Logo">
         <h1>Jungschützenkurs Gewehr 300m</h1>
         <p class="subtitle">Termine ' . $year . '</p>
     </div>

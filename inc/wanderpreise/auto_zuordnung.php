@@ -5,6 +5,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../csrf.inc.php';
 header('Content-Type: application/json; charset=utf-8');
 if (function_exists('ob_get_level')) { while (ob_get_level()) { ob_end_clean(); } }
 
@@ -20,11 +21,7 @@ function ok_json($data = []) {
 
 // --- Method/CSRF ---
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') err_json('Method not allowed', 405);
-if (!empty($_POST['csrf_token'])) {
-    if (empty($_SESSION['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        err_json('Ungültiges CSRF-Token', 403);
-    }
-}
+csrf_require(true);
 
 // --- Eingaben ---
 $jahr = isset($_POST['jahr']) ? (int)$_POST['jahr'] : (int)date('Y');

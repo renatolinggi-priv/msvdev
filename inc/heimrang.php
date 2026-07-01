@@ -7,27 +7,6 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Mobile-Optimierung für Heimrang
-$page_specific_css = '
-/* Mobile-Optimierung (WCAG AAA Touch Targets) */
-@media (max-width: 767.98px) {
-    .form-control,
-    .form-select,
-    input[type="text"],
-    input[type="number"],
-    select {
-        min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-    }
-
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-}
-';
-
 include 'header.inc.php';
 ?>
 <!-- Heimrang.php HTML-Gerüst nach jmrang.php Vorbild -->
@@ -37,34 +16,25 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-trophy me-2"></i>
-                            Heimmeisterschaft Ranglisten
-                        </h2>
-                    </div>
-                </div>
-                
+                <?php $page_title = "Heimmeisterschaft Ranglisten"; include 'partials/page_header.inc.php'; ?>
+
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
                 <form id="heimresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl -->
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                            <i class="bi bi-calendar3 me-1"></i>Jahr:
-                        </label>
-                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
-                    </div>
-                    <!-- Export-Toolbar (einheitlich mit endschrang.php) -->
-                    <div class="export-toolbar mb-4">
+                    <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
+                    <div class="export-toolbar mb-3">
                         <div class="export-toolbar-head">
+                            <label for="yearSelect" class="export-year-label mb-0">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
+                            <span class="export-toolbar-divider" aria-hidden="true"></span>
                             <i class="bi bi-file-earmark-arrow-down"></i>
                             <span>Dokumente erstellen</span>
                             <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
-                                <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
+                                <i class="bi bi-pencil me-1"></i>Resultate bearbeiten
                             </button>
                         </div>
                         <div class="export-group-btns">

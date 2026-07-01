@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/save_info.php
+// inc/jsk_verwaltung/save_info.php
 // Speichert Titel + Text des Info-/Willkommensblocks fuers JSK-Dashboard (settings).
 // PDO, CSRF, Vorstand/Admin.
 

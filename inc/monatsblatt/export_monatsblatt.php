@@ -8,10 +8,29 @@
  ************************************************************/
 
 require_once '../config.php';
+require_once '../session_config.inc.php';
 require_once '../vendor/autoload.php';
+require_once '../pdf/pdf_theme.php';  // zentrales PDF-Theme (Palette/Logo)
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
+
+// Auth: nur eingeloggte Nutzer (gleicher Schutz wie die aufrufende Seite)
+if (empty($_SESSION['user_id'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(401);
+    echo json_encode(['message' => 'Nicht angemeldet']);
+    exit;
+}
+
+// CSRF: Token muss zur Session passen
+$csrf = $_POST['csrf_token'] ?? '';
+if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(403);
+    echo json_encode(['message' => 'Ungültige Anfrage']);
+    exit;
+}
 
 class MonatsblattPDFExporter {
     private $conn;
@@ -63,23 +82,23 @@ class MonatsblattPDFExporter {
     }
 
     private function initializeParameters() {
-        // Validierung und Sanitization der GET-Parameter
-        $this->year = filter_input(INPUT_GET, 'year', FILTER_VALIDATE_INT) ?: date('Y');
-        
+        // Validierung und Sanitization der POST-Parameter
+        $this->year = filter_input(INPUT_POST, 'year', FILTER_VALIDATE_INT) ?: date('Y');
+
         // Monate können mit führender Null kommen (z.B. "01", "02")
-        $startMonthRaw = $_GET['start_month'] ?? '1';
-        $endMonthRaw = $_GET['end_month'] ?? '12';
-        
+        $startMonthRaw = $_POST['start_month'] ?? '1';
+        $endMonthRaw = $_POST['end_month'] ?? '12';
+
         // Konvertiere zu Integer (entfernt führende Nullen)
         $this->startMonth = (int)$startMonthRaw;
         $this->endMonth = (int)$endMonthRaw;
-        
+
         // Sicherstellen, dass die Monate im gültigen Bereich sind
         $this->startMonth = max(1, min(12, $this->startMonth ?: 1));
         $this->endMonth = max(1, min(12, $this->endMonth ?: 12));
-        
+
         // Bemerkung mit XSS-Schutz
-        $this->bemerkung = htmlspecialchars($_GET['bemerkung'] ?? '', ENT_QUOTES, 'UTF-8');
+        $this->bemerkung = htmlspecialchars($_POST['bemerkung'] ?? '', ENT_QUOTES, 'UTF-8');
     }
 
     private function calculateDateRanges() {
@@ -333,7 +352,9 @@ class MonatsblattPDFExporter {
     }
 
     private function getCSS() {
-        return '
+        // Zentrales Theme zuerst (Typografie/Akzentfarbe/Tabellen-Defaults),
+        // danach Monatsblatt-spezifische Layout-Overrides.
+        return pdf_theme_css() . '
             body {
                 font-family: Arial, sans-serif;
                 font-size: 10px;
@@ -390,8 +411,9 @@ class MonatsblattPDFExporter {
     }
 
     private function buildTitlePage($rangeTitle) {
-        $logoBase64 = $this->imgToBase64('dat/MSVWilen_Logo.jpg');
-        
+        // Zentrales Logo (Master-Datei via pdf_theme), Fallback auf lokale dat/-Kopie
+        $logoBase64 = pdf_logo_src() ?: $this->imgToBase64('dat/MSVWilen_Logo.jpg');
+
         return '<div style="text-align: left; margin-top: 100px;">
             <img src="' . $logoBase64 . '" alt="Logo" style="width:200px; height:auto;">
         </div>
@@ -580,7 +602,7 @@ class MonatsblattPDFExporter {
         $dompdf->loadHtml($htmlContent);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        
+
         $filename = sprintf(
             'Monatsblatt_%d_%02d-%02d_%s.pdf',
             $this->year,
@@ -588,35 +610,34 @@ class MonatsblattPDFExporter {
             $this->endMonth,
             date('d.m.Y')
         );
-        
-        $filePath = 'dat/' . $filename;
-        
-        // Sicherstellen, dass das Verzeichnis existiert
-        if (!is_dir('dat')) {
-            mkdir('dat', 0755, true);
-        }
-        
-        if (file_put_contents($filePath, $dompdf->output()) === false) {
-            throw new Exception("Konnte PDF nicht speichern");
-        }
-        
-        return ['pdf_link' => $filePath];
+
+        // PDF direkt als Download streamen (kein Speichern auf Platte).
+        // Puffer leeren, damit keine Vor-Ausgabe das Binär-PDF beschädigt.
+        if (ob_get_length()) { @ob_end_clean(); }
+        $dompdf->stream($filename, ['Attachment' => true]);
+        exit;
     }
 }
+
+// Binär-Streaming: keine PHP-Warnungen in die Ausgabe (würde das PDF beschädigen)
+ini_set('display_errors', '0');
 
 // Hauptausführung
 try {
     $exporter = new MonatsblattPDFExporter($conn);
+    // generatePDF() streamt das PDF und beendet das Skript bei Erfolg.
+    // Kehrt es zurück, ist beim Generieren ein Fehler aufgetreten.
     $result = $exporter->generatePDF();
-    
-    header('Content-Type: application/json');
-    echo json_encode($result);
-    
-} catch (Exception $e) {
-    header('Content-Type: application/json');
+
     http_response_code(500);
-    echo json_encode(['message' => $e->getMessage()]);
-    
+    header('Content-Type: text/plain; charset=utf-8');
+    echo (is_array($result) && !empty($result['message'])) ? $result['message'] : 'PDF konnte nicht erstellt werden';
+
+} catch (Exception $e) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo $e->getMessage();
+
 } finally {
     if (isset($conn)) {
         $conn->close();

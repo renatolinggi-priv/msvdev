@@ -169,8 +169,9 @@ $page_specific_css = '
     padding: 0.45rem 0.75rem;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    height: 38px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    min-height: 38px;
 }
 
 .total-actions-row .total-bar .total-amount {
@@ -288,6 +289,71 @@ $page_specific_css = '
     color: var(--secondary-color);
 }
 
+/* === ERFASSUNG: Formular + Käufe-Tabelle nebeneinander (breite Monitore) === */
+.erfassung-form-col,
+.erfassung-table-col { width: 100%; }
+
+/* Erfassungs-Card flach: das Formular sitzt bereits im weissen
+   .main-content-wrapper. Die zusaetzliche weisse .content-background-Card
+   (global padding 2.5rem + Shadow) erzeugt nur einen dicken weissen Rand. */
+.erfassung-form-col .content-background {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin-bottom: 0 !important;
+}
+
+@media (min-width: 1200px) {
+    .erfassung-layout {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+    .erfassung-form-col {
+        flex: 0 1 660px;
+        min-width: 380px;
+    }
+    .erfassung-table-col {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    /* Käufe-Liste an Viewport-Höhe ausrichten statt unbegrenzt zu wachsen */
+    .erfassung-table-col .table-responsive {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+    /* Titelzeile der Liste: Titel links, Filter-Buttons rechts (mit Abstand) */
+    .erfassung-table-col .table-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+}
+
+/* Statistiken nicht zu breit ausreissen lassen */
+#tab-statistiken .content-background { max-width: 900px; }
+
+/* === SELECT2 (Mitglied-Auswahl): an form-select-sm angleichen === */
+#mitgliedSelect + .select2-container { width: 100% !important; }
+#mitgliedSelect + .select2-container .select2-selection--single {
+    height: calc(1.5em + 0.5rem + 2px) !important;
+    border-color: #ced4da;
+    display: flex;
+    align-items: center;
+}
+#mitgliedSelect + .select2-container .select2-selection__rendered {
+    font-size: 0.875rem;
+    line-height: 1.5 !important;
+    padding-left: 0.5rem;
+    padding-right: 1.75rem;
+}
+#mitgliedSelect + .select2-container .select2-selection__arrow { height: 100% !important; }
+.select2-mitglied-dropdown .select2-results__option,
+.select2-mitglied-dropdown .select2-search__field { font-size: 0.875rem !important; }
+
 /* === KÄUFE-TABELLE: Sticky-Header Scroll-Bleed Fix ===
    Globale .table thead th sind position:sticky. Bootstrap nutzt
    border-collapse:collapse -> sticky-Borders scrollen weg und die
@@ -296,6 +362,14 @@ $page_specific_css = '
 #bestellungenTabelle {
     border-collapse: separate;
     border-spacing: 0;
+    font-size: 0.8rem;
+}
+
+/* Kompaktere Zellen (mehr Platz dank kleinerer Schrift) */
+#bestellungenTabelle th,
+#bestellungenTabelle td {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
 }
 
 #bestellungenTabelle thead th {
@@ -371,15 +445,18 @@ $page_specific_css = '
         grid-template-columns: 1fr;
     }
 
-    /* Touch-friendly Form Controls */
-    .form-control, .form-control-sm, .form-select, .form-select-sm {
+    .input-group-text {
         min-height: 48px !important;
         font-size: 16px !important;
     }
 
-    .input-group-text {
-        min-height: 48px !important;
+    /* Select2 touch-freundlich */
+    #mitgliedSelect + .select2-container .select2-selection--single {
+        height: 48px !important;
+    }
+    #mitgliedSelect + .select2-container .select2-selection__rendered {
         font-size: 16px !important;
+        line-height: 46px !important;
     }
 
     .form-check {
@@ -396,11 +473,6 @@ $page_specific_css = '
     .form-check-label {
         font-size: 16px !important;
         padding: 8px !important;
-    }
-
-    .btn, .btn-sm {
-        min-height: 48px !important;
-        font-size: 16px !important;
     }
 
     /* Mobile Tabs */
@@ -564,14 +636,13 @@ include 'header.inc.php';
 
 <div class="container-fluid">
 <div class="row">
-  <div class="col-xl-7 col-lg-9 col-md-11 col-12 ps-0">
+  <div class="col-12 col-md-11 col-lg-9 col-xl-12 ps-0">
     <div class="main-content-wrapper">
 
       <!-- Page Title -->
       <div class="row mb-3 d-none d-md-flex">
         <div class="col-md-12">
-          <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-            <i class="bi bi-cart-check me-2"></i>Munitionskauf erfassen
+          <h2 class="h4 mb-0 page-title">Munitionskauf erfassen
           </h2>
         </div>
       </div>
@@ -580,9 +651,6 @@ include 'header.inc.php';
       <div class="msv-tabs">
         <button class="msv-tab active" data-tab="tab-erfassung">
           <i class="bi bi-cart-plus me-1"></i>Erfassung
-        </button>
-        <button class="msv-tab d-none d-md-inline-block" data-tab="tab-kaeufe">
-          <i class="bi bi-table me-1"></i>Käufe
         </button>
         <button class="msv-tab" data-tab="tab-statistiken">
           <i class="bi bi-graph-up me-1"></i>Statistiken
@@ -595,6 +663,8 @@ include 'header.inc.php';
 
       <!-- ============ TAB: Erfassung ============ -->
       <div class="tab-pane active" id="tab-erfassung">
+        <div class="erfassung-layout">
+        <div class="erfassung-form-col">
         <div class="content-background">
           <form id="munitionForm">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -605,11 +675,11 @@ include 'header.inc.php';
                 <label><i class="bi bi-calendar3 me-1"></i>Jahr</label>
                 <select id="yearSelect" class="form-select form-select-sm"></select>
               </div>
-              <div class="form-group" style="flex: 0 0 160px;">
+              <div class="form-group" style="flex: 1; min-width: 160px;">
                 <label><i class="bi bi-calendar-event me-1"></i>Kaufdatum</label>
                 <input type="date" id="kaufDatum" class="form-control form-control-sm" required>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="flex: 0 0 100%;">
                 <label><i class="bi bi-tag me-1"></i>Anlass</label>
                 <input type="text" id="anlass" class="form-control form-control-sm" placeholder="z.B. Training, Feldschiessen...">
               </div>
@@ -684,10 +754,10 @@ include 'header.inc.php';
                 <span class="total-amount ms-3" id="total_preis">CHF 0.00</span>
               </div>
               <div class="action-buttons">
-                <button type="button" id="btnReset" class="btn btn-compact-standard btn-outline-secondary" title="Zurücksetzen">
+                <button type="button" id="btnReset" class="btn btn-sm btn-outline-secondary" title="Zurücksetzen">
                   <i class="bi bi-arrow-counterclockwise"></i>
                 </button>
-                <button type="submit" id="btnSave" class="btn btn-compact-standard btn-primary">
+                <button type="submit" id="btnSave" class="btn btn-sm btn-outline-primary">
                   <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpinner"></span>
                   <i class="bi bi-save me-1"></i>Speichern
                 </button>
@@ -695,18 +765,19 @@ include 'header.inc.php';
             </div>
           </form>
         </div>
+        </div>
 
-        <!-- Desktop: Bestellungen-Tabelle direkt unter dem Formular -->
-        <div class="d-none d-md-block" id="desktopKaeufeContainer">
+        <!-- Desktop: Bestellungen-Tabelle neben dem Formular (breite Monitore) -->
+        <div class="erfassung-table-col d-none d-md-block" id="desktopKaeufeContainer">
           <div class="table-wrapper">
             <div class="table-title">
-              <span><i class="bi bi-table me-2"></i>Munitionskäufe</span>
+              <span><i class="bi bi-table me-2"></i>Vergangene Bezüge</span>
               <div class="button-group">
-                <button type="button" id="btnFilterToday" class="btn btn-compact-standard btn-outline-secondary btn-sm">Heute</button>
-                <button type="button" id="btnFilterWeek" class="btn btn-compact-standard btn-outline-secondary btn-sm">Woche</button>
-                <button type="button" id="btnFilterMonth" class="btn btn-compact-standard btn-outline-secondary btn-sm">Monat</button>
-                <button type="button" id="btnFilterYear" class="btn btn-compact-standard btn-outline-secondary btn-sm active">Jahr</button>
-                <button type="button" id="btnGeneratePDF" class="btn btn-compact-standard btn-outline-primary btn-sm ms-2">
+                <button type="button" id="btnFilterToday" class="btn btn-outline-secondary btn-sm">Heute</button>
+                <button type="button" id="btnFilterWeek" class="btn btn-outline-secondary btn-sm">Woche</button>
+                <button type="button" id="btnFilterMonth" class="btn btn-outline-secondary btn-sm">Monat</button>
+                <button type="button" id="btnFilterYear" class="btn btn-outline-secondary btn-sm active">Jahr</button>
+                <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm ms-2">
                   <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                 </button>
               </div>
@@ -742,12 +813,6 @@ include 'header.inc.php';
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- ============ TAB: Käufe (Desktop, als eigener Tab wenn gewünscht) ============ -->
-      <div class="tab-pane" id="tab-kaeufe">
-        <div class="content-background">
-          <p class="text-muted text-center"><i class="bi bi-arrow-up me-1"></i>Die Käufe-Tabelle wird direkt unter dem Erfassungsformular angezeigt.</p>
         </div>
       </div>
 
@@ -851,6 +916,11 @@ include 'header.inc.php';
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
-<script src="munitionskauf/munitionskauf.js?v=<?= time() ?>"></script>
+<!-- Select2 (Mitglied-Auswahl) -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script src="munitionskauf/munitionskauf.js?v=<?= @filemtime(__DIR__ . '/munitionskauf/munitionskauf.js') ?: '1' ?>"></script>
 
 <?php include 'footer.inc.php'; ?>

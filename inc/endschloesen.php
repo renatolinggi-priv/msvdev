@@ -25,10 +25,9 @@ if (empty($_SESSION['csrf_token'])) {
 <div class="row">
 <div class="col-xl-8 col-lg-9 col-md-9 col-12 ps-0">
     <div class="main-content-wrapper">
-      <div class="row mb-4 d-none d-md-flex">
+      <div class="row mb-3 d-none d-md-flex">
         <div class="col-md-12">
-          <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-            <i class="bi bi-bullseye me-2"></i>
+          <h2 class="h4 mb-0 page-title">
             Endschiessen – Stiche erfassen
           </h2>
         </div>
@@ -104,23 +103,23 @@ if (empty($_SESSION['csrf_token'])) {
           <div class="row g-1" id="stichList"></div>
           
           <!-- Zahlungsmethode -->
-          <div class="mt-3 mb-3">
-            <h6 class="mb-2"><i class="bi bi-credit-card"></i> Zahlungsmethode</h6>
-            <div class="btn-group w-100" role="group" aria-label="Zahlungsmethode">
+          <div class="mt-2 mb-2 d-flex align-items-center flex-wrap gap-2">
+            <h6 class="mb-0 me-1"><i class="bi bi-credit-card"></i> Zahlungsmethode</h6>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Zahlungsmethode">
               <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_bar" value="bar">
               <label class="btn btn-outline-primary" for="zahlung_bar">
-                <i class="bi bi-cash"></i> Bar
+                <i class="bi bi-cash me-1"></i>Bar
               </label>
-              
+
               <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_karte" value="karte" checked>
               <label class="btn btn-outline-primary" for="zahlung_karte">
-                <i class="bi bi-credit-card-2-back"></i> Karte
+                <i class="bi bi-credit-card-2-back me-1"></i>Karte
               </label>
             </div>
           </div>
           
           <!-- Zusätzliche Schüsse -->
-          <div class="mt-3 p-2 bg-light rounded">
+          <div class="mt-2 p-2 bg-light rounded">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="mb-0" role="button" data-bs-toggle="collapse" data-bs-target="#munitionCollapse" aria-expanded="false" style="cursor: pointer;">
                 <i class="bi bi-chevron-right me-1" id="munitionChevron"></i>
@@ -199,12 +198,12 @@ if (empty($_SESSION['csrf_token'])) {
           <!-- Toolbar direkt unter den Stichen -->
           <div class="row g-2 mt-2 mb-3">
             <div class="col-8 col-sm-4 col-md-auto">
-              <button type="button" id="btnGeneratePDF" class="btn btn-outline-primary btn-sm w-100">
+              <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm w-100">
                 <i class="bi bi-file-earmark-pdf"></i> Abrechnung
               </button>
             </div>
             <div class="col-4 col-sm-4 col-md-auto">
-              <button type="button" id="btnStandblatt" class="btn btn-outline-success btn-sm w-100" disabled>
+              <button type="button" id="btnStandblatt" class="btn btn-outline-info btn-sm w-100" disabled>
                 <i class="bi bi-file-earmark-spreadsheet"></i> Standblatt
               </button>
             </div>
@@ -215,7 +214,7 @@ if (empty($_SESSION['csrf_token'])) {
               </button>
             </div>
             <div class="col-2 col-sm-4 col-md-auto">
-              <button type="submit" id="btnSave" class="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center px-1">
+              <button type="submit" id="btnSave" class="btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center px-1">
                 <span class="spinner-border spinner-border-sm d-none" id="saveSpinner"></span>
                 <i class="bi bi-save d-sm-none"></i>
                 <span class="d-none d-sm-inline"><i class="bi bi-save me-1"></i>Speichern</span>
@@ -299,38 +298,6 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Lösch-Bestätigungsmodal -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="deleteConfirmModalLabel">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          Bestätigung erforderlich
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-danger mb-3" role="alert">
-          <h6 class="alert-heading">Sind Sie sicher?</h6>
-          <p class="mb-0" id="deleteConfirmMessage"></p>
-        </div>
-        <div class="text-muted">
-          <small>Diese Aktion kann nicht rückgängig gemacht werden!</small>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-x-lg me-2"></i>Abbrechen
-        </button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-          <i class="bi bi-trash3 me-2"></i>Ja, löschen
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Admin Modal -->
 <div class="modal fade" id="adminModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
@@ -374,7 +341,7 @@ if (empty($_SESSION['csrf_token'])) {
                 </tbody>
               </table>
             </div>
-            <button class="btn btn-sm btn-success mt-2" id="btnAddNewStich">
+            <button class="btn btn-sm btn-outline-success mt-2" id="btnAddNewStich">
               <i class="bi bi-plus-circle"></i> Neuer Stich
             </button>
           </div>
@@ -385,7 +352,7 @@ if (empty($_SESSION['csrf_token'])) {
               <!-- Wird via JS gefüllt -->
             </div>
             <div class="mt-3">
-              <button class="btn btn-primary" id="btnSaveSpezialpreise">
+              <button class="btn btn-outline-primary btn-sm" id="btnSaveSpezialpreise">
                 <span class="spinner-border spinner-border-sm me-2 d-none" id="saveSpezialpreiseSpinner"></span>
                 <i class="bi bi-save"></i> Spezialpreise speichern
               </button>
@@ -447,8 +414,8 @@ if (empty($_SESSION['csrf_token'])) {
         </form>
       </div>
       <div class="modal-footer py-2">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-        <button type="button" class="btn btn-primary btn-sm" id="btnSaveStich">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="btnSaveStich">
           <span class="spinner-border spinner-border-sm me-1 d-none" id="editStichSpinner"></span>
           Speichern
         </button>
@@ -492,14 +459,16 @@ if (empty($_SESSION['csrf_token'])) {
     box-shadow: none;
   }
   .stich-card-body {
-    padding: 0.5rem;
+    padding: 0.3rem 0.45rem;
   }
   .stich-card-body .form-check {
     margin-bottom: 0;
+    min-height: auto;
   }
   .stich-card-body .form-check-label {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 600;
+    line-height: 1.15;
   }
   .partner-checkbox-wrapper {
     display: flex;
@@ -521,8 +490,9 @@ if (empty($_SESSION['csrf_token'])) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 0.15rem;
-    font-size: 0.75rem;
+    margin-top: 0.05rem;
+    font-size: 0.7rem;
+    line-height: 1.1;
   }
   .stich-price { 
     font-weight: 600; 
@@ -582,6 +552,18 @@ if (empty($_SESSION['csrf_token'])) {
   #btnAdminSettings {
     font-size: 0.8rem;
     padding: 0.25rem 0.5rem;
+  }
+
+  /* Kompaktere, einheitliche Aktions-Buttons (vgl. kantiresultate.php) */
+  #stichForm .btn-sm,
+  #stichForm .btn-group-sm > .btn {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    line-height: 1.3;
+  }
+  #stichForm .btn-sm i,
+  #stichForm .btn-group-sm > .btn i {
+    font-size: 0.85em;
   }
   
   /* Collapse Header Hover */
@@ -721,7 +703,7 @@ function renderStiche(){
       </div>` : '';
 
     const col = document.createElement('div');
-    col.className = 'col-6 col-sm-4 col-md-4 col-lg-3';
+    col.className = 'col-6 col-sm-4 col-md-3 col-lg-3';
     col.innerHTML = `
       <div class="card card-stich ${isDisabledForGast ? 'disabled-card' : ''}" data-stich-id="${s.id}">
         <div class="stich-card-body">
@@ -1831,7 +1813,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
     html += `
       <td class="text-center">
         <div class="btn-group btn-group-sm" role="group">
-          <button class="btn btn-outline-success btn-download-standblatt"
+          <button class="btn btn-outline-info btn-sm btn-download-standblatt"
                   data-entity-id="${entry.entity_id || entry.mitglied_id}"
                   data-entity-typ="${entry.typ || 'mitglied'}"
                   data-entity-name="${entry.name}"
@@ -1839,19 +1821,19 @@ html += `<td class="text-center small">${munHtml}</td>`;
                   data-tooltip="Standblatt herunterladen">
             <i class="bi bi-file-earmark-spreadsheet"></i>
           </button>
-          <button class="btn btn-outline-secondary btn-edit-selection"
+          <button class="btn btn-outline-primary btn-sm btn-edit-selection"
                   data-entity-id="${entry.entity_id || entry.mitglied_id}"
                   data-entity-typ="${entry.typ || 'mitglied'}"
                   data-entity-name="${entry.name}"
                   data-tooltip="Bearbeiten">
-            <i class="bi bi-pencil-square"></i>
+            <i class="bi bi-pencil"></i>
           </button>
-          <button class="btn btn-outline-danger btn-delete-selection"
+          <button class="btn btn-outline-danger btn-sm btn-delete-selection"
                   data-entity-id="${entry.entity_id || entry.mitglied_id}"
                   data-entity-typ="${entry.typ || 'mitglied'}"
                   data-entity-name="${entry.name}"
                   data-tooltip="Löschen">
-            <i class="bi bi-trash3"></i>
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       </td>`;
@@ -1951,11 +1933,6 @@ html += `<td class="text-center small">${munHtml}</td>`;
   });
   
   function deleteSelection(entityId, entityTyp, entityName, jahr) {
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    const originalText = confirmBtn.innerHTML;
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lösche...';
-    
     const url = `${API}?action=delete_selection`;
     
     fetch(url, {
@@ -1990,13 +1967,6 @@ html += `<td class="text-center small">${munHtml}</td>`;
     .catch(err => {
       console.error('Delete error:', err);
       msvToast('Netzwerkfehler beim Löschen', 'danger');
-    })
-    .finally(() => {
-      const confirmBtn = document.getElementById('confirmDeleteBtn');
-      if (confirmBtn) {
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="bi bi-trash3 me-2"></i>Ja, löschen';
-      }
     });
   }
 
@@ -2265,28 +2235,12 @@ html += `<td class="text-center small">${munHtml}</td>`;
     });
   }
   
-  let deleteConfirmModal = null;
-  let pendingDeleteData = null;
-  
   function showDeleteConfirmation(entityId, entityTyp, entityName, jahr) {
-    pendingDeleteData = { entityId, entityTyp, entityName, jahr };
-    
-    const message = `Sie sind dabei, alle Stiche und Munitionsbestellungen für <strong>${entityName}</strong> im Jahr ${jahr} zu löschen.`;
-    document.getElementById('deleteConfirmMessage').innerHTML = message;
-    
-    if (!deleteConfirmModal) {
-      deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    }
-    deleteConfirmModal.show();
+    msvConfirmDelete(entityName).then(function(res) {
+      if (!res.isConfirmed) return;
+      deleteSelection(entityId, entityTyp, entityName, jahr);
+    });
   }
-  
-  document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-    if (pendingDeleteData) {
-      deleteConfirmModal.hide();
-      deleteSelection(pendingDeleteData.entityId, pendingDeleteData.entityTyp, pendingDeleteData.entityName, pendingDeleteData.jahr);
-      pendingDeleteData = null;
-    }
-  });
   
   document.getElementById('btnGeneratePDF').addEventListener('click', function() {
     const jahr = document.getElementById('yearSelect').value;
@@ -2450,7 +2404,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
         <div class="mobile-card-body">
           ${stichHtml}
           ${entityId ? `
-          <button type="button" class="btn btn-outline-primary w-100 mt-3 btn-edit-selection"
+          <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-3 btn-edit-selection"
                   data-entity-id="${entityId}"
                   data-entity-typ="${entityTyp}"
                   data-entity-name="${name}"

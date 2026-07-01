@@ -15,9 +15,15 @@ header('Content-Type: application/json; charset=utf-8');
 try {
     // Werte aus dem Formular holen
     $member_id = $_POST['member_id'];
-    $wert = $_POST['wert'];
+    $wert = (int)($_POST['wert'] ?? 0);
     $siegerdef = $_POST['siegerdef'];
     $year = $_POST['year'];
+
+    // Validierung: Wert muss positiv sein (kein 0-Punkte-Sieger)
+    if ($wert <= 0) {
+        http_response_code(422);
+        die(json_encode(['success' => false, 'message' => 'Wert muss grösser als 0 sein']));
+    }
 
     // Mitglied-Name aus der Tabelle `mitglieder` holen
     $sql = "SELECT Vorname, Name FROM mitglieder WHERE ID = ?";

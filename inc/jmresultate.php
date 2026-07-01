@@ -8,22 +8,8 @@ $page_specific_css = "
 
 /* =========================================
    Anlass Slide-Panel
+   (Container .anlass-panel + .open zentral in css/msv-styles.css)
    ========================================= */
-.anlass-panel {
-    position: fixed;
-    top: 0;
-    right: -520px;
-    width: 500px;
-    height: 100vh;
-    background: #fff;
-    box-shadow: -8px 0 30px rgba(0,0,0,0.12);
-    z-index: 1060;
-    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-    display: flex;
-    flex-direction: column;
-}
-.anlass-panel.open { right: 0; }
-
 .anlass-panel-overlay {
     position: fixed;
     inset: 0;
@@ -77,6 +63,20 @@ $page_specific_css = "
     background: #f0fdf4;
 }
 
+/* Gruppen-Trennzeile im Anlass-Panel (mit Resultat / noch offen) */
+.anlass-group-header {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 1.25rem;
+    background: #eef2f7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
 /* Anlass Overview Cards – selected state */
 .anlass-overview-card.selected {
     border-color: #6366f1 !important;
@@ -84,10 +84,6 @@ $page_specific_css = "
 }
 
 @media (max-width: 767.98px) {
-    .anlass-panel {
-        width: 100vw;
-        right: -100vw;
-    }
     .anlass-panel-overlay { display: none !important; }
     .anlass-panel-footer .btn { min-height: 48px; font-size: 0.9rem; }
     .anlass-input { min-height: 44px !important; font-size: 16px !important; }
@@ -201,7 +197,7 @@ $page_specific_css = "
 #jmresultateTabelle .vertical-header{
   position: sticky; top: var(--top-hscroll, 0px);
   z-index:105 !important; /* zwischen normalem THEAD (100) und erster Spalte (110) */
-  background: linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
+  background-color: #f8f9fa;
 }
 
 /* =========================================
@@ -227,22 +223,6 @@ $page_specific_css = "
   /* Desktop-Tabelle ausblenden, Mobile Cards einblenden (nur alte Eingabe-Tabelle) */
   #jmInputTableWrapper .desktop-table-container { display: none !important; }
   #jmInputTableWrapper .mobile-cards-container { display: flex !important; }
-
-  /* WCAG AAA Touch Targets: Alle Form-Elemente */
-  .form-control,
-  .form-select,
-  input[type=\"text\"],
-  input[type=\"number\"],
-  select {
-    min-height: 48px !important;
-    font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-  }
-
-  .btn {
-    min-height: 48px !important;
-    font-size: 16px !important;
-    padding: 0.5rem 1rem !important;
-  }
 
   /* Mobile Inputs: WCAG AAA touch targets + iOS zoom prevention */
   .mobile-card-body .small-input-mobile {
@@ -526,14 +506,7 @@ try {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-trophy me-2"></i>
-                            Erfassung Jahresmeisterschaft
-                        </h2>
-                    </div>
-                </div>
+                <?php $page_title = 'Erfassung Jahresmeisterschaft'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
@@ -551,15 +524,10 @@ try {
                         </div>
 
                         <!-- Aktionsbereich (Bootstrap Collapse) -->
-                        <div class="card action-card mb-0">
-                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                                 data-bs-toggle="collapse" data-bs-target="#jmresultateActions"
-                                 aria-expanded="false" aria-controls="jmresultateActions">
-                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                                <i class="bi bi-chevron-down action-chevron"></i>
-                            </div>
-                            <div class="collapse" id="jmresultateActions">
-                                <div class="card-body pt-2 pb-3 px-3">
+<?php
+                        $ac_id = 'jmresultateActions';
+                        ob_start();
+                        ?>
                                     <div class="row g-2">
                                         <div class="col-6">
                                             <button type="submit" class="btn btn-outline-primary btn-sm w-100">
@@ -587,9 +555,10 @@ try {
                                             <i class="bi bi-trash me-1"></i>Alle Resultate löschen
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                        <?php
+                        $ac_body = ob_get_clean();
+                        include 'partials/action_card.inc.php';
+                        ?>
                         </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- ===== ANLASS OVERVIEW CARDS ===== -->
@@ -725,8 +694,7 @@ try {
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="anlassPanelCancelBtn">Abbrechen</button>
-                <button type="button" id="btnAnlassSave" class="btn btn-sm"
-                        style="background:#6366f1; color:#fff; font-weight:700; border-radius:8px; padding:0.5rem 1.5rem;">
+                <button type="button" id="btnAnlassSave" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-save me-1"></i>Speichern
                 </button>
             </div>
@@ -749,8 +717,8 @@ try {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" id="btn-cancel-leave" data-bs-dismiss="modal">Abbrechen</button>
-        <button type="button" class="btn btn-outline-danger" id="btn-leave-without-save">Ohne Speichern verlassen</button>
-        <button type="button" class="btn btn-success" id="btn-save-and-leave">Speichern & verlassen</button>
+        <button type="button" class="btn btn-outline-secondary" id="btn-leave-without-save">Ohne Speichern verlassen</button>
+        <button type="button" class="btn btn-outline-primary" id="btn-save-and-leave">Speichern & verlassen</button>
       </div>
     </div>
   </div>
@@ -823,7 +791,7 @@ try {
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
         <button type="button" class="btn btn-outline-primary" id="pdfImportBackBtn" style="display:none;"><i class="bi bi-arrow-left me-1"></i>Andere Datei</button>
-        <button type="button" class="btn btn-success" id="pdfImportCommitBtn" style="display:none;"><i class="bi bi-download me-1"></i>Importieren (<span id="pdfImportCommitCount">0</span>)</button>
+        <button type="button" class="btn btn-outline-success" id="pdfImportCommitBtn" style="display:none;"><i class="bi bi-download me-1"></i>Importieren (<span id="pdfImportCommitCount">0</span>)</button>
       </div>
     </div>
   </div>
@@ -1355,16 +1323,41 @@ try {
                     $('#anlassPanelHeader').removeClass('sektionsmeisterschaft');
                 }
 
-                // Mitglieder-Zeilen generieren
-                let html = '';
-                resp.members.forEach(function(m, i) {
-                    const hasValue = def.isSektionsmeisterschaft
+                // Mitglieder-Zeilen generieren – gruppiert: zuerst mit Resultat, dann ohne.
+                // Beide Gruppen bleiben alphabetisch (Server sortiert nach Name/Vorname).
+                const hasMemberValue = function(m) {
+                    return def.isSektionsmeisterschaft
                         ? (m.punkte_runde1 !== null || m.punkte_runde2 !== null)
                         : (m.punkte !== null);
+                };
+                // Gruppierung nach JM-Aktivität des Jahres (Resultat in IRGENDEINEM Anlass),
+                // NICHT nach diesem Anlass. Das grüne has-value-Highlight bleibt anlassbezogen.
+                const isJahrAktiv = function(m) { return !!m.hatJahrResultat; };
+                const __withVal = resp.members.filter(isJahrAktiv);
+                const __withoutVal = resp.members.filter(function(m) { return !isJahrAktiv(m); });
+                const ordered = [];
+                if (__withVal.length) {
+                    ordered.push({ __group: 'Mit JM-Resultat (' + __withVal.length + ')', __icon: 'bi-check-circle' });
+                    __withVal.forEach(function(m) { ordered.push(m); });
+                }
+                if (__withoutVal.length) {
+                    ordered.push({ __group: 'Noch ohne JM-Resultat (' + __withoutVal.length + ')', __icon: 'bi-dash-circle' });
+                    __withoutVal.forEach(function(m) { ordered.push(m); });
+                }
+
+                let html = '';
+                let __pos = 0;
+                ordered.forEach(function(m) {
+                    if (m.__group) {
+                        html += '<div class="anlass-group-header"><i class="bi ' + m.__icon + ' me-1"></i>' + m.__group + '</div>';
+                        return;
+                    }
+                    __pos++;
+                    const hasValue = hasMemberValue(m);
                     const rowClass = hasValue ? 'has-value' : '';
 
                     html += '<div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom anlass-member-row ' + rowClass + '" data-name="' + m.name.toLowerCase() + '">';
-                    html += '<span style="width:30px; text-align:center; font-size:0.8rem; color:#94a3b8; font-weight:600;">' + (i + 1) + '</span>';
+                    html += '<span style="width:30px; text-align:center; font-size:0.8rem; color:#94a3b8; font-weight:600;">' + __pos + '</span>';
                     html += '<span class="flex-fill" style="font-weight:500; color:#1e293b; font-size:0.95rem;">' + m.name;
                     if (m.status === 'entwurf') {
                         html += ' <span title="Vom Mitglied gemeldet – noch nicht bestätigt" style="display:inline-block; margin-left:4px; font-size:0.66rem; font-weight:700; color:#92700c; background:#fff3cd; border:1px solid #ffe69c; border-radius:999px; padding:1px 8px; vertical-align:middle; white-space:nowrap;"><i class="bi bi-person-check"></i> gemeldet</span>';
@@ -1434,6 +1427,11 @@ try {
         $('#anlassPanelBody .anlass-member-row').each(function() {
             const name = $(this).data('name') || '';
             $(this).toggle(name.includes(q));
+        });
+        // Gruppen-Header nur zeigen, wenn die Gruppe noch sichtbare Treffer hat
+        $('#anlassPanelBody .anlass-group').each(function() {
+            const anyVisible = $(this).find('.anlass-member-row:visible').length > 0;
+            $(this).find('.anlass-group-header').toggle(anyVisible);
         });
     });
 

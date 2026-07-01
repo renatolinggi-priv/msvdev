@@ -24,7 +24,7 @@ try {
     
     // CSRF Token prüfen
     session_start();
-    if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (empty($_SESSION['csrf_token']) || !isset($data['csrf_token']) || !hash_equals($_SESSION['csrf_token'], (string)$data['csrf_token'])) {
         throw new Exception("Ungültiger CSRF Token");
     }
     

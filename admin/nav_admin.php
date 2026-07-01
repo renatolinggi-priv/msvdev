@@ -260,8 +260,7 @@ include 'header.inc.php';
         <!-- Titel -->
         <div class="row mb-3 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-menu-button-wide me-2"></i>Navigation verwalten
+            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Navigation verwalten
             </h2>
           </div>
         </div>

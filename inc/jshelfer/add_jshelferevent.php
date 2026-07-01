@@ -4,6 +4,10 @@ error_reporting(E_ALL);
 
 header('Content-Type: application/json');
 include '../config.php';
+require_once __DIR__ . '/../csrf.inc.php';
+
+csrf_require(true);
+if (empty($_SESSION['user_id'])) { http_response_code(403); header('Content-Type: application/json'); echo json_encode(['success'=>false,'message'=>'Nicht angemeldet']); exit; }
 
 $freierTitel     = trim($_POST['freierTitel'] ?? '');
 $freierWilen     = floatval($_POST['freierWilen'] ?? 0);

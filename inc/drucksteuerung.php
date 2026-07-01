@@ -2,8 +2,7 @@
 // drucksteuerung.php - Drucksteuerung (QZ Tray Druckprofile, Drucker, Protokoll)
 
 $page_specific_css = '
-    /* Collapse-Chevron */
-    .action-chevron { transition: transform .2s ease; }
+    /* Collapse-Chevron (.action-chevron kommt zentral aus msv-styles.css) */
     [data-bs-toggle="collapse"].collapsed .action-chevron { transform: rotate(-90deg); }
 
     /* Container fuer Drucksteuerung */
@@ -125,13 +124,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper">
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-printer me-2"></i>Drucksteuerung
-            </h2>
-          </div>
-        </div>
+        <?php $page_title = 'Drucksteuerung'; include 'partials/page_header.inc.php'; ?>
         <div class="content-background">
 
     <!-- Karte 1: Druckprofile (QZ-Bar + Matrix) -->
@@ -142,7 +135,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
             <span id="qzStatusText" class="qz-text">Nicht verbunden mit QZ Tray</span>
             <span id="machineIdBadge" class="badge bg-secondary ms-2" style="font-size:.7rem; font-weight:normal; cursor:help" title=""></span>
             <div class="qz-actions">
-                <button id="btnConnect" class="btn btn-primary btn-sm" onclick="Druck.connect()">
+                <button id="btnConnect" class="btn btn-outline-primary btn-sm" onclick="Druck.connect()">
                     <i class="bi bi-plug me-1"></i>Verbinden
                 </button>
                 <button id="btnDisconnect" class="btn btn-outline-secondary btn-sm" onclick="Druck.disconnect()" disabled>
@@ -155,7 +148,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
         <div class="card-header d-flex align-items-center">
             <span class="fw-bold">Druckprofile</span>
             <span class="badge bg-primary ms-2" id="profileCount">0</span>
-            <button class="btn btn-success btn-sm ms-auto" onclick="Druck.saveAllProfiles()">
+            <button class="btn btn-outline-primary btn-sm ms-auto" onclick="Druck.saveAllProfiles()">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
         </div>
@@ -173,13 +166,13 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
         <div class="card-header d-flex align-items-center" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#druckerBody">
             <i class="bi bi-chevron-down action-chevron me-2"></i>
             <span class="fw-bold">Drucker</span>
-            <button class="btn btn-primary btn-sm ms-auto" onclick="event.stopPropagation(); Druck.showAddPrinter()">
+            <button class="btn btn-outline-success btn-sm ms-auto" onclick="event.stopPropagation(); Druck.showAddPrinter()">
                 <i class="bi bi-plus-lg me-1"></i>Hinzufuegen
             </button>
         </div>
         <div class="collapse" id="druckerBody">
         <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0" style="font-size:0.82rem; table-layout:fixed">
+            <table class="table table-hover table-sm mb-0" style="table-layout:fixed">
                 <colgroup>
                     <col>
                     <col style="width:80px">
@@ -260,8 +253,8 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-success" onclick="Druck.savePrinter()"><i class="bi bi-check-circle me-1"></i>Speichern</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="Druck.savePrinter()"><i class="bi bi-save me-1"></i>Speichern</button>
             </div>
         </div>
     </div>

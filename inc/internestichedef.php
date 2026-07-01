@@ -21,6 +21,11 @@ $page_specific_css = '
 #stichdefTabelle th:first-child {
   text-align: left !important;
 }
+/* Body-Zellen der 1. Spalte normal (nicht fett wie die zentrale Rang-Spalte) */
+#stichdefTabelle td:first-child {
+  font-weight: normal;
+  background-color: transparent;
+}
 ';
 
 include 'header.inc.php';
@@ -33,14 +38,7 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                            Interne Stiche - Imetron Stichnummerverwaltung
-                        </h2>
-                    </div>
-                </div>
+                <?php $page_title = 'Interne Stiche - Imetron Stichnummerverwaltung'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
@@ -58,7 +56,7 @@ include 'header.inc.php';
                     <!-- Toolbar -->
                     <div class="mb-3">
                         <div class="d-flex flex-wrap align-items-center gap-2">
-                            <button id="btnSave" class="btn btn-outline-success btn-compact-standard" disabled>
+                            <button id="btnSave" class="btn btn-outline-primary btn-sm" disabled>
                                 <i class="bi bi-save"></i><span>Speichern</span>
                             </button>
                         </div>
@@ -81,7 +79,7 @@ include 'header.inc.php';
                                     <tbody>
                                     <?php foreach ($stiche as $s): ?>
                                         <tr data-stich="<?= htmlspecialchars($s) ?>">
-                                            <td><strong><?= htmlspecialchars($s) ?></strong></td>
+                                            <td><?= htmlspecialchars($s) ?></td>
                                             <td class="text-center">
                                                 <input type="text" class="form-control form-control-sm nr1-input"
                                                     placeholder="—">
@@ -138,11 +136,11 @@ include 'header.inc.php';
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-2"></i>
                     Abbrechen
                 </button>
-                <button type="button" class="btn btn-success" id="confirmImportBtn">
+                <button type="button" class="btn btn-outline-success btn-sm" id="confirmImportBtn">
                     <i class="bi bi-check-circle me-2"></i>
                     Ja, importieren
                 </button>
@@ -157,7 +155,7 @@ const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
 </script>
 
 <!-- JavaScript für Interne Stiche -->
-<script src="internestichedef/stiche.js?v=<?= time(); ?>"></script>
+<script src="internestichedef/stiche.js?v=<?= @filemtime(__DIR__ . '/internestichedef/stiche.js') ?: '1'; ?>"></script>
 <script>
 $(function(){
     window.InterneStiche.init();
@@ -214,22 +212,6 @@ window.filterMobileInternestichedef = function(searchInput) {
 
 <style>
 @media (max-width: 767.98px) {
-    /* WCAG AAA Touch Targets: Alle Form-Elemente */
-    .form-control,
-    .form-select,
-    input[type="text"],
-    input[type="number"] {
-        min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-    }
-
-    /* Alle Buttons */
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
     /* Desktop Table/Mobile Cards Toggle */
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: block !important; }

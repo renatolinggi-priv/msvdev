@@ -1,5 +1,5 @@
 <?php
-// gruppenerfassung.php
+// jmdefinition_gruppen.php - Gruppenerfassung Jahresmeisterschaft
 include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles definieren
@@ -268,6 +268,17 @@ $page_specific_css = "
 .member-search { position: relative; margin-bottom: .5rem; }
 .member-search input { padding-left: 1.9rem; }
 .member-search .bi-search { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .85rem; }
+
+/* === SortableJS Drag-Feedback (ersetzt jQuery-UI) === */
+.draggable-member.sortable-ghost { opacity: .35; background: #eef2f7; border-color: #3b5998; }
+.draggable-member.sortable-chosen { box-shadow: 0 6px 18px rgba(0,0,0,.18); border-color: #3b5998; }
+.draggable-member.sortable-drag { opacity: .9; }
+
+/* === Slide-Panel 'Neuer Anlass' ===
+   Container/.panel-overlay/.panel-header/.panel-body sowie Mobile-Touch-Targets
+   jetzt zentral in css/msv-styles.css. Breite = 440px via --panel-width am Panel.
+   .panel-footer bleibt seitenspezifisch (Flex-Layout der Buttons). */
+.panel-footer { display: flex; gap: .5rem; justify-content: flex-end; }
 ";
 
 include 'header.inc.php';
@@ -280,19 +291,14 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-11 col-lg-12 col-12 ps-0">
+        <div class="col-xl-12 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-people me-2"></i>
-                            Gruppenerfassung Jahresmeisterschaft
-                        </h2>
-                        <p class="text-muted mb-0">Teams zusammenstellen und verwalten</p>
-                    </div>
-                </div>
+                <?php
+                $page_title = 'Gruppenerfassung Jahresmeisterschaft';
+                include 'partials/page_header.inc.php';
+                ?>
                 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
@@ -318,7 +324,7 @@ if (empty($_SESSION['csrf_token'])) {
                                     <select id="eventSelect" class="form-select form-select-sm mb-2">
                                         <option value="">Bitte wählen...</option>
                                     </select>
-                                    <button type="button" class="btn btn-outline-success btn-compact w-100" data-bs-toggle="modal" data-bs-target="#newAnlassModal">
+                                    <button type="button" class="btn btn-outline-success btn-sm w-100" id="openAnlassPanel">
                                         <i class="bi bi-plus-circle me-1"></i>Neuer Anlass
                                     </button>
                                 </div>
@@ -425,10 +431,10 @@ if (empty($_SESSION['csrf_token'])) {
                                         </div>
 
                                         <div class="d-flex gap-2 mt-3">
-                                            <button type="submit" class="btn btn-outline-success btn-compact" id="saveGruppe">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm" id="saveGruppe">
                                                 <i class="bi bi-save me-1"></i>Gruppe speichern
                                             </button>
-                                            <button type="button" class="btn btn-outline-secondary btn-compact" id="resetForm">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="resetForm">
                                                 <i class="bi bi-arrow-clockwise me-1"></i>Zurücksetzen
                                             </button>
                                         </div>
@@ -443,81 +449,63 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Modal für neuen Anlass -->
-<div class="modal fade" id="newAnlassModal" tabindex="-1" aria-labelledby="newAnlassModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="newAnlassModalLabel">
-                    <i class="bi bi-plus-circle"></i> Neuen Anlass hinzufügen
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+<!-- Slide-Panel für neuen Anlass – zentrale Struktur via inc/partials/side_panel.inc.php -->
+<?php
+$panel_id       = 'anlassPanel';
+$panel_overlay_id = 'anlassOverlay';
+$panel_close_id = 'closeAnlassPanel';
+$panel_width    = '440px';
+$panel_title    = '<i class="bi bi-plus-circle me-2"></i>Neuen Anlass hinzufügen';
+ob_start();
+?>
+        <div class="mb-3">
+            <label for="neueJMDefinitionBezeichnung" class="form-label fw-semibold small">Anlassname *</label>
+            <input type="text" class="form-control" id="neueJMDefinitionBezeichnung" placeholder="z.B. Gruppenwettkampf">
+        </div>
+        <div class="mb-3">
+            <label for="neueJMDefinitionMaxpunkte" class="form-label fw-semibold small">Maximalpunkte</label>
+            <input type="number" class="form-control" id="neueJMDefinitionMaxpunkte" placeholder="100" min="0">
+        </div>
+        <div class="mb-3">
+            <label for="neueJMDefinitionSchiesstage" class="form-label fw-semibold small">Schiesstage</label>
+            <textarea class="form-control" id="neueJMDefinitionSchiesstage" placeholder="z.B. Samstag 09:00-12:00..." rows="3"></textarea>
+        </div>
+        <div class="mb-2">
+            <label class="form-label fw-semibold small">Optionen:</label>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="neueJMDefinitionStreicher">
+                <label class="form-check-label" for="neueJMDefinitionStreicher">Streicher</label>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label for="neueJMDefinitionBezeichnung" class="form-label">Anlassname *</label>
-                        <input type="text" class="form-control mb-3" id="neueJMDefinitionBezeichnung" placeholder="z.B. Gruppenwettkampf">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="neueJMDefinitionMaxpunkte" class="form-label">Maximalpunkte</label>
-                        <input type="number" class="form-control mb-3" id="neueJMDefinitionMaxpunkte" placeholder="100" min="0">
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-12">
-                        <label for="neueJMDefinitionSchiesstage" class="form-label">Schiesstage</label>
-                        <textarea class="form-control mb-3" id="neueJMDefinitionSchiesstage" placeholder="z.B. Samstag 09:00-12:00..." rows="3"></textarea>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-12">
-                        <label class="form-label">Optionen:</label>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="neueJMDefinitionStreicher">
-                                    <label class="form-check-label" for="neueJMDefinitionStreicher">Streicher</label>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="neueJMDefinitionErweitert">
-                                    <label class="form-check-label" for="neueJMDefinitionErweitert">Erweitert</label>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="neueJMDefinitionInfo">
-                                    <label class="form-check-label" for="neueJMDefinitionInfo">Info</label>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="neueJMDefinitionGruppe" checked>
-                                    <label class="form-check-label" for="neueJMDefinitionGruppe">Gruppenwettkampf</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="neueJMDefinitionErweitert">
+                <label class="form-check-label" for="neueJMDefinitionErweitert">Erweitert</label>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-compact-standard btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-compact-standard btn-outline-success" id="jmdefinitionHinzufuegen">
-                    <i class="bi bi-plus-circle me-1"></i>Anlass hinzufügen
-                </button>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="neueJMDefinitionInfo">
+                <label class="form-check-label" for="neueJMDefinitionInfo">Info</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="neueJMDefinitionGruppe" checked>
+                <label class="form-check-label" for="neueJMDefinitionGruppe">Gruppenwettkampf</label>
             </div>
         </div>
-    </div>
-</div>
+<?php
+$panel_body = ob_get_clean();
+ob_start();
+?>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="cancelAnlassPanel">
+            <i class="bi bi-x-circle me-1"></i>Abbrechen
+        </button>
+        <button type="button" class="btn btn-outline-success btn-sm" id="jmdefinitionHinzufuegen">
+            <i class="bi bi-plus-circle me-1"></i>Anlass hinzufügen
+        </button>
+<?php
+$panel_footer = ob_get_clean();
+include 'partials/side_panel.inc.php';
+?>
 
-<!-- jQuery UI für Drag & Drop -->
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<!-- SortableJS für Drag & Drop (ersetzt jQuery UI) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
 
@@ -541,58 +529,42 @@ $(document).ready(function() {
     initializeYearDropdown();
 
     /**
-     * b) Drag & Drop Setup - Fehler-sicher
+     * b) Drag & Drop Setup mit SortableJS (ersetzt jQuery UI)
+     * SortableJS macht alle passenden Kind-Elemente automatisch ziehbar -
+     * kein per-Element-Init noetig. Init nur einmal pro Container (idempotent).
      */
-    // Gemeinsame Draggable-Optionen
-    var dragDefaults = {
-        revert: "invalid",
-        revertDuration: 150,
-        helper: "clone",
-        cursor: "grabbing",
-        zIndex: 9999,
-        appendTo: "body",
-        distance: 3,
-        delay: 0,
-        opacity: 0.9,
-        scroll: false,
-        start: function(event, ui) {
-            $(this).css('opacity', '0.4');
-            ui.helper.addClass('ui-draggable-dragging');
-        },
-        stop: function(event, ui) {
-            $(this).css('opacity', '');
-        }
-    };
-
-    function makeDraggable($elements) {
-        $elements.each(function() {
-            if (!$(this).hasClass('ui-draggable')) {
-                $(this).draggable(dragDefaults);
-            }
-        });
-    }
-
     function setupDragDrop() {
-        // Nur neue (noch nicht initialisierte) Elemente draggable machen
-        makeDraggable($("#availableMembers .draggable-member"));
-        makeDraggable($("#groupMembers .draggable-member"));
+        var avail = document.getElementById('availableMembers');
+        var grp   = document.getElementById('groupMembers');
 
-        // Dropzones nur einmal initialisieren
-        if (!$("#groupMembers").hasClass('ui-droppable')) {
-            $("#groupMembers").droppable({
-                accept: ".draggable-member",
-                tolerance: "pointer",
-                activeClass: "hovered",
-                drop: function(event, ui) { moveToGroup($(ui.draggable)); }
+        if (avail && !avail._sortable) {
+            avail._sortable = Sortable.create(avail, {
+                group: 'gruppenDnD',
+                animation: 150,
+                draggable: '.draggable-member',
+                onAdd: function(evt) {
+                    // Mitglied wurde nach "Verfuegbar" gezogen
+                    $(evt.item).addClass('member-flex-item');
+                    if ($("#groupMembers .draggable-member").length === 0) {
+                        $("#groupMembers").html('<p class="text-muted"><i class="bi bi-cursor me-2"></i>Mitglieder hierher ziehen oder links anklicken...</p>');
+                    }
+                    refreshCounts();
+                    applyMemberFilter();
+                }
             });
         }
 
-        if (!$("#availableMembers").hasClass('ui-droppable')) {
-            $("#availableMembers").droppable({
-                accept: ".draggable-member",
-                tolerance: "pointer",
-                activeClass: "hovered",
-                drop: function(event, ui) { moveToAvailable($(ui.draggable)); }
+        if (grp && !grp._sortable) {
+            grp._sortable = Sortable.create(grp, {
+                group: 'gruppenDnD',
+                animation: 150,
+                draggable: '.draggable-member',
+                onAdd: function(evt) {
+                    // Mitglied wurde nach "Gruppe" gezogen
+                    $("#groupMembers p.text-muted").remove();
+                    $(evt.item).removeClass('member-flex-item');
+                    refreshCounts();
+                }
             });
         }
     }
@@ -618,7 +590,6 @@ $(document).ready(function() {
         $("#groupMembers").find("p.text-muted").remove();
         $("#groupMembers").append($new);
         $member.remove();
-        makeDraggable($new);
         refreshCounts();
     }
     function moveToAvailable($member) {
@@ -629,7 +600,6 @@ $(document).ready(function() {
             var $new = $("<div></div>").addClass("member-flex-item draggable-member").attr("data-id", id).text($member.text());
             $("#availableMembers").append($new);
             $member.remove();
-            makeDraggable($new);
         }
         if ($("#groupMembers .draggable-member").length === 0) {
             $("#groupMembers").html('<p class="text-muted"><i class="bi bi-cursor me-2"></i>Mitglieder hierher ziehen oder links anklicken...</p>');
@@ -760,14 +730,12 @@ $(document).ready(function() {
      * loadEventDropdown => füllt #eventSelect - MIT DEBUG
      */
     function loadEventDropdown(year) {
-        console.log("Loading events for year:", year); // DEBUG
         $.ajax({
             url: 'jmdefinition/load_jmdefinition_gruppen.php',
             method: 'GET',
             data: { year: year },
             dataType: 'json',
             success: function(data) {
-                console.log("Received events data:", data); // DEBUG
                 var eventSelect = $('#eventSelect').empty();
                 if (data && data.length > 0) {
                     eventSelect.append($('<option></option>').val('').text('Bitte auswählen'));
@@ -1189,6 +1157,26 @@ $(document).ready(function() {
         }
     });
 
+    // --- Slide-Panel 'Neuer Anlass' Steuerung ---
+    function openAnlassPanel() {
+        $('#anlassOverlay').addClass('show');
+        $('#anlassPanel').addClass('open').attr('aria-hidden', 'false');
+        setTimeout(function() { $('#neueJMDefinitionBezeichnung').trigger('focus'); }, 350);
+    }
+    function closeAnlassPanel() {
+        $('#anlassPanel').removeClass('open').attr('aria-hidden', 'true');
+        $('#anlassOverlay').removeClass('show');
+    }
+    $('#openAnlassPanel').on('click', openAnlassPanel);
+    $('#closeAnlassPanel, #cancelAnlassPanel, #anlassOverlay').on('click', closeAnlassPanel);
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $('#anlassPanel').hasClass('open')) closeAnlassPanel();
+    });
+    // Enter in einem Textfeld des Panels = Anlass hinzufügen
+    $('#anlassPanel').on('keydown', 'input', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('#jmdefinitionHinzufuegen').click(); }
+    });
+
     // Neuen Anlass hinzufügen
     $('#jmdefinitionHinzufuegen').click(function() {
         var $btn = $(this);
@@ -1228,10 +1216,10 @@ $(document).ready(function() {
             },
             success: function(response) {
                 msvToast('Anlass erfolgreich hinzugefügt!', 'success');
-                
-                $('#newAnlassModal').modal('hide');
-                
-                // Modal-Felder zurücksetzen
+
+                closeAnlassPanel();
+
+                // Panel-Felder zurücksetzen
                 $('#neueJMDefinitionBezeichnung, #neueJMDefinitionSchiesstage, #neueJMDefinitionMaxpunkte').val('');
                 $('#neueJMDefinitionStreicher, #neueJMDefinitionErweitert, #neueJMDefinitionInfo').prop('checked', false);
                 $('#neueJMDefinitionGruppe').prop('checked', true);

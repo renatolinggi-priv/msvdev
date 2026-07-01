@@ -363,11 +363,41 @@ foreach ($resultData as $mid => &$mData) {
 }
 unset($mData);
 
+// ======= 7c. "Hat gewertetes JM-Resultat" bestimmen (für Gruppierung) =======
+// Gleiche Logik wie das Erfassungs-Panel: Cup, SSM/Sektionsmeisterschaft,
+// Feldschiessen und Obligatorisch zählen NICHT als Resultat. Nur echte
+// (Nicht-Platzhalter) Einträge in den übrigen Anlässen gelten als Teilnahme.
+$countingDefIDs = [];
+foreach ($definitions as $def) {
+    $bez = (string)$def['Bezeichnung'];
+    if ($bez === 'Obligatorisch' || $bez === 'Feldschiessen') continue;
+    if (stripos($bez, 'Sektionsmeisterschaft') !== false) continue;
+    if (stripos($bez, 'SSM') === 0) continue;
+    if (stripos($bez, 'Cup') !== false) continue;
+    $countingDefIDs[(int)$def['ID']] = true;
+}
+foreach ($resultData as &$mData) {
+    $hasResult = false;
+    foreach ($mData['wettbewerbe'] as $defID => $pArray) {
+        if (!isset($countingDefIDs[(int)$defID])) continue;
+        foreach ($pArray as $p) {
+            $isPlaceholder = is_array($p) ? !empty($p['placeholder']) : false;
+            if (!$isPlaceholder) { $hasResult = true; break 2; }
+        }
+    }
+    $mData['hasResult'] = $hasResult;
+}
+unset($mData);
+
 // ======= 8. Sortieren =======
-// Nach dem Endstich: nach Total DESC (Rangliste). Vorher: alphabetisch nach Name
-// (es gibt noch kein Total, daher noch keine Rangfolge).
+// Zuerst Schützen MIT gewertetem Resultat, danach jene ohne (separate Gruppe).
+// Innerhalb "mit Resultat": nach dem Endstich nach Total DESC (Rangliste),
+// vorher alphabetisch. "Ohne Resultat" immer alphabetisch.
 usort($resultData, function($a, $b) use ($endstichDone) {
-    if ($endstichDone) {
+    if (($a['hasResult'] ?? false) !== ($b['hasResult'] ?? false)) {
+        return ($a['hasResult'] ?? false) ? -1 : 1;
+    }
+    if (($a['hasResult'] ?? false) && $endstichDone) {
         $cmp = $b['sumTotal'] <=> $a['sumTotal'];
         if ($cmp !== 0) return $cmp;
     }
@@ -455,15 +485,33 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
     $theadHtml .= "</tr>";
 
     // ---- Body ----
+    // Gruppierung: zuerst Schützen mit gewertetem Resultat (Rangliste), danach als
+    // separate Gruppe jene ohne Resultat (alphabetisch, ohne Rang).
+    $noResultCount = 0;
+    foreach ($resultData as $e) { if (empty($e['hasResult'])) $noResultCount++; }
+
     $tbodyHtml = "";
     $actualPosition = 0; $currentRank = 0; $previousScore = null; $rowIdx = 0;
+    $noResultHeaderShown = false;
 
     foreach ($resultData as $entry) {
-        $actualPosition++; $rowIdx++;
+        $rowIdx++;
+        $hasResult = !empty($entry['hasResult']);
+
+        // Trennzeile vor der ersten Zeile ohne Resultat
+        if (!$hasResult && !$noResultHeaderShown) {
+            $noResultHeaderShown = true;
+            $tbodyHtml .= "<tr class='jm-group-row'><td colspan='$totalColspan' class='jm-group-cell'>"
+                . "<i class='bi bi-dash-circle me-1'></i>Ohne gewertetes JM-Resultat ($noResultCount)</td></tr>";
+        }
+
         $sumTotal = $entry['sumTotal'];
-        if ($sumTotal !== $previousScore) {
-            $currentRank = $actualPosition;
-            $previousScore = $sumTotal;
+        if ($hasResult) {
+            $actualPosition++;
+            if ($sumTotal !== $previousScore) {
+                $currentRank = $actualPosition;
+                $previousScore = $sumTotal;
+            }
         }
         $m = $entry['mitglied'];
         $fullname   = h($m['Name'] . " " . $m['Vorname']);
@@ -471,7 +519,7 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
         $pflichtSum = $endstichDone ? number_format($entry['sumStreicher0'], DEZIMALSTELLEN, '.', '') : $offenTxt;
         $streichSum = $endstichDone ? number_format($entry['sumStreicher1'], DEZIMALSTELLEN, '.', '') : $offenTxt;
         $totalStr   = $endstichDone ? number_format($sumTotal, DEZIMALSTELLEN, '.', '') : $offenTxt;
-        $rangStr    = $endstichDone ? (string)$currentRank : "&ndash;";
+        $rangStr    = ($hasResult && $endstichDone) ? (string)$currentRank : "&ndash;";
         $totalTip   = $endstichDone ? "" : " data-tooltip='Total wird erst nach dem Endstich berechnet'";
 
         // ---- Hauptzeile (Rangliste mit letzten Anlässen) ----

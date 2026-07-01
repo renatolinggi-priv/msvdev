@@ -6,90 +6,12 @@
 try { include 'dbconnect.inc.php'; } catch (Exception $e) { die("System error."); }
 
 $page_specific_css = <<<'CSS'
-/* ===== Mitgliederverwaltung – Seitenspezifisch ===== */
-
-/* --- Flag-Dots --- */
-.flag-dots { display: flex; gap: 6px; justify-content: center; }
-.flag-dot {
-  position: relative;
-  width: 28px; height: 28px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; cursor: default;
-  transition: transform 0.15s;
-}
-.flag-dot:hover { transform: scale(1.15); z-index: 9999; }
-.flag-dot.on { background: #3b82f6; color: #fff; }
-.flag-dot.off { background: #f1f5f9; color: #cbd5e1; }
-
-/* Tooltip → global via msv-styles.css + msv-tooltips.js */
-
-/* --- Slide-Panel --- */
-.mv-edit-panel {
-  position: fixed; top: 0; right: -520px; width: 500px; height: 100vh;
-  background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12);
-  z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-  display: flex; flex-direction: column;
-}
-.mv-edit-panel.open { right: 0; }
-.panel-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-  z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s;
-}
-.panel-overlay.show { opacity: 1; visibility: visible; }
-.panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc; flex-shrink: 0;
-}
-.panel-header h6 { font-weight: 600; }
-.panel-body {
-  padding: 1.25rem; overflow-y: auto; flex: 1;
-}
-.panel-label {
-  display: block; font-size: 0.8rem; font-weight: 600;
-  color: #64748b; margin-bottom: 0.35rem;
-}
-.panel-section {
-  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.5px; color: #94a3b8;
-  margin: 1rem 0 0.5rem; padding-bottom: 0.35rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-/* --- Aktions-Card --- */
-.action-card { border-color: #e2e8f0; }
-.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; }
-.action-card-header:hover { background-color: #f1f5f9; }
-.action-chevron { transition: transform .2s ease; }
-.action-card-header[aria-expanded="true"] .action-chevron { transform: rotate(180deg); }
-
-/* --- Skeleton --- */
-.skeleton {
-  height: 20px; border-radius: 4px;
-  background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
-  background-size: 200% 100%; animation: sk-load 1.5s infinite;
-}
-@keyframes sk-load { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-/* --- Import Area --- */
-.import-area {
-  border: 2px dashed #dee2e6; border-radius: 1rem;
-  padding: 2rem; text-align: center; background: #fff;
-  transition: all 0.3s; cursor: pointer;
-}
-.import-area:hover { border-color: #3b82f6; background: #f8fafe; }
-.import-area.dragging { border-color: #28a745; background: #d4edda; }
-
-/* --- Mobile --- */
-@media (max-width: 767.98px) {
-  .desktop-table-container { display: none !important; }
-  .mobile-cards-container { display: block !important; }
-  .mv-edit-panel { width: 100%; right: -110%; }
-  .mv-edit-panel.open { right: 0; }
-}
-@media (min-width: 768px) {
-  .mobile-cards-container { display: none !important; }
-}
+/* ===== Mitgliederverwaltung – Seitenspezifisch =====
+   Slide-Panel (.mv-edit-panel/.panel-*), Aktions-Card und Titel-Farbe
+   sind jetzt zentral in css/msv-styles.css. Desktop/Mobile-Umschaltung
+   der Tabelle/Cards kommt global aus css/mobile-cards.css.
+   Flag-Dots (.flag-dots/.flag-dot*), Skeleton (.skeleton/@keyframes)
+   und Import-Area (.import-area*) sind jetzt zentral in css/msv-styles.css. */
 
 CSS;
 
@@ -102,15 +24,9 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-7 col-lg-11 col-12 ps-0">
+    <div class="col-xl-12 col-lg-11 col-12 ps-0">
       <div class="main-content-wrapper">
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-people-fill me-2"></i>Mitgliederverwaltung
-            </h2>
-          </div>
-        </div>
+        <?php $page_title = 'Mitgliederverwaltung'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <form id="mitgliederForm">
@@ -125,15 +41,10 @@ if (empty($_SESSION['csrf_token'])) {
                 </div>
               </div>
 
-              <div class="card action-card mb-0">
-                <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                     data-bs-toggle="collapse" data-bs-target="#mvActions"
-                     aria-expanded="false" aria-controls="mvActions">
-                  <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                  <i class="bi bi-chevron-down action-chevron"></i>
-                </div>
-                <div class="collapse" id="mvActions">
-                  <div class="card-body pt-2 pb-3 px-3">
+<?php
+              $ac_id = 'mvActions';
+              ob_start();
+              ?>
                     <div class="row g-2">
                       <div class="col-6">
                         <button type="button" class="btn btn-outline-success btn-sm w-100" id="btnNewMember">
@@ -151,7 +62,7 @@ if (empty($_SESSION['csrf_token'])) {
                         </a>
                       </div>
                       <div class="col-6">
-                        <button type="button" class="btn btn-outline-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <button type="button" class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#importModal">
                           <i class="bi bi-upload me-1"></i>Import
                         </button>
                       </div>
@@ -161,9 +72,10 @@ if (empty($_SESSION['csrf_token'])) {
                         </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
+              <?php
+              $ac_body = ob_get_clean();
+              include 'partials/action_card.inc.php';
+              ?>
             </div>
 
             <!-- Desktop: Hybrid-Tabelle -->
@@ -210,14 +122,13 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Slide-Panel (Edit) -->
-<div class="panel-overlay" id="panelOverlay"></div>
-<div class="mv-edit-panel" id="editPanel">
-  <div class="panel-header">
-    <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i><span id="panelTitle">Mitglied bearbeiten</span></h6>
-    <button class="btn btn-sm btn-outline-secondary" id="panelClose"><i class="bi bi-x-lg"></i></button>
-  </div>
-  <div class="panel-body">
+<!-- Slide-Panel (Edit) – zentrale Struktur via inc/partials/side_panel.inc.php -->
+<?php
+$panel_id    = 'editPanel';
+$panel_class = 'mv-edit-panel';
+$panel_title = '<i class="bi bi-pencil-square me-2"></i><span id="panelTitle">Mitglied bearbeiten</span>';
+ob_start();
+?>
     <!-- Stammdaten -->
     <div class="panel-section"><i class="bi bi-person me-1"></i>Stammdaten</div>
     <div class="row g-2 mb-2">
@@ -324,6 +235,10 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
       </div>
     </div>
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" id="panelJskLeiter">
+      <label class="form-check-label" for="panelJskLeiter"><i class="bi bi-person-badge me-1"></i>Jungschützenleiter</label>
+    </div>
     <div class="mb-3">
       <label class="panel-label">Vereinsaufnahme (Jahr)</label>
       <input type="number" class="form-control form-control-sm" id="panelVereinsaufnahme"
@@ -331,11 +246,13 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 
     <hr>
-    <button class="btn btn-outline-danger w-100" id="panelDeleteBtn">
+    <button class="btn btn-outline-danger btn-sm w-100" id="panelDeleteBtn">
       <i class="bi bi-trash me-1"></i>Mitglied löschen
     </button>
-  </div>
-</div>
+<?php
+$panel_body = ob_get_clean();
+include 'partials/side_panel.inc.php';
+?>
 
 <!-- Modal: Neues Mitglied -->
 <div class="modal fade" id="newMemberModal" tabindex="-1">
@@ -346,6 +263,7 @@ if (empty($_SESSION['csrf_token'])) {
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form id="newMemberForm">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
         <div class="modal-body">
           <div class="row g-2 mb-2">
             <div class="col-4">
@@ -456,33 +374,11 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Modal: Löschen bestätigen -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
-  <div class="modal-dialog modal-sm modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <h6 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Löschen?</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body text-center py-3">
-        <p class="mb-0" id="deleteConfirmText">Dieses Mitglied wirklich löschen?</p>
-      </div>
-      <div class="modal-footer py-2 justify-content-center">
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-        <button type="button" class="btn btn-outline-danger btn-sm" id="confirmDeleteBtn">
-          <i class="bi bi-trash me-1"></i>Löschen
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script src="js/msv-phone.js"></script>
 <script>
 $(function() {
   const basePath = (/\/inc(\/|$)/.test(location.pathname)) ? '' : 'inc/';
   let hasChanges = false;
-  let deleteId = null;
   let waffenOptionsHtml = '';
 
   // ========== Slide-Panel ==========
@@ -515,6 +411,7 @@ $(function() {
       $('#panelStatus').prop('checked', d.status === '1');
       $('#panelEhre').prop('checked', d.ehrenmitglied === '1');
       $('#panelVerstorben').prop('checked', d.verstorben === '1');
+      $('#panelJskLeiter').prop('checked', d.ist_jsk_leiter === '1');
       $('#panelVereinsaufnahme').val(d.vereinsaufnahme || '');
 
       // Waffen-Dropdown im Panel befüllen
@@ -569,6 +466,7 @@ $(function() {
         status: d.status === '1' ? 1 : 0,
         ehrenmitglied: d.ehrenmitglied === '1' ? 1 : 0,
         verstorben: d.verstorben === '1' ? 1 : 0,
+        ist_jsk_leiter: d.ist_jsk_leiter === '1' ? 1 : 0,
         vereinsaufnahme: d.vereinsaufnahme || '',
         csrf_token: $('input[name="csrf_token"]').val()
       })
@@ -658,6 +556,7 @@ $(function() {
   $('#panelStatus').on('change', function() { MVPanel.syncFlag('status', this.checked); });
   $('#panelEhre').on('change', function() { MVPanel.syncFlag('ehrenmitglied', this.checked); });
   $('#panelVerstorben').on('change', function() { MVPanel.syncFlag('verstorben', this.checked); });
+  $('#panelJskLeiter').on('change', function() { MVPanel.syncFlag('ist_jsk_leiter', this.checked); });
 
   // Phone auto-format on blur
   $('#panelTelefon, #panelMobile').on('blur', function() {
@@ -763,30 +662,22 @@ $(function() {
 
   // ========== Löschen ==========
   $('#panelDeleteBtn').on('click', function() {
-    deleteId = $(this).data('id');
+    const deleteId = $(this).data('id');
     const $row = $(`#row${deleteId}`);
-    const name = $row.data('vorname') + ' ' + $row.data('name');
-    $('#deleteConfirmText').html(`<strong>${name}</strong> wirklich löschen?`);
+    const name = ($row.data('vorname') || '') + ' ' + ($row.data('name') || '');
     MVPanel.close();
-    $('#confirmDeleteModal').modal('show');
-  });
-
-  $('#confirmDeleteBtn').on('click', function() {
-    if (!deleteId) return;
-    const $btn = $(this);
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>...');
-
-    $.post(basePath + 'mitgliederverwaltung/delete_mitglied.php', {
-      id: deleteId,
-      csrf_token: $('input[name="csrf_token"]').val()
-    })
-    .done(function() {
-      $('#confirmDeleteModal').modal('hide');
-      msvToast('Mitglied gelöscht', 'success');
-      loadMitglieder();
-    })
-    .fail(() => msvToast('Fehler beim Löschen', 'error'))
-    .always(function() { $btn.prop('disabled', false).html('<i class="bi bi-trash me-1"></i>Löschen'); deleteId = null; });
+    msvConfirmDelete(name.trim()).then(function(res) {
+      if (!res.isConfirmed) return;
+      $.post(basePath + 'mitgliederverwaltung/delete_mitglied.php', {
+        id: deleteId,
+        csrf_token: $('input[name="csrf_token"]').val()
+      })
+      .done(function() {
+        msvToast('Mitglied gelöscht', 'success');
+        loadMitglieder();
+      })
+      .fail(() => msvToast('Fehler beim Löschen', 'error'));
+    });
   });
 
   // ========== CSV Import ==========

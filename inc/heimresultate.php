@@ -63,9 +63,8 @@ $page_specific_css = "
     border-bottom: 2px solid #dee2e6;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.85rem;
     letter-spacing: 0.5px;
-    padding: 1rem;
+    padding: 0.75rem;
     background-color: #f8f9fa;
     position: sticky;
     top: 0;
@@ -82,7 +81,7 @@ $page_specific_css = "
 }
 
 .table tbody td {
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     vertical-align: middle;
     border: none;
     text-align: center;
@@ -167,21 +166,7 @@ $page_specific_css = "
 
 @media (max-width: 767.98px) {
 
-    /* WCAG AAA Touch Targets: Alle Form-Elemente */
-    .form-control,
-    .form-select,
-    input[type=\"text\"],
-    input[type=\"number\"],
-    select {
-        min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-    }
-
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
+    /* Touch-Target-Grössen (form-controls/.btn) zentral in css/msv-styles.css */
 
     /* Mobile: Tabelle verstecken, Cards zeigen */
     #desktopTableContainer { display: none !important; }
@@ -374,6 +359,25 @@ $page_specific_css = "
     .button-toolbar .btn { width: 100%; }
 }
 
+/* === Gruppen-Trennzeile (mit / ohne Resultate) === */
+.table tbody tr.group-header td.group-header-cell {
+    background: #eef2f7;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    text-align: left;
+    padding: 0.45rem 1rem;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+#heimresultateTabelle tbody tr.group-header:hover td.group-header-cell,
+#heimresultateTabelle tbody tr.group-header td.group-header-cell {
+    background: #eef2f7;
+    cursor: default;
+}
+
 /* === Summe & Status Features === */
 .sum-cell {
     font-weight: 700;
@@ -397,27 +401,9 @@ input.small-input.filled {
 
 /* =========================================
    Erfassen Slide-Panel (Schütze um Schütze)
+   Container/Overlay/Header/Body zentral in css/msv-styles.css
+   (Breite via panel-width Custom-Property am Panel-Element)
    ========================================= */
-.hybrid-edit-panel {
-    position: fixed; top: 0; right: -560px; width: 540px; height: 100vh;
-    background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,.12);
-    z-index: 1060; transition: right .3s cubic-bezier(.4,0,.2,1);
-    display: flex; flex-direction: column;
-}
-.hybrid-edit-panel.open { right: 0; }
-
-.panel-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.3);
-    z-index: 1055; opacity: 0; visibility: hidden; transition: all .3s;
-}
-.panel-overlay.show { opacity: 1; visibility: visible; }
-
-.panel-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc; flex-shrink: 0;
-}
-.panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
 .panel-footer {
     padding: .75rem 1.25rem; border-top: 1px solid #e2e8f0;
     background: #f8fafc; flex-shrink: 0;
@@ -470,7 +456,15 @@ input.small-input.filled {
     /* Karte auf Inhaltsbreite begrenzen statt voll auszudehnen.
        Prefix #desktopTableContainer erhöht Spezifität, damit diese Breiten
        die !important-Regeln aus css/fixes/resultate-unified.css schlagen. */
-    #desktopTableContainer .results-list-card { max-width: 900px; }
+    #desktopTableContainer .results-list-card {
+        max-width: 900px;
+        /* Dezenter Tabellen-Rahmen INNERHALB der content-background-Karte
+           (nur Border, kein Schatten) – analog rank-table-wrapper auf jmresultate. */
+        background: #fff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.5rem !important;
+        box-shadow: none !important;
+    }
 
     /* Passe-Spalten schmaler */
     #desktopTableContainer #heimresultateTabelle th:not(:first-child),
@@ -515,30 +509,29 @@ input.small-input.filled {
        max-height:calc(100vh-350px) und overflow (alle !important) -> das
        verursachte Leerraum bzw. eine Karte, die nicht so hoch wie die Tabelle
        ist. Hier alles aufgehoben: die Karte ist exakt so gross wie die Tabelle. */
-    /* Äussere weisse Rahmen (main-content-wrapper + content-background) auf
-       Desktop entfernen -> nur die results-list-card umschliesst die Tabelle,
-       kein weisser Rest darunter. Seite scrollt natürlich. */
+    /* Karte wie auf jmresultate: die aeussere weisse Karte (main-content-wrapper +
+       content-background) BEHALTEN. Nur Hoehe/Scroll loesen, damit die Karte mit
+       dem Inhalt waechst (kein viewport-fixes Scrollen, kein Leerraum darunter). */
     .main-content-wrapper {
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
-        padding: 0 !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
         margin-bottom: 1.5rem !important;
     }
     .content-background {
         overflow: visible !important;
-        padding: 0 !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
     }
     /* overflow:visible über die ganze Kette, sonst bricht position:sticky
        (ein overflow:hidden-Vorfahre würde die Kopfzeile mitscrollen) */
     #desktopTableContainer .results-list-card { overflow: visible !important; }
-    #desktopTableContainer .table-wrapper { overflow: visible !important; }
+    /* Innerer Wrapper soll KEINE zweite Karte sein (Rahmen/Schatten aus
+       resultate-unified.css aufheben) -> sonst doppelte Linie. */
+    #desktopTableContainer .table-wrapper {
+        overflow: visible !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
     #desktopTableContainer .table-responsive {
         min-height: 0 !important;
         max-height: none !important;
@@ -574,15 +567,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-xl-10 col-lg-11 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-house-door me-2"></i>
-                            Heimmeisterschaft Resultaterfassung
-                        </h2>
-                        <p class="text-muted mb-0">Resultate erfassen und verwalten</p>
-                    </div>
-                </div>
+                <?php $page_title = 'Heimmeisterschaft Resultaterfassung'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="heimresultateForm">
@@ -600,18 +585,13 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
 
                         <!-- Aktionsbereich (Bootstrap Collapse) -->
-                        <div class="card action-card mb-0">
-                            <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                                 data-bs-toggle="collapse" data-bs-target="#heimresultateActions"
-                                 aria-expanded="false" aria-controls="heimresultateActions">
-                                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                                <i class="bi bi-chevron-down action-chevron"></i>
-                            </div>
-                            <div class="collapse" id="heimresultateActions">
-                                <div class="card-body pt-2 pb-3 px-3">
+<?php
+                        $ac_id = 'heimresultateActions';
+                        ob_start();
+                        ?>
                                     <div class="row g-2">
                                         <div class="col-6 d-none d-md-block">
-                                            <button type="button" class="btn btn-primary btn-sm w-100" id="startEntryBtn">
+                                            <button type="button" class="btn btn-outline-primary btn-sm w-100" id="startEntryBtn">
                                                 <i class="bi bi-pencil-square me-1"></i>Schnellerfassung
                                             </button>
                                         </div>
@@ -636,9 +616,10 @@ if (empty($_SESSION['csrf_token'])) {
                                             <i class="bi bi-trash me-1"></i>Alle Resultate löschen
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                        <?php
+                        $ac_body = ob_get_clean();
+                        include 'partials/action_card.inc.php';
+                        ?>
 
                         </div><!-- Ende flex-row Jahr+Aktionen -->
 
@@ -708,42 +689,9 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
-<!-- Lösch-Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalLabel">
-                    <i class="bi bi-exclamation-triangle text-warning"></i> Bestätigung erforderlich
-                </h5>
-                <button type="button" class="custom-close" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle text-danger me-3" style="font-size: 2rem;"></i>
-                    <div>
-                        <strong>Möchtest du wirklich ALLE Resultate des aktuellen Jahres löschen?</strong>
-                        <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden!</small>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-compact btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-compact btn-outline-danger" id="confirmDeleteButton">
-                    <i class="bi bi-trash me-1"></i>Löschen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Erfassen Slide-Panel -->
 <div class="panel-overlay" id="entryOverlay"></div>
-<div class="hybrid-edit-panel" id="entryPanel">
+<div class="hybrid-edit-panel" id="entryPanel" style="--panel-width: 540px;">
     <div class="panel-header">
         <div class="d-flex align-items-center gap-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="entryPrev" data-tooltip="Vorheriger">
@@ -774,10 +722,10 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
     <div class="panel-footer">
         <div class="d-flex gap-2 w-100">
-            <button type="button" class="btn btn-outline-success flex-fill" id="entrySaveBtn">
+            <button type="button" class="btn btn-outline-primary flex-fill" id="entrySaveBtn">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
-            <button type="button" class="btn btn-success flex-fill" id="entrySaveNextBtn">
+            <button type="button" class="btn btn-outline-primary flex-fill" id="entrySaveNextBtn">
                 Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
@@ -1215,26 +1163,20 @@ $(document).ready(function() {
     });
 
     // ===== Löschen =====
-    $('#delete-btn').on('click', function() { $('#confirmModal').modal('show'); });
-
-    $('#confirmDeleteButton').on('click', function() {
-        var $btn = $(this);
-        var originalText = $btn.html();
+    $('#delete-btn').on('click', function() {
         var selectedYear = $('#yearSelect').val();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
-
-        $.ajax({
-            url: 'heimresultate/delete_heim.php',
-            method: 'POST',
-            data: { jahr: selectedYear, csrf_token: $('input[name="csrf_token"]').val() },
-            success: function() {
-                $('#confirmModal').modal('hide');
-                msvToast('Alle Resultate erfolgreich gelöscht', 'success');
-                setTimeout(function() { loadResultate(selectedYear); }, 500);
-            },
-            error: function() { msvToast('Fehler beim Löschen', 'error'); },
-            complete: function() { $btn.prop('disabled', false).html(originalText); }
+        msvConfirmDelete('alle Resultate des Jahres ' + selectedYear).then(function(res) {
+            if (!res.isConfirmed) return;
+            $.ajax({
+                url: 'heimresultate/delete_heim.php',
+                method: 'POST',
+                data: { jahr: selectedYear, csrf_token: $('input[name="csrf_token"]').val() },
+                success: function() {
+                    msvToast('Alle Resultate erfolgreich gelöscht', 'success');
+                    setTimeout(function() { loadResultate(selectedYear); }, 500);
+                },
+                error: function() { msvToast('Fehler beim Löschen', 'error'); }
+            });
         });
     });
 

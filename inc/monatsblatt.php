@@ -8,18 +8,8 @@ $page_specific_css = '
 <style>
 /* Mobile Optimierung für Monatsblatt */
 @media (max-width: 767.98px) {
-    .form-control, .form-select {
-        min-height: 48px !important;
-        font-size: 16px !important;
-    }
-
     textarea.form-control {
         min-height: 120px !important;
-        font-size: 16px !important;
-    }
-
-    .btn {
-        min-height: 48px !important;
         font-size: 16px !important;
     }
 
@@ -44,14 +34,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Monatsblatt exportieren
-                        </h2>
-                    </div>
-                </div>
+                <?php $page_title = 'Monatsblatt exportieren'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
@@ -127,7 +110,7 @@ if (empty($_SESSION['csrf_token'])) {
                         <!-- Button Toolbar -->
                         <div class="button-toolbar">
                             <div class="button-group">
-                                <button type="submit" class="btn btn-compact-standard btn-outline-info">
+                                <button type="submit" class="btn btn-outline-info btn-sm">
                                     <i class="bi bi-file-earmark-pdf me-2"></i>
                                     PDF exportieren
                                 </button>
@@ -164,14 +147,12 @@ $(document).ready(function() {
     $('#exportStartMonth').val(currentMonth.toString().padStart(2, '0'));
     $('#exportEndMonth').val(currentMonth.toString().padStart(2, '0'));
 
-    // 2) Export via Ajax
-    $("#pdfExportForm").on("submit", function(e) {
+    // 2) Export: PDF direkt generieren und herunterladen (fetch -> Blob -> Download)
+    $("#pdfExportForm").on("submit", async function(e) {
         e.preventDefault();
 
         const $submitBtn = $(this).find('button[type="submit"]');
         const originalText = $submitBtn.html();
-        $submitBtn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
 
         var year = $("#exportYear").val();
         var startMonth = $("#exportStartMonth").val();
@@ -180,42 +161,43 @@ $(document).ready(function() {
 
         if (!year || !startMonth || !endMonth) {
             msvToast('Bitte alle Pflichtfelder ausfüllen', 'warning');
-            $submitBtn.prop('disabled', false).html(originalText);
             return;
         }
 
-        msvToast('PDF wird generiert...', 'info');
+        $submitBtn.prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
 
-        $.ajax({
-            url: 'monatsblatt/export_monatsblatt.php',
-            method: 'GET',
-            data: {
+        try {
+            const params = new URLSearchParams({
                 year: year,
                 start_month: startMonth,
                 end_month: endMonth,
                 bemerkung: bemerkung,
                 csrf_token: $('input[name="csrf_token"]').val()
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.pdf_link) {
-                    $('#pdf-link').html(
-                        '<a href="monatsblatt/' + response.pdf_link + '" target="_blank" class="btn btn-compact-standard btn-outline-success">' +
-                        '<i class="bi bi-download me-2"></i>Monatsblatt PDF herunterladen</a>'
-                    );
-                    msvToast('PDF erfolgreich generiert!', 'success');
-                } else {
-                    msvToast('PDF konnte nicht generiert werden.', 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('PDF Export Error:', xhr.responseText);
-                msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false).html(originalText);
-            }
-        });
+            });
+            const response = await fetch('monatsblatt/export_monatsblatt.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            });
+            if (!response.ok) throw new Error((await response.text()) || 'Fehler beim Generieren');
+
+            const blob = await response.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Monatsblatt_${year}_${startMonth}-${endMonth}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(a.href);
+
+            msvToast('PDF heruntergeladen', 'success');
+        } catch (err) {
+            console.error('PDF Export Error:', err);
+            msvToast('Fehler beim Generieren des PDFs: ' + err.message, 'error');
+        } finally {
+            $submitBtn.prop('disabled', false).html(originalText);
+        }
     });
 });
 </script>

@@ -1,8 +1,11 @@
 <?php
 // add_jmdefinition.php
 include '../config.php';
+require_once __DIR__ . '/../csrf.inc.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require();
+    if (empty($_SESSION['user_id'])) { http_response_code(403); exit('Nicht angemeldet'); }
     $bezeichnung = isset($_POST['bezeichnung']) ? trim($_POST['bezeichnung']) : '';
     $adresse = isset($_POST['adresse']) ? trim($_POST['adresse']) : '';
     $maxpunkte = isset($_POST['maxpunkte']) ? intval($_POST['maxpunkte']) : 0;

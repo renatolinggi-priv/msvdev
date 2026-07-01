@@ -86,17 +86,6 @@ $page_specific_css = "
 
 /* Mobile Optimierung für Backup & Restore */
 @media (max-width: 767.98px) {
-    .form-control, .form-control-sm {
-        min-height: 48px !important;
-        font-size: 16px !important;
-    }
-
-    .btn, .btn-compact-standard {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
     .sidebar-card, .group-creation-card, .existing-groups-card {
         padding: 1rem !important;
     }
@@ -156,15 +145,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
       <!-- Außen-Container -->
       <div class="main-content-wrapper">
         <!-- Header-Zeile -->
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-hdd-stack me-2"></i> Backup &amp; Restore
-            </h2>
-            <p class="text-muted mb-0">Datenbank sichern, Backups herunterladen/löschen und Wiederherstellung aus Datei
-            </p>
-          </div>
-        </div>
+        <?php $page_title = 'Backup &amp; Restore'; include 'partials/page_header.inc.php'; ?>
 
         <!-- Weißer Hintergrund-Container -->
         <div class="content-background">
@@ -181,11 +162,11 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
                     Backups werden außerhalb des Webroots gespeichert (empfohlen). Zugriff nur mit gültigem API-Key.
                   </div>
                   <div class="d-flex gap-2">
-                    <button id="btnBackupNow" class="btn btn-compact-standard btn-outline-success">
+                    <button id="btnBackupNow" class="btn btn-sm btn-outline-success">
                       <span class="spinner-border spinner-border-sm me-2 d-none" id="spinBackup"></span>
                       <i class="bi bi-cloud-arrow-down me-1"></i> Backup jetzt erstellen
                     </button>
-                    <button id="btnReload" class="btn btn-compact-standard btn-outline-secondary">
+                    <button id="btnReload" class="btn btn-sm btn-outline-secondary">
                       <i class="bi bi-arrow-clockwise me-1"></i> Aktualisieren
                     </button>
                   </div>
@@ -204,7 +185,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
                   autocomplete="off">
                   <input class="form-control form-control-sm" type="file" id="restoreFile" name="file" accept=".sql,.gz"
                     required>
-                  <button class="btn btn-compact-standard btn-outline-danger" id="btnRestore" type="submit">
+                  <button class="btn btn-sm btn-outline-danger" id="btnRestore" type="submit">
                     <span class="spinner-border spinner-border-sm me-2 d-none" id="spinRestore"></span>
                     <i class="bi bi-arrow-counterclockwise me-1"></i> Wiederherstellen
                   </button>
@@ -297,8 +278,8 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
         </div>
       </div>
       <div class="modal-footer" id="modalFooter">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnModalCancel">Abbrechen</button>
-        <button type="button" class="btn btn-danger" id="btnConfirmRestore">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" id="btnModalCancel">Abbrechen</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" id="btnConfirmRestore">
           <i class="bi bi-arrow-counterclockwise me-1"></i> Ja, wiederherstellen
         </button>
       </div>
@@ -381,7 +362,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
               <td class="text-end">${fmtSize(f.size)}</td>
               <td>${fmtDate(f.mtime)}</td>
               <td class="text-end">
-                <a class="btn btn-compact-standard btn-outline-primary me-1" href="${href}" data-tooltip="Herunterladen">
+                <a class="btn btn-compact-standard btn-outline-info me-1" href="${href}" data-tooltip="Herunterladen">
                   <i class="bi bi-download"></i>
                 </a>
                 <button class="btn btn-compact-standard btn-outline-warning me-1 btnRestoreExisting" 

@@ -60,8 +60,9 @@ $page_specific_css = '
     max-width: none !important;
     white-space: normal !important;
     overflow: visible !important;
-    font-size: 0.8rem !important;
-    padding: 0.5rem 0.4rem !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    padding: 0.75rem !important;
     font-weight: 600 !important;
     /* Border durch box-shadow ersetzen (kein bleed-through bei sticky) */
     border-bottom: none !important;
@@ -87,6 +88,21 @@ $page_specific_css = '
 
 /* Klickbare Hauptzeilen */
 .jm-main-row { cursor: pointer; }
+
+/* Gruppen-Trennzeile: "Ohne gewertetes JM-Resultat" */
+.jm-group-row td.jm-group-cell {
+    background: #eef2f7 !important;
+    color: #475569 !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left !important;
+    padding: 0.4rem 1rem !important;
+    border-top: 1px solid #e2e8f0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+.jm-group-row:hover td.jm-group-cell { background: #eef2f7 !important; }
 
 #JMA tbody tr.jm-main-row:hover td,
 #JMB tbody tr.jm-main-row:hover td {
@@ -217,17 +233,6 @@ $page_specific_css = '
 
 /* Mobile */
 @media (max-width: 767.98px) {
-    .form-control, .form-select,
-    input[type="text"], input[type="number"], select {
-        min-height: 48px !important;
-        font-size: 16px !important;
-    }
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
     .jm-detail-groups { grid-template-columns: 1fr !important; }
 
     /* JM Mobile Card Styles */
@@ -275,34 +280,25 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-trophy me-2"></i>
-                            Jahresmeisterschaft Ranglisten
-                        </h2>
-                    </div>
-                </div>
-                
+                <?php $page_title = "Jahresmeisterschaft Ranglisten"; include 'partials/page_header.inc.php'; ?>
+
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
                 <form id="jmresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl -->
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                            <i class="bi bi-calendar3 me-1"></i>Jahr:
-                        </label>
-                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
-                    </div>
-                    <!-- Export-Toolbar (einheitlich mit endschrang.php) -->
+                    <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
                     <div class="export-toolbar mb-3">
                         <div class="export-toolbar-head">
+                            <label for="yearSelect" class="export-year-label mb-0">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
+                            <span class="export-toolbar-divider" aria-hidden="true"></span>
                             <i class="bi bi-file-earmark-arrow-down"></i>
                             <span>Dokumente erstellen</span>
                             <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
-                                <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
+                                <i class="bi bi-pencil me-1"></i>Resultate bearbeiten
                             </button>
                         </div>
                         <div class="export-group-btns">
@@ -314,11 +310,6 @@ include 'header.inc.php';
                             </button>
                         </div>
                         <div id="pdf-link" class="mt-2"></div>
-                    </div>
-
-                    <div class="info-card mb-3">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Hinweis:</strong> Die roten durchgestrichenen Werte sind Streicher und werden nicht in die Gesamtwertung einbezogen.
                     </div>
 
                     <!-- Kategorie A Tabelle -->

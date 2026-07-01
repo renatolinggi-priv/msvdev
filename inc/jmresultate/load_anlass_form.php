@@ -42,6 +42,30 @@ try {
         $mitglieder[] = $row;
     }
 
+    // Mitglieder, die in DIESEM Jahr in einem "richtigen" JM-Anlass ein Resultat haben
+    // (-> Gruppierung "aktiv" oben, unabhängig vom aktuell geöffneten Anlass).
+    // Ignoriert: Cup/Vereinscup, SSM/Sektionsmeisterschaft, Feldschiessen, Obligatorisch.
+    $jahrAktivIds = [];
+    $aktivStmt = $conn->prepare(
+        "SELECT DISTINCT jr.mitgliederID
+           FROM jmresultate jr
+           JOIN JMDefinition d ON d.ID = jr.jmdefinitionID
+          WHERE d.year = ?
+            AND d.Bezeichnung NOT IN ('Obligatorisch', 'Feldschiessen')
+            AND d.Bezeichnung NOT LIKE 'SSM%'
+            AND d.Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'
+            AND d.Bezeichnung NOT LIKE '%Cup%'"
+    );
+    if ($aktivStmt) {
+        $aktivStmt->bind_param("i", $year);
+        $aktivStmt->execute();
+        $aktivRes = $aktivStmt->get_result();
+        while ($aktivRow = $aktivRes->fetch_assoc()) {
+            $jahrAktivIds[(int)$aktivRow['mitgliederID']] = true;
+        }
+        $aktivStmt->close();
+    }
+
     // Resultate laden
     $members = [];
     foreach ($mitglieder as $m) {
@@ -51,7 +75,8 @@ try {
             'punkte' => null,
             'punkte_runde1' => null,
             'punkte_runde2' => null,
-            'status' => null   // 'entwurf' = vom Mitglied gemeldet, 'freigegeben' = vom Vorstand bestaetigt
+            'status' => null,  // 'entwurf' = vom Mitglied gemeldet, 'freigegeben' = vom Vorstand bestaetigt
+            'hatJahrResultat' => isset($jahrAktivIds[(int)$m['ID']])  // irgendein JM-Resultat dieses Jahr
         ];
 
         if ($isReadonly) {

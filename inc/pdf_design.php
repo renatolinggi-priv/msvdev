@@ -267,10 +267,8 @@ include 'header.inc.php';
 
         <div class="row mb-3">
           <div class="col-md-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-palette me-2"></i>PDF-Design
+            <h2 class="h4 mb-0 page-title">PDF-Design
             </h2>
-            <span class="text-muted small">Gilt für alle PDFs, die die zentrale Vorlage nutzen. Hoch-/Querformat bleibt unverändert.</span>
           </div>
         </div>
 
@@ -326,10 +324,10 @@ include 'header.inc.php';
               <?php endforeach; ?>
 
               <div class="pd-actions">
-                <button type="submit" class="btn btn-primary btn-sm" id="pdSave">
+                <button type="submit" class="btn btn-outline-primary btn-sm" id="pdSave">
                   <i class="bi bi-save me-1"></i>Speichern
                 </button>
-                <button type="button" class="btn btn-outline-danger btn-sm" id="pdReset">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="pdReset">
                   <i class="bi bi-arrow-counterclockwise me-1"></i>Auf Standard zurücksetzen
                 </button>
               </div>
@@ -385,7 +383,7 @@ include 'header.inc.php';
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-        <button type="button" class="btn btn-primary btn-sm" id="logoCropSave"><i class="bi bi-save me-1"></i>Zuschneiden &amp; speichern</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="logoCropSave"><i class="bi bi-save me-1"></i>Zuschneiden &amp; speichern</button>
       </div>
     </div>
   </div>

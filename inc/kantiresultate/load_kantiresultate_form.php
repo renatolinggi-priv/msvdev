@@ -146,18 +146,56 @@ try {
         $resultateArray[$row['MitgliedID']] = $row;
     }
 
-    // Tabellenzeilen generieren
-    $output = '';
+    // Mitglieder in zwei Gruppen aufteilen: mit / ohne erfasste Resultate.
+    // Beide Gruppen bleiben alphabetisch (Query sortiert bereits nach Name/Vorname).
+    $withResults = [];
+    $withoutResults = [];
     $memberCount = 0;
-    
+
     while ($mitglied = $mitgliederResult->fetch_assoc()) {
         $mitgliedID = (int)$mitglied['ID'];
         $resultate = isset($resultateArray[$mitgliedID]) ? $resultateArray[$mitgliedID] : [];
-        
-        $output .= generateMemberRow($mitglied, $resultate, $year);
+
+        $hasResult = false;
+        for ($i = 1; $i <= 5; $i++) {
+            if (isset($resultate["Passe$i"]) && $resultate["Passe$i"] !== '' && (int)$resultate["Passe$i"] != 0) {
+                $hasResult = true;
+                break;
+            }
+        }
+
+        $entry = ['mitglied' => $mitglied, 'resultate' => $resultate];
+        if ($hasResult) {
+            $withResults[] = $entry;
+        } else {
+            $withoutResults[] = $entry;
+        }
         $memberCount++;
     }
-    
+
+    // Gruppen-Trennzeile (colspan = Name + 5 Passen + Total = 7)
+    $groupHeader = function ($label, $icon) {
+        return '<tr class="group-header"><td colspan="7" class="group-header-cell">'
+            . '<i class="bi ' . $icon . ' me-1"></i>' . $label . '</td></tr>';
+    };
+
+    // Tabellenzeilen generieren
+    $output = '';
+
+    if (count($withResults) > 0) {
+        $output .= $groupHeader('Mit Resultaten (' . count($withResults) . ')', 'bi-check-circle');
+        foreach ($withResults as $entry) {
+            $output .= generateMemberRow($entry['mitglied'], $entry['resultate'], $year);
+        }
+    }
+
+    if (count($withoutResults) > 0) {
+        $output .= $groupHeader('Noch keine Resultate (' . count($withoutResults) . ')', 'bi-dash-circle');
+        foreach ($withoutResults as $entry) {
+            $output .= generateMemberRow($entry['mitglied'], $entry['resultate'], $year);
+        }
+    }
+
     // Falls keine Mitglieder gefunden
     if ($memberCount === 0) {
         $output = '<tr><td colspan="7" class="text-center text-muted py-4">';

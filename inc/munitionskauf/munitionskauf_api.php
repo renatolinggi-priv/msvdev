@@ -11,6 +11,7 @@ date_default_timezone_set('Europe/Zurich');
 
 // Zentrale Session-Konfiguration (Cross-Subdomain Cookies, CSRF)
 require_once __DIR__ . '/../session_config.inc.php';
+require_once __DIR__ . '/../csrf.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -54,47 +55,9 @@ try {
         jsonResponse(false, null, 'Database connection failed');
     }
 
-    // CSRF validation for POST requests - angepasst für verschiedene Header-Formate
+    // CSRF validation for POST requests (zentraler Helfer)
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $csrf_token = '';
-        
-        // Fallback für getallheaders() wenn nicht verfügbar
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            // Verschiedene Schreibweisen des Headers prüfen
-            foreach ($headers as $key => $value) {
-                if (strtolower($key) === 'x-csrf-token') {
-                    $csrf_token = $value;
-                    break;
-                }
-            }
-        } else {
-            // Alternative für Server ohne getallheaders()
-            if (isset($_SERVER['HTTP_X_CSRF_TOKEN'])) {
-                $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'];
-            }
-        }
-        
-        // Wenn kein Header gefunden, aus POST-Daten versuchen
-        if (empty($csrf_token)) {
-            $input = json_decode(file_get_contents('php://input'), true);
-            if (isset($input['csrf_token'])) {
-                $csrf_token = $input['csrf_token'];
-            }
-        }
-        
-        // Token-Validierung nur wenn Session-Token existiert
-        if (isset($_SESSION['csrf_token'])) {
-            if (empty($csrf_token) || $csrf_token !== $_SESSION['csrf_token']) {
-                error_log('CSRF Token Validation Failed');
-                http_response_code(403);
-                jsonResponse(false, null, 'CSRF token validation failed');
-            }
-        }
-        // Wenn kein Session-Token existiert, loggen wir es aber lassen es durchgehen (für Entwicklung)
-        else {
-            error_log('Warning: No CSRF token in session - skipping validation');
-        }
+        csrf_require(true);
     }
 
     // Get action

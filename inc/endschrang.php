@@ -35,6 +35,17 @@ include 'header.inc.php';
 }
 .btn-compact i.ms-auto { display: none !important; }
 
+/* "Resultate bearbeiten" im Toolbar-Kopf kompakter (Desktop) */
+@media (min-width: 768px) {
+    #redirect-btn {
+        min-height: 0 !important;
+        padding: 0.2rem 0.6rem !important;
+        font-size: 0.78rem !important;
+        line-height: 1.4;
+    }
+    #redirect-btn i { font-size: 0.8rem !important; }
+}
+
 /* Export-Toolbar-Styles (.export-toolbar / .export-group*) sind zentral in css/msv-styles.css */
 
 /* ==========================================
@@ -70,24 +81,6 @@ include 'header.inc.php';
 #EndA tbody tr.rank-2 td:first-child, #EndB tbody tr.rank-2 td:first-child,
 #EndA tbody tr.rank-3 td:first-child, #EndB tbody tr.rank-3 td:first-child { font-weight: 800; }
 
-/* Mobile-Optimierung (WCAG AAA Touch Targets) */
-@media (max-width: 767.98px) {
-    .form-control,
-    .form-select,
-    input[type="text"],
-    input[type="number"],
-    select {
-        min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-    }
-
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-}
-
 </style>
 
 <!-- Header -->
@@ -97,28 +90,19 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-trophy me-2"></i>
-                            Endschiessen Ranglisten
-                        </h2>
-                    </div>
-                </div>
+                <?php $page_title = "Endschiessen Ranglisten"; include 'partials/page_header.inc.php'; ?>
                 <!-- Weißer Container für den Rest -->
                 <div class="content-background">
-                <!-- Jahr-Auswahl -->
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                        <i class="bi bi-calendar3 me-1"></i>Jahr:
-                    </label>
-                    <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
-                        <!-- Optionen werden per JavaScript eingefügt -->
-                    </select>
-                </div>
-                <!-- Export-Toolbar (gruppierte Dokumenten-Erstellung) -->
-                <div class="export-toolbar mb-4">
+                <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
+                <div class="export-toolbar mb-3">
                     <div class="export-toolbar-head">
+                        <label for="yearSelect" class="export-year-label mb-0">
+                            <i class="bi bi-calendar3 me-1"></i>Jahr:
+                        </label>
+                        <select id="yearSelect" class="form-select form-select-sm export-year-select">
+                            <!-- Optionen werden per JavaScript eingefügt -->
+                        </select>
+                        <span class="export-toolbar-divider" aria-hidden="true"></span>
                         <i class="bi bi-file-earmark-arrow-down"></i>
                         <span>Dokumente erstellen</span>
                         <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
@@ -130,16 +114,16 @@ include 'header.inc.php';
                         <div class="export-group">
                             <div class="export-group-label">Ranglisten &amp; Übersicht</div>
                             <div class="export-group-btns">
-                                <button class="btn btn-compact btn-info ges-btn">
+                                <button class="btn btn-compact btn-outline-info ges-btn">
                                     <i class="bi bi-trophy me-1"></i><span>Gesamt</span>
                                 </button>
-                                <button class="btn btn-compact btn-zwischenrang zwi-btn">
+                                <button class="btn btn-compact btn-outline-info zwi-btn">
                                     <i class="bi bi-list-ol me-1"></i><span>Zwischen</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-secondary anm-btn">
+                                <button class="btn btn-compact btn-outline-info anm-btn">
                                     <i class="bi bi-person-plus me-1"></i><span>Anmeldung</span>
                                 </button>
-                                <button class="btn btn-compact btn-absendenbuch abs-btn">
+                                <button class="btn btn-compact btn-outline-info abs-btn">
                                     <i class="bi bi-journal-bookmark-fill me-1"></i><span>Absendenbuch</span>
                                 </button>
                             </div>
@@ -148,22 +132,22 @@ include 'header.inc.php';
                         <div class="export-group">
                             <div class="export-group-label">Einzelwettbewerbe</div>
                             <div class="export-group-btns">
-                                <button class="btn btn-compact btn-danger end-btn">
+                                <button class="btn btn-compact btn-outline-info end-btn">
                                     <i class="bi bi-award me-1"></i><span>Endstich</span>
                                 </button>
-                                <button class="btn btn-compact btn-pink sch-btn">
+                                <button class="btn btn-compact btn-outline-info sch-btn">
                                     <i class="bi bi-piggy-bank me-1"></i><span>Schwini</span>
                                 </button>
-                                <button class="btn btn-compact btn-success kun-btn">
+                                <button class="btn btn-compact btn-outline-info kun-btn">
                                     <i class="bi bi-palette me-1"></i><span>Kunst</span>
                                 </button>
-                                <button class="btn btn-compact btn-warning glu-btn">
+                                <button class="btn btn-compact btn-outline-info glu-btn">
                                     <i class="bi bi-dice-3 me-1"></i><span>Glück</span>
                                 </button>
-                                <button class="btn btn-compact btn-secondary zab-btn">
+                                <button class="btn btn-compact btn-outline-info zab-btn">
                                     <i class="bi bi-cup-straw me-1"></i><span>Zabig</span>
                                 </button>
-                                <button class="btn btn-compact btn-dark dif-btn">
+                                <button class="btn btn-compact btn-outline-info dif-btn">
                                     <i class="bi bi-sliders me-1"></i><span>Differenzler</span>
                                 </button>
                             </div>
@@ -172,10 +156,10 @@ include 'header.inc.php';
                         <div class="export-group">
                             <div class="export-group-label">Partner</div>
                             <div class="export-group-btns">
-                                <button class="btn btn-compact btn-primary part-btn">
+                                <button class="btn btn-compact btn-outline-info part-btn">
                                     <i class="bi bi-people me-1"></i><span>Partner</span>
                                 </button>
-                                <button class="btn btn-compact btn-special sieer-btn">
+                                <button class="btn btn-compact btn-outline-info sieer-btn">
                                     <i class="bi bi-bullseye me-1"></i><span>Sie &amp; Er</span>
                                 </button>
                             </div>

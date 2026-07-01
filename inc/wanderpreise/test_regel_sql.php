@@ -1,20 +1,28 @@
 <?php
 // test_regel_sql.php - Testet eine SQL-Regel gegen die aktuelle DB
-session_start();
+require_once '../session_config.inc.php';
 require_once '../dbconnect.inc.php';
+require_once 'regel_builder.inc.php'; // wp_normalize_kategorie()
+require_once __DIR__ . '/../csrf.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     exit;
 }
 
-// CSRF pruefen
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-    echo json_encode(['success' => false, 'message' => 'Ungueltiger CSRF-Token']);
+// Auth pruefen: nur eingeloggte Admin-Nutzer duerfen Regel-SQL ausfuehren
+// (gleicher Schutz wie die aufrufende Seite via header.inc.php)
+if (empty($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Nicht angemeldet']);
     exit;
 }
+
+// CSRF pruefen
+csrf_require(true);
 
 $conn = get_db_connection();
 if (!$conn) {
@@ -62,8 +70,10 @@ try {
     }
 
     // Platzhalter ersetzen
+    $kat = wp_normalize_kategorie($_POST['kategorie'] ?? ''); // '' | 'Kat. A' | 'Kat. B'
     $sql = str_replace('{jahr}', $jahr, $sql);
     $sql = str_replace('{wanderpreis_id}', '0', $sql);
+    $sql = str_replace('{kategorie}', $kat, $sql);
 
     // Collation vereinheitlichen (verhindert "Illegal mix of collations")
     $conn->set_charset('utf8mb4');
@@ -100,32 +110,68 @@ try {
     }
 
     if (count($rows) === 0) {
-        echo json_encode(['success' => true, 'message' => "Kein Ergebnis fuer Jahr $jahr (0 Zeilen)"]);
+        echo json_encode([
+            'success' => true,
+            'message' => "Kein Ergebnis fuer Jahr $jahr (0 Zeilen)",
+            'total'   => 0,
+            'columns' => [],
+            'rows'    => [],
+            'jahr'    => $jahr,
+        ]);
     } else {
-        $first = $rows[0];
-        $gewinnerId = $first['gewinner_id'] ?? 'N/A';
-        $name = '';
+        // Vorschau auf die ersten 10 Zeilen begrenzen
+        $total   = count($rows);
+        $preview = array_slice($rows, 0, 10);
 
-        // Name nachladen (neue Verbindung noetig nach multi_query)
-        if (is_numeric($gewinnerId)) {
+        // Mitglieder-Namen zu allen gewinner_id der Vorschau in EINER Abfrage nachladen
+        // (neue Verbindung noetig, da multi_query die Hauptverbindung belegt hat).
+        $namen = [];
+        $ids = [];
+        foreach ($preview as $row) {
+            if (isset($row['gewinner_id']) && is_numeric($row['gewinner_id'])) {
+                $ids[(int)$row['gewinner_id']] = true;
+            }
+        }
+        if ($ids) {
             $conn2 = get_db_connection();
             if ($conn2) {
+                $idList = implode(',', array_map('intval', array_keys($ids)));
                 $nameResult = $conn2->query(
-                    "SELECT CONCAT(Vorname, ' ', Name) AS fullname FROM mitglieder WHERE ID = " . intval($gewinnerId)
+                    "SELECT ID, CONCAT(Vorname, ' ', Name) AS fullname FROM mitglieder WHERE ID IN ($idList)"
                 );
-                if ($nameResult && $nameRow = $nameResult->fetch_assoc()) {
-                    $name = $nameRow['fullname'];
+                if ($nameResult) {
+                    while ($nameRow = $nameResult->fetch_assoc()) {
+                        $namen[(int)$nameRow['ID']] = $nameRow['fullname'];
+                    }
                 }
                 $conn2->close();
             }
         }
 
-        $msg = "Gewinner: $name (ID: $gewinnerId)";
-        if (isset($first['resultat'])) $msg .= " - Resultat: " . $first['resultat'];
-        if (isset($first['rang']))     $msg .= " - Rang: " . $first['rang'];
-        $msg .= " (" . count($rows) . " Zeile" . (count($rows) > 1 ? 'n' : '') . ")";
+        // Spalten aus der ersten Zeile; gewinner_name vorne anstellen.
+        $columns = array_keys($preview[0]);
+        foreach ($preview as &$row) {
+            $gid = isset($row['gewinner_id']) && is_numeric($row['gewinner_id']) ? (int)$row['gewinner_id'] : null;
+            $row['gewinner_name'] = ($gid !== null && isset($namen[$gid])) ? $namen[$gid] : '';
+        }
+        unset($row);
+        array_unshift($columns, 'gewinner_name');
 
-        echo json_encode(['success' => true, 'message' => $msg]);
+        // Kurz-Zusammenfassung (Rueckwaertskompatibilitaet + Toast-Fallback)
+        $first = $preview[0];
+        $msg = 'Gewinner: ' . ($first['gewinner_name'] !== '' ? $first['gewinner_name'] : '?')
+             . ' (ID: ' . ($first['gewinner_id'] ?? 'N/A') . ')';
+        if (isset($first['resultat'])) $msg .= ' - Resultat: ' . $first['resultat'];
+        $msg .= " ($total Zeile" . ($total > 1 ? 'n' : '') . ')';
+
+        echo json_encode([
+            'success' => true,
+            'message' => $msg,
+            'total'   => $total,
+            'columns' => $columns,
+            'rows'    => array_values($preview),
+            'jahr'    => $jahr,
+        ]);
     }
 
 } catch (Exception $e) {

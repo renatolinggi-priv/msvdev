@@ -22,6 +22,12 @@ try {
         throw new Exception('Ungültige ID');
     }
 
+    // Validierung: Wert muss positiv sein (kein 0-Punkte-Sieger)
+    if ($wert <= 0) {
+        http_response_code(422);
+        die(json_encode(['success' => false, 'message' => 'Wert muss grösser als 0 sein']));
+    }
+
     // Falls member_id mitgesendet wird, Name daraus ableiten
     $member_id = intval($_POST['member_id'] ?? 0);
     if ($member_id > 0) {

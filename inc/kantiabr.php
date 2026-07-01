@@ -43,7 +43,7 @@ $page_specific_css = "
     <div class="col-xl-9 col-lg-8">
       <div class="main-card">
         <div class="d-none d-md-flex align-items-center justify-content-between mb-3">
-          <h2 class="h4 mb-0" style="color: var(--secondary-color);"><i class="bi bi-clipboard-data me-2"></i>Kantonalstich – Ranglisten</h2>
+          <h2 class="h4 mb-0 page-title">Kantonalstich – Ranglisten</h2>
           <div class="d-flex gap-2">
             <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
             <button id="reload-btn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Neu laden</button>
@@ -114,10 +114,10 @@ $page_specific_css = "
 
           <div class="col-12">
             <div class="d-flex gap-2 mt-3">
-              <button class="btn btn-outline-danger pdf-btn">
+              <button class="btn btn-sm btn-outline-info pdf-btn">
                 <i class="bi bi-file-pdf me-2"></i>PDF generieren
               </button>
-              <button class="btn btn-outline-success word-btn">
+              <button class="btn btn-sm btn-outline-info word-btn">
                 <i class="bi bi-file-earmark-excel me-2"></i>Excel generieren
               </button>
             </div>
@@ -180,8 +180,7 @@ $(document).ready(function() {
     // Kantiresultate A laden
     function loadKantonala() {
         var selectedYear = $('#yearSelect').val();
-        setStatus('Lade Kategorie A...', 'loading');
-        
+
         $.ajax({
             url: basePath + 'kantirang/load_kantonal.php',
             type: 'GET',
@@ -194,7 +193,6 @@ $(document).ready(function() {
                         if (index >= 3) $(this).addClass('text-center');
                     });
                 });
-                setStatus('Kategorie A geladen', 'success');
             },
             error: function(xhr, status, error) {
                 setStatus('Fehler beim Laden Kategorie A: ' + error, 'danger');
@@ -206,8 +204,7 @@ $(document).ready(function() {
     // Kantiresultate B laden
     function loadKantonalb() {
         var selectedYear = $('#yearSelect').val();
-        setStatus('Lade Kategorie B...', 'loading');
-        
+
         $.ajax({
             url: basePath + 'kantirang/load_kantonal.php',
             type: 'GET',
@@ -219,7 +216,6 @@ $(document).ready(function() {
                         if (index >= 3) $(this).addClass('text-center');
                     });
                 });
-                setStatus('Kategorie B geladen', 'success');
             },
             error: function(xhr, status, error) {
                 setStatus('Fehler beim Laden Kategorie B: ' + error, 'danger');

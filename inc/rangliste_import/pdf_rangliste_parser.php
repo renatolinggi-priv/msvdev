@@ -256,6 +256,18 @@ function ranglisteInterpretLine($line) {
         $nameStart = 1;
     }
 
+    // Resultat direkt nach dem Rang (z.B. Verbandsschiessen-Layout):
+    // Manche Ranglisten schieben das Resultat per Kerning optisch in die rechte
+    // Spalte, im Textfluss (getDataTm) liegt es aber im selben Fragment wie der
+    // Rang – also unmittelbar dahinter. Ein 1–3-stelliges Token direkt nach dem
+    // Rang ist daher ein fuehrendes Resultat. (In den uebrigen Ranglisten folgt
+    // dem Rang der Name, also ein Buchstaben-Token -> kein Konflikt.)
+    $leadingResultat = null;
+    if ($rang !== null && isset($tokens[$nameStart]) && preg_match('/^\d{1,3}$/', $tokens[$nameStart])) {
+        $leadingResultat = (int) $tokens[$nameStart];
+        $nameStart++;
+    }
+
     // Lizenznummer = erstes 5–7-stelliges Token (= mitglieder.ID)
     $lizenz = null;
     $lizenzIdx = null;
@@ -293,6 +305,12 @@ function ranglisteInterpretLine($line) {
     // Resultat + Preis aus dem hinteren Teil der Zeile
     $scanStart = ($yearIdx !== null) ? $yearIdx + 1 : $nameStart + max($nameWordCount, 1);
     list($resultat, $preis) = ranglisteExtractResultPreis($tokens, $scanStart);
+
+    // Fallback: Resultat aus dem fuehrenden Token (Verbandsschiessen-Layout),
+    // falls im hinteren Zeilenteil keine Punktezahl gefunden wurde.
+    if ($resultat === null && $leadingResultat !== null) {
+        $resultat = $leadingResultat;
+    }
 
     // Zeile nur behalten, wenn ein Resultat ODER eine Lizenz vorhanden ist
     // (reine Namens-Zeilen ohne Resultat sind nicht importierbar).

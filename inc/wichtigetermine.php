@@ -28,9 +28,9 @@ $page_specific_css = <<<'CSS'
   width: 100%; border-collapse: collapse; font-size: 0.85rem;
 }
 .hybrid-table thead th {
-  padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-  background: linear-gradient(180deg, #f8fafc, #eef2f7);
+  padding: 0.5rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
+  background-color: #f8f9fa;
   border-bottom: 2px solid #e2e8f0;
   position: sticky; top: 0; z-index: 6;
 }
@@ -93,44 +93,11 @@ $page_specific_css = <<<'CSS'
   padding: 2px 8px;
 }
 
-/* --- Slide-Panel --- */
-.hybrid-edit-panel {
-  position: fixed; top: 0; right: -380px; width: 360px; height: 100vh;
-  background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12);
-  z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-  display: flex; flex-direction: column;
-}
-.hybrid-edit-panel.open { right: 0; }
-.panel-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-  z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s;
-}
-.panel-overlay.show { opacity: 1; visibility: visible; }
-.panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0.875rem 1.125rem; border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc; flex-shrink: 0;
-}
-.panel-body { padding: 1.125rem; overflow-y: auto; flex: 1; }
-.panel-label {
-  display: block; font-size: 0.78rem; font-weight: 600;
-  color: #64748b; margin-bottom: 0.3rem;
-}
+/* Slide-Panel (.hybrid-edit-panel/.panel-overlay/.panel-header/.panel-body/.panel-label)
+   und Aktions-Card jetzt zentral in css/msv-styles.css.
+   Breite 360px via --panel-width am Panel. */
 
-/* --- Aktions-Card --- */
-.action-card { border-color: #e2e8f0; }
-.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; }
-.action-card-header:hover { background-color: #f1f5f9; }
-.action-chevron { transition: transform .2s ease; }
-.action-card-header[aria-expanded="true"] .action-chevron { transform: rotate(180deg); }
-
-/* --- Skeleton Loader --- */
-.skeleton {
-  height: 16px; border-radius: 4px;
-  background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
-  background-size: 200% 100%; animation: loading 1.5s infinite;
-}
-@keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+/* Skeleton Loader (.skeleton/@keyframes) jetzt zentral in css/msv-styles.css. */
 
 /* --- Empty State --- */
 .empty-state {
@@ -142,17 +109,7 @@ $page_specific_css = <<<'CSS'
 @media (max-width: 767.98px) {
   .desktop-table-container { display: none !important; }
   .mobile-cards-container { display: block !important; }
-  /* Slide-Panel auf Mobile = Fullscreen */
-  .hybrid-edit-panel {
-    width: 100% !important; right: -105% !important;
-  }
-  .hybrid-edit-panel.open { right: 0 !important; }
-  .panel-body .form-control, .panel-body input {
-    min-height: 48px !important; font-size: 16px !important;
-  }
-  .panel-body .btn {
-    min-height: 48px !important; font-size: 16px !important;
-  }
+  /* Slide-Panel Mobile-Fullscreen + Touch-Targets jetzt zentral in css/msv-styles.css */
 
   /* Container-Padding auf Mobile minimal */
   .main-content-wrapper {
@@ -240,23 +197,17 @@ if (empty($_SESSION['csrf_token'])) {
   <div class="row">
     <div class="col-xl-8 col-lg-10 col-12 ps-lg-3">
       <div class="main-content-wrapper">
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-calendar-event me-2"></i>Wichtige Termine
-            </h2>
-            <p class="text-muted mb-0 small">Termine verwalten und exportieren
-              <span class="badge bg-secondary ms-1" id="eventCount" style="font-size:0.7rem; vertical-align:middle;">0</span>
-            </p>
-          </div>
-        </div>
+        <?php
+        $page_title = 'Wichtige Termine';
+        include 'partials/page_header.inc.php';
+        ?>
 
         <div class="content-background">
           <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
           <!-- Mobile: Neuer-Termin + Jahrauswahl -->
           <div class="d-flex d-md-none align-items-center gap-2 mb-3 justify-content-end">
-            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#newEventModal">
+            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#newEventModal">
               <i class="bi bi-plus-lg me-1"></i>Neu
             </button>
             <select id="eventYearMobile" class="form-select form-select-sm" style="width: auto; min-width: 80px;"></select>
@@ -271,15 +222,10 @@ if (empty($_SESSION['csrf_token'])) {
               <select id="eventYear" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
             </div>
 
-            <div class="card action-card mb-0">
-              <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                   data-bs-toggle="collapse" data-bs-target="#wichtigetermineActions"
-                   aria-expanded="false" aria-controls="wichtigetermineActions">
-                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                <i class="bi bi-chevron-down action-chevron"></i>
-              </div>
-              <div class="collapse" id="wichtigetermineActions">
-                <div class="card-body pt-2 pb-3 px-3">
+<?php
+            $ac_id = 'wichtigetermineActions';
+            ob_start();
+            ?>
                   <div class="row g-2 mb-3">
                     <div class="col-6">
                       <button type="button" class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#newEventModal">
@@ -308,7 +254,7 @@ if (empty($_SESSION['csrf_token'])) {
                         </button>
                       </div>
                       <div class="col-6">
-                        <button type="button" id="generateIcsButton" class="btn btn-outline-secondary btn-sm w-100">
+                        <button type="button" id="generateIcsButton" class="btn btn-outline-info btn-sm w-100">
                           <i class="bi bi-calendar-plus me-1"></i>ICS
                         </button>
                       </div>
@@ -319,9 +265,10 @@ if (empty($_SESSION['csrf_token'])) {
                       <i class="bi bi-trash me-1"></i>Alle Termine löschen
                     </button>
                   </div>
-                </div>
-              </div>
-            </div>
+            <?php
+            $ac_body = ob_get_clean();
+            include 'partials/action_card.inc.php';
+            ?>
           </div>
 
           <!-- Hybrid-Tabelle -->
@@ -353,14 +300,12 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Slide-Panel (Edit) -->
-<div class="panel-overlay" id="panelOverlay"></div>
-<div class="hybrid-edit-panel" id="editPanel">
-  <div class="panel-header">
-    <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Termin bearbeiten</h6>
-    <button class="btn btn-sm btn-outline-secondary" id="panelClose"><i class="bi bi-x-lg"></i></button>
-  </div>
-  <div class="panel-body">
+<!-- Slide-Panel (Edit) – zentrale Struktur via inc/partials/side_panel.inc.php -->
+<?php
+$panel_width = '360px';
+$panel_title = '<i class="bi bi-pencil-square me-2"></i>Termin bearbeiten';
+ob_start();
+?>
     <div class="mb-3">
       <label class="panel-label"><i class="bi bi-tag me-1"></i>Bezeichnung</label>
       <input type="text" class="form-control form-control-sm" id="panelName" required>
@@ -380,14 +325,16 @@ if (empty($_SESSION['csrf_token'])) {
     <hr>
     <div class="d-flex gap-2">
       <button class="btn btn-outline-primary btn-sm flex-fill" id="panelSaveBtn">
-        <i class="bi bi-check-circle me-1"></i>Speichern
+        <i class="bi bi-save me-1"></i>Speichern
       </button>
       <button class="btn btn-outline-danger btn-sm flex-fill" id="panelDeleteBtn">
         <i class="bi bi-trash me-1"></i>Löschen
       </button>
     </div>
-  </div>
-</div>
+<?php
+$panel_body = ob_get_clean();
+include 'partials/side_panel.inc.php';
+?>
 
 <!-- Modal: Neuer Termin -->
 <div class="modal fade" id="newEventModal" tabindex="-1" aria-labelledby="newEventModalLabel" aria-hidden="true">
@@ -418,42 +365,11 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
           <i class="bi bi-x-circle me-1"></i>Abbrechen
         </button>
-        <button type="button" class="btn btn-outline-success btn-compact" id="addEventBtn">
+        <button type="button" class="btn btn-outline-success btn-sm" id="addEventBtn">
           <i class="bi bi-plus-circle me-1"></i>Hinzufügen
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Löschen bestätigen -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmDeleteModalLabel">
-          <i class="bi bi-exclamation-triangle text-warning me-2"></i>Bestätigung erforderlich
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
-      </div>
-      <div class="modal-body">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
-          <div>
-            <strong id="deleteConfirmText">Möchtest du diesen Termin wirklich löschen?</strong>
-            <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle me-1"></i>Abbrechen
-        </button>
-        <button type="button" class="btn btn-outline-danger btn-compact" id="confirmDeleteButton">
-          <i class="bi bi-trash me-1"></i>Löschen
         </button>
       </div>
     </div>
@@ -482,8 +398,8 @@ if (empty($_SESSION['csrf_token'])) {
         <div id="copyList"><div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Lädt…</div></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
-        <button type="button" class="btn btn-outline-info btn-compact" id="copyApplyBtn"><i class="bi bi-check2-circle me-1"></i>Übernehmen</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
+        <button type="button" class="btn btn-outline-info btn-sm" id="copyApplyBtn"><i class="bi bi-check2-circle me-1"></i>Übernehmen</button>
       </div>
     </div>
   </div>
@@ -493,7 +409,6 @@ if (empty($_SESSION['csrf_token'])) {
 $(function() {
   const csrfToken = $('#csrfToken').val();
   const currentYear = new Date().getFullYear();
-  let deleteId = null;
 
   const monthNames = {
     1:'Januar',2:'Februar',3:'März',4:'April',5:'Mai',6:'Juni',
@@ -848,39 +763,35 @@ $(function() {
   });
 
   // ========== Löschen ==========
+  function deleteEventById(deleteId, name) {
+    if (!deleteId) return;
+    msvConfirmDelete(name || 'diesen Termin').then(res => {
+      if (!res.isConfirmed) return;
+      $.post('wichtigetermine/delete_event.php', { event_id: deleteId, csrf_token: csrfToken })
+      .done(resp => {
+        const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+        if (r.success) {
+          msvToast('Termin gelöscht', 'success');
+          setTimeout(() => loadEvents($('#eventYear').val()), 300);
+        } else { msvToast('Fehler: ' + (r.message || 'Unbekannt'), 'error'); }
+      })
+      .fail(() => msvToast('Fehler beim Löschen', 'error'));
+    });
+  }
+
   $(document).on('click', '.delete-event', function(e) {
     e.stopPropagation();
-    deleteId = $(this).data('id');
+    const deleteId = $(this).data('id');
     const name = $(this).data('name') || 'diesen Termin';
-    $('#deleteConfirmText').text('«' + name + '» wirklich löschen?');
     EditPanel.close();
-    $('#confirmDeleteModal').modal('show');
+    deleteEventById(deleteId, name);
   });
 
   $('#panelDeleteBtn').on('click', function() {
-    deleteId = EditPanel.currentId;
+    const deleteId = EditPanel.currentId;
     const name = $('#panelName').val() || 'diesen Termin';
-    $('#deleteConfirmText').text('«' + name + '» wirklich löschen?');
     EditPanel.close();
-    $('#confirmDeleteModal').modal('show');
-  });
-
-  $('#confirmDeleteButton').on('click', function() {
-    if (!deleteId) return;
-    const $btn = $(this), orig = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>...');
-
-    $.post('wichtigetermine/delete_event.php', { event_id: deleteId, csrf_token: csrfToken })
-    .done(resp => {
-      const r = typeof resp === 'object' ? resp : JSON.parse(resp);
-      if (r.success) {
-        $('#confirmDeleteModal').modal('hide');
-        msvToast('Termin gelöscht', 'success');
-        setTimeout(() => loadEvents($('#eventYear').val()), 300);
-      } else { msvToast('Fehler: ' + (r.message || 'Unbekannt'), 'error'); }
-    })
-    .fail(() => msvToast('Fehler beim Löschen', 'error'))
-    .always(() => { $btn.prop('disabled', false).html(orig); deleteId = null; });
+    deleteEventById(deleteId, name);
   });
 
   // ========== Alle Termine löschen ==========

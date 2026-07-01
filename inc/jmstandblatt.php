@@ -22,12 +22,26 @@ if ($result) {
 $page_specific_css = <<<'CSS'
 /* ===== JM Standblatt ===== */
 
+/* Karte/Container auf feste, kompakte Breite begrenzen (verlässlicher als col-Breite) */
+.main-content-wrapper { max-width: 1000px; }
+
 /* Auf dieser Seite kein Row-Click → cursor zurücksetzen */
 .hybrid-table tbody tr.hybrid-row {
     cursor: default;
 }
 .hybrid-table tbody tr.hybrid-row:hover {
     background: rgba(99, 102, 241, 0.03);
+}
+
+/* Etwas kompaktere Liste (Mittelweg) */
+.hybrid-table { font-size: 0.86rem; }
+.hybrid-table thead th { padding: 0.4rem 0.6rem; }
+.hybrid-table tbody td { padding: 0.32rem 0.6rem; }
+.hybrid-table tbody .btn-group-sm > .btn,
+.hybrid-table tbody .btn {
+    padding: 0.25rem 0.55rem;
+    font-size: 0.85rem;
+    line-height: 1.2;
 }
 
 /* Mobile */
@@ -45,22 +59,16 @@ include 'header.inc.php';
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-9 col-lg-11 col-12 ps-0">
+    <div class="col-12 ps-0">
       <div class="main-content-wrapper">
         <!-- Desktop-Header (unsichtbar auf Mobile) -->
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-file-earmark-word me-2"></i>JM Standblatt
-            </h2>
-          </div>
-        </div>
+        <?php $page_title = 'JM Standblatt'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <!-- Filter-Bereich -->
           <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
             <!-- Suchfeld -->
-            <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width:350px;">
+            <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width:280px;">
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" class="form-control" id="searchInput" placeholder="Mitglied suchen...">
@@ -89,22 +97,19 @@ include 'header.inc.php';
                 <div class="card-body pt-2 pb-3 px-3">
                   <div class="row g-2">
                     <div class="col-6">
-                      <button type="button" id="btnDownloadAll" class="btn btn-outline-primary btn-sm w-100">
+                      <button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm w-100">
                         <i class="bi bi-download me-1"></i>Alle (DOCX)
                       </button>
                     </div>
                     <div class="col-6">
-                      <button type="button" id="btnDownloadAllPdf" class="btn btn-outline-danger btn-sm w-100">
+                      <button type="button" id="btnDownloadAllPdf" class="btn btn-outline-info btn-sm w-100">
                         <i class="bi bi-file-earmark-pdf me-1"></i>Alle (PDF)
                       </button>
                     </div>
                     <div class="col-6">
-                      <button type="button" id="btnPrintAll" class="btn btn-outline-success btn-sm w-100" disabled title="QZ Tray nicht verbunden">
+                      <button type="button" id="btnPrintAll" class="btn btn-outline-info btn-sm w-100" disabled title="QZ Tray nicht verbunden">
                         <i class="bi bi-printer me-1"></i>Alle drucken
                       </button>
-                    </div>
-                    <div class="col-6">
-                      <span id="qzBadge" class="badge bg-secondary" style="font-size:.7rem">QZ Tray</span>
                     </div>
                   </div>
                 </div>
@@ -141,7 +146,7 @@ include 'header.inc.php';
                     <td><?= htmlspecialchars($m['Vorname']) ?></td>
                     <td class="text-center">
                       <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-success btn-standblatt"
+                        <button type="button" class="btn btn-outline-info btn-standblatt"
                                 data-id="<?= $m['ID'] ?>"
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
@@ -149,7 +154,7 @@ include 'header.inc.php';
                                 onclick="event.stopPropagation();">
                           <i class="bi bi-file-earmark-word"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-print-single"
+                        <button type="button" class="btn btn-outline-info btn-print-single"
                                 data-id="<?= $m['ID'] ?>"
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
@@ -186,13 +191,12 @@ include 'header.inc.php';
                     <i class="bi bi-chevron-down"></i>
                   </div>
                   <div class="mobile-card-body">
-                      <button type="button" class="btn btn-outline-success btn-sm w-100 btn-standblatt"
-                              data-id="<?= $m['ID'] ?>"
-                              data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
-                              data-name="<?= htmlspecialchars($m['Name']) ?>">
-                        <i class="bi bi-file-earmark-word me-1"></i>Standblatt herunterladen
-                      </button>
-                    </div>
+                    <button type="button" class="btn btn-outline-info btn-sm w-100 btn-standblatt"
+                            data-id="<?= $m['ID'] ?>"
+                            data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
+                            data-name="<?= htmlspecialchars($m['Name']) ?>">
+                      <i class="bi bi-file-earmark-word me-1"></i>Standblatt herunterladen
+                    </button>
                   </div>
                 </div>
                 <?php endforeach; ?>

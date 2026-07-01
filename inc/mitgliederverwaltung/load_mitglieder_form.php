@@ -4,7 +4,7 @@ include 'config.php';
 
 $sql = "SELECT m.id, m.Anrede, m.vorname, m.name, m.waffenid, m.status, w.bezeichnung AS waffe,
         m.Geburtsdatum, m.Ehrenmitglied, m.Strasse, m.PLZ, m.Ort, m.Email,
-        m.Telefon, m.Mobile, m.Notizen, m.Verstorben, m.Vereinsaufnahme, m.Kommunikation
+        m.Telefon, m.Mobile, m.Notizen, m.Verstorben, m.Vereinsaufnahme, m.Kommunikation, m.ist_jsk_leiter
         FROM mitglieder m
         INNER JOIN Waffen w ON m.waffenid = w.id
         ORDER BY m.name ASC, m.vorname ASC";
@@ -18,6 +18,7 @@ if ($result && $result->num_rows > 0) {
         $statusVal  = intval($row['status']);
         $ehreVal    = intval($row['Ehrenmitglied']);
         $verstVal   = intval($row['Verstorben']);
+        $leiterVal  = intval($row['ist_jsk_leiter'] ?? 0);
 
         // Geburtsdatum formatieren für Anzeige
         $gebDisplay = '';
@@ -48,6 +49,7 @@ if ($result && $result->num_rows > 0) {
             . ' data-verstorben="' . $verstVal . '"'
             . ' data-vereinsaufnahme="' . $esc($row['Vereinsaufnahme']) . '"'
             . ' data-kommunikation="' . $esc($row['Kommunikation']) . '"'
+            . ' data-ist_jsk_leiter="' . $leiterVal . '"'
             . $rowClass . '>';
 
         // Lizenznr.
@@ -72,6 +74,7 @@ if ($result && $result->num_rows > 0) {
         echo '<div class="flag-dot ' . ($statusVal ? 'on' : 'off') . '" data-flag="status" data-tooltip="Aktiv"><i class="bi bi-check-lg"></i></div>';
         echo '<div class="flag-dot ' . ($ehreVal ? 'on' : 'off') . '" data-flag="ehrenmitglied" data-tooltip="Ehrenmitglied" style="' . ($ehreVal ? 'background:#f59e0b;' : '') . '"><i class="bi bi-award"></i></div>';
         echo '<div class="flag-dot ' . ($verstVal ? 'on' : 'off') . '" data-flag="verstorben" data-tooltip="Verstorben" style="' . ($verstVal ? 'background:#64748b;' : '') . '"><i class="bi bi-dash-circle"></i></div>';
+        echo '<div class="flag-dot ' . ($leiterVal ? 'on' : 'off') . '" data-flag="ist_jsk_leiter" data-tooltip="Jungschützenleiter" style="' . ($leiterVal ? 'background:#14b8a6;' : '') . '"><i class="bi bi-person-badge"></i></div>';
         echo '</div>';
         echo '</td>';
 
@@ -94,6 +97,7 @@ if ($result && $result->num_rows > 0) {
         if ($statusVal) echo '<input type="hidden" name="status[' . $id . ']" value="1" class="flag-input" data-flag="status">';
         if ($ehreVal)   echo '<input type="hidden" name="ehrenmitglied[' . $id . ']" value="1" class="flag-input" data-flag="ehrenmitglied">';
         if ($verstVal)  echo '<input type="hidden" name="verstorben[' . $id . ']" value="1" class="flag-input" data-flag="verstorben">';
+        if ($leiterVal) echo '<input type="hidden" name="ist_jsk_leiter[' . $id . ']" value="1" class="flag-input" data-flag="ist_jsk_leiter">';
 
         echo '</tr>';
     }

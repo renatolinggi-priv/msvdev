@@ -769,7 +769,8 @@ class NavigationManager {
         top: 0;
         left: -320px;
         width: 320px;
-        height: 100vh;
+        height: 100vh;       /* Fallback fuer aeltere Browser */
+        height: 100dvh;      /* iOS Safari: sichtbare Hoehe OHNE untere Adressleiste -> letzte Eintraege/Abmelden bleiben sichtbar */
         background: white;
         z-index: 9999;
         transition: left 0.3s ease;
@@ -947,6 +948,8 @@ class NavigationManager {
         margin-top: auto;
         border-top: 2px solid #dee2e6;
         background: #f8f9fa;
+        /* iPhone: Inhalt ueber den Home-Indicator anheben (PWA standalone) */
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     .mobile-user-header {
@@ -1095,7 +1098,8 @@ class NavigationManager {
         top: var(--nav-h, 76px);
         left: 0;
         width: var(--nav-sidebar-w, 280px);
-        height: calc(100vh - var(--nav-h, 76px));
+        height: calc(100vh - var(--nav-h, 76px));   /* Fallback */
+        height: calc(100dvh - var(--nav-h, 76px));  /* iOS/iPad Safari: ohne untere Adressleiste */
         overflow-y: auto;
         background: #fff;
         z-index: 1020;
@@ -1122,7 +1126,7 @@ class NavigationManager {
     }
     body.nav-sidebar .offcanvas-nav .mobile-nav-link {
         padding: 0.75rem 1.25rem;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         font-weight: 600;
         color: var(--sb-text);
         border-bottom: 1px solid var(--sb-border);
@@ -1158,7 +1162,7 @@ class NavigationManager {
         align-items: center;
         padding: 0.5rem 1rem 0.5rem 1.75rem;
         min-height: 38px;
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         font-weight: 500;
         color: var(--sb-text);
         white-space: nowrap;

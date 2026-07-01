@@ -12,8 +12,11 @@ if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['cs
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Debug-Funktion (schreibt in die PHP-Error-Logs)
+// Debug-Funktion (schreibt nur bei aktiviertem Debug-Flag in die PHP-Error-Logs)
+// In Produktion standardmaessig aus. Zum Aktivieren: JMDEF_DEBUG = true setzen.
+if (!defined('JMDEF_DEBUG')) define('JMDEF_DEBUG', false);
 function debug_log($message) {
+    if (!JMDEF_DEBUG) return;
     error_log("[save_jmdefinition DEBUG] " . $message);
 }
 
@@ -44,6 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Beginne Transaktion
     $conn->begin_transaction();
+
+    // Sammelt Schiesstag-Zeilen, die nicht automatisch erkannt werden konnten
+    $parseWarnings = [];
 
     try {
         // 1. Aktualisiere JMDefinition-Daten
@@ -134,7 +140,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 foreach ($lines as $line) {
                     $line = trim($line);
                     if (empty($line)) continue;
-                    
+
+                    // Whitespace robust normalisieren: geschützte Leerzeichen (NBSP),
+                    // Tabs und Mehrfach-Leerzeichen -> ein einzelnes Leerzeichen.
+                    $line = preg_replace('/[\s\x{00A0}]+/u', ' ', $line);
+                    // Fehlendes Leerzeichen nach dem Tages-Punkt ergänzen ("15.März" -> "15. März")
+                    $line = preg_replace('/(\d{1,2}\.)(\p{L})/u', '$1 $2', $line);
+                    $line = trim($line);
+
                     /* Wir gehen davon aus, dass jede Zeile im Format ist:
                        "Samstag 12. April 2025 08:00 – 12:00 Uhr, 13:30 – 17:00 Uhr"
                        Wir möchten zunächst den gemeinsamen Datumsteil (Prefix) ermitteln.
@@ -194,6 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             }
                         } else {
                             debug_log("Kein Regex-Treffer für: $fullPart");
+                            $parseWarnings[$line] = true; // Zeile als nicht erkannt vormerken (dedupliziert)
                         }
                     }
                 }
@@ -203,7 +217,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmtInsert->close();
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'Alle Änderungen wurden erfolgreich gespeichert']);
+        $response = ['success' => true, 'message' => 'Alle Änderungen wurden erfolgreich gespeichert'];
+        if (!empty($parseWarnings)) {
+            // Schlüssel sind die nicht erkannten Zeilen (dedupliziert)
+            $response['warnings'] = array_keys($parseWarnings);
+        }
+        echo json_encode($response);
     } catch (Exception $e) {
         $conn->rollback();
         http_response_code(500);

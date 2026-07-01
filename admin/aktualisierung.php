@@ -97,8 +97,7 @@ include 'header.inc.php';
 
         <div class="row mb-3 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-database-gear me-2"></i>Datenbank aktualisieren
+            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Datenbank aktualisieren
             </h2>
           </div>
         </div>
@@ -260,7 +259,7 @@ document.querySelectorAll('.navbar a[href], .offcanvas-nav a[href], #logoutModal
       icon: 'warning',
       title: 'Migrationen ausführen?',
       html: 'Es ' + (count === 1 ? 'wird <strong>1</strong> ausstehende Migration' : 'werden <strong>' + count + '</strong> ausstehende Migrationen')
-            + ' auf der Datenbank ausgeführt.<br><span class="text-muted">Dieser Vorgang verändert die Datenbankstruktur und kann nicht automatisch rückgängig gemacht werden.</span>',
+            + ' ausgeführt. Verändert die DB-Struktur, nicht automatisch umkehrbar.',
       showCancelButton: true,
       confirmButtonText: '<i class="bi bi-play-fill me-1"></i>Jetzt ausführen',
       cancelButtonText: 'Abbrechen',

@@ -133,8 +133,7 @@ function validate_password($password, $username) {
 
         <div class="row mb-3">
             <div class="col">
-                <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                    <i class="bi bi-key me-2"></i>Passwort ändern
+                <h2 class="h4 mb-0 page-title">Passwort ändern
                 </h2>
             </div>
         </div>

@@ -68,15 +68,7 @@ include 'header.inc.php';
         <div class="col-xl-7 col-lg-8 col-md-10 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                            CSV Import - Heim- und Kantimeisterschaft
-                        </h2>
-                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload → Auswahl → Import</p>
-                    </div>
-                </div>
+                <?php $page_title = 'CSV Import - Heim- und Kantimeisterschaft'; include 'partials/page_header.inc.php'; ?>
                 
                     <!-- Phase 1: Upload -->
                     <div id="phase1" class="workflow-phase active">
@@ -149,10 +141,10 @@ include 'header.inc.php';
                         
                         <!-- Phase 2 Navigation -->
                         <div class="text-center mt-4">
-                            <button type="button" class="btn btn-outline-secondary me-2" onclick="FileHandler.goToPhase(1)">
+                            <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="FileHandler.goToPhase(1)">
                                 <i class="bi bi-arrow-left me-2"></i>Zurück
                             </button>
-                            <button type="button" class="btn btn-success" id="proceedToImportBtn" onclick="FileHandler.proceedToImport()" disabled>
+                            <button type="button" class="btn btn-outline-success btn-sm" id="proceedToImportBtn" onclick="FileHandler.proceedToImport()" disabled>
                                 <i class="bi bi-arrow-right me-2"></i>Weiter zum Import
                             </button>
                         </div>
@@ -214,10 +206,10 @@ include 'header.inc.php';
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-2"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-success" id="confirmFinalImportBtn">
+                <button type="button" class="btn btn-outline-success btn-sm" id="confirmFinalImportBtn">
                     <i class="bi bi-check-circle me-2"></i>Bestätigen & Importieren
                 </button>
             </div>
@@ -231,9 +223,9 @@ const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
 </script>
 
 <!-- JavaScript Module einbinden -->
-<script src="heimkanti_import/csv_handler.js?v=<?php echo time(); ?>"></script>
-<script src="heimkanti_import/import_manager.js?v=<?php echo time(); ?>"></script>
-<script src="heimkanti_import/ui_helper.js?v=<?php echo time(); ?>"></script>
+<script src="heimkanti_import/csv_handler.js?v=<?php echo @filemtime(__DIR__ . '/heimkanti_import/csv_handler.js') ?: '1'; ?>"></script>
+<script src="heimkanti_import/import_manager.js?v=<?php echo @filemtime(__DIR__ . '/heimkanti_import/import_manager.js') ?: '1'; ?>"></script>
+<script src="heimkanti_import/ui_helper.js?v=<?php echo @filemtime(__DIR__ . '/heimkanti_import/ui_helper.js') ?: '1'; ?>"></script>
 
 <script>
 // 3-Phasen Workflow Initialisierung

@@ -41,7 +41,7 @@ $page_specific_css = "
 }
 
 .result-preview-table {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .result-preview-table th {
@@ -50,9 +50,13 @@ $page_specific_css = "
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
-    padding: 1rem 0.75rem;
+    padding: 0.75rem;
     color: var(--secondary-color);
     border-bottom: 2px solid #dee2e6;
+}
+
+.result-preview-table td {
+    padding: 0.5rem 0.75rem;
 }
 
 /* Spaltenbreiten für Durchschnittstabelle */
@@ -76,14 +80,24 @@ $page_specific_css = "
     .definition-selection-card {
         padding: 1rem;
     }
-    
+
     .result-preview-table {
         font-size: 0.8rem;
     }
-    
+
     .result-preview-table th,
     .result-preview-table td {
         padding: 0.5rem 0.25rem;
+    }
+}
+
+/* Mobile Cards: zählende Resultate grün markieren (analog Desktop table-success) */
+@media (max-width: 767.98px) {
+    .mobile-card.card-used {
+        border-color: #198754;
+    }
+    .mobile-card.card-used .mobile-card-header {
+        background-color: #d1e7dd;
     }
 }
 ";
@@ -96,21 +110,34 @@ if (empty($_SESSION['csrf_token'])) {
 }
 ?>
 
+<!-- Select2 (für Schiessanlass-Auswahl) -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+#anlassSelect + .select2-container { width: 100% !important; }
+/* Kompaktere (kleinere) Schrift für dieses Select2-Feld */
+#anlassSelect + .select2-container .select2-selection { min-height: calc(1.4em + 0.45rem + 2px) !important; }
+#anlassSelect + .select2-container .select2-selection__rendered,
+#anlassSelect + .select2-container .select2-selection__placeholder { font-size: 0.8rem !important; }
+.select2-anlass-dropdown .select2-results__option,
+.select2-anlass-dropdown .select2-search__field {
+    font-size: 0.8rem !important;
+    line-height: 1.25 !important;
+}
+.select2-anlass-dropdown .select2-results__option {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+}
+</style>
+
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-6 col-lg-8 col-12 ps-0">
+        <div class="col-xxl-7 col-xl-9 col-lg-11 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-calculator me-2"></i>
-                            Durchschnittsresultate JM
-                        </h2>
-                        <p class="text-muted mb-0">Berechnung der Durchschnittsresultate basierend auf den besten Resultaten</p>
-                    </div>
-                </div>
+                <?php $page_title = 'Durchschnittsresultate JM'; include 'partials/page_header.inc.php'; ?>
                 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
@@ -135,7 +162,7 @@ if (empty($_SESSION['csrf_token'])) {
                             </label>
                             <input type="number" id="zaehlendeInput" class="form-control form-control-sm"
                                    style="width: 80px;" min="1" max="99" step="1">
-                            <button type="button" id="saveConfigBtn" class="btn btn-compact-standard btn-outline-primary">
+                            <button type="button" id="saveConfigBtn" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-save me-1"></i>Speichern
                             </button>
                             <small id="configHint" class="text-muted ms-1"></small>
@@ -168,7 +195,7 @@ if (empty($_SESSION['csrf_token'])) {
                                     </select>
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <button type="button" id="exportPdfBtn" class="btn btn-compact-standard btn-outline-success" disabled>
+                                    <button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm" disabled>
                                         <i class="bi bi-file-pdf me-2"></i>
                                         PDF exportieren
                                     </button>
@@ -185,67 +212,74 @@ if (empty($_SESSION['csrf_token'])) {
                                 </div>
                                 <p class="mt-2 text-muted">Berechne Durchschnitt...</p>
                             </div>
-                            
+
                             <!-- Keine Resultate Meldung -->
                             <div id="noResultsMessage" style="display: none;" class="alert alert-info">
                                 <i class="bi bi-info-circle me-2"></i>
                                 Für diesen Anlass sind noch keine Resultate vorhanden.
                             </div>
+
                             <div class="table-wrapper">
                                 <h5 class="table-title" id="resultTitle">
                                     <i class="bi bi-table me-2"></i>
                                     Durchschnittsresultat
                                 </h5>
-                                <div class="table-responsive">
+
+                                <!-- Desktop: Tabelle -->
                                 <div class="desktop-table-container">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0 result-preview-table" id="durchschnittTabelle">
-                                        <thead>
-                                            <tr>
-                                                <th class="rang-col">Rang</th>
-                                                <th class="name-col">Name</th>
-                                                <th class="punkte-col">Punkte</th>
-                                                <th class="verwendet-col">Verwendet</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Wird per JavaScript gefüllt -->
-                                        </tbody>
-                                    </table>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0 result-preview-table" id="durchschnittTabelle">
+                                            <thead>
+                                                <tr>
+                                                    <th class="rang-col">Rang</th>
+                                                    <th class="name-col">Name</th>
+                                                    <th class="punkte-col">Punkte</th>
+                                                    <th class="verwendet-col">Verwendet</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Wird per JavaScript gefüllt -->
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                                </div>
-                                <!-- Mobile Cards Container -->
+
+                                <!-- Mobile: Cards -->
                                 <div class="mobile-cards-container" id="mobileCardsDurchschnitt">
-                                    <div class="mobile-search-container">
-                                        <input type="text" class="form-control mobile-search-input" placeholder="Suchen...">
+                                    <div class="mobile-search">
+                                        <div class="position-relative">
+                                            <i class="bi bi-search search-icon"></i>
+                                            <input type="text" class="form-control" placeholder="Suchen..."
+                                                   oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCardsDurchschnitt')">
+                                        </div>
                                     </div>
-                                    <div class="mobile-scroll-container">
-                                        <!-- Cards werden hier eingefügt -->
+                                    <div class="mobile-cards-scroll">
+                                        <!-- Cards werden per JavaScript generiert -->
                                     </div>
                                 </div>
-                                
+
                                 <!-- Zusammenfassung -->
-                                <div id="summaryCard" class="mt-3" style="display: none;">
+                                <div id="summaryCard" class="mt-3 mx-3 mb-3" style="display: none;">
                                     <div class="card">
                                         <div class="card-body">
-                                            <div class="row text-center">
-                                                <div class="col-md-2">
+                                            <div class="row text-center g-3">
+                                                <div class="col-6 col-md-2">
                                                     <strong>Teilnehmer:</strong><br>
                                                     <span id="totalParticipants" class="h5 text-primary">-</span>
                                                 </div>
-                                                <div class="col-md-2">
+                                                <div class="col-6 col-md-2">
                                                     <strong>Pflichtteilnehmer:</strong><br>
                                                     <span id="usedResults" class="h5 text-info">-</span>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-6 col-md-3">
                                                     <strong>Durchschnitt:</strong><br>
                                                     <span id="averageScore" class="h5 text-warning">-</span>
                                                 </div>
-                                                <div class="col-md-2">
+                                                <div class="col-6 col-md-2">
                                                     <strong>Beteiligungszuschlag:</strong><br>
                                                     <span id="bonusPoints" class="h5 text-secondary">-</span>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-12 col-md-3">
                                                     <strong>Endergebnis:</strong><br>
                                                     <span id="finalResult" class="h3 text-success">-</span>
                                                 </div>
@@ -304,9 +338,31 @@ $(document).ready(function () {
         });
     }
 
+    // Select2 auf dem Anlass-Dropdown (neu) aufsetzen – nach jedem Befüllen nötig
+    function applyAnlassSelect2() {
+        const $sel = $('#anlassSelect');
+        if ($sel.hasClass('select2-hidden-accessible')) {
+            $sel.select2('destroy');
+        }
+        $sel.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: '-- Bitte Anlass auswählen --',
+            dropdownCssClass: 'select2-anlass-dropdown',
+            language: {
+                noResults: function () { return 'Keine Treffer'; },
+                searching: function () { return 'Suche…'; }
+            }
+        });
+    }
+
     // Verfügbare JM-Definitionen laden
     function loadAvailableDefinitions(year) {
-        $('#anlassSelect').html('<option value="">Lade Anlässe...</option>');
+        const $sel = $('#anlassSelect');
+        if ($sel.hasClass('select2-hidden-accessible')) {
+            $sel.select2('destroy');
+        }
+        $sel.html('<option value="">Lade Anlässe...</option>');
 
         $.ajax({
             url: 'jmdurchschnitt/load_available_definitions.php',
@@ -314,21 +370,23 @@ $(document).ready(function () {
             data: { year: year },
             dataType: 'json',
             success: function (response) {
-                $('#anlassSelect').html('<option value="">-- Bitte Anlass auswählen --</option>');
-                
+                $sel.html('<option value="">-- Bitte Anlass auswählen --</option>');
+
                 if (response.success && response.definitions.length > 0) {
                     response.definitions.forEach(function(def) {
                         const option = $('<option></option>')
                             .val(def.ID)
                             .text(`${def.Bezeichnung} (Max: ${def.Maxpunkte}, Beteiligungszuschlag: ${def.Zuschlag || 0})`);
-                        $('#anlassSelect').append(option);
+                        $sel.append(option);
                     });
                 } else {
-                    $('#anlassSelect').append('<option value="" disabled>Keine Anlässe verfügbar</option>');
+                    $sel.append('<option value="" disabled>Keine Anlässe verfügbar</option>');
                 }
+                applyAnlassSelect2();
             },
             error: function () {
-                $('#anlassSelect').html('<option value="" disabled>Fehler beim Laden</option>');
+                $sel.html('<option value="" disabled>Fehler beim Laden</option>');
+                applyAnlassSelect2();
                 msvToast('Fehler beim Laden der verfügbaren Anlässe', 'error');
             }
         });
@@ -540,12 +598,15 @@ $(document).ready(function () {
 
     // Mobile Cards Builder für Durchschnittstabelle
     function buildMobileCardsDurchschnitt() {
-        MSVMobileCards.initResponsive({
-            tableId: 'durchschnittTabelle',
-            mobileContainerId: 'mobileCardsDurchschnitt',
-            titleColumns: [0, 1],
-            summaryColumns: [2],
-            rankColumn: 0
+        MSVMobileCards.initResponsive(function () {
+            MSVMobileCards.buildCards('#durchschnittTabelle', '#mobileCardsDurchschnitt', {
+                titleColumns: [0, 1],
+                summaryColumns: [2],
+                customCardClass: function (row, cells) {
+                    // "Verwendet"-Spalte (Index 3): zählende Resultate grün markieren – wie Desktop
+                    return (cells[3]?.textContent || '').trim() === '✓' ? 'card-used' : '';
+                }
+            });
         });
     }
 

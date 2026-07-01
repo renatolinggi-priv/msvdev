@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/save_single_js.php
+// inc/jsk_verwaltung/save_single_js.php
 // Einzelnen Jungschuetzen anlegen (id=0) oder aktualisieren. PDO, CSRF, Vorstand/Admin.
 
 require_once __DIR__ . '/../../auth.php';

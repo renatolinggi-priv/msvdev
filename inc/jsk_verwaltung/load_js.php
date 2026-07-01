@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/load_js.php
+// inc/jsk_verwaltung/load_js.php
 // Rendert die Jungschuetzen-Tabellenzeilen (Hybrid-Row) inkl. Konto-Status.
 // Read-only Fragment fuer die JSK-Verwaltung. Vorstand/Admin.
 

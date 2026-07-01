@@ -26,9 +26,11 @@ $page_specific_css = <<<'CSS'
 }
 .hybrid-table thead th {
   padding: 0.85rem 1rem; font-size: 0.75rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-  background: linear-gradient(180deg, #f8fafc, #eef2f7);
-  border-bottom: 2px solid #e2e8f0;
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
+  background-color: #f8f9fa;
+  /* box-shadow statt border-bottom: verhindert Durchscheinen beim Scrollen
+     unter dem sticky-Header (border-collapse:collapse-Pitfall, vgl. jmrang) */
+  box-shadow: inset 0 -2px 0 #e2e8f0;
   position: sticky; top: 0; z-index: 6;
 }
 .hybrid-table tbody tr.hybrid-row {
@@ -58,46 +60,12 @@ $page_specific_css = <<<'CSS'
 .h-dates { font-size: 0.85rem; }
 .h-max { text-align: center; font-weight: 600; }
 
-/* --- Flag-Dots mit CSS-Tooltip --- */
-.flag-dots { display: flex; gap: 6px; justify-content: center; }
-.flag-dot {
-  position: relative;
-  width: 28px; height: 28px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; cursor: default;
-  transition: transform 0.15s;
-}
-.flag-dot:hover { transform: scale(1.15); }
-.flag-dot.on { background: #3b82f6; color: #fff; }
-.flag-dot.off { background: #f1f5f9; color: #cbd5e1; }
+/* Flag-Dots (.flag-dots/.flag-dot*) jetzt zentral in css/msv-styles.css. */
 
 /* Tooltip → global via msv-styles.css + msv-tooltips.js */
 
-/* --- Slide-Panel --- */
-.hybrid-edit-panel {
-  position: fixed; top: 0; right: -520px; width: 500px; height: 100vh;
-  background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12);
-  z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-  display: flex; flex-direction: column;
-}
-.hybrid-edit-panel.open { right: 0; }
-.panel-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-  z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s;
-}
-.panel-overlay.show { opacity: 1; visibility: visible; }
-.panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc; flex-shrink: 0;
-}
-.panel-body {
-  padding: 1.25rem; overflow-y: auto; flex: 1;
-}
-.panel-label {
-  display: block; font-size: 0.8rem; font-weight: 600;
-  color: #64748b; margin-bottom: 0.35rem;
-}
+/* Slide-Panel (.hybrid-edit-panel/.panel-overlay/.panel-header/.panel-body/.panel-label)
+   jetzt zentral in css/msv-styles.css. Breite = Default 500px. */
 
 /* --- Drag & Drop --- */
 .jm-row-dragging {
@@ -112,20 +80,9 @@ $page_specific_css = <<<'CSS'
   border: 2px dashed #93c5fd !important;
 }
 
-/* --- Aktions-Card --- */
-.action-card { border-color: #e2e8f0; }
-.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; }
-.action-card-header:hover { background-color: #f1f5f9; }
-.action-chevron { transition: transform .2s ease; }
-.action-card-header[aria-expanded="true"] .action-chevron { transform: rotate(180deg); }
+/* Aktions-Card (.action-card/.action-card-header/.action-chevron) jetzt zentral in css/msv-styles.css. */
 
-/* --- Skeleton Loader --- */
-.skeleton {
-  height: 20px; border-radius: 4px;
-  background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
-  background-size: 200% 100%; animation: loading 1.5s infinite;
-}
-@keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+/* Skeleton Loader (.skeleton/@keyframes) jetzt zentral in css/msv-styles.css. */
 
 /* --- Mobile Card Edit Layout --- */
 .jm-edit-body { padding: 0.75rem 1rem 1rem !important; }
@@ -217,13 +174,7 @@ if (empty($_SESSION['csrf_token'])) {
   <div class="row">
     <div class="col-xl-12 col-lg-11 col-12 ps-0">
       <div class="main-content-wrapper">
-        <div class="row mb-4 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-              <i class="bi bi-trophy me-2"></i>Jahresmeisterschaft Definition
-            </h2>
-          </div>
-        </div>
+        <?php $page_title = 'Jahresmeisterschaft Definition'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <form id="jmdefinitionForm">
@@ -239,15 +190,10 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
 
               <!-- Aktionsbereich -->
-              <div class="card action-card mb-0">
-                <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                     data-bs-toggle="collapse" data-bs-target="#jmdefActions"
-                     aria-expanded="false" aria-controls="jmdefActions">
-                  <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                  <i class="bi bi-chevron-down action-chevron"></i>
-                </div>
-                <div class="collapse" id="jmdefActions">
-                  <div class="card-body pt-2 pb-3 px-3">
+<?php
+              $ac_id = 'jmdefActions';
+              ob_start();
+              ?>
                     <div class="row g-2 mb-3">
                       <div class="col-6">
                         <button type="button" class="btn btn-outline-success btn-sm w-100"
@@ -288,32 +234,33 @@ if (empty($_SESSION['csrf_token'])) {
                       <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                       <div class="row g-2">
                         <div class="col-6">
-                          <button type="button" id="exportPdfButton" class="btn btn-outline-danger btn-sm w-100">
+                          <button type="button" id="exportPdfButton" class="btn btn-outline-info btn-sm w-100">
                             <i class="bi bi-file-pdf me-1"></i>PDF
                           </button>
                         </div>
                         <div class="col-6">
-                          <button type="button" id="exportPdfDraftButton" class="btn btn-outline-warning btn-sm w-100"
+                          <button type="button" id="exportPdfDraftButton" class="btn btn-outline-info btn-sm w-100"
                                   data-tooltip="PDF mit Wasserzeichen 'Entwurf'">
                             <i class="bi bi-file-pdf me-1"></i>Entwurf
                           </button>
                         </div>
                         <div class="col-6">
-                          <button type="button" id="exportWordFragebogen" class="btn btn-outline-secondary btn-sm w-100">
+                          <button type="button" id="exportWordFragebogen" class="btn btn-outline-info btn-sm w-100">
                             <i class="bi bi-file-word me-1"></i>Fragen
                           </button>
                         </div>
                         <div class="col-6">
-                          <button type="button" id="exportICSAll" class="btn btn-outline-secondary btn-sm w-100">
+                          <button type="button" id="exportICSAll" class="btn btn-outline-info btn-sm w-100">
                             <i class="bi bi-calendar-plus me-1"></i>ICS
                           </button>
                         </div>
                       </div>
                       <div id="pdfDownloadLink" class="mt-2"></div>
                     </div>
-                  </div>
-                </div>
-              </div>
+              <?php
+              $ac_body = ob_get_clean();
+              include 'partials/action_card.inc.php';
+              ?>
             </div>
 
             <!-- Desktop: Hybrid-Tabelle -->
@@ -370,14 +317,11 @@ if (empty($_SESSION['csrf_token'])) {
   </div>
 </div>
 
-<!-- Slide-Panel (Edit) -->
-<div class="panel-overlay" id="panelOverlay"></div>
-<div class="hybrid-edit-panel" id="editPanel">
-  <div class="panel-header">
-    <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Anlass bearbeiten</h6>
-    <button class="btn btn-sm btn-outline-secondary" id="panelClose"><i class="bi bi-x-lg"></i></button>
-  </div>
-  <div class="panel-body">
+<!-- Slide-Panel (Edit) – zentrale Struktur via inc/partials/side_panel.inc.php -->
+<?php
+$panel_title = '<i class="bi bi-pencil-square me-2"></i>Anlass bearbeiten';
+ob_start();
+?>
     <div class="mb-3">
       <label class="panel-label">Bezeichnung</label>
       <textarea class="form-control" id="panelBezeichnung" rows="3"></textarea>
@@ -432,12 +376,14 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
     <hr>
     <div class="d-flex gap-2">
-      <button class="btn btn-outline-danger flex-fill" id="panelDeleteBtn">
+      <button class="btn btn-outline-danger btn-sm flex-fill" id="panelDeleteBtn">
         <i class="bi bi-trash me-1"></i>Löschen
       </button>
     </div>
-  </div>
-</div>
+<?php
+$panel_body = ob_get_clean();
+include 'partials/side_panel.inc.php';
+?>
 
 <!-- Modal: Neuer Anlass -->
 <div class="modal fade" id="newAnlassModal" tabindex="-1" aria-labelledby="newAnlassModalLabel" aria-hidden="true">
@@ -493,39 +439,8 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
-        <button type="button" class="btn btn-outline-success btn-compact" id="jmdefinitionHinzufuegen"><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Löschen bestätigen -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmDeleteModalLabel">
-          <i class="bi bi-exclamation-triangle text-warning me-2"></i>Bestätigung erforderlich
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
-      </div>
-      <div class="modal-body">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
-          <div>
-            <strong>Möchtest du diesen Anlass wirklich löschen?</strong>
-            <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle me-1"></i>Abbrechen
-        </button>
-        <button type="button" class="btn btn-outline-danger btn-compact" id="confirmDeleteButton">
-          <i class="bi bi-trash me-1"></i>Löschen
-        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
+        <button type="button" class="btn btn-outline-success btn-sm" id="jmdefinitionHinzufuegen"><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
       </div>
     </div>
   </div>
@@ -553,8 +468,8 @@ if (empty($_SESSION['csrf_token'])) {
         <div id="copyList"><div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Lädt…</div></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-compact" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
-        <button type="button" class="btn btn-outline-info btn-compact" id="copyApplyBtn"><i class="bi bi-check2-circle me-1"></i>Übernehmen</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
+        <button type="button" class="btn btn-outline-info btn-sm" id="copyApplyBtn"><i class="bi bi-check2-circle me-1"></i>Übernehmen</button>
       </div>
     </div>
   </div>
@@ -911,9 +826,10 @@ $(function () {
 
   // Loeschen aus Panel
   $('#panelDeleteBtn').on('click', function() {
-    deleteId = $(this).data('id');
+    const deleteId = $(this).data('id');
+    const name = (($('#panelBezeichnung').val() || '').split('\n')[0] || '').trim() || 'diesen Anlass';
     JMEditPanel.close();
-    $('#confirmDeleteModal').modal('show');
+    deleteJMDefinitionById(deleteId, name);
   });
 
   // ========== Vom Vorjahr übernehmen ==========
@@ -1275,8 +1191,15 @@ $(function () {
     const anzahlStreicher = parseInt($('#anzahlStreicherInput').val()) || 3;
 
     $.post(basePath + 'jmdefinition/save_jmdefinition.php', formData)
-     .done(function() {
+     .done(function(resp) {
         showSuccessToast('Änderungen gespeichert!');
+        // Hinweis, falls einzelne Schiesstag-Zeilen nicht automatisch erkannt wurden
+        try {
+            var r = (typeof resp === 'string') ? JSON.parse(resp) : resp;
+            if (r && Array.isArray(r.warnings) && r.warnings.length) {
+                showWarningToast(r.warnings.length + ' Schiesstag-Zeile(n) nicht erkannt – bitte Format prüfen (z. B. „Samstag 12. April 2025 08:00 – 12:00 Uhr").');
+            }
+        } catch (e) { /* ignore */ }
         hasChanges = false;
         JMEditPanel.close();
         $.post(basePath + 'jmdefinition/save_jminformation.php', {
@@ -1342,42 +1265,35 @@ $(function () {
   });
 
   // ========== Loeschen ==========
-  let deleteId = null;
   $(document).on('click', '.deleteJMDefinition', function() {
-    deleteId = $(this).data('id');
-    if (deleteId) {
-      $('#confirmDeleteModal').modal('show');
-    }
-  });
-
-  $('#confirmDeleteButton').on('click', function() {
+    const deleteId = $(this).data('id');
     if (!deleteId) return;
-    const $btn = $(this);
-    const originalText = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
-
-    $.post(basePath + 'jmdefinition/delete_jmdefinition.php', {
-      id: deleteId,
-      csrf_token: $('input[name="csrf_token"]').val()
-    })
-    .done(function() {
-      $('#confirmDeleteModal').modal('hide');
-      showSuccessToast('Eintrag gelöscht');
-      loadJMDefinition($('#yearSelect').val());
-    })
-    .fail(function(xhr) {
-      let msg = 'Fehler beim Löschen';
-      try {
-        const resp = JSON.parse(xhr.responseText);
-        if (resp.message) msg = resp.message;
-      } catch(e) {}
-      showErrorToast(msg);
-    })
-    .always(function() {
-      $btn.prop('disabled', false).html(originalText);
-      deleteId = null;
-    });
+    const name = ((($('#jmHybridTabelle tbody tr.hybrid-row[data-id="' + deleteId + '"]').attr('data-bezeichnung')) || '').split('\n')[0] || '').trim() || 'diesen Anlass';
+    deleteJMDefinitionById(deleteId, name);
   });
+
+  function deleteJMDefinitionById(deleteId, name) {
+    if (!deleteId) return;
+    msvConfirmDelete(name).then(function(res) {
+      if (!res.isConfirmed) return;
+      $.post(basePath + 'jmdefinition/delete_jmdefinition.php', {
+        id: deleteId,
+        csrf_token: $('input[name="csrf_token"]').val()
+      })
+      .done(function() {
+        showSuccessToast('Eintrag gelöscht');
+        loadJMDefinition($('#yearSelect').val());
+      })
+      .fail(function(xhr) {
+        let msg = 'Fehler beim Löschen';
+        try {
+          const resp = JSON.parse(xhr.responseText);
+          if (resp.message) msg = resp.message;
+        } catch(e) {}
+        showErrorToast(msg);
+      });
+    });
+  }
 
   // ========== Exporte ==========
   function triggerDownload(url) {

@@ -12,25 +12,6 @@ if (empty($_SESSION['csrf_token'])) {
 $page_specific_css = "
 /* === MOBILE OPTIMIZATION === */
 @media (max-width: 767.98px) {
-    /* WCAG AAA Touch Targets: Alle Form-Elemente */
-    .form-control,
-    .form-select,
-    input[type=\"text\"],
-    input[type=\"number\"],
-    input[type=\"email\"],
-    textarea,
-    select {
-        min-height: 48px !important;
-        font-size: 16px !important; /* Verhindert iOS Auto-Zoom */
-    }
-
-    /* Alle Buttons */
-    .btn {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
     /* Desktop-Tabelle ausblenden */
     .desktop-table-container {
         display: none !important;
@@ -74,6 +55,24 @@ $page_specific_css = "
         display: none !important;
     }
 }
+
+/* === TABELLEN-DARSTELLUNG an andere Seiten angleichen === */
+#wanderpreiseTable { font-size: 0.85rem; }
+#wanderpreiseTable thead th {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+}
+#wanderpreiseTable th,
+#wanderpreiseTable td { padding: 0.5rem 0.75rem; }
+#wanderpreiseTable td small { font-size: 0.75rem; }
+/* Erste Spalte ist der Name (kein Rang) -> globale Rang-Optik aufheben */
+#wanderpreiseTable th:first-child,
+#wanderpreiseTable td:first-child {
+    width: auto;
+    text-align: left;
+    font-weight: 400;
+    background-color: transparent;
+}
 ";
 
 include 'header.inc.php';
@@ -96,92 +95,68 @@ if (WANDERPREISE_DEBUG) {
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-award me-2"></i>
-                            Wanderpreise verwalten
-                        </h2>
-                        <p class="text-muted mb-0" style="font-size: 0.85rem;">Wanderpreise erfassen und Gewinner
-                            zuordnen</p>
-                    </div>
-                </div>
+                <?php $page_title = 'Wanderpreise verwalten'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weißer Container für den Rest -->
                 <div class="content-background">
 
                     <!-- Aktionsbereich (Bootstrap Collapse) -->
-                    <div class="card mb-3 action-card">
-                        <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                             data-bs-toggle="collapse" data-bs-target="#wanderpreiseActions"
-                             aria-expanded="false" aria-controls="wanderpreiseActions">
-                            <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                            <i class="bi bi-chevron-down action-chevron"></i>
-                        </div>
-                        <div class="collapse" id="wanderpreiseActions">
-                            <div class="card-body pt-2 pb-3 px-3">
-                                <!-- Verwaltungs-Buttons -->
+<?php
+                    $ac_id = 'wanderpreiseActions';
+                    $ac_card_class = 'mb-3';
+                    ob_start();
+                    ?>
+                                <!-- Verwaltung -->
                                 <small class="text-muted d-block mb-2"><i class="bi bi-tools me-1"></i>Verwaltung</small>
                                 <div class="row g-2 mb-3">
-                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                    <div class="col-6 col-md-4 col-lg-3">
                                         <button class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal"
                                             data-bs-target="#addWanderpreisModal">
                                             <i class="bi bi-plus-circle me-1"></i>Hinzufügen
                                         </button>
                                     </div>
-                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                    <div class="col-6 col-md-4 col-lg-3">
                                         <button type="button" id="zuordnungButton" class="btn btn-outline-primary btn-sm w-100"
                                             data-bs-toggle="modal" data-bs-target="#zuordnungModal">
                                             <i class="bi bi-link-45deg me-1"></i>Zuordnen
                                         </button>
                                     </div>
-                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                    <div class="col-6 col-md-4 col-lg-3">
                                         <button type="button" id="autoZuordnungButton" class="btn btn-outline-warning btn-sm w-100">
-                                            <i class="bi bi-magic me-1"></i>Auto
+                                            <i class="bi bi-magic me-1"></i>Auto-Zuordnung
                                         </button>
                                     </div>
-                                    <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                    <div class="col-6 col-md-4 col-lg-3">
                                         <button type="button" id="vergangeneGewinnerButton" class="btn btn-outline-info btn-sm w-100"
                                             data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal">
                                             <i class="bi bi-clock-history me-1"></i>Historie
                                         </button>
                                     </div>
                                 </div>
-                                <!-- Export-Buttons -->
-                                <div class="border-top pt-2">
-                                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
+
+                                <!-- Listen & Berichte -->
+                                <div class="border-top pt-2 mb-3">
+                                    <small class="text-muted d-block mb-2"><i class="bi bi-list-ul me-1"></i>Listen &amp; Berichte</small>
                                     <div class="row g-2">
-                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <div class="col-6 col-md-4 col-lg-3">
                                             <button type="button" class="btn btn-outline-success btn-sm w-100 export-btn"
                                                 data-export-type="csv">
                                                 <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
                                             </button>
                                         </div>
-                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <div class="col-6 col-md-4 col-lg-3">
                                             <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
                                                 data-export-type="pdf-all">
                                                 <i class="bi bi-file-earmark-pdf me-1"></i>PDF Alle
                                             </button>
                                         </div>
-                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
-                                                data-export-type="pdf-schnitzerei">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>Schnitzerei
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
-                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
-                                                data-export-type="pdf-akura">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>Akura
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <div class="col-6 col-md-4 col-lg-3">
                                             <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
                                                 data-export-type="pdf-jm">
                                                 <i class="bi bi-file-earmark-pdf me-1"></i>JM Preise
                                             </button>
                                         </div>
-                                        <div class="col-6 col-md-4 col-lg-3 col-xl-2-4">
+                                        <div class="col-6 col-md-4 col-lg-3">
                                             <button type="button" class="btn btn-outline-secondary btn-sm w-100 export-btn"
                                                 data-export-type="pdf-mitglieder-info">
                                                 <i class="bi bi-people-fill me-1"></i>Mitglieder
@@ -189,16 +164,32 @@ if (WANDERPREISE_DEBUG) {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+
+                                <!-- Gravur-Aufträge -->
+                                <div class="border-top pt-2">
+                                    <small class="text-muted d-block mb-2"><i class="bi bi-pen me-1"></i>Gravur-Aufträge</small>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
+                                                data-export-type="pdf-schnitzerei">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>Schnitzerei
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
+                                                data-export-type="pdf-akura">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>Akura
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                    <?php
+                    $ac_body = ob_get_clean();
+                    include 'partials/action_card.inc.php';
+                    ?>
 
                     <!-- Wanderpreise Liste -->
                     <div class="table-wrapper mb-4">
-                        <h5 class="table-title">
-                            <i class="bi bi-list me-2"></i>
-                            <span id="wanderpreisListTitle">Wanderpreise Übersicht</span>
-                        </h5>
                         <div class="table-responsive">
                             <div id="wanderpreisTableContainer">
                                 <div class="p-4 text-center">
@@ -307,10 +298,10 @@ if (WANDERPREISE_DEBUG) {
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="submit" form="addWanderpreisForm" class="btn btn-primary">
+                <button type="submit" form="addWanderpreisForm" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-save me-1"></i> Speichern
                 </button>
             </div>
@@ -377,42 +368,11 @@ if (WANDERPREISE_DEBUG) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-primary" id="saveZuordnung">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="saveZuordnung">
                     <i class="bi bi-save me-1"></i>Zuordnung speichern
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal zur Bestätigung für das Löschen -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalLabel">
-                    <i class="bi bi-exclamation-triangle"></i> Bestätigung erforderlich
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-            </div>
-            <div class="modal-body">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
-                    <div>
-                        <strong>Möchtest du diesen Wanderpreis wirklich löschen?</strong>
-                        <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-outline-danger" id="confirmAction">
-                    <i class="bi bi-trash me-1"></i>Löschen bestätigen
                 </button>
             </div>
         </div>
@@ -449,10 +409,10 @@ if (WANDERPREISE_DEBUG) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-primary" id="startExport">
+                <button type="button" class="btn btn-outline-info btn-sm" id="startExport">
                     <i class="bi bi-download me-1"></i>Export starten
                 </button>
             </div>
@@ -523,11 +483,11 @@ if (WANDERPREISE_DEBUG) {
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-primary" id="saveVergangenerGewinner">
-                    <i class="bi bi-save me-1"></i>Gewinner eintragen
+                <button type="button" class="btn btn-outline-success btn-sm" id="saveVergangenerGewinner">
+                    <i class="bi bi-plus-circle me-1"></i>Gewinner eintragen
                 </button>
             </div>
         </div>
@@ -598,10 +558,10 @@ if (WANDERPREISE_DEBUG) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Schließen
                 </button>
-                <button type="button" class="btn btn-primary" id="exportHistoryBtn">
+                <button type="button" class="btn btn-outline-info btn-sm" id="exportHistoryBtn">
                     <i class="bi bi-file-earmark-pdf me-1"></i>Historie als PDF
                 </button>
             </div>
@@ -707,10 +667,10 @@ if (WANDERPREISE_DEBUG) {
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-primary" id="saveEditWanderpreis">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="saveEditWanderpreis">
                     <i class="bi bi-save me-1"></i>Änderungen speichern
                 </button>
             </div>
@@ -733,8 +693,8 @@ if (WANDERPREISE_DEBUG) {
                 <small class="text-muted">Hinweis: Option C aktiv â€“ 0/leer = alle Jahre.</small>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-primary" id="confirmAutoZuordnung">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-outline-success btn-sm" id="confirmAutoZuordnung">
                     Ja, starten
                 </button>
             </div>
@@ -742,29 +702,6 @@ if (WANDERPREISE_DEBUG) {
     </div>
 </div>
 
-<div class="modal fade" id="confirmDeleteHistorieModal" tabindex="-1" aria-labelledby="confirmDeleteHistorieLabel"
-    aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="confirmDeleteHistorieLabel"><i class="bi bi-exclamation-triangle"></i>
-                    Wirklich löschen?</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Schließen"></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmDeleteHistorieText">Soll dieser Eintrag wirklich gelöscht werden?</p>
-                <input type="hidden" id="deleteHistorieId" value="">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteHistorieYes">
-                    <i class="bi bi-trash"></i> Ja, löschen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 <!-- Select2 JavaScript für suchbare Dropdowns -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -811,7 +748,6 @@ if (WANDERPREISE_DEBUG) {
             if (wpId) $('#vg_wanderpreis').trigger('change');
         });
 
-        var wanderpreisId = null;
         var currentExportType = null;
 
 
@@ -1253,53 +1189,42 @@ $('#startExport').on('click', function () {
             }, 300);
         });
 
-        // Wanderpreis löschen
+        // Wanderpreis löschen — Bestätigung via SweetAlert2, dann AJAX
         $(document).on('click', '.delete-wanderpreis', function () {
-            wanderpreisId = $(this).data('id');
-            $('#confirmModal').modal('show');
-        });
-
-        // Löschen bestätigen (robust + echtes JSON + FK-Fehler sichtbar)
-        $('#confirmAction').off('click').on('click', function () {
-            if (!wanderpreisId) {
+            const wpId = $(this).data('id');
+            if (!wpId) {
                 msvToast('Fehler: Keine Wanderpreis-ID vorhanden.', 'error');
                 return;
             }
+            const name = $(this).closest('tr').data('bezeichnung') || 'diesen Wanderpreis';
+            msvConfirmDelete(name).then(function (res) {
+                if (!res.isConfirmed) return;
 
-            const csrf = $('input[name="csrf_token"]').val() || window.CSRF_TOKEN || '';
-            const $btn = $(this);
-            const originalText = $btn.html();
+                const csrf = $('input[name="csrf_token"]').val() || window.CSRF_TOKEN || '';
 
-            $btn.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
-
-            $.ajax({
-                url: 'wanderpreise/delete_wanderpreis.php',
-                method: 'POST',
-                dataType: 'json', // <- erzwingt JSON, kein try/catch nötig
-                data: { wanderpreis_id: wanderpreisId, csrf_token: csrf }
-            })
-                .done(function (res) {
-                    if (res && res.success) {
-                        $('#confirmModal').modal('hide');
-                        msvToast(res.message || 'Wanderpreis erfolgreich gelöscht', 'success');
-                        loadWanderpreise();
-                    } else {
-                        msvToast('Löschen fehlgeschlagen: ' + (res?.message || 'Unbekannter Fehler'), 'error');
-                    }
+                $.ajax({
+                    url: 'wanderpreise/delete_wanderpreis.php',
+                    method: 'POST',
+                    dataType: 'json', // <- erzwingt JSON, kein try/catch nötig
+                    data: { wanderpreis_id: wpId, csrf_token: csrf }
                 })
-                .fail(function (xhr) {
-                    let msg = (xhr.responseJSON && xhr.responseJSON.message) || xhr.responseText || xhr.statusText || 'Unbekannter Fehler';
-                    if (xhr.status === 409) {
-                        // typischer FK-Fehler (z. B. verknüpfte Gewinner/Historie)
-                        msg = 'Löschen nicht möglich: Es existieren verknüpfte Datensätze (z. B. Gewinner/Historie).';
-                    }
-                    msvToast('Fehler beim Löschen: ' + msg, 'error');
-                })
-                .always(function () {
-                    $btn.prop('disabled', false).html(originalText);
-                    wanderpreisId = null;
-                });
+                    .done(function (res) {
+                        if (res && res.success) {
+                            msvToast(res.message || 'Wanderpreis erfolgreich gelöscht', 'success');
+                            loadWanderpreise();
+                        } else {
+                            msvToast('Löschen fehlgeschlagen: ' + (res?.message || 'Unbekannter Fehler'), 'error');
+                        }
+                    })
+                    .fail(function (xhr) {
+                        let msg = (xhr.responseJSON && xhr.responseJSON.message) || xhr.responseText || xhr.statusText || 'Unbekannter Fehler';
+                        if (xhr.status === 409) {
+                            // typischer FK-Fehler (z. B. verknüpfte Gewinner/Historie)
+                            msg = 'Löschen nicht möglich: Es existieren verknüpfte Datensätze (z. B. Gewinner/Historie).';
+                        }
+                        msvToast('Fehler beim Löschen: ' + msg, 'error');
+                    });
+            });
         });
 
         // Gewinner-/Historie-Modal per Button öffnen
@@ -1739,82 +1664,59 @@ $('#startExport').on('click', function () {
         });
     });
 
-    // 1) Klick auf "Löschen" in der Historien-Tabelle öffnet das Bestätigungsmodal
+    // Klick auf "Löschen" in der Historien-Tabelle: Bestätigung via SweetAlert2, dann Löschen
     $(document).on('click', '.btn-delete-historie', function () {
-        const id = $(this).data('id');
-        const jahr = $(this).data('jahr');
-        const name = $(this).data('name');
-        const wpid = $(this).data('wpid');
+        const id = parseInt($(this).data('id'), 10) || 0;
+        const wpid = parseInt($(this).data('wpid'), 10) || 0;
 
-        $('#deleteHistorieId').val(id);
-        $('#deleteHistorieWpId').val(wpid);  // Wanderpreis-ID speichern
-        $('#confirmDeleteHistorieText').text(`Soll der Eintrag ${name} (${jahr}) wirklich gelöscht werden?`);
+        msvConfirmDelete('diesen Eintrag').then(function (res) {
+            if (!res.isConfirmed) return;
 
-        const modal = new bootstrap.Modal(document.getElementById('confirmDeleteHistorieModal'));
-        modal.show();
-    });
+            const csrfToken = $('input[name="csrf_token"]').first().val() || '';
 
-    // 2) Bestätigung: tatsächliches Löschen via Backend
-    $('#confirmDeleteHistorieYes').on('click', function () {
-        const id = parseInt($('#deleteHistorieId').val(), 10) || 0;
-        const wpid = parseInt($('#deleteHistorieWpId').val(), 10) || 0;
-        const $btn = $(this).prop('disabled', true);
-
-        const csrfToken = $('input[name="csrf_token"]').first().val() || '';
-
-        if (!id) {
-            (window.showToast ? showToast : alert)('Kein gültiger Eintrags-ID gefunden.', 'error');
-            $btn.prop('disabled', false);
-            return;
-        }
-        if (!csrfToken) {
-            (window.showToast ? showToast : alert)('Kein CSRF-Token gefunden.', 'error');
-            $btn.prop('disabled', false);
-            return;
-        }
-
-        $.ajax({
-            url: '/inc/wanderpreise/delete_vergangener_gewinner.php',
-            method: 'POST',
-            dataType: 'json',
-            data: { id: id, csrf_token: csrfToken, wanderpreis_id: wpid }, // wpid mitgeben (falls Backend das braucht)
-            headers: { 'Accept': 'application/json' }, // optional
-            success: function (json) {
-                if (json && json.success) {
-                    (window.showToast ? showToast : alert)('Eintrag gelöscht', 'success');
-
-                    // Bestätigungsmodal schließen
-                    bootstrap.Modal.getInstance(
-                        document.getElementById('confirmDeleteHistorieModal')
-                    )?.hide();
-
-                    // Wanderpreis-ID & Bezeichnung verlässlich vom Modal holen
-                    const $hist = $('#wanderpreisHistorieModal');
-                    const wpid = Number($hist.data('wanderpreisId')) || 0;
-                    const bez = String($hist.data('bezeichnung') || '')
-                        || $('#wanderpreisHistorieModalLabel').text()
-                            .replace(/^.*Historie:\s*/, '').trim();
-
-                    console.table({ reload_wpid: wpid, reload_bez: bez }); // Debug
-
-                    if (wpid && typeof window.loadWanderpreisHistorie === 'function') {
-                        window.loadWanderpreisHistorie(wpid, bez);
-                    } else {
-                        // Fallback, falls irgendwas schief ist
-                        (window.showToast ? showToast : alert)('Konnte Historie nicht aktualisieren (fehlende ID).', 'warning');
-                    }
-
-                    // Optional Hauptliste aktualisieren
-                    if (typeof loadWanderpreise === 'function') loadWanderpreise();
-                } else {
-                    (window.showToast ? showToast : alert)(
-                        'Fehler: ' + ((json && json.message) || 'Unbekannter Fehler'), 'error');
-                }
-            },
-
-            complete: function () {
-                $btn.prop('disabled', false);
+            if (!id) {
+                (window.showToast ? showToast : alert)('Kein gültiger Eintrags-ID gefunden.', 'error');
+                return;
             }
+            if (!csrfToken) {
+                (window.showToast ? showToast : alert)('Kein CSRF-Token gefunden.', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '/inc/wanderpreise/delete_vergangener_gewinner.php',
+                method: 'POST',
+                dataType: 'json',
+                data: { id: id, csrf_token: csrfToken, wanderpreis_id: wpid }, // wpid mitgeben (falls Backend das braucht)
+                headers: { 'Accept': 'application/json' }, // optional
+                success: function (json) {
+                    if (json && json.success) {
+                        (window.showToast ? showToast : alert)('Eintrag gelöscht', 'success');
+
+                        // Wanderpreis-ID & Bezeichnung verlässlich vom Modal holen
+                        const $hist = $('#wanderpreisHistorieModal');
+                        const reloadWpid = Number($hist.data('wanderpreisId')) || 0;
+                        const bez = String($hist.data('bezeichnung') || '')
+                            || $('#wanderpreisHistorieModalLabel').text()
+                                .replace(/^.*Historie:\s*/, '').trim();
+
+                        console.table({ reload_wpid: reloadWpid, reload_bez: bez }); // Debug
+
+                        if (reloadWpid && typeof window.loadWanderpreisHistorie === 'function') {
+                            window.loadWanderpreisHistorie(reloadWpid, bez);
+                        } else {
+                            // Fallback, falls irgendwas schief ist
+                            (window.showToast ? showToast : alert)('Konnte Historie nicht aktualisieren (fehlende ID).', 'warning');
+                        }
+
+                        // Optional Hauptliste aktualisieren
+                        if (typeof loadWanderpreise === 'function') loadWanderpreise();
+                    } else {
+                        (window.showToast ? showToast : alert)(
+                            'Fehler: ' + ((json && json.message) || 'Unbekannter Fehler'), 'error');
+                    }
+                }
+            });
         });
     });
 

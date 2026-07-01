@@ -68,15 +68,7 @@ include 'header.inc.php';
         <div class="col-xl-7 col-lg-8 col-md-10 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                            CSV Import - Endschiessen
-                        </h2>
-                        <p class="text-muted mt-1">3-Phasen-Workflow: Upload → Auswahl → Import</p>
-                    </div>
-                </div>
+                <?php $page_title = 'CSV Import - Endschiessen'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     
@@ -162,10 +154,10 @@ include 'header.inc.php';
                             
                             <!-- Phase 2 Navigation -->
                             <div class="text-center mt-4">
-                                <button type="button" class="btn btn-outline-secondary me-2" onclick="WorkflowHelper.goToPhase(1)">
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="WorkflowHelper.goToPhase(1)">
                                     <i class="bi bi-arrow-left me-2"></i>Zurück
                                 </button>
-                                <button type="button" class="btn btn-success" id="proceedToImportBtn" onclick="WorkflowHelper.proceedToImport()" disabled>
+                                <button type="button" class="btn btn-outline-success btn-sm" id="proceedToImportBtn" onclick="WorkflowHelper.proceedToImport()" disabled>
                                     <i class="bi bi-arrow-right me-2"></i>Weiter zum Import
                                 </button>
                             </div>
@@ -221,10 +213,10 @@ include 'header.inc.php';
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-2"></i>Abbrechen
                 </button>
-                <button type="button" class="btn btn-success" id="modalConfirmImportBtn">
+                <button type="button" class="btn btn-outline-success btn-sm" id="modalConfirmImportBtn">
                     <i class="bi bi-check-circle me-2"></i>Bestätigen & Importieren
                 </button>
             </div>
@@ -241,9 +233,9 @@ const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- JavaScript Module einbinden -->
-<script src="endsch_import/ui_helper.js?v=<?php echo time(); ?>"></script>
-<script src="endsch_import/import_manager.js?v=<?php echo time(); ?>"></script>
-<script src="endsch_import/csv_handler.js?v=<?php echo time(); ?>"></script>
+<script src="endsch_import/ui_helper.js?v=<?php echo @filemtime(__DIR__ . '/endsch_import/ui_helper.js') ?: '1'; ?>"></script>
+<script src="endsch_import/import_manager.js?v=<?php echo @filemtime(__DIR__ . '/endsch_import/import_manager.js') ?: '1'; ?>"></script>
+<script src="endsch_import/csv_handler.js?v=<?php echo @filemtime(__DIR__ . '/endsch_import/csv_handler.js') ?: '1'; ?>"></script>
 
 <script>
 // 3-Phasen Workflow Initialisierung

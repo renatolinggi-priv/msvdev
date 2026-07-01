@@ -38,13 +38,13 @@ include 'header.inc.php';
 ?>
 
 <div class="container-fluid mt-3">
-    <h4 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i>CSV-Schnittstelle (Schiessanlage)</h4>
+    <h2 class="h4 mb-3 page-title">CSV-Schnittstelle (Schiessanlage)</h2>
 
     <!-- Einstellungen -->
     <div class="card data-card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="bi bi-gear me-1"></i>Einstellungen</span>
-            <button class="btn btn-primary btn-sm" onclick="CsvSettings.save()">
+            <button class="btn btn-outline-primary btn-sm" onclick="CsvSettings.save()">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
         </div>
@@ -74,7 +74,7 @@ include 'header.inc.php';
     <div class="card data-card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="bi bi-file-earmark-spreadsheet me-1"></i>Export-Status</span>
-            <button class="btn btn-success btn-sm" onclick="CsvSettings.exportNow()" id="btnExport">
+            <button class="btn btn-outline-info btn-sm" onclick="CsvSettings.exportNow()" id="btnExport">
                 <i class="bi bi-download me-1"></i>Jetzt exportieren
             </button>
         </div>

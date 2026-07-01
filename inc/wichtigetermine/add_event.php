@@ -60,7 +60,7 @@ if (function_exists('fastcgi_finish_request')) {
 //  - JSK-Termin    (fuer_jsk=1): Jungschuetzen-Teilnehmer        -> portal/jsk_termine.php
 // $rolleFilter stammt aus festem Code (kein User-Input) -> Interpolation unkritisch.
 @include_once __DIR__ . '/../push_helper.php';
-if (function_exists('sendePushAnBenutzer')) {
+if (function_exists('benachrichtigungZustellen')) {
     try {
         $pdb = getDB();
         if ($fuerJsk) {
@@ -71,14 +71,14 @@ if (function_exists('sendePushAnBenutzer')) {
             $pushUrl     = 'portal/termine.php';
         }
 
-        // Approved Empfaenger mit aktivem Haupt- + Themen-Schalter (fehlende Zeile = an).
+        // Empfaenger mit aktivem termine-Thema (fehlende Zeile = an). push_aktiv steuert
+        // nur den Push, NICHT die Glocke -> hier bewusst kein push_aktiv-Filter.
         $empf = $pdb->query(
             "SELECT u.id
                FROM users u
                LEFT JOIN benachrichtigung_prefs p ON p.user_id = u.id
               WHERE u.status = 'approved'
                 AND $rolleFilter
-                AND COALESCE(p.push_aktiv, 1) = 1
                 AND COALESCE(p.termine, 1) = 1"
         )->fetchAll(PDO::FETCH_COLUMN);
 
@@ -93,7 +93,7 @@ if (function_exists('sendePushAnBenutzer')) {
 
             foreach ($empf as $uid) {
                 try {
-                    sendePushAnBenutzer((int) $uid, 'Neuer Termin', $text, $pushUrl);
+                    benachrichtigungZustellen((int) $uid, 'Neuer Termin', $text, $pushUrl, 'termine');
                 } catch (\Throwable $e) {
                     error_log('add_event push (user ' . $uid . '): ' . $e->getMessage());
                 }

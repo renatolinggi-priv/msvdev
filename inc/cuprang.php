@@ -16,13 +16,14 @@ $page_specific_css = '
 .main-content-wrapper { max-width: 980px; }
 /* Karten an ihren Inhalt anpassen (kein erzwungener Leerraum durch flex:1 1 auto / min-height) */
 .content-background .table-wrapper { flex: 0 0 auto !important; }
+/* Export-Toolbar besteht hier nur aus dem Kopf (Rangliste-Button steht dort) → Trenner/
+   Leerraum darunter entfernen, damit die Karte kompakt bleibt. Nur cuprang-scoped. */
+.export-toolbar-head { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 
 /* Mobile Optimierung für Cuprang */
 @media (max-width: 767.98px) {
     .main-content-wrapper { max-width: none; }
-    .form-select { min-height: 48px !important; font-size: 16px !important; }
-    .btn { min-height: 48px !important; font-size: 16px !important; }
-    .table-title { font-size: 1.1rem !important; }
+    .table-title { font-size: 0.95rem !important; }
     .container-fluid { padding: 0.5rem !important; }
 }
 ';
@@ -37,39 +38,27 @@ include 'header.inc.php';
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
                 <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-trophy me-2"></i>
-                            MSV Wilen Vereinscup – Übersicht
-                        </h2>
-                    </div>
-                </div>
-                
+                <?php $page_title = "MSV Wilen Vereinscup – Übersicht"; include 'partials/page_header.inc.php'; ?>
+
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
-                    <!-- Jahr-Auswahl -->
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                            <i class="bi bi-calendar3 me-1"></i>Jahr:
-                        </label>
-                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
-                    </div>
-                    <!-- Export-Toolbar (einheitlich mit endschrang.php) -->
-                    <div class="export-toolbar mb-4">
+                    <!-- Jahr-Auswahl + Dokumente erstellen (einreihige, kompakte Karte) -->
+                    <div class="export-toolbar mb-3">
                         <div class="export-toolbar-head">
+                            <label for="yearSelect" class="export-year-label mb-0">
+                                <i class="bi bi-calendar3 me-1"></i>Jahr:
+                            </label>
+                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
+                            <span class="export-toolbar-divider" aria-hidden="true"></span>
                             <i class="bi bi-file-earmark-arrow-down"></i>
                             <span>Dokumente erstellen</span>
-                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
+                            <button id="btnCupPdf" type="button" class="btn btn-outline-info btn-sm pdf-btn ms-auto">
+                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
+                            </button>
+                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
                             </button>
                         </div>
-                        <div class="export-group-btns">
-                            <button id="btnCupPdf" type="button" class="btn btn-outline-info btn-sm pdf-btn">
-                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
-                            </button>
-                        </div>
-                        <div id="pdf-link" class="mt-2"></div>
                     </div>
 
                     <?php

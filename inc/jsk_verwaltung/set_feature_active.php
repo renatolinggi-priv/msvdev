@@ -1,5 +1,5 @@
 <?php
-// inc/jungschuetzen_verwaltung/set_feature_active.php
+// inc/jsk_verwaltung/set_feature_active.php
 // Globaler Admin-Schalter fuer die Jungschuetzen-Betreuung (settings.jsk_betreuung_aktiv).
 // Nur Admin. PDO, CSRF.
 

@@ -6,6 +6,7 @@
  */
 
 include '../config.php';
+require_once __DIR__ . '/../csrf.inc.php';
 
 // Header für JSON-Response
 header('Content-Type: application/json');
@@ -16,6 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     exit;
 }
+
+csrf_require(true);
+if (empty($_SESSION['user_id'])) { http_response_code(403); header('Content-Type: application/json'); echo json_encode(['success'=>false,'message'=>'Nicht angemeldet']); exit; }
 
 // Eingabevalidierung
 $pair_id = isset($_POST['pair_id']) ? (int)$_POST['pair_id'] : 0;

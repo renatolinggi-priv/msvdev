@@ -85,15 +85,7 @@ include 'header.inc.php';
         <div class="col-xl-7 col-lg-11 col-12 ps-0">
             <div class="main-content-wrapper">
                 <!-- Header -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            CSV Resultate Viewer
-                        </h2>
-                        <p class="text-muted mt-1">Lade eine CSV-Datei hoch, um alle Stiche und deren Details anzuzeigen</p>
-                    </div>
-                </div>
+                <?php $page_title = 'CSV Resultate Viewer'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
             
@@ -155,8 +147,8 @@ include 'header.inc.php';
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- JavaScript Module einbinden -->
-<script src="check_resultscsv/ui_helper.js?v=<?php echo time(); ?>"></script>
-<script src="check_resultscsv/csv_viewer.js?v=<?php echo time(); ?>"></script>
+<script src="check_resultscsv/ui_helper.js?v=<?php echo @filemtime(__DIR__ . '/check_resultscsv/ui_helper.js') ?: '1'; ?>"></script>
+<script src="check_resultscsv/csv_viewer.js?v=<?php echo @filemtime(__DIR__ . '/check_resultscsv/csv_viewer.js') ?: '1'; ?>"></script>
 
 <script>
 // Scroll-Höhen-Berechnung optimiert

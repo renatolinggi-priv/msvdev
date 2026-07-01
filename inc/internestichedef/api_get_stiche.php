@@ -11,7 +11,7 @@ session_start();
 
 // CSRF prüfen
 $input = json_decode(file_get_contents('php://input'), true);
-if (!isset($input['csrf_token']) || $input['csrf_token'] !== $_SESSION['csrf_token']) {
+if (empty($_SESSION['csrf_token']) || !isset($input['csrf_token']) || !hash_equals($_SESSION['csrf_token'], (string)$input['csrf_token'])) {
     echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF-Token']);
     exit;
 }

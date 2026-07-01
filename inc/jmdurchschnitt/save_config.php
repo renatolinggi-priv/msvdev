@@ -4,6 +4,7 @@
 session_start();
 include '../config.php';
 require_once __DIR__ . '/config_helper.php';
+require_once __DIR__ . '/../csrf.inc.php';
 
 if ($conn->connect_error) {
     http_response_code(500);
@@ -12,11 +13,7 @@ if ($conn->connect_error) {
 }
 
 // CSRF Token pruefen
-if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF Token']);
-    exit;
-}
+csrf_require(true);
 
 $year = isset($_POST['year']) ? intval($_POST['year']) : 0;
 $anzahl = isset($_POST['anzahl_zaehlende']) ? intval($_POST['anzahl_zaehlende']) : 0;

@@ -13,22 +13,22 @@ $page_specific_css = "
     overflow: hidden;
 }
 
-.ranking-table { font-size: .9rem; margin-bottom: 0; }
+.ranking-table { font-size: .85rem; margin-bottom: 0; }
 
 .ranking-table thead th {
-    background: #f8fafc;
+    background-color: #f8f9fa;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: .72rem;
-    letter-spacing: .4px;
-    color: #64748b;
-    padding: .85rem 1rem;
+    font-size: .75rem;
+    letter-spacing: .5px;
+    color: var(--secondary-color);
+    padding: .75rem;
     border-bottom: 1px solid #e9eef5;
     white-space: nowrap;
 }
 
 .ranking-table tbody td {
-    padding: .7rem 1rem;
+    padding: .5rem .75rem;
     vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
     white-space: nowrap;
@@ -59,16 +59,7 @@ $page_specific_css = "
 .ranking-table .preis-col    { width: 16%; }
 .ranking-table .aktionen-col { width: 70px; }
 
-/* Rang-Badge mit Medaillen-Farben */
-.rang-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 34px; height: 30px; padding: 0 .55rem;
-    border-radius: 999px; font-weight: 700; font-size: .82rem;
-    background: #eef2f7; color: #475569;
-}
-.rang-badge.r1 { background: linear-gradient(135deg,#fde68a,#f59e0b); color: #7c2d12; box-shadow: 0 1px 2px rgba(245,158,11,.35); }
-.rang-badge.r2 { background: linear-gradient(135deg,#e8edf3,#aab6c5); color: #1e293b; }
-.rang-badge.r3 { background: linear-gradient(135deg,#fed7aa,#fb923c); color: #7c2d12; }
+/* Rang-Badge mit Medaillen-Farben (.rang-badge/.r1/.r2/.r3) jetzt zentral in css/msv-styles.css. */
 
 /* Preis-Zelle */
 .preis-cell { font-weight: 700; color: #0f766e; white-space: nowrap; }
@@ -125,16 +116,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-xxl-8 col-xl-10 col-lg-12 col-md-12 col-12 ps-0">
             <!-- Äußerer weißer Container -->
             <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
-                <div class="row mb-4 d-none d-md-flex">
-                    <div class="col-md-12">
-                        <h2 class="h4 mb-0" style="color: var(--secondary-color);">
-                            <i class="bi bi-person-badge me-2"></i>
-                            Einzelrangierungen
-                        </h2>
-                        <!--<p class="text-muted mb-0">Verwaltung der Einzelrangierungen von Mitgliedern</p>-->
-                    </div>
-                </div>
+                <?php $page_title = 'Einzelrangierungen'; include 'partials/page_header.inc.php'; ?>
                 
                 <!-- Weißer Hintergrund-Container -->
                 <div class="content-background">
@@ -153,15 +135,10 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
 
                             <!-- Aktionsbereich (Bootstrap Collapse) -->
-                            <div class="card action-card mb-0">
-                                <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                                     data-bs-toggle="collapse" data-bs-target="#einzelrangActions"
-                                     aria-expanded="false" aria-controls="einzelrangActions">
-                                    <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                                    <i class="bi bi-chevron-down action-chevron"></i>
-                                </div>
-                                <div class="collapse" id="einzelrangActions">
-                                    <div class="card-body pt-2 pb-3 px-3">
+<?php
+                            $ac_id = 'einzelrangActions';
+                            ob_start();
+                            ?>
                                         <div class="row g-2">
                                             <div class="col-6">
                                                 <button type="button" id="addNewBtn" class="btn btn-outline-success btn-sm w-100" disabled>
@@ -169,14 +146,15 @@ if (empty($_SESSION['csrf_token'])) {
                                                 </button>
                                             </div>
                                             <div class="col-6">
-                                                <button type="button" id="exportPdfBtn" class="btn btn-outline-danger btn-sm w-100" style="display: none;">
+                                                <button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm w-100" style="display: none;">
                                                     <i class="bi bi-file-pdf me-1"></i>PDF
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <?php
+                            $ac_body = ob_get_clean();
+                            include 'partials/action_card.inc.php';
+                            ?>
                         </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Neue Rangierung hinzufügen -->
@@ -212,7 +190,7 @@ if (empty($_SESSION['csrf_token'])) {
                                     <input type="number" id="preisInput" class="form-control" min="0" step="0.05" placeholder="z.B. 100">
                                 </div>
                                 <div class="col-12 d-flex justify-content-end">
-                                    <button type="button" id="saveRankingBtn" class="btn btn-primary btn-sm">
+                                    <button type="button" id="saveRankingBtn" class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-save me-1"></i>Speichern
                                     </button>
                                 </div>
@@ -293,8 +271,8 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
 
         <hr>
-        <button type="button" class="btn btn-primary w-100" id="saveEditRankingBtn">
-            <i class="bi bi-check-circle me-1"></i>Speichern
+        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="saveEditRankingBtn">
+            <i class="bi bi-save me-1"></i>Speichern
         </button>
     </div>
 </div>
@@ -439,7 +417,7 @@ $(document).ready(function () {
                     <td class="text-center">${ranking.resultat || '<span class="text-muted">–</span>'}</td>
                     <td class="text-end"><span class="preis-cell">CHF ${parseFloat(ranking.preis).toFixed(2)}</span></td>
                     <td class="text-center row-actions">
-                        <button type="button" class="btn btn-outline-danger delete-ranking" data-tooltip="Löschen"
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-ranking" data-tooltip="Löschen"
                                 data-id="${ranking.id}" data-anlass="${ranking.anlass_bezeichnung}"
                                 data-mitglied="${ranking.mitglied_name}">
                             <i class="bi bi-trash"></i>
