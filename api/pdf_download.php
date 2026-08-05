@@ -6,9 +6,11 @@
  * Usage: pdf_download.php?year=2024
  */
 
-// Fehlerbehandlung
-error_reporting(0);
-ini_set('display_errors', 0);
+// Fehlerbehandlung: nichts an den Browser ausgeben (wuerde das PDF zerstoeren), aber
+// alles ins Error-Log schreiben. Vorher stand hier error_reporting(0) -- das hat auch
+// das Logging abgeschaltet, weshalb der HTTP 500 dieses Endpoints unsichtbar blieb.
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
 
 // Parameter
 $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
@@ -26,9 +28,16 @@ if (!file_exists($export_script)) {
 // Output Buffer starten um JSON zu fangen
 ob_start();
 
-// Export-Script ausführen
+// Export-Script ausführen. Es benutzt relative Pfade ('../vendor/autoload.php',
+// '../config.php'), die vom Working Directory abhaengen -- ohne chdir() laufen die ins
+// Leere und der Endpoint endet in einem Fatal (HTTP 500, leere Antwort).
+$cwd_vorher = getcwd();
+chdir(dirname($export_script));
 $_GET['year'] = $year;
 include $export_script;
+if ($cwd_vorher !== false) {
+    chdir($cwd_vorher);
+}
 
 // Output abfangen
 $output = ob_get_clean();

@@ -17,3 +17,28 @@ Options -Indexes
     # Leitet /fragebogen auf fragebogen.php um (öffentliches Umfrageformular)
     RewriteRule ^fragebogen$ fragebogen.php [L]
 </IfModule>
+
+# Security-Header (eingefuehrt 05.08.2026). Vorher lieferte die Seite ausser dem
+# Session-Cookie keinen einzigen Schutz-Header aus.
+#
+# Bewusst KEINE Content-Security-Policy: die Codebasis arbeitet durchgehend mit
+# Inline-<script> und Inline-<style>. Eine naive CSP wuerde Portal und Admin lahmlegen --
+# das ist ein eigenes Projekt, kein Einzeiler.
+<IfModule mod_headers.c>
+    # HTTPS erzwingen (1 Jahr). Absichtlich OHNE includeSubDomains/preload: das wuerde
+    # alle *.msvwilen.ch-Subdomains mitzwingen, auch fremd betriebene.
+    Header always set Strict-Transport-Security "max-age=31536000"
+
+    # Kein MIME-Sniffing. Uploads werden ueber api/dokument_download.php und
+    # api/foto_serve.php mit per finfo erkanntem Typ ausgeliefert -- der Browser soll
+    # den Header nicht ueberstimmen.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Referrer nur innerhalb derselben Herkunft in voller Laenge weitergeben.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Clickjacking: Einbetten in fremde Seiten verhindern. Geprueft am 05.08.2026 --
+    # www.msvwilen.ch bettet nichts von hier per iframe ein. Der PDF-Viewer im Portal
+    # (openPortalDoc) nutzt iframes innerhalb derselben Herkunft, SAMEORIGIN genuegt.
+    Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>

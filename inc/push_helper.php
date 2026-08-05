@@ -56,11 +56,17 @@ if (!function_exists('pushLeadTime')) {
  * Web-Push (push_abos, VAPID) und Native-Push (push_geraete_native, FCM) laufen
  * PARALLEL und unabhaengig: ein Kanal-Fehler beeintraechtigt den anderen nicht.
  *
+ * $tag (optional): Kollaps-Schluessel. Eine neue Meldung mit gleichem Tag ERSETZT die
+ * alte auf dem Geraet statt sie zu stapeln (Web: showNotification-tag in sw.js,
+ * Android: notification.tag, iOS: apns-collapse-id). Leer = kein Kollabieren.
+ * Tags immer eng fassen (z.B. "jm-2026-08-08"), sonst verdeckt eine Meldung eine
+ * inhaltlich andere.
+ *
  * @return int Anzahl erfolgreicher Zustellungen (web + native summiert).
  *             Abgelaufene Web-Abos (404/410) und tote FCM-Tokens werden automatisch geloescht.
  */
 if (!function_exists('sendePushAnBenutzer')) {
-    function sendePushAnBenutzer(int $userId, string $titel, string $text, string $url = '/portal/dashboard.php', ?int $badge = null): int {
+    function sendePushAnBenutzer(int $userId, string $titel, string $text, string $url = '/portal/dashboard.php', ?int $badge = null, string $tag = ''): int {
         $db = getDB();
         $erfolgreich = 0;
 
@@ -82,10 +88,9 @@ if (!function_exists('sendePushAnBenutzer')) {
                 ]]);
                 $webPush->setReuseVAPIDHeaders(true);
 
-                $payload = json_encode(
-                    ['titel' => $titel, 'text' => $text, 'url' => $url],
-                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-                );
+                $daten = ['titel' => $titel, 'text' => $text, 'url' => $url];
+                if ($tag !== '') { $daten['tag'] = $tag; } // sw.js: gleiche tag -> ersetzt statt stapelt
+                $payload = json_encode($daten, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                 foreach ($abos as $abo) {
                     try {
@@ -123,7 +128,7 @@ if (!function_exists('sendePushAnBenutzer')) {
         // ===== 2) Native-Push (FCM, additiv) ====================================
         // In eigenem try/catch -> kann den Web-Push niemals beeintraechtigen.
         try {
-            $erfolgreich += sendeNativePushAnBenutzer($db, $userId, $titel, $text, $url, $badge);
+            $erfolgreich += sendeNativePushAnBenutzer($db, $userId, $titel, $text, $url, $badge, $tag);
         } catch (\Throwable $e) {
             error_log('push_helper: Native-Push fehlgeschlagen: ' . $e->getMessage());
         }
@@ -145,10 +150,13 @@ if (!function_exists('sendePushAnBenutzer')) {
  * Fuer reine Push-Tests (api/push.php?action=test) NICHT verwenden -> dort weiterhin
  * direkt sendePushAnBenutzer() aufrufen, damit kein Inbox-Eintrag entsteht.
  *
+ * $tag wird nur an den Push weitergegeben (Kollaps-Schluessel, siehe sendePushAnBenutzer);
+ * der Inbox-Eintrag entsteht unabhaengig davon immer.
+ *
  * @return int Anzahl erfolgreicher Push-Zustellungen (0 wenn Push aus/keine Geraete).
  */
 if (!function_exists('benachrichtigungZustellen')) {
-    function benachrichtigungZustellen(int $userId, string $titel, string $text, string $url = '/portal/dashboard.php', string $kategorie = 'allgemein'): int {
+    function benachrichtigungZustellen(int $userId, string $titel, string $text, string $url = '/portal/dashboard.php', string $kategorie = 'allgemein', string $tag = ''): int {
         $db = getDB();
 
         // 1) In-App immer persistieren (best-effort: ein DB-Fehler darf den Push nicht verhindern)
@@ -165,7 +173,7 @@ if (!function_exists('benachrichtigungZustellen')) {
             $stmt->execute([$userId]);
             $on = $stmt->fetchColumn();
             if ($on === false || (int) $on === 1) {
-                return sendePushAnBenutzer($userId, $titel, $text, $url);
+                return sendePushAnBenutzer($userId, $titel, $text, $url, null, $tag);
             }
         } catch (\Throwable $e) {
             error_log('benachrichtigungZustellen: Push-Versand fehlgeschlagen (user ' . $userId . '): ' . $e->getMessage());
@@ -182,7 +190,7 @@ if (!function_exists('benachrichtigungZustellen')) {
  * @return int Anzahl erfolgreicher Zustellungen. Tote Tokens werden geloescht.
  */
 if (!function_exists('sendeNativePushAnBenutzer')) {
-    function sendeNativePushAnBenutzer(\PDO $db, int $userId, string $titel, string $text, string $url, ?int $badge = null): int {
+    function sendeNativePushAnBenutzer(\PDO $db, int $userId, string $titel, string $text, string $url, ?int $badge = null, string $tag = ''): int {
         $stmt = $db->prepare('SELECT id, fcm_token FROM push_geraete_native WHERE benutzer_id = ?');
         $stmt->execute([$userId]);
         $rows = $stmt->fetchAll();
@@ -211,12 +219,20 @@ if (!function_exists('sendeNativePushAnBenutzer')) {
             if ($badge !== null) {
                 $aps['badge'] = $badge;
             }
+            $android = ['priority' => 'high', 'notification' => ['default_sound' => true]];
+            $apns    = ['payload' => ['aps' => $aps]];
+            if ($tag !== '') {
+                // Ersetzen statt stapeln: Android ueber notification.tag, iOS ueber apns-collapse-id
+                // (max. 64 Byte -> lange Tags kuerzen).
+                $android['notification']['tag']    = $tag;
+                $apns['headers']['apns-collapse-id'] = substr($tag, 0, 64);
+            }
             $message = ['message' => [
                 'token'        => $row['fcm_token'],
                 'notification' => ['title' => $titel, 'body' => $text],
                 'data'         => ['url' => (string) $url],
-                'android'      => ['priority' => 'high', 'notification' => ['default_sound' => true]],
-                'apns'         => ['payload' => ['aps' => $aps]],
+                'android'      => $android,
+                'apns'         => $apns,
             ]];
 
             $resp = pushHttpPost($endpoint, json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $headers);

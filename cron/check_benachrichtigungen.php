@@ -89,11 +89,12 @@ function markiere(PDO $db, int $userId, string $kategorie, string $refTyp, int $
  * naechsten Lauf. Nur bei hartem Fehler kein Marker (-> Retry).
  */
 function zustellen(PDO $db, int $userId, string $kategorie, string $refTyp, int $refId,
-                   string $termin, string $titel, string $text, string $url, array &$stats): void {
+                   string $termin, string $titel, string $text, string $url, array &$stats,
+                   string $tag = ''): void {
     if (bereitsGemeldet($db, $userId, $refTyp, $refId, $termin)) { $stats['skipped']++; return; }
 
     try {
-        $n = benachrichtigungZustellen($userId, $titel, $text, $url, $kategorie);
+        $n = benachrichtigungZustellen($userId, $titel, $text, $url, $kategorie, $tag);
     } catch (\Throwable $e) {
         error_log('cron benachrichtigungen: Sendefehler user ' . $userId . ': ' . $e->getMessage());
         $stats['failed']++;
@@ -114,6 +115,49 @@ function fmtZeit(?string $z): string {
     if ($z === '') return '';
     if (preg_match('/^(\d{2}):(\d{2}):\d{2}$/', $z, $m)) return $m[1] . ':' . $m[2]; // TIME -> HH:MM
     return $z;
+}
+
+/**
+ * Fasst alle Vorkommnisse EINES Tages zu einer Sammelmeldung zusammen.
+ *
+ * Gleiche Bezeichnung mit mehreren Startzeiten wird zu einer Zeile gebuendelt
+ * ("SV Sattel (08:00, 13:30)") - damit erzeugt ein Anlass mit Vormittags- und
+ * Nachmittagsdurchgang nur noch eine Meldung statt zwei. Bei genau einem Anlass
+ * bleibt der bisherige Wortlaut erhalten.
+ *
+ * @param array   $items    Liste aus ['bez' => Bezeichnung, 'zeit' => 'HH:MM' oder '']
+ * @param ?string $themaMz  Titel-Variante fuer die Sammelmeldung (null = $thema)
+ * @param string  $wortMz   Zaehlwort im Text ("4 Anlaesse: ...")
+ * @return array{0:string,1:string,2:int} Titel, Text, Idempotenz-Schluessel
+ *         (= Anzahl gebuendelter Anlaesse; aendert sich, wenn ein Anlass nachtraeglich
+ *         dazukommt -> dann wird der Tag genau einmal erneut gemeldet)
+ */
+function buendeln(string $thema, array $items, string $datum, ?string $themaMz = null, string $wortMz = 'Anlässe'): array {
+    $gruppen = []; // Bezeichnung -> Startzeiten (Eingangsreihenfolge, ohne Duplikate)
+    foreach ($items as $it) {
+        $bez = trim((string) $it['bez']);
+        if (!isset($gruppen[$bez])) $gruppen[$bez] = [];
+        $zeit = (string) $it['zeit'];
+        if ($zeit !== '' && !in_array($zeit, $gruppen[$bez], true)) $gruppen[$bez][] = $zeit;
+    }
+    $anzahl = count($gruppen);
+
+    // Einzelner Anlass -> gewohnter Wortlaut (mehrere Zeiten mit " / " verbunden)
+    if ($anzahl === 1) {
+        $bez    = (string) array_key_first($gruppen);
+        $zeiten = $gruppen[$bez];
+        $text   = $bez . ' am ' . fmtDatum($datum);
+        if ($zeiten) $text .= ' um ' . implode(' / ', $zeiten) . ' Uhr';
+        return [$thema, $text, 1];
+    }
+
+    $teile = [];
+    foreach ($gruppen as $bez => $zeiten) {
+        $teile[] = $bez . ($zeiten ? ' (' . implode(', ', $zeiten) . ')' : '');
+    }
+    return [($themaMz ?? $thema) . ' – ' . fmtDatum($datum),
+            $anzahl . ' ' . $wortMz . ': ' . implode(' · ', $teile),
+            $anzahl];
 }
 
 $stats = ['sent' => 0, 'skipped' => 0, 'no_device' => 0, 'failed' => 0];
@@ -147,7 +191,10 @@ try {
     error_log('cron benachrichtigungen [einsaetze]: ' . $e->getMessage());
 }
 
-// =====================  2. Jahresmeisterschaft (broadcast)  ==================
+// ============  2. Jahresmeisterschaft (broadcast, pro Tag gebuendelt)  =======
+// Ein Schiessanlass hat pro Startzeit eine eigene JMSchiesstage-Zeile, und mehrere
+// Anlaesse koennen auf denselben Tag fallen. Darum wird NICHT je Zeile zugestellt,
+// sondern erst gesammelt (je Benutzer und Tag) und dann eine Meldung verschickt.
 try {
     $def = (int) pushLeadTime('push_lead_jm', 2);
     $win = PUSH_MAX_WINDOW;
@@ -157,17 +204,26 @@ try {
                        DATEDIFF(js.schiesstag, CURDATE()) AS tage_bis
                 FROM JMSchiesstage js
                 JOIN JMDefinition jd ON jd.ID = js.jm_id
-                WHERE js.schiesstag BETWEEN CURDATE() AND (CURDATE() + INTERVAL $win DAY)";
+                WHERE js.schiesstag BETWEEN CURDATE() AND (CURDATE() + INTERVAL $win DAY)
+                ORDER BY js.schiesstag, jd.Bezeichnung, js.start_time";
         $n0 = $stats['sent'];
+        // Puffer [user][datum][] - je Benutzer, weil die Vorlaufzeit persoenlich ist
+        // und jeder Benutzer daher eine andere Teilmenge der Tage sieht.
+        $buf = [];
         foreach ($db->query($sql)->fetchAll() as $r) {
             $datum   = (string) $r['schiesstag'];
-            $zeit    = fmtZeit($r['start_time']);
-            $text    = $r['Bezeichnung'] . ' am ' . fmtDatum($datum) . ($zeit !== '' ? ' um ' . $zeit . ' Uhr' : '');
             $tageBis = (int) $r['tage_bis'];
+            $item    = ['bez' => (string) $r['Bezeichnung'], 'zeit' => fmtZeit($r['start_time'])];
             foreach ($users as $uid => $info) {
                 if ($tageBis > ($info['lead'] ?? $def)) continue; // ausserhalb persoenlicher Vorlaufzeit
-                zustellen($db, $uid, 'jm', 'jm', (int) $r['id'], $datum,
-                          'Jahresmeisterschaft', $text, 'portal/meine_jm.php', $stats);
+                $buf[$uid][$datum][] = $item;
+            }
+        }
+        foreach ($buf as $uid => $tage) {
+            foreach ($tage as $datum => $items) {
+                [$titel, $text, $key] = buendeln('Jahresmeisterschaft', $items, (string) $datum);
+                zustellen($db, (int) $uid, 'jm', 'jm_tag', $key, (string) $datum,
+                          $titel, $text, 'portal/meine_jm.php', $stats, 'jm-' . $datum);
             }
         }
         $details['jm'] = $stats['sent'] - $n0;
@@ -233,18 +289,26 @@ try {
                  FROM wichtige_termine
                  WHERE date BETWEEN CURDATE() AND (CURDATE() + INTERVAL $win DAY)";
 
-        $quellen = [['sql' => $sql1, 'ref' => 'standbelegung'], ['sql' => $sql2, 'ref' => 'wichtig']];
-        foreach ($quellen as $q) {
-            foreach ($db->query($q['sql'])->fetchAll() as $r) {
+        // Beide Quellen in EINEN Puffer [user][datum][] - ein Tag ergibt eine Meldung,
+        // egal aus welcher Tabelle die Termine stammen.
+        $buf = [];
+        foreach ([$sql1, $sql2] as $sql) {
+            foreach ($db->query($sql)->fetchAll() as $r) {
                 $datum   = (string) $r['datum'];
-                $zeit    = fmtZeit($r['zeit']);
-                $text    = $r['Bezeichnung'] . ' am ' . fmtDatum($datum) . ($zeit !== '' ? ' um ' . $zeit . ' Uhr' : '');
                 $tageBis = (int) $r['tage_bis'];
+                $item    = ['bez' => (string) $r['Bezeichnung'], 'zeit' => fmtZeit($r['zeit'])];
                 foreach ($users as $uid => $info) {
                     if ($tageBis > ($info['lead'] ?? $def)) continue; // ausserhalb persoenlicher Vorlaufzeit
-                    zustellen($db, $uid, 'termine', $q['ref'], (int) $r['id'], $datum,
-                              'Vereinstermin', $text, 'portal/dashboard.php', $stats);
+                    $buf[$uid][$datum][] = $item;
                 }
+            }
+        }
+        foreach ($buf as $uid => $tage) {
+            ksort($tage); // Quellen wurden nacheinander eingelesen -> Tage wieder chronologisch
+            foreach ($tage as $datum => $items) {
+                [$titel, $text, $key] = buendeln('Vereinstermin', $items, (string) $datum, 'Vereinstermine', 'Termine');
+                zustellen($db, (int) $uid, 'termine', 'termin_tag', $key, (string) $datum,
+                          $titel, $text, 'portal/dashboard.php', $stats, 'termin-' . $datum);
             }
         }
         $details['termine'] = $stats['sent'] - $n0;

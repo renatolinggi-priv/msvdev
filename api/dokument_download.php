@@ -20,6 +20,15 @@ if (!$doc) {
     die('Dokument nicht gefunden');
 }
 
+// Rollentrennung: Jungschuetzen haben nur Zugriff auf JSK-Inhalte. Die Allowlist in
+// portal/portal_header.php greift ausschliesslich auf Seiten, die den Header einbinden --
+// ohne diese Pruefung koennte ein Jungschuetze Protokolle und Einsatzplaene mit
+// sichtbar_fuer='alle_mitglieder' per ?id=N abrufen. Analog zu api/foto_serve.php.
+if (isJungschuetze() && ($doc['typ'] ?? '') !== 'jsk') {
+    http_response_code(403);
+    die('Zugriff verweigert');
+}
+
 // Berechtigungspruefung (fail-closed: nur bekannte Sichtbarkeits-Werte freigeben)
 $user_role = $_SESSION['user_role'] ?? 'mitglied';
 $visible = false;

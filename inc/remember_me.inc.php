@@ -6,6 +6,25 @@
 define('REMEMBER_COOKIE_NAME', 'msv_remember');
 define('REMEMBER_TOKEN_LIFETIME', 30 * 24 * 60 * 60); // 30 Tage in Sekunden
 
+// Diagnose-Logging aus der iOS-PWA-Fehlersuche. Diese Aufrufe schrieben eine Zeile pro
+// anonymem Request und bei eingeloggten Nutzern zusaetzlich Token-Hashes -- solange kein
+// error_log konfiguriert war, fiel das nicht auf. Seit .user.ini das Log setzt, wuerde es
+// die Datei zumuellen und unbrauchbar machen. Darum standardmaessig AUS.
+// Zum Einschalten: define('REMEMBER_DEBUG', true) VOR dem Einbinden dieser Datei.
+// Echte Fehler (DB-Fehler, gesperrtes Konto) werden unabhaengig davon immer geloggt.
+if (!defined('REMEMBER_DEBUG')) {
+    define('REMEMBER_DEBUG', false);
+}
+
+/**
+ * Diagnose-Zeile, nur bei aktivem REMEMBER_DEBUG.
+ */
+function _remember_debug($msg) {
+    if (REMEMBER_DEBUG) {
+        error_log('[remember_me] ' . $msg);
+    }
+}
+
 /**
  * Erkennt ob die aktuelle Verbindung HTTPS ist
  */
@@ -59,12 +78,13 @@ function setRememberToken($user_id) {
 function validateRememberToken() {
     $token = $_COOKIE[REMEMBER_COOKIE_NAME] ?? '';
     if (empty($token)) {
-        error_log('[remember_me] validateRememberToken: cookie "' . REMEMBER_COOKIE_NAME . '" not found. All cookies: ' . implode(', ', array_keys($_COOKIE)));
+        // Normalfall bei jedem anonymen Request -> nur Diagnose, kein Log-Eintrag.
+        _remember_debug('validateRememberToken: cookie "' . REMEMBER_COOKIE_NAME . '" not found. All cookies: ' . implode(', ', array_keys($_COOKIE)));
         return false;
     }
 
     $token_hash = hash('sha256', $token);
-    error_log('[remember_me] validateRememberToken: cookie found, hash=' . substr($token_hash, 0, 16) . '...');
+    _remember_debug('validateRememberToken: cookie found, hash=' . substr($token_hash, 0, 16) . '...');
 
     try {
         $db   = getDB();
@@ -79,7 +99,9 @@ function validateRememberToken() {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
-            error_log('[remember_me] validateRememberToken: no matching token in DB (hash=' . $token_hash . ')');
+            // Regelfall bei abgelaufenem oder veraltetem Cookie. Hash nur gekuerzt: der
+            // vollstaendige Wert ist genau das, was in remember_tokens steht.
+            _remember_debug('validateRememberToken: no matching token in DB (hash=' . substr($token_hash, 0, 16) . '...)');
             _clearRememberCookie();
             return false;
         }
@@ -92,7 +114,7 @@ function validateRememberToken() {
             return false;
         }
 
-        error_log('[remember_me] validateRememberToken: success for user_id=' . $user['user_id']);
+        _remember_debug('validateRememberToken: success for user_id=' . $user['user_id']);
         return $user;
     } catch (PDOException $e) {
         error_log('[remember_me] validateRememberToken error: ' . $e->getMessage());

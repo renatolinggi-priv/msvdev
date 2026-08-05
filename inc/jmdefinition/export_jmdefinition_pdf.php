@@ -37,7 +37,7 @@ function extractDaysAndMonths($schiesstage)
             $month = $matches[2]; 
             $year = isset($matches[3]) ? $matches[3] : $currentYear; // Falls kein Jahr angegeben ist, aktuelles Jahr verwenden
 
-            // Falls das Jahr größer als das aktuelle Jahr ist, füge es hinzu
+            // Falls das Jahr grösser als das aktuelle Jahr ist, füge es hinzu
             if ($year > $currentYear) {
                 $month .= " " . $year;
             }
@@ -148,7 +148,7 @@ ob_start();
 
         body {
     font-family: Arial, sans-serif;
-    font-size: 10px; /* Schriftgröße verkleinern */
+    font-size: 10px; /* Schriftgrösse verkleinern */
     margin: 10px;
 }
 
@@ -324,12 +324,24 @@ $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
-// PDF-Ausgabe speichern
+// PDF-Ausgabe speichern. Schreibpfad ABSOLUT ueber __DIR__, damit das Ergebnis nicht vom
+// Working Directory des Aufrufers abhaengt (bei include aus einem anderen Verzeichnis
+// landete die Datei sonst woanders). Der zurueckgegebene Link bleibt relativ wie bisher.
 $date = new DateTime();
 $draftSuffix = $isDraft ? '_ENTWURF' : '';
 $pdfFileName = "Jahresprogramm_{$currentYear}{$draftSuffix}_" . $date->format('Y-m-d_H-i-s') . ".pdf";
 $pdfFilePath = "dat/" . $pdfFileName;
-file_put_contents($pdfFilePath, $dompdf->output());
+$datDir      = __DIR__ . '/dat';
+file_put_contents($datDir . '/' . $pdfFileName, $dompdf->output());
+
+// Aufraeumen direkt beim Generieren. Dieses Script ist OHNE LOGIN oeffentlich erreichbar
+// und legte bei jedem Aufruf eine neue zeitgestempelte Datei an (Stand 05.08.2026: 965
+// Dateien / 7.7 MB). Der woechentliche cron/cleanup_dat.php allein genuegt hier nicht --
+// zwischen zwei Laeufen liesse sich das Verzeichnis beliebig weit fluten.
+// Der Helfer gruppiert je Namens-Praefix, "Jahresprogramm_2025" und "Jahresprogramm_2026"
+// behalten also unabhaengig voneinander ihre neuesten Staende.
+require_once __DIR__ . '/../dat_cleanup.inc.php';
+datAufraeumen($datDir, 3);
 
 // JSON-Antwort mit PDF-Link
 echo json_encode([

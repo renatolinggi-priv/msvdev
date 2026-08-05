@@ -3,19 +3,12 @@
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
-require_once __DIR__ . '/../inc/session_config.inc.php';
+require_once __DIR__ . '/../auth.php'; // laedt session_config.inc.php mit
 
-// Auth manuell prüfen (JSON-freundlich, kein Redirect)
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt']);
-    exit;
-}
-$role = $_SESSION['user_role'] ?? '';
-if (!in_array($role, ['admin', 'vorstand'])) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Zugriff verweigert']);
-    exit;
-}
+// Auth zentral (JSON-freundlich, kein Redirect). Statt der frueheren Inline-Pruefung:
+// requireRoleJson() liefert korrekt 401 statt 200, prueft zusaetzlich den Konto-Status
+// und stellt die Session bei iOS-PWA-Clients aus dem Remember-Cookie wieder her.
+requireRoleJson(['admin', 'vorstand']);
 
 $id = intval($_GET['id'] ?? 0);
 if ($id < 1) {
