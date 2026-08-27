@@ -90,7 +90,7 @@ function getTotal($kategorie)
                     $stmtResultate->close();
                 }
 
-                // Skalierungsbedingung gemäß Ihren Anforderungen
+                // Skalierungsbedingung gemäss Ihren Anforderungen
                 if ($punkte !== null && !in_array($bezeichnung, ['Obligatorisch', 'Feldschiessen']) && $maxpunkte < 100) {
                     $punkte = round(($punkte * 100.0 / $maxpunkte), 2);
                 }

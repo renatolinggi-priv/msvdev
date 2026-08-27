@@ -345,7 +345,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     </nav>
 
     <?php
-    // Mobile Off-Canvas Menu (außerhalb navbar-collapse)
+    // Mobile Off-Canvas Menu (ausserhalb navbar-collapse)
     NavigationManager::getInstance()->generateMobileMenu();
     ?>
 
@@ -367,10 +367,12 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i>Abbrechen
                     </button>
-                    <a href="<?php echo file_exists('user_logout.php') ? 'user_logout.php' : '../user_logout.php'; ?>"
-                       class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-box-arrow-right me-1"></i>Abmelden
-                    </a>
+                    <form method="post" action="<?php echo $incBase; ?>user_logout.php" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-box-arrow-right me-1"></i>Abmelden
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

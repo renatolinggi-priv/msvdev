@@ -13,6 +13,12 @@ require_once __DIR__ . '/inc/session_config.inc.php';
 
 // Bei Logout-Parameter alte Session komplett erneuern
 if (isset($_GET['logout']) || isset($_GET['timeout'])) {
+    // Persistenten Remember-Token entwerten (Cookie + DB), damit Timeout/Logout ein
+    // ECHTER Logout ist und die Session nicht sofort via msv_remember-Cookie
+    // wiederhergestellt wird (sonst käme man durch Entfernen von ?timeout=1 zurück).
+    if (function_exists('clearRememberToken')) {
+        clearRememberToken();
+    }
     session_regenerate_id(true);
     $_SESSION = array(); // Session-Daten löschen
 }
@@ -247,7 +253,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             width: 100%;
-            max-width: 360px;
+            max-width: 300px;
             animation: fadeInUp 0.6s ease-out;
             border: 1px solid #e9ecef;
         }
@@ -264,40 +270,40 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
         .login-header {
             background: linear-gradient(135deg, #dee2e6, #adb5bd);
             color: #343a40;
-            padding: 1.5rem;
+            padding: 1rem;
             text-align: center;
         }
         .logo-container {
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
         .logo {
-            max-height: 60px;
-            max-width: 160px;
+            max-height: 48px;
+            max-width: 130px;
             height: auto;
             width: auto;
         }
         .login-header h1 {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.2rem;
         }
         .login-header p {
             opacity: 0.9;
             margin: 0;
-            font-size: 0.9rem;
+            font-size: 0.82rem;
         }
         .login-body {
-            padding: 1.5rem;
+            padding: 1.25rem;
         }
         .form-floating {
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
         .form-floating .form-control {
             border: 2px solid #e9ecef;
             border-radius: var(--border-radius);
             transition: all var(--transition-speed) ease;
-            font-size: 1rem;
-            padding: 1rem 0.75rem;
+            font-size: 0.95rem;
+            padding: 0.85rem 0.75rem;
         }
         .form-floating .form-control:focus {
             border-color: var(--primary-color);
@@ -317,11 +323,11 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
             border-radius: var(--border-radius);
             color: #343a40;
             font-weight: 600;
-            padding: 0.6rem 2rem;
-            font-size: 1rem;
+            padding: 0.5rem 2rem;
+            font-size: 0.95rem;
             transition: all var(--transition-speed) ease;
             width: 100%;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
         .btn-login:hover {
             transform: translateY(-2px);

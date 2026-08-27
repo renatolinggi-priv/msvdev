@@ -15,13 +15,13 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-auto ps-0" style="max-width: 100%;">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = 'Auswertung Fragebogen'; include 'partials/page_header.inc.php'; ?>
                 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <form id="fragebogenForm" class="fragebogen-form">
                         <input type="hidden" name="csrf_token"
@@ -80,15 +80,10 @@ if (empty($_SESSION['csrf_token'])) {
 
                         <!-- Tabelle -->
                         <div class="table-wrapper">
-                            <h5 class="table-title">
-                                <i class="bi bi-table me-2"></i>
-                                Teilnahme-Übersicht
-                            </h5>
-
                             <!-- Desktop: Tabelle -->
                             <div class="desktop-table-container">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered mb-0" id="fragebogenTabelle">
+                                    <table class="table mb-0" id="fragebogenTabelle">
                                         <thead>
                                             <tr>
                                                 <td colspan="100%" class="text-center">
@@ -262,9 +257,9 @@ if (empty($_SESSION['csrf_token'])) {
 
                         msvToast('Fragebogen erfolgreich geladen', 'success');
                     } else {
-                        $('#fragebogenTabelle thead').html('<tr><th>Keine Daten verfügbar</th></tr>');
-                        $('#fragebogenTabelle tbody').html('<tr><td>Keine Daten für dieses Jahr gefunden</td></tr>');
-                        MSVMobileCards.showError('#fragebogenMobileCards', 'Keine Daten für dieses Jahr');
+                        $('#fragebogenTabelle thead').html('');
+                        $('#fragebogenTabelle tbody').html('<tr class="msv-empty-row"><td colspan="99" class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>Keine Daten gefunden</td></tr>');
+                        MSVMobileCards.showError('#fragebogenMobileCards', 'Keine Daten gefunden');
                         msvToast('Keine Daten für dieses Jahr gefunden', 'warning');
                     }
                 },

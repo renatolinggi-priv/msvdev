@@ -64,7 +64,7 @@ try {
         // Regel aktualisieren
         $id = intval($_POST['id']);
         
-        // Prüfen ob regel_code bereits existiert (außer bei der aktuellen Regel)
+        // Prüfen ob regel_code bereits existiert (ausser bei der aktuellen Regel)
         $check_sql = "SELECT id FROM wanderpreise_regeln WHERE regel_code = ? AND id != ?";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("si", $regel_code, $id);

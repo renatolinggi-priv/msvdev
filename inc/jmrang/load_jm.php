@@ -87,8 +87,8 @@ if (!$definitions) {
         exit; 
     }
     echo json_encode([
-        'thead' => "<tr><th>Keine Wettbewerbe gefunden</th></tr>",
-        'tbody' => "<tr><td>Für das Jahr $year wurden keine Wettbewerbe gefunden.</td></tr>"
+        'thead' => "<tr><th></th></tr>",
+        'tbody' => '<tr class="msv-empty-row"><td colspan="99" class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>Keine Wettbewerbe gefunden</td></tr>'
     ]);
     exit;
 }
@@ -139,8 +139,8 @@ if (!$members) {
         exit; 
     }
     echo json_encode([
-        'thead' => "<tr><th>Keine Mitglieder gefunden</th></tr>",
-        'tbody' => "<tr><td>Für diese Kategorie/Jahr keine Mitglieder.</td></tr>"
+        'thead' => "<tr><th></th></tr>",
+        'tbody' => '<tr class="msv-empty-row"><td colspan="99" class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>Keine Mitglieder gefunden</td></tr>'
     ]);
     exit;
 }

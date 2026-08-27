@@ -7,11 +7,11 @@ $page_specific_css = "
 .year-selector {
     display: flex; align-items: center; gap: 0.5rem;
 }
-.year-selector label {
-    font-weight: 600; font-size: 0.9rem; color: #64748b; white-space: nowrap; margin-bottom: 0;
-}
 .year-selector select {
     width: auto; min-width: 90px;
+}
+.year-selector .form-label {
+    font-size: 0.875rem;
 }
 
 /* === CATEGORY GRID === */
@@ -140,20 +140,20 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-12 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-default">
                 <!-- CSRF Token -->
                 <input type="hidden" id="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
                 <?php $page_title = 'Sieger der letzten Jahre'; include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <!-- Jahr-Auswahl -->
                     <div class="year-selector mb-3">
-                        <label><i class="bi bi-calendar3 me-1"></i>Jahr:</label>
-                        <select id="filterYear" class="form-select form-select-sm">
+                        <label for="filterYear" class="form-label fw-bold mb-0 text-nowrap"><i class="bi bi-calendar3 me-1"></i>Jahr:</label>
+                        <select id="filterYear" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
                             <?php
                             $currentYear = (int)date("Y");
                             $lastYear = $currentYear - 1;

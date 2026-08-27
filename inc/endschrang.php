@@ -25,16 +25,6 @@ include 'header.inc.php';
     font-size: 0.875rem;
 }
 
-/* Kompaktere Buttons */
-.btn-compact {
-    white-space: nowrap;
-    overflow: hidden;
-    min-height: 32px !important;
-    padding: 0.3rem 0.6rem !important;
-    font-size: 0.8rem !important;
-}
-.btn-compact i.ms-auto { display: none !important; }
-
 /* "Resultate bearbeiten" im Toolbar-Kopf kompakter (Desktop) */
 @media (min-width: 768px) {
     #redirect-btn {
@@ -86,12 +76,12 @@ include 'header.inc.php';
 <!-- Header -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xxl-8 col-xl-9 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = "Endschiessen Ranglisten"; include 'partials/page_header.inc.php'; ?>
-                <!-- Weißer Container für den Rest -->
+                <!-- Weisser Container für den Rest -->
                 <div class="content-background">
                 <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
                 <div class="export-toolbar mb-3">
@@ -114,16 +104,16 @@ include 'header.inc.php';
                         <div class="export-group">
                             <div class="export-group-label">Ranglisten &amp; Übersicht</div>
                             <div class="export-group-btns">
-                                <button class="btn btn-compact btn-outline-info ges-btn">
+                                <button class="btn btn-compact-standard btn-outline-info ges-btn">
                                     <i class="bi bi-trophy me-1"></i><span>Gesamt</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info zwi-btn">
+                                <button class="btn btn-compact-standard btn-outline-info zwi-btn">
                                     <i class="bi bi-list-ol me-1"></i><span>Zwischen</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info anm-btn">
+                                <button class="btn btn-compact-standard btn-outline-info anm-btn">
                                     <i class="bi bi-person-plus me-1"></i><span>Anmeldung</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info abs-btn">
+                                <button class="btn btn-compact-standard btn-outline-info abs-btn">
                                     <i class="bi bi-journal-bookmark-fill me-1"></i><span>Absendenbuch</span>
                                 </button>
                             </div>
@@ -132,22 +122,22 @@ include 'header.inc.php';
                         <div class="export-group">
                             <div class="export-group-label">Einzelwettbewerbe</div>
                             <div class="export-group-btns">
-                                <button class="btn btn-compact btn-outline-info end-btn">
+                                <button class="btn btn-compact-standard btn-outline-info end-btn">
                                     <i class="bi bi-award me-1"></i><span>Endstich</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info sch-btn">
+                                <button class="btn btn-compact-standard btn-outline-info sch-btn">
                                     <i class="bi bi-piggy-bank me-1"></i><span>Schwini</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info kun-btn">
+                                <button class="btn btn-compact-standard btn-outline-info kun-btn">
                                     <i class="bi bi-palette me-1"></i><span>Kunst</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info glu-btn">
+                                <button class="btn btn-compact-standard btn-outline-info glu-btn">
                                     <i class="bi bi-dice-3 me-1"></i><span>Glück</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info zab-btn">
+                                <button class="btn btn-compact-standard btn-outline-info zab-btn">
                                     <i class="bi bi-cup-straw me-1"></i><span>Zabig</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info dif-btn">
+                                <button class="btn btn-compact-standard btn-outline-info dif-btn">
                                     <i class="bi bi-sliders me-1"></i><span>Differenzler</span>
                                 </button>
                             </div>
@@ -156,10 +146,10 @@ include 'header.inc.php';
                         <div class="export-group">
                             <div class="export-group-label">Partner</div>
                             <div class="export-group-btns">
-                                <button class="btn btn-compact btn-outline-info part-btn">
+                                <button class="btn btn-compact-standard btn-outline-info part-btn">
                                     <i class="bi bi-people me-1"></i><span>Partner</span>
                                 </button>
-                                <button class="btn btn-compact btn-outline-info sieer-btn">
+                                <button class="btn btn-compact-standard btn-outline-info sieer-btn">
                                     <i class="bi bi-bullseye me-1"></i><span>Sie &amp; Er</span>
                                 </button>
                             </div>

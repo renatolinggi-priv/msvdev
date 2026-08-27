@@ -114,7 +114,7 @@ const ImportManagerSingle = {
     let errorCount = 0;
     const importResults = [];
 
-    // Alle Programme nacheinander importieren (außer ausgeschlossene)
+    // Alle Programme nacheinander importieren (ausser ausgeschlossene)
     for (let i = 0; i < allPrograms.length; i++) {
       // Überspringe ausgeschlossene Programme
       if (window._excludedPrograms && window._excludedPrograms.has(i)) {
@@ -318,7 +318,7 @@ const ImportManagerSingle = {
     // Modal anzeigen
     $('#nextFileModal').modal('show');
     
-    // Aufräumen beim Schließen - .one() für einmalige Ausführung
+    // Aufräumen beim Schliessen - .one() für einmalige Ausführung
     $('#nextFileModal').one('hidden.bs.modal', function () {
       $('.modal-backdrop').remove();
       $('body').removeClass('modal-open').css('padding-right', '');
@@ -800,7 +800,7 @@ const ImportManagerSingle = {
         console.log('[ENDSCH-DEBUG] Additional parameters from modal:', additionalParams);
 
         $('#overwriteModal').modal('hide');
-        // Aufräumen nach Modal schließen
+        // Aufräumen nach Modal schliessen
         setTimeout(() => {
           $('.modal-backdrop').remove();
           $('body').removeClass('modal-open').css('padding-right', '');
@@ -810,7 +810,7 @@ const ImportManagerSingle = {
         this.executeImport(true, additionalParams);
       });
       
-      // Event-Handler für Modal schließen (X-Button und Abbrechen) - .one() für einmalige Ausführung
+      // Event-Handler für Modal schliessen (X-Button und Abbrechen) - .one() für einmalige Ausführung
       $('#overwriteModal').one('hidden.bs.modal', function () {
         // Stelle sicher dass alles aufgeräumt wird
         $('.modal-backdrop').remove();

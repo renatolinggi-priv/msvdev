@@ -1,6 +1,24 @@
 <?php
 // load_jmdefinition_form.php – Hybrid Layout (read-only Tabelle + hidden Inputs)
 include '../config.php';
+require_once __DIR__ . '/../partials/empty_state.inc.php';
+
+if (!function_exists('dv_format_adresse')) {
+    function dv_format_adresse(string $adr): string {
+        $t = trim($adr);
+        // Reine Koordinaten: zwei Dezimalzahlen, getrennt durch , / ; oder Leerzeichen
+        if (preg_match('/^(-?\d{1,3}[.,]\d+)\s*[,\/;\s]\s*(-?\d{1,3}[.,]\d+)$/u', $t, $m)) {
+            $lat = round((float) str_replace(',', '.', $m[1]), 5);
+            $lon = round((float) str_replace(',', '.', $m[2]), 5);
+            $label = number_format($lat, 5, '.', '') . ', ' . number_format($lon, 5, '.', '');
+            $href  = 'https://www.google.com/maps?q=' . $lat . ',' . $lon;
+            return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8')
+                 . '" target="_blank" rel="noopener" data-tooltip="Auf Karte öffnen">'
+                 . '<i class="bi bi-geo-alt me-1"></i>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+        }
+        return nl2br($adr);
+    }
+}
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -55,7 +73,7 @@ if ($result->num_rows > 0) {
         echo "<td class='h-title'>" . nl2br($bez) . "</td>";
 
         // Spalte 3: Adresse (Read-only)
-        echo "<td class='h-addr'>" . nl2br($adr) . "</td>";
+        echo "<td class='h-addr'>" . dv_format_adresse($adr) . "</td>";
 
         // Spalte 4: Schiesstage (Read-only)
         echo "<td class='h-dates'>" . nl2br($sch) . "</td>";
@@ -89,7 +107,7 @@ if ($result->num_rows > 0) {
         echo "</tr>";
     }
 } else {
-    echo "<tr><td colspan='6' class='text-center text-muted py-4'><i class='bi bi-inbox me-2'></i>Keine Einträge gefunden</td></tr>";
+    echo msv_empty_row(6, 'Keine Einträge gefunden');
 }
 
 $conn->close();

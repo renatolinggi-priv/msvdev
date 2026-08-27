@@ -23,7 +23,7 @@ try {
     $stmt->bind_param("i", $year);
     $stmt->execute();
     $stmt->close();
-    // Transaktion erfolgreich abschließen
+    // Transaktion erfolgreich abschliessen
     $conn->commit();
     json_encode(['status' => 'success', 'message' => 'Script ausgeführt']);
 
@@ -37,7 +37,7 @@ try {
     $stmt->bind_param("i", $year);
     $stmt->execute();
     $stmt->close();
-    // Transaktion erfolgreich abschließen
+    // Transaktion erfolgreich abschliessen
     $conn->commit();
     json_encode(['status' => 'success', 'message' => 'Script ausgeführt']);
 
@@ -47,6 +47,6 @@ try {
     echo "Fehler beim Leeren der Tabellen: " . $e->getMessage();
 }
 
-// Schließen der Verbindung
+// Schliessen der Verbindung
 $conn->close();
 ?>

@@ -31,7 +31,7 @@ try {
     ";
     $conn->query($sqlDelete);
 
-    // Transaktion erfolgreich abschließen
+    // Transaktion erfolgreich abschliessen
     $conn->commit();
     logChangelog('resultate', 'geloescht', "JM-Resultate $selectedYear gelöscht", ['tabelle' => 'jmresultate', 'jahr' => $selectedYear, 'sichtbar' => 0]);
 
@@ -47,5 +47,5 @@ try {
     echo "Fehler beim Löschen: " . $e->getMessage();
 }
 
-// Verbindung schließen
+// Verbindung schliessen
 $conn->close();

@@ -87,7 +87,7 @@ try {
     } else {
         echo "<div class='empty-state'>";
         echo "<i class='bi bi-trophy'></i>";
-        echo "<p>Keine Sieger für das Jahr " . htmlspecialchars($selected_year) . " erfasst.</p>";
+        echo "<p>Keine Sieger für das Jahr " . htmlspecialchars($selected_year) . " gefunden.</p>";
         echo "</div>";
     }
 

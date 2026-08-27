@@ -34,13 +34,13 @@ include 'header.inc.php';
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xxl-8 col-xl-9 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = "MSV Wilen Vereinscup – Übersicht"; include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <!-- Jahr-Auswahl + Dokumente erstellen (einreihige, kompakte Karte) -->
                     <div class="export-toolbar mb-3">

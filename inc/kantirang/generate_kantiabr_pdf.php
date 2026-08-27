@@ -211,7 +211,7 @@ $dompdf->setPaper('A4', 'portrait');
 
 $dompdf->render();
 
-// Fußzeile auf jeder Seite hinzufügen
+// Fusszeile auf jeder Seite hinzufügen
 $canvas = $dompdf->getCanvas();
 $canvas->page_text(270, 800, "© " . date('Y') . " Schwyzer Kantonal-Schützengesellschaft", null, 10, array(0,0,0));
 

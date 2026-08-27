@@ -81,7 +81,7 @@ try {
     
     $stmt_endstich->close();
     
-    // Transaktion erfolgreich abschließen
+    // Transaktion erfolgreich abschliessen
     $conn->commit();
     
     // Erfolgreiche JSON-Antwort
@@ -105,6 +105,6 @@ try {
     error_log("Fehler beim Löschen des Mitglieds $mitgliedID aus Endstich-Tabellen: " . $e->getMessage());
 }
 
-// Verbindung schließen
+// Verbindung schliessen
 $conn->close();
 ?>

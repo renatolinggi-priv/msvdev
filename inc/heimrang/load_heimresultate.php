@@ -1,6 +1,7 @@
 <?php
 // Beispiel: load_heimresultate.php
 include '../config.php';
+require_once __DIR__ . '/../partials/empty_state.inc.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -52,7 +53,7 @@ if ($result && $result->num_rows > 0) {
         $i++;
     }
 } else {
-    echo '<tr><td colspan="11">Keine Ergebnisse gefunden.</td></tr>';
+    echo msv_empty_row(11, 'Keine Ergebnisse gefunden');
 }
 
 $conn->close();

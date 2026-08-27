@@ -1,6 +1,6 @@
 <?php
 // portal/mitteilungen.php - Benachrichtigungs-Verlauf (Glocke) + Vorstand-Broadcast
-$portal_page_title = 'Benachrichtigungen';
+$portal_page_title = 'Mitteilungen';
 
 $portal_page_css = '
 .mt-compose { margin-bottom: var(--p-3); padding-top: 0; padding-bottom: 0; }

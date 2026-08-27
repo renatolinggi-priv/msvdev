@@ -5,6 +5,7 @@
  */
 
 include '../config.php';
+require_once __DIR__ . '/../partials/empty_state.inc.php';
 
 // Error handling für Production
 error_reporting(E_ALL);
@@ -82,7 +83,7 @@ try {
             $previousTotal = $row['KantiSumme'];
         }
     } else {
-        echo '<tr><td colspan="8" class="text-center">Keine Ergebnisse gefunden.</td></tr>';
+        echo msv_empty_row(8, 'Keine Ergebnisse gefunden');
     }
     
     $stmt->close();

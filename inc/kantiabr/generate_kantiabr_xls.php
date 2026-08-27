@@ -79,6 +79,6 @@ if ($result->num_rows > 0) {
     echo json_encode(array('message' => 'Keine Daten für das Jahr ' . $year . ' gefunden.'));
 }
 
-// Verbindung zur Datenbank schließen
+// Verbindung zur Datenbank schliessen
 $conn->close();
 ?>

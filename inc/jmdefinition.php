@@ -172,8 +172,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-12 col-lg-11 col-12 ps-0">
-      <div class="main-content-wrapper">
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-default">
         <?php $page_title = 'Jahresmeisterschaft Definition'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
@@ -225,7 +225,7 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
                         <div class="col-12">
                           <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="publishChangelogBtn">
-                            <i class="bi bi-megaphone me-1"></i>Publizieren
+                            <i class="bi bi-megaphone me-1"></i>Veröffentlichen
                           </button>
                         </div>
                       </div>

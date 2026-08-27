@@ -41,6 +41,6 @@ $header = '<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>' . pdf_theme_css() . $fragebogenOverrides . '</style>';
 
-// Footer schließt body + html
+// Footer schliesst body + html
 $footer = '</body>
 </html>';

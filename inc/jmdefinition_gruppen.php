@@ -291,16 +291,16 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-12 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-default">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php
                 $page_title = 'Gruppenerfassung Jahresmeisterschaft';
                 include 'partials/page_header.inc.php';
                 ?>
                 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <!-- Jahr-Auswahl -->
                     <div class="d-flex align-items-center gap-2 mb-3">

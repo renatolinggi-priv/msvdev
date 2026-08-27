@@ -17,6 +17,7 @@
 include '../config.php';
 require_once __DIR__ . '/../changelog_helper.php';
 require_once __DIR__ . '/pdf_rangliste_parser.php';
+require_once __DIR__ . '/fsa_teilnehmerliste_parser.php';
 require_once __DIR__ . '/../einsatzplan_parser/name_matcher.php'; // matchSingleName(), findDisplayName()
 
 header('Content-Type: application/json; charset=utf-8');
@@ -59,11 +60,13 @@ $conn->close();
 // parse
 // ───────────────────────────────────────────────────────────────
 function handleParse($conn) {
-    $jmdefId = intval($_POST['jmdefinitionID'] ?? 0);
-    $year    = intval($_POST['year'] ?? date('Y'));
-    $debug   = !empty($_POST['debug']);
+    $jmdefRaw = $_POST['jmdefinitionID'] ?? '';
+    $isOpfs   = ($jmdefRaw === 'opfs'); // Spezialauswahl: Obligatorisch + Feldschiessen (FSA)
+    $jmdefId  = intval($jmdefRaw);
+    $year     = intval($_POST['year'] ?? date('Y'));
+    $debug    = !empty($_POST['debug']);
 
-    if ($jmdefId <= 0) {
+    if (!$isOpfs && $jmdefId <= 0) {
         echo json_encode(['success' => false, 'message' => 'Bitte zuerst einen Anlass auswählen']);
         return;
     }
@@ -97,6 +100,19 @@ function handleParse($conn) {
     finfo_close($finfo);
     if ($mime !== 'application/pdf') {
         echo json_encode(['success' => false, 'message' => 'Nur PDF-Dateien werden unterstützt']);
+        return;
+    }
+
+    // FSA-Teilnehmerliste (Obligatorisch + Feldschiessen)? Auto-Erkennung
+    // unabhaengig vom gewaehlten Anlass, damit ein FSA-PDF nie faelschlich
+    // als Einzelrangliste importiert wird.
+    $fsa = parseFsaTeilnehmerliste($file['tmp_name'], $debug);
+    if ($fsa !== null) {
+        handleParseOpfs($conn, $fsa, $year, $debug);
+        return;
+    }
+    if ($isOpfs) {
+        echo json_encode(['success' => false, 'message' => 'Das PDF wurde nicht als FSA-Teilnehmerliste (bundesuebung.ch) erkannt. Für Einzelranglisten bitte den jeweiligen Anlass wählen.']);
         return;
     }
 
@@ -217,6 +233,12 @@ function handleParse($conn) {
 // import
 // ───────────────────────────────────────────────────────────────
 function handleImport($conn) {
+    // OP/FS-Bonus-Import (FSA-Teilnehmerliste) hat einen eigenen Ablauf
+    if (($_POST['mode'] ?? '') === 'opfs') {
+        handleImportOpfs($conn);
+        return;
+    }
+
     $jmdefId = intval($_POST['jmdefinitionID'] ?? 0);
     $year    = intval($_POST['year'] ?? date('Y'));
     $rows    = json_decode($_POST['rows'] ?? '[]', true);
@@ -410,6 +432,193 @@ function upsertSektionsrangierung($conn, $year, $jmdefId, $rang, $preis) {
         $stmt->execute();
         $stmt->close();
     }
+}
+
+// ───────────────────────────────────────────────────────────────
+// Obligatorisch + Feldschiessen (FSA-Teilnehmerliste, Bonus-Import)
+// ───────────────────────────────────────────────────────────────
+
+/** Laedt die JMDefinitionen 'Obligatorisch' und 'Feldschiessen' des Jahres. */
+function opfsLoadDefs($conn, $year) {
+    $out = ['op' => null, 'fs' => null];
+    $stmt = $conn->prepare("SELECT ID, Bezeichnung, Maxpunkte FROM JMDefinition
+                             WHERE year = ? AND hidden = 0 AND Info = 0 AND Erweitert = 0
+                               AND Bezeichnung IN ('Obligatorisch','Feldschiessen')");
+    $stmt->bind_param('i', $year);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $entry = ['id' => (int) $row['ID'], 'bezeichnung' => $row['Bezeichnung'], 'max' => (int) $row['Maxpunkte']];
+        if ($row['Bezeichnung'] === 'Obligatorisch') {
+            $out['op'] = $entry;
+        } else {
+            $out['fs'] = $entry;
+        }
+    }
+    $stmt->close();
+    return $out;
+}
+
+/**
+ * Vorschau fuer den OP/FS-Bonus-Import aus einer FSA-Teilnehmerliste.
+ * ALLE Vereins-Abschnitte des PDFs werden beruecksichtigt (ein eigener Schuetze
+ * kann bei einem anderen Verein / mit anderer Waffe geschossen haben); pro
+ * Mitglied wird zusammengefuehrt: OP absolviert und/oder FS absolviert.
+ */
+function handleParseOpfs($conn, $parsed, $year, $debug) {
+    if (empty($parsed['success'])) {
+        echo json_encode(['success' => false, 'mode' => 'opfs', 'message' => $parsed['message'] ?? 'FSA-Teilnehmerliste konnte nicht gelesen werden']);
+        return;
+    }
+
+    $defs = opfsLoadDefs($conn, $year);
+    if ($defs['op'] === null || $defs['fs'] === null) {
+        echo json_encode(['success' => false, 'mode' => 'opfs',
+            'message' => "Für {$year} sind die Anlässe «Obligatorisch» und/oder «Feldschiessen» nicht definiert. Bitte zuerst in der Anlassdefinition anlegen."]);
+        return;
+    }
+
+    list($mitglieder, $exactMap, $reversedMap) = loadMitgliederMaps($conn);
+    $existOp = existingJmMemberIds($conn, $defs['op']['id']);
+    $existFs = existingJmMemberIds($conn, $defs['fs']['id']);
+
+    $byMember = [];
+    $totalLines = count($parsed['rows']);
+
+    foreach ($parsed['rows'] as $r) {
+        $m = matchSingleName($r['name'], $mitglieder, $exactMap, $reversedMap);
+        if ($m['mitglied_id'] === null) {
+            continue; // kein Vereinsmitglied
+        }
+        $mid = (int) $m['mitglied_id'];
+
+        // Bestes OP-Resultat inkl. Nachschiessen (W1/W2); "absolviert" = Wert vorhanden
+        $opRes = null;
+        foreach (['op', 'op_w1', 'op_w2'] as $k) {
+            if ($r[$k] !== null && ($opRes === null || $r[$k] > $opRes)) {
+                $opRes = $r[$k];
+            }
+        }
+        $fsRes = $r['fs'];
+        $quelle = trim($r['verein'] . ($r['waffe'] !== '' ? ' (' . $r['waffe'] . ')' : ''));
+
+        if (!isset($byMember[$mid])) {
+            $byMember[$mid] = [
+                'mitglied_id'  => $mid,
+                'matched_name' => $m['matched_name'],
+                'match_status' => $m['match_status'],
+                'raw_name'     => $r['name'],
+                'jg'           => $r['jg'],
+                'op_resultat'  => $opRes,
+                'fs_resultat'  => $fsRes,
+                'quellen'      => [],
+                'dup_op'       => isset($existOp[$mid]),
+                'dup_fs'       => isset($existFs[$mid]),
+            ];
+        } else {
+            if ($opRes !== null && ($byMember[$mid]['op_resultat'] === null || $opRes > $byMember[$mid]['op_resultat'])) {
+                $byMember[$mid]['op_resultat'] = $opRes;
+            }
+            if ($fsRes !== null && ($byMember[$mid]['fs_resultat'] === null || $fsRes > $byMember[$mid]['fs_resultat'])) {
+                $byMember[$mid]['fs_resultat'] = $fsRes;
+            }
+        }
+        if ($quelle !== '' && !in_array($quelle, $byMember[$mid]['quellen'], true)) {
+            $byMember[$mid]['quellen'][] = $quelle;
+        }
+    }
+
+    $rows = array_values($byMember);
+    foreach ($rows as &$row) {
+        $row['quelle'] = implode(', ', $row['quellen']);
+        unset($row['quellen']);
+    }
+    unset($row);
+    usort($rows, fn($a, $b) => strcasecmp($a['matched_name'], $b['matched_name']));
+
+    $stats = [
+        'total_lines' => $totalLines,
+        'matched'     => count($rows),
+        'op_count'    => count(array_filter($rows, fn($x) => $x['op_resultat'] !== null)),
+        'fs_count'    => count(array_filter($rows, fn($x) => $x['fs_resultat'] !== null)),
+        'duplicates'  => count(array_filter($rows, fn($x) => $x['dup_op'] || $x['dup_fs'])),
+        'fuzzy'       => count(array_filter($rows, fn($x) => $x['match_status'] === 'fuzzy')),
+    ];
+
+    $resp = [
+        'success' => true,
+        'mode'    => 'opfs',
+        'rows'    => $rows,
+        'defs'    => $defs,
+        'stats'   => $stats,
+        'message' => $stats['matched'] . ' Vereinsmitglieder von ' . $totalLines . ' Teilnehmer-Zeilen erkannt',
+    ];
+    if ($debug && isset($parsed['debug'])) $resp['debug'] = $parsed['debug'];
+    echo json_encode($resp);
+}
+
+/**
+ * Import des OP/FS-Bonus: schreibt pro ausgewaehltem Mitglied die Bonus-Punkte
+ * in jmresultate (Obligatorisch bzw. Feldschiessen, status='freigegeben').
+ * Leere Felder werden uebersprungen.
+ */
+function handleImportOpfs($conn) {
+    $year = intval($_POST['year'] ?? date('Y'));
+    $rows = json_decode($_POST['rows'] ?? '[]', true);
+    if (!is_array($rows) || empty($rows)) {
+        echo json_encode(['success' => false, 'message' => 'Keine Zeilen zum Importieren ausgewählt']);
+        return;
+    }
+
+    $defs = opfsLoadDefs($conn, $year);
+    if ($defs['op'] === null || $defs['fs'] === null) {
+        echo json_encode(['success' => false, 'message' => "Für {$year} sind die Anlässe «Obligatorisch»/«Feldschiessen» nicht definiert."]);
+        return;
+    }
+
+    $vorstandUserId = $_SESSION['user_id'] ?? null;
+    $countOp = 0;
+    $countFs = 0;
+
+    try {
+        $conn->begin_transaction();
+
+        foreach ($rows as $r) {
+            $mid = intval($r['mitglied_id'] ?? 0);
+            if ($mid <= 0) continue;
+
+            $opRaw = trim((string) ($r['op_punkte'] ?? ''));
+            if ($opRaw !== '' && is_numeric($opRaw)) {
+                upsertJmResultat($conn, $mid, $defs['op']['id'], (int) $opRaw, $vorstandUserId);
+                $countOp++;
+            }
+            $fsRaw = trim((string) ($r['fs_punkte'] ?? ''));
+            if ($fsRaw !== '' && is_numeric($fsRaw)) {
+                upsertJmResultat($conn, $mid, $defs['fs']['id'], (int) $fsRaw, $vorstandUserId);
+                $countFs++;
+            }
+        }
+
+        $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        error_log('rangliste_import opfs import error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Fehler beim Import: ' . $e->getMessage()]);
+        return;
+    }
+
+    if (function_exists('logChangelog')) {
+        logChangelog('resultate', 'aktualisiert', 'Obligatorisch/Feldschiessen-Bonus via FSA-Import erfasst',
+            ['tabelle' => 'jmresultate', 'jahr' => $year, 'sichtbar' => 0]);
+    }
+
+    echo json_encode([
+        'success'  => true,
+        'message'  => "Import abgeschlossen: {$countOp}× Obligatorisch, {$countFs}× Feldschiessen",
+        'count_op' => $countOp,
+        'count_fs' => $countFs,
+    ]);
 }
 
 /** Upsert in einzelrangierungen (INSERT, sonst UPDATE bei vorhandenem Eintrag). */

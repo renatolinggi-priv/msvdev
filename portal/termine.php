@@ -54,10 +54,10 @@ include 'portal_header.php';
 .tm-abo-btn { white-space:nowrap; }
 .tm-section-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; font-weight:700; margin:0.9rem 0 0.35rem; }
 .tm-section-label:first-of-type { margin-top:0; }
-.tm-card { display:flex; align-items:center; gap:0.65rem; border:1px solid #e2e8f0; border-radius:0.6rem;
-  padding:0.4rem 0.65rem; margin-bottom:0.3rem; background:#fff; }
-.tm-card--next { border-color:#3b5998; box-shadow:0 0 0 1px #3b5998; }
-.tm-date { flex-shrink:0; width:46px; text-align:center; background:#3b5998; color:#fff; border-radius:0.45rem; padding:0.18rem 0; line-height:1.08; }
+.tm-card { display:flex; align-items:center; gap:var(--p-2); border:1px solid var(--p-border); border-radius:var(--p-radius);
+  box-shadow:var(--p-shadow); padding:0.55rem 0.7rem; margin-bottom:var(--p-2); background:#fff; }
+.tm-card--next { border-color:var(--primary-color); box-shadow:0 0 0 1px var(--primary-color), var(--p-shadow); }
+.tm-date { flex-shrink:0; width:46px; text-align:center; background:var(--primary-color); color:#fff; border-radius:var(--p-radius-sm); padding:0.18rem 0; line-height:1.08; }
 .tm-date .wd { font-size:0.6rem; text-transform:uppercase; opacity:0.85; letter-spacing:0.02em; }
 .tm-date .d { font-size:1.05rem; font-weight:800; }
 .tm-date .mo { font-size:0.6rem; text-transform:uppercase; opacity:0.85; letter-spacing:0.02em; }
@@ -66,12 +66,11 @@ include 'portal_header.php';
 .tm-meta { font-size:0.76rem; color:#64748b; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
 .tm-badge-next { flex-shrink:0; font-size:0.66rem; font-weight:700; color:#3b5998; background:rgba(59,89,152,0.1); border-radius:999px; padding:0.12rem 0.5rem; }
 .tm-badge-jsk { font-size:0.64rem; font-weight:600; color:#92400e; background:#fef3c7; border-radius:999px; padding:0.08rem 0.4rem; }
-.tm-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; max-width:640px; }
+.tm-empty { text-align:center; color:var(--p-text-muted); padding:2.5rem 1rem; border:1px solid var(--p-border); border-radius:var(--p-radius); box-shadow:var(--p-shadow); background:#fff; max-width:640px; }
 .tm-card--past { opacity:0.55; }
 .tm-card--past .tm-date { background:#94a3b8; }
 </style>
 
-<div class="container py-2">
   <div class="portal-page-header tm-toolbar">
     <div>
       <h1 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Termine</h1>
@@ -131,6 +130,5 @@ include 'portal_header.php';
 
     <p class="text-muted small mt-3"><i class="bi bi-info-circle me-1"></i>Termine im eigenen Handy-Kalender? <a href="kalender_abo.php">Kalender abonnieren</a> – neue Termine erscheinen dann automatisch.</p>
   </div>
-</div>
 
 <?php include 'portal_footer.php'; ?>

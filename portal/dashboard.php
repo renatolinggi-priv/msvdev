@@ -1,6 +1,6 @@
 <?php
 // portal/dashboard.php - Mitgliederportal Dashboard
-$portal_page_title = 'MSV Wilen';
+$portal_page_title = 'Dashboard';
 
 // Auth + DB laden
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
@@ -674,6 +674,14 @@ include 'portal_header.php';
         </div>
         <div class="dash-card-title">Kantonalstich</div>
         <div class="dash-card-desc">5 Passen + Kranzlimite</div>
+    </a>
+
+    <a href="termine.php" class="dash-card">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1565c0;">
+            <i class="bi bi-calendar3"></i>
+        </div>
+        <div class="dash-card-title">Termine</div>
+        <div class="dash-card-desc">Vereinstermine &amp; Schiessanlässe</div>
     </a>
 
 

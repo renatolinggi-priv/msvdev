@@ -207,7 +207,7 @@ try {
     
     echo $output;
     
-    // Statements schließen
+    // Statements schliessen
     $mitgliederStmt->close();
     $kantiresultateStmt->close();
     
@@ -232,7 +232,7 @@ try {
     echo '</td></tr>';
     
 } finally {
-    // Datenbankverbindung schließen
+    // Datenbankverbindung schliessen
     if (isset($conn) && $conn) {
         $conn->close();
     }

@@ -62,7 +62,7 @@ function parseSchuesse($rohdaten) {
 $schuesse = parseSchuesse($rohdaten);
 
 // Generator erstellen
-$generator = new ZielscheibeGenerator(1000, 1000); // Größeres Bild für bessere Qualität
+$generator = new ZielscheibeGenerator(1000, 1000); // Grösseres Bild für bessere Qualität
 
 // Prüfen ob ein Ausgabe-Modus angegeben wurde
 $modus = isset($_GET['modus']) ? $_GET['modus'] : 'anzeigen';

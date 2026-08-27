@@ -45,6 +45,9 @@ function requireLogin() {
         header('Location: ' . $login . '?error=not_approved');
         exit;
     }
+    // Aktivitaets-Zeitstempel auffrischen, damit auch AJAX-Requests (die nur auth.php
+    // laden, nicht header.inc.php) den serverseitigen Inaktivitaets-Timeout zuruecksetzen.
+    $_SESSION['last_activity'] = time();
 }
 
 /**
@@ -171,6 +174,8 @@ function requireRoleJson($roles) {
         echo json_encode(['success' => false, 'message' => 'Zugriff verweigert']);
         exit;
     }
+    // Aktivitaets-Zeitstempel auffrischen (AJAX-Requests halten den Timeout wach).
+    $_SESSION['last_activity'] = time();
 }
 
 /**

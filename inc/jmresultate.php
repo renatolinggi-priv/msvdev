@@ -260,7 +260,7 @@ $page_specific_css = "
     color: #1e293b !important;
   }
 
-  /* Buttons: größere Touch-Targets */
+  /* Buttons: grössere Touch-Targets */
   .button-toolbar .btn {
     min-height: 48px !important;
     font-size: 0.95rem !important;
@@ -502,13 +502,13 @@ try {
 <link rel="stylesheet" href="../css/fixes/table-title-and-firstcol-override.css">
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-12 col-lg-12 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = 'Erfassung Jahresmeisterschaft'; include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <form id="jmresultateForm">
                         <input type="hidden" name="csrf_token"
@@ -757,7 +757,7 @@ try {
           <div class="upload-area" id="pdfImportDropzone">
             <i class="bi bi-cloud-arrow-up" style="font-size:2.5rem; color:#6c757d;"></i>
             <h6 class="mt-2 mb-1">PDF hier ablegen oder klicken</h6>
-            <p class="text-muted small mb-0">Einzelrangliste eines Anlasses (z.B. Vereinsstich). Vereinsmitglieder werden automatisch erkannt.</p>
+            <p class="text-muted small mb-0">Einzelrangliste eines Anlasses (z.B. Vereinsstich) oder FSA-Teilnehmerliste (Obligatorisch + Feldschiessen). Vereinsmitglieder werden automatisch erkannt.</p>
           </div>
           <input type="file" id="pdfImportFile" accept="application/pdf" style="display:none;">
         </div>
@@ -766,7 +766,7 @@ try {
         <div id="pdfImportStep2" style="display:none;">
           <div id="pdfImportStats" class="alert alert-info py-2 px-3 small mb-2"></div>
           <div id="pdfImportSektion" class="mb-2"></div>
-          <p class="text-muted small mb-2">
+          <p class="text-muted small mb-2" id="pdfImportHint">
             <i class="bi bi-trophy-fill text-warning"></i> = Top&nbsp;10 (wird zusätzlich als Einzelrangierung gespeichert) ·
             Gelb markierte Zeilen sind bereits erfasst und standardmässig abgewählt.
           </p>
@@ -928,7 +928,7 @@ try {
             const thead = table.querySelector('thead');
             const tbody = table.querySelector('tbody');
             if (!thead || !tbody) {
-                container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+                container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
                 return;
             }
 
@@ -937,7 +937,7 @@ try {
             const rows = tbody.querySelectorAll('tr');
 
             if (rows.length === 0) {
-                container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+                container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
                 return;
             }
 
@@ -949,7 +949,7 @@ try {
                 // Erste Zelle: Mitgliedername
                 const memberName = cells[0]?.textContent?.trim() || 'Unbekannt';
 
-                // Felder sammeln (alle außer erste Spalte)
+                // Felder sammeln (alle ausser erste Spalte)
                 let fieldsHtml = '';
                 let summaryTotal = '';
 
@@ -1610,7 +1610,7 @@ try {
 
             const mainRows = table.querySelectorAll('tbody tr.jm-main-row');
             if (mainRows.length === 0) {
-                scrollContainer.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+                scrollContainer.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
                 return;
             }
 
@@ -1789,14 +1789,19 @@ try {
     const modal = new bootstrap.Modal(modalEl);
     let previewRows = [];
     let sektionData = null;
+    let opfsMode = false;   // FSA-Teilnehmerliste: Obligatorisch + Feldschiessen (Bonus)
+    let opfsDefs = null;
 
     function csrf() { return $('#jmresultateForm input[name="csrf_token"]').val(); }
     function selectedYear() { return $('#yearSelect').val(); }
     function escapeHtml(s) { return $('<div>').text(s == null ? '' : s).html(); }
 
+    const theadDefaultHtml = $('#pdfImportPreviewTable thead tr').html();
+    const hintDefaultHtml = $('#pdfImportHint').html();
+
     const dropzoneHtml = '<i class="bi bi-cloud-arrow-up" style="font-size:2.5rem; color:#6c757d;"></i>' +
         '<h6 class="mt-2 mb-1">PDF hier ablegen oder klicken</h6>' +
-        '<p class="text-muted small mb-0">Einzelrangliste eines Anlasses (z.B. Vereinsstich). Vereinsmitglieder werden automatisch erkannt.</p>';
+        '<p class="text-muted small mb-0">Einzelrangliste eines Anlasses (z.B. Vereinsstich) oder FSA-Teilnehmerliste (Obligatorisch + Feldschiessen). Vereinsmitglieder werden automatisch erkannt.</p>';
 
     // ---- Öffnen ----
     $('#pdf-import-btn').on('click', function () {
@@ -1809,6 +1814,10 @@ try {
     function resetModal() {
         previewRows = [];
         sektionData = null;
+        opfsMode = false;
+        opfsDefs = null;
+        $('#pdfImportPreviewTable thead tr').html(theadDefaultHtml);
+        $('#pdfImportHint').html(hintDefaultHtml);
         $('#pdfImportStep1').show();
         $('#pdfImportStep2').hide();
         $('#pdfImportBackBtn, #pdfImportCommitBtn').hide();
@@ -1823,8 +1832,10 @@ try {
         $.get('jmresultate/load_anlaesse.php', { year: selectedYear() })
             .done(function (resp) {
                 $sel.html('<option value="">-- Anlass wählen --</option>');
+                // OP + FS werden nur kombiniert aus der FSA-Teilnehmerliste importiert
+                $sel.append($('<option>').val('opfs').text('Obligatorisch + Feldschiessen (FSA-Teilnehmerliste)'));
                 if (resp.success && resp.anlaesse) {
-                    resp.anlaesse.filter(a => !a.isReadonly).forEach(function (a) {
+                    resp.anlaesse.filter(a => !a.isReadonly && a.bezeichnung !== 'Obligatorisch' && a.bezeichnung !== 'Feldschiessen').forEach(function (a) {
                         $sel.append($('<option>').val(a.id).text(a.bezeichnung).attr('data-max', a.maxpunkte));
                     });
                 }
@@ -1881,7 +1892,13 @@ try {
                 }
                 previewRows = resp.rows || [];
                 sektionData = resp.sektion || null;
-                renderPreview(resp.stats);
+                opfsMode = (resp.mode === 'opfs');
+                opfsDefs = resp.defs || null;
+                if (opfsMode) {
+                    renderPreviewOpfs(resp.stats);
+                } else {
+                    renderPreview(resp.stats);
+                }
             })
             .fail(function () { msvToast('Fehler beim Hochladen / Parsen', 'error'); $dz.html(dropzoneHtml); });
     }
@@ -1939,6 +1956,86 @@ try {
         updateCommitCount();
     }
 
+    // ---- Vorschau: Obligatorisch + Feldschiessen (FSA-Bonus) ----
+    function renderPreviewOpfs(stats) {
+        $('#pdfImportStep1').hide();
+        $('#pdfImportStep2').show();
+        $('#pdfImportBackBtn').show();
+
+        const opMax = (opfsDefs && opfsDefs.op) ? opfsDefs.op.max : 20;
+        const fsMax = (opfsDefs && opfsDefs.fs) ? opfsDefs.fs.max : 20;
+
+        $('#pdfImportStats').html('<i class="bi bi-info-circle me-1"></i><strong>FSA-Teilnehmerliste – Obligatorisch + Feldschiessen</strong> – ' +
+            stats.matched + ' Mitglieder erkannt · OP: ' + stats.op_count + ' · FS: ' + stats.fs_count +
+            ' · ' + stats.duplicates + ' bereits (teilweise) erfasst' +
+            (stats.fuzzy ? ' · ' + stats.fuzzy + ' unsicher' : '') + ' (von ' + stats.total_lines + ' Teilnehmer-Zeilen, alle Vereine im PDF)');
+
+        sektionData = null;
+        $('#pdfImportSektion').empty();
+        $('#pdfImportHint').html('Bonus-Punkte sind mit ' + opMax + ' (Obligatorisch) bzw. ' + fsMax + ' (Feldschiessen) vorbelegt, wo ein Resultat vorhanden ist – leeres Feld wird nicht importiert. ' +
+            'Bereits erfasste Disziplinen bleiben leer (gelbe Zeile), unsichere Zuordnungen sind standardmässig abgewählt.');
+
+        $('#pdfImportPreviewTable thead tr').html(
+            '<th style="width:36px;"><input type="checkbox" id="pdfImportSelectAll" class="form-check-input" title="Alle"></th>' +
+            '<th>Mitglied</th>' +
+            '<th>Name (PDF) / Quelle</th>' +
+            '<th style="width:120px;">Geschossen</th>' +
+            '<th style="width:96px;">Bonus OP</th>' +
+            '<th style="width:96px;">Bonus FS</th>' +
+            '<th style="width:170px;">Status</th>');
+
+        if (previewRows.length === 0) {
+            $('#pdfImportPreviewTable tbody').html('<tr><td colspan="7" class="text-center text-muted py-3">Keine Vereinsmitglieder im PDF erkannt.</td></tr>');
+            $('#pdfImportCommitBtn').hide();
+            updateCommitCount();
+            return;
+        }
+        $('#pdfImportCommitBtn').show();
+
+        const badge = {
+            exact: '<span class="badge bg-success">Name</span>',
+            fuzzy: '<span class="badge bg-warning text-dark">unsicher</span>'
+        };
+
+        let html = '';
+        previewRows.forEach(function (r, i) {
+            const hasOp = r.op_resultat !== null;
+            const hasFs = r.fs_resultat !== null;
+            const opImportable = hasOp && !r.dup_op;
+            const fsImportable = hasFs && !r.dup_fs;
+            const isDup = (hasOp && r.dup_op) || (hasFs && r.dup_fs);
+            const checked = (r.match_status === 'exact' && (opImportable || fsImportable)) ? 'checked' : '';
+            const trCls = isDup ? 'row-dup' : '';
+
+            const geschossen = '<span class="text-nowrap">OP ' + (hasOp ? '<strong>' + r.op_resultat + '</strong>' : '–') +
+                ' · FS ' + (hasFs ? '<strong>' + r.fs_resultat + '</strong>' : '–') + '</span>';
+            const opCell = hasOp
+                ? '<input type="text" class="form-control form-control-sm res-input op-input" value="' + (opImportable ? opMax : '') + '" inputmode="numeric">'
+                : '<span class="text-muted small">–</span>';
+            const fsCell = hasFs
+                ? '<input type="text" class="form-control form-control-sm res-input fs-input" value="' + (fsImportable ? fsMax : '') + '" inputmode="numeric">'
+                : '<span class="text-muted small">–</span>';
+
+            let status = badge[r.match_status] || '';
+            if (hasOp && r.dup_op) status += ' <span class="badge bg-warning text-dark">OP erfasst</span>';
+            if (hasFs && r.dup_fs) status += ' <span class="badge bg-warning text-dark">FS erfasst</span>';
+
+            html += '<tr class="' + trCls + '" data-i="' + i + '">' +
+                '<td><input type="checkbox" class="form-check-input row-check" ' + checked + '></td>' +
+                '<td class="small fw-semibold">' + escapeHtml(r.matched_name) + '</td>' +
+                '<td class="small">' + escapeHtml(r.raw_name) +
+                    (r.quelle ? '<div class="text-muted" style="font-size:0.72rem;">' + escapeHtml(r.quelle) + '</div>' : '') + '</td>' +
+                '<td class="small">' + geschossen + '</td>' +
+                '<td>' + opCell + '</td>' +
+                '<td>' + fsCell + '</td>' +
+                '<td>' + status + '</td>' +
+                '</tr>';
+        });
+        $('#pdfImportPreviewTable tbody').html(html);
+        $('#pdfImportSelectAll').prop('checked', false);
+        updateCommitCount();
+    }
+
     function renderSektion() {
         const $c = $('#pdfImportSektion');
         if (!sektionData) { $c.empty(); return; }
@@ -1970,7 +2067,8 @@ try {
         $('#pdfImportCommitBtn').prop('disabled', (n + s) === 0);
     }
 
-    $('#pdfImportSelectAll').on('change', function () {
+    // Delegiert, da der thead im OP/FS-Modus neu aufgebaut wird
+    $('#pdfImportPreviewTable').on('change', '#pdfImportSelectAll', function () {
         $('#pdfImportPreviewTable tbody .row-check').prop('checked', this.checked);
         updateCommitCount();
     });
@@ -1978,6 +2076,7 @@ try {
 
     // ---- Import ----
     $('#pdfImportCommitBtn').on('click', function () {
+        if (opfsMode) { commitOpfs($(this)); return; }
         const rows = [];
         $('#pdfImportPreviewTable tbody tr').each(function () {
             const $tr = $(this);
@@ -2024,6 +2123,43 @@ try {
             .fail(function () { msvToast('Fehler beim Import', 'error'); })
             .always(function () { $btn.prop('disabled', false).html(orig); });
     });
+
+    // ---- Import: OP/FS-Bonus aus FSA-Teilnehmerliste ----
+    function commitOpfs($btn) {
+        const rows = [];
+        $('#pdfImportPreviewTable tbody tr').each(function () {
+            const $tr = $(this);
+            if (!$tr.find('.row-check').is(':checked')) return;
+            const r = previewRows[$tr.data('i')];
+            if (!r) return;
+            rows.push({
+                mitglied_id: r.mitglied_id,
+                op_punkte: ($tr.find('.op-input').val() || '').trim(),
+                fs_punkte: ($tr.find('.fs-input').val() || '').trim()
+            });
+        });
+        if (!rows.length) { msvToast('Nichts ausgewählt', 'warning'); return; }
+
+        const orig = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Importiere...');
+
+        $.ajax({
+            url: 'rangliste_import/import_api.php', type: 'POST', dataType: 'json',
+            data: { action: 'import', mode: 'opfs', csrf_token: csrf(), year: selectedYear(), rows: JSON.stringify(rows) }
+        })
+            .done(function (resp) {
+                if (resp.success) {
+                    msvToast(resp.message, 'success');
+                    modal.hide();
+                    $('#yearSelect').trigger('change'); // Anlass-Karten + Ranglisten neu laden
+                } else {
+                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen. Bitte Seite neu laden.'); return; }
+                    msvToast(resp.message || 'Fehler beim Import', 'error');
+                }
+            })
+            .fail(function () { msvToast('Fehler beim Import', 'error'); })
+            .always(function () { $btn.prop('disabled', false).html(orig); });
+    }
 })();
 </script>
 

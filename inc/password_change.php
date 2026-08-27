@@ -119,7 +119,7 @@ function validate_password($password, $username) {
     if (preg_match('/[0-9]/', $password)) $categories++;
     if (preg_match('/[^A-Za-z0-9]/', $password)) $categories++;
     if ($categories < 3) {
-        $errors[] = "Das Passwort muss mindestens 3 der folgenden Kategorien enthalten: Großbuchstaben, Kleinbuchstaben, Ziffern, Sonderzeichen.";
+        $errors[] = "Das Passwort muss mindestens 3 der folgenden Kategorien enthalten: Grossbuchstaben, Kleinbuchstaben, Ziffern, Sonderzeichen.";
     }
     if (stripos($password, $username) !== false) {
         $errors[] = "Das Passwort darf den Benutzernamen nicht enthalten.";
@@ -179,7 +179,7 @@ function validate_password($password, $username) {
                             <li data-requirement="length"><i class="bi bi-circle me-2"></i>Mindestens 10 Zeichen</li>
                             <li data-requirement="categories" class="mt-1"><i class="bi bi-circle me-2"></i>Mindestens 3 Kategorien:
                                 <ul class="list-unstyled ps-3 mt-1">
-                                    <li data-requirement="uppercase"><i class="bi bi-circle me-2"></i>Großbuchstaben (A-Z)</li>
+                                    <li data-requirement="uppercase"><i class="bi bi-circle me-2"></i>Grossbuchstaben (A-Z)</li>
                                     <li data-requirement="lowercase"><i class="bi bi-circle me-2"></i>Kleinbuchstaben (a-z)</li>
                                     <li data-requirement="numbers"><i class="bi bi-circle me-2"></i>Ziffern (0–9)</li>
                                     <li data-requirement="special"><i class="bi bi-circle me-2"></i>Sonderzeichen</li>

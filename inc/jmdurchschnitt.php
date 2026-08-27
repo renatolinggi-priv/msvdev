@@ -133,13 +133,13 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xxl-7 col-xl-9 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
-                <?php $page_title = 'Durchschnittsresultate JM'; include 'partials/page_header.inc.php'; ?>
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
+                <?php $page_title = 'Sektionsabrechnungen'; include 'partials/page_header.inc.php'; ?>
                 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <form id="durchschnittForm">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -157,7 +157,7 @@ if (empty($_SESSION['csrf_token'])) {
 
                             <label for="zaehlendeInput" class="form-label fw-bold mb-0 text-nowrap"
                                    data-bs-toggle="tooltip"
-                                   title="Anzahl der besten Resultate, die in den Durchschnitt einfließen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
+                                   title="Anzahl der besten Resultate, die in den Durchschnitt einfliessen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
                                 <i class="bi bi-list-ol me-1"></i>Zählende Resultate:
                             </label>
                             <input type="number" id="zaehlendeInput" class="form-control form-control-sm"
@@ -187,7 +187,7 @@ if (empty($_SESSION['csrf_token'])) {
                             <div class="row align-items-end">
                                 <div class="col-md-8">
                                     <label for="anlassSelect" class="form-label fw-bold">
-                                        <i class="bi bi-target me-1"></i>Schießanlass auswählen:
+                                        <i class="bi bi-target me-1"></i>Schiessanlass auswählen:
                                     </label>
                                     <select id="anlassSelect" class="form-select">
                                         <option value="">-- Bitte Anlass auswählen --</option>

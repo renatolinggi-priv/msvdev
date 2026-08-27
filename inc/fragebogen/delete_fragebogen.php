@@ -31,7 +31,7 @@ try {
     ";
     $conn->query($sqlDeleteExtended);
 
-    // Anschließend alle Einträge aus mitglieder_fragebogen löschen, die zum Jahr $year gehören.
+    // Anschliessend alle Einträge aus mitglieder_fragebogen löschen, die zum Jahr $year gehören.
     $sqlDeleteMain = "DELETE FROM mitglieder_fragebogen WHERE jahr = $year";
     $conn->query($sqlDeleteMain);
 

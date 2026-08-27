@@ -72,7 +72,7 @@ function truncateHeader($text, $maxLen = 14) {
     if ($lastSpace > 6) {
         $short = mb_substr($short, 0, $lastSpace);
     }
-    return '<span title="' . htmlspecialchars($text) . '" style="cursor:help;border-bottom:1px dotted #999">' . htmlspecialchars($short) . '&hellip;</span>';
+    return '<span data-tooltip="' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '" style="cursor:help;border-bottom:1px dotted #999">' . htmlspecialchars($short) . '&hellip;</span>';
 }
 
 $thead = '<tr>

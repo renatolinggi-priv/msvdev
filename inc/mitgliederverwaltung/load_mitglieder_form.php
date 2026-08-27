@@ -1,6 +1,7 @@
 <?php
 // load_mitglieder_form.php - Hybrid-Version (Read-only Tabelle + Slide-Panel)
 include 'config.php';
+require_once __DIR__ . '/../partials/empty_state.inc.php';
 
 $sql = "SELECT m.id, m.Anrede, m.vorname, m.name, m.waffenid, m.status, w.bezeichnung AS waffe,
         m.Geburtsdatum, m.Ehrenmitglied, m.Strasse, m.PLZ, m.Ort, m.Email,
@@ -102,7 +103,7 @@ if ($result && $result->num_rows > 0) {
         echo '</tr>';
     }
 } else {
-    echo '<tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Keine Mitglieder gefunden</td></tr>';
+    echo msv_empty_row(9, 'Keine Mitglieder gefunden');
 }
 
 $conn->close();

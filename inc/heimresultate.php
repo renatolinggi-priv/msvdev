@@ -564,8 +564,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-11 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-wide">
                 <!-- Header -->
                 <?php $page_title = 'Heimmeisterschaft Resultaterfassung'; include 'partials/page_header.inc.php'; ?>
 
@@ -607,7 +607,7 @@ if (empty($_SESSION['csrf_token'])) {
                                         </div>
                                         <div class="col-6">
                                             <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="publishChangelogBtn">
-                                                <i class="bi bi-megaphone me-1"></i>Publizieren
+                                                <i class="bi bi-megaphone me-1"></i>Veröffentlichen
                                             </button>
                                         </div>
                                     </div>
@@ -1320,7 +1320,15 @@ $(document).ready(function() {
 
             $('#entryOverlay').addClass('show');
             $('#entryPanel').addClass('open');
-            setTimeout(function() { $('#entryPassenGrid input').first().focus().select(); }, 150);
+            setTimeout(function() {
+                const $fields = $('#entryPassenGrid input');
+                let $target = $fields.filter(function() {
+                    const v = $(this).val().trim();
+                    return v === '' || v === '0';
+                }).first();
+                if (!$target.length) $target = $fields.first();
+                $target.focus().select();
+            }, 150);
         },
 
         // Schützen-Suche (Select2) befüllen + aktuellen markieren

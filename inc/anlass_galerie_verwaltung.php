@@ -115,7 +115,7 @@ foreach ($stmt->fetchAll() as $a) {
 <div class="container-fluid">
   <div class="row">
     <div class="col-12 ps-0">
-      <div class="main-content-wrapper">
+      <div class="main-content-wrapper content-width-default">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
           <h2 class="h4 mb-0 page-title">Foto-Galerien</h2>

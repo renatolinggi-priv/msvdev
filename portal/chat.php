@@ -68,10 +68,13 @@ $csrf_token = ensureCsrfToken();
 .chat-thread-head .chat-av { width:38px; height:38px; background:#fff; color:#3b5998; }
 .chat-back { display:none; background:none; border:none; font-size:1.3rem; color:#fff; }
 .chat-msgs { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.3rem; }
-.chat-bubble { position:relative; max-width:80%; padding:0.4rem 0.65rem 0.5rem; border-radius:0.7rem; font-size:0.9rem; line-height:1.35; word-wrap:break-word; box-shadow:0 1px 0.5px rgba(0,0,0,0.13); }
-.chat-bubble .t { font-size:0.62rem; color:#8a9bb5; display:block; text-align:right; margin-top:1px; }
+.chat-bubble { position:relative; max-width:80%; padding:0.4rem 0.65rem 0.42rem; border-radius:0.7rem; font-size:0.9rem; line-height:1.35; word-wrap:break-word; box-shadow:0 1px 0.5px rgba(0,0,0,0.13); display:flow-root; }
+.chat-bubble .t { font-size:0.62rem; color:#8a9bb5; float:right; margin:0.3rem 0 -0.1rem 0.55rem; position:relative; top:0.2rem; user-select:none; }
 .chat-bubble.them { background:#fff; color:#1f2937; align-self:flex-start; border-top-left-radius:0.15rem; }
 .chat-bubble.me { background:#dbe4f7; color:#16233d; align-self:flex-end; border-top-right-radius:0.15rem; }
+.chat-bubble.cont { margin-top:-0.15rem; }
+.chat-bubble.them.cont { border-top-left-radius:0.7rem; }
+.chat-bubble.me.cont { border-top-right-radius:0.7rem; }
 .chat-bubble.me .t { color:#5b7099; }
 .chat-day { align-self:center; background:#ffffffcc; color:#3b5998; font-size:0.72rem; font-weight:600; padding:2px 12px; border-radius:999px; margin:0.5rem 0; box-shadow:0 1px 1px rgba(0,0,0,0.08); }
 .chat-input { display:flex; gap:0.4rem; padding:0.5rem 0.6rem; border-top:1px solid #e2e8f0; background:#fff; align-items:flex-end; }
@@ -79,7 +82,8 @@ $csrf_token = ensureCsrfToken();
 .chat-input textarea:focus { outline:none; border-color:#3b5998; box-shadow:0 0 0 3px rgba(59,89,152,0.12); }
 .chat-send { flex-shrink:0; background:#3b5998; color:#fff; border:none; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; font-size:1.05rem; }
 .chat-send:hover { background:#2d4373; color:#fff; }
-.chat-emoji-btn { background:none; border:none; font-size:1.4rem; line-height:1; padding:0 0.25rem; cursor:pointer; flex-shrink:0; }
+.chat-emoji-btn { background:none; border:none; font-size:1.35rem; line-height:1; padding:0 0.25rem; cursor:pointer; flex-shrink:0; color:#5b7099; }
+.chat-emoji-btn:hover { color:#3b5998; }
 .chat-emoji-panel { display:none; position:absolute; left:8px; right:8px; bottom:62px; z-index:20;
   grid-template-columns:repeat(8, 1fr); gap:2px; max-height:190px; overflow-y:auto;
   background:#fff; border:1px solid #e2e8f0; border-radius:0.8rem; box-shadow:0 6px 20px rgba(0,0,0,0.15); padding:0.5rem; }
@@ -98,14 +102,20 @@ $csrf_token = ensureCsrfToken();
   .chat-wrap { height: calc(100dvh - var(--nav-height)); border:0; border-radius:0; box-shadow:none; }
   /* Sendebutton nicht ganz am Rand / nicht unter dem iOS-Home-Indikator */
   .chat-input { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
-  .chat-list { width:100%; }
-  .chat-thread { display:none; }
-  .chat-wrap.show-thread .chat-list { display:none; }
-  .chat-wrap.show-thread .chat-thread { display:flex; }
-  .chat-back { display:inline-block; }
-  /* Home-FAB nicht über dem Sendebutton: in der Liste nach links, im offenen Thread ausblenden */
+
+  /* Beide Spalten gleichzeitig sichtbar – Liste verkleinert (WhatsApp-Web-Stil) */
+  .chat-list { width:40%; min-width:132px; max-width:240px; }
+  .chat-thread { display:flex; }
+  .chat-wrap.show-thread .chat-list { display:flex; }
+  .chat-back { display:none; }
+
+  /* Liste kompakter */
+  .chat-row { padding:0.55rem 0.6rem; gap:0.5rem; }
+  .chat-av  { width:38px; height:38px; font-size:0.85rem; }
+  .chat-row-time { display:none; }
+
+  /* Home-FAB unten links, bleibt sichtbar */
   .portal-back-fab { left:1rem !important; right:auto !important; }
-  body.chat-in-thread .portal-back-fab { display:none !important; }
 }
 </style>
 
@@ -132,7 +142,7 @@ $csrf_token = ensureCsrfToken();
       <div class="chat-msgs" id="chatMsgs" style="display:none;"></div>
       <div class="chat-emoji-panel" id="emojiPanel"></div>
       <form class="chat-input" id="chatForm" style="display:none;">
-        <button type="button" class="chat-emoji-btn" id="emojiBtn" title="Emoji" aria-label="Emoji">😊</button>
+        <button type="button" class="chat-emoji-btn" id="emojiBtn" title="Emoji" aria-label="Emoji"><i class="bi bi-emoji-smile"></i></button>
         <textarea id="chatText" rows="1" placeholder="Nachricht…" maxlength="2000"></textarea>
         <button class="chat-send" type="submit" aria-label="Senden"><i class="bi bi-send-fill"></i></button>
       </form>
@@ -157,7 +167,7 @@ $csrf_token = ensureCsrfToken();
 (function () {
   const csrf = <?php echo json_encode($csrf_token); ?>;
   const API = '../api/chat.php';
-  let activeConv = 0, lastMsgId = 0, threadTimer = null, lastDay = '';
+  let activeConv = 0, lastMsgId = 0, threadTimer = null, lastDay = '', lastSender = null;
 
   const esc = s => $('<div>').text(s == null ? '' : s).html();
   function fmtTime(s){ if(!s) return ''; const d=new Date(s.replace(' ','T')); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
@@ -187,7 +197,7 @@ $csrf_token = ensureCsrfToken();
 
   // ---------- Thread ----------
   function openConv(id) {
-    activeConv = id; lastMsgId = 0; lastDay = '';
+    activeConv = id; lastMsgId = 0; lastDay = ''; lastSender = null;
     document.getElementById('threadPlaceholder').style.display = 'none';
     document.getElementById('threadHead').style.display = 'flex';
     document.getElementById('chatMsgs').style.display = 'flex';
@@ -214,10 +224,14 @@ $csrf_token = ensureCsrfToken();
       const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
       d.messages.forEach(m => {
         const day = fmtDay(m.at);
-        if (day !== lastDay) { box.insertAdjacentHTML('beforeend', '<div class="chat-day">'+esc(day)+'</div>'); lastDay = day; }
+        let dayBreak = false;
+        if (day !== lastDay) { box.insertAdjacentHTML('beforeend', '<div class="chat-day">'+esc(day)+'</div>'); lastDay = day; dayBreak = true; }
+        const sender = m.mine ? 'me' : 'them';
+        const cont = (sender === lastSender && !dayBreak) ? ' cont' : '';
         box.insertAdjacentHTML('beforeend',
-          '<div class="chat-bubble ' + (m.mine?'me':'them') + '">' + esc(m.text).replace(/\n/g,'<br>')
+          '<div class="chat-bubble ' + sender + cont + '">' + esc(m.text).replace(/\n/g,'<br>')
           + '<span class="t">' + fmtTime(m.at) + '</span></div>');
+        lastSender = sender;
         lastMsgId = Math.max(lastMsgId, m.id);
       });
       if (d.messages.length && (initial || nearBottom)) box.scrollTop = box.scrollHeight;

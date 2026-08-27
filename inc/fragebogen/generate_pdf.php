@@ -31,7 +31,7 @@ $htmlOutput .= "<h1 style='text-align:left;'>MSV Wilen Fragebogen $selectedYear<
 // 3) Tabelle inkl. Totals-Zeile erzeugen
 $htmlOutput .= buildFragebogenTableForPDF($selectedYear, $conn);
 
-// 4) Footer hinzufügen (schließt </body></html>)
+// 4) Footer hinzufügen (schliesst </body></html>)
 $htmlOutput .= $footer;
 
 // --- PDF-Erzeugung ---

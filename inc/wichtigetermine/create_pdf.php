@@ -173,7 +173,7 @@ foreach ($termine as $termin) {
               </tr>';
 }
 
-// Abschließender Teil des HTML mit Footer
+// Abschliessender Teil des HTML mit Footer
 $html .= '
   </table>
 

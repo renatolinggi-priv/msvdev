@@ -276,13 +276,13 @@ include 'header.inc.php';
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xxl-8 col-xl-9 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = "Jahresmeisterschaft Ranglisten"; include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="jmresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -446,7 +446,7 @@ $(document).ready(function() {
 
             const mainRows = table.querySelectorAll('tbody tr.jm-main-row');
             if (mainRows.length === 0) {
-                scrollContainer.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+                scrollContainer.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
                 return;
             }
 

@@ -236,7 +236,7 @@ function openManualWinnerModal(pair) {
 }
 
 /**
- * Schließt das Modal
+ * Schliesst das Modal
  */
 function closeManualWinnerModal() {
     $('#manual-winner-modal').fadeOut(function() {
@@ -405,7 +405,7 @@ $(document).ready(function() {
         loadPairs(currentRound);
     });
     
-    // Modal schließen bei Klick außerhalb
+    // Modal schliessen bei Klick ausserhalb
     $(document).on('click', '.modal', function(e) {
         if (e.target === this) {
             $(this).find('.close').click();

@@ -217,7 +217,7 @@ try {
         $stmt_update_3->close();
     }
 
-    // Transaktion abschließen
+    // Transaktion abschliessen
     $conn->commit();
 
     // Response erstellen

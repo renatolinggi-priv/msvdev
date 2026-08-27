@@ -161,10 +161,10 @@ try {
 <!-- Zielscheiben-Ausdruck Workflow -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-9 col-lg-10 col-md-12 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'Zielscheiben-Ausdruck'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Partner Scheiben Ausdruck'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     

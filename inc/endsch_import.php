@@ -65,8 +65,8 @@ include 'header.inc.php';
 <!-- 3-Phasen CSV Import Workflow -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-7 col-lg-8 col-md-10 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
                 <?php $page_title = 'CSV Import - Endschiessen'; include 'partials/page_header.inc.php'; ?>
                 

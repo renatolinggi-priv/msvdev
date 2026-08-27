@@ -121,13 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         foreach ($bezeichnungen as $id => $dummy) {
             $id = intval($id);
-            // Lösche alte Schießtage für dieses Event
+            // Lösche alte Schiesstage für dieses Event
             $stmtDelete->bind_param("i", $id);
             if (!$stmtDelete->execute()) {
                 throw new Exception("Fehler beim Löschen der alten Schiesstage für Event ID $id: " . $stmtDelete->error);
             }
             
-            // Falls neue Schießstage vorhanden sind
+            // Falls neue Schiessstage vorhanden sind
             if (isset($schiesstage[$id]) && !empty(trim($schiesstage[$id]))) {
                 // Normalisiere Zeilenumbrüche
                 $normalized = str_replace(["\r\n", "\r"], "\n", trim($schiesstage[$id]));

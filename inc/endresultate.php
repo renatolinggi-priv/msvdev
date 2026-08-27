@@ -361,8 +361,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-12 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-wide">
                 <!-- Header -->
                 <?php $page_title = 'Endschiessen Resultaterfassung'; include 'partials/page_header.inc.php'; ?>
 
@@ -1200,13 +1200,13 @@ $(document).ready(function() {
 
         const tbody = table.querySelector('tbody');
         if (!tbody) {
-            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
             return;
         }
 
         const rows = tbody.querySelectorAll('tr.hybrid-row');
         if (rows.length === 0) {
-            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
             return;
         }
 

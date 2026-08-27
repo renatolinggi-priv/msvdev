@@ -54,7 +54,7 @@ try {
             $options .= '</option>';
         }
         
-        // Letztes optgroup schließen
+        // Letztes optgroup schliessen
         if ($current_kategorie !== '') {
             $options .= '</optgroup>';
         }

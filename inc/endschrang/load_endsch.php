@@ -16,7 +16,7 @@ if ($conn->connect_error) {
 }
 
 /**
- * Liefert das Ergebnisobjekt für Endschießen basierend auf Kategorie und Jahr.
+ * Liefert das Ergebnisobjekt für Endschiessen basierend auf Kategorie und Jahr.
  *
  * @param string $kat       Kategorie (z. B. 'A' oder 'B')
  * @param int    $selectedYear  Jahr

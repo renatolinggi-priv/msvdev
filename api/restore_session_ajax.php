@@ -35,7 +35,7 @@ $token_hash = hash('sha256', $token);
 try {
     $db   = getDB();
     $stmt = $db->prepare("
-        SELECT rt.user_id, u.username, u.full_name, u.role, u.status, u.mitglied_id
+        SELECT rt.user_id, u.username, u.full_name, u.role, u.status, u.mitglied_id, u.jungschuetze_id
         FROM remember_tokens rt
         JOIN users u ON rt.user_id = u.id
         WHERE rt.token_hash = ? AND rt.expires_at > NOW()
@@ -63,6 +63,7 @@ try {
     $_SESSION['user_role']     = $user['role'] ?? 'mitglied';
     $_SESSION['user_status']   = $user['status'] ?: 'approved'; // '' und NULL → 'approved' (Legacy-Admins)
     $_SESSION['mitglied_id']   = $user['mitglied_id'];
+    $_SESSION['jungschuetze_id'] = $user['jungschuetze_id'] ?? null;
     $_SESSION['last_activity'] = time();
     $_SESSION['csrf_token']    = bin2hex(random_bytes(32));
 

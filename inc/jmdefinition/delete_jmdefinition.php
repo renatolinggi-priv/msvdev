@@ -21,7 +21,7 @@ if ($conn->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && is_numeric($_POST['id'])) {
     $id = intval($_POST['id']); // ID als Ganzzahl validieren
 
-    // Sicherstellen, dass die ID größer als 0 ist
+    // Sicherstellen, dass die ID grösser als 0 ist
     if ($id > 0) {
         // SQL-Abfrage vorbereiten
         $stmt = $conn->prepare("DELETE FROM JMDefinition WHERE ID = ?");
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && is_numeric($
     } else {
         echo json_encode([
             "success" => false,
-            "message" => "Ungültige ID. Die ID muss größer als 0 sein."
+            "message" => "Ungültige ID. Die ID muss grösser als 0 sein."
         ]);
     }
 } else {

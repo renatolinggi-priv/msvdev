@@ -636,8 +636,8 @@ include 'header.inc.php';
 
 <div class="container-fluid">
 <div class="row">
-  <div class="col-12 col-md-11 col-lg-9 col-xl-12 ps-0">
-    <div class="main-content-wrapper">
+  <div class="col-12 ps-0">
+    <div class="main-content-wrapper content-width-wide">
 
       <!-- Page Title -->
       <div class="row mb-3 d-none d-md-flex">

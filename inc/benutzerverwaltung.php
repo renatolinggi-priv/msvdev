@@ -104,8 +104,8 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-11 col-lg-12 col-md-12 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-wide">
                 <?php $page_title = 'Benutzerverwaltung'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">

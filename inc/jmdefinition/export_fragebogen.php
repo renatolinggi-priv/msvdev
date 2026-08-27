@@ -40,7 +40,7 @@ function extractDaysAndMonths($schiesstage)
             $month = $matches[2];
             $year = isset($matches[3]) ? $matches[3] : $currentYear; // Falls kein Jahr angegeben, aktuelles Jahr
 
-            // Falls das Jahr größer als das aktuelle Jahr ist, Jahr zum Monat hinzufügen
+            // Falls das Jahr grösser als das aktuelle Jahr ist, Jahr zum Monat hinzufügen
             if ($year > $currentYear) {
                 $month .= " " . $year;
             }
@@ -83,7 +83,7 @@ $date = new DateTime();
 $outputFile = 'dat/Fragebogen_' .$date->format('Y-m-d_H-i-s') . '.docx';
 $templateProcessor->saveAs($outputFile);
 
-// Schließe die DB-Verbindung
+// Schliesse die DB-Verbindung
 $conn->close();
 
 // Erstelle eine JSON-Antwort, die den Link zum generierten Word-Dokument enthält

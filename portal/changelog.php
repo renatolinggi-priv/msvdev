@@ -101,7 +101,7 @@ include 'portal_header.php';
 <div class="p-narrow">
 
 <div class="portal-page-header">
-    <h1><i class="bi bi-megaphone me-2"></i>Neuigkeiten & Updates</h1>
+    <h1><i class="bi bi-megaphone me-2"></i>Neuigkeiten</h1>
     <p class="subtitle">Alle Änderungen und Neuerungen am System</p>
 </div>
 

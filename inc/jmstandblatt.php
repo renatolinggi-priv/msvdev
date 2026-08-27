@@ -60,7 +60,7 @@ include 'header.inc.php';
 <div class="container-fluid">
   <div class="row">
     <div class="col-12 ps-0">
-      <div class="main-content-wrapper">
+      <div class="main-content-wrapper content-width-narrow">
         <!-- Desktop-Header (unsichtbar auf Mobile) -->
         <?php $page_title = 'JM Standblatt'; include 'partials/page_header.inc.php'; ?>
 

@@ -82,10 +82,10 @@ include 'header.inc.php';
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-7 col-lg-11 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'CSV Resultate Viewer'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Imetron CSV prüfen'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
             

@@ -255,7 +255,7 @@ $html .= '</div>
 // HTML im Browser ausgeben, um die Formatierung zu überprüfen
 //echo $html;
 
-// Verbindung schließen
+// Verbindung schliessen
 $conn->close();
 
 // Weiteres Skript beenden, damit das PDF nicht sofort erstellt wird

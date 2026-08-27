@@ -143,7 +143,7 @@ try {
         
     } else {
         echo '<div class="p-4 text-center text-muted">';
-        echo '<i class="bi bi-info-circle me-2"></i>';
+        echo '<i class="bi bi-inbox me-2"></i>';
         echo 'Keine Wanderpreise gefunden.';
         echo '</div>';
     }

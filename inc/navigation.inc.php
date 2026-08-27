@@ -80,7 +80,7 @@ class NavigationManager {
         // Header
         echo '<div class="offcanvas-header">';
         echo '<h5 class="offcanvas-title"><i class="bi bi-list-ul me-2"></i>Navigation</h5>';
-        echo '<button class="offcanvas-close" aria-label="Schließen">';
+        echo '<button class="offcanvas-close" aria-label="Schliessen">';
         echo '<i class="bi bi-x"></i>';
         echo '</button>';
         echo '</div>';
@@ -386,7 +386,7 @@ class NavigationManager {
     
     // Hilfsfunktion zum Normalisieren von Pfaden
     private function normalizePath($path) {
-        // Entferne führende/abschließende Slashes und normalisiere
+        // Entferne führende/abschliessende Slashes und normalisiere
         $path = trim((string)$path);
         $path = str_replace('\\', '/', $path);
         
@@ -1218,15 +1218,24 @@ document.addEventListener("DOMContentLoaded", function() {
         function expandActiveSection() {
             var sidebar = document.querySelector(".offcanvas-nav");
             if (!sidebar) return;
-            var active = sidebar.querySelector(".mobile-submenu-link.active, .mobile-nav-link.active");
-            if (!active) return;
-            var sub = active.closest(".mobile-submenu");
-            while (sub) {
-                sub.classList.add("show");
-                var toggle = sub.previousElementSibling;
-                if (toggle && toggle.hasAttribute("data-has-submenu")) toggle.classList.add("expanded");
-                sub = sub.parentElement ? sub.parentElement.closest(".mobile-submenu") : null;
-            }
+            // Über ALLE aktiven Einträge iterieren: isActiveDeep markiert Blatt UND
+            // alle übergeordneten Toggles als .active. Ein einzelner querySelector würde
+            // den Level-1-Toggle zuerst finden (der in keinem .mobile-submenu sitzt).
+            sidebar.querySelectorAll(".mobile-submenu-link.active, .mobile-nav-link.active").forEach(function (active) {
+                var sub = active.closest(".mobile-submenu");
+                while (sub) {
+                    sub.classList.add("show");
+                    var toggle = sub.previousElementSibling;
+                    if (toggle && toggle.hasAttribute("data-has-submenu")) toggle.classList.add("expanded");
+                    sub = sub.parentElement ? sub.parentElement.closest(".mobile-submenu") : null;
+                }
+            });
+            // Ist der aktive Eintrag selbst ein Toggle (Gruppe/Zwischenebene), sein eigenes Untermenü öffnen
+            sidebar.querySelectorAll("[data-has-submenu].active").forEach(function (toggle) {
+                toggle.classList.add("expanded");
+                var own = toggle.nextElementSibling;
+                if (own && own.classList.contains("mobile-submenu")) own.classList.add("show");
+            });
         }
 
         function apply(on, persist) {

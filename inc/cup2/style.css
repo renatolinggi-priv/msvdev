@@ -1,5 +1,5 @@
 body {
-    font-size: 0.9em; /* Kleinere Schriftgröße */
+    font-size: 0.9em; /* Kleinere Schriftgrösse */
 }
 
 .container-fluid {
@@ -63,7 +63,7 @@ body {
 
 .btn {
     padding: 4px 8px; /* Weniger Padding in den Buttons */
-    font-size: 0.8em; /* Kleinere Schriftgröße in den Buttons */
+    font-size: 0.8em; /* Kleinere Schriftgrösse in den Buttons */
 }
 
 .participant-item,
@@ -283,7 +283,7 @@ input[type="number"] {
     margin-right: 10px; /* Abstand zwischen Label und Eingabefeld */
 }
 
-/* Gleiche Größe für die Namensfelder im Standcup und Finalrunde */
+/* Gleiche Grösse für die Namensfelder im Standcup und Finalrunde */
 .final-round-partner, .standcup-final-container .final-partner {
     width: 180px; /* Gleiche Breite für alle Namensfelder */
     text-align: right; /* Text im Eingabefeld rechtsbündig */
@@ -292,7 +292,7 @@ input[type="number"] {
 
 /* Resultat-Input soll wie bei der Finalrunde aussehen */
 .standcup-final-container .result-input {
-    width: 50px; /* Gleiche Größe wie in der Finalrunde */
+    width: 50px; /* Gleiche Grösse wie in der Finalrunde */
     text-align: center; /* Zentrierter Text für die Eingabe */
     height: 40px; /* Gleiche Höhe wie in der Finalrunde */
     box-sizing: border-box;

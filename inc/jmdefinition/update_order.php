@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order'])) {
             }
         }
 
-        $conn->commit(); // Transaktion abschließen
+        $conn->commit(); // Transaktion abschliessen
         echo json_encode([
             "success" => true,
             "message" => "Reihenfolge erfolgreich aktualisiert."

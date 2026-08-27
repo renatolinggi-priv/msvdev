@@ -577,7 +577,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             ['type' => 'link', 'link' => 'chat.php', 'text' => 'Jungschützenchat', 'icon' => 'bi-chat-dots'],
             ['type' => 'link', 'link' => 'jsk_termin.php', 'text' => 'Schiessanfrage', 'icon' => 'bi-calendar-plus'],
             ['type' => 'link', 'link' => 'jsk_termine.php', 'text' => 'Termine', 'icon' => 'bi-calendar3'],
-            ['type' => 'link', 'link' => 'jsk_dokumente.php', 'text' => 'Dokumente', 'icon' => 'bi-mortarboard'],
+            ['type' => 'link', 'link' => 'jsk_dokumente.php', 'text' => 'JSK-Dokumente', 'icon' => 'bi-mortarboard'],
             ['type' => 'link', 'link' => 'jsk_profil.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'],
         ];
     } else {
@@ -751,9 +751,12 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item text-danger" href="../inc/user_logout.php">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Abmelden
-                                </a>
+                                <form method="post" action="../inc/user_logout.php">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Abmelden
+                                    </button>
+                                </form>
                             </li>
                         </ul>
                     </li>
@@ -824,10 +827,13 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                         </a>
                     </li>
                     <li class="mobile-nav-item">
-                        <a class="mobile-nav-link text-danger" href="../inc/user_logout.php">
-                            <i class="bi bi-box-arrow-right"></i>
-                            Abmelden
-                        </a>
+                        <form method="post" action="../inc/user_logout.php">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
+                            <button type="submit" class="mobile-nav-link text-danger w-100 text-start" style="border:0;background:none;">
+                                <i class="bi bi-box-arrow-right"></i>
+                                Abmelden
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </div>
@@ -914,4 +920,4 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <a href="dashboard.php" class="portal-back-fab"><i class="bi bi-house"></i></a>
     <?php endif; ?>
 
-    <?php if (empty($portal_hide_pwa_install)) include __DIR__ . '/inc_pwa_install.php'; /* "Als App installieren"-Hinweis (iOS-Anleitung / Android-Button); zeigt sich nur, wenn noch nicht installiert. Opt-out via $portal_hide_pwa_install (z.B. benachrichtigungen.php mit eigenem Hinweis) */ ?>
+    <?php if ($current_page === 'dashboard.php' && empty($portal_hide_pwa_install)) include __DIR__ . '/inc_pwa_install.php'; /* "Als App installieren"-Hinweis nur auf dem Dashboard (iOS-Anleitung / Android-Button); zeigt sich nur, wenn noch nicht installiert. Opt-out via $portal_hide_pwa_install */ ?>

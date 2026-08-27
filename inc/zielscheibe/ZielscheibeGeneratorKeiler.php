@@ -40,7 +40,7 @@ class ZielscheibeGeneratorKeiler {
         
         $this->keilerBild = new Imagick($bildPfad);
         
-        // Auf Zielgröße skalieren
+        // Auf Zielgrösse skalieren
         $this->keilerBild->scaleImage($this->breite, $this->hoehe, true);
         
         return true;
@@ -98,14 +98,14 @@ class ZielscheibeGeneratorKeiler {
         $px = $this->zentrum_x + ($x_mm * $faktor);
         $py = $this->zentrum_y - ($y_mm * $faktor);
         
-        // Größerer Kreis für bessere Sichtbarkeit
+        // Grösserer Kreis für bessere Sichtbarkeit
         $kreisRadius = 16;
         
         // Alle Schüsse rot
         $kreiFarbe = '#FF0000';
         $kreisRandFarbe = '#8B0000'; // Dunkelrot für Rand
         
-        // Äußerer dunkler Rand (für Tiefe)
+        // Äusserer dunkler Rand (für Tiefe)
         $drawRand = new ImagickDraw();
         $drawRand->setFillColor(new ImagickPixel($kreisRandFarbe));
         $drawRand->setStrokeOpacity(0);
@@ -128,7 +128,7 @@ class ZielscheibeGeneratorKeiler {
         
         // Schuss-Nummer mittig im Kreis
         if ($nr > 0) {
-            // Weiße Nummer zentriert
+            // Weisse Nummer zentriert
             $drawText = new ImagickDraw();
             $drawText->setFillColor(new ImagickPixel('#FFFFFF'));
             $drawText->setFont('Arial-Bold');

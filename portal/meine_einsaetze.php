@@ -350,7 +350,7 @@ if (!$mitglied_id): ?>
                 data-id="<?php echo (int) $e['id']; ?>"
                 data-bez="<?php echo htmlspecialchars($e['bezeichnung'], ENT_QUOTES); ?>"
                 data-datum="<?php echo htmlspecialchars(einsatzDatum($e['event_datum'], $weekdays, $months), ENT_QUOTES); ?>"
-                data-tooltip="Abtauschen / übergeben" aria-label="Einsatz abtauschen">
+                title="Abtauschen / übergeben" aria-label="Einsatz abtauschen">
             <i class="bi bi-arrow-left-right"></i>
         </button>
     </div>

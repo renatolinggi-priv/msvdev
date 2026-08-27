@@ -554,7 +554,7 @@ const FileHandler = {
                 this.executeImport();
             });
 
-            // Event-Handler für Modal schließen - .one() für einmalige Ausführung
+            // Event-Handler für Modal schliessen - .one() für einmalige Ausführung
             $('#overwriteModal').one('hidden.bs.modal', function () {
                 $('.modal-backdrop').remove();
                 $('body').removeClass('modal-open').css('padding-right', '');
@@ -754,7 +754,7 @@ const FileHandler = {
     },
     
     async executeImport() {
-        // Modal schließen
+        // Modal schliessen
         const modal = bootstrap.Modal.getInstance(document.getElementById('importConfirmationModal'));
         if (modal) {
             modal.hide();

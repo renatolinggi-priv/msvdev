@@ -101,6 +101,7 @@ function generateResultRow($row) {
 
 // Include database configuration
 include '../config.php';
+require_once __DIR__ . '/../partials/empty_state.inc.php';
 
 // Check database connection with proper error handling
 if ($conn->connect_error) {
@@ -173,10 +174,14 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
     
-    while ($row = $result->fetch_assoc()) {
-        echo generateResultRow($row);
+    if ($result->num_rows === 0) {
+        echo msv_empty_row(8, 'Keine Ergebnisse gefunden');
+    } else {
+        while ($row = $result->fetch_assoc()) {
+            echo generateResultRow($row);
+        }
     }
-    
+
     $stmt->close();
     
 } catch (Exception $e) {

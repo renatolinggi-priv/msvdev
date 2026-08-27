@@ -1,6 +1,6 @@
 <?php
 // portal/jsk_dashboard.php - Übersicht fuer Jungschuetzen: eigene Schiess-Termin-Anmeldungen
-$portal_page_title = 'Jungschützen';
+$portal_page_title = 'Übersicht';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/chat.inc.php';

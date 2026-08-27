@@ -206,8 +206,27 @@ $page_specific_css = "
     background: rgba(0,123,255,0.08);
     box-shadow: inset 4px 0 0 #007bff;
 }
+#partnerTabelle tbody tr.hybrid-row[data-has-data='1'] td:first-child {
+    box-shadow: inset 4px 0 0 #28a745;
+}
+#partnerTabelle tbody tr.hybrid-row[data-has-data='0'] td:first-child {
+    box-shadow: inset 4px 0 0 #dee2e6;
+}
 #partnerTabelle tbody tr.hybrid-row.selected td:first-child {
     box-shadow: inset 4px 0 0 #007bff;
+}
+
+/* =========================================
+   Fortschrittsbalken
+   ========================================= */
+.progress-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--box-shadow);
+    flex-shrink: 0;
 }
 #partnerTabelle tbody tr.hybrid-row.table-warning {
     cursor: pointer;
@@ -343,6 +362,14 @@ $page_specific_css = "
 
 @media (min-width: 768px) {
     .mobile-cards-container { display: none !important; }
+    /* Kompakte Tabellen-Kopfzeile wie auf endresultate/kanti/heim */
+    #resultateContainer #partnerTabelle thead th {
+        font-size: 0.72rem !important;
+        padding: 0.6rem 0.4rem !important;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    #resultateContainer #partnerTabelle tbody td { padding: 0.35rem 0.4rem !important; }
 }
 ";
 
@@ -358,10 +385,10 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-12 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-wide">
                 <!-- Header -->
-                <?php $page_title = 'Partner Endresultate'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Endschiessen Partner'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="partnerResultateForm">
@@ -391,11 +418,11 @@ if (empty($_SESSION['csrf_token'])) {
                                                     <i class="bi bi-trophy me-1"></i>Rangliste
                                                 </button>
                                             </div>
-                                            <div class="col-6">
-                                                <button id="delete-year-btn" type="button" class="btn btn-outline-danger btn-sm w-100">
-                                                    <i class="bi bi-trash me-1"></i>Löschen
-                                                </button>
-                                            </div>
+                                        </div>
+                                        <div class="border-top mt-2 pt-2 text-end">
+                                            <button id="delete-year-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
+                                                <i class="bi bi-trash me-1"></i>Alle Resultate löschen
+                                            </button>
                                         </div>
                             <?php
                             $ac_body = ob_get_clean();
@@ -403,13 +430,22 @@ if (empty($_SESSION['csrf_token'])) {
                             ?>
                         </div>
 
+                        <!-- Fortschrittsbalken -->
+                        <div class="progress-card">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="fw-semibold small">
+                                    <i class="bi bi-people me-1"></i>Erfassungsfortschritt
+                                </span>
+                                <span class="badge bg-success" id="progressBadge">0 / 0</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
                         <!-- Tabelle Container -->
                         <div id="resultateContainer">
                             <div class="results-list-card">
-                                <div class="results-header">
-                                    <i class="bi bi-table me-2"></i>
-                                    Partner-Resultate
-                                </div>
                                 <div class="table-wrapper">
                                     <!-- Desktop: Tabelle -->
                                     <div class="desktop-table-container">
@@ -895,13 +931,31 @@ $(document).ready(function() {
                 const partnerId = $tr.data('partner-id');
                 const guestName = $tr.data('guest-name');
 
+                // "Erfasst" = irgendein Resultat vorhanden (Endstich / Sie&Er-Total / Schwini)
+                const $tds = $tr.children('td');
+                const num = s => parseFloat(String(s || '').replace(',', '.')) || 0;
+                const hasData = num($tds.eq(2).text()) > 0
+                    || num($tr.find('.sie-er-total').text()) > 0
+                    || num($tds.eq(4).text()) > 0;
+                $tr.attr('data-has-data', hasData ? '1' : '0');
+
                 this.allRows.push({
                     id: partnerId || null,
                     isGuest: !partnerId && !!guestName,
                     guestName: guestName || null,
-                    tr: tr
+                    tr: tr,
+                    hasData: hasData
                 });
             });
+            this.updateProgress();
+        },
+
+        updateProgress() {
+            const total = this.allRows.length;
+            const withData = this.allRows.filter(r => r.hasData).length;
+            const pct = total > 0 ? Math.round((withData / total) * 100) : 0;
+            $('#progressBadge').text(withData + ' / ' + total);
+            $('#progressBar').css('width', pct + '%');
         },
 
         async deletePartner() {
@@ -1205,13 +1259,13 @@ $(document).ready(function() {
 
         const tbody = table.querySelector('tbody');
         if (!tbody) {
-            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
             return;
         }
 
         const rows = tbody.querySelectorAll('tr.hybrid-row');
         if (rows.length === 0) {
-            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+            container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
             return;
         }
 

@@ -7,13 +7,26 @@ include 'header.inc.php';
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous" />
 
 <div class="container-fluid">
-  <h5>Helfereinsätze Jungschützenkurs â€“ <?= date('Y') ?></h5>
-  <form id="helferstundenForm">
-    <div id="helferstundenTabelle" class="col-4"></div>
-    <button type="submit" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-save me-1"></i>Speichern</button>
-    <button type="button" class="btn btn-outline-success btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#freierEintragModal">âž• Zusätzlicher Helfereinsatz</button>
-    <button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm mt-3"><i class="bi bi-file-pdf me-1"></i>Helferstunden als PDF exportieren</button>
-  </form>
+  <div class="row">
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-default">
+        <?php $page_title = 'Helferstunden erfassen'; include 'partials/page_header.inc.php'; ?>
+        <div class="content-background">
+          <form id="helferstundenForm">
+            <div class="table-wrapper">
+              <h5 class="table-title"><i class="bi bi-people-fill me-2"></i>Helfereinsätze Jungschützenkurs – <?= date('Y') ?></h5>
+              <div id="helferstundenTabelle"></div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-save me-1"></i>Speichern</button>
+              <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#freierEintragModal"><i class="bi bi-plus-lg me-1"></i>Zusätzlicher Helfereinsatz</button>
+              <button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm"><i class="bi bi-file-pdf me-1"></i>Helferstunden als PDF exportieren</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <div class="row mt-3">
   <div class="col-12 text-center">
@@ -27,7 +40,7 @@ include 'header.inc.php';
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="feedbackModalLabel">Hinweis</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
       </div>
       <div class="modal-body" id="feedbackMessage"></div>
       <div class="modal-footer">
@@ -44,7 +57,7 @@ include 'header.inc.php';
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
       <div class="modal-header">
         <h5 class="modal-title" id="freierEintragLabel">Freier Helfereinsatz erfassen</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
       </div>
       <div class="modal-body">
         <div class="mb-2">

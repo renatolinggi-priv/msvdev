@@ -128,23 +128,29 @@ foreach ($fragen as $f) {
     ];
 
     if (in_array($f['frage_typ'], ['radio', 'dropdown'])) {
-        // Zählen pro Option
+        // Zählen pro Option, Namen pro Option (Vorstand sieht, wer wie gestimmt hat)
         $counts = [];
+        $namen = [];
         foreach ($optionen_raw as $opt) {
             $counts[$opt] = 0;
+            $namen[$opt] = [];
         }
         foreach ($frage_antworten as $a) {
             $val = $a['antwort'];
             if (isset($counts[$val])) {
                 $counts[$val]++;
+                $namen[$val][] = $a['Vorname'] . ' ' . $a['Name'];
             }
         }
         $result['optionen'] = $counts;
+        $result['namen'] = $namen;
     } elseif ($f['frage_typ'] === 'checkbox') {
-        // Zählen pro Option (JSON-Array decodieren)
+        // Zählen pro Option (JSON-Array decodieren), Namen pro Option
         $counts = [];
+        $namen = [];
         foreach ($optionen_raw as $opt) {
             $counts[$opt] = 0;
+            $namen[$opt] = [];
         }
         foreach ($frage_antworten as $a) {
             $decoded = json_decode($a['antwort'], true);
@@ -152,11 +158,13 @@ foreach ($fragen as $f) {
                 foreach ($decoded as $v) {
                     if (isset($counts[$v])) {
                         $counts[$v]++;
+                        $namen[$v][] = $a['Vorname'] . ' ' . $a['Name'];
                     }
                 }
             }
         }
         $result['optionen'] = $counts;
+        $result['namen'] = $namen;
     } else {
         // Text: alle Antworten als Liste
         $result['texte'] = [];

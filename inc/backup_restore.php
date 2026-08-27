@@ -141,13 +141,13 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-8 col-lg-11 col-12 ps-0">
-      <!-- Außen-Container -->
-      <div class="main-content-wrapper">
+    <div class="col-12 ps-0">
+      <!-- Aussen-Container -->
+      <div class="main-content-wrapper content-width-default">
         <!-- Header-Zeile -->
         <?php $page_title = 'Backup &amp; Restore'; include 'partials/page_header.inc.php'; ?>
 
-        <!-- Weißer Hintergrund-Container -->
+        <!-- Weisser Hintergrund-Container -->
         <div class="content-background">
           <div class="row g-3">
             <!-- Info & Quick Actions -->
@@ -159,7 +159,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
                 </h5>
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                   <div class="text-muted">
-                    Backups werden außerhalb des Webroots gespeichert (empfohlen). Zugriff nur mit gültigem API-Key.
+                    Backups werden ausserhalb des Webroots gespeichert (empfohlen). Zugriff nur mit gültigem API-Key.
                   </div>
                   <div class="d-flex gap-2">
                     <button id="btnBackupNow" class="btn btn-sm btn-outline-success">
@@ -205,7 +205,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
                 <thead class="table-light">
                   <tr>
                     <th>Datei</th>
-                    <th class="text-end">Größe</th>
+                    <th class="text-end">Grösse</th>
                     <th>Erstellt</th>
                     <th class="text-end">Aktionen</th>
                   </tr>
@@ -448,7 +448,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
       document.getElementById('modalErrorContent').classList.remove('d-none');
       document.getElementById('modalFooter').classList.remove('d-none');
       document.getElementById('btnConfirmRestore').classList.add('d-none');
-      document.getElementById('btnModalCancel').textContent = 'Schließen';
+      document.getElementById('btnModalCancel').textContent = 'Schliessen';
       
       // Fehlermeldung setzen
       document.getElementById('errorMessage').textContent = message || 'Ein unbekannter Fehler ist aufgetreten.';

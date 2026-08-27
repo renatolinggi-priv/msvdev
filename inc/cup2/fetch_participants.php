@@ -34,7 +34,7 @@ if (!$all) {
         SELECT Participant3 FROM cupPairs WHERE Round = 1 AND Year = ? AND Participant3 IS NOT NULL
     )";
 
-    // Wenn nur ein Kat. B Schütze existiert, diesen auch ausschließen
+    // Wenn nur ein Kat. B Schütze existiert, diesen auch ausschliessen
     if ($katb_count == 1) {
         $sql .= " AND w.Kategorie != 'Kat. B'";
     }

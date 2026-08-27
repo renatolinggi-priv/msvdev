@@ -60,7 +60,7 @@ $csrf_token = ensureCsrfToken();
 
 <div class="container py-4">
   <div class="portal-page-header">
-    <h1><i class="bi bi-calendar3 me-2"></i>Jungschützen-Termine</h1>
+    <h1><i class="bi bi-calendar3 me-2"></i>Termine</h1>
     <p class="subtitle">Trainings und Anlässe der Jungschützen</p>
   </div>
 

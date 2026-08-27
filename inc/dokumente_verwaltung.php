@@ -22,7 +22,6 @@ if (!isset($_SESSION['user_id']) || !(isAdmin() || isVorstand())) {
 }
 
 $page_specific_css = <<<'CSS'
-.main-content-wrapper { max-width: 1040px; }
 .dv-upload { background:#f8fafc; border:2px dashed #cbd5e1; border-radius:0.75rem; padding:1rem 1.1rem; margin-bottom:1.1rem; }
 .dv-upload h6 { color:#475569; }
 .dv-table { width:100%; }
@@ -175,7 +174,7 @@ function dv_vis_options(bool $isAdminUser, string $current = 'alle_mitglieder'):
 <div class="container-fluid">
   <div class="row">
     <div class="col-12 ps-0">
-      <div class="main-content-wrapper">
+      <div class="main-content-wrapper content-width-default">
 
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
           <h2 class="h4 mb-0 page-title">Dokumente-Verwaltung</h2>
@@ -202,6 +201,12 @@ function dv_vis_options(bool $isAdminUser, string $current = 'alle_mitglieder'):
           <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabJsk" type="button"><i class="bi bi-mortarboard me-1"></i>JSK-Dokumente <span class="badge bg-secondary ms-1"><?= count($docsJsk) ?></span></button>
           </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabEinsaetze" type="button"><i class="bi bi-people-fill me-1"></i>Einsätze <span class="badge bg-secondary ms-1"><?= count($einsaetze) ?></span></button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTausch" type="button"><i class="bi bi-arrow-left-right me-1"></i>Tausche <span class="badge bg-secondary ms-1"><?= count($tausch_log) ?></span></button>
+          </li>
         </ul>
 
         <div class="tab-content">
@@ -227,97 +232,6 @@ function dv_vis_options(bool $isAdminUser, string $current = 'alle_mitglieder'):
               </form>
             </div>
             <?php dv_render_list($docsEins, 'einsatzplan'); ?>
-
-            <!-- Importierte Einsätze -->
-            <?php if (!empty($einsaetze_grouped)): ?>
-            <hr class="my-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Importierte Einsätze <?= $selected_year ?></h5>
-              <span class="badge bg-secondary"><?= count($einsaetze) ?> Einträge</span>
-            </div>
-            <?php $groupIdx = 0; foreach ($einsaetze_grouped as $key => $entries):
-              $first = $entries[0]; $ts = strtotime($first['event_datum']); $groupIdx++; ?>
-            <div class="card mb-2">
-              <div class="card-header py-2 d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#ezGroup<?= $groupIdx ?>">
-                <div>
-                  <strong><?= htmlspecialchars($first['bezeichnung']) ?></strong>
-                  <span class="text-muted ms-2"><?= $wochentage[(int) date('w', $ts)] ?> <?= date('d.m.Y', $ts) ?></span>
-                  <?php if ($first['event_zeit']): ?><span class="text-muted"><?= htmlspecialchars($first['event_zeit']) ?></span><?php endif; ?>
-                  <span class="badge bg-primary ms-2"><?= count($entries) ?></span>
-                </div>
-                <div>
-                  <?php if ($first['dokument_id']): ?>
-                  <button class="btn btn-sm btn-outline-danger btn-delete-all-ez" data-dokid="<?= $first['dokument_id'] ?>" data-titel="<?= htmlspecialchars($first['bezeichnung'], ENT_QUOTES) ?>" onclick="event.stopPropagation();" title="Alle Einträge dieses Imports löschen"><i class="bi bi-trash me-1"></i>Alle</button>
-                  <?php endif; ?>
-                  <i class="bi bi-chevron-down"></i>
-                </div>
-              </div>
-              <div class="collapse show" id="ezGroup<?= $groupIdx ?>">
-                <div class="card-body p-0">
-                  <table class="table table-sm table-hover mb-0" style="font-size:0.85rem;">
-                    <thead class="table-light"><tr><th>Funktion</th><th>Name (Dokument)</th><th>Mitglied (DB)</th><th style="width:80px;"></th></tr></thead>
-                    <tbody>
-                    <?php foreach ($entries as $e): ?>
-                      <tr id="ez-row-<?= $e['id'] ?>">
-                        <td><?= htmlspecialchars($e['funktion']) ?></td>
-                        <td><?= htmlspecialchars($e['mitglied_name']) ?></td>
-                        <td>
-                          <?php if ($e['mitglied_id']): ?>
-                            <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i><?= htmlspecialchars($e['m_name'] . ' ' . $e['m_vorname']) ?></span>
-                          <?php else: ?>
-                            <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Nicht zugeordnet</span>
-                          <?php endif; ?>
-                        </td>
-                        <td class="text-end">
-                          <button class="btn btn-sm btn-outline-primary py-0 px-1 btn-edit-ez"
-                            data-id="<?= $e['id'] ?>"
-                            data-funktion="<?= htmlspecialchars($e['funktion'], ENT_QUOTES) ?>"
-                            data-name="<?= htmlspecialchars($e['mitglied_name'], ENT_QUOTES) ?>"
-                            data-mid="<?= $e['mitglied_id'] ?? '' ?>"
-                            data-datum="<?= $e['event_datum'] ?>"
-                            data-zeit="<?= htmlspecialchars($e['event_zeit'] ?? '', ENT_QUOTES) ?>"
-                            title="Bearbeiten"><i class="bi bi-pencil"></i></button>
-                          <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete-ez" data-id="<?= $e['id'] ?>" data-name="<?= htmlspecialchars($e['mitglied_name'], ENT_QUOTES) ?>" title="Löschen"><i class="bi bi-trash"></i></button>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <?php endforeach; ?>
-            <?php endif; ?>
-
-            <!-- Einsatz-Tausche & Übernahmen (read-only) -->
-            <?php if (!empty($tausch_log)): ?>
-            <hr class="my-4">
-            <h5 class="mb-1"><i class="bi bi-arrow-left-right me-2"></i>Einsatz-Tausche &amp; Übernahmen <?= $selected_year ?></h5>
-            <p class="text-muted small mb-2">Von den Mitgliedern selbst abgewickelt. Bei Bedarf über die Einsatz-Bearbeitung korrigierbar.</p>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover" style="font-size:0.85rem;">
-                <thead class="table-light"><tr><th>Datum</th><th>Art</th><th>Von → An</th><th>Einsatz</th><th>Status</th></tr></thead>
-                <tbody>
-                <?php
-                $tauschStatusMap = ['offen'=>['Offen','bg-warning text-dark'],'bestaetigt'=>['Bestätigt','bg-success'],'abgelehnt'=>['Abgelehnt','bg-secondary'],'zurueckgezogen'=>['Zurückgezogen','bg-light text-dark border']];
-                foreach ($tausch_log as $r):
-                  $stx = $tauschStatusMap[$r['status']] ?? [$r['status'], 'bg-secondary'];
-                  $datumRef = $r['entschieden_am'] ?: $r['erstellt_am']; ?>
-                  <tr>
-                    <td><?= $datumRef ? date('d.m.Y', strtotime($datumRef)) : '' ?></td>
-                    <td><?= $r['typ'] === 'tausch' ? 'Tausch' : 'Übernahme' ?></td>
-                    <td><?= htmlspecialchars(trim($r['von_vorname'] . ' ' . $r['von_name'])) ?> &rarr; <?= htmlspecialchars(trim($r['an_vorname'] . ' ' . $r['an_name'])) ?></td>
-                    <td>
-                      <?= htmlspecialchars($r['a_bez'] ?? '—') ?><?php if (!empty($r['a_datum'])): ?> <span class="text-muted">(<?= date('d.m.Y', strtotime($r['a_datum'])) ?>)</span><?php endif; ?>
-                      <?php if ($r['typ'] === 'tausch' && !empty($r['b_bez'])): ?><br><span class="text-muted">&harr; <?= htmlspecialchars($r['b_bez']) ?><?php if (!empty($r['b_datum'])): ?> (<?= date('d.m.Y', strtotime($r['b_datum'])) ?>)<?php endif; ?></span><?php endif; ?>
-                    </td>
-                    <td><span class="badge <?= $stx[1] ?>"><?= $stx[0] ?></span></td>
-                  </tr>
-                <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-            <?php endif; ?>
           </div>
 
           <!-- TAB: Protokolle -->
@@ -362,6 +276,116 @@ function dv_vis_options(bool $isAdminUser, string $current = 'alle_mitglieder'):
               </form>
             </div>
             <?php dv_render_list($docsJsk); ?>
+          </div>
+
+          <!-- TAB: Einsätze -->
+          <div class="tab-pane fade" id="tabEinsaetze" role="tabpanel">
+            <?php if (!empty($einsaetze_grouped)): ?>
+            <div class="table-wrapper">
+              <h5 class="table-title d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people-fill me-2"></i>Importierte Einsätze <?= $selected_year ?>
+                  <span class="text-muted fw-normal" style="font-size:.8rem;">· <?= count($einsaetze) ?> Einträge, <?= count($einsaetze_grouped) ?> Anlässe</span>
+                </span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="ezExpandAll" data-state="mixed">
+                  <i class="bi bi-arrows-expand me-1"></i>Alle ausklappen
+                </button>
+              </h5>
+              <div class="p-2 d-flex flex-column gap-2">
+                <?php $groupIdx = 0; $today = strtotime('today');
+                foreach ($einsaetze_grouped as $key => $entries):
+                  $first = $entries[0]; $ts = strtotime($first['event_datum']); $groupIdx++;
+                  $istKommend = $ts >= $today;
+                  $collapseCls = $istKommend ? 'collapse show' : 'collapse';
+                  $chevron     = $istKommend ? 'bi-chevron-down' : 'bi-chevron-right';
+                ?>
+                <div class="card">
+                  <div class="card-header py-2 d-flex justify-content-between align-items-center<?= $istKommend ? '' : ' text-muted' ?>" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#ezGroup<?= $groupIdx ?>">
+                    <div>
+                      <strong><?= htmlspecialchars($first['bezeichnung']) ?></strong>
+                      <span class="ms-2"><?= $wochentage[(int) date('w', $ts)] ?> <?= date('d.m.Y', $ts) ?></span>
+                      <?php if ($first['event_zeit']): ?><span class="ms-1"><?= htmlspecialchars($first['event_zeit']) ?></span><?php endif; ?>
+                      <span class="badge bg-primary ms-2"><?= count($entries) ?></span>
+                      <?php if (!$istKommend): ?><span class="ms-2" style="font-size:.8rem;">· vergangen</span><?php endif; ?>
+                    </div>
+                    <div>
+                      <?php if ($first['dokument_id']): ?>
+                      <button class="btn btn-sm btn-outline-danger btn-delete-all-ez" data-dokid="<?= $first['dokument_id'] ?>" data-titel="<?= htmlspecialchars($first['bezeichnung'], ENT_QUOTES) ?>" onclick="event.stopPropagation();" title="Alle Einträge dieses Imports löschen"><i class="bi bi-trash me-1"></i>Alle</button>
+                      <?php endif; ?>
+                      <i class="bi <?= $chevron ?> ez-chevron"></i>
+                    </div>
+                  </div>
+                  <div class="<?= $collapseCls ?>" id="ezGroup<?= $groupIdx ?>">
+                    <div class="card-body p-0">
+                      <table class="table table-sm table-hover mb-0" style="font-size:0.85rem;">
+                        <thead class="table-light"><tr><th>Funktion</th><th>Name (Dokument)</th><th>Mitglied (DB)</th><th style="width:80px;"></th></tr></thead>
+                        <tbody>
+                        <?php foreach ($entries as $e): ?>
+                          <tr id="ez-row-<?= $e['id'] ?>">
+                            <td><?= htmlspecialchars($e['funktion']) ?></td>
+                            <td><?= htmlspecialchars($e['mitglied_name']) ?></td>
+                            <td>
+                              <?php if ($e['mitglied_id']): ?>
+                                <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i><?= htmlspecialchars($e['m_name'] . ' ' . $e['m_vorname']) ?></span>
+                              <?php else: ?>
+                                <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Nicht zugeordnet</span>
+                              <?php endif; ?>
+                            </td>
+                            <td class="text-end">
+                              <button class="btn btn-sm btn-outline-primary py-0 px-1 btn-edit-ez"
+                                data-id="<?= $e['id'] ?>" data-funktion="<?= htmlspecialchars($e['funktion'], ENT_QUOTES) ?>"
+                                data-name="<?= htmlspecialchars($e['mitglied_name'], ENT_QUOTES) ?>" data-mid="<?= $e['mitglied_id'] ?? '' ?>"
+                                data-datum="<?= $e['event_datum'] ?>" data-zeit="<?= htmlspecialchars($e['event_zeit'] ?? '', ENT_QUOTES) ?>"
+                                title="Bearbeiten"><i class="bi bi-pencil"></i></button>
+                              <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete-ez" data-id="<?= $e['id'] ?>" data-name="<?= htmlspecialchars($e['mitglied_name'], ENT_QUOTES) ?>" title="Löschen"><i class="bi bi-trash"></i></button>
+                            </td>
+                          </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
+            <?php else: ?>
+            <div class="dv-empty"><i class="bi bi-inbox d-block mb-2" style="font-size:2rem;"></i>Keine importierten Einsätze für dieses Jahr.</div>
+            <?php endif; ?>
+          </div>
+
+          <!-- TAB: Tausche -->
+          <div class="tab-pane fade" id="tabTausch" role="tabpanel">
+            <?php if (!empty($tausch_log)): ?>
+            <div class="table-wrapper">
+              <h5 class="table-title"><i class="bi bi-arrow-left-right me-2"></i>Einsatz-Tausche &amp; Übernahmen <?= $selected_year ?></h5>
+              <p class="text-muted small px-3 pt-2 mb-2">Von den Mitgliedern selbst abgewickelt. Bei Bedarf über die Einsatz-Bearbeitung korrigierbar.</p>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover" style="font-size:0.85rem;">
+                  <thead class="table-light"><tr><th>Datum</th><th>Art</th><th>Von → An</th><th>Einsatz</th><th>Status</th></tr></thead>
+                  <tbody>
+                  <?php
+                  $tauschStatusMap = ['offen'=>['Offen','bg-warning text-dark'],'bestaetigt'=>['Bestätigt','bg-success'],'abgelehnt'=>['Abgelehnt','bg-secondary'],'zurueckgezogen'=>['Zurückgezogen','bg-light text-dark border']];
+                  foreach ($tausch_log as $r):
+                    $stx = $tauschStatusMap[$r['status']] ?? [$r['status'], 'bg-secondary'];
+                    $datumRef = $r['entschieden_am'] ?: $r['erstellt_am']; ?>
+                    <tr>
+                      <td><?= $datumRef ? date('d.m.Y', strtotime($datumRef)) : '' ?></td>
+                      <td><?= $r['typ'] === 'tausch' ? 'Tausch' : 'Übernahme' ?></td>
+                      <td><?= htmlspecialchars(trim($r['von_vorname'] . ' ' . $r['von_name'])) ?> &rarr; <?= htmlspecialchars(trim($r['an_vorname'] . ' ' . $r['an_name'])) ?></td>
+                      <td>
+                        <?= htmlspecialchars($r['a_bez'] ?? '—') ?><?php if (!empty($r['a_datum'])): ?> <span class="text-muted">(<?= date('d.m.Y', strtotime($r['a_datum'])) ?>)</span><?php endif; ?>
+                        <?php if ($r['typ'] === 'tausch' && !empty($r['b_bez'])): ?><br><span class="text-muted">&harr; <?= htmlspecialchars($r['b_bez']) ?><?php if (!empty($r['b_datum'])): ?> (<?= date('d.m.Y', strtotime($r['b_datum'])) ?>)<?php endif; ?></span><?php endif; ?>
+                      </td>
+                      <td><span class="badge <?= $stx[1] ?>"><?= $stx[0] ?></span></td>
+                    </tr>
+                  <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <?php else: ?>
+            <div class="dv-empty"><i class="bi bi-inbox d-block mb-2" style="font-size:2rem;"></i>Keine Tausche oder Übernahmen für dieses Jahr.</div>
+            <?php endif; ?>
           </div>
 
         </div>
@@ -478,12 +502,6 @@ function dv_vis_options(bool $isAdminUser, string $current = 'alle_mitglieder'):
 (function () {
   var CSRF = document.getElementById('csrfToken').value;
   var editModal = new bootstrap.Modal(document.getElementById('dvEditModal'));
-
-  // Direkt zu einem Tab springen (z.B. aus der JSK-Verwaltung: dokumente_verwaltung.php#tabJsk)
-  if (window.location.hash) {
-    var trigger = document.querySelector('[data-bs-target="' + window.location.hash + '"]');
-    if (trigger) { new bootstrap.Tab(trigger).show(); }
-  }
 
   // Direkt zu einem Tab springen (z.B. aus der JSK-Verwaltung: dokumente_verwaltung.php#tabJsk)
   if (window.location.hash) {
@@ -705,6 +723,19 @@ function dv_vis_options(bool $isAdminUser, string $current = 'alle_mitglieder'):
         }, 'json');
       }
     });
+  });
+
+  // ===== Einsätze-Tab: Alle ausklappen / einklappen + Chevron-Rotation =====
+  $('#ezExpandAll').on('click', function () {
+    var open = $(this).attr('data-state') !== 'open';
+    $('#tabEinsaetze .collapse').collapse(open ? 'show' : 'hide');
+    $('#tabEinsaetze .ez-chevron').toggleClass('bi-chevron-down', open).toggleClass('bi-chevron-right', !open);
+    $(this).attr('data-state', open ? 'open' : 'closed')
+           .html('<i class="bi ' + (open ? 'bi-arrows-collapse' : 'bi-arrows-expand') + ' me-1"></i>' + (open ? 'Alle einklappen' : 'Alle ausklappen'));
+  });
+  $('#tabEinsaetze').on('shown.bs.collapse hidden.bs.collapse', '.collapse', function (e) {
+    var down = e.type === 'shown';
+    $(this).closest('.card').find('.ez-chevron').toggleClass('bi-chevron-down', down).toggleClass('bi-chevron-right', !down);
   });
 })();
 </script>

@@ -15,12 +15,12 @@ include 'header.inc.php';
 <!-- Schuetzenabr.php HTML-Gerüst nach heimrang.php Vorbild -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-wide">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = 'Schützenabrechnung'; include 'partials/page_header.inc.php'; ?>
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="schuetzenabr-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">

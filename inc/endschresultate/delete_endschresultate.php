@@ -50,7 +50,7 @@ try {
         error_log("Gelöschte jmresultate-Einträge für Endstich: " . $deleted_rows);
     }
 
-    // Transaktion erfolgreich abschließen
+    // Transaktion erfolgreich abschliessen
     $conn->commit();
     echo "Tabellen erfolgreich geleert.";
 } catch (Exception $e) {
@@ -59,6 +59,6 @@ try {
     echo "Fehler beim Leeren der Tabellen: " . $e->getMessage();
 }
 
-// Verbindung schließen
+// Verbindung schliessen
 $conn->close();
 ?>

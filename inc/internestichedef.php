@@ -34,13 +34,13 @@ include 'header.inc.php';
 <!-- Result Import CSV Hauptbereich -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-6 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-narrow">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = 'Interne Stiche - Imetron Stichnummerverwaltung'; include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weißer Hintergrund-Container -->
+                <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <?php
                     $stiche = ['Heimmeisterschaft', 'Kantonalstich', 'Endstich', 'Schwini', 'Kunst', 'Glück', 'Sie und Er', 'Zabig'];

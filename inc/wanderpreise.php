@@ -91,13 +91,13 @@ if (WANDERPREISE_DEBUG) {
 <!-- Header -->
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-10 col-lg-11 col-12 ps-0">
-            <!-- Äußerer weißer Container -->
-            <div class="main-content-wrapper">
-                <!-- Header außerhalb des inneren Containers -->
+        <div class="col-12 ps-0">
+            <!-- Äusserer weisser Container -->
+            <div class="main-content-wrapper content-width-default">
+                <!-- Header ausserhalb des inneren Containers -->
                 <?php $page_title = 'Wanderpreise verwalten'; include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weißer Container für den Rest -->
+                <!-- Weisser Container für den Rest -->
                 <div class="content-background">
 
                     <!-- Aktionsbereich (Bootstrap Collapse) -->
@@ -215,7 +215,7 @@ if (WANDERPREISE_DEBUG) {
                 <h5 class="modal-title" id="addWanderpreisModalLabel">
                     <i class="bi bi-plus-circle"></i> Neuen Wanderpreis erfassen
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <form id="addWanderpreisForm" method="post">
@@ -317,7 +317,7 @@ if (WANDERPREISE_DEBUG) {
                 <h5 class="modal-title" id="zuordnungModalLabel">
                     <i class="bi bi-person-check"></i> Gewinner zuordnen
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <form id="zuordnungForm">
@@ -387,7 +387,7 @@ if (WANDERPREISE_DEBUG) {
                 <h5 class="modal-title" id="exportModalLabel">
                     <i class="bi bi-download"></i> Export auswählen
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <div class="row mb-3">
@@ -429,7 +429,7 @@ if (WANDERPREISE_DEBUG) {
                 <h5 class="modal-title" id="vergangeneGewinnerModalLabel">
                     <i class="bi bi-calendar-plus"></i> Vergangene Gewinner eintragen
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <form id="vergangeneGewinnerForm">
@@ -503,7 +503,7 @@ if (WANDERPREISE_DEBUG) {
                 <h5 class="modal-title" id="wanderpreisHistorieModalLabel">
                     <i class="bi bi-clock-history"></i> Wanderpreis-Historie
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <!-- Wanderpreis-Info -->
@@ -559,7 +559,7 @@ if (WANDERPREISE_DEBUG) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Schließen
+                    <i class="bi bi-x-circle me-1"></i>Schliessen
                 </button>
                 <button type="button" class="btn btn-outline-info btn-sm" id="exportHistoryBtn">
                     <i class="bi bi-file-earmark-pdf me-1"></i>Historie als PDF
@@ -578,7 +578,7 @@ if (WANDERPREISE_DEBUG) {
                 <h5 class="modal-title" id="editWanderpreisModalLabel">
                     <i class="bi bi-pencil"></i> Wanderpreis bearbeiten
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <form id="editWanderpreisForm">

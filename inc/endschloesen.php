@@ -23,8 +23,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
 <div class="row">
-<div class="col-xl-8 col-lg-9 col-md-9 col-12 ps-0">
-    <div class="main-content-wrapper">
+<div class="col-12 ps-0">
+    <div class="main-content-wrapper content-width-wide">
       <div class="row mb-3 d-none d-md-flex">
         <div class="col-md-12">
           <h2 class="h4 mb-0 page-title">
@@ -33,25 +33,16 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
       </div>
 
+      <div class="erfassung-layout">
+      <div class="erfassung-form-col">
       <div class="content-background">
         <form id="stichForm">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
           <!-- Jahr -->
           <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="mb-0" role="button" data-bs-toggle="collapse" data-bs-target="#yearCollapse" aria-expanded="false" style="cursor: pointer;">
-                <i class="bi bi-chevron-right me-1" id="yearChevron"></i>
-                <i class="bi bi-calendar3 me-1"></i>Jahr auswählen
-              </h6>
-            </div>
-            <div class="collapse" id="yearCollapse">
-              <div class="row align-items-center">
-                <div class="col-md-8">
-                  <select id="yearSelect" class="form-select form-select-sm"></select>
-                </div>
-              </div>
-            </div>
+            <label for="yearSelect" class="form-label fw-bold mb-1"><i class="bi bi-calendar3 me-1"></i>Jahr</label>
+            <select id="yearSelect" class="form-select form-select-sm" style="max-width: 140px;"></select>
           </div>
 
           <!-- Mitgliederauswahl -->
@@ -62,6 +53,12 @@ if (empty($_SESSION['csrf_token'])) {
                 <select id="mitgliedSelect" class="form-select form-select-sm">
                   <option value="">– Mitglied wählen –</option>
                 </select>
+                <!-- Waffe (für Munitionsberechnung) – neben dem Datumsfeld, ohne Label -->
+                <div id="gastWaffeContainer" class="mt-1" style="display: none;">
+                  <select id="gastWaffe" class="form-select form-select-sm" data-tooltip="Waffe (für Munitionsberechnung)">
+                    <option value="">– Waffe wählen –</option>
+                  </select>
+                </div>
               </div>
               <div class="col-md-6">
                 <div class="input-group input-group-sm mb-1">
@@ -75,27 +72,11 @@ if (empty($_SESSION['csrf_token'])) {
               </div>
             </div>
             
-            <!-- Waffen-Auswahl für Gäste -->
-            <div id="gastWaffeContainer" class="mt-2" style="display: none;">
-              <div class="row g-2">
-                <div class="col-md-6 offset-md-6">
-                  <label for="gastWaffe" class="form-label form-label-sm mb-1">
-                    <i class="bi bi-crosshair"></i> Waffe (für Munitionsberechnung)
-                  </label>
-                  <select id="gastWaffe" class="form-select form-select-sm">
-                    <option value="">– Waffe wählen –</option>
-                  </select>
-                  <small class="text-muted d-block mt-1">Nur Stgw90 verwendet GP90, alle anderen GP11</small>
-                </div>
-              </div>
-            </div>
-            
-            <small class="text-muted">Für Jungschützen: Name eingeben und Geburtsdatum wählen</small>
           </div>
 
           <!-- Stiche-Auswahl (Kompaktere Checkbox-Karten) -->
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0"><i class="bi bi-card-checklist"></i> Stiche auswählen</h6>
+            <h6 class="mb-0" style="font-size:0.9rem;">Stiche auswählen</h6>
             <button type="button" id="btnSelectAll" class="btn btn-outline-primary btn-sm">
               <i class="bi bi-check2-square"></i> Alles auswählen
             </button>
@@ -104,7 +85,6 @@ if (empty($_SESSION['csrf_token'])) {
           
           <!-- Zahlungsmethode -->
           <div class="mt-2 mb-2 d-flex align-items-center flex-wrap gap-2">
-            <h6 class="mb-0 me-1"><i class="bi bi-credit-card"></i> Zahlungsmethode</h6>
             <div class="btn-group btn-group-sm" role="group" aria-label="Zahlungsmethode">
               <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_bar" value="bar">
               <label class="btn btn-outline-primary" for="zahlung_bar">
@@ -121,7 +101,7 @@ if (empty($_SESSION['csrf_token'])) {
           <!-- Zusätzliche Schüsse -->
           <div class="mt-2 p-2 bg-light rounded">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="mb-0" role="button" data-bs-toggle="collapse" data-bs-target="#munitionCollapse" aria-expanded="false" style="cursor: pointer;">
+              <h6 class="mb-0" role="button" data-bs-toggle="collapse" data-bs-target="#munitionCollapse" aria-expanded="false" style="cursor: pointer; font-size: 0.9rem;">
                 <i class="bi bi-chevron-right me-1" id="munitionChevron"></i>
                 <i class="bi bi-plus-circle"></i> Zusätzliche Schüsse <span id="munitionProSchussText">(CHF 0.50 pro Schuss)</span>
               </h6>
@@ -195,43 +175,60 @@ if (empty($_SESSION['csrf_token'])) {
             </div>
           </div>
           
-          <!-- Toolbar direkt unter den Stichen -->
-          <div class="row g-2 mt-2 mb-3">
-            <div class="col-8 col-sm-4 col-md-auto">
-              <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm w-100">
-                <i class="bi bi-file-earmark-pdf"></i> Abrechnung
-              </button>
+          <!-- Total-Leiste + Aktionen (kompakt, nach Vorbild munitionskauf) -->
+          <div class="total-actions-row">
+            <div class="total-bar">
+              <span class="text-muted small">Stiche:&nbsp;</span><strong id="totalCount">0</strong>
+              <span class="text-muted small ms-2">Schuss:&nbsp;</span><strong id="totalShots">0</strong>
+              <span class="text-muted small ms-2">+Muni:&nbsp;</span><strong id="totalZusatzShots">0</strong>
+              <span class="text-muted small ms-2">Total:&nbsp;</span><strong id="totalAllShots">0</strong>
+              <span class="total-amount ms-3" id="totalPrice">CHF 0.00</span>
             </div>
-            <div class="col-4 col-sm-4 col-md-auto">
-              <button type="button" id="btnStandblatt" class="btn btn-outline-info btn-sm w-100" disabled>
-                <i class="bi bi-file-earmark-spreadsheet"></i> Standblatt
+            <div class="action-buttons">
+              <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm" data-tooltip="Abrechnung">
+                <i class="bi bi-file-earmark-pdf"></i><span class="d-none d-lg-inline ms-1">Abrechnung</span>
               </button>
-            </div>
-            <div class="col-2 col-sm-4 col-md-auto ms-md-auto">
-              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center px-1" data-tooltip="Zurücksetzen">
+              <button type="button" id="btnStandblatt" class="btn btn-outline-info btn-sm" disabled data-tooltip="Standblatt">
+                <i class="bi bi-file-earmark-spreadsheet"></i><span class="d-none d-lg-inline ms-1">Standblatt</span>
+              </button>
+              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm" data-tooltip="Zurücksetzen">
                 <i class="bi bi-arrow-counterclockwise"></i>
-                <span class="d-none d-sm-inline ms-1">Zurücksetzen</span>
               </button>
-            </div>
-            <div class="col-2 col-sm-4 col-md-auto">
-              <button type="submit" id="btnSave" class="btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center px-1">
+              <button type="submit" id="btnSave" class="btn btn-outline-primary btn-sm">
                 <span class="spinner-border spinner-border-sm d-none" id="saveSpinner"></span>
-                <i class="bi bi-save d-sm-none"></i>
-                <span class="d-none d-sm-inline"><i class="bi bi-save me-1"></i>Speichern</span>
+                <i class="bi bi-save me-1"></i>Speichern
               </button>
             </div>
           </div>
           <div id="saveFeedback" class="text-end small text-muted mt-2"></div>
           
-          <!-- Erfasste Stiche Tabelle -->
-          <div class="mt-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="mb-0"><i class="bi bi-table"></i> Bereits erfasste Stiche</h6>
+        </form>
+      </div><!-- /.content-background -->
+      </div><!-- /.erfassung-form-col -->
+
+      <!-- Rechts: bereits erfasste Stiche (Tabelle neben dem Formular) -->
+      <div class="erfassung-table-col">
+        <div class="table-wrapper">
+          <div class="table-title">
+            <span><i class="bi bi-table me-2"></i>Bereits erfasste Stiche</span>
+            <?php
+            // Admin-Button nur für berechtigte Benutzer anzeigen
+            $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+            $isAdmin = true; // TODO: Testing – Admin-Button immer sichtbar
+            if ($isAdmin):
+            ?>
+            <div class="button-group">
+              <button class="btn btn-outline-secondary btn-sm" id="btnAdminSettings">
+                <i class="bi bi-gear me-1"></i>Endschiessen Definition
+              </button>
             </div>
-            <!-- Desktop: Tabelle -->
-            <div class="desktop-table-container">
-              <div class="table-responsive">
-                <table class="table table-sm table-hover table-bordered" id="erfassteTabelle">
+            <?php endif; ?>
+          </div>
+
+          <!-- Desktop: Tabelle -->
+          <div class="desktop-table-container">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0" id="erfassteTabelle">
                 <thead class="table-light">
                   <tr id="erfassteTableHeader">
                     <th style="min-width: 150px;">Mitglied</th>
@@ -248,55 +245,28 @@ if (empty($_SESSION['csrf_token'])) {
               </table>
             </div>
           </div>
+        </div><!-- /.table-wrapper -->
 
-          <!-- Mobile: Cards -->
-          <div class="mobile-cards-container" id="mobileCardsEndsch">
-            <div class="mobile-search">
-              <div class="position-relative">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" class="form-control" placeholder="Suchen..."
-                       oninput="filterMobileEndsch(this)">
-              </div>
-            </div>
-            <div class="mobile-cards-scroll">
-              <!-- Cards werden per JavaScript generiert -->
+        <!-- Mobile: Cards -->
+        <div class="mobile-cards-container" id="mobileCardsEndsch">
+          <div class="mobile-search">
+            <div class="position-relative">
+              <i class="bi bi-search search-icon"></i>
+              <input type="text" class="form-control" placeholder="Suchen..."
+                     oninput="filterMobileEndsch(this)">
             </div>
           </div>
+          <div class="mobile-cards-scroll">
+            <!-- Cards werden per JavaScript generiert -->
+          </div>
         </div>
-        </form>
-      </div>
-    </div>
-  </div>
+      </div><!-- /.erfassung-table-col -->
 
-  <!-- Sidebar: Totals -->
-  <div class="col-xl-2 col-lg-3 col-md-3 col-12">
-    <div class="sidebar-wrapper">
-  <div class="content-background p-2">
-  <h6 class="mb-2"><i class="bi bi-calculator"></i> Total</h6>
-  <div class="d-flex justify-content-between mb-1 small"><span>Ausgewählte Stiche</span><strong id="totalCount">0</strong></div>
-  <div class="d-flex justify-content-between mb-1 small"><span>Stiche Schuss</span><strong id="totalShots">0</strong></div>
-  <div class="d-flex justify-content-between mb-1 small"><span>Bestellte Munition</span><strong id="totalZusatzShots">0</strong></div>
-  <div class="d-flex justify-content-between mb-1 small"><span>Total Schuss</span><strong id="totalAllShots">0</strong></div>
-  <hr class="my-1">
-  <div class="d-flex justify-content-between"><span><strong>Gesamtpreis</strong></span><strong id="totalPrice">CHF 0.00</strong></div>
-  </div>
-    
-      <?php 
-      // Admin-Button nur für berechtigte Benutzer anzeigen
-      $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
-      // Für Testing kannst du es auf true setzen:
-      $isAdmin = true;
-      if ($isAdmin): 
-      ?>
-      <div class="content-background mt-3">
-        <button class="btn btn-outline-secondary btn-sm w-100" id="btnAdminSettings">
-          <i class="bi bi-gear"></i> Endschiessen Definition
-        </button>
-      </div>
-      <?php endif; ?>
-    </div>
-  </div>
-</div>
+    </div><!-- /.erfassung-layout -->
+  </div><!-- /.main-content-wrapper -->
+  </div><!-- /.col-12 -->
+
+</div><!-- /.row -->
 
 <!-- Admin Modal -->
 <div class="modal fade" id="adminModal" tabindex="-1">
@@ -509,10 +479,11 @@ if (empty($_SESSION['csrf_token'])) {
   #erfassteTabelle .stich-header {
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    padding: 4px 2px;
+    padding: 6px 2px !important;
     min-width: 30px;
     max-width: 40px;
-    height: 80px;
+    height: 108px;
+    white-space: nowrap;
     text-align: center;
     font-weight: normal;
     background-color: var(--bs-light);
@@ -541,6 +512,20 @@ if (empty($_SESSION['csrf_token'])) {
   }
   #erfassteTabelle th:last-child {
     min-width: 80px;
+  }
+  /* Kopf immer opak und über den Körperzellen (sonst schiebt sich die
+     Namensspalte beim Scrollen über den Tabellenkopf) */
+  #erfassteTabelle thead th,
+  #erfassteTabelle .stich-header {
+    background-color: #f8f9fa !important;
+    z-index: 15 !important;
+  }
+
+  /* Tabellen-Card dynamisch an Browserhöhe: bei mehr Inhalt wächst sie bis
+     zur Viewport-Höhe und scrollt dann intern (gilt auf allen Breiten). */
+  .erfassung-table-col .table-responsive {
+    max-height: calc(100vh - 170px);
+    overflow-y: auto;
   }
   
   /* Kompaktere Sidebar */
@@ -574,6 +559,103 @@ if (empty($_SESSION['csrf_token'])) {
   /* Badge Animation */
   #munitionBadge {
     transition: all 0.3s ease;
+  }
+
+  /* === Formular + Tabelle nebeneinander (nach Vorbild munitionskauf) === */
+  .erfassung-form-col,
+  .erfassung-table-col { width: 100%; }
+
+  /* Äusserer .main-content-wrapper nur als Layout-Container (transparent);
+     Formular UND Tabelle sind je eine eigene weisse Card auf dem Seitenhintergrund. */
+  .main-content-wrapper {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .erfassung-form-col .content-background {
+    padding: 1.25rem !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Waffenauswahl dauerhaft sichtbar (auch für Mitglieder). Überschreibt das
+     inline display:none/block der JS-Toggles; die Wert-Logik (leer für Mitglied,
+     Stgw90-Default für Gast) bleibt unangetastet → keine Auswirkung auf die
+     Munitionsberechnung. */
+  #gastWaffeContainer { display: block !important; }
+
+  /* Titelzeile der rechten Tabelle: Titel links, Admin-Button rechts
+     (Gradient/Padding/Sticky kommen aus der zentralen .table-title) */
+  .erfassung-table-col .table-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  /* Tabelle als eigene Card (analog zum Formular) */
+  .erfassung-table-col .table-wrapper {
+    margin-bottom: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+
+  @media (min-width: 1200px) {
+    .erfassung-layout {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+    .erfassung-form-col {
+      flex: 0 1 720px;
+      min-width: 420px;
+    }
+    .erfassung-table-col {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    /* Tabelle an Viewport-Höhe ausrichten statt unbegrenzt zu wachsen */
+    .erfassung-table-col .table-responsive {
+      max-height: calc(100vh - 170px);
+      overflow-y: auto;
+    }
+  }
+
+  /* === Total-Leiste + Aktionen (kompakt, wie munitionskauf) === */
+  .total-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  .total-actions-row .total-bar {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 38px;
+  }
+  .total-actions-row .total-bar .total-amount {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--bs-dark);
+  }
+  .total-actions-row .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
   }
 
 @media (max-width: 767.98px) {
@@ -703,7 +785,7 @@ function renderStiche(){
       </div>` : '';
 
     const col = document.createElement('div');
-    col.className = 'col-6 col-sm-4 col-md-3 col-lg-3';
+    col.className = 'col-6 col-md-4';
     col.innerHTML = `
       <div class="card card-stich ${isDisabledForGast ? 'disabled-card' : ''}" data-stich-id="${s.id}">
         <div class="stich-card-body">
@@ -2317,13 +2399,6 @@ html += `<td class="text-center small">${munHtml}</td>`;
     }
   });
 
-  document.getElementById('yearCollapse').addEventListener('shown.bs.collapse', function() {
-    document.getElementById('yearChevron').className = 'bi bi-chevron-down me-1';
-  });
-  document.getElementById('yearCollapse').addEventListener('hidden.bs.collapse', function() {
-    document.getElementById('yearChevron').className = 'bi bi-chevron-right me-1';
-  });
-  
   document.getElementById('munitionCollapse').addEventListener('shown.bs.collapse', function() {
     document.getElementById('munitionChevron').className = 'bi bi-chevron-down me-1';
   });
@@ -2336,9 +2411,6 @@ html += `<td class="text-center small">${munHtml}</td>`;
     initAdminModals();
     initZusatzSchuesse();
     
-    const yearCollapse = new bootstrap.Collapse(document.getElementById('yearCollapse'), {
-      toggle: false
-    });
     const munitionCollapse = new bootstrap.Collapse(document.getElementById('munitionCollapse'), {
       toggle: false
     });
@@ -2355,13 +2427,13 @@ html += `<td class="text-center small">${munHtml}</td>`;
 
     const tbody = table.querySelector('tbody');
     if (!tbody) {
-      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
       return;
     }
 
     const rows = tbody.querySelectorAll('tr');
     if (rows.length === 0 || rows[0].cells.length === 1) {
-      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten vorhanden</div></div>';
+      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Keine Daten gefunden</div></div>';
       return;
     }
 
@@ -2374,7 +2446,7 @@ html += `<td class="text-center small">${munHtml}</td>`;
       const totalIdx = cells.length - 2;
       const total = cells[totalIdx]?.textContent?.trim() || '-';
 
-      // Stich-Daten extrahieren (alle Spalten außer Name, Total, Actions)
+      // Stich-Daten extrahieren (alle Spalten ausser Name, Total, Actions)
       let stichHtml = '';
       for (let i = 1; i < totalIdx; i++) {
         const val = cells[i]?.textContent?.trim() || '';

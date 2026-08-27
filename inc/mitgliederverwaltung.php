@@ -24,8 +24,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-12 col-lg-11 col-12 ps-0">
-      <div class="main-content-wrapper">
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-wide">
         <?php $page_title = 'Mitgliederverwaltung'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">

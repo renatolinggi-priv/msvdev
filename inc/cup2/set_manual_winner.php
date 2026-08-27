@@ -134,7 +134,7 @@ try {
         $stmt->execute();
     }
     
-    // Transaktion abschließen
+    // Transaktion abschliessen
     $conn->commit();
     
     // Erfolgreiche Response mit Details

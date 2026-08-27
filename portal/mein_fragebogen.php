@@ -1,6 +1,6 @@
 <?php
 // portal/mein_fragebogen.php - Fragebogen & Umfragen (Mitglied + Vorstand-Verwaltung)
-$portal_page_title = 'Fragebogen & Umfragen';
+$portal_page_title = 'Umfragen';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 requireLogin();
@@ -79,35 +79,30 @@ $portal_page_css = "
 .umfrage-accordion .accordion-button {
     font-weight: 700;
     font-size: 0.92rem;
-    color: #1a5c2a;
-    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: var(--p-text);
+    background: #fff;
     padding: 0.85rem 1.1rem;
-    border-bottom: 1px solid #a5d6a7;
+    border-bottom: 1px solid var(--p-border);
+    border-left: 3px solid var(--primary-color);
     box-shadow: none !important;
     gap: 0;
 }
 .umfrage-accordion .accordion-button:not(.collapsed) {
-    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-    color: #1a5c2a;
+    background: #f8f9fb;
+    color: var(--p-text);
 }
 .umfrage-accordion .accordion-button::after {
     filter: none;
     flex-shrink: 0;
     margin-left: 0.5rem;
 }
-/* Arbeitseinsatz-Cards: orange/rot */
-.umfrage-accordion .accordion-item[data-kategorie='arbeitseinsatz'] .accordion-button,
-.umfrage-accordion .accordion-item[data-kategorie='arbeitseinsatz'] .accordion-button:not(.collapsed) {
-    background: linear-gradient(135deg, #fef0e4, #fde8d0);
-    color: #8b4000;
-    border-bottom-color: #f5c89a;
+/* Arbeitseinsatz-Cards: oranger Akzentbalken */
+.umfrage-accordion .accordion-item[data-kategorie='arbeitseinsatz'] .accordion-button {
+    border-left-color: #e67e00;
 }
-/* Helfer-Cards: blau */
-.umfrage-accordion .accordion-item[data-kategorie='helfer'] .accordion-button,
-.umfrage-accordion .accordion-item[data-kategorie='helfer'] .accordion-button:not(.collapsed) {
-    background: linear-gradient(135deg, #e8f4fd, #d1ecf9);
-    color: #0c5460;
-    border-bottom-color: #bee5eb;
+/* Helfer-Cards: blauer Akzentbalken */
+.umfrage-accordion .accordion-item[data-kategorie='helfer'] .accordion-button {
+    border-left-color: #2b8ac6;
 }
 .umfrage-accordion .accordion-body {
     padding: 1.5rem;
@@ -184,6 +179,23 @@ $portal_page_css = "
     border-radius: 4px;
     transition: width 0.5s ease;
     min-width: 2px;
+}
+/* Namen pro Option — nur sichtbar, wenn der Schalter «Namen anzeigen» aktiv ist */
+.result-names {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+}
+.results-wrap.show-names .result-names { display: flex; }
+.result-name-tag {
+    background: #f1f3f5;
+    border: 1px solid #e0e4e8;
+    color: #495057;
+    font-size: 0.75rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+    white-space: nowrap;
 }
 .text-antwort {
     background: #f8f9fa;
@@ -307,7 +319,7 @@ include 'portal_header.php';
 ?>
 
 <div class="portal-page-header">
-    <h1><i class="bi bi-clipboard-check me-2"></i>Fragebogen & Umfragen</h1>
+    <h1><i class="bi bi-clipboard-check me-2"></i>Umfragen</h1>
     <p class="subtitle">Teilnahme erfassen und Umfragen beantworten</p>
 </div>
 
@@ -1391,13 +1403,24 @@ $(function() {
     };
 
     let currentResultsUmfrageId = 0;
+    let resultsShowNames = true;
 
     function renderResults(data) {
         currentResultsUmfrageId = data.umfrage.id;
         const pct = data.total_mitglieder > 0 ? Math.round(data.total_beantwortet / data.total_mitglieder * 100) : 0;
-        let html = '<div class="mb-3">';
+        const hatOptionsFragen = data.ergebnisse.some(r => r.optionen);
+        let html = '<div class="results-wrap' + (resultsShowNames ? ' show-names' : '') + '">';
+        html += '<div class="mb-3 d-flex justify-content-between align-items-start flex-wrap gap-2">';
+        html += '<div>';
         html += '<h6>' + escapeHtml(data.umfrage.titel) + '</h6>';
-        html += '<p class="text-muted">' + data.total_beantwortet + ' von ' + data.total_mitglieder + ' Mitgliedern haben geantwortet (' + pct + '%)</p>';
+        html += '<p class="text-muted mb-0">' + data.total_beantwortet + ' von ' + data.total_mitglieder + ' Mitgliedern haben geantwortet (' + pct + '%)</p>';
+        html += '</div>';
+        if (hatOptionsFragen) {
+            html += '<div class="form-check form-switch">';
+            html += '<input class="form-check-input" type="checkbox" role="switch" id="toggleResultNames"' + (resultsShowNames ? ' checked' : '') + '>';
+            html += '<label class="form-check-label" for="toggleResultNames" style="font-size:0.85rem;">Namen anzeigen</label>';
+            html += '</div>';
+        }
         html += '</div>';
 
         data.ergebnisse.forEach(function(r, idx) {
@@ -1411,6 +1434,10 @@ $(function() {
                     html += '<div class="result-bar-container">';
                     html += '<div class="result-bar-label"><span>' + escapeHtml(opt) + '</span><span>' + count + ' (' + p + '%)</span></div>';
                     html += '<div class="result-bar"><div class="result-bar-fill" style="width:' + p + '%"></div></div>';
+                    const optNamen = (r.namen && r.namen[opt]) || [];
+                    if (optNamen.length > 0) {
+                        html += '<div class="result-names">' + optNamen.map(n => '<span class="result-name-tag">' + escapeHtml(n) + '</span>').join('') + '</div>';
+                    }
                     html += '</div>';
                 }
             } else if (r.texte) {
@@ -1452,8 +1479,15 @@ $(function() {
             html += '<i class="bi bi-trash me-1"></i>Alle ' + data.total_beantwortet + ' Rückmeldungen löschen</button>';
         }
 
+        html += '</div>'; // .results-wrap
+
         $('#resultsTitle').text('Auswertung: ' + data.umfrage.titel);
         $('#resultsBody').html(html);
+
+        $('#toggleResultNames').on('change', function() {
+            resultsShowNames = this.checked;
+            $('#resultsBody .results-wrap').toggleClass('show-names', this.checked);
+        });
     }
 
     window.deleteAntwort = async function(umfrageId, mitgliedId, name) {

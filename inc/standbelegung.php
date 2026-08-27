@@ -75,14 +75,14 @@ $artCodes = [
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-xl-12 col-lg-11 col-12 ps-0">
-            <div class="main-content-wrapper">
+        <div class="col-12 ps-0">
+            <div class="main-content-wrapper content-width-narrow">
                 <!-- Header -->
                 <div class="row mb-4 d-none d-md-flex">
                     <div class="col-md-12 d-flex justify-content-between align-items-start">
                         <div>
                             <h2 class="h4 mb-0 page-title">
-                                Standbelegungsplan
+                                Standbelegung
                             </h2>
                         </div>
                         <button type="button" class="btn btn-outline-success btn-sm" id="publishChangelogBtn">
@@ -558,7 +558,7 @@ $artCodes = [
 <div class="hybrid-edit-panel" id="editPanel" aria-hidden="true">
     <div class="panel-header">
         <h5 id="editModalTitle"><i class="bi bi-pencil me-2"></i>Eintrag bearbeiten</h5>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="closeEditPanel" aria-label="Schließen">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="closeEditPanel" aria-label="Schliessen">
             <i class="bi bi-x-lg"></i>
         </button>
     </div>

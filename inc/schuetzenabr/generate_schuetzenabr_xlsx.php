@@ -48,7 +48,7 @@ while ($schuetze = $schuetzen->fetch_assoc()) {
 
     // Zellen A3 bis C3 verbinden
     $sheet->mergeCells('A3:C3');
-    // Schriftart und -größe für die verbundene Zelle A3:C3 ändern
+    // Schriftart und -grösse für die verbundene Zelle A3:C3 ändern
     $sheet->getStyle('A3')->getFont()->setName('Arial')->setSize(14)->setBold(true);
     $sheet->getStyle('A3:C3')->getAlignment()->setWrapText(true);
     $sheet->getStyle($ZelleName)->getFont()->setName('Arial')->setSize(13)->setBold(true);
@@ -62,7 +62,7 @@ while ($schuetze = $schuetzen->fetch_assoc()) {
       $drawing->setName('Logo');
       $drawing->setDescription('Dieses Bild ist ein Logo.');
       $drawing->setPath('dat/MSVWilen_Logo.jpg'); // Pfad zum Bild
-      $drawing->setHeight(100); // Höhe des Bildes (optional, abhängig von deiner Bildgröße)
+      $drawing->setHeight(100); // Höhe des Bildes (optional, abhängig von deiner Bildgrösse)
       $drawing->setCoordinates('A1'); // Positionierung des Bildes in der Zelle
       $drawing->setOffsetX(0); // Optional: Horizontaler Offset in der Zelle
       $drawing->setOffsetY(0); // Optional: Vertikaler Offset in der Zelle

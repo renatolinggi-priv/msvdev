@@ -20,7 +20,7 @@ $conn->begin_transaction();
 
 try {
     $conn->query("DELETE FROM `heimresultate` WHERE `Jahr` = $jahr;");
-    // Transaktion erfolgreich abschließen
+    // Transaktion erfolgreich abschliessen
     $conn->commit();
     json_encode(['status' => 'success', 'message' => 'Script ausgeführt']);
 
@@ -30,6 +30,6 @@ try {
     echo "Fehler beim Leeren der Tabellen: " . $e->getMessage();
 }
 
-// Schließen der Verbindung
+// Schliessen der Verbindung
 $conn->close();
 ?>

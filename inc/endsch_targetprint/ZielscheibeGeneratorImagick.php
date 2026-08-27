@@ -300,14 +300,14 @@ class ZielscheibeGeneratorImagick
             $pixelX = $this->mittelpunktX + ($xMm * $this->skalierungsFaktor);
             $pixelY = $this->mittelpunktY - ($yMm * $this->skalierungsFaktor);
 
-            // Größerer Kreis für bessere Sichtbarkeit
+            // Grösserer Kreis für bessere Sichtbarkeit
             $kreisRadius = 16;
 
             // Alle Schüsse rot
             $kreiFarbe = '#FF0000';
             $kreisRandFarbe = '#8B0000'; // Dunkelrot für Rand
 
-            // Äußerer dunkler Rand (für Tiefe)
+            // Äusserer dunkler Rand (für Tiefe)
             $drawRand = new ImagickDraw();
             $drawRand->setFillColor(new ImagickPixel($kreisRandFarbe));
             $drawRand->setStrokeOpacity(0);
@@ -327,7 +327,7 @@ class ZielscheibeGeneratorImagick
             // Schuss-Nummer mittig im Kreis
             $schussNr = isset($trefferDaten['schuss_nr']) ? (int) $trefferDaten['schuss_nr'] : $index + 1;
 
-            // Weiße Nummer zentriert
+            // Weisse Nummer zentriert
             $drawText = new ImagickDraw();
             $drawText->setFillColor(new ImagickPixel('#FFFFFF'));
             $drawText->setFont($this->findFont());

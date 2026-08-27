@@ -157,6 +157,9 @@ function generateGuestWithoutResultRow($guest) {
 // Include database configuration
 include '../config.php';
 
+// Einheitliche Empty-State-Komponente
+require_once __DIR__ . '/../partials/empty_state.inc.php';
+
 // Check database connection with proper error handling
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
@@ -284,7 +287,7 @@ try {
 
     // Wenn weder Partner noch Gäste vorhanden sind
     if (!$hasResults) {
-        echo "<tr><td colspan='5' class='text-center py-4'>Noch keine Partnerinnen oder Gäste erfasst für das Jahr $year.</td></tr>";
+        echo msv_empty_row(5, 'Keine Partnerinnen oder Gäste gefunden');
     }
 } catch (Exception $e) {
 

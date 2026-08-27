@@ -40,7 +40,7 @@ const MSVMobileCards = {
             scrollContainer.innerHTML = `
                 <div class="mobile-cards-empty">
                     <i class="bi bi-inbox"></i>
-                    <div>Keine Daten vorhanden</div>
+                    <div>Keine Daten gefunden</div>
                 </div>`;
             return;
         }

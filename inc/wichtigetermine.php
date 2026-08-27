@@ -195,8 +195,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-8 col-lg-10 col-12 ps-lg-3">
-      <div class="main-content-wrapper">
+    <div class="col-12 ps-lg-3">
+      <div class="main-content-wrapper content-width-narrow">
         <?php
         $page_title = 'Wichtige Termine';
         include 'partials/page_header.inc.php';

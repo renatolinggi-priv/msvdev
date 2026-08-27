@@ -64,10 +64,11 @@ html { font-size: 15px; }
     margin-bottom: var(--p-4);
 }
 .portal-page-header h1 {
-    font-size: 1rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--p-text);
     margin-bottom: 0;
+    letter-spacing: -0.01em;
 }
 /* Seitentitel bewusst schlicht: Icons & Untertitel portalweit ausgeblendet (zentral, reversibel) */
 .portal-page-header h1 i { display: none; }
@@ -387,7 +388,7 @@ a.p-card:hover {
 /* ---- Mobile -------------------------------------------------------- */
 @media (max-width: 767.98px) {
     .portal-content { padding: var(--p-3) .7rem; }
-    .portal-page-header h1 { font-size: 0.95rem; }
+    .portal-page-header h1 { font-size: 1.2rem; }
     .p-narrow { max-width: none; }       /* volle Breite auf Mobile */
     .p-list-row { flex-wrap: wrap; }
     .p-list-actions { margin-left: auto; }

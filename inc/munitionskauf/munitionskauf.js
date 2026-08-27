@@ -139,6 +139,11 @@
         searching: function () { return 'Suche…'; }
       }
     });
+    // Suchfeld beim Öffnen fokussieren – Select2 4.1 + jQuery 3.6 tun das nicht mehr selbst
+    $sel.off('select2:open.msvFocus').on('select2:open.msvFocus', function() {
+      var search = document.querySelector('.select2-container--open .select2-search__field');
+      if (search) search.focus();
+    });
     // Gegenseitiger Ausschluss mit Gast – Select2 feuert ein jQuery-change-Event
     $sel.on('change', function() {
       if (this.value) document.getElementById('gastName').value = '';

@@ -3,7 +3,7 @@
 // Cover antippen = Slideshow startet direkt (Overlay). Pro Karte zusätzlich ein
 // Knopf „Fotos hinzufügen". Eine Detail-/Programm-Ansicht brauchen Mitglieder nicht.
 // Jungschuetzen werden von der Portal-Rollenweiche ohnehin umgeleitet.
-$portal_page_title = 'Foto-Galerien';
+$portal_page_title = 'Fotos';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/fotogalerie.inc.php';
@@ -57,7 +57,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 
 <div class="container py-2">
   <div class="portal-page-header">
-    <h1><i class="bi bi-images me-2"></i>Foto-Galerien</h1>
+    <h1><i class="bi bi-images me-2"></i>Fotos</h1>
     <p class="subtitle">Bilder der Vereinsanlässe</p>
   </div>
 
