@@ -90,7 +90,7 @@ function getTotal($kategorie, $year)
                 SELECT
                     jr.jmdefinitionID AS WettbewerbID,
                     CASE
-                        WHEN jd.Maxpunkte != 100 THEN ROUND((jr.Punkte / jd.Maxpunkte) * 100, 2)
+                        WHEN jd.Maxpunkte > 0 AND jd.Maxpunkte < 100 THEN ROUND((jr.Punkte / jd.Maxpunkte) * 100, 2)
                         ELSE jr.Punkte
                     END AS NormalizedPoints
                 FROM
@@ -213,7 +213,7 @@ function GetStreicher($kategorie, $year)
                 SELECT
                     jr.jmdefinitionID AS WettbewerbID,
                     CASE
-                        WHEN jd.Maxpunkte != 100 THEN ROUND((jr.Punkte / jd.Maxpunkte) * 100, 2)
+                        WHEN jd.Maxpunkte > 0 AND jd.Maxpunkte < 100 THEN ROUND((jr.Punkte / jd.Maxpunkte) * 100, 2)
                         ELSE jr.Punkte
                     END AS NormalizedPoints
                 FROM

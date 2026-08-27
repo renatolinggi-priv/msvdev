@@ -1498,7 +1498,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                     jr.jmdefinitionID,
                     CASE
                         WHEN jd.Bezeichnung IN ('Einzelwettschiessen', 'Obligatorisch', 'Feldschiessen') THEN jr.Punkte
-                        WHEN jd.Maxpunkte > 0 THEN ROUND((jr.Punkte * 100.0) / jd.Maxpunkte, 2)
+                        WHEN jd.Maxpunkte > 0 AND jd.Maxpunkte < 100 THEN ROUND((jr.Punkte * 100.0) / jd.Maxpunkte, 2)
                         ELSE jr.Punkte
                     END AS scaled_points,
                     jd.Streicher AS streicher_flag
@@ -1513,7 +1513,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                     e.MitgliedID as mitgliederID,
                     jd.ID as jmdefinitionID,
                     CASE
-                        WHEN jd.Maxpunkte > 0 THEN ROUND(((COALESCE(e.Schuss1,0) + COALESCE(e.Schuss2,0) + COALESCE(e.Schuss3,0) +
+                        WHEN jd.Maxpunkte > 0 AND jd.Maxpunkte < 100 THEN ROUND(((COALESCE(e.Schuss1,0) + COALESCE(e.Schuss2,0) + COALESCE(e.Schuss3,0) +
                             COALESCE(e.Schuss4,0) + COALESCE(e.Schuss5,0) + COALESCE(e.Schuss6,0) +
                             COALESCE(e.Schuss7,0) + COALESCE(e.Schuss8,0) + COALESCE(e.Schuss9,0) +
                             COALESCE(e.Schuss10,0)) * 100.0) / jd.Maxpunkte, 2)
@@ -1536,7 +1536,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                     k.MitgliedID as mitgliederID,
                     jd.ID as jmdefinitionID,
                     CASE
-                        WHEN jd.Maxpunkte > 0 THEN ROUND((GREATEST(
+                        WHEN jd.Maxpunkte > 0 AND jd.Maxpunkte < 100 THEN ROUND((GREATEST(
                             COALESCE(k.Passe1,0), COALESCE(k.Passe2,0), COALESCE(k.Passe3,0),
                             COALESCE(k.Passe4,0), COALESCE(k.Passe5,0)
                         ) * 100.0) / jd.Maxpunkte, 2)

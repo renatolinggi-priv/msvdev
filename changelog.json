@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.25.0",
+    "datum": "2026-08-26",
+    "aenderungen": [
+      {
+        "titel": "Resultaterfassung: Obligatorisch/Feldschiessen-Bonus aus FSA-Teilnehmerliste importieren",
+        "beschreibung": "Der PDF-Import in der JM-Resultaterfassung versteht neu die FSA-Teilnehmerliste «nach Verein» (bundesuebung.ch): Im Anlass-Auswahlfeld gibt es dafür den Eintrag «Obligatorisch + Feldschiessen (FSA-Teilnehmerliste)» – das PDF wird aber auch automatisch erkannt, egal welcher Anlass gewählt ist. Der Import liest alle Vereins-Abschnitte des PDFs (auch wenn ein eigener Schütze bei einem anderen Verein oder mit Pistole geschossen hat, inkl. Nachschiessen OP W1/W2), führt Mehrfach-Vorkommen pro Mitglied zusammen und belegt die Bonus-Punkte mit den Maxpunkten des jeweiligen Anlasses vor (anpassbar, leeres Feld wird nicht importiert). Beide Disziplinen werden in einem Schritt erfasst; bereits erfasste Disziplinen sind gelb markiert und bleiben leer, unsichere Namens-Zuordnungen sind standardmässig abgewählt.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft: Stiche mit mehr als 100 Maxpunkten werden nicht mehr umgerechnet",
+        "beschreibung": "Bisher wurden Stiche mit mehr als 100 Maxpunkten (z.B. 120) in einzelnen Auswertungen auf 100 Punkte herunterskaliert – im JM-Ranglisten-PDF, im Resultatbuch (Absendenbuch) und bei der Wanderpreis-Zuordnung. Die Bildschirm-Rangliste zeigte dagegen schon immer das effektive Resultat. Neu gilt überall dieselbe Regel: Hochgerechnet auf 100 wird nur bei Stichen mit weniger als 100 Maxpunkten; Stiche mit 100 oder mehr Maxpunkten zählen mit dem effektiven Resultat. Dafür ist die Datenbank-Aktualisierung 044 nötig («Aktualisierung» im Adminbereich ausführen), damit auch die gespeicherten Wanderpreis-Regeln «Jahresmeisterschaft Kat. A/B» angepasst werden.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Resultatbuch: JM-Totale stimmen jetzt mit der Rangliste überein",
+        "beschreibung": "Die Jahresmeisterschafts-Tabelle im Resultatbuch (Absendenbuch) wich von der JM-Rangliste ab. Drei Ursachen wurden behoben: Erstens blendete das Resultatbuch Anlässe mit angehaktem «Gruppenwettkampf» komplett aus (2026 betraf das «125 Jahre Brunnen-Ingenbohl» – allen Teilnehmern fehlten dadurch bis zu 94 Punkte im Total); der Filter ist entfernt, da solche Anlässe in der Einzelwertung normal zählen. Zweitens kannte die Total- und Streicher-Berechnung des Resultatbuchs den Endstich und den Besten Kantonalstich nicht, weil deren Resultate in eigenen Tabellen liegen – sie werden jetzt wie in der Rangliste angebunden (wichtig fürs Saisonende: ohne den Fix hätten nach dem Endstich alle Buch-Totale falsch gestrichen). Drittens respektiert die Endstich-Zelle nun die Streicher-Markierung, statt sie zu überschreiben. Ein DB-Abgleich über alle Mitglieder bestätigt: Resultatbuch- und Rangliste-Totale sind jetzt identisch.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "JM-Rangliste: Anzahl Streicher überall aus den Einstellungen",
+        "beschreibung": "Das Ranglisten-PDF nach Rang strich bisher fest die 3 schlechtesten Auswärts-Resultate, unabhängig vom konfigurierten Wert in der Parameter-Tabelle. Neu verwendet auch das PDF die eingestellte Anzahl Streicher (wie Bildschirm-Rangliste und Resultatbuch), und die Legende zeigt die tatsächliche Zahl an.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "JM-Ranglisten-PDFs: klare Nachkommastellen-Regel und kompakterer Seitenkopf",
+        "beschreibung": "In beiden JM-Ranglisten-PDFs (nach Rang und «Alle Resultate» nach Name) gilt neu eine einheitliche Regel: Nur hochgerechnete Resultate und die Totale tragen zwei Nachkommastellen – auch wenn ein hochgerechneter Wert ganzzahlig ausfällt (z.B. 98.00). Rohe, nicht hochgerechnete Resultate erscheinen ganzzahlig. So ist auf einen Blick erkennbar, welche Werte hochgerechnet wurden. Zusätzlich ist der Seitenkopf (Logo und Titel) kompakter, damit die Tabelle mehr Platz erhält – und das Vereinslogo erscheint nun auch im PDF nach Rang (der Logo-Pfad zeigte bisher auf einen nicht existierenden Ordner, das Logo wurde deshalb still weggelassen).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.24.0",
     "datum": "2026-06-30",
     "aenderungen": [

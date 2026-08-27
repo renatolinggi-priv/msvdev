@@ -18,11 +18,16 @@ function imgToBase64($imgPath)
 $jmrangOverrides = '
     /* JM-Rangliste: Querformat mit vielen rotierten Spalten */
     body { font-size: 11px; }
-    .logo { width: 90px; max-width: 90px; }
     .table th, .table td { padding: 5px 2px; }
     .result-col { font-size: 11px; }
     .vertical-header { font-size: 8px; line-height: 1.2; }
     @page { margin-bottom: 50px; }
+
+    /* Kompakter Seitenkopf: mehr Hoehe fuer die Tabelle */
+    .pdf-header { min-height: 34px; margin: 0 10px 6px 10px; }
+    .logo { width: 55px; max-width: 55px; margin-right: 10px; }
+    .header-text h1 { font-size: 13px; }
+    h2 { margin-bottom: 6px; }
 ';
 
 // HTML-Header mit Theme-CSS + Overrides; Footer weiterhin via Dompdf page_script.

@@ -27,7 +27,7 @@ $htmlOutput .= "<title>Jahresmeisterschaft $selectedYear</title>";
 $htmlOutput .= "</head>\n<body>\n";
 
 // Logo und Header
-$logoPath = '../images/MSVWilen_Logo.jpg'; // Pfad anpassen falls nötig
+$logoPath = __DIR__ . '/../../images/MSVWilen_Logo.jpg'; // Logo liegt im Root-Ordner images/
 $htmlOutput .= '<div class="pdf-header">';
 if (file_exists($logoPath)) {
     $htmlOutput .= '<div class="logo-container">';
@@ -174,6 +174,17 @@ function buildJMRangliste($year, $kategorie, $conn) {
     
     if (!$members) {
         return "<p>Keine Mitglieder für Kategorie $kategorie gefunden.</p>";
+    }
+
+    // Anzahl Streicher aus der Parameter-Tabelle (wie Bildschirm-Rangliste/Resultatbuch)
+    $anzahlStreicher = 3;
+    $stmtP = $conn->prepare("SELECT excludeCount FROM Parameter WHERE year = ?");
+    if ($stmtP) {
+        $stmtP->bind_param('i', $year);
+        $stmtP->execute();
+        $rowP = $stmtP->get_result()->fetch_assoc();
+        $stmtP->close();
+        if ($rowP) $anzahlStreicher = max(1, (int)$rowP['excludeCount']);
     }
 
     // 3) Datenstruktur resultData
@@ -362,8 +373,8 @@ function buildJMRangliste($year, $kategorie, $conn) {
         }
 
         usort($str1Vals, fn($a,$b) => $a['punkte'] <=> $b['punkte']);
-        $gestr = array_slice($str1Vals, 0, 3);
-        $verwd = array_slice($str1Vals, 3);
+        $gestr = array_slice($str1Vals, 0, $anzahlStreicher);
+        $verwd = array_slice($str1Vals, $anzahlStreicher);
 
         $sumStr1 = array_sum(array_column($verwd, 'punkte'));
         $mData['sumStreicher0'] = $sumStr0;
@@ -478,15 +489,15 @@ function buildJMRangliste($year, $kategorie, $conn) {
 
         foreach ($definitions as $def) {
             $dID = $def['ID'];
+            // Nachkommastellen nur bei hochgerechneten Resultaten; rohe Resultate ganzzahlig
+            $dec = isScaledDef($def) ? 2 : 0;
             $cellContent = '<span class="no-data">-</span>';
 
             if (!empty($entry['wettbewerbe'][$dID])) {
                 $pointArr = $entry['wettbewerbe'][$dID];
                 $vals     = [];
                 foreach ($pointArr as $pItem) {
-                    // Ganzzahlige (nicht hochgerechnete) Resultate ohne Nachkommastellen
-                    $pDec = (abs($pItem['punkte'] - round($pItem['punkte'])) < 0.005) ? 0 : 2;
-                    $pVal = number_format($pItem['punkte'], $pDec, '.', '');
+                    $pVal = number_format($pItem['punkte'], $dec, '.', '');
                     if ($pItem['strichen']) {
                         $vals[] = "<span class='struck'>$pVal</span>";
                     } else {
@@ -503,9 +514,8 @@ function buildJMRangliste($year, $kategorie, $conn) {
             $html .= "<td class='result-col'>$cellContent</td>";
         }
         
-        // Total - erste 3 Ränge fett; ganzzahlig ohne Nachkommastellen
-        $totDec = (abs($sumTotal - round($sumTotal)) < 0.005) ? 0 : 2;
-        $totStr = number_format($sumTotal, $totDec, '.', '');
+        // Total - erste 3 Ränge fett; einheitlich zwei Nachkommastellen
+        $totStr = number_format($sumTotal, 2, '.', '');
         if ($currRank <= 3) {
             $html .= "<td style='font-weight: bold;'><strong>$totStr</strong></td>";
         } else {
@@ -520,23 +530,30 @@ function buildJMRangliste($year, $kategorie, $conn) {
     $html .= '<div class="legend">';
     $html .= '<span class="legend-item"><span class="struck">00.00</span> = Streichresultat (nicht gewertet)</span>';
     $html .= '<span class="legend-item"><strong>-</strong> = Nicht teilgenommen</span>';
-    $html .= '<span class="legend-item">Die roten durchgestrichenen Werte sind die 3 schlechtesten Resultate (Streicher) und werden nicht in die Gesamtwertung einbezogen</span>';
+    $html .= '<span class="legend-item">Die roten durchgestrichenen Werte sind die ' . $anzahlStreicher . ' schlechtesten Resultate (Streicher) und werden nicht in die Gesamtwertung einbezogen</span>';
     $html .= '</div>';
     
     $html .= '</div>';
     return $html;
 }
 
-// Hilfsfunktion: Skaliert Punkte auf 100er-Skala
-function scalePoints($points, $def) {
+// Wird dieser Wettbewerb auf 100 hochgerechnet? Bestimmt auch die Anzeige:
+// nur hochgerechnete Resultate (und Totale) erhalten Nachkommastellen.
+function isScaledDef($def) {
     // Keine Hochrechnung für diese speziellen Wettbewerbe
     if (in_array($def['Bezeichnung'], ['Einzelwettschiessen', 'Obligatorisch', 'Feldschiessen'])) {
+        return false;
+    }
+    // Hochrechnung nur wenn Maxpunkte < 100; Stiche mit Maxpunkte > 100 (z.B. 120)
+    // zaehlen mit dem effektiven Resultat (analog scalePoints in load_jm.php)
+    $maxP = (int)$def['Maxpunkte'];
+    return $maxP > 0 && $maxP < 100;
+}
+
+// Hilfsfunktion: Skaliert Punkte auf 100er-Skala
+function scalePoints($points, $def) {
+    if (!isScaledDef($def)) {
         return $points;
     }
-    
-    $maxP = (int)$def['Maxpunkte'];
-    if ($maxP > 0 && $maxP != 100) {
-        return round(($points * 100) / $maxP, 2);
-    }
-    return $points;
+    return round(($points * 100) / (int)$def['Maxpunkte'], 2);
 }

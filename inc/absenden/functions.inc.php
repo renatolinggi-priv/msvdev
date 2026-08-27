@@ -1789,7 +1789,7 @@ function getJMA($templateProcessor, $conn)
     $jmQuery = "
         SELECT *
         FROM JMDefinition 
-        WHERE year = ? AND Erweitert = 0 AND Info = 0 AND Gruppe = 0
+        WHERE year = ? AND Erweitert = 0 AND Info = 0
         ORDER BY 
             CASE 
                 WHEN Bezeichnung = 'Obligatorisch' THEN 1
@@ -1907,12 +1907,12 @@ function getJMA($templateProcessor, $conn)
 
                     // Wenn 0, als Bindestrich darstellen
                     if ($endVal == 0 || $endVal === 0.0) $show = '-';
+                // isStreicher NICHT ueberschreiben: der Endstich ist Streicher=1 und kann
+                // von GetStreicher als gestrichen markiert sein (analog zur Rangliste)
                 if (isset($idxFirst[$endID]) && isset($resFirst[$idxFirst[$endID]])) {
                     $resFirst[$idxFirst[$endID]]['wert'] = $show;
-                    $resFirst[$idxFirst[$endID]]['isStreicher'] = false;
                 } elseif (isset($idxSecond[$endID]) && isset($resSecond[$idxSecond[$endID]])) {
                     $resSecond[$idxSecond[$endID]]['wert'] = $show;
-                    $resSecond[$idxSecond[$endID]]['isStreicher'] = false;
                 }
             }
         }
@@ -2033,7 +2033,7 @@ function getJMB($templateProcessor, $conn)
     $jmQuery = "
         SELECT *
         FROM JMDefinition 
-        WHERE year = ? AND Erweitert = 0 AND Info = 0 AND Gruppe = 0
+        WHERE year = ? AND Erweitert = 0 AND Info = 0
         ORDER BY 
             CASE 
                 WHEN Bezeichnung = 'Obligatorisch' THEN 1
@@ -2151,12 +2151,12 @@ function getJMB($templateProcessor, $conn)
 
                     // Wenn 0, als Bindestrich darstellen
                     if ($endVal == 0 || $endVal === 0.0) $show = '-';
+                // isStreicher NICHT ueberschreiben: der Endstich ist Streicher=1 und kann
+                // von GetStreicher als gestrichen markiert sein (analog zur Rangliste)
                 if (isset($idxFirst[$endID]) && isset($resFirst[$idxFirst[$endID]])) {
                     $resFirst[$idxFirst[$endID]]['wert'] = $show;
-                    $resFirst[$idxFirst[$endID]]['isStreicher'] = false;
                 } elseif (isset($idxSecond[$endID]) && isset($resSecond[$idxSecond[$endID]])) {
                     $resSecond[$idxSecond[$endID]]['wert'] = $show;
-                    $resSecond[$idxSecond[$endID]]['isStreicher'] = false;
                 }
             }
         }
@@ -2431,7 +2431,8 @@ function getResultateForMember($mitgliedID, $jmData, $streicher, $conn) {
         if ($punkteResult->num_rows > 0) {
             $punkteRow = $punkteResult->fetch_assoc();
             $punkte = $punkteRow['Punkte'];
-            if ($punkteRow['Streicher'] == 1 && $punkteRow['Maxpunkte'] != 100) {
+            // Hochrechnung auf 100 nur wenn Maxpunkte < 100; ueber 100 (z.B. 120) wird nie umgerechnet
+            if ($punkteRow['Streicher'] == 1 && $punkteRow['Maxpunkte'] > 0 && $punkteRow['Maxpunkte'] < 100) {
                 $punkte = round(($punkte * 100.0 / $punkteRow['Maxpunkte']), 2);
             }
 
@@ -2453,6 +2454,80 @@ function getResultateForMember($mitgliedID, $jmData, $streicher, $conn) {
 }
 
 // ========================================================================
+// Sonderfaelle Endstich / Bester Kantonalstich: deren Resultate liegen in den
+// eigenen Tabellen endstich/kantiresultate, NICHT in jmresultate (analog zur
+// JM-Rangliste inc/jmrang/load_jm.php).
+// ========================================================================
+
+// Endstich-Punkte eines Mitglieds (Summe der 10 Schuesse, beste Zeile); null = keine
+function absendenEndstichPunkte($conn, $year, $mitgliedID) {
+    $sql = "SELECT MAX(
+                COALESCE(Schuss1,0)+COALESCE(Schuss2,0)+COALESCE(Schuss3,0)+COALESCE(Schuss4,0)+COALESCE(Schuss5,0)+
+                COALESCE(Schuss6,0)+COALESCE(Schuss7,0)+COALESCE(Schuss8,0)+COALESCE(Schuss9,0)+COALESCE(Schuss10,0)
+            ) AS P FROM endstich WHERE MitgliedID = ? AND Jahr = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) return null;
+    $stmt->bind_param("ii", $mitgliedID, $year);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return ($row && $row['P'] !== null) ? (float)$row['P'] : null;
+}
+
+// Bester Kantonalstich eines Mitglieds (hoechste Passe ueber alle Zeilen); null = keine
+function absendenKantiPunkte($conn, $year, $mitgliedID) {
+    $sql = "SELECT MAX(GREATEST(
+                COALESCE(Passe1,0),COALESCE(Passe2,0),COALESCE(Passe3,0),COALESCE(Passe4,0),COALESCE(Passe5,0)
+            )) AS P FROM kantiresultate WHERE MitgliedID = ? AND Jahr = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) return null;
+    $stmt->bind_param("ii", $mitgliedID, $year);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return ($row && $row['P'] !== null) ? (float)$row['P'] : null;
+}
+
+// Gibt es fuer den Sonderfall ueberhaupt Resultate im Jahr? (Aktiv-Check Streicher-Pool)
+function absendenSonderfallAktiv($conn, $year, $bezeichnung) {
+    $table = ($bezeichnung === 'Endstich') ? 'endstich' : 'kantiresultate';
+    $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM $table WHERE Jahr = ?");
+    if (!$stmt) return false;
+    $stmt->bind_param("i", $year);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row && (int)$row['c'] > 0;
+}
+
+// Normalisierter Streicher-Wert eines Mitglieds fuer einen Streicher-Wettkampf
+// (0 = nicht teilgenommen). Hochrechnung auf 100 nur wenn Maxpunkte < 100;
+// ueber 100 (z.B. 120) wird nie umgerechnet.
+function absendenStreicherWert($conn, $year, $mitgliedID, array $wettkampf) {
+    $bez = $wettkampf['Bezeichnung'] ?? '';
+    if ($bez === 'Endstich') {
+        $punkte = absendenEndstichPunkte($conn, $year, $mitgliedID) ?? 0;
+    } elseif ($bez === 'Bester Kantonalstich') {
+        $punkte = absendenKantiPunkte($conn, $year, $mitgliedID) ?? 0;
+    } else {
+        $punkte = 0;
+        $stmt = $conn->prepare("SELECT MAX(Punkte) AS Punkte FROM jmresultate WHERE mitgliederID = ? AND jmdefinitionID = ?");
+        if ($stmt) {
+            $stmt->bind_param("ii", $mitgliedID, $wettkampf['ID']);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if ($row && $row['Punkte'] !== null) $punkte = $row['Punkte'];
+        }
+    }
+    $maxPunkte = (int)$wettkampf['Maxpunkte'];
+    if ($punkte > 0 && $maxPunkte > 0 && $maxPunkte < 100) {
+        $punkte = round(($punkte / $maxPunkte) * 100, 2);
+    }
+    return $punkte;
+}
+
+// ========================================================================
 // ERSETZE DIE KOMPLETTE getTotal() FUNKTION (ab Zeile 2477)
 
 // ========================================================================
@@ -2464,7 +2539,7 @@ function getTotal($kategorie, $conn) {
     $ssmExists = checkIfSSMExists($conn);
 
     // Erst alle Wettkämpfe mit Streicher=1 holen
-    $sqlWettkaempfe = "SELECT ID, Maxpunkte FROM JMDefinition 
+    $sqlWettkaempfe = "SELECT ID, Bezeichnung, Maxpunkte FROM JMDefinition
                        WHERE year = ? AND Streicher = 1 AND Info = 0 AND Erweitert = 0
                        ORDER BY Reihenfolge";
     $stmt = $conn->prepare($sqlWettkaempfe);
@@ -2479,6 +2554,7 @@ function getTotal($kategorie, $conn) {
     while ($row = $wettkaempfeResult->fetch_assoc()) {
         $wettkaempfe[] = array(
             'ID' => $row['ID'],
+            'Bezeichnung' => $row['Bezeichnung'],
             'Maxpunkte' => $row['Maxpunkte']
         );
     }
@@ -2491,6 +2567,15 @@ function getTotal($kategorie, $conn) {
     $activeStreicherIDs = array();
     foreach ($wettkaempfe as $wettkampf) {
         $wettbewerbID = $wettkampf['ID'];
+
+        // Endstich/Bester Kantonalstich: Resultate liegen in eigenen Tabellen, nicht in jmresultate
+        if (in_array($wettkampf['Bezeichnung'] ?? '', array('Endstich', 'Bester Kantonalstich'), true)) {
+            if (absendenSonderfallAktiv($conn, $selectedYear, $wettkampf['Bezeichnung'])) {
+                $activeStreicherIDs[] = $wettbewerbID;
+            }
+            continue;
+        }
+
         $sqlCheck = "SELECT COUNT(*) as count FROM jmresultate WHERE jmdefinitionID = ?";
         $stmtCheck = $conn->prepare($sqlCheck);
         if ($stmtCheck) {
@@ -2516,6 +2601,21 @@ function getTotal($kategorie, $conn) {
     $wettkaempfe = array_values($wettkaempfe);
     logDebug("getTotal - Aktive Streicher-Wettbewerbe: " . count($wettkaempfe));
 
+    // Sonderfaelle mit Streicher=0 (z.B. Bester Kantonalstich): Resultate aus eigenen Tabellen
+    $fixSonderDefs = array();
+    $stmtS = $conn->prepare("SELECT ID, Bezeichnung FROM JMDefinition
+                             WHERE year = ? AND Erweitert = 0 AND Info = 0 AND Streicher = 0
+                               AND Bezeichnung IN ('Endstich', 'Bester Kantonalstich')");
+    if ($stmtS) {
+        $stmtS->bind_param("i", $selectedYear);
+        $stmtS->execute();
+        $resS = $stmtS->get_result();
+        while ($rowS = $resS->fetch_assoc()) {
+            $fixSonderDefs[] = $rowS;
+        }
+        $stmtS->close();
+    }
+
     // ==========================================
     // Mitglieder abrufen
     $sqlMitgliederA = "SELECT m.id FROM mitglieder m
@@ -2535,16 +2635,17 @@ function getTotal($kategorie, $conn) {
             $mitgliedID = $mitglied['id'];
             $totalFix = 0;
 
-            // Resultate mit Streicher = 0
+            // Resultate mit Streicher = 0 (Endstich/Kanti ausgenommen: eigene Tabellen, s.u.)
             $sqlResultateFix = "
                 SELECT MAX(jm.Punkte) AS Punkte
                 FROM jmresultate jm
                 INNER JOIN JMDefinition jd ON jd.ID = jm.jmdefinitionID
-                WHERE jm.mitgliederID = ? 
-                  AND jd.Streicher = 0 
-                  AND jd.Info = 0 
+                WHERE jm.mitgliederID = ?
+                  AND jd.Streicher = 0
+                  AND jd.Info = 0
                   AND jd.Erweitert = 0
                   AND jd.year = ?
+                  AND jd.Bezeichnung NOT IN ('Endstich', 'Bester Kantonalstich')
                 GROUP BY jm.jmdefinitionID
             ";
             $stmt = $conn->prepare($sqlResultateFix);
@@ -2558,38 +2659,24 @@ function getTotal($kategorie, $conn) {
                 $stmt->close();
             }
 
+            // Sonderfaelle mit Streicher=0 aus ihren eigenen Tabellen dazuzaehlen
+            foreach ($fixSonderDefs as $sd) {
+                $p = ($sd['Bezeichnung'] === 'Endstich')
+                    ? absendenEndstichPunkte($conn, $selectedYear, $mitgliedID)
+                    : absendenKantiPunkte($conn, $selectedYear, $mitgliedID);
+                if ($p !== null) {
+                    $totalFix += $p;
+                }
+            }
+
             // Resultate mit Streicher = 1 - NUR MIT AKTIVEN WETTKÄMPFEN
             $streicherArray = array();
             foreach ($wettkaempfe as $wettkampf) {
-                $wettbewerbID = $wettkampf['ID'];
-                $maxPunkte = $wettkampf['Maxpunkte'];
-
-                // Resultat für diesen Wettkampf holen
-                $sqlPunkte = "SELECT MAX(Punkte) AS Punkte 
-                             FROM jmresultate 
-                             WHERE mitgliederID = ? AND jmdefinitionID = ?";
-                $stmt = $conn->prepare($sqlPunkte);
-                if ($stmt) {
-                    $stmt->bind_param("ii", $mitgliedID, $wettbewerbID);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    $punkte = 0; // Default: nicht teilgenommen = 0
-                    if ($row = $result->fetch_assoc()) {
-                        if ($row['Punkte'] !== null) {
-                            $punkte = $row['Punkte'];
-
-                            // Normalisieren auf 100 wenn nötig
-                            if ($maxPunkte != 100) {
-                                $punkte = round(($punkte / $maxPunkte) * 100, 2);
-                            }
-                        }
-                    }
-                    $stmt->close();
-                    $streicherArray[] = array(
-                        'WettbewerbID' => $wettbewerbID,
-                        'NormalizedPoints' => $punkte
-                    );
-                }
+                // Wert holen (Endstich/Kanti aus eigenen Tabellen) und normalisieren
+                $streicherArray[] = array(
+                    'WettbewerbID' => $wettkampf['ID'],
+                    'NormalizedPoints' => absendenStreicherWert($conn, $selectedYear, $mitgliedID, $wettkampf)
+                );
             }
 
             // Zähle fehlende Resultate (0-Werte)
@@ -2655,7 +2742,7 @@ function GetStreicher($kategorie, $conn) {
     $ssmExists = checkIfSSMExists($conn);
 
     // Erst alle Wettkämpfe mit Streicher=1 holen
-    $sqlWettkaempfe = "SELECT ID, Maxpunkte FROM JMDefinition 
+    $sqlWettkaempfe = "SELECT ID, Bezeichnung, Maxpunkte FROM JMDefinition
                        WHERE year = ? AND Streicher = 1 AND Info = 0 AND Erweitert = 0";
     if ($ssmExists) {
         $sqlWettkaempfe .= " AND Bezeichnung NOT LIKE '%Sektionsmeisterschaft%'";
@@ -2673,6 +2760,7 @@ function GetStreicher($kategorie, $conn) {
     while ($row = $wettkaempfeResult->fetch_assoc()) {
         $wettkaempfe[] = array(
             'ID' => $row['ID'],
+            'Bezeichnung' => $row['Bezeichnung'],
             'Maxpunkte' => $row['Maxpunkte']
         );
     }
@@ -2685,6 +2773,15 @@ function GetStreicher($kategorie, $conn) {
     $activeStreicherIDs = array();
     foreach ($wettkaempfe as $wettkampf) {
         $wettbewerbID = $wettkampf['ID'];
+
+        // Endstich/Bester Kantonalstich: Resultate liegen in eigenen Tabellen, nicht in jmresultate
+        if (in_array($wettkampf['Bezeichnung'] ?? '', array('Endstich', 'Bester Kantonalstich'), true)) {
+            if (absendenSonderfallAktiv($conn, $selectedYear, $wettkampf['Bezeichnung'])) {
+                $activeStreicherIDs[] = $wettbewerbID;
+            }
+            continue;
+        }
+
         $sqlCheck = "SELECT COUNT(*) as count FROM jmresultate WHERE jmdefinitionID = ?";
         $stmtCheck = $conn->prepare($sqlCheck);
         if ($stmtCheck) {
@@ -2731,35 +2828,11 @@ function GetStreicher($kategorie, $conn) {
 
             // Für jeden AKTIVEN Wettkampf mit Streicher=1 das Resultat holen (oder 0 wenn nicht vorhanden)
             foreach ($wettkaempfe as $wettkampf) {
-                $wettbewerbID = $wettkampf['ID'];
-                $maxPunkte = $wettkampf['Maxpunkte'];
-
-                // Resultat für diesen Wettkampf holen
-                $sqlPunkte = "SELECT MAX(Punkte) AS Punkte 
-                             FROM jmresultate 
-                             WHERE mitgliederID = ? AND jmdefinitionID = ?";
-                $stmt = $conn->prepare($sqlPunkte);
-                if ($stmt) {
-                    $stmt->bind_param("ii", $mitgliedID, $wettbewerbID);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    $punkte = 0; // Default: nicht teilgenommen = 0
-                    if ($row = $result->fetch_assoc()) {
-                        if ($row['Punkte'] !== null) {
-                            $punkte = $row['Punkte'];
-
-                            // Normalisieren auf 100 wenn nötig
-                            if ($maxPunkte != 100) {
-                                $punkte = round(($punkte / $maxPunkte) * 100, 2);
-                            }
-                        }
-                    }
-                    $stmt->close();
-                    $streicherArray[] = array(
-                        'WettbewerbID' => $wettbewerbID,
-                        'NormalizedPoints' => $punkte
-                    );
-                }
+                // Wert holen (Endstich/Kanti aus eigenen Tabellen) und normalisieren
+                $streicherArray[] = array(
+                    'WettbewerbID' => $wettkampf['ID'],
+                    'NormalizedPoints' => absendenStreicherWert($conn, $selectedYear, $mitgliedID, $wettkampf)
+                );
             }
 
             // Zähle fehlende Resultate (0-Werte)

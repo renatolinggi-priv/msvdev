@@ -352,14 +352,14 @@ function createTable($kategorie, $selectedYear) {
         $html .= "<tr>";
         $html .= "<td style='text-align: left; font-weight: normal; font-size: 11px; white-space: nowrap; padding-right: 8px;'>{$entry['name']}</td>";
 
-        // Pro Wettbewerb (hochgerechnete Resultate mit 2 Nachkommastellen, sonst ohne)
+        // Nachkommastellen nur bei hochgerechneten Resultaten; rohe Resultate ganzzahlig
         foreach ($wettbewerbe as $wbID => $wb) {
+            $isScaled = !in_array($wb['Bezeichnung'], ['Obligatorisch', 'Feldschiessen', 'Einzelwettschiessen'])
+                && (int)$wb['Maxpunkte'] > 0 && (int)$wb['Maxpunkte'] < 100;
             if (!empty($entry['resultate'][$wbID])) {
                 $parts = [];
                 foreach ($entry['resultate'][$wbID] as $v) {
-                    // Ganzzahlige (nicht hochgerechnete) Resultate ohne Nachkommastellen
-                    $dec = (abs($v - round($v)) < 0.005) ? 0 : 2;
-                    $parts[] = "<span class='value'>" . number_format($v, $dec, '.', '') . "</span>";
+                    $parts[] = "<span class='value'>" . number_format($v, $isScaled ? 2 : 0, '.', '') . "</span>";
                 }
                 $display = implode(', ', $parts);
             } else {
@@ -368,9 +368,8 @@ function createTable($kategorie, $selectedYear) {
             $html .= "<td class='result-col'>$display</td>";
         }
 
-        // Total: nur Nachkommastellen wenn nicht ganzzahlig
-        $totalDec = (abs($entry['total'] - round($entry['total'])) < 0.005) ? 0 : 2;
-        $html .= "<td><strong>" . number_format($entry['total'], $totalDec, '.', '') . "</strong></td>";
+        // Total: einheitlich zwei Nachkommastellen
+        $html .= "<td><strong>" . number_format($entry['total'], 2, '.', '') . "</strong></td>";
         $html .= "</tr>";
     }
 
