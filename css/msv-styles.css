@@ -1141,3 +1141,142 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     padding-top: 0.4rem !important;
     padding-bottom: 0.4rem !important;
 }
+
+/* ==========================================
+   ENDSCHIESSEN ERFASSUNGS-PANEL (endresultate.php / endresultate_partner.php)
+   Stich-Sektionen mit Schuss-Feldern im Slide-Panel. Optik angelehnt an das
+   Erfassen-Panel von kanti-/heimresultate (.entry-passe-field): grosse
+   zentrierte Felder, kleine Uppercase-Labels, gruen wenn ausgefuellt.
+   Nicht geloeste Stiche klappen auf die Kopfzeile zusammen (.disabled).
+   ========================================== */
+.shot-section,
+.shot-cols {
+    padding: 0.85rem 0;
+    border-top: 1px solid #eef2f7;
+}
+.shot-first { border-top: 0; padding-top: 0; }
+.shot-cols { display: flex; gap: 1.5rem; align-items: flex-start; }
+.shot-cols > .shot-section,
+.shot-cols > .shot-field { flex: 1 1 0; min-width: 0; border-top: 0; padding: 0; }
+
+.shot-section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-height: 1.6rem;
+}
+.shot-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-right: auto;
+}
+.shot-section-title i { color: #94a3b8; font-size: 0.85rem; }
+.shot-hint {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #94a3b8;
+}
+.shot-total {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    background: #f1f5f9;
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+    min-width: 2.6rem;
+    text-align: center;
+    line-height: 1.4;
+}
+.shot-status {
+    display: none;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #94a3b8;
+    background: #f8fafc;
+    border: 1px dashed #d9e0e8;
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+.shot-section.disabled .shot-section-head { margin-bottom: 0; }
+.shot-section.disabled .shot-section-title { color: #b6c0cc; }
+.shot-section.disabled .shot-section-title i { color: #cbd5e1; }
+.shot-section.disabled .shot-section-body,
+.shot-section.disabled .shot-total { display: none; }
+.shot-section.disabled .shot-status { display: inline-block; }
+
+.shot-row { display: flex; align-items: center; gap: 0.5rem; }
+.shot-row + .shot-row { margin-top: 0.45rem; }
+.shot-row .shot-total { margin-left: auto; }
+.shot-row-label {
+    flex: 0 0 4.2rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #94a3b8;
+}
+.shot-row.schwini-pass-disabled .shot-grid,
+.shot-row.schwini-pass-disabled .shot-total { display: none; }
+.shot-row.schwini-pass-disabled .shot-status { display: inline-block; }
+
+.shot-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+
+.shot-input {
+    width: 44px;
+    height: 40px;
+    padding: 0;
+    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #fff;
+    border: 1.5px solid #dee2e6;
+    border-radius: 0.5rem;
+    -moz-appearance: textfield;
+    appearance: textfield;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.shot-input::-webkit-outer-spin-button,
+.shot-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.shot-input::placeholder { color: #cbd5e1; font-weight: 500; font-size: 0.85rem; }
+.shot-input:focus {
+    border-color: #4a90d9;
+    box-shadow: 0 0 0 3px rgba(74,144,217,0.15);
+    outline: none;
+}
+.shot-input.filled { background: #f0fdf4; border-color: #86efac; }
+.shot-input:disabled { background: #f8fafc; color: #cbd5e1; }
+.shot-input-dec { width: 50px; }
+.shot-input-wide { width: 72px; }
+/* Sie und Er: Unique-Logik – Duplikate zaehlen nicht */
+.shot-input.is-unique { background: #f0fdf4; border-color: #86efac; }
+.shot-input.is-dup {
+    background: #fff5f5;
+    border-color: #fca5a5;
+    color: #b91c1c;
+    text-decoration: line-through;
+}
+
+.shot-field .panel-label { margin-bottom: 0.35rem; }
+
+@media (max-width: 767.98px) {
+    .shot-cols { flex-direction: column; gap: 0; }
+    .shot-cols > .shot-section { border-top: 1px solid #eef2f7; padding: 0.85rem 0; }
+    .shot-cols > .shot-section:first-child { border-top: 0; padding-top: 0; }
+    .shot-input { width: 46px; height: 46px; min-height: 46px; font-size: 16px; }
+    .shot-input-dec { width: 52px; }
+    .shot-input-wide { width: 80px; }
+}

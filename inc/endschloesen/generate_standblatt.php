@@ -10,9 +10,8 @@ ini_set('log_errors', 1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../dbconnect.inc.php';
-
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('plain'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 // --- Parameter ---
 $jahr = intval($_GET['jahr'] ?? date('Y'));
@@ -142,6 +141,13 @@ foreach ($codeToPlaceholder as $code => $placeholder) {
 }
 
 // --- Excel-Vorlage laden und Platzhalter ersetzen ---
+// Bewusst OHNE PhpSpreadsheet: die Bibliothek kann Textfelder/Autoformen nicht
+// einlesen und wirft sie beim Speichern weg (Titel "Endschiessen MSV Wilen ${year}"
+// und die "Stichnr."-Beschriftungen liegen in der Vorlage als Textfelder vor).
+// Darum wird die XLSX als Zip geöffnet und die XML-Teile werden direkt bearbeitet:
+//   - xl/sharedStrings.xml   → Platzhalter in Zellen
+//   - xl/drawings/drawing1.xml → Platzhalter in Textfeldern
+//   - Barcode als zusätzliches Bild im Drawing verankert (an der ${lizenz}-Zelle)
 $templatePath = __DIR__ . '/Vorlage/Standblatt_Endschiessen_Vorlage.xlsx';
 
 if (!file_exists($templatePath)) {
@@ -150,39 +156,109 @@ if (!file_exists($templatePath)) {
     exit;
 }
 
-$spreadsheet = IOFactory::load($templatePath);
+$xmlEsc = static fn(string $s): string => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
-foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-    foreach ($sheet->getRowIterator() as $row) {
-        $cellIterator = $row->getCellIterator();
-        $cellIterator->setIterateOnlyExistingCells(true);
-        foreach ($cellIterator as $cell) {
-            $val = $cell->getValue();
-            if (!is_string($val) || strpos($val, '${') === false) continue;
+/** Ersetzt alle ${key}-Platzhalter in einem XML-String (Werte XML-escaped). */
+$ersetzePlatzhalter = static function (string $xml, array $map) use ($xmlEsc): string {
+    foreach ($map as $key => $wert) {
+        $xml = str_replace('${' . $key . '}', $xmlEsc((string) $wert), $xml);
+    }
+    return $xml;
+};
 
-            // Barcode-Platzhalter → Bild einfügen
-            if (strpos($val, '${lizenz}') !== false) {
-                $cell->setValue(str_replace('${lizenz}', '', $val));
-                if ($barcodePng) {
-                    $drawing = new Drawing();
-                    $drawing->setPath($barcodePng);
-                    $drawing->setCoordinates($cell->getCoordinate());
-                    $drawing->setHeight(40);
-                    $drawing->setOffsetX(2);
-                    $drawing->setOffsetY(2);
-                    $drawing->setWorksheet($sheet);
-                }
-                continue;
-            }
+/** Spaltenbuchstaben (A, B, …, AA) → 0-basierter Index */
+$spalteZuIndex = static function (string $col): int {
+    $n = 0;
+    foreach (str_split(strtoupper($col)) as $ch) {
+        $n = $n * 26 + (ord($ch) - 64);
+    }
+    return $n - 1;
+};
 
-            // Normale Text-Platzhalter
-            foreach ($replacements as $key => $replacement) {
-                $val = str_replace('${' . $key . '}', $replacement, $val);
-            }
-            $cell->setValue($val);
-        }
+$tmpXlsx = tempnam(sys_get_temp_dir(), 'standblatt_') . '.xlsx';
+if (!copy($templatePath, $tmpXlsx)) {
+    http_response_code(500);
+    echo 'Vorlage konnte nicht kopiert werden';
+    exit;
+}
+
+$zip = new ZipArchive();
+if ($zip->open($tmpXlsx) !== true) {
+    @unlink($tmpXlsx);
+    http_response_code(500);
+    echo 'Vorlage konnte nicht geöffnet werden';
+    exit;
+}
+
+// 1) Zell-Texte (sharedStrings): Position der ${lizenz}-Zelle merken, dann ersetzen
+$sharedStrings = (string) $zip->getFromName('xl/sharedStrings.xml');
+$lizenzIndex = -1;
+if (preg_match_all('#<si>.*?</si>#s', $sharedStrings, $siMatches)) {
+    foreach ($siMatches[0] as $idx => $si) {
+        if (strpos($si, '${lizenz}') !== false) { $lizenzIndex = $idx; break; }
     }
 }
+$zellMap = $replacements + ['lizenz' => ''];
+$zip->addFromString('xl/sharedStrings.xml', $ersetzePlatzhalter($sharedStrings, $zellMap));
+
+// 2) Textfelder (Drawings): alle drawing*.xml durchgehen
+$drawingNamen = [];
+for ($i = 0; $i < $zip->numFiles; $i++) {
+    $n = $zip->getNameIndex($i);
+    if (preg_match('#^xl/drawings/drawing\d+\.xml$#', $n)) $drawingNamen[] = $n;
+}
+// PITFALL ZipArchive: getFromName() liefert für einen per addFromString() ersetzten,
+// noch nicht geschriebenen Eintrag einen leeren Inhalt. Darum alle XML-Teile im
+// Speicher halten und jeden Eintrag erst am Ende genau einmal schreiben.
+$drawings = [];
+foreach ($drawingNamen as $dn) {
+    $drawings[$dn] = $ersetzePlatzhalter((string) $zip->getFromName($dn), $replacements);
+}
+
+// 3) Barcode-Bild an der ${lizenz}-Zelle verankern (Blatt 1, drawing1.xml)
+if ($barcodePng && $lizenzIndex >= 0 && isset($drawings['xl/drawings/drawing1.xml'])) {
+    $sheetXml = (string) $zip->getFromName('xl/worksheets/sheet1.xml');
+    if (preg_match('#<c r="([A-Z]+)(\d+)"[^>]*\bt="s"[^>]*>\s*<v>' . $lizenzIndex . '</v>#', $sheetXml, $cm)) {
+        $col = $spalteZuIndex($cm[1]);
+        $row = (int) $cm[2] - 1;
+
+        // Bildgrösse: Höhe 40px, Breite proportional; 1px = 9525 EMU
+        [$pxW, $pxH] = getimagesize($barcodePng) ?: [280, 60];
+        $cy = 40 * 9525;
+        $cx = (int) round($pxW * 40 / max(1, $pxH) * 9525);
+        $off = 2 * 9525;
+
+        $relId = 'rIdBarcode';
+        $relsName = 'xl/drawings/_rels/drawing1.xml.rels';
+        $rels = (string) $zip->getFromName($relsName);
+        $rels = str_replace(
+            '</Relationships>',
+            '<Relationship Id="' . $relId . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/barcode_lizenz.png"/></Relationships>',
+            $rels
+        );
+        $zip->addFromString($relsName, $rels);
+        $zip->addFromString('xl/media/barcode_lizenz.png', (string) file_get_contents($barcodePng));
+
+        $anchor = '<xdr:oneCellAnchor>'
+            . '<xdr:from><xdr:col>' . $col . '</xdr:col><xdr:colOff>' . $off . '</xdr:colOff>'
+            . '<xdr:row>' . $row . '</xdr:row><xdr:rowOff>' . $off . '</xdr:rowOff></xdr:from>'
+            . '<xdr:ext cx="' . $cx . '" cy="' . $cy . '"/>'
+            . '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="9001" name="Barcode Lizenz"/>'
+            . '<xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>'
+            . '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="' . $relId . '"/>'
+            . '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+            . '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $cx . '" cy="' . $cy . '"/></a:xfrm>'
+            . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>'
+            . '<xdr:clientData/></xdr:oneCellAnchor>';
+        $drawings['xl/drawings/drawing1.xml'] = str_replace('</xdr:wsDr>', $anchor . '</xdr:wsDr>', $drawings['xl/drawings/drawing1.xml']);
+    }
+}
+
+foreach ($drawings as $dn => $xml) {
+    $zip->addFromString($dn, $xml);
+}
+
+$zip->close();
 
 // --- Download ausgeben ---
 $filename = "Endschiessen_{$jahr}_{$vorname}{$nachname}.xlsx";
@@ -190,11 +266,11 @@ $filename = "Endschiessen_{$jahr}_{$vorname}{$nachname}.xlsx";
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Cache-Control: max-age=0');
+header('Content-Length: ' . filesize($tmpXlsx));
+readfile($tmpXlsx);
 
-$writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
-$writer->save('php://output');
-
-// Temporäre Barcode-Datei aufräumen
+// Temporäre Dateien aufräumen
+@unlink($tmpXlsx);
 if ($barcodePng && file_exists($barcodePng)) {
     unlink($barcodePng);
 }

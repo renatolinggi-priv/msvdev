@@ -12,6 +12,8 @@ header('Content-Type: application/json');
 
 // Include database configuration
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 // Check database connection with proper error handling
 if ($conn->connect_error) {

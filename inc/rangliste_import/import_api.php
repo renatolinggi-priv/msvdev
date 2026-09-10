@@ -170,6 +170,7 @@ function handleParse($conn) {
             'match_status' => $status,
             'is_top10'     => ($rang !== null && $rang >= 1 && $rang <= 10),
             'dup_jm'       => isset($existJm[$mid]),
+            'dup_jm_punkte' => $existJm[$mid] ?? null,
             'dup_einzel'   => isset($existEinzel[$mid]),
         ];
 
@@ -219,11 +220,12 @@ function handleParse($conn) {
     }
 
     $resp = [
-        'success' => true,
-        'rows'    => $rows,
-        'sektion' => $sektion,
-        'stats'   => $stats,
-        'message' => $stats['matched'] . ' Vereinsmitglieder von ' . $totalLines . ' Zeilen erkannt',
+        'success'   => true,
+        'rows'      => $rows,
+        'sektion'   => $sektion,
+        'generator' => $parsed['generator'] ?? null,
+        'stats'     => $stats,
+        'message'   => $stats['matched'] . ' Vereinsmitglieder von ' . $totalLines . ' Zeilen erkannt',
     ];
     if ($debug && isset($parsed['debug'])) $resp['debug'] = $parsed['debug'];
     echo json_encode($resp);
@@ -356,14 +358,17 @@ function loadMitgliederMaps($conn) {
     return [$mitglieder, $exactMap, $reversedMap, $idSet];
 }
 
-/** Mitglieder-IDs mit bestehendem jmresultate-Eintrag fuer diesen Anlass (Info=''). */
+/**
+ * Mitglieder-IDs mit bestehendem jmresultate-Eintrag fuer diesen Anlass (Info='').
+ * Wert = bestehende Punkte (fuer den Vergleich in der Import-Vorschau).
+ */
 function existingJmMemberIds($conn, $jmdefId) {
     $set = [];
-    $stmt = $conn->prepare("SELECT mitgliederID FROM jmresultate WHERE jmdefinitionID = ? AND (Info = '' OR Info IS NULL)");
+    $stmt = $conn->prepare("SELECT mitgliederID, Punkte FROM jmresultate WHERE jmdefinitionID = ? AND (Info = '' OR Info IS NULL)");
     $stmt->bind_param('i', $jmdefId);
     $stmt->execute();
     $r = $stmt->get_result();
-    while ($row = $r->fetch_assoc()) $set[(int) $row['mitgliederID']] = true;
+    while ($row = $r->fetch_assoc()) $set[(int) $row['mitgliederID']] = (int) $row['Punkte'];
     $stmt->close();
     return $set;
 }

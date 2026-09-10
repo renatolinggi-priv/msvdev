@@ -1,1222 +1,563 @@
 <?php
-// endschloesen_api.php - Backend API für Endschiessen Stich-Erfassung (mysqli Version)
+/**
+ * endschloesen_api.php – Backend für «Endschiessen – Stiche lösen» (endschloesen.php)
+ *
+ * Aktionen (GET ?action=…, schreibende per POST mit JSON-Body + X-CSRF-TOKEN):
+ *   list_stiche, list_mitglieder, list_waffen, get_spezialpreise
+ *   get_selection      (mitglied_id | gast_id | gast_name, jahr)  -> Stiche, Zahlung, Zusatzmunition
+ *   get_zusatz_schuesse (Kompatibilität; Inhalt steckt auch in get_selection)
+ *   get_year_details   (jahr)                                     -> Matrix für die Übersichtstabelle
+ *   save_selection     POST                                       -> Stiche + Zusatzmunition speichern
+ *   delete_selection   POST
+ *   get_stich_definitions, update_stich_definition POST, update_spezialpreis POST
+ *
+ * Grundsätze (Überarbeitung 09.2026):
+ *   - Zugriff nur für Admin-Bereich (adminApiGuard), CSRF bei POST.
+ *   - Preise werden AUSSCHLIESSLICH serverseitig berechnet (preislogik.inc.php);
+ *     der Client schickt keinen Preis mehr mit.
+ *   - Keine Schema-Änderungen zur Laufzeit mehr (siehe migrations/045_endschiessen_schema.sql).
+ *   - Geburtsdatum von Jungschützen als eigenes Feld, nicht im Namen.
+ */
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: https://www.msvwilen.ch');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CSRF-TOKEN');
-header('Access-Control-Allow-Credentials: true');
-
-// Bei OPTIONS Request (CORS Preflight) sofort beenden
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
-
-// Error handling
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
-ini_set('log_errors', 1);
 
-// Helper function für JSON Response
-function jsonResponse($success, $data = null, $message = '', $extra = [])
+require_once __DIR__ . '/../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/preislogik.inc.php';
+
+adminApiGuard('json');
+
+if (!isset($conn) || $conn->connect_error) {
+    jsonResponse(false, null, 'Datenbankverbindung fehlgeschlagen');
+}
+$conn->set_charset('utf8mb4');
+
+// ---------------------------------------------------------------------------
+// Helfer
+// ---------------------------------------------------------------------------
+function jsonResponse(bool $success, $data = null, string $message = '', array $extra = []): void
 {
-    $response = [
-        'success' => $success,
-        'data' => $data,
-        'message' => $message
-    ];
-    // Füge zusätzliche Felder hinzu
-    foreach ($extra as $key => $value) {
-        $response[$key] = $value;
-    }
-    echo json_encode($response);
+    echo json_encode(array_merge(['success' => $success, 'data' => $data, 'message' => $message], $extra), JSON_UNESCAPED_UNICODE);
     exit;
 }
 
+function requestInput(): array
+{
+    if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
+        $in = json_decode(file_get_contents('php://input'), true);
+        return is_array($in) ? $in : [];
+    }
+    return $_POST;
+}
+
+function checkCSRF(): void
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        jsonResponse(false, null, 'POST erwartet');
+    }
+    csrf_require(true);
+}
+
+/** Prepared Statement mit dynamischer Parameterliste ausführen und Ergebnis liefern. */
+function q(mysqli $conn, string $sql, string $types = '', array $params = []): mysqli_stmt
+{
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        throw new RuntimeException('Prepare fehlgeschlagen: ' . $conn->error);
+    }
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+    if (!$stmt->execute()) {
+        throw new RuntimeException('Ausführung fehlgeschlagen: ' . $stmt->error);
+    }
+    return $stmt;
+}
+
+function rows(mysqli_stmt $stmt): array
+{
+    $out = [];
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $out[] = $row;
+    }
+    return $out;
+}
+
+/** Munitionsart aus Waffe ableiten (GP11 / GP90 / null). */
+function endschAmmoPref(?int $waffeId, ?string $bez, ?string $kat): ?string
+{
+    $map = [1 => 'GP11', 2 => 'GP90']; // 1 = Standardgewehr 300m, 2 = Stgw90
+    if ($waffeId && isset($map[$waffeId])) {
+        return $map[$waffeId];
+    }
+    $text = mb_strtolower(trim(($kat ?? '') . ' ' . ($bez ?? '')), 'UTF-8');
+    if (preg_match('/\b(stgw|stg)\s*90\b|\bpe\s*90\b|\b(sg|sig)\s*550\b|\bgp\s*90\b|\b5\.56\b|\b\.?223\b/', $text)) {
+        return 'GP90';
+    }
+    if (preg_match('/\b(stgw|stg)\s*57\b|\bk[\s-]?31\b|\bkarabiner\s*31\b|\bk[\s-]?11\b|\bg[\s-]?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp\s*11\b|\bstandardgewehr\b|\bstdg\b/', $text)) {
+        return 'GP11';
+    }
+    return null;
+}
+
+/** Gast nach id oder (name, jahr) laden. */
+function findeGast(mysqli $conn, int $gastId, string $gastName, int $jahr): ?array
+{
+    if ($gastId > 0) {
+        $r = rows(q($conn, "SELECT id, name, geburtsdatum, waffen_id, jahr FROM endstich_gaeste WHERE id = ?", 'i', [$gastId]));
+    } elseif ($gastName !== '') {
+        $r = rows(q($conn, "SELECT id, name, geburtsdatum, waffen_id, jahr FROM endstich_gaeste WHERE name = ? AND jahr = ?", 'si', [$gastName, $jahr]));
+    } else {
+        return null;
+    }
+    return $r[0] ?? null;
+}
+
+/** Zusatzmunition eines Teilnehmers. */
+function ladeZusatz(mysqli $conn, string $spalte, int $id, int $jahr): array
+{
+    return rows(q($conn, "SELECT typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE $spalte = ? AND jahr = ?", 'ii', [$id, $jahr]));
+}
+
+// ---------------------------------------------------------------------------
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+
 try {
-    // Database connection
-    $dbFile = __DIR__ . '/../dbconnect.inc.php';
-
-    if (!file_exists($dbFile)) {
-        error_log("DB file not found at: " . $dbFile);
-        jsonResponse(false, null, 'Database configuration error');
-    }
-
-    require_once $dbFile;
-
-    // Verwende mysqli
-    if (!isset($conn)) {
-        error_log("Connection not initialized after including dbconnect");
-        jsonResponse(false, null, 'Database connection not initialized');
-    }
-
-    // Prüfe Verbindung
-    if ($conn->connect_error) {
-        error_log("Database connection error: " . $conn->connect_error);
-        jsonResponse(false, null, 'Database connection failed');
-    }
-
-    // Session für CSRF
-    require_once __DIR__ . '/../session_config.inc.php';
-    require_once __DIR__ . '/../csrf.inc.php';
-
-    // CSRF Check für POST requests (zentraler Helfer)
-    function checkCSRF()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            csrf_require(true);
-        }
-    }
-
-    // Get action
-    $action = $_GET['action'] ?? $_POST['action'] ?? '';
-
     switch ($action) {
 
+        // -------------------------------------------------------------- Stammdaten
+        case 'list_stiche':
+            $r = rows(q($conn, "SELECT id, code, name, shots, price_cents, sort_order FROM endstich_definition WHERE active = 1 ORDER BY sort_order, name"));
+            jsonResponse(true, $r);
+
+        case 'get_stich_definitions':
+            $r = rows(q($conn, "SELECT id, code, name, shots, price_cents, sort_order, active FROM endstich_definition ORDER BY sort_order, name"));
+            jsonResponse(true, $r);
+
+        case 'list_mitglieder':
+            $r = rows(q($conn, "SELECT m.ID AS id, m.Name AS Nachname, m.Vorname, m.WaffenID AS waffe_id, w.Bezeichnung AS waffe_bez, w.Kategorie AS waffe_kat
+                                FROM mitglieder m LEFT JOIN Waffen w ON w.ID = m.WaffenID
+                                WHERE COALESCE(m.Verstorben, 0) != 1 ORDER BY m.Name, m.Vorname"));
+            jsonResponse(true, $r);
+
+        case 'list_waffen':
+            $r = rows(q($conn, "SELECT id AS ID, bezeichnung AS Bezeichnung, kategorie AS Kategorie FROM Waffen ORDER BY kategorie, bezeichnung"));
+            jsonResponse(true, $r);
+
         case 'get_spezialpreise':
-            // Hole alle Spezialpreise
-            $sql = "SELECT * FROM endstich_spezialpreise ORDER BY sort_order, typ";
-            $result = $conn->query($sql);
-
-            if (!$result) {
-                // Tabelle existiert vermutlich noch nicht
-                jsonResponse(true, []);
+            // Format wie bisher: typ => Zeile (Frontend liest .price_cents)
+            $out = [];
+            foreach (endschLadeSpezialpreise($conn) as $typ => $cents) {
+                $out[$typ] = ['typ' => $typ, 'price_cents' => $cents];
             }
-
-            $preise = [];
-            while ($row = $result->fetch_assoc()) {
-                $preise[$row['typ']] = $row;
-            }
-
-            jsonResponse(true, $preise);
-            break;
+            jsonResponse(true, $out);
 
         case 'update_spezialpreis':
             checkCSRF();
-
-            // Parse input
-            $input = null;
-            if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
-                $input = json_decode(file_get_contents('php://input'), true);
-            } else {
-                $input = $_POST;
+            $in  = requestInput();
+            $typ = trim((string)($in['typ'] ?? ''));
+            $cents = (int)($in['price_cents'] ?? 0);
+            if ($typ === '' || !array_key_exists($typ, ENDSCH_PREIS_DEFAULTS)) {
+                jsonResponse(false, null, 'Unbekannter Preistyp');
             }
-
-            $typ = $input['typ'] ?? '';
-            $price_cents = (int) ($input['price_cents'] ?? 0);
-
-            if (empty($typ)) {
-                jsonResponse(false, null, 'Typ fehlt');
-            }
-
-            // Prüfe ob Tabelle existiert
-            $table_check = $conn->query("SHOW TABLES LIKE 'endstich_spezialpreise'");
-            if ($table_check->num_rows == 0) {
-                jsonResponse(false, null, 'Spezialpreise-Tabelle existiert noch nicht');
-            }
-
-            // Update Preis
-            $stmt = $conn->prepare("UPDATE endstich_spezialpreise SET price_cents = ? WHERE typ = ?");
-            $stmt->bind_param("is", $price_cents, $typ);
-
-            if ($stmt->execute()) {
-                jsonResponse(true, ['typ' => $typ, 'price_cents' => $price_cents], 'Preis aktualisiert');
-            } else {
-                jsonResponse(false, null, 'Fehler beim Update: ' . $conn->error);
-            }
-            break;
-
-        case 'list_stiche':
-            // Liste aller aktiven Stiche
-            $sql = "SELECT id, code, name, shots, price_cents, sort_order 
-                    FROM endstich_definition 
-                    WHERE active = 1 
-                    ORDER BY sort_order, name";
-
-            $result = $conn->query($sql);
-
-            if (!$result) {
-                error_log("Query error: " . $conn->error);
-                jsonResponse(false, null, 'Datenbankfehler beim Abrufen der Stiche');
-            }
-
-            $stiche = [];
-            while ($row = $result->fetch_assoc()) {
-                $stiche[] = $row;
-            }
-
-            jsonResponse(true, $stiche);
-            break;
-
-        case 'list_mitglieder':
-            // Liste aller aktiven Mitglieder
-            $sql = "SELECT 
-  m.ID AS id,
-  m.Name AS Nachname, m.Vorname,
-  m.Geburtsdatum,
-  m.WaffenID        AS waffe_id,
-  w.Bezeichnung     AS waffe_bez,
-  w.Kategorie       AS waffe_kat
-FROM mitglieder m
-LEFT JOIN Waffen w ON w.ID = m.WaffenID
-WHERE COALESCE(m.Verstorben, 0) != 1
-ORDER BY m.Name, m.Vorname"
-            ;
-
-            $result = $conn->query($sql);
-
-            if (!$result) {
-                error_log("Query error: " . $conn->error);
-                jsonResponse(false, null, 'Datenbankfehler beim Abrufen der Mitglieder');
-            }
-
-            $mitglieder = [];
-            while ($row = $result->fetch_assoc()) {
-                $mitglieder[] = $row;
-            }
-
-            jsonResponse(true, $mitglieder);
-            break;
-
-        case 'list_waffen':
-            // Liste aller aktiven Waffen für Munitionsberechnung
-            $sql = "SELECT id as ID, bezeichnung as Bezeichnung, kategorie as Kategorie 
-                    FROM Waffen 
-                    ORDER BY kategorie, bezeichnung";
-
-            $result = $conn->query($sql);
-
-            if (!$result) {
-                error_log("Query error: " . $conn->error);
-                jsonResponse(false, null, 'Datenbankfehler beim Abrufen der Waffen');
-            }
-
-            $waffen = [];
-            while ($row = $result->fetch_assoc()) {
-                $waffen[] = $row;
-            }
-
-            jsonResponse(true, $waffen);
-            break;
-
-        case 'get_selection':
-            // Hole gespeicherte Auswahl für Mitglied/Gast/Jahr
-            $mitglied_id = isset($_GET['mitglied_id']) ? (int) $_GET['mitglied_id'] : 0;
-            $gast_name = isset($_GET['gast_name']) ? trim($_GET['gast_name']) : '';
-            $jahr = (int) ($_GET['jahr'] ?? date('Y'));
-
-            if (!$mitglied_id && !$gast_name) {
-                jsonResponse(true, []); // Keine Auswahl wenn weder Mitglied noch Gast
-            }
-
-            $selected = [];
-            $zahlungsmethode = 'bar'; // Default
-            $is_js = false; // JungschützeIn Flag
-
-            if ($mitglied_id) {
-                // Mitglied-basierte Suche - hole auch Zahlungsmethode
-                $stmt = $conn->prepare("SELECT DISTINCT zahlungsmethode FROM endstich_selection WHERE mitglied_id = ? AND jahr = ? AND zahlungsmethode IS NOT NULL LIMIT 1");
-                $stmt->bind_param("ii", $mitglied_id, $jahr);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($row = $result->fetch_assoc()) {
-                    $zahlungsmethode = $row['zahlungsmethode'];
-                }
-
-                // Hole Stiche
-                $stmt = $conn->prepare("SELECT stich_id FROM endstich_selection WHERE mitglied_id = ? AND jahr = ?");
-                $stmt->bind_param("ii", $mitglied_id, $jahr);
-            } else {
-                // Gast-basierte Suche - erst Gast-ID finden
-                $stmt = $conn->prepare("SELECT id, waffen_id, geburtsdatum FROM endstich_gaeste WHERE name = ? AND jahr = ?");
-                $stmt->bind_param("si", $gast_name, $jahr);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $gast = $result->fetch_assoc();
-
-                if ($gast) {
-                    $gast_id = $gast['id'];
-                    $waffen_id = $gast['waffen_id'];
-                    $geburtsdatum = $gast['geburtsdatum']; // Speichere Geburtsdatum
-                    
-                    // Prüfe ob JungschützeIn (Geburtsdatum vorhanden)
-                    $is_js = !empty($gast['geburtsdatum']);
-
-                    // Hole Zahlungsmethode
-                    $stmt = $conn->prepare("SELECT DISTINCT zahlungsmethode FROM endstich_selection WHERE gast_id = ? AND jahr = ? AND zahlungsmethode IS NOT NULL LIMIT 1");
-                    $stmt->bind_param("ii", $gast_id, $jahr);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($row = $result->fetch_assoc()) {
-                        $zahlungsmethode = $row['zahlungsmethode'];
-                    }
-
-                    // Hole Stiche
-                    $stmt = $conn->prepare("SELECT stich_id FROM endstich_selection WHERE gast_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $gast_id, $jahr);
-                } else {
-                    jsonResponse(true, []); // Gast noch nicht erfasst
-                }
-            }
-
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            while ($row = $result->fetch_assoc()) {
-                $selected[] = $row['stich_id'];
-            }
-
-            // Prüfe ob Zabig mit Partner ausgewählt ist
-            $zabig_partner = false;
-            if ($mitglied_id) {
-                $stmt = $conn->prepare("SELECT ed.code FROM endstich_selection es 
-                                        JOIN endstich_definition ed ON es.stich_id = ed.id 
-                                        WHERE es.mitglied_id = ? AND es.jahr = ? AND ed.code = 'ZABIG' AND es.sie_und_er = 1");
-                $stmt->bind_param("ii", $mitglied_id, $jahr);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($result->num_rows > 0) {
-                    $zabig_partner = true;
-                }
-            }
-
-            $response = [
-                'zahlungsmethode' => $zahlungsmethode, 
-                'zabig_partner' => $zabig_partner,
-                'is_js' => $is_js  // NEU: Ob es sich um JungschützeIn handelt
-            ];
-            if (isset($waffen_id) && $waffen_id) {
-                $response['waffen_id'] = $waffen_id;
-            }
-            if (isset($geburtsdatum) && $geburtsdatum) {
-                $response['geburtsdatum'] = $geburtsdatum;
-            }
-
-            jsonResponse(true, $selected, '', $response);
-            break;
-
-        case 'save_selection':
-            checkCSRF();
-
-            // Parse JSON body wenn Content-Type application/json
-            $input = null;
-            if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
-                $input = json_decode(file_get_contents('php://input'), true);
-            } else {
-                $input = $_POST;
-            }
-
-            $mitglied_id = isset($input['mitglied_id']) ? (int) $input['mitglied_id'] : 0;
-            $gast_name = isset($input['gast_name']) ? trim($input['gast_name']) : '';
-            $jahr = (int) ($input['jahr'] ?? date('Y'));
-            $stiche = $input['stiche'] ?? [];
-            $zahlungsmethode = $input['zahlungsmethode'] ?? 'bar'; // Default: bar
-            $gast_spezialpreis = isset($input['gast_spezialpreis']) ? (int) $input['gast_spezialpreis'] : null;
-            $zabig_partner = isset($input['zabig_partner']) ? 1 : 0;
-
-            if (!$mitglied_id && !$gast_name) {
-                jsonResponse(false, null, 'Kein Mitglied oder Gast angegeben');
-            }
-
-            $gast_id = null;
-            $is_js = false; // Flag ob JungschützeIn
-
-            // Bei Gast: Prüfe ob er existiert oder lege ihn an
-            if ($gast_name && !$mitglied_id) {
-                // Prüfe zuerst ob die Tabelle existiert
-                $table_check = $conn->query("SHOW TABLES LIKE 'endstich_gaeste'");
-                if ($table_check->num_rows == 0) {
-                    // Tabelle existiert nicht, erstelle sie
-                    $create_table = "CREATE TABLE IF NOT EXISTS `endstich_gaeste` (
-                        `id` int(11) NOT NULL AUTO_INCREMENT,
-                        `name` varchar(200) NOT NULL,
-                        `geburtsdatum` date DEFAULT NULL,
-                        `waffen_id` int(11) DEFAULT NULL,
-                        `jahr` int(4) NOT NULL,
-                        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        `created_by` varchar(100) DEFAULT NULL,
-                        PRIMARY KEY (`id`),
-                        UNIQUE KEY `unique_gast_jahr` (`name`, `jahr`),
-                        KEY `idx_jahr` (`jahr`),
-                        KEY `idx_name` (`name`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-                    $conn->query($create_table);
-                }
-
-                // Prüfe ob waffen_id Spalte existiert
-                $col_check = $conn->query("SHOW COLUMNS FROM endstich_gaeste LIKE 'waffen_id'");
-                if ($col_check->num_rows == 0) {
-                    // Spalte existiert nicht, füge sie hinzu
-                    $conn->query("ALTER TABLE endstich_gaeste ADD COLUMN `waffen_id` int(11) DEFAULT NULL AFTER `geburtsdatum`");
-                }
-
-                // Prüfe ob Gast bereits existiert
-                $stmt = $conn->prepare("SELECT id, geburtsdatum, waffen_id FROM endstich_gaeste WHERE name = ? AND jahr = ?");
-                $stmt->bind_param("si", $gast_name, $jahr);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $existing_gast = $result->fetch_assoc();
-
-                if ($existing_gast) {
-                    $gast_id = $existing_gast['id'];
-                    
-                    // Prüfe ob JungschützeIn
-                    $is_js = !empty($existing_gast['geburtsdatum']);
-
-                    // Update waffen_id wenn vorhanden
-                    if (isset($input['waffen_id'])) {
-                        $waffen_id = (int) $input['waffen_id'];
-                        $stmt = $conn->prepare("UPDATE endstich_gaeste SET waffen_id = ? WHERE id = ?");
-                        $stmt->bind_param("ii", $waffen_id, $gast_id);
-                        $stmt->execute();
-                    }
-                } else {
-                    // Prüfe ob geburtsdatum Spalte existiert
-                    $col_check = $conn->query("SHOW COLUMNS FROM endstich_gaeste LIKE 'geburtsdatum'");
-                    if ($col_check->num_rows == 0) {
-                        // Spalte existiert nicht, füge sie hinzu
-                        $conn->query("ALTER TABLE endstich_gaeste ADD COLUMN `geburtsdatum` date DEFAULT NULL AFTER `name`");
-                    }
-
-                    // Extrahiere Geburtsdatum aus dem Gast-Namen wenn vorhanden (Format: "Name (DD.MM.YYYY)")
-                    $geburtsdatum = null;
-                    if (preg_match('/(\d{1,2}\.\d{1,2}\.\d{4})/', $gast_name, $matches)) {
-                        // Konvertiere DD.MM.YYYY zu YYYY-MM-DD
-                        $date_parts = explode('.', $matches[1]);
-                        if (count($date_parts) == 3) {
-                            $geburtsdatum = sprintf('%04d-%02d-%02d', $date_parts[2], $date_parts[1], $date_parts[0]);
-                            // Entferne das Datum aus dem Namen
-                            $gast_name_clean = trim(preg_replace('/\s*\(' . preg_quote($matches[1], '/') . '\)\s*/', '', $gast_name));
-                        } else {
-                            $gast_name_clean = $gast_name;
-                        }
-                    } else {
-                        $gast_name_clean = $gast_name;
-                    }
-
-                    // Erstelle neuen Gast
-                    $created_by = $_SESSION['username'] ?? 'system';
-                    $waffen_id = isset($input['waffen_id']) ? (int) $input['waffen_id'] : null;
-
-                    $stmt = $conn->prepare("INSERT INTO endstich_gaeste (name, geburtsdatum, waffen_id, jahr, created_by) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->bind_param("ssiis", $gast_name_clean, $geburtsdatum, $waffen_id, $jahr, $created_by);
-                    $stmt->execute();
-                    $gast_id = $conn->insert_id;
-                    
-                    // Setze is_js Flag wenn Geburtsdatum vorhanden
-                    $is_js = !empty($geburtsdatum);
-                }
-            }
-
-            // Validiere Mitglied falls angegeben
-            if ($mitglied_id) {
-                $stmt = $conn->prepare("SELECT ID FROM mitglieder WHERE ID = ?");
-                $stmt->bind_param("i", $mitglied_id);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($result->num_rows === 0) {
-                    error_log("Invalid Mitglied ID: " . $mitglied_id);
-                    jsonResponse(false, null, 'Ungültiges Mitglied');
-                }
-            }
-
-            // Start transaction
-            $conn->begin_transaction();
-
-            try {
-                // Temporär Foreign Key Checks deaktivieren für diese Session
-                $conn->query("SET FOREIGN_KEY_CHECKS = 0");
-                // Prüfe ob gast_id Spalte existiert in endstich_selection
-                $col_check = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'gast_id'");
-                if ($col_check->num_rows == 0) {
-                    // Spalte existiert nicht, füge sie hinzu
-                    $conn->query("ALTER TABLE endstich_selection ADD COLUMN `gast_id` int(11) DEFAULT NULL AFTER `mitglied_id`");
-                    $conn->query("ALTER TABLE endstich_selection MODIFY COLUMN `mitglied_id` int(11) DEFAULT NULL");
-                }
-
-                // Prüfe ob zahlungsmethode Spalte existiert in endstich_selection
-                $col_check = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'zahlungsmethode'");
-                if ($col_check->num_rows == 0) {
-                    // Spalte existiert nicht, füge sie hinzu
-                    $conn->query("ALTER TABLE endstich_selection ADD COLUMN `zahlungsmethode` varchar(20) DEFAULT 'bar' AFTER `stich_id`");
-                }
-
-                // Prüfe ob gast_spezialpreis Spalte existiert in endstich_selection
-                $col_check = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'gast_spezialpreis'");
-                if ($col_check->num_rows == 0) {
-                    // Spalte existiert nicht, füge sie hinzu
-                    $conn->query("ALTER TABLE endstich_selection ADD COLUMN `gast_spezialpreis` int(11) DEFAULT NULL AFTER `zahlungsmethode`");
-                }
-
-                // Prüfe ob sie_und_er Spalte existiert in endstich_selection
-                $col_check = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'sie_und_er'");
-                if ($col_check->num_rows == 0) {
-                    // Spalte existiert nicht, füge sie hinzu
-                    $conn->query("ALTER TABLE endstich_selection ADD COLUMN `sie_und_er` tinyint(1) DEFAULT 0 AFTER `gast_spezialpreis`");
-                }
-
-                // Prüfe ob gast_id Spalte existiert in endstich_zusatz_schuss
-                $col_check = $conn->query("SHOW COLUMNS FROM endstich_zusatz_schuss LIKE 'gast_id'");
-                if ($col_check->num_rows == 0) {
-                    // Spalte existiert nicht, füge sie hinzu
-                    $conn->query("ALTER TABLE endstich_zusatz_schuss ADD COLUMN `gast_id` int(11) DEFAULT NULL AFTER `mitglied_id`");
-                    $conn->query("ALTER TABLE endstich_zusatz_schuss MODIFY COLUMN `mitglied_id` int(11) DEFAULT NULL");
-                }
-
-                // Hole existierende Stiche
-                if ($mitglied_id) {
-                    $stmt = $conn->prepare("SELECT stich_id FROM endstich_selection WHERE mitglied_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $mitglied_id, $jahr);
-                } else {
-                    $stmt = $conn->prepare("SELECT stich_id FROM endstich_selection WHERE gast_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $gast_id, $jahr);
-                }
-                $stmt->execute();
-                $result = $stmt->get_result();
-
-                $existing_stiche = [];
-                while ($row = $result->fetch_assoc()) {
-                    $existing_stiche[] = (int) $row['stich_id'];
-                }
-
-                // Bestimme was hinzugefügt und was entfernt werden muss
-                $neue_stiche = array_map('intval', $stiche);
-                $zu_loeschen = array_diff($existing_stiche, $neue_stiche);
-                $zu_erstellen = array_diff($neue_stiche, $existing_stiche);
-                $zu_aktualisieren = array_intersect($existing_stiche, $neue_stiche); // Bestehende die bleiben
-
-                // Aktualisiere Zahlungsmethode und Gast-Spezialpreis für bestehende Stiche
-                if (!empty($zu_aktualisieren)) {
-                    if ($mitglied_id) {
-                        $stmt = $conn->prepare("UPDATE endstich_selection SET zahlungsmethode = ?, sie_und_er = ? WHERE mitglied_id = ? AND jahr = ? AND stich_id = ?");
-                        foreach ($zu_aktualisieren as $stich_id) {
-                            // Prüfe ob es der Zabig Stich ist
-                            $stich_info = $conn->query("SELECT code FROM endstich_definition WHERE id = $stich_id")->fetch_assoc();
-                            $sie_und_er_value = ($stich_info && $stich_info['code'] === 'ZABIG' && $zabig_partner) ? 1 : 0;
-
-                            $stmt->bind_param("siiii", $zahlungsmethode, $sie_und_er_value, $mitglied_id, $jahr, $stich_id);
-                            $stmt->execute();
-                        }
-                    } else {
-                        // Für Gäste: Setze Spezialpreis nur beim ersten Stich
-                        $first_stich = true;
-                        $stmt = $conn->prepare("UPDATE endstich_selection SET zahlungsmethode = ?, gast_spezialpreis = ? WHERE gast_id = ? AND jahr = ? AND stich_id = ?");
-                        foreach ($zu_aktualisieren as $stich_id) {
-                            $preis_for_update = $first_stich ? $gast_spezialpreis : null;
-                            $stmt->bind_param("siiii", $zahlungsmethode, $preis_for_update, $gast_id, $jahr, $stich_id);
-                            $stmt->execute();
-                            $first_stich = false;
-                        }
-                    }
-                }
-
-                // Lösche nur die nicht mehr ausgewählten Stiche
-                if (!empty($zu_loeschen)) {
-                    $placeholders = implode(',', array_fill(0, count($zu_loeschen), '?'));
-                    if ($mitglied_id) {
-                        $sql = "DELETE FROM endstich_selection WHERE mitglied_id = ? AND jahr = ? AND stich_id IN ($placeholders)";
-                    } else {
-                        $sql = "DELETE FROM endstich_selection WHERE gast_id = ? AND jahr = ? AND stich_id IN ($placeholders)";
-                    }
-                    $stmt = $conn->prepare($sql);
-
-                    $types = 'ii' . str_repeat('i', count($zu_loeschen));
-                    // Verwende Variable statt ternären Operator
-                    $entity_id = $mitglied_id ?: $gast_id;
-                    $params = array_merge([$entity_id, $jahr], $zu_loeschen);
-
-                    $bind_params = [$types];
-                    foreach ($params as $key => $value) {
-                        $bind_params[] = &$params[$key];
-                    }
-                    call_user_func_array([$stmt, 'bind_param'], $bind_params);
-                    $stmt->execute();
-                }
-
-                // Füge nur neue Stiche hinzu
-                if (!empty($zu_erstellen)) {
-                    $created_by = $_SESSION['username'] ?? 'system';
-
-                    if ($mitglied_id) {
-                        $stmt = $conn->prepare("INSERT INTO endstich_selection (mitglied_id, jahr, stich_id, zahlungsmethode, sie_und_er, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-                        foreach ($zu_erstellen as $stich_id) {
-                            if ($stich_id > 0) {
-                                // Prüfe ob es der Zabig Stich ist
-                                $stich_info = $conn->query("SELECT code FROM endstich_definition WHERE id = $stich_id")->fetch_assoc();
-                                $sie_und_er_value = ($stich_info && $stich_info['code'] === 'ZABIG' && $zabig_partner) ? 1 : 0;
-
-                                $stmt->bind_param("iiisis", $mitglied_id, $jahr, $stich_id, $zahlungsmethode, $sie_und_er_value, $created_by);
-                                $stmt->execute();
-                            }
-                        }
-                    } else {
-                        // Für JS (JungschützenInnen): Verwende den JS-Paketpreis
-                        // Dieser wird nur einmal gesetzt (beim ersten Stich), alle anderen bekommen NULL
-                        $js_preis_gesetzt = false;
-                        
-                        $stmt = $conn->prepare("INSERT INTO endstich_selection (gast_id, jahr, stich_id, zahlungsmethode, gast_spezialpreis, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-                        foreach ($zu_erstellen as $stich_id) {
-                            if ($stich_id > 0) {
-                                // Entscheide ob Spezialpreis gesetzt werden soll
-                                $preis_for_insert = null;
-                                if ($is_js && !$js_preis_gesetzt) {
-                                    // Erster Stich bei JS: Setze JS-Paketpreis
-                                    $preis_for_insert = $gast_spezialpreis;
-                                    $js_preis_gesetzt = true;
-                                } else if (!$is_js && !$js_preis_gesetzt) {
-                                    // Normaler Gast: Setze Gast-Spezialpreis einmal
-                                    $preis_for_insert = $gast_spezialpreis;
-                                    $js_preis_gesetzt = true;
-                                }
-                                // Alle weiteren Stiche: NULL (wird nicht zusätzlich berechnet)
-                                
-                                $stmt->bind_param("iiisis", $gast_id, $jahr, $stich_id, $zahlungsmethode, $preis_for_insert, $created_by);
-                                $stmt->execute();
-                            }
-                        }
-                    }
-                }
-
-                $conn->commit();
-
-                // Foreign Key Checks wieder aktivieren
-                $conn->query("SET FOREIGN_KEY_CHECKS = 1");
-
-                // Speichere zusätzliche Schüsse wenn vorhanden
-                if (isset($input['zusatz_schuesse']) && is_array($input['zusatz_schuesse'])) {
-                    // Lösche alte Einträge
-                    if ($mitglied_id) {
-                        $stmt = $conn->prepare("DELETE FROM endstich_zusatz_schuss WHERE mitglied_id = ? AND jahr = ?");
-                        $stmt->bind_param("ii", $mitglied_id, $jahr);
-                    } else {
-                        $stmt = $conn->prepare("DELETE FROM endstich_zusatz_schuss WHERE gast_id = ? AND jahr = ?");
-                        $stmt->bind_param("ii", $gast_id, $jahr);
-                    }
-                    $stmt->execute();
-
-                    // Füge neue ein
-                    if (!empty($input['zusatz_schuesse'])) {
-                        if ($mitglied_id) {
-                            $stmt = $conn->prepare("INSERT INTO endstich_zusatz_schuss (mitglied_id, jahr, typ, anzahl, preis_cents, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-                        } else {
-                            $stmt = $conn->prepare("INSERT INTO endstich_zusatz_schuss (gast_id, jahr, typ, anzahl, preis_cents, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-                        }
-
-                        foreach ($input['zusatz_schuesse'] as $zusatz) {
-                            $typ = $zusatz['typ'] ?? '';
-                            $anzahl = (int) ($zusatz['anzahl'] ?? 0);
-                            if ($typ && $anzahl > 0) {
-                                $preis = $anzahl * 50; // 50 Rappen pro Schuss
-                                // Verwende Variable statt ternären Operator für bind_param
-                                $entity_id = $mitglied_id ?: $gast_id;
-                                $stmt->bind_param("iisiis", $entity_id, $jahr, $typ, $anzahl, $preis, $created_by);
-                                $stmt->execute();
-                            }
-                        }
-                    }
-                }
-
-                // Erfolg zurükmelden
-                $message = $gast_name ? "Gast '$gast_name' erfolgreich gespeichert" : 'Erfolgreich gespeichert';
-                jsonResponse(true, ['message' => $message], $message);
-
-            } catch (Exception $e) {
-                $conn->rollback();
-                // Foreign Key Checks wieder aktivieren auch bei Fehler
-                $conn->query("SET FOREIGN_KEY_CHECKS = 1");
-                error_log("Error in save_selection: " . $e->getMessage());
-                error_log("SQL Error: " . $conn->error);
-                jsonResponse(false, null, 'Fehler beim Speichern: ' . $e->getMessage());
-            }
-            break;
-
-        case 'get_stich_definitions':
-            // Für Admin-Edit: Alle Stich-Definitionen
-            $sql = "SELECT * FROM endstich_definition ORDER BY sort_order, name";
-            $result = $conn->query($sql);
-
-            if (!$result) {
-                error_log("Query error: " . $conn->error);
-                jsonResponse(false, null, 'Datenbankfehler beim Abrufen der Definitionen');
-            }
-
-            $definitions = [];
-            while ($row = $result->fetch_assoc()) {
-                $definitions[] = $row;
-            }
-
-            jsonResponse(true, $definitions);
-            break;
+            q($conn, "INSERT INTO endstich_spezialpreise (typ, price_cents, sort_order, active) VALUES (?, ?, 100, 1)
+                      ON DUPLICATE KEY UPDATE price_cents = VALUES(price_cents)", 'si', [$typ, $cents]);
+            jsonResponse(true, ['typ' => $typ, 'price_cents' => $cents], 'Preis aktualisiert');
 
         case 'update_stich_definition':
             checkCSRF();
+            $in = requestInput();
+            $id = (int)($in['id'] ?? 0);
+            $name  = trim((string)($in['name'] ?? ''));
+            $shots = (int)($in['shots'] ?? 0);
+            $price = (int)($in['price_cents'] ?? 0);
+            $sort  = (int)($in['sort_order'] ?? 100);
+            $active = !empty($in['active']) ? 1 : 0;
 
-            // Parse input
-            $input = null;
-            if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
-                $input = json_decode(file_get_contents('php://input'), true);
-            } else {
-                $input = $_POST;
-            }
-
-            $id = (int) ($input['id'] ?? 0);
-
-            // Wenn keine ID -> Neuer Eintrag
-            if (!$id) {
-                // Insert new stich
-                $code = $conn->real_escape_string($input['code'] ?? '');
-                $name = $conn->real_escape_string($input['name'] ?? '');
-                $shots = (int) ($input['shots'] ?? 0);
-                $price_cents = (int) ($input['price_cents'] ?? 0);
-                $sort_order = (int) ($input['sort_order'] ?? 100);
-                $active = isset($input['active']) ? ($input['active'] ? 1 : 0) : 1;
-
-                if (empty($code) || empty($name)) {
+            if ($id === 0) {
+                $code = strtoupper(trim((string)($in['code'] ?? '')));
+                if ($code === '' || $name === '') {
                     jsonResponse(false, null, 'Code und Name sind erforderlich');
                 }
-
-                // Check if code already exists
-                $stmt = $conn->prepare("SELECT id FROM endstich_definition WHERE code = ?");
-                $stmt->bind_param("s", $code);
-                $stmt->execute();
-                $result = $stmt->get_result();
-
-                if ($result->num_rows > 0) {
+                if (!preg_match('/^[A-Z0-9_]{2,50}$/', $code)) {
+                    jsonResponse(false, null, 'Code nur aus Grossbuchstaben, Ziffern und Unterstrich');
+                }
+                if (rows(q($conn, "SELECT id FROM endstich_definition WHERE code = ?", 's', [$code]))) {
                     jsonResponse(false, null, 'Ein Stich mit diesem Code existiert bereits');
                 }
-
-                $stmt = $conn->prepare("INSERT INTO endstich_definition (code, name, shots, price_cents, sort_order, active) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("ssiiii", $code, $name, $shots, $price_cents, $sort_order, $active);
-
-                if ($stmt->execute()) {
-                    $newId = $conn->insert_id;
-                    jsonResponse(true, ['id' => $newId], 'Neuer Stich erfolgreich erstellt');
-                } else {
-                    jsonResponse(false, null, 'Fehler beim Erstellen: ' . $conn->error);
-                }
-                break;
+                q($conn, "INSERT INTO endstich_definition (code, name, shots, price_cents, sort_order, active) VALUES (?, ?, ?, ?, ?, ?)",
+                    'ssiiii', [$code, $name, $shots, $price, $sort, $active]);
+                jsonResponse(true, ['id' => $conn->insert_id], 'Neuer Stich erstellt');
             }
-
-            // Update existing stich
-            $updates = [];
-            $types = "";
-            $params = [];
-
-            if (isset($input['name'])) {
-                $updates[] = 'name = ?';
-                $types .= 's';
-                $params[] = $input['name'];
+            if ($name === '') {
+                jsonResponse(false, null, 'Name ist erforderlich');
             }
-            if (isset($input['shots'])) {
-                $updates[] = 'shots = ?';
-                $types .= 'i';
-                $params[] = (int) $input['shots'];
-            }
-            if (isset($input['price_cents'])) {
-                $updates[] = 'price_cents = ?';
-                $types .= 'i';
-                $params[] = (int) $input['price_cents'];
-            }
-            if (isset($input['sort_order'])) {
-                $updates[] = 'sort_order = ?';
-                $types .= 'i';
-                $params[] = (int) $input['sort_order'];
-            }
-            if (isset($input['active'])) {
-                $updates[] = 'active = ?';
-                $types .= 'i';
-                $params[] = $input['active'] ? 1 : 0;
-            }
+            q($conn, "UPDATE endstich_definition SET name = ?, shots = ?, price_cents = ?, sort_order = ?, active = ? WHERE id = ?",
+                'siiiii', [$name, $shots, $price, $sort, $active, $id]);
+            jsonResponse(true, ['id' => $id], 'Stich aktualisiert');
 
-            if (empty($updates)) {
-                jsonResponse(false, null, 'Keine Änderungen angegeben');
-            }
-
-            $types .= 'i'; // für ID
-            $params[] = $id;
-
-            $sql = "UPDATE endstich_definition SET " . implode(', ', $updates) . " WHERE id = ?";
-            $stmt = $conn->prepare($sql);
-
-            // Dynamisches bind_param
-            $bind_params = [];
-            $bind_params[] = $types;
-            foreach ($params as $key => $value) {
-                $bind_params[] = &$params[$key];
-            }
-            call_user_func_array([$stmt, 'bind_param'], $bind_params);
-
-            if ($stmt->execute()) {
-                if ($stmt->affected_rows > 0) {
-                    jsonResponse(true, ['id' => $id], 'Stich erfolgreich aktualisiert');
-                } else {
-                    jsonResponse(true, ['id' => $id], 'Keine Änderungen vorgenommen');
-                }
-            } else {
-                jsonResponse(false, null, 'Fehler beim Update: ' . $conn->error);
-            }
-            break;
-
+        // -------------------------------------------------------------- Auswahl lesen
+        case 'get_selection':
         case 'get_zusatz_schuesse':
-            // Hole zusätzliche Schüsse für Mitglied/Gast/Jahr
-            $mitglied_id = isset($_GET['mitglied_id']) ? (int) $_GET['mitglied_id'] : 0;
-            $gast_name = isset($_GET['gast_name']) ? trim($_GET['gast_name']) : '';
-            $jahr = (int) ($_GET['jahr'] ?? date('Y'));
+            $mitgliedId = (int)($_GET['mitglied_id'] ?? 0);
+            $gastId     = (int)($_GET['gast_id'] ?? 0);
+            $gastName   = trim((string)($_GET['gast_name'] ?? ''));
+            $jahr       = (int)($_GET['jahr'] ?? date('Y'));
 
-            if (!$mitglied_id && !$gast_name) {
-                jsonResponse(true, []);
-            }
-
-            if ($mitglied_id) {
-                // Mitglied-basierte Suche
-                $stmt = $conn->prepare("SELECT typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE mitglied_id = ? AND jahr = ?");
-                $stmt->bind_param("ii", $mitglied_id, $jahr);
+            if ($mitgliedId) {
+                $spalte = 'mitglied_id';
+                $id = $mitgliedId;
+                $extra = ['typ' => 'mitglied'];
             } else {
-                // Gast-basierte Suche - erst Gast-ID finden
-                $stmt = $conn->prepare("SELECT id FROM endstich_gaeste WHERE name = ? AND jahr = ?");
-                $stmt->bind_param("si", $gast_name, $jahr);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $gast = $result->fetch_assoc();
+                $gast = findeGast($conn, $gastId, $gastName, $jahr);
+                if (!$gast) {
+                    jsonResponse(true, [], '', ['gefunden' => false]);
+                }
+                $spalte = 'gast_id';
+                $id = (int)$gast['id'];
+                $extra = [
+                    'typ'          => endschTeilnehmerTyp($gast['geburtsdatum']),
+                    'gast_id'      => $id,
+                    'gast_name'    => $gast['name'],
+                    'geburtsdatum' => $gast['geburtsdatum'],
+                    'waffen_id'    => $gast['waffen_id'] ? (int)$gast['waffen_id'] : null,
+                ];
+            }
 
-                if ($gast) {
-                    $gast_id = $gast['id'];
-                    $stmt = $conn->prepare("SELECT typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE gast_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $gast_id, $jahr);
-                } else {
-                    jsonResponse(true, []); // Gast noch nicht erfasst
+            $zusatz = ladeZusatz($conn, $spalte, $id, $jahr);
+            if ($action === 'get_zusatz_schuesse') {
+                jsonResponse(true, $zusatz);
+            }
+
+            $sel = rows(q($conn, "SELECT es.stich_id, es.zahlungsmethode, es.sie_und_er, ed.code
+                                  FROM endstich_selection es JOIN endstich_definition ed ON ed.id = es.stich_id
+                                  WHERE es.$spalte = ? AND es.jahr = ?", 'ii', [$id, $jahr]));
+            $ids = [];
+            $zahlung = null;
+            $zabigPartner = false;
+            foreach ($sel as $s) {
+                $ids[] = (int)$s['stich_id'];
+                if (!empty($s['zahlungsmethode'])) {
+                    $zahlung = $s['zahlungsmethode'];
+                }
+                if ($s['code'] === 'ZABIG' && (int)$s['sie_und_er'] === 1) {
+                    $zabigPartner = true;
                 }
             }
+            $extra += [
+                'gefunden'        => true,
+                'zahlungsmethode' => $zahlung ?? 'karte',
+                'zabig_partner'   => $zabigPartner,
+                'is_js'           => ($extra['typ'] ?? '') === 'js',
+                'zusatz'          => $zusatz,
+            ];
+            jsonResponse(true, $ids, '', $extra);
 
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            $zusatz = [];
-            while ($row = $result->fetch_assoc()) {
-                $zusatz[] = $row;
-            }
-
-            jsonResponse(true, $zusatz);
-            break;
-
-        case 'get_year_details':
-            // Detaillierte Übersicht mit einzelnen Stich-IDs für Matrix-Darstellung
-            $jahr = (int) ($_GET['jahr'] ?? date('Y'));
-            $debug = isset($_GET['debug']) ? (int)$_GET['debug'] : 0;
-
-            // Hole alle Mitglieder und Gäste die entweder Stiche ODER Munition haben
-            // Mit expliziter Collation um Fehler zu vermeiden
-            // Sortierung: Erst Mitglieder (1), dann Gäste (2), dann JS (3), jeweils alphabetisch
-            // Inkl. Waffentyp für Mitglieder (m.WaffenID) und Gäste (g.waffen_id) via LEFT JOIN Waffen
-            $sql = "SELECT 
-                'mitglied' COLLATE utf8mb4_general_ci as typ,
-                m.ID as entity_id,
-                CONCAT(m.Name, ' ', m.Vorname) COLLATE utf8mb4_general_ci as name,
-                NULL as geburtsdatum,
-                m.WaffenID as waffe_id,
-                w.Bezeichnung as waffe_bez,
-                w.Kategorie as waffe_kat,
-                1 as sort_group
-            FROM mitglieder m
-            LEFT JOIN Waffen w ON w.ID = m.WaffenID
-            WHERE m.ID IN (
-                SELECT DISTINCT mitglied_id FROM endstich_selection WHERE jahr = ? AND mitglied_id IS NOT NULL
-                UNION
-                SELECT DISTINCT mitglied_id FROM endstich_zusatz_schuss WHERE jahr = ? AND mitglied_id IS NOT NULL
-            )
-            UNION
-            SELECT 
-                'gast' COLLATE utf8mb4_general_ci as typ,
-                g.id as entity_id,
-                g.name COLLATE utf8mb4_general_ci as name,
-                g.geburtsdatum,
-                g.waffen_id as waffe_id,
-                w2.Bezeichnung as waffe_bez,
-                w2.Kategorie as waffe_kat,
-                CASE WHEN g.geburtsdatum IS NOT NULL THEN 3 ELSE 2 END as sort_group
-            FROM endstich_gaeste g
-            LEFT JOIN Waffen w2 ON w2.ID = g.waffen_id
-            WHERE g.jahr = ?
-              AND g.id IN (
-                SELECT DISTINCT gast_id FROM endstich_selection WHERE jahr = ? AND gast_id IS NOT NULL
-                UNION
-                SELECT DISTINCT gast_id FROM endstich_zusatz_schuss WHERE jahr = ? AND gast_id IS NOT NULL
-            )
-            ORDER BY sort_group, name";
-
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("iiiii", $jahr, $jahr, $jahr, $jahr, $jahr);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            $details = [];
-
-            while ($row = $result->fetch_assoc()) {
-                // sichere Defaults, falls keine Waffe hinterlegt ist
-                $row['waffe_id'] = isset($row['waffe_id']) ? (int)$row['waffe_id'] : null;
-                $row['waffe_bez'] = $row['waffe_bez'] ?? null;
-                $row['waffe_kat'] = $row['waffe_kat'] ?? null;
-
-                $row['stiche'] = [];
-                $row['zusatz_schuesse'] = [];
-                $row['total_shots'] = 0;
-                $row['total_price'] = 0;
-                $row['zahlungsmethode'] = 'bar'; // Default
-
-                // kompatible ID
-                $row['mitglied_id'] = $row['entity_id'];
-
-                // NEU: Munition Felder
-                $row['munition_schuss'] = 0;   // Summe Zusatzschüsse
-                $row['munition_preis']  = 0;   // Summe Zusatzpreis (Cents)
-
-                // NEU: Split nach Munitionsart
-                $row['stich_gp11']  = 0;      // Schüsse aus gelösten Stichen
-                $row['stich_gp90']  = 0;
-                $row['zusatz_gp11'] = 0;      // Zusatzschüsse
-                $row['zusatz_gp90'] = 0;
-
-                $details[] = $row;
-            }
-
-            // Hole die Stiche und Munition für alle Entities
-            foreach ($details as &$entity) {
-                // Robustere Ableitung der Munitionsart aus Waffe
-$katbez = ($entity['waffe_kat'] ?? '') . ' ' . ($entity['waffe_bez'] ?? '');
-$katbez_lc = function_exists('mb_strtolower')
-    ? mb_strtolower(trim(preg_replace('/\s+/', ' ', $katbez)), 'UTF-8')
-    : strtolower(trim(preg_replace('/\s+/', ' ', $katbez)));
-
-$ammoPref = null;
-
-/**
- * 1) Feste Zuordnung per Waffen-ID (empfohlen, stabil)
- *    -> Passe die IDs an eure Waffen-Tabelle an.
- *       In deinem JSON:
- *         id=1  => "Standardgewehr"  => GP11
- *         id=2  => "Stgw90"          => GP90
- */
-$waffenMap = [
-    1 => 'GP11', // Standardgewehr 300m -> GP11
-    2 => 'GP90', // Stgw90 -> GP90
-    // ggf. weitere IDs ergänzen …
-];
-
-if (!empty($entity['waffe_id']) && isset($waffenMap[(int)$entity['waffe_id']])) {
-    $ammoPref = $waffenMap[(int)$entity['waffe_id']];
-}
-
-/**
- * 2) Heuristik über Bezeichnung, falls IDs mal nicht passen
- *    (z.B. wenn „Standardgewehr“ anderswo auftaucht)
- */
-if ($ammoPref === null && preg_match('/\bstandardgewehr\b|\bstdg\b/i', (string)($entity['waffe_bez'] ?? ''))) {
-    $ammoPref = 'GP11';
-}
-
-/**
- * 3) Regex-Fallbacks über Kat./Bez. (Stgw57/K31/K11/G11 etc.)
- *    Nur ausführen, wenn noch nichts gemappt wurde.
- */
-if ($ammoPref === null) {
-    // GP90: Stgw90 / PE90 / (S)G 550 / SIG 550 / GP 90 / 5.56 / .223
-    if (preg_match('/\b(stgw|stg)\s*90\b|\bpe\s*90\b|\b(sg|sig)\s*550\b|\bgp\s*90\b|\b5\.56\b|\b\.223\b|\b223\b/', $katbez_lc)) {
-        $ammoPref = 'GP90';
-    }
-    // GP11: Stgw57 / K31 / K11 / G11 / Mousqueton / Ordon(n)anz / GP 11 / 7.5 x 55
-    elseif (preg_match('/\b(stgw|stg)\s*57\b|\bk[\s-]?31\b|\bkarabiner\s*31\b|\bk[\s-]?11\b|\bg[\s-]?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp\s*11\b|\b7[,\.\s]*5\s*x\s*55\b/', $katbez_lc)) {
-        $ammoPref = 'GP11';
-    }
-}
-
-// Debug-Felder (nur wenn ?debug=1)
-if (!empty($debug)) {
-    $entity['__debug_katbez']   = $katbez;
-    $entity['__debug_ammoPref'] = $ammoPref;
-    if ($ammoPref === null) {
-        error_log('[ENDSCH] ammoPref ungeklärt: entity_id=' . $entity['entity_id'] . ' katbez="' . $katbez . '"');
-    }
-}
-
-                if ($entity['typ'] === 'mitglied') {
-                    // Stiche für Mitglied - berücksichtige auch alte Daten ohne gast_id
-                    // Prüfe zuerst ob zahlungsmethode und sie_und_er Spalten existieren
-                    $col_check_zm = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'zahlungsmethode'");
-                    $col_check_sue = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'sie_und_er'");
-
-                    if ($col_check_zm->num_rows > 0 && $col_check_sue->num_rows > 0) {
-                        $sql = "SELECT 
-                            es.stich_id,
-                            es.zahlungsmethode,
-                            es.sie_und_er,
-                            ed.shots,
-                            ed.price_cents,
-                            ed.code
-                        FROM endstich_selection es
-                        JOIN endstich_definition ed ON es.stich_id = ed.id
-                        WHERE es.mitglied_id = ? AND es.jahr = ?";
-                    } else if ($col_check_zm->num_rows > 0) {
-                        $sql = "SELECT 
-                            es.stich_id,
-                            es.zahlungsmethode,
-                            0 as sie_und_er,
-                            ed.shots,
-                            ed.price_cents,
-                            ed.code
-                        FROM endstich_selection es
-                        JOIN endstich_definition ed ON es.stich_id = ed.id
-                        WHERE es.mitglied_id = ? AND es.jahr = ?";
-                    } else {
-                        $sql = "SELECT 
-                            es.stich_id,
-                            NULL as zahlungsmethode,
-                            0 as sie_und_er,
-                            ed.shots,
-                            ed.price_cents,
-                            ed.code
-                        FROM endstich_selection es
-                        JOIN endstich_definition ed ON es.stich_id = ed.id
-                        WHERE es.mitglied_id = ? AND es.jahr = ?";
-                    }
-
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("ii", $entity['entity_id'], $jahr);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    while ($row = $result->fetch_assoc()) {
-                        // Probeschüsse: Nur bei JS mitzählen, sonst ignorieren
-                        // (Bei Mitgliedern gibt es keine JS, daher immer ignorieren)
-                        if (strcasecmp($row['code'] ?? '', 'PROBE') === 0) {
-                            continue;
-                        }
-
-                        $entity['stiche'][] = (int)$row['stich_id'];
-                        $entity['total_shots'] += (int)$row['shots'];
-
-                        // Schüsse aus gelösten Stichen nach Ammo der Waffe zuordnen
-                        if ($ammoPref === 'GP11') {
-                            $entity['stich_gp11'] += (int)$row['shots'];
-                        } elseif ($ammoPref === 'GP90') {
-                            $entity['stich_gp90'] += (int)$row['shots'];
-                        }
-
-                        // Preis (Zabig Partnerpreis berücksichtigen)
-                        $preis = (int)$row['price_cents'];
-                        if (($row['code'] ?? '') === 'ZABIG' && (int)($row['sie_und_er'] ?? 0) === 1) {
-                            $preis = 1000; // CHF 10.00
-                        }
-                        $entity['total_price'] += $preis;
-
-                        // Markiere Partner-Stich
-                        if (($row['code'] ?? '') === 'ZABIG' && (int)($row['sie_und_er'] ?? 0) === 1) {
-                            if (!isset($entity['partner_stiche'])) $entity['partner_stiche'] = [];
-                            $entity['partner_stiche'][] = (int)$row['stich_id'];
-                        }
-
-                        // Zahlungsmethode ggf. überschreiben
-                        if (!empty($row['zahlungsmethode'])) {
-                            $entity['zahlungsmethode'] = $row['zahlungsmethode'];
-                        }
-                    }
-
-                    // Zusätzliche Schüsse für Mitglied
-                    $sql = "SELECT typ, anzahl, preis_cents 
-                            FROM endstich_zusatz_schuss 
-                            WHERE mitglied_id = ? AND jahr = ?";
-
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("ii", $entity['entity_id'], $jahr);
-
-                } else {
-                    // Stiche für Gast
-                    // Prüfe zuerst ob zahlungsmethode und gast_spezialpreis Spalten existieren
-                    $col_check_zm = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'zahlungsmethode'");
-                    $col_check_gsp = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'gast_spezialpreis'");
-
-                    if ($col_check_zm->num_rows > 0 && $col_check_gsp->num_rows > 0) {
-                        $sql = "SELECT 
-                            es.stich_id,
-                            es.zahlungsmethode,
-                            es.gast_spezialpreis,
-                            ed.shots,
-                            ed.price_cents,
-                            ed.code
-                        FROM endstich_selection es
-                        JOIN endstich_definition ed ON es.stich_id = ed.id
-                        WHERE es.gast_id = ? AND es.jahr = ?";
-                    } else if ($col_check_zm->num_rows > 0) {
-                        $sql = "SELECT 
-                            es.stich_id,
-                            es.zahlungsmethode,
-                            NULL as gast_spezialpreis,
-                            ed.shots,
-                            ed.price_cents,
-                            ed.code
-                        FROM endstich_selection es
-                        JOIN endstich_definition ed ON es.stich_id = ed.id
-                        WHERE es.gast_id = ? AND es.jahr = ?";
-                    } else {
-                        $sql = "SELECT 
-                            es.stich_id,
-                            NULL as zahlungsmethode,
-                            NULL as gast_spezialpreis,
-                            ed.shots,
-                            ed.price_cents,
-                            ed.code
-                        FROM endstich_selection es
-                        JOIN endstich_definition ed ON es.stich_id = ed.id
-                        WHERE es.gast_id = ? AND es.jahr = ?";
-                    }
-
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("ii", $entity['entity_id'], $jahr);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    $gast_spezialpreis_gesetzt = false;
-
-                    while ($row = $result->fetch_assoc()) {
-                        // Probeschüsse: Bei JS mitzählen, bei normalen Gästen ignorieren
-                        $isProbe = strcasecmp($row['code'] ?? '', 'PROBE') === 0;
-                        $isJS = !empty($entity['geburtsdatum']);
-                        
-                        if ($isProbe && !$isJS) {
-                            continue; // PROBE ignorieren bei normalen Gästen
-                        }
-
-                        $entity['stiche'][] = (int)$row['stich_id'];
-                        $entity['total_shots'] += (int)$row['shots'];
-
-                        // Schüsse aus gelösten Stichen nach Ammo der Waffe zuordnen
-                        if ($ammoPref === 'GP11') {
-                            $entity['stich_gp11'] += (int)$row['shots'];
-                        } elseif ($ammoPref === 'GP90') {
-                            $entity['stich_gp90'] += (int)$row['shots'];
-                        }
-
-                        // Preis (Gast-Spezialpreis priorisieren)
-                        if (!$gast_spezialpreis_gesetzt && !empty($row['gast_spezialpreis'])) {
-                            $entity['total_price'] = (int)$row['gast_spezialpreis'];
-                            $gast_spezialpreis_gesetzt = true;
-                        } else if (!$gast_spezialpreis_gesetzt) {
-                            $entity['total_price'] += (int)$row['price_cents'];
-                        }
-
-                        // Zahlungsmethode ggf. überschreiben
-                        if (!empty($row['zahlungsmethode'])) {
-                            $entity['zahlungsmethode'] = $row['zahlungsmethode'];
-                        }
-                    }
-
-                    // Zusätzliche Schüsse für Gast
-                    $sql = "SELECT typ, anzahl, preis_cents 
-                            FROM endstich_zusatz_schuss 
-                            WHERE gast_id = ? AND jahr = ?";
-
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("ii", $entity['entity_id'], $jahr);
-                }
-
-                $stmt->execute();
-                $result = $stmt->get_result();
-
-                while ($row = $result->fetch_assoc()) {
-                    $entity['zusatz_schuesse'][] = [
-                        'typ' => $row['typ'],
-                        'anzahl' => (int)$row['anzahl'],
-                        'preis_cents' => (int)$row['preis_cents']
-                    ];
-
-                    // Debug: Roh-Typen sammeln
-                    if ($debug) {
-                        if (!isset($entity['__debug_zusatz_types'])) $entity['__debug_zusatz_types'] = [];
-                        $entity['__debug_zusatz_types'][] = $row['typ'];
-                    }
-
-                    // Zusatzschüsse nach Munitionsart splitten (Typ tolerant normalisieren)
-                    $typNorm = strtoupper(str_replace(['-', '_', ' '], '', (string)$row['typ']));
-                    if (strpos($typNorm, 'GP11') !== false) {
-                        $entity['zusatz_gp11'] += (int)$row['anzahl'];
-                    } elseif (strpos($typNorm, 'GP90') !== false) {
-                        $entity['zusatz_gp90'] += (int)$row['anzahl'];
-                    }
-
-                    // Summen
-                    $entity['munition_schuss'] += (int)$row['anzahl'];
-                    $entity['munition_preis']  += (int)$row['preis_cents'];
-                    $entity['total_price']     += (int)$row['preis_cents'];
-                }
-            }
-
-            jsonResponse(true, $details);
-            break;
-
-        case 'delete_selection':
+        // -------------------------------------------------------------- Auswahl speichern
+        case 'save_selection':
             checkCSRF();
+            $in = requestInput();
 
-            // Parse JSON body wenn Content-Type application/json
-            $input = null;
-            if (strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false) {
-                $input = json_decode(file_get_contents('php://input'), true);
-            } else {
-                $input = $_POST;
+            $typ        = (string)($in['typ'] ?? '');
+            $mitgliedId = (int)($in['mitglied_id'] ?? 0);
+            $gastId     = (int)($in['gast_id'] ?? 0);
+            $gastName   = trim((string)($in['gast_name'] ?? ''));
+            $geburt     = trim((string)($in['gast_geburtsdatum'] ?? ''));
+            $waffenId   = isset($in['waffen_id']) && (int)$in['waffen_id'] > 0 ? (int)$in['waffen_id'] : null;
+            $jahr       = (int)($in['jahr'] ?? date('Y'));
+            $stichIds   = array_values(array_unique(array_filter(array_map('intval', (array)($in['stiche'] ?? [])))));
+            $zahlung    = in_array($in['zahlungsmethode'] ?? '', ['bar', 'karte'], true) ? $in['zahlungsmethode'] : 'karte';
+            $zabigPartner = !empty($in['zabig_partner']);
+            $zusatzIn   = is_array($in['zusatz_schuesse'] ?? null) ? $in['zusatz_schuesse'] : [];
+
+            // Altes Frontend-Format (Typ nicht mitgeschickt) tolerant ableiten
+            if (!in_array($typ, ['mitglied', 'gast', 'js'], true)) {
+                $typ = $mitgliedId ? 'mitglied' : ($geburt !== '' ? 'js' : 'gast');
+            }
+            if ($typ === 'mitglied' && !$mitgliedId) {
+                jsonResponse(false, null, 'Kein Mitglied gewählt');
+            }
+            if ($typ !== 'mitglied' && $gastName === '' && !$gastId) {
+                jsonResponse(false, null, 'Kein Gastname angegeben');
+            }
+            if ($typ === 'js' && $geburt !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $geburt)) {
+                jsonResponse(false, null, 'Geburtsdatum ungültig');
+            }
+            if ($jahr < 2000 || $jahr > (int)date('Y') + 1) {
+                jsonResponse(false, null, 'Jahr ungültig');
             }
 
-            $entity_id = isset($input['entity_id']) ? (int) $input['entity_id'] : 0;
-            $typ = isset($input['typ']) ? $input['typ'] : '';
-            $jahr = (int) ($input['jahr'] ?? date('Y'));
-
-            if (!$entity_id || !$typ) {
-                jsonResponse(false, null, 'Fehlende Parameter');
+            $stiche  = endschLadeStiche($conn);          // code => def
+            $spezial = endschLadeSpezialpreise($conn);
+            $idZuCode = [];
+            foreach ($stiche as $code => $def) {
+                $idZuCode[$def['id']] = $code;
             }
+
+            // Nur bekannte, aktive und für den Typ erlaubte Stiche übernehmen
+            $codes = [];
+            foreach ($stichIds as $sid) {
+                if (!isset($idZuCode[$sid])) {
+                    continue;
+                }
+                $code = $idZuCode[$sid];
+                if ($typ === 'js' && !in_array($code, ENDSCH_JS_PAKET_CODES, true)) {
+                    continue;
+                }
+                if ($typ === 'gast' && !in_array($code, ENDSCH_GAST_ERLAUBT, true)) {
+                    continue;
+                }
+                if ($typ === 'mitglied' && $code === 'PROBE') {
+                    continue;
+                }
+                $codes[$sid] = $code;
+            }
+            $stichIds = array_keys($codes);
+            $preis    = endschBerechnePreis(array_values($codes), $typ, $zabigPartner, $stiche, $spezial);
+            $createdBy = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'system';
 
             $conn->begin_transaction();
-
             try {
                 if ($typ === 'mitglied') {
-                    // Lösche Stiche für Mitglied
-                    $stmt = $conn->prepare("DELETE FROM endstich_selection WHERE mitglied_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $entity_id, $jahr);
-                    $stmt->execute();
+                    if (!rows(q($conn, "SELECT ID FROM mitglieder WHERE ID = ?", 'i', [$mitgliedId]))) {
+                        throw new RuntimeException('Ungültiges Mitglied');
+                    }
+                    $spalte = 'mitglied_id';
+                    $id = $mitgliedId;
+                } else {
+                    // Legacy: Datum im Namen «Name (dd.mm.yyyy)» herauslösen
+                    if (preg_match('/^(.*?)\s*\((\d{1,2})\.(\d{1,2})\.(\d{4})\)\s*$/', $gastName, $m)) {
+                        $gastName = trim($m[1]);
+                        if ($geburt === '') {
+                            $geburt = sprintf('%04d-%02d-%02d', $m[4], $m[3], $m[2]);
+                        }
+                    }
+                    $geburtDb = ($typ === 'js' && $geburt !== '') ? $geburt : null;
+                    $gast = findeGast($conn, $gastId, $gastName, $jahr);
+                    if ($gast) {
+                        $id = (int)$gast['id'];
+                        // Stammdaten des Gastes mitpflegen (Name-Änderung nur bei id-basiertem Aufruf)
+                        $neuerName = ($gastId && $gastName !== '') ? $gastName : $gast['name'];
+                        q($conn, "UPDATE endstich_gaeste SET name = ?, geburtsdatum = ?, waffen_id = ? WHERE id = ?",
+                            'ssii', [$neuerName, $geburtDb, $waffenId, $id]);
+                    } else {
+                        q($conn, "INSERT INTO endstich_gaeste (name, geburtsdatum, waffen_id, jahr, created_by) VALUES (?, ?, ?, ?, ?)",
+                            'ssiis', [$gastName, $geburtDb, $waffenId, $jahr, $createdBy]);
+                        $id = (int)$conn->insert_id;
+                    }
+                    $spalte = 'gast_id';
+                }
 
-                    // Lösche Zusatz-Schüsse für Mitglied
-                    $stmt = $conn->prepare("DELETE FROM endstich_zusatz_schuss WHERE mitglied_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $entity_id, $jahr);
-                    $stmt->execute();
+                // Bestehende Auswahl ermitteln
+                $bestehend = array_map(fn($r) => (int)$r['stich_id'],
+                    rows(q($conn, "SELECT stich_id FROM endstich_selection WHERE $spalte = ? AND jahr = ?", 'ii', [$id, $jahr])));
+                $loeschen  = array_values(array_diff($bestehend, $stichIds));
+                $anlegen   = array_values(array_diff($stichIds, $bestehend));
+                $behalten  = array_values(array_intersect($bestehend, $stichIds));
 
-                } else if ($typ === 'gast') {
-                    // Lösche Stiche für Gast
-                    $stmt = $conn->prepare("DELETE FROM endstich_selection WHERE gast_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $entity_id, $jahr);
-                    $stmt->execute();
+                if ($loeschen) {
+                    $ph = implode(',', array_fill(0, count($loeschen), '?'));
+                    q($conn, "DELETE FROM endstich_selection WHERE $spalte = ? AND jahr = ? AND stich_id IN ($ph)",
+                        'ii' . str_repeat('i', count($loeschen)), array_merge([$id, $jahr], $loeschen));
+                }
+                foreach ($anlegen as $sid) {
+                    q($conn, "INSERT INTO endstich_selection ($spalte, jahr, stich_id, zahlungsmethode, created_by) VALUES (?, ?, ?, ?, ?)",
+                        'iiiss', [$id, $jahr, $sid, $zahlung, $createdBy]);
+                }
+                // Zahlungsart, Partner-Flag und Gast-Gesamtpreis auf allen Zeilen konsistent setzen:
+                // Partner-Flag nur am ZABIG, Gast-Spezialpreis genau EINMAL (kleinste stich_id).
+                q($conn, "UPDATE endstich_selection SET zahlungsmethode = ?, sie_und_er = 0, gast_spezialpreis = NULL WHERE $spalte = ? AND jahr = ?",
+                    'sii', [$zahlung, $id, $jahr]);
+                if ($typ === 'mitglied' && $zabigPartner && isset($stiche['ZABIG'])) {
+                    q($conn, "UPDATE endstich_selection SET sie_und_er = 1 WHERE mitglied_id = ? AND jahr = ? AND stich_id = ?",
+                        'iii', [$id, $jahr, $stiche['ZABIG']['id']]);
+                }
+                if ($typ !== 'mitglied' && $stichIds) {
+                    q($conn, "UPDATE endstich_selection SET gast_spezialpreis = ? WHERE gast_id = ? AND jahr = ? ORDER BY stich_id LIMIT 1",
+                        'iii', [$preis, $id, $jahr]);
+                }
 
-                    // Lösche Zusatz-Schüsse für Gast
-                    $stmt = $conn->prepare("DELETE FROM endstich_zusatz_schuss WHERE gast_id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $entity_id, $jahr);
-                    $stmt->execute();
-
-                    // Lösche auch den Gast selbst aus der endstich_gaeste Tabelle
-                    $stmt = $conn->prepare("DELETE FROM endstich_gaeste WHERE id = ? AND jahr = ?");
-                    $stmt->bind_param("ii", $entity_id, $jahr);
-                    $stmt->execute();
+                // Zusatzmunition komplett neu schreiben (Preis serverseitig)
+                q($conn, "DELETE FROM endstich_zusatz_schuss WHERE $spalte = ? AND jahr = ?", 'ii', [$id, $jahr]);
+                $erlaubteTypen = ['GP11_60', 'GP90_50', 'GP11_CUSTOM', 'GP90_CUSTOM'];
+                foreach ($zusatzIn as $z) {
+                    $ztyp = (string)($z['typ'] ?? '');
+                    $anz  = (int)($z['anzahl'] ?? 0);
+                    if (!in_array($ztyp, $erlaubteTypen, true) || $anz <= 0) {
+                        continue;
+                    }
+                    q($conn, "INSERT INTO endstich_zusatz_schuss ($spalte, jahr, typ, anzahl, preis_cents, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+                        'iisiis', [$id, $jahr, $ztyp, $anz, endschZusatzPreis($anz, $spezial), $createdBy]);
                 }
 
                 $conn->commit();
-                jsonResponse(true, null, 'Erfolgreich gelöscht');
-
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $conn->rollback();
-                error_log("Error in delete_selection: " . $e->getMessage());
-                jsonResponse(false, null, 'Fehler beim Löschen: ' . $e->getMessage());
+                throw $e;
             }
-            break;
+
+            jsonResponse(true, [
+                'typ'         => $typ,
+                'entity_id'   => $id,
+                'stiche'      => $stichIds,
+                'preis_cents' => $preis,
+                'zusatz_gespeichert' => count($zusatzIn),
+                'zusatzmunition_pro_schuss' => $spezial['munition_pro_schuss'],
+            ], count($stichIds) ? 'Gespeichert' : 'Auswahl geleert');
+
+        // -------------------------------------------------------------- Löschen
+        case 'delete_selection':
+            checkCSRF();
+            $in = requestInput();
+            $entityId = (int)($in['entity_id'] ?? 0);
+            $typ      = (string)($in['typ'] ?? '');
+            $jahr     = (int)($in['jahr'] ?? date('Y'));
+            if (!$entityId || !in_array($typ, ['mitglied', 'gast', 'js'], true)) {
+                jsonResponse(false, null, 'Fehlende Parameter');
+            }
+            $spalte = $typ === 'mitglied' ? 'mitglied_id' : 'gast_id';
+            $conn->begin_transaction();
+            try {
+                q($conn, "DELETE FROM endstich_selection WHERE $spalte = ? AND jahr = ?", 'ii', [$entityId, $jahr]);
+                q($conn, "DELETE FROM endstich_zusatz_schuss WHERE $spalte = ? AND jahr = ?", 'ii', [$entityId, $jahr]);
+                if ($spalte === 'gast_id') {
+                    q($conn, "DELETE FROM endstich_gaeste WHERE id = ? AND jahr = ?", 'ii', [$entityId, $jahr]);
+                }
+                $conn->commit();
+            } catch (Throwable $e) {
+                $conn->rollback();
+                throw $e;
+            }
+            jsonResponse(true, null, 'Gelöscht');
+
+        // -------------------------------------------------------------- Jahresübersicht
+        case 'get_year_details':
+            $jahr = (int)($_GET['jahr'] ?? date('Y'));
+            $spezial = endschLadeSpezialpreise($conn);
+
+            // Teilnehmer: Mitglieder und Gäste mit Stichen ODER Zusatzmunition
+            $teilnehmer = rows(q($conn, "
+                SELECT 'mitglied' COLLATE utf8mb4_general_ci AS typ, m.ID AS entity_id,
+                       CONCAT(m.Name, ' ', m.Vorname) COLLATE utf8mb4_general_ci AS name, NULL AS geburtsdatum,
+                       m.WaffenID AS waffe_id, w.Bezeichnung COLLATE utf8mb4_general_ci AS waffe_bez,
+                       w.Kategorie COLLATE utf8mb4_general_ci AS waffe_kat, 1 AS sort_group
+                FROM mitglieder m LEFT JOIN Waffen w ON w.ID = m.WaffenID
+                WHERE m.ID IN (SELECT mitglied_id FROM endstich_selection WHERE jahr = ? AND mitglied_id IS NOT NULL
+                               UNION SELECT mitglied_id FROM endstich_zusatz_schuss WHERE jahr = ? AND mitglied_id IS NOT NULL)
+                UNION ALL
+                SELECT 'gast' COLLATE utf8mb4_general_ci, g.id, g.name COLLATE utf8mb4_general_ci, g.geburtsdatum,
+                       g.waffen_id, w2.Bezeichnung COLLATE utf8mb4_general_ci, w2.Kategorie COLLATE utf8mb4_general_ci, CASE WHEN g.geburtsdatum IS NOT NULL THEN 3 ELSE 2 END
+                FROM endstich_gaeste g LEFT JOIN Waffen w2 ON w2.ID = g.waffen_id
+                WHERE g.jahr = ? AND g.id IN (SELECT gast_id FROM endstich_selection WHERE jahr = ? AND gast_id IS NOT NULL
+                                              UNION SELECT gast_id FROM endstich_zusatz_schuss WHERE jahr = ? AND gast_id IS NOT NULL)
+                ORDER BY sort_group, name", 'iiiii', [$jahr, $jahr, $jahr, $jahr, $jahr]));
+
+            // Alle Stiche und Zusatzmunition des Jahres in je EINER Abfrage
+            $selektionen = rows(q($conn, "SELECT es.mitglied_id, es.gast_id, es.stich_id, es.zahlungsmethode, es.sie_und_er, es.gast_spezialpreis,
+                                                  ed.code, ed.shots, ed.price_cents
+                                           FROM endstich_selection es JOIN endstich_definition ed ON ed.id = es.stich_id
+                                           WHERE es.jahr = ? ORDER BY es.stich_id", 'i', [$jahr]));
+            $zusaetze = rows(q($conn, "SELECT mitglied_id, gast_id, typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE jahr = ?", 'i', [$jahr]));
+
+            $key = fn(string $typ, int $id) => ($typ === 'mitglied' ? 'm' : 'g') . $id;
+            $selByKey = $zusByKey = [];
+            foreach ($selektionen as $s) {
+                $k = $s['mitglied_id'] ? 'm' . (int)$s['mitglied_id'] : 'g' . (int)$s['gast_id'];
+                $selByKey[$k][] = $s;
+            }
+            foreach ($zusaetze as $z) {
+                $k = $z['mitglied_id'] ? 'm' . (int)$z['mitglied_id'] : 'g' . (int)$z['gast_id'];
+                $zusByKey[$k][] = $z;
+            }
+
+            $details = [];
+            foreach ($teilnehmer as $t) {
+                $istMitglied = $t['typ'] === 'mitglied';
+                $teilTyp = $istMitglied ? 'mitglied' : endschTeilnehmerTyp($t['geburtsdatum']);
+                $e = [
+                    'typ'          => $t['typ'],
+                    'teilnehmer_typ' => $teilTyp,
+                    'entity_id'    => (int)$t['entity_id'],
+                    'mitglied_id'  => (int)$t['entity_id'],
+                    'name'         => $t['name'],
+                    'geburtsdatum' => $t['geburtsdatum'],
+                    'waffe_id'     => $t['waffe_id'] ? (int)$t['waffe_id'] : null,
+                    'waffe_bez'    => $t['waffe_bez'],
+                    'waffe_kat'    => $t['waffe_kat'],
+                    'stiche'       => [],
+                    'partner_stiche' => [],
+                    'zusatz_schuesse' => [],
+                    'total_shots'  => 0,
+                    'total_price'  => 0,
+                    'zahlungsmethode' => null,
+                    'munition_schuss' => 0,
+                    'munition_preis'  => 0,
+                    'stich_gp11' => 0, 'stich_gp90' => 0, 'zusatz_gp11' => 0, 'zusatz_gp90' => 0,
+                ];
+                $ammo = endschAmmoPref($e['waffe_id'], $t['waffe_bez'], $t['waffe_kat']);
+                $k = $key($t['typ'], (int)$t['entity_id']);
+
+                $gastPreisGesetzt = false;
+                $codes = [];
+                $zabigPartner = false;
+                foreach ($selByKey[$k] ?? [] as $s) {
+                    if ($s['code'] === 'PROBE' && $teilTyp !== 'js') {
+                        continue;
+                    }
+                    $e['stiche'][] = (int)$s['stich_id'];
+                    $codes[] = $s['code'];
+                    $e['total_shots'] += (int)$s['shots'];
+                    if ($ammo === 'GP11') { $e['stich_gp11'] += (int)$s['shots']; }
+                    if ($ammo === 'GP90') { $e['stich_gp90'] += (int)$s['shots']; }
+                    if (!empty($s['zahlungsmethode'])) { $e['zahlungsmethode'] = $s['zahlungsmethode']; }
+                    if ($s['code'] === 'ZABIG' && (int)$s['sie_und_er'] === 1) {
+                        $zabigPartner = true;
+                        $e['partner_stiche'][] = (int)$s['stich_id'];
+                    }
+                    if (!$istMitglied && !$gastPreisGesetzt && $s['gast_spezialpreis'] !== null) {
+                        $e['total_price'] = (int)$s['gast_spezialpreis'];
+                        $gastPreisGesetzt = true;
+                    }
+                }
+                if ($istMitglied) {
+                    // Mitglieder: Einzelpreise aus der Definition, Partner-Zabig aus den Spezialpreisen
+                    $defs = [];
+                    foreach ($selByKey[$k] ?? [] as $s) {
+                        $defs[$s['code']] = ['id' => (int)$s['stich_id'], 'price_cents' => (int)$s['price_cents']];
+                    }
+                    $e['total_price'] = endschBerechnePreis($codes, 'mitglied', $zabigPartner, $defs, $spezial);
+                } elseif (!$gastPreisGesetzt) {
+                    // Altdaten ohne gespeicherten Gesamtpreis: aus den Regeln nachrechnen
+                    $defs = [];
+                    foreach ($selByKey[$k] ?? [] as $s) {
+                        $defs[$s['code']] = ['id' => (int)$s['stich_id'], 'price_cents' => (int)$s['price_cents']];
+                    }
+                    $e['total_price'] = endschBerechnePreis($codes, $teilTyp, false, $defs, $spezial);
+                }
+
+                foreach ($zusByKey[$k] ?? [] as $z) {
+                    $e['zusatz_schuesse'][] = ['typ' => $z['typ'], 'anzahl' => (int)$z['anzahl'], 'preis_cents' => (int)$z['preis_cents']];
+                    $typNorm = strtoupper((string)$z['typ']);
+                    if (strpos($typNorm, 'GP11') !== false) { $e['zusatz_gp11'] += (int)$z['anzahl']; }
+                    elseif (strpos($typNorm, 'GP90') !== false) { $e['zusatz_gp90'] += (int)$z['anzahl']; }
+                    $e['munition_schuss'] += (int)$z['anzahl'];
+                    $e['munition_preis']  += (int)$z['preis_cents'];
+                    $e['total_price']     += (int)$z['preis_cents'];
+                }
+                $e['zahlungsmethode'] = $e['zahlungsmethode'] ?? 'karte';
+                $details[] = $e;
+            }
+            jsonResponse(true, $details);
 
         default:
             jsonResponse(false, null, 'Unbekannte Action: ' . $action);
     }
-
-} catch (Exception $e) {
-    error_log("API Error in endschloesen_api.php: " . $e->getMessage());
-    jsonResponse(false, null, 'Systemfehler: ' . $e->getMessage());
+} catch (Throwable $e) {
+    error_log('[endschloesen_api] ' . $action . ': ' . $e->getMessage());
+    http_response_code(500);
+    jsonResponse(false, null, 'Fehler: ' . $e->getMessage());
 }

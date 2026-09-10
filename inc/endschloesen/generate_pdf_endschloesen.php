@@ -2,6 +2,7 @@
 // generate_pdf_endschloesen.php - PDF-Report für Endschiessen Stiche und Munition
 
 require_once '../wanderpreise/PDFGenerator.php';
+require_once __DIR__ . '/preislogik.inc.php'; // zentrale Preislogik (Partner-Zabig, Spezialpreise)
 
 /**
  * Endschiessen Auswertungs-Report
@@ -109,7 +110,8 @@ class EndschloesenReport extends PDFGenerator
     {
         $jahr = (int) $this->selectedYear;
 
-        $jsPaketPreis = $this->getJsPaketPreis(); 
+        $jsPaketPreis = $this->getJsPaketPreis();
+        $partnerZabigPreis = (int)endschLadeSpezialpreise($this->conn)['partner_zabig'];
         // Mitglieder mit Waffe
         $sqlMit = "SELECT DISTINCT 
                     m.ID as mitglied_id,
@@ -276,7 +278,7 @@ class EndschloesenReport extends PDFGenerator
                 if ($isMitglied) {
                     $preis = (int) $row['price_cents'];
                     if (($row['code'] ?? '') === 'ZABIG' && (int) ($row['sie_und_er'] ?? 0) === 1) {
-                        $preis = 1000; // CHF 10.00
+                        $preis = $partnerZabigPreis; // Spezialpreis partner_zabig
                         $entry['partner_stiche'][] = (int) $row['stich_id'];
                     }
                     $entry['total_price'] += $preis;
@@ -586,7 +588,7 @@ class EndschloesenReport extends PDFGenerator
             $left .= '</tr>';
         }
         if ($partnerCount > 0) {
-            $ein = $partnerCount * 1000; // CHF 10.00 pro Partner-Zabig
+            $ein = $partnerCount * (int)endschLadeSpezialpreise($this->conn)['partner_zabig']; // Spezialpreis
             $sumEinnahmen += $ein;
             $left .= '<tr>';
             $left .= '<td>Zabig <span style="color:#3b5998;">(Partner)</span></td>';
@@ -799,6 +801,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'generate_pdf') {
     try {
         // Database connection
         require_once '../dbconnect.inc.php';
+        require_once __DIR__ . '/../admin_api_guard.inc.php';
+        adminApiGuard('json'); // Zugriff nur Admin-Bereich
 
         if (!isset($conn)) {
             throw new Exception('Datenbankverbindung nicht verfügbar');

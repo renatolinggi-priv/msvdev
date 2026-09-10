@@ -765,6 +765,7 @@ try {
         <!-- Schritt 2: Vorschau -->
         <div id="pdfImportStep2" style="display:none;">
           <div id="pdfImportStats" class="alert alert-info py-2 px-3 small mb-2"></div>
+          <div id="pdfImportGenWarn"></div>
           <div id="pdfImportSektion" class="mb-2"></div>
           <p class="text-muted small mb-2" id="pdfImportHint">
             <i class="bi bi-trophy-fill text-warning"></i> = Top&nbsp;10 (wird zusätzlich als Einzelrangierung gespeichert) ·
@@ -1367,15 +1368,15 @@ try {
                     if (def.isSektionsmeisterschaft) {
                         html += '<div class="d-flex align-items-center gap-1">';
                         html += '<span style="font-size:0.7rem; font-weight:700; color:#94a3b8;">R1:</span>';
-                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde1" value="' + (m.punkte_runde1 || '') + '" inputmode="numeric" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
+                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde1" value="' + (m.punkte_runde1 ?? '') + '" inputmode="numeric" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
                         html += '<span style="font-size:0.7rem; font-weight:700; color:#94a3b8; margin-left:4px;">R2:</span>';
-                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde2" value="' + (m.punkte_runde2 || '') + '" inputmode="numeric" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
+                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde2" value="' + (m.punkte_runde2 ?? '') + '" inputmode="numeric" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
                         html += '</div>';
                     } else if (def.isReadonly) {
                         html += '<span style="font-weight:700; color:#059669; min-width:60px; text-align:center;">' + (m.punkte || '\u2013') + '</span>';
                     } else {
                         const draftStyle = (m.status === 'entwurf') ? ' border-color:#ffc107; background:#fffbea; box-shadow:inset 0 0 0 1px #ffc107;' : '';
-                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte" value="' + (m.punkte || '') + '" inputmode="numeric" placeholder="\u2013" style="width:80px; text-align:center; font-weight:600; font-size:1rem; border-radius:8px;' + draftStyle + '">';
+                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte" value="' + (m.punkte ?? '') + '" inputmode="numeric" placeholder="\u2013" style="width:80px; text-align:center; font-weight:600; font-size:1rem; border-radius:8px;' + draftStyle + '">';
                     }
 
                     html += '</div>';
@@ -1791,6 +1792,7 @@ try {
     let sektionData = null;
     let opfsMode = false;   // FSA-Teilnehmerliste: Obligatorisch + Feldschiessen (Bonus)
     let opfsDefs = null;
+    let generatorInfo = null; // erkannte Generator-Familie (z.B. 'vereinswk') für gezielte Hinweise
 
     function csrf() { return $('#jmresultateForm input[name="csrf_token"]').val(); }
     function selectedYear() { return $('#yearSelect').val(); }
@@ -1816,6 +1818,8 @@ try {
         sektionData = null;
         opfsMode = false;
         opfsDefs = null;
+        generatorInfo = null;
+        $('#pdfImportGenWarn').empty();
         $('#pdfImportPreviewTable thead tr').html(theadDefaultHtml);
         $('#pdfImportHint').html(hintDefaultHtml);
         $('#pdfImportStep1').show();
@@ -1894,6 +1898,7 @@ try {
                 sektionData = resp.sektion || null;
                 opfsMode = (resp.mode === 'opfs');
                 opfsDefs = resp.defs || null;
+                generatorInfo = resp.generator || null;
                 if (opfsMode) {
                     renderPreviewOpfs(resp.stats);
                 } else {
@@ -1912,6 +1917,14 @@ try {
         $('#pdfImportStats').html('<i class="bi bi-info-circle me-1"></i><strong>' + escapeHtml(anlassName) + '</strong> – ' +
             stats.matched + ' Mitglieder erkannt · ' + stats.top10 + ' Top-10 · ' + stats.duplicates + ' bereits erfasst' +
             (stats.fuzzy ? ' · ' + stats.fuzzy + ' unsicher' : '') + ' (von ' + stats.total_lines + ' Zeilen)');
+
+        // Gezielter Hinweis pro Generator-Familie
+        $('#pdfImportGenWarn').html(generatorInfo === 'vereinswk'
+            ? '<div class="alert alert-warning py-2 px-3 small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>' +
+              '<strong>VereinsWK-Rangliste:</strong> Bei Schützen, die nachgedoppelt haben (Auszahlungsstich), steht in der ' +
+              'Punkte-Spalte das <em>ersetzte</em> Resultat – das ursprüngliche Stich-Resultat ist im PDF nicht enthalten. ' +
+              'Betroffene Resultate vor dem Import hier in der Vorschau anpassen.</div>'
+            : '');
 
         renderSektion();
 
@@ -1936,7 +1949,8 @@ try {
             const isDup = r.dup_jm || r.dup_einzel;
             const checked = (!isDup && r.match_status !== 'none') ? 'checked' : '';
             const trCls = isDup ? 'row-dup' : (r.match_status === 'none' ? 'row-none' : '');
-            const dupNote = isDup ? '<span class="badge bg-warning text-dark ms-1">bereits erfasst</span>' : '';
+            const dupVal = (r.dup_jm && r.dup_jm_punkte != null) ? ': ' + r.dup_jm_punkte : '';
+            const dupNote = isDup ? '<span class="badge bg-warning text-dark ms-1">bereits erfasst' + dupVal + '</span>' : '';
             const top10 = r.is_top10 ? ' <i class="bi bi-trophy-fill text-warning" title="Top 10 – auch Einzelrangierung"></i>' : '';
             const preisCell = r.is_top10
                 ? '<input type="text" class="form-control form-control-sm preis-input" value="' + (r.preis !== null ? r.preis : '') + '" inputmode="decimal">'
@@ -1972,6 +1986,7 @@ try {
 
         sektionData = null;
         $('#pdfImportSektion').empty();
+        $('#pdfImportGenWarn').empty();
         $('#pdfImportHint').html('Bonus-Punkte sind mit ' + opMax + ' (Obligatorisch) bzw. ' + fsMax + ' (Feldschiessen) vorbelegt, wo ein Resultat vorhanden ist – leeres Feld wird nicht importiert. ' +
             'Bereits erfasste Disziplinen bleiben leer (gelbe Zeile), unsichere Zuordnungen sind standardmässig abgewählt.');
 

@@ -108,7 +108,7 @@ $page_specific_css = "
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
 }
 
@@ -247,49 +247,8 @@ $page_specific_css = "
 }
 
 /* =========================================
-   Stich-Karten im Panel
+   Stich-Sektionen im Panel: zentral .shot-* in css/msv-styles.css
    ========================================= */
-.panel-stich-card {
-    background: transparent;
-    border: none;
-    border-top: 1px solid #e2e8f0;
-    border-radius: 0;
-    padding: 0.625rem 0 0.375rem;
-    margin-bottom: 0.25rem;
-}
-
-.row > .col-6 > .panel-stich-card {
-    border-top: none;
-    padding-top: 0;
-}
-
-.panel-stich-card h6 {
-    color: #64748b;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 0.375rem;
-}
-
-.focusable-input:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    border-color: #007bff;
-}
-
-.small-input {
-    width: 42px !important;
-    text-align: center !important;
-    padding: 0.2rem !important;
-    font-size: 0.85rem !important;
-}
-
-.total-display {
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: var(--secondary-color);
-    min-width: 30px;
-    text-align: center;
-}
-
 @media (max-width: 576px) {
     .button-toolbar { flex-direction: column; }
     .button-toolbar .btn { width: 100%; }
@@ -332,12 +291,6 @@ $page_specific_css = "
         font-size: 0.9rem;
     }
 
-    .panel-stich-card .small-input {
-        width: 38px !important;
-        min-height: 38px !important;
-        font-size: 14px !important;
-    }
-
     .mobile-card-detail-row {
         padding: 0.75rem 0 !important;
         border-bottom: 1px solid #f1f5f9 !important;
@@ -370,6 +323,13 @@ $page_specific_css = "
         white-space: nowrap;
     }
     #resultateContainer #partnerTabelle tbody td { padding: 0.35rem 0.4rem !important; }
+    /* Namensspalten: Inhaltsbreite, kein Umbruch -> eine Zeile pro Eintrag */
+    #resultateContainer #partnerTabelle thead th:nth-child(-n+2),
+    #resultateContainer #partnerTabelle tbody td:nth-child(-n+2) {
+        width: 1%;
+        white-space: nowrap;
+        padding-right: 1.25rem !important;
+    }
 }
 ";
 
@@ -499,7 +459,7 @@ if (empty($_SESSION['csrf_token'])) {
 <div class="panel-overlay" id="panelOverlay"></div>
 
 <!-- Slide-Panel -->
-<div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 540px;">
+<div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 600px;">
     <div class="panel-header">
         <div class="d-flex align-items-center gap-2">
             <button class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorherige">
@@ -523,97 +483,95 @@ if (empty($_SESSION['csrf_token'])) {
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
         <!-- Grunddaten: Mitglied + Partnerin -->
-        <div class="row g-2 mb-2">
-            <div class="col-6">
-                <div class="panel-stich-card">
-                    <h6><i class="bi bi-person me-1"></i>Mitglied</h6>
-                    <select class="form-select form-select-sm focusable-input" id="mitgliedSelect" name="mitgliedID" required>
-                        <option value="">-- Wählen --</option>
-                        <?php
-                        $sql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
-                        $result = $conn->query($sql);
-                        if ($result && $result->num_rows > 0) {
-                            while ($row = $result->fetch_assoc()) {
-                                echo "<option value='" . $row['ID'] . "'>" . htmlspecialchars($row['Name'] . " " . $row['Vorname']) . "</option>";
-                            }
+        <div class="shot-cols shot-first">
+            <div class="shot-field">
+                <label class="panel-label" for="mitgliedSelect"><i class="bi bi-person me-1"></i>Mitglied</label>
+                <select class="form-select form-select-sm focusable-input" id="mitgliedSelect" name="mitgliedID" required>
+                    <option value="">-- Wählen --</option>
+                    <?php
+                    $sql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Verstorben = 0 ORDER BY Name, Vorname";
+                    $result = $conn->query($sql);
+                    if ($result && $result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                            echo "<option value='" . $row['ID'] . "'>" . htmlspecialchars($row['Name'] . " " . $row['Vorname']) . "</option>";
                         }
-                        ?>
-                    </select>
-                </div>
+                    }
+                    ?>
+                </select>
             </div>
-            <div class="col-6">
-                <div class="panel-stich-card">
-                    <h6><i class="bi bi-heart me-1"></i>Partnerin</h6>
-                    <input type="text" class="form-control form-control-sm focusable-input" id="partnerName" name="partnerName" placeholder="Name" required>
-                </div>
+            <div class="shot-field">
+                <label class="panel-label" for="partnerName"><i class="bi bi-heart me-1"></i>Partnerin</label>
+                <input type="text" class="form-control form-control-sm focusable-input" id="partnerName" name="partnerName" placeholder="Name" required>
             </div>
         </div>
 
         <!-- Endstich (10 Schüsse) -->
-        <div class="panel-stich-card">
-            <h6><i class="bi bi-bullseye me-1"></i>Endstich <span id="endstichSumme" class="total-display float-end">0</span></h6>
-            <div class="d-flex align-items-center gap-1 flex-wrap">
-                <?php for ($i=1; $i<=10; $i++): ?>
-                    <input type="number" class="small-input endstich-schuss focusable-input" id="EndstichSchuss<?= $i ?>" name="EndstichSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
-                <?php endfor; ?>
+        <div class="shot-section">
+            <div class="shot-section-head">
+                <span class="shot-section-title"><i class="bi bi-bullseye"></i>Endstich</span>
+                <span class="shot-total" id="endstichSumme">0</span>
+            </div>
+            <div class="shot-section-body">
+                <div class="shot-grid">
+                    <?php for ($i=1; $i<=10; $i++): ?>
+                    <input type="number" class="shot-input shot-input-dec endstich-schuss focusable-input" id="EndstichSchuss<?= $i ?>" name="EndstichSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
+                    <?php endfor; ?>
+                </div>
             </div>
         </div>
 
-        <!-- Sie und Er (Partner 1-5) -->
-        <div class="panel-stich-card">
-            <h6>
-                <i class="bi bi-heart me-1"></i>"Sie und Er"
-                <span class="badge bg-info ms-1" style="font-size: 0.6rem;">Partner 1-5</span>
-                <span class="badge bg-success float-end" id="uniqueTotal" style="font-size: 0.65rem;"><i class="bi bi-calculator me-1"></i>Total: 0</span>
-            </h6>
-            <div class="d-flex align-items-center gap-1 flex-wrap mb-1">
-                <?php for ($i=1; $i<=5; $i++): ?>
+        <!-- Sie und Er (Partnerin 1-5) -->
+        <div class="shot-section">
+            <div class="shot-section-head">
+                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">Schüsse 1–5, Partnerin</span></span>
+                <span class="shot-total" id="uniqueTotal" data-tooltip="Total der eindeutigen Werte">0</span>
+            </div>
+            <div class="shot-section-body">
+                <div class="shot-grid">
+                    <?php for ($i=1; $i<=5; $i++): ?>
                     <input type="number"
-                           class="small-input sie-er-schuss sie-er-partner focusable-input"
+                           class="shot-input shot-input-dec sie-er-schuss sie-er-partner focusable-input"
                            id="SieErSchuss<?= $i ?>"
                            name="SieErSchuss<?= $i ?>"
                            data-position="<?= $i ?>"
                            data-source="partner"
                            min="0" max="10" step="0.1"
-                           style="border-bottom: 3px solid #dc3545;"
                            placeholder="<?= $i ?>"
                            inputmode="decimal">
-                <?php endfor; ?>
+                    <?php endfor; ?>
+                </div>
+                <div class="shot-hint mt-2">Zusammen mit den Schüssen 6–10 des Mitglieds (in der Endschiessen-Resultaterfassung). Jeder Wert zählt nur einmal, Doppelte sind rot durchgestrichen.</div>
             </div>
-            <div id="previewBadges" class="d-flex gap-1 flex-wrap" style="font-size: 0.7rem;"></div>
         </div>
 
         <!-- Partner Schwini (2 Passen à 6 Schüsse) -->
-        <div class="panel-stich-card">
-            <h6><i class="bi bi-piggy-bank me-1"></i>Partner Schwini</h6>
-            <div class="mb-1">
-                <label class="small mb-0" style="font-size: 0.7rem;">Passe 1: <span id="schwiniSumme1" class="total-display">0</span></label>
-                <div class="d-flex align-items-center gap-1">
-                    <?php for ($i=1; $i<=6; $i++): ?>
-                        <input type="number" class="small-input schwini-passe1 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
-                    <?php endfor; ?>
+        <div class="shot-section">
+            <div class="shot-section-head">
+                <span class="shot-section-title"><i class="bi bi-piggy-bank"></i>Partner Schwini</span>
+                <span class="shot-total" id="schwiniSummeTotal">0</span>
+            </div>
+            <div class="shot-section-body">
+                <div class="shot-row">
+                    <span class="shot-row-label">Passe 1</span>
+                    <div class="shot-grid">
+                        <?php for ($i=1; $i<=6; $i++): ?>
+                        <input type="number" class="shot-input shot-input-dec schwini-passe1 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
+                        <?php endfor; ?>
+                    </div>
+                    <span class="shot-total" id="schwiniSumme1">0</span>
+                </div>
+                <div class="shot-row">
+                    <span class="shot-row-label">Passe 2</span>
+                    <div class="shot-grid">
+                        <?php for ($i=7; $i<=12; $i++): ?>
+                        <input type="number" class="shot-input shot-input-dec schwini-passe2 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
+                        <?php endfor; ?>
+                    </div>
+                    <span class="shot-total" id="schwiniSumme2">0</span>
                 </div>
             </div>
-            <div>
-                <label class="small mb-0" style="font-size: 0.7rem;">Passe 2: <span id="schwiniSumme2" class="total-display">0</span></label>
-                <div class="d-flex align-items-center gap-1">
-                    <?php for ($i=7; $i<=12; $i++): ?>
-                        <input type="number" class="small-input schwini-passe2 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
-                    <?php endfor; ?>
-                </div>
-            </div>
-            <div class="mt-1">
-                <small class="fw-bold">Total: <span id="schwiniSummeTotal" class="text-primary">0</span></small>
-            </div>
-        </div>
-
-        <!-- Info-Hinweis -->
-        <div class="alert alert-info py-2 px-3 mb-0" style="font-size: 0.75rem;">
-            <i class="bi bi-info-circle me-1"></i>
-            <strong>"Sie und Er":</strong> 5 Schüsse der Partnerin (hier) + 5 Schüsse des Mitglieds (separat erfasst). Unique-Logik: Jeder Wert zählt nur 1x.
         </div>
     </div>
-
     <div class="panel-footer">
         <div class="d-flex gap-2 w-100">
             <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn">
@@ -737,14 +695,11 @@ $(document).ready(function() {
         resetForm() {
             // Alle Inputs leeren
             $('#editPanel .focusable-input').val('');
-            $('#editPanel .small-input').val('');
+            $('#editPanel .shot-input').val('').removeClass('filled is-unique is-dup');
             $('#partnerID').val('');
             $('#mitgliedSelect').val('');
             $('#partnerName').val('');
-            $('.total-display').text('0');
-            $('#schwiniSummeTotal').text('0');
-            $('#previewBadges').html('');
-            $('#uniqueTotal').html('<i class="bi bi-calculator me-1"></i>Total: 0');
+            $('#editPanel .shot-total').text('0');
         },
 
         loadPartnerData(partnerId) {
@@ -781,6 +736,7 @@ $(document).ready(function() {
 
                         calculateAllSums();
                         updateSieErUniqueVisualization();
+                        refreshFilled();
 
                         setTimeout(function() {
                             $('#editPanel .focusable-input:first').focus().select();
@@ -1037,6 +993,13 @@ $(document).ready(function() {
     // =========================================
     //  Summen berechnen
     // =========================================
+    // Ausgefuellte Felder gruen markieren (wie kanti/heim .filled)
+    function refreshFilled() {
+        $('#editPanel .shot-input').each(function() {
+            $(this).toggleClass('filled', this.value !== '');
+        });
+    }
+
     function calculateAllSums() {
         // Endstich
         var endstichSum = 0;
@@ -1098,7 +1061,7 @@ $(document).ready(function() {
         });
 
         // Reset
-        $('.sie-er-schuss').css({ 'border-color': '', 'background-color': '' });
+        $('.sie-er-schuss').removeClass('is-unique is-dup');
 
         var uniqueValues = [];
         var processedValues = {};
@@ -1106,42 +1069,25 @@ $(document).ready(function() {
         Object.keys(valuePositions).forEach(function(value) {
             var positions = valuePositions[value];
             if (positions.length === 1) {
-                positions[0].element.css({ 'border': '2px solid #28a745', 'background-color': '#f0fff4' });
+                positions[0].element.addClass('is-unique');
                 uniqueValues.push(parseInt(value));
             } else {
                 positions.forEach(function(pos, index) {
                     if (index === 0) {
-                        pos.element.css({ 'border': '2px solid #28a745', 'background-color': '#f0fff4' });
+                        pos.element.addClass('is-unique');
                         if (!processedValues[value]) {
                             uniqueValues.push(parseInt(value));
                             processedValues[value] = true;
                         }
                     } else {
-                        pos.element.css({ 'border': '2px solid #dc3545', 'background-color': '#fff5f5', 'opacity': '0.7' });
+                        pos.element.addClass('is-dup');
                     }
                 });
             }
         });
 
-        // Preview Badges
-        var previewHTML = '';
-        var processedForPreview = {};
-        $('.sie-er-partner').each(function() {
-            var value = parseFloat($(this).val() || 0);
-            if (value > 0) {
-                var intValue = Math.floor(value);
-                if (processedForPreview[intValue]) {
-                    previewHTML += '<span class="badge bg-danger bg-opacity-25 text-danger" style="text-decoration: line-through; font-size: 0.7rem;">' + value + '</span> ';
-                } else {
-                    previewHTML += '<span class="badge bg-danger" style="font-size: 0.7rem;">' + value + '</span> ';
-                    processedForPreview[intValue] = true;
-                }
-            }
-        });
-        $('#previewBadges').html(previewHTML || '<span class="text-muted small">Noch keine Werte</span>');
-
         var uniqueSum = uniqueValues.reduce(function(sum, val) { return sum + val; }, 0);
-        $('#uniqueTotal').html('<i class="bi bi-calculator me-1"></i>Total: ' + uniqueSum);
+        $('#uniqueTotal').text(uniqueSum);
     }
 
     // =========================================
@@ -1239,6 +1185,11 @@ $(document).ready(function() {
     // Summen-Berechnung bei Input
     $(document).on('input change', '.endstich-schuss, .schwini-passe1, .schwini-passe2', function() {
         calculateAllSums();
+    });
+
+    // Feld ausgefuellt -> gruen
+    $(document).on('input change', '#editPanel .shot-input', function() {
+        $(this).toggleClass('filled', this.value !== '');
     });
 
     // Sie und Er Berechnung

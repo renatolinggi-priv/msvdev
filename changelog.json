@@ -1,5 +1,71 @@
 [
   {
+    "version": "1.26.0",
+    "datum": "2026-09-09",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen-Standblatt: Titel mit Jahr und Stichnummern fehlten im Excel",
+        "beschreibung": "Im heruntergeladenen Standblatt (Seite «Endschiessen lösen», Button «Standblatt») fehlten der Titel «Endschiessen MSV Wilen» samt Jahr sowie die Beschriftungen «Stichnr. 522» usw. Diese stehen in der Excel-Vorlage in Textfeldern, nicht in Zellen; die bisher verwendete Excel-Bibliothek kann Textfelder nicht lesen und hat sie beim Speichern entfernt, der Platzhalter für das Jahr blieb entsprechend unersetzt. Der Generator bearbeitet die Vorlage jetzt direkt auf Dateiebene: alle Textfelder bleiben erhalten, das Jahr wird eingesetzt, Name, «gelöst»-Markierungen und der Lizenz-Barcode kommen wie bisher an ihre Stelle. Zusätzlich korrigiert: In der Vorlage zeigten beide Schwini-Felder («1. Doppel» und «2.Doppel») denselben Platzhalter, weshalb bei nur einem gelösten Schwini trotzdem beide als «gelöst» erschienen; das Feld «2.Doppel» hat jetzt seinen eigenen Platzhalter.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Neue Rangliste «Sektionsmeisterschaft»: Runde 1, Runde 2 und Gesamt",
+        "beschreibung": "Unter «Ranglisten» gibt es neu die Seite «Sektionsmeisterschaft Rangliste». Sie wertet die im JM-Anlass Sektionsmeisterschaft erfassten beiden Runden aus: je eine Liste pro Runde, absteigend nach Resultat sortiert, ohne Rangnummern. Unter jeder Runde steht der Schnitt nach der Regel der Sektionsabrechnungen (Teilnehmer, Pflichtteilnehmer, Durchschnitt, Beteiligungszuschlag, Endergebnis), pro Runde getrennt berechnet. Jahr wählbar, PDF-Export (Runden nebeneinander, Schnitt darunter) und Sprung zur Erfassung. Der Menüeintrag kommt mit Migration 046 («Aktualisierung» ausführen); dabei wird das Feld für Menütexte von 30 auf 50 Zeichen erweitert.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Standbelegung: Speichern, Löschen und Kalender-Schalter liefen auf 403",
+        "beschreibung": "Auf der Seite «Standbelegung» scheiterten das Bearbeiten und Anlegen von Einträgen, das Löschen, der Import-Speichervorgang und der Kalender-Schalter mit «403 Forbidden». Die Seite schickte das CSRF-Token nur im JSON-Body, die Endpunkte prüften es aber im Formularfeld oder im Header. Neu sendet die Seite das Token bei jedem Aufruf zusätzlich als Header X-CSRF-TOKEN, wie es die anderen Admin-Seiten tun.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft-Erfassung: Resultat 0 lässt sich eintragen",
+        "beschreibung": "Im Erfassungs-Panel pro Anlass (Seite «JM-Resultate») wurde eine gespeicherte 0 nach dem Neuladen als leeres Feld angezeigt, obwohl sie in der Datenbank stand – es sah aus, als würde 0 nicht akzeptiert. Der Wert 0 wird jetzt korrekt angezeigt und zählt in der Rangliste wie bisher als Teilnahme mit 0 Punkten.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "PDF-Ranglisten-Import: Nachdoppel-Warnung bei VereinsWK und bestehende Werte sichtbar",
+        "beschreibung": "Zwei Absicherungen in der Import-Vorschau: 1. Bei Ranglisten aus dem Programm VereinsWK (Vereinsstich, Etzelbund-, Roggenstockschiessen u.a.) erscheint neu ein Warnhinweis, dass bei Schützen mit Nachdoppel (Auszahlungsstich) in der Punkte-Spalte das ersetzte Resultat steht – das ursprüngliche Stich-Resultat steht nicht im PDF und muss für die Jahresmeisterschaft von Hand in der Vorschau korrigiert werden. 2. Das Badge «bereits erfasst» zeigt neu den bestehenden Wert (z.B. «bereits erfasst: 93»); Abweichungen zwischen PDF und einem schon erfassten oder vom Schützen selbst eingetragenen Resultat fallen damit direkt auf.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "PDF-Ranglisten-Import: VereinsWK-Ranglisten (z.B. Roggenstockschiessen) werden erkannt",
+        "beschreibung": "Ranglisten aus dem Programm VereinsWK (www.vereinswk.ch), etwa die Einzelrangliste des Roggenstockschiessens, liessen sich nicht importieren – es kamen keine Zeilen zurück. Grund: In diesen PDFs sind die fett gedruckten Spalten (Teilnehmername und Punkte) technisch nicht als Text, sondern als interne Schrift-Zeichennummern abgelegt; Namen kamen als Zeichensalat an und die Punktzahl fehlte ganz. Der Import übersetzt diese Kodierung jetzt automatisch zurück (inklusive Umlauten und Akzenten) und liest als Resultat korrekt die fette Punkte-Spalte, nicht die kleinen Zwischenwerte. Die bisherigen Ranglisten-Formate (Vereinsstich, Etzelbundschiessen, Verbandsschiessen, FSA-Teilnehmerliste) funktionieren unverändert.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen-Resultate: Gelöste Schützen erscheinen auch ohne erfasste Resultate",
+        "beschreibung": "Die Seite «Endresultate» listete nur Schützen, die bereits Resultate hatten. Wer gelöst hatte, aber noch nichts geschossen hatte, fehlte – zu Saisonbeginn blieb die Liste darum leer, obwohl schon gelöst wurde. Neu erscheinen alle im gewählten Jahr gelösten Schützen (Tabelle Endschiessen lösen) sowie weiterhin alle mit erfassten Resultaten; Zeilen ohne Resultate zeigen Striche und lassen sich zum Erfassen öffnen.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen-Resultate und Partner: Erfassungs-Panel und Tabelle überarbeitet",
+        "beschreibung": "Das Erfassungs-Panel der Seiten «Endresultate» und «Endschiessen Partner» ist neu aufgebaut, in der Optik des Erfassen-Panels von Kantonal-/Heimresultaten: grosse zentrierte Schussfelder ohne Spinner, kleine Abschnitts-Titel, Total als Pille rechts, grün wenn ausgefüllt. Nicht gelöste Stiche klappen auf eine Zeile mit dem Hinweis «Nicht gelöst» zusammen, statt halbtransparent mit rotem Badge überlagert zu werden. Reihenfolge folgt den Tabellenspalten (Endstich, Schwini, Kunst/Glück, Zabig, Sie und Er, Ansage/Absenden); der Fokus springt beim Öffnen direkt auf den ersten gelösten Stich. Bei «Sie und Er» sind doppelte Werte rot durchgestrichen, die Badge-Vorschau entfällt. In der Tabelle zeigen gelöste Schützen ohne Resultate pro Stich ein «gelöst»-Pill (Schwini mit P1/P2), nicht gelöste Stiche einen hellen Strich; die Tabellenkarte passt sich der Anzahl Zeilen an.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen lösen: Seite neu aufgebaut, Preise nur noch serverseitig",
+        "beschreibung": "Die Seite «Endschiessen – Stiche lösen» hat einen Umschalter Mitglied / Gast / Jungschütze statt der versteckten Regel «Gastname ausgefüllt = Gast, Geburtsdatum ausgefüllt = Jungschütze». Das Formular ist in Abschnitte gegliedert (Teilnehmer, Stiche als Kacheln, Zahlung, Zusatzmunition, Total), Rückmeldungen laufen über die Toasts, die kaputte Zeichen-Rückmeldung nach dem Speichern ist weg. Die Übersicht rechts zeigt Gast und JS als Badge, Munition in einer Zeile, Aktionen in einem Menü, und markiert den gerade bearbeiteten Teilnehmer. Stich-Definitionen und Spezialpreise liegen in einem Seitenpanel statt in verschachtelten Modals; sichtbar nur für Admin und Vorstand (bisher für alle). Technisch: Der Preis wird ausschliesslich auf dem Server aus den Spezialpreisen berechnet (bisher zeigte die Seite den Spezialpreis an, speicherte aber fest verdrahtete Werte); dieselbe Logik nutzen Übersicht und Abrechnungs-PDF (Partner-Zabig). Das Geburtsdatum von Jungschützen wird als eigenes Feld gespeichert statt im Namen. Die Datenbank-Struktur wird nicht mehr beim Speichern zur Laufzeit verändert, sondern über Migration 045 («Aktualisierung» ausführen; auf dem bestehenden Stand ändert sie nichts).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Admin-Endpunkte prüfen jetzt den Login",
+        "beschreibung": "Die AJAX-Endpunkte von Endschiessen lösen, Endresultate, Endschiessen Partner und Munitionskauf prüften bisher nur das CSRF-Token bei Schreibzugriffen; lesende Aufrufe (u.a. Mitgliederlisten) waren ohne Anmeldung erreichbar. Neu verlangen alle diese Endpunkte eine angemeldete Admin- oder Vorstands-Sitzung (inc/admin_api_guard.inc.php). Nach Ablauf der Sitzung meldet die Seite «Sitzung abgelaufen» statt still zu scheitern.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.25.0",
     "datum": "2026-08-26",
     "aenderungen": [

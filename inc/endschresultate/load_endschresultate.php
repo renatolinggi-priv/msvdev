@@ -45,6 +45,26 @@ function validateYear($year) {
 }
 
 /**
+ * Tabellenzelle für einen Stich ohne Resultat: "gelöst" (ggf. mit Passen) oder leerer Strich
+ *
+ * @param array $codes       Gelöste Stich-Codes des Schützen
+ * @param array $stichCodes  Codes, die zu dieser Spalte gehören
+ * @param bool  $showPassen  Schwini: P1/P2 einzeln ausweisen
+ */
+function geloestCell(array $codes, array $stichCodes, bool $showPassen = false) {
+    $hit = array_values(array_intersect($stichCodes, $codes));
+    if (!$hit) {
+        return "<td class='text-center'><span class='cell-empty'>–</span></td>";
+    }
+    if ($showPassen && count($hit) < count($stichCodes)) {
+        $label = 'gelöst ' . str_replace('SCHWINI_', '', $hit[0]);
+    } else {
+        $label = 'gelöst';
+    }
+    return "<td class='text-center'><span class='geloest-pill'>" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</span></td>";
+}
+
+/**
  * Generate HTML for a result row with existing data
  *
  * @param array $row Database row with member and score data
@@ -73,7 +93,7 @@ function generateResultRow($row) {
     $id = htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');
     $name = htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8');
 
-    $html = "<tr class='hybrid-row' data-mitglied-id='{$id}' data-has-data='{$dataAttr}'>";
+    $html = "<tr class='hybrid-row' data-mitglied-id='{$id}' data-has-data='{$dataAttr}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'>";
     $html .= "<td>{$name}</td>";
 
     if ($hasRealData) {
@@ -85,15 +105,16 @@ function generateResultRow($row) {
         $html .= "<td class='text-center'>" . htmlspecialchars($row['SieUndEr_Summe'] ?? '-', ENT_QUOTES, 'UTF-8') . "</td>";
         $html .= "<td class='text-center'>" . htmlspecialchars($row['Ansage'] ?? '', ENT_QUOTES, 'UTF-8') . "</td>";
     } else {
-        $html .= "<td class='text-center'>-</td>";
-        $html .= "<td class='text-center'>-</td>";
-        $html .= "<td class='text-center'>-</td>";
-        $html .= "<td class='text-center'>-</td>";
-        $html .= "<td class='text-center'>-</td>";
-        $html .= "<td class='text-center'>-</td>";
-        $html .= "<td class='text-center'>-</td>";
+        // Noch keine Resultate: pro Spalte anzeigen, ob der Stich gelöst ist
+        $codes = array_filter(array_map('trim', explode(',', (string)($row['geloeste_codes'] ?? ''))));
+        $html .= geloestCell($codes, ['END']);
+        $html .= geloestCell($codes, ['SCHWINI_P1', 'SCHWINI_P2'], true);
+        $html .= geloestCell($codes, ['KUNST']);
+        $html .= geloestCell($codes, ['GLUECK']);
+        $html .= geloestCell($codes, ['ZABIG']);
+        $html .= geloestCell($codes, ['SIEUNDER']);
+        $html .= geloestCell($codes, ['DIFF']);
     }
-
     $html .= "</tr>";
 
     return $html;
@@ -101,6 +122,8 @@ function generateResultRow($row) {
 
 // Include database configuration
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../partials/empty_state.inc.php';
 
 // Check database connection with proper error handling
@@ -139,9 +162,19 @@ SELECT
     COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0) AS Schwini_Summe1,
     COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0) AS Schwini_Summe2,
     COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS Kunst_Summe,
-    COALESCE(ep.SieErSchuss6 + ep.SieErSchuss7 + ep.SieErSchuss8 + ep.SieErSchuss9 + ep.SieErSchuss10, 0) AS SieUndEr_Summe
+    COALESCE(ep.SieErSchuss6 + ep.SieErSchuss7 + ep.SieErSchuss8 + ep.SieErSchuss9 + ep.SieErSchuss10, 0) AS SieUndEr_Summe,
+    MAX(sel.mitglied_id IS NOT NULL) AS geloest,
+    MAX(sel.codes) AS geloeste_codes
 FROM
     mitglieder m
+-- Geloeste Schuetzen des Jahres (1 Zeile pro Mitglied, damit die SUMs nicht vervielfacht werden)
+LEFT JOIN (
+    SELECT es.mitglied_id, GROUP_CONCAT(DISTINCT ed.code) AS codes
+    FROM endstich_selection es
+    INNER JOIN endstich_definition ed ON ed.id = es.stich_id
+    WHERE es.jahr = ? AND es.mitglied_id IS NOT NULL
+    GROUP BY es.mitglied_id
+) sel ON sel.mitglied_id = m.ID
 LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
 LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
 LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = ?
@@ -151,7 +184,8 @@ LEFT JOIN endresultate_partner ep ON m.ID = ep.MitgliedID AND ep.Jahr = ?
 GROUP BY
     m.ID, m.Vorname, m.Name
 HAVING
-    Endstich_Summe > 0
+    geloest = 1
+    OR Endstich_Summe > 0
     OR Schwini_Summe1 > 0
     OR Schwini_Summe2 > 0
     OR Kunst_Summe > 0
@@ -170,7 +204,7 @@ try {
     }
     
     // Bind parameters to prevent SQL injection
-    $stmt->bind_param("iiiiii", $year, $year, $year, $year, $year, $year);
+    $stmt->bind_param("iiiiiii", $year, $year, $year, $year, $year, $year, $year);
     $stmt->execute();
     $result = $stmt->get_result();
     

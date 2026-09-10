@@ -156,6 +156,8 @@ function generateGuestWithoutResultRow($guest) {
 
 // Include database configuration
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 // Einheitliche Empty-State-Komponente
 require_once __DIR__ . '/../partials/empty_state.inc.php';

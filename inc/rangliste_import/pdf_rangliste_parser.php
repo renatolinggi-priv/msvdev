@@ -11,7 +11,9 @@
 // Lizenznummer (5-7-stellige Zahl = mitglieder.ID), Resultat (letzte Punktezahl) und
 // Preis/Auszahlung (Dezimalwert), falls vorhanden.
 
-require_once __DIR__ . '/../vendor/autoload.php';
+if (!class_exists('Smalot\\PdfParser\\Parser')) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
 
 use Smalot\PdfParser\Parser;
 
@@ -54,7 +56,19 @@ function parseRanglistePdf($filepath, $debug = false, $ownClubNeedles = ['wilen'
         }
     }
 
-    // 3) Sektionsrangierung (Vereinsrangliste) des eigenen Vereins, falls vorhanden
+    // 3) Generator-Familie erkennen (fuer gezielte Hinweise in der Vorschau).
+    // VereinsWK druckt sich in die Fusszeile ("VereinsWK x.y.z - www.vereinswk.ch");
+    // bei diesen Ranglisten ersetzt ein Nachdoppel (Auszahlungsstich) das
+    // Resultat in der Punkte-Spalte -> Warnung im Import-Dialog.
+    $generator = null;
+    foreach ($lines as $line) {
+        if (stripos($line, 'vereinswk') !== false) {
+            $generator = 'vereinswk';
+            break;
+        }
+    }
+
+    // 4) Sektionsrangierung (Vereinsrangliste) des eigenen Vereins, falls vorhanden
     $sektion = parseSektionsrangierungOwnClub($lines, $ownClubNeedles);
 
     if (empty($rows) && $sektion === null) {
@@ -65,7 +79,7 @@ function parseRanglistePdf($filepath, $debug = false, $ownClubNeedles = ['wilen'
         return $result;
     }
 
-    $result = ['success' => true, 'rows' => $rows, 'sektion' => $sektion, 'message' => count($rows) . ' Ranglisten-Zeilen erkannt'];
+    $result = ['success' => true, 'rows' => $rows, 'sektion' => $sektion, 'generator' => $generator, 'message' => count($rows) . ' Ranglisten-Zeilen erkannt'];
     if ($debug) {
         $result['debug'] = ['strategy' => $usedStrategy, 'line_count' => count($lines), 'sample_lines' => array_slice($lines, 0, 40)];
     }
@@ -150,7 +164,7 @@ function ranglisteReconstructLinesPositional($pdf) {
             if (count($item) >= 2 && is_array($item[0]) && count($item[0]) >= 6) {
                 $x = (float) $item[0][4];
                 $y = (float) $item[0][5];
-                $text = trim($item[1]);
+                $text = trim(ranglisteDecodeGlyphText($item[1]));
                 if ($text !== '') {
                     $fragments[] = ['x' => $x, 'y' => $y, 'text' => $text];
                 }
@@ -188,6 +202,61 @@ function ranglisteReconstructLinesPositional($pdf) {
     }
 
     return $lines;
+}
+
+/**
+ * Dekodiert CID/Identity-kodierte Fragmente ohne brauchbares ToUnicode
+ * (Generator-Familie VereinsWK, z.B. Roggenstockschiessen): Der Font liefert
+ * 16-bit Glyph-IDs, die Smalot byteweise uebernimmt -> jedes zweite Zeichen
+ * ist U+0000, das andere ist die Glyph-ID. Die Glyph-IDs folgen der
+ * Standard-Macintosh-Glyphreihenfolge von TrueType-Fonts:
+ * GID 3 = Leerzeichen, danach fortlaufend ASCII (GID + 0x1D = Zeichencode),
+ * ab GID 0x62 die Akzent-Zeichen (0x6C=ä, 0x7C=ö, 0x81=ü, 0x70=é, ...).
+ * Fragmente ohne dieses Muster werden unveraendert zurueckgegeben.
+ */
+function ranglisteDecodeGlyphText($text) {
+    if ($text === '' || strpos($text, "\x00") === false) {
+        return $text;
+    }
+    if (preg_match_all('/./us', $text, $m) === false) {
+        return $text;
+    }
+    $chars = $m[0];
+    $len = count($chars);
+    if ($len < 2) {
+        return $text;
+    }
+    $zeros = 0;
+    foreach ($chars as $c) {
+        if ($c === "\x00") $zeros++;
+    }
+    // GID-Muster: mindestens jedes zweite Zeichen ist U+0000 (High-Byte der 16-bit-ID)
+    if ($zeros * 2 < $len) {
+        return $text;
+    }
+    $out = '';
+    foreach ($chars as $c) {
+        if ($c === "\x00") {
+            continue;
+        }
+        $out .= ranglisteGlyphIdToChar(mb_ord($c, 'UTF-8'));
+    }
+    return $out;
+}
+
+/** Mappt eine TrueType-Glyph-ID (Standard-Macintosh-Reihenfolge) auf ihr Zeichen. */
+function ranglisteGlyphIdToChar($gid) {
+    if ($gid >= 3 && $gid <= 0x61) {
+        return chr($gid + 0x1D); // GID 3 = ' ' (0x20) ... GID 0x61 = '~' (0x7E)
+    }
+    static $map = [
+        0x62 => 'Ä', 0x63 => 'Å', 0x64 => 'Ç', 0x65 => 'É', 0x66 => 'Ñ', 0x67 => 'Ö', 0x68 => 'Ü',
+        0x69 => 'á', 0x6A => 'à', 0x6B => 'â', 0x6C => 'ä', 0x6D => 'ã', 0x6E => 'å', 0x6F => 'ç',
+        0x70 => 'é', 0x71 => 'è', 0x72 => 'ê', 0x73 => 'ë', 0x74 => 'í', 0x75 => 'ì', 0x76 => 'î',
+        0x77 => 'ï', 0x78 => 'ñ', 0x79 => 'ó', 0x7A => 'ò', 0x7B => 'ô', 0x7C => 'ö', 0x7D => 'õ',
+        0x7E => 'ú', 0x7F => 'ù', 0x80 => 'û', 0x81 => 'ü', 0x89 => 'ß',
+    ];
+    return $map[$gid] ?? '';
 }
 
 /**

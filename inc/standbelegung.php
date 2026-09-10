@@ -652,6 +652,9 @@ $artCodes = [
 
 <script>
 const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
+// Alle JSON-Endpunkte unter standbelegung/ lesen das Token aus $_POST oder dem Header
+// X-CSRF-TOKEN. Bei contentType 'application/json' ist $_POST leer, darum immer den Header setzen.
+$.ajaxSetup({ headers: { 'X-CSRF-TOKEN': CSRF_TOKEN } });
 const ART_CODES = <?php echo json_encode($artCodes); ?>;
 let importData = [];
 let overviewData = <?php echo json_encode($existingEntries); ?>;
