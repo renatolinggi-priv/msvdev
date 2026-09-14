@@ -266,7 +266,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
 <script src="js/lib/rsvp.min.js"></script>
 <script src="js/lib/sha-256.min.js"></script>
 <script src="js/lib/qz-tray.js"></script>
-<script src="js/print-manager.js"></script>
-<script src="js/app-drucksteuerung.js"></script>
+<script src="js/print-manager.js?v=<?php echo @filemtime(__DIR__ . '/js/print-manager.js') ?: '1'; ?>"></script>
+<script src="js/app-drucksteuerung.js?v=<?php echo @filemtime(__DIR__ . '/js/app-drucksteuerung.js') ?: '1'; ?>"></script>
 
 <?php include 'footer.inc.php'; ?>

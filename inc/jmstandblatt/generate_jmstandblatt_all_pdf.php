@@ -99,7 +99,8 @@ function generateItfBarcodePng(string $nummer, int $imgWidth = 280, int $imgHeig
     }
     $drawBar($wide); $drawSpace($narrow); $drawBar($narrow);
 
-    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_') . '.jpg';
+    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_');
+    rename($tmpFile, $tmpFile . '.jpg'); $tmpFile .= '.jpg'; // Stub umbenennen statt liegen lassen
     imagejpeg($img, $tmpFile, 90);
     imagedestroy($img);
     return $tmpFile;
@@ -127,7 +128,8 @@ function generateSinglePdf(mysqli $conn, int $mitglied_id, string $vorname, stri
         $template->setValue('lizenz', '');
     }
 
-    $tmpDocx = tempnam(sys_get_temp_dir(), 'sb_') . '.docx';
+    $tmpDocx = tempnam(sys_get_temp_dir(), 'sb_');
+    rename($tmpDocx, $tmpDocx . '.docx'); $tmpDocx .= '.docx'; // Stub umbenennen statt liegen lassen
     $template->saveAs($tmpDocx);
 
     $tmpPdf = null;
@@ -185,7 +187,8 @@ try {
         }
     }
 
-    $mergedPdf = tempnam(sys_get_temp_dir(), 'merged_') . '.pdf';
+    $mergedPdf = tempnam(sys_get_temp_dir(), 'merged_');
+    rename($mergedPdf, $mergedPdf . '.pdf'); $mergedPdf .= '.pdf'; // Stub umbenennen statt liegen lassen
     $merger->Output('F', $mergedPdf);
 
     $filename = "JM_Standblaetter_{$jahr}_alle.pdf";

@@ -4,6 +4,24 @@
     "datum": "2026-09-09",
     "aenderungen": [
       {
+        "titel": "PDF-Umwandlung: Wechsel von ConvertAPI auf iLoveAPI, per Konfiguration umschaltbar",
+        "beschreibung": "Die Umwandlung der Office-Vorlagen zu PDF (JM-Standblatt aus Word, Endschiessen-Standblatt aus Excel) lief über ConvertAPI, dessen Gratis-Zugang nach 30 Tagen ausläuft und danach nur noch im Abo funktioniert. Neu wird iLoveAPI verwendet (2500 Gratis-Credits pro Monat, eine Office-Datei kostet 10 Credits). Der Dienst wird in der externen Konfigurationsdatei gewählt («pdf_converter»: iloveapi oder convertapi); ein Rückbau auf ConvertAPI ist damit ohne Code-Änderung möglich. Fehlermeldungen nennen jetzt den Dienst, der sie ausgelöst hat. Nebenbei behoben: Die Standblatt-Generatoren (Endschiessen und JM) liessen pro Aufruf eine leere Temporärdatei auf dem Server zurück; sie wird jetzt mitverwendet und aufgeräumt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen-Standblatt direkt drucken (QZ Tray), beidseitig über Druckprofil",
+        "beschreibung": "Auf «Endschiessen lösen» gibt es neben dem Excel-Download neu einen Drucker-Button und in der Übersichtstabelle die Aktion «Standblatt drucken». Das Standblatt wird dafür serverseitig aus der Excel-Vorlage zu PDF gewandelt (ConvertAPI, gleicher Dienst wie beim JM-Standblatt) und über QZ Tray direkt an den Drucker geschickt. Drucker, Kopien und Duplex («Lange Seite» = beidseitig mit Bindung an der langen Kante) stellt man in der «Drucksteuerung» im neuen Profil «Endschiessen Standblatt» ein, pro Benutzer und Arbeitsplatz. Ohne laufendes QZ Tray oder ohne Profil bleibt der Button deaktiviert, der Excel-Download funktioniert unverändert.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen lösen: Waffe pro Teilnehmer wählen, erscheint im Standblatt",
+        "beschreibung": "Auf der Seite «Endschiessen lösen» gibt es neu für alle Teilnehmertypen ein Pflichtfeld «Waffe». Bei Mitgliedern ist es mit der Waffe aus den Stammdaten vorbelegt (ein Hinweis zeigt «Aus den Stammdaten übernommen» bzw. «Abweichend von den Stammdaten»); fehlt dort eine Waffe, muss sie gewählt werden. Bei Gästen und Jungschützen bleibt Stgw 90 der Vorschlag. Die Auswahl wird mit der Lösung gespeichert und in der Jahresübersicht angezeigt; die Stammdaten des Mitglieds bleiben unverändert. Im Excel-Standblatt wird der Platzhalter ${waffe} mit der Bezeichnung gefüllt, auch beim Download aus der Übersichtstabelle. Dafür gibt es Migration 047 («Aktualisierung» ausführen); bis dahin läuft die Seite weiter, die Waffe kommt dann nur aus den Stammdaten.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
         "titel": "Endschiessen-Standblatt: Titel mit Jahr und Stichnummern fehlten im Excel",
         "beschreibung": "Im heruntergeladenen Standblatt (Seite «Endschiessen lösen», Button «Standblatt») fehlten der Titel «Endschiessen MSV Wilen» samt Jahr sowie die Beschriftungen «Stichnr. 522» usw. Diese stehen in der Excel-Vorlage in Textfeldern, nicht in Zellen; die bisher verwendete Excel-Bibliothek kann Textfelder nicht lesen und hat sie beim Speichern entfernt, der Platzhalter für das Jahr blieb entsprechend unersetzt. Der Generator bearbeitet die Vorlage jetzt direkt auf Dateiebene: alle Textfelder bleiben erhalten, das Jahr wird eingesetzt, Name, «gelöst»-Markierungen und der Lizenz-Barcode kommen wie bisher an ihre Stelle. Zusätzlich korrigiert: In der Vorlage zeigten beide Schwini-Felder («1. Doppel» und «2.Doppel») denselben Platzhalter, weshalb bei nur einem gelösten Schwini trotzdem beide als «gelöst» erschienen; das Feld «2.Doppel» hat jetzt seinen eigenen Platzhalter.",
         "typ": "fix",

@@ -21,6 +21,13 @@ const Druck = {
             profiles: [
                 { doc_type: 'jm_standblatt', label: 'JM Standblatt', desc: 'Standblatt fuer Jahresmeisterschaft (PDF)', format_fixed: 'A4 Portrait', default_copies: 1 }
             ]
+        },
+        {
+            section: 'Endschiessen',
+            profiles: [
+                // Excel-Vorlage → PDF (ConvertAPI) → QZ Tray; Duplex «Lange Seite» = beidseitig, Bindung an der langen Kante
+                { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt', desc: 'Standblatt aus «Endschiessen loesen» (A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 }
+            ]
         }
     ],
 

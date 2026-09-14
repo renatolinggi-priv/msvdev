@@ -101,7 +101,8 @@ function generateItfBarcodePng(string $nummer, int $imgWidth = 280, int $imgHeig
     }
     $drawBar($wide); $drawSpace($narrow); $drawBar($narrow);
 
-    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_') . '.jpg';
+    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_');
+    rename($tmpFile, $tmpFile . '.jpg'); $tmpFile .= '.jpg'; // Stub umbenennen statt liegen lassen
     imagejpeg($img, $tmpFile, 90);
     imagedestroy($img);
     return $tmpFile;
@@ -134,7 +135,8 @@ if ($barcodeImg) {
 }
 
 // --- DOCX speichern → ConvertAPI → PDF ---
-$tmpDocx = tempnam(sys_get_temp_dir(), 'standblatt_') . '.docx';
+$tmpDocx = tempnam(sys_get_temp_dir(), 'standblatt_');
+rename($tmpDocx, $tmpDocx . '.docx'); $tmpDocx .= '.docx'; // Stub umbenennen statt liegen lassen
 $template->saveAs($tmpDocx);
 
 $tmpPdf = null;

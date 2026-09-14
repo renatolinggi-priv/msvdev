@@ -19,7 +19,8 @@ $page_specific_css = "
     border: none !important;
     padding: 0 !important;
 }
-.erfassung-layout { display: flex; flex-direction: column; gap: 1.25rem; }
+.erfassung-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+.erfassung-form-col, .erfassung-table-col { min-width: 0; }
 .erfassung-form-col .content-background {
     padding: 1.25rem 1.5rem !important;
     background: #fff !important;
@@ -45,70 +46,106 @@ $page_specific_css = "
 #erfassteTabelle thead th:first-child, #erfassteTabelle tbody td:first-child { padding-left: 0.75rem; }
 @media (min-width: 1400px) {
     .erfassung-layout { flex-direction: row; align-items: flex-start; }
-    .erfassung-form-col { flex: 0 0 640px; }
+    .erfassung-form-col { flex: 0 0 clamp(520px, 39%, 600px); }
     .erfassung-table-col { flex: 1 1 auto; min-width: 0; }
 }
 
 /* Abschnitte im Formular: gleiche Sprache wie das Erfassungs-Panel (.shot-section zentral) */
 #stichForm .shot-section { padding: 1rem 0; }
 #stichForm .shot-section.shot-first { padding-top: 0; }
-#stichForm .shot-section-head { margin-bottom: 0.75rem; }
+#stichForm .shot-section-head { margin-bottom: 0.75rem; flex-wrap: wrap; }
+#stichForm .shot-section-title { font-size: 0.8rem; color: #475569; flex-wrap: wrap; }
+#stichForm .shot-hint { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+#stichForm .panel-label { font-size: 0.82rem; color: #475569; }
+#stichForm .form-control, #stichForm .form-select { min-height: 2.5rem; }
+#stichForm .munition-toggle {
+    width: 100%; padding: 0; border: 0; background: transparent; text-align: left;
+}
+#stichForm .munition-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; border-radius: 0.25rem; }
+
+/* Waffenwahl: gleiche Breite und Abstände wie die Mitgliedersuche */
+#stichForm .waffe-field { margin-top: 1rem; }
+#stichForm .waffe-field .panel-label { display: block; margin-bottom: 0.35rem; }
+#waffeSelect {
+    width: 100%; padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+    font-size: 0.875rem; color: #334155; border-radius: 0.375rem;
+}
+#waffeHint { margin-top: 0.35rem; }
+#waffeHint:empty { display: none; }
 
 /* Teilnehmer-Umschalter */
-.typ-switch .btn { font-size: 0.8rem; padding: 0.3rem 0.8rem; }
+.typ-switch .btn { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
 .typ-switch .btn i { font-size: 0.85em; }
 
 /* Stich-Kacheln */
-.stich-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.stich-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 0.65rem; }
 @media (max-width: 575.98px) { .stich-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stich-tile {
-    position: relative;
-    display: flex; flex-direction: column; gap: 0.15rem;
-    padding: 0.55rem 0.7rem 0.5rem 2.1rem;
-    border: 1.5px solid #dee2e6; border-radius: 0.5rem; background: #fff;
-    cursor: pointer; user-select: none;
+    position: relative; container-type: inline-size;
+    display: flex; flex-direction: column;
+    border: 1px solid #dbe2ea; border-radius: 0.65rem; background: #fff;
+    user-select: none;
     transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
 }
 .stich-tile:hover { border-color: #b6c6d9; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.stich-tile .form-check-input {
-    position: absolute; left: 0.65rem; top: 0.7rem; margin: 0; cursor: pointer;
+.stich-tile:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; }
+.stich-tile-main {
+    position: relative; display: flex; flex: 1; flex-direction: column; gap: 0.55rem;
+    padding: 0.85rem 0.75rem 0.75rem; margin: 0; cursor: pointer;
 }
-.stich-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-width: 0; }
-.stich-tile-name { font-size: 0.82rem; font-weight: 600; color: #1e293b; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stich-tile-meta { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.7rem; color: #94a3b8; white-space: nowrap; }
-.stich-tile-meta .stich-price { font-weight: 600; color: #475569; }
-.stich-tile.selected { background: #f0fdf4; border-color: #86efac; }
+.stich-tile .form-check-input {
+    position: absolute; left: 0.75rem; top: 0.95rem; margin: 0; cursor: pointer;
+}
+.stich-tile-head { display: flex; min-width: 0; padding-left: 1.5rem; }
+.stich-tile:has(.stich-tile-partner) .stich-tile-head { padding-right: 4rem; }
+.stich-tile-name { font-size: 0.9rem; font-weight: 600; color: #1e293b; line-height: 1.4; overflow-wrap: anywhere; }
+.stich-tile-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.5rem; margin-top: auto; font-size: 0.78rem; color: #64748b; }
+.stich-tile-meta .stich-price { font-weight: 600; color: #334155; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stich-tile.selected { background: #f0fdf4; border-color: #86cfa2; }
+.stich-tile .form-check-input:checked { background-color: #15803d; border-color: #15803d; }
 .stich-tile.selected .stich-tile-meta .stich-price { color: #15803d; }
 .stich-tile-partner {
-    display: inline-flex; align-items: center; gap: 0.3rem; flex: 0 0 auto;
-    font-size: 0.68rem; color: #64748b; cursor: pointer; margin: 0;
+    position: absolute; top: 0.6rem; right: 0.5rem;
+    display: flex; align-items: center; gap: 0.3rem;
+    font-size: 0.75rem; color: #475569; cursor: pointer; margin: 0;
+    padding: 0.25rem; line-height: 1.5;
 }
+.stich-tile-partner .partner-icon { display: none; }
 .stich-tile.selected .stich-tile-partner:has(:checked) { color: #15803d; font-weight: 600; }
-.stich-tile-partner .form-check-input { position: static; margin: 0; width: 1.6em; height: 0.9em; }
+.stich-tile-partner .form-check-input { position: static; margin: 0; width: 1.1em; height: 1.1em; flex-shrink: 0; }
+@container (max-width: 155px) {
+    .stich-tile:has(.stich-tile-partner) .stich-tile-head { padding-right: 2.5rem; }
+    .stich-tile-partner .partner-text { display: none; }
+    .stich-tile-partner .partner-icon { display: inline; }
+}
 
 /* Zusatzmunition */
-.muni-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0; }
+.muni-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; }
 .muni-row + .muni-row { border-top: 1px solid #f1f5f9; }
 .muni-row .form-check { margin: 0; flex: 1 1 auto; }
-.muni-row .form-check-label { font-size: 0.82rem; }
+.muni-row .form-check-label { font-size: 0.85rem; }
 .muni-row .muni-price { font-size: 0.78rem; color: #475569; font-weight: 600; min-width: 5.5rem; text-align: right; }
 .muni-row .muni-input { width: 5.5rem; text-align: center; }
 .muni-row .muni-label { flex: 1 1 auto; font-size: 0.82rem; }
 
 /* Total-Leiste */
 .total-actions-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-    margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid #eef2f7;
+    display: flex; flex-direction: column; gap: 1rem;
+    margin-top: 1rem; padding: 1rem; border: 1px solid #dbe5f1; border-radius: 0.75rem;
+    background: #f4f7fb;
 }
 .total-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.total-kpi { display: flex; flex-direction: column; line-height: 1.1; }
-.total-kpi small { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; font-weight: 600; }
-.total-kpi strong { font-size: 0.95rem; color: #1e293b; }
+.total-kpi { display: flex; flex-direction: column; gap: 0.25rem; line-height: 1.2; }
+.total-kpi small { font-size: 0.72rem; color: #64748b; font-weight: 600; }
+.total-kpi strong { font-size: 1rem; color: #1e293b; font-variant-numeric: tabular-nums; }
+.total-price-block { margin-left: auto; text-align: right; }
 .total-amount {
-    font-size: 1.05rem; font-weight: 700; color: #fff; background: var(--secondary-color, #0d6efd);
-    border-radius: 999px; padding: 0.25rem 0.9rem;
+    font-size: 1.45rem; font-weight: 700; color: #1e293b; white-space: nowrap;
+    font-variant-numeric: tabular-nums; line-height: 1.2;
 }
-.action-buttons { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.action-buttons .btn { min-height: 2.6rem; padding: 0.5rem 0.75rem; }
+#btnSave { margin-left: auto; min-width: 8rem; font-weight: 600; }
 
 /* Übersichtstabelle */
 #erfassteTabelle th { font-size: 0.72rem; vertical-align: bottom; padding: 0.4rem 0.35rem; white-space: nowrap; }
@@ -118,7 +155,9 @@ $page_specific_css = "
     height: 92px; min-width: 24px; max-width: 28px; padding: 0.3rem 0.15rem !important;
     text-transform: none;
 }
-#erfassteTabelle tbody td { vertical-align: middle; padding: 0.35rem 0.4rem; font-size: 0.82rem; }
+#erfassteTabelle tbody td { vertical-align: middle; padding: 0.65rem 0.45rem; font-size: 0.85rem; border-bottom: 1px solid #eef2f7; }
+#erfassteTabelle th, #erfassteTabelle td { border-right: 0; }
+#erfassteTabelle thead th { color: #475569; background-color: #f8fafc; }
 #erfassteTabelle td.check-cell { padding-left: 0.15rem; padding-right: 0.15rem; }
 #erfassteTabelle td.waffe-cell { white-space: nowrap; font-size: 0.75rem; color: #64748b; }
 #erfassteTabelle td.name-cell { white-space: nowrap; font-weight: 500; text-align: left; }
@@ -135,7 +174,7 @@ $page_specific_css = "
 #erfassteTabelle td.muni-cell .muni-tag {
     display: inline-block; padding: 0.05rem 0.4rem; border-radius: 4px; background: #f1f5f9; margin-right: 0.25rem;
 }
-#erfassteTabelle td.total-cell { text-align: right; font-weight: 600; white-space: nowrap; }
+#erfassteTabelle td.total-cell { text-align: right; font-weight: 700; white-space: nowrap; color: #1e293b; font-variant-numeric: tabular-nums; }
 #erfassteTabelle tbody tr.row-selected { background: rgba(74,144,217,0.08); box-shadow: inset 3px 0 0 #4a90d9; }
 #erfassteTabelle .dropdown-toggle::after { display: none; }
 #erfassteTabelle .dropdown-menu { font-size: 0.85rem; }
@@ -151,17 +190,62 @@ $page_specific_css = "
 #adminPanel .def-edit { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.85rem 1rem; }
 
 /* Select2 an form-select-sm angleichen */
-.select2-container--bootstrap-5 .select2-selection--single {
-    font-size: 0.875rem; min-height: calc(1.5em + 0.5rem + 2px); padding: 0.25rem 0.5rem;
+#stichForm .select2-container--bootstrap-5 .select2-selection--single {
+    font-size: 0.875rem; min-height: 2.5rem; padding: 0.5rem 0.75rem;
 }
 .select2-container { z-index: 1065; }
 
+/* Kompakter Formularbereich auf Desktop und Tablet */
+@media (min-width: 768px) {
+    .erfassung-form-col .content-background { padding: 1rem 1.5rem !important; }
+    #stichForm .shot-section { padding: 0.65rem 0; }
+    #stichForm .shot-section-head { margin-bottom: 0.45rem; }
+    #stichForm .munition-toggle[aria-expanded='false'] { margin-bottom: 0; }
+    #stichForm .typ-switch.mb-3 { margin-bottom: 0.5rem !important; }
+    #stichForm .typ-switch .btn { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+    #stichForm .waffe-field { margin-top: 0.6rem; }
+    #stichForm .form-control, #stichForm .form-select { min-height: 2.25rem; }
+    #stichForm .select2-container--bootstrap-5 .select2-selection--single {
+        min-height: 2.25rem; padding-top: 0.35rem; padding-bottom: 0.35rem;
+    }
+    #waffeSelect { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+    #stichForm .stich-grid { gap: 0.5rem; }
+    #stichForm .stich-tile-main { padding-top: 0.65rem; padding-bottom: 0.55rem; gap: 0.35rem; }
+    #stichForm .stich-tile .form-check-input { top: 0.75rem; }
+    #stichForm .stich-tile-partner { top: 0.4rem; }
+    #stichForm .total-actions-row { margin-top: 0.5rem; padding: 0.75rem; gap: 0.65rem; }
+    #stichForm .action-buttons .btn { min-height: 2.25rem; padding-top: 0.35rem; padding-bottom: 0.35rem; }
+}
+
 @media (max-width: 767.98px) {
+    .erfassung-layout { gap: 1rem; }
+    .erfassung-form-col .content-background { padding: 1rem !important; }
+    #stichForm .typ-switch { display: flex; width: 100%; }
+    #stichForm .typ-switch .btn { display: flex; align-items: center; justify-content: center; padding: 0.5rem; min-height: 2.75rem; }
+    #stichForm .typ-switch .btn i { display: none; }
+    #stichForm .total-actions-row {
+        position: sticky; bottom: 0.5rem; bottom: max(0.5rem, env(safe-area-inset-bottom)); z-index: 10;
+        padding: 0.85rem; box-shadow: 0 4px 18px rgba(15,23,42,0.12);
+    }
+    .total-bar { gap: 0.75rem; }
+    .total-amount { font-size: 1.25rem; }
+    .action-buttons .btn { min-height: 2.75rem; }
+    #btnSave { min-width: 0; flex: 1; }
+    .muni-row { flex-wrap: wrap; gap: 0.5rem; }
+    .muni-row .muni-label { flex-basis: 100%; }
+    .muni-row .muni-price { margin-left: auto; }
+    .erfassung-table-col .table-title { gap: 0.75rem; }
+    #mobileCardsEndsch .mobile-card-header { padding: 1rem; }
     .erfassung-table-col .desktop-table-container { display: none !important; }
     .erfassung-table-col .mobile-cards-container { display: flex !important; }
     .erfassung-table-col .table-responsive { max-height: none; }
 }
 @media (min-width: 768px) { .erfassung-table-col .mobile-cards-container { display: none !important; } }
+@media (max-width: 359.98px) {
+    .action-buttons .btn { padding: 0.5rem; white-space: nowrap; }
+    #btnStandblatt i, #btnSave > i { display: none; }
+    #btnStandblatt span { margin-left: 0 !important; }
+}
 ";
 
 include 'header.inc.php';
@@ -229,13 +313,16 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
                     <label for="gastGeburtsdatum" class="panel-label">Geburtsdatum</label>
                     <input type="date" class="form-control form-control-sm" id="gastGeburtsdatum">
                   </div>
-                  <div class="col-6 col-md-3">
-                    <label for="gastWaffe" class="panel-label">Waffe</label>
-                    <select id="gastWaffe" class="form-select form-select-sm">
-                      <option value="">– wählen –</option>
-                    </select>
-                  </div>
                 </div>
+              </div>
+
+              <!-- Waffe: für alle Teilnehmertypen, Pflichtfeld (landet im Standblatt als ${waffe}) -->
+              <div class="waffe-field">
+                <label for="waffeSelect" class="panel-label">Waffe</label>
+                <select id="waffeSelect" class="form-select form-select-sm" aria-describedby="waffeHint">
+                  <option value="">– Waffe wählen –</option>
+                </select>
+                <div class="shot-hint" id="waffeHint"></div>
               </div>
             </div>
           </div>
@@ -270,13 +357,13 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
           <!-- Zusatzmunition -->
           <div class="shot-section">
-            <div class="shot-section-head" role="button" data-bs-toggle="collapse" data-bs-target="#munitionCollapse" aria-expanded="false" aria-controls="munitionCollapse">
+            <button type="button" class="shot-section-head munition-toggle" data-bs-toggle="collapse" data-bs-target="#munitionCollapse" aria-expanded="false" aria-controls="munitionCollapse">
               <span class="shot-section-title">
                 <i class="bi bi-chevron-right" id="munitionChevron"></i>Zusätzliche Munition
                 <span class="shot-hint" id="munitionProSchussText"></span>
               </span>
               <span class="shot-total" id="munitionBadge" hidden>0</span>
-            </div>
+            </button>
             <div class="collapse" id="munitionCollapse">
               <div class="shot-section-body">
                 <div class="muni-row">
@@ -313,16 +400,19 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <div class="total-kpi"><small>Stiche</small><strong id="totalCount">0</strong></div>
               <div class="total-kpi"><small>Schuss</small><strong id="totalShots">0</strong></div>
               <div class="total-kpi"><small>Zusatz</small><strong id="totalZusatzShots">0</strong></div>
-              <span class="total-amount" id="totalPrice">CHF 0.00</span>
+              <div class="total-kpi total-price-block"><small>Gesamtbetrag</small><span class="total-amount" id="totalPrice" aria-live="polite" aria-atomic="true">CHF 0.00</span></div>
             </div>
             <div class="action-buttons">
               <button type="button" id="btnStandblatt" class="btn btn-outline-info btn-sm" disabled data-tooltip="Standblatt (Excel) für diesen Teilnehmer">
-                <i class="bi bi-file-earmark-spreadsheet"></i><span class="d-none d-lg-inline ms-1">Standblatt</span>
+                <i class="bi bi-file-earmark-spreadsheet"></i><span class="ms-1">Standblatt</span>
               </button>
-              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm" data-tooltip="Formular zurücksetzen">
+              <button type="button" id="btnStandblattDruck" class="btn btn-outline-info btn-sm" disabled data-tooltip="QZ Tray nicht verbunden" aria-label="Standblatt direkt drucken">
+                <i class="bi bi-printer"></i>
+              </button>
+              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm" data-tooltip="Formular zurücksetzen" aria-label="Formular zurücksetzen">
                 <i class="bi bi-arrow-counterclockwise"></i>
               </button>
-              <button type="submit" id="btnSave" class="btn btn-outline-primary btn-sm">
+              <button type="submit" id="btnSave" class="btn btn-primary btn-sm">
                 <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpinner"></span>
                 <i class="bi bi-save me-1"></i>Speichern
               </button>
@@ -336,7 +426,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       <div class="erfassung-table-col">
         <div class="table-wrapper">
           <div class="table-title">
-            <span><i class="bi bi-table me-2"></i>Gelöst <span class="badge bg-light text-dark border ms-1" id="erfasstCount">0</span></span>
+            <span><i class="bi bi-table me-2"></i>Erfasste Teilnehmer <span class="badge bg-light text-dark border ms-1" id="erfasstCount">0</span></span>
             <div class="d-flex gap-2">
               <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm" data-tooltip="Abrechnung als PDF">
                 <i class="bi bi-file-earmark-pdf me-1"></i>Abrechnung
@@ -464,6 +554,11 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- QZ Tray Direktdruck (Profil «Endschiessen Standblatt» in der Drucksteuerung) -->
+<script src="js/lib/rsvp.min.js"></script>
+<script src="js/lib/sha-256.min.js"></script>
+<script src="js/lib/qz-tray.js"></script>
+<script src="js/print-manager.js?v=<?php echo @filemtime(__DIR__ . '/js/print-manager.js') ?: '1'; ?>"></script>
 <script>
 (function () {
   'use strict';
@@ -486,6 +581,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     alleStiche: [],           // inkl. inaktive (Admin)
     spezial: { ...PREIS_DEFAULTS },
     waffen: [],
+    mitgliedWaffe: new Map(), // Mitglied-ID -> WaffenID aus den Stammdaten (Vorbelegung des Waffen-Dropdowns)
     uebersicht: [],           // Zeilen der Jahresübersicht
     erfassteMitglieder: new Set(), // Mitglieder-IDs, die im Jahr schon gelöst haben (im Select2 ausgeblendet)
     aktuelleEntity: null,     // { typ, id } für Zeilenmarkierung
@@ -555,18 +651,52 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       $id('gastGeburtsdatum').value = '';
       $id('gastId').value = '';
       $id('gastHint').hidden = true;
+      // Waffe kommt beim Wählen des Mitglieds aus den Stammdaten (setWaffeAusAuswahl)
+      if (!$id('mitgliedSelect').value) $id('waffeSelect').value = '';
     } else {
       $('#mitgliedSelect').val('').trigger('change.select2');
-      if (!$id('gastWaffe').value) setDefaultWaffe();
+      if (!keepSelection) setDefaultWaffe();
     }
+    updateWaffeHint();
     renderStiche(keepSelection);
     recalcTotals();
   }
 
   function setDefaultWaffe() {
     const stgw90 = state.waffen.find(w => /stgw\s*90/i.test(w.Bezeichnung || ''));
-    if (stgw90) $id('gastWaffe').value = stgw90.ID;
+    $id('waffeSelect').value = stgw90 ? String(stgw90.ID) : '';
   }
+
+  function waffeName(id) {
+    const w = state.waffen.find(x => Number(x.ID) === Number(id));
+    return w ? w.Bezeichnung : '?';
+  }
+
+  /** Waffe nach dem Laden einer Auswahl setzen: gespeicherte Waffe > Stammdaten (Mitglied) > Standard (Gast). */
+  function setWaffeAusAuswahl(j) {
+    const sel = $id('waffeSelect');
+    if (j && j.success && j.waffen_id) { sel.value = String(j.waffen_id); }
+    else if (state.typ === 'mitglied') {
+      const stamm = state.mitgliedWaffe.get(Number($id('mitgliedSelect').value)) || null;
+      sel.value = stamm ? String(stamm) : '';
+    } else if (!sel.value) { setDefaultWaffe(); }
+    if (sel.value !== '' && sel.selectedIndex < 0) sel.value = ''; // unbekannte ID
+    updateWaffeHint();
+  }
+
+  function updateWaffeHint() {
+    const sel = $id('waffeSelect'), hint = $id('waffeHint');
+    if (state.typ !== 'mitglied') { hint.textContent = sel.value ? '' : 'Bitte Waffe wählen'; return; }
+    const mid = Number($id('mitgliedSelect').value);
+    if (!mid) { hint.textContent = ''; return; }
+    const stamm = state.mitgliedWaffe.get(mid) || null;
+    if (!sel.value) hint.textContent = stamm ? 'Bitte Waffe wählen' : 'Keine Waffe in den Stammdaten hinterlegt – bitte wählen';
+    else if (!stamm) hint.textContent = 'Nicht in den Stammdaten hinterlegt';
+    else if (Number(sel.value) !== stamm) hint.textContent = 'Abweichend von den Stammdaten (' + waffeName(stamm) + ')';
+    else hint.textContent = '';
+  }
+
+  $id('waffeSelect').addEventListener('change', () => { updateWaffeHint(); recalcTotals(); });
 
   document.querySelectorAll('input[name="typ"]').forEach(r => r.addEventListener('change', () => {
     setTyp(r.value);
@@ -608,17 +738,18 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
       const partner = (s.code === 'ZABIG' && state.typ === 'mitglied') ? `
         <label class="stich-tile-partner" for="partner_zabig" data-tooltip="Zabig mit Partner: ${fmtCHF(preis('partner_zabig'))}">
-          <input class="form-check-input partner-check" type="checkbox" role="switch" id="partner_zabig" data-stich-id="${s.id}" ${partnerVorher ? 'checked' : ''}>Partner
+          <input class="form-check-input partner-check" type="checkbox" id="partner_zabig" aria-label="Zabig mit Partner" data-stich-id="${s.id}" ${partnerVorher ? 'checked' : ''}><span class="partner-text">Partner</span><i class="bi bi-people partner-icon" aria-hidden="true"></i>
         </label>` : '';
 
-      const tile = document.createElement('label');
+      const tile = document.createElement('div');
       tile.className = 'stich-tile';
-      tile.setAttribute('for', 'stich_' + s.id);
       tile.dataset.stichId = s.id;
       tile.innerHTML = `
-        <input class="form-check-input stich-check" type="checkbox" value="${s.id}" id="stich_${s.id}" data-code="${esc(s.code)}" data-shots="${shots}" ${vorher.has(String(s.id)) ? 'checked' : ''}>
-        <span class="stich-tile-head"><span class="stich-tile-name">${esc(s.name)}</span>${partner}</span>
-        <span class="stich-tile-meta"><span>${shots} Schuss</span><span class="stich-price" id="price_${s.id}">${preisText}</span></span>`;
+        <label class="stich-tile-main" for="stich_${s.id}">
+          <input class="form-check-input stich-check" type="checkbox" value="${s.id}" id="stich_${s.id}" data-code="${esc(s.code)}" data-shots="${shots}" ${vorher.has(String(s.id)) ? 'checked' : ''}>
+          <span class="stich-tile-head"><span class="stich-tile-name">${esc(s.name)}</span></span>
+          <span class="stich-tile-meta"><span>${shots} Schuss</span><span class="stich-price" id="price_${s.id}">${preisText}</span></span>
+        </label>${partner}`;
       list.appendChild(tile);
     });
     updateTiles();
@@ -649,11 +780,6 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       updateTiles(); recalcTotals();
     }
   });
-  // Klick auf den Partner-Schalter darf die Kachel nicht mit-toggeln
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.stich-tile-partner')) e.stopPropagation();
-  }, true);
-
   $id('btnSelectAll').addEventListener('click', () => {
     const alle = [...document.querySelectorAll('.stich-check')];
     const alleAn = alle.length > 0 && alle.every(cb => cb.checked);
@@ -698,7 +824,10 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     $id('munitionBadge').textContent = zusatzSchuss + ' Schuss · ' + fmtCHF(zusatzPreis);
 
     const hatPerson = state.typ === 'mitglied' ? !!$id('mitgliedSelect').value : $id('gastName').value.trim() !== '';
-    $id('btnStandblatt').disabled = !(hatPerson && checked.length > 0);
+    const hatWaffe = !!$id('waffeSelect').value;
+    const standblattMoeglich = hatPerson && hatWaffe && checked.length > 0;
+    $id('btnStandblatt').disabled = !standblattMoeglich;
+    $id('btnStandblattDruck').disabled = !(standblattMoeglich && printReady());
   }
 
   document.querySelectorAll('.zusatz-check').forEach(cb => cb.addEventListener('change', recalcTotals));
@@ -719,7 +848,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     $id('gastName').value = '';
     $id('gastGeburtsdatum').value = '';
     $id('gastId').value = '';
-    $id('gastWaffe').value = '';
+    $id('waffeSelect').value = '';
     $id('gastHint').hidden = true;
     $id('zahlung_karte').checked = true;
     resetZusatz();
@@ -744,6 +873,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       });
       if (zusatzListe().length) new bootstrap.Collapse($id('munitionCollapse'), { toggle: false }).show();
     }
+    setWaffeAusAuswahl(j);
     updateTiles(); recalcTotals();
   }
 
@@ -774,7 +904,6 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       $id('gastName').value = j.gast_name;
       if (j.typ !== state.typ) setTyp(j.typ, { keepSelection: true });
       $id('gastGeburtsdatum').value = j.geburtsdatum || '';
-      if (j.waffen_id) $id('gastWaffe').value = j.waffen_id;
       $id('gastHint').textContent = 'Bereits erfasst – Änderungen überschreiben die Auswahl';
       $id('gastHint').hidden = false;
       state.aktuelleEntity = { typ: 'gast', id: Number(j.gast_id) };
@@ -805,7 +934,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       stiche: [...document.querySelectorAll('.stich-check:checked')].map(cb => cb.value),
       zahlungsmethode: document.querySelector('input[name="zahlungsmethode"]:checked').value,
       zabig_partner: !!($id('partner_zabig') && $id('partner_zabig').checked),
-      zusatz_schuesse: zusatzListe()
+      zusatz_schuesse: zusatzListe(),
+      waffen_id: $id('waffeSelect').value || undefined
     };
     if (typ === 'mitglied') {
       body.mitglied_id = $id('mitgliedSelect').value;
@@ -814,10 +944,10 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       body.gast_name = $id('gastName').value.trim();
       body.gast_id = $id('gastId').value || undefined;
       body.gast_geburtsdatum = typ === 'js' ? $id('gastGeburtsdatum').value : '';
-      body.waffen_id = $id('gastWaffe').value || undefined;
       if (!body.gast_name) { msvToast('Bitte den Namen eingeben', 'warning'); $id('gastName').focus(); return; }
       if (typ === 'js' && !body.gast_geburtsdatum) { msvToast('Bitte das Geburtsdatum eingeben', 'warning'); $id('gastGeburtsdatum').focus(); return; }
     }
+    if (body.stiche.length && !body.waffen_id) { msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus(); return; }
     if (!body.stiche.length && !body.zusatz_schuesse.length) {
       const r = await msvConfirm('Es ist kein Stich gewählt. Bestehende Auswahl dieses Teilnehmers wird geleert.', 'Auswahl leeren', 'Ja, leeren');
       if (!r.isConfirmed) return;
@@ -921,7 +1051,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="Aktionen"><i class="bi bi-three-dots"></i></button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item act-edit" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-pencil me-2"></i>Bearbeiten</a></li>
-                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Standblatt</a></li>
+                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Standblatt</a></li>
+                <li><a class="dropdown-item act-print${printReady() ? '' : ' disabled'}" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}" data-tooltip="${printReady() ? 'Direktdruck über QZ Tray' : 'QZ Tray nicht verbunden oder kein Druckprofil'}"><i class="bi bi-printer me-2"></i>Standblatt drucken</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item act-delete text-danger" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-trash me-2"></i>Löschen</a></li>
               </ul>
@@ -936,11 +1067,18 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   document.addEventListener('click', async (e) => {
     const edit = e.target.closest('.act-edit');
     const stand = e.target.closest('.act-standblatt');
+    const prt = e.target.closest('.act-print');
     const del = e.target.closest('.act-delete');
-    if (!edit && !stand && !del) return;
+    if (!edit && !stand && !prt && !del) return;
     e.preventDefault();
-    const a = edit || stand || del;
+    const a = edit || stand || prt || del;
     const typ = a.dataset.typ, entityId = a.dataset.entityId, name = a.dataset.name;
+
+    if (prt) {
+      if (!printReady()) { msvToast('QZ Tray nicht verbunden oder kein Druckprofil «Endschiessen Standblatt»', 'warning'); return; }
+      await printStandblatt({ typ, entityId, name, stiche: a.dataset.stiche || '', waffenId: a.dataset.waffeId || '' });
+      return;
+    }
 
     if (edit) {
       if (typ === 'mitglied') {
@@ -954,7 +1092,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (stand) { await downloadStandblatt({ typ, entityId, name, stiche: a.dataset.stiche || '' }); return; }
+    if (stand) { await downloadStandblatt({ typ, entityId, name, stiche: a.dataset.stiche || '', waffenId: a.dataset.waffeId || '' }); return; }
     if (del) {
       const r = await msvConfirmDelete(name);
       if (!r.isConfirmed) return;
@@ -971,10 +1109,18 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   // =========================================================================
   //  Standblatt / Abrechnung
   // =========================================================================
-  async function downloadStandblatt({ typ, entityId, name, stiche }) {
+  function standblattUrl({ typ, entityId, name, stiche, waffenId = '', format = '' }) {
     const jahr = $id('yearSelect').value;
     let url = `endschloesen/generate_standblatt.php?jahr=${encodeURIComponent(jahr)}&stiche=${encodeURIComponent(stiche)}`;
     url += typ === 'mitglied' ? `&mitglied_id=${encodeURIComponent(entityId)}` : `&gast_name=${encodeURIComponent(name)}`;
+    if (waffenId) url += `&waffen_id=${encodeURIComponent(waffenId)}`;
+    if (format) url += `&format=${encodeURIComponent(format)}`;
+    return url;
+  }
+
+  async function downloadStandblatt({ typ, entityId, name, stiche, waffenId = '' }) {
+    const jahr = $id('yearSelect').value;
+    const url = standblattUrl({ typ, entityId, name, stiche, waffenId });
     try {
       const r = await fetch(url);
       if (!r.ok) throw new Error();
@@ -992,13 +1138,110 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const btn = this, orig = btn.innerHTML;
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     const stiche = gewaehlteCodes().join(',');
-    if (state.typ === 'mitglied') {
-      const opt = $id('mitgliedSelect').selectedOptions[0];
-      await downloadStandblatt({ typ: 'mitglied', entityId: $id('mitgliedSelect').value, name: opt ? opt.textContent : 'Mitglied', stiche });
+    const waffenId = $id('waffeSelect').value;
+    if (!waffenId) {
+      msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus();
     } else {
-      await downloadStandblatt({ typ: 'gast', entityId: $id('gastId').value, name: $id('gastName').value.trim(), stiche });
+      await downloadStandblatt(aktuellerTeilnehmer({ stiche, waffenId }));
     }
     btn.disabled = false; btn.innerHTML = orig; recalcTotals();
+  });
+
+  /** Teilnehmer-Parameter (typ, entityId, name) aus dem Formular, ergänzt um weitere Felder. */
+  function aktuellerTeilnehmer(extra = {}) {
+    if (state.typ === 'mitglied') {
+      const opt = $id('mitgliedSelect').selectedOptions[0];
+      return { typ: 'mitglied', entityId: $id('mitgliedSelect').value, name: opt ? opt.textContent : 'Mitglied', ...extra };
+    }
+    return { typ: 'gast', entityId: $id('gastId').value, name: $id('gastName').value.trim(), ...extra };
+  }
+
+  // =========================================================================
+  //  Direktdruck über QZ Tray (Profil doc_type «endschiessen_standblatt», Drucksteuerung)
+  //  Duplex/Kopien/Farbe kommen aus dem Profil; die XLSX wird serverseitig zu PDF gewandelt.
+  // =========================================================================
+  let pm = null;          // PrintManager
+  let printConfig = null; // Druckprofil des Benutzers/Arbeitsplatzes
+
+  function printReady() {
+    return !!(pm && pm.connected && printConfig && printConfig.printer_name);
+  }
+
+  function updatePrintUI() {
+    const btn = $id('btnStandblattDruck');
+    const verbunden = !!(pm && pm.connected);
+    btn.dataset.tooltip = !verbunden ? 'QZ Tray nicht verbunden'
+      : !printConfig || !printConfig.printer_name ? 'Kein Druckprofil «Endschiessen Standblatt» (Drucksteuerung)'
+      : 'Standblatt direkt drucken (' + printConfig.printer_name + (printConfig.duplex ? ', beidseitig' : '') + ')';
+    recalcTotals();
+    if (state.uebersicht.length) renderUebersicht();
+  }
+
+  async function initPrint() {
+    if (typeof PrintManager === 'undefined' || typeof qz === 'undefined') return;
+    pm = new PrintManager();
+    pm.onStatusChange = () => updatePrintUI();
+    try {
+      await pm.connect();
+    } catch (err) {
+      console.warn('QZ Tray nicht verfügbar:', err && err.message ? err.message : err);
+      pm = null; updatePrintUI(); return;
+    }
+    try {
+      const j = await $.getJSON('drucksteuerung/profiles_api.php', { doc_type: 'endschiessen_standblatt' });
+      if (j.success && j.data && j.data.length) printConfig = j.data[0];
+    } catch (err) { console.error('Druckprofil laden fehlgeschlagen:', err); }
+    updatePrintUI();
+  }
+
+  async function printStandblatt({ typ, entityId, name, stiche, waffenId = '' }) {
+    if (!printReady()) return false;
+    const jahr = $id('yearSelect').value;
+    const dateiname = `Endschiessen_${jahr}_${name.replace(/[^a-zA-ZäöüÄÖÜ0-9]/g, '_')}.pdf`;
+    const copies = parseInt(printConfig.copies, 10) || 1;
+    try {
+      const r = await fetch(standblattUrl({ typ, entityId, name, stiche, waffenId, format: 'pdf' }));
+      if (!r.ok) throw new Error((await r.text()) || 'PDF-Generierung fehlgeschlagen');
+      const blob = await r.blob();
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      await pm.printPixel(
+        printConfig.printer_name,
+        [{ type: 'pdf', format: 'base64', data: base64 }],
+        {
+          copies,
+          orientation: 'landscape',            // Vorlage ist A4 quer
+          size: { width: 210, height: 297 },   // QZ liest die Seitengrösse nicht aus dem PDF
+          units: 'mm',
+          margins: { top: 0, right: 0, bottom: 0, left: 0 },
+          colorType:   printConfig.color_mode || 'blackwhite',
+          duplex:      printConfig.duplex || false, // '' | 'long-edge' | 'short-edge' aus dem Profil
+          rasterize:   false,
+          jobName:     `Endschiessen Standblatt ${name} ${jahr}`,
+        }
+      );
+      await pm.logJob('endschiessen_standblatt', printConfig.printer_name, dateiname, 'gesendet', copies);
+      msvToast(`Standblatt ${name} an ${printConfig.printer_name} gesendet`, 'success');
+      return true;
+    } catch (err) {
+      console.error('Druckfehler:', err);
+      await pm.logJob('endschiessen_standblatt', printConfig.printer_name, dateiname, 'fehler', copies, err && err.message ? err.message : String(err));
+      msvToast('Druckfehler: ' + (err && err.message ? err.message : err), 'error');
+      return false;
+    }
+  }
+
+  $id('btnStandblattDruck').addEventListener('click', async function () {
+    const btn = this, orig = btn.innerHTML;
+    const waffenId = $id('waffeSelect').value;
+    if (!waffenId) { msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus(); return; }
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    await printStandblatt(aktuellerTeilnehmer({ stiche: gewaehlteCodes().join(','), waffenId }));
+    btn.innerHTML = orig; recalcTotals();
   });
 
   $id('btnGeneratePDF').addEventListener('click', async function () {
@@ -1195,7 +1438,10 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const sel = $id('mitgliedSelect');
     try {
       const j = await api('list_mitglieder');
-      (j.data || []).forEach(m => sel.add(new Option(`${(m.Nachname || '').trim()} ${(m.Vorname || '').trim()}`.trim(), m.id)));
+      (j.data || []).forEach(m => {
+        sel.add(new Option(`${(m.Nachname || '').trim()} ${(m.Vorname || '').trim()}`.trim(), m.id));
+        state.mitgliedWaffe.set(Number(m.id), m.waffe_id ? Number(m.waffe_id) : null);
+      });
     } catch (e) { msvToast('Mitglieder konnten nicht geladen werden', 'error'); }
     // Bereits erfasste Mitglieder ausblenden – ausser dem gerade gewählten (Bearbeiten aus der Tabelle)
     const defaultMatcher = $.fn.select2.defaults.defaults.matcher;
@@ -1211,7 +1457,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     try {
       const j = await api('list_waffen');
       state.waffen = j.data || [];
-      const sel = $id('gastWaffe');
+      const sel = $id('waffeSelect');
       state.waffen.forEach(w => sel.add(new Option(`${w.Bezeichnung} (${w.Kategorie})`, w.ID)));
     } catch (e) { /* ohne Waffenliste weiterarbeiten */ }
   }
@@ -1236,6 +1482,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     if (!state.stiche.length) msvToast('Keine aktiven Stiche definiert', 'warning');
     setTyp('mitglied');
     await loadUebersicht();
+    initPrint(); // QZ Tray im Hintergrund verbinden (ohne QZ bleibt der Druck-Button deaktiviert)
   })();
 })();
 </script>

@@ -123,6 +123,31 @@ function ladeZusatz(mysqli $conn, string $spalte, int $id, int $jahr): array
     return rows(q($conn, "SELECT typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE $spalte = ? AND jahr = ?", 'ii', [$id, $jahr]));
 }
 
+/**
+ * Spalte endstich_selection.waffen_id vorhanden? (Migration 047)
+ * Bis die Migration gelaufen ist, arbeitet die API ohne die Spalte weiter
+ * (Waffe dann nur aus den Stammdaten).
+ */
+function endschHatWaffeSpalte(mysqli $conn): bool
+{
+    static $hat = null;
+    if ($hat === null) {
+        $res = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'waffen_id'");
+        $hat = $res ? $res->num_rows > 0 : false;
+    }
+    return $hat;
+}
+
+/** Waffen-Stammdaten als Map ID => ['bezeichnung' => …, 'kategorie' => …]. */
+function endschWaffenMap(mysqli $conn): array
+{
+    $map = [];
+    foreach (rows(q($conn, "SELECT ID AS id, Bezeichnung AS bezeichnung, Kategorie AS kategorie FROM Waffen")) as $w) {
+        $map[(int)$w['id']] = $w;
+    }
+    return $map;
+}
+
 // ---------------------------------------------------------------------------
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -233,12 +258,14 @@ try {
                 jsonResponse(true, $zusatz);
             }
 
-            $sel = rows(q($conn, "SELECT es.stich_id, es.zahlungsmethode, es.sie_und_er, ed.code
+            $waffeCol = endschHatWaffeSpalte($conn) ? 'es.waffen_id' : 'NULL AS waffen_id';
+            $sel = rows(q($conn, "SELECT es.stich_id, es.zahlungsmethode, es.sie_und_er, $waffeCol, ed.code
                                   FROM endstich_selection es JOIN endstich_definition ed ON ed.id = es.stich_id
                                   WHERE es.$spalte = ? AND es.jahr = ?", 'ii', [$id, $jahr]));
             $ids = [];
             $zahlung = null;
             $zabigPartner = false;
+            $selWaffe = null;
             foreach ($sel as $s) {
                 $ids[] = (int)$s['stich_id'];
                 if (!empty($s['zahlungsmethode'])) {
@@ -247,7 +274,13 @@ try {
                 if ($s['code'] === 'ZABIG' && (int)$s['sie_und_er'] === 1) {
                     $zabigPartner = true;
                 }
+                if (!empty($s['waffen_id'])) {
+                    $selWaffe = (int)$s['waffen_id'];
+                }
             }
+            // Bei der Lösung gewählte Waffe hat Vorrang vor den Stammdaten des Gastes;
+            // für Mitglieder kennt der Client die Stammdaten-Waffe aus list_mitglieder.
+            $extra['waffen_id'] = $selWaffe ?? ($extra['waffen_id'] ?? null);
             $extra += [
                 'gefunden'        => true,
                 'zahlungsmethode' => $zahlung ?? 'karte',
@@ -290,6 +323,9 @@ try {
             if ($jahr < 2000 || $jahr > (int)date('Y') + 1) {
                 jsonResponse(false, null, 'Jahr ungültig');
             }
+            if ($waffenId !== null && !rows(q($conn, "SELECT ID FROM Waffen WHERE ID = ?", 'i', [$waffenId]))) {
+                jsonResponse(false, null, 'Waffe ungültig');
+            }
 
             $stiche  = endschLadeStiche($conn);          // code => def
             $spezial = endschLadeSpezialpreise($conn);
@@ -317,8 +353,13 @@ try {
                 $codes[$sid] = $code;
             }
             $stichIds = array_keys($codes);
+            // Waffe ist Pflicht, sobald Stiche gelöst werden (Standblatt-Platzhalter ${waffe})
+            if ($stichIds && $waffenId === null) {
+                jsonResponse(false, null, 'Keine Waffe gewählt');
+            }
             $preis    = endschBerechnePreis(array_values($codes), $typ, $zabigPartner, $stiche, $spezial);
             $createdBy = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'system';
+            $hatWaffeSpalte = endschHatWaffeSpalte($conn);
 
             $conn->begin_transaction();
             try {
@@ -368,9 +409,11 @@ try {
                     q($conn, "INSERT INTO endstich_selection ($spalte, jahr, stich_id, zahlungsmethode, created_by) VALUES (?, ?, ?, ?, ?)",
                         'iiiss', [$id, $jahr, $sid, $zahlung, $createdBy]);
                 }
-                // Zahlungsart, Partner-Flag und Gast-Gesamtpreis auf allen Zeilen konsistent setzen:
+                // Zahlungsart, Waffe, Partner-Flag und Gast-Gesamtpreis auf allen Zeilen konsistent setzen:
                 // Partner-Flag nur am ZABIG, Gast-Spezialpreis genau EINMAL (kleinste stich_id).
-                q($conn, "UPDATE endstich_selection SET zahlungsmethode = ?, sie_und_er = 0, gast_spezialpreis = NULL WHERE $spalte = ? AND jahr = ?",
+                // waffen_id als geprüfter Integer direkt im SQL (kein NULL-Binding, Spalte erst ab Migration 047).
+                $waffeSet = ($hatWaffeSpalte && $waffenId !== null) ? ', waffen_id = ' . (int)$waffenId : '';
+                q($conn, "UPDATE endstich_selection SET zahlungsmethode = ?, sie_und_er = 0, gast_spezialpreis = NULL$waffeSet WHERE $spalte = ? AND jahr = ?",
                     'sii', [$zahlung, $id, $jahr]);
                 if ($typ === 'mitglied' && $zabigPartner && isset($stiche['ZABIG'])) {
                     q($conn, "UPDATE endstich_selection SET sie_und_er = 1 WHERE mitglied_id = ? AND jahr = ? AND stich_id = ?",
@@ -457,7 +500,9 @@ try {
                 ORDER BY sort_group, name", 'iiiii', [$jahr, $jahr, $jahr, $jahr, $jahr]));
 
             // Alle Stiche und Zusatzmunition des Jahres in je EINER Abfrage
-            $selektionen = rows(q($conn, "SELECT es.mitglied_id, es.gast_id, es.stich_id, es.zahlungsmethode, es.sie_und_er, es.gast_spezialpreis,
+            $waffeCol  = endschHatWaffeSpalte($conn) ? 'es.waffen_id' : 'NULL AS waffen_id';
+            $waffenMap = endschWaffenMap($conn);
+            $selektionen = rows(q($conn, "SELECT es.mitglied_id, es.gast_id, es.stich_id, es.zahlungsmethode, es.sie_und_er, es.gast_spezialpreis, $waffeCol,
                                                   ed.code, ed.shots, ed.price_cents
                                            FROM endstich_selection es JOIN endstich_definition ed ON ed.id = es.stich_id
                                            WHERE es.jahr = ? ORDER BY es.stich_id", 'i', [$jahr]));
@@ -498,8 +543,18 @@ try {
                     'munition_preis'  => 0,
                     'stich_gp11' => 0, 'stich_gp90' => 0, 'zusatz_gp11' => 0, 'zusatz_gp90' => 0,
                 ];
-                $ammo = endschAmmoPref($e['waffe_id'], $t['waffe_bez'], $t['waffe_kat']);
                 $k = $key($t['typ'], (int)$t['entity_id']);
+                // Bei der Lösung gewählte Waffe (Migration 047) hat Vorrang vor den Stammdaten
+                foreach ($selByKey[$k] ?? [] as $s) {
+                    if (!empty($s['waffen_id']) && isset($waffenMap[(int)$s['waffen_id']])) {
+                        $w = $waffenMap[(int)$s['waffen_id']];
+                        $e['waffe_id']  = (int)$s['waffen_id'];
+                        $e['waffe_bez'] = $w['bezeichnung'];
+                        $e['waffe_kat'] = $w['kategorie'];
+                        break;
+                    }
+                }
+                $ammo = endschAmmoPref($e['waffe_id'], $e['waffe_bez'], $e['waffe_kat']);
 
                 $gastPreisGesetzt = false;
                 $codes = [];

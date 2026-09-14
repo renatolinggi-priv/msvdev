@@ -101,7 +101,8 @@ function generateItfBarcodePng(string $nummer, int $imgWidth = 280, int $imgHeig
     }
     $drawBar($wide); $drawSpace($narrow); $drawBar($narrow);
 
-    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_') . '.png';
+    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_');
+    rename($tmpFile, $tmpFile . '.png'); $tmpFile .= '.png'; // Stub umbenennen statt liegen lassen
     imagepng($img, $tmpFile);
     imagedestroy($img);
     return $tmpFile;
@@ -140,7 +141,8 @@ header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessi
 header("Content-Disposition: attachment; filename=\"{$filename}\"");
 header('Cache-Control: max-age=0');
 
-$tmpDocx = tempnam(sys_get_temp_dir(), 'standblatt_') . '.docx';
+$tmpDocx = tempnam(sys_get_temp_dir(), 'standblatt_');
+rename($tmpDocx, $tmpDocx . '.docx'); $tmpDocx .= '.docx'; // Stub umbenennen statt liegen lassen
 $template->saveAs($tmpDocx);
 readfile($tmpDocx);
 

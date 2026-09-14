@@ -1,7 +1,9 @@
 <?php
 /**
  * Generiert ein Endschiessen-Standblatt aus der Excel-Vorlage.
- * GET-Parameter: jahr, mitglied_id (oder gast_name), stiche (kommasepariert)
+ * GET-Parameter: jahr, mitglied_id (oder gast_name), stiche (kommasepariert),
+ *                waffen_id (optional; sonst gespeicherte Lösung bzw. Stammdaten),
+ *                format=pdf (optional; XLSX via ConvertAPI zu PDF für den QZ-Tray-Direktdruck)
  */
 
 error_reporting(E_ALL);
@@ -54,6 +56,47 @@ function ssvBarcodeNummer(string $lnr): string {
 }
 
 $barcode = ($mitglied_id > 0 && $lizenznr !== '') ? ssvBarcodeNummer($lizenznr) : '';
+
+// --- Waffe (Platzhalter ${waffe}) ---
+// Vorrang: 1. waffen_id aus dem Formular, 2. bei der Lösung gespeicherte Waffe
+// (endstich_selection.waffen_id, Migration 047), 3. Stammdaten (mitglieder.WaffenID
+// bzw. endstich_gaeste.waffen_id).
+$waffenId = intval($_GET['waffen_id'] ?? 0);
+$waffeBez = '';
+if (isset($conn)) {
+    $einWert = static function (string $sql, string $types, array $params) use ($conn) {
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) return null;
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_row();
+        $stmt->close();
+        return $row ? $row[0] : null;
+    };
+    if ($waffenId <= 0) {
+        $res = $conn->query("SHOW COLUMNS FROM endstich_selection LIKE 'waffen_id'");
+        $hatWaffeSpalte = $res ? $res->num_rows > 0 : false;
+        if ($mitglied_id > 0) {
+            if ($hatWaffeSpalte) {
+                $waffenId = (int) $einWert("SELECT waffen_id FROM endstich_selection WHERE mitglied_id = ? AND jahr = ? AND waffen_id IS NOT NULL LIMIT 1", 'ii', [$mitglied_id, $jahr]);
+            }
+            if ($waffenId <= 0) {
+                $waffenId = (int) $einWert("SELECT WaffenID FROM mitglieder WHERE ID = ?", 'i', [$mitglied_id]);
+            }
+        } elseif ($gast_name !== '') {
+            $gastId = (int) $einWert("SELECT id FROM endstich_gaeste WHERE name = ? AND jahr = ?", 'si', [$gast_name, $jahr]);
+            if ($gastId > 0 && $hatWaffeSpalte) {
+                $waffenId = (int) $einWert("SELECT waffen_id FROM endstich_selection WHERE gast_id = ? AND jahr = ? AND waffen_id IS NOT NULL LIMIT 1", 'ii', [$gastId, $jahr]);
+            }
+            if ($gastId > 0 && $waffenId <= 0) {
+                $waffenId = (int) $einWert("SELECT waffen_id FROM endstich_gaeste WHERE id = ?", 'i', [$gastId]);
+            }
+        }
+    }
+    if ($waffenId > 0) {
+        $waffeBez = (string) ($einWert("SELECT Bezeichnung FROM Waffen WHERE ID = ?", 'i', [$waffenId]) ?? '');
+    }
+}
 
 // --- ITF Barcode als PNG generieren ---
 function generateItfBarcodePng(string $nummer, int $imgWidth = 280, int $imgHeight = 60): ?string {
@@ -111,7 +154,8 @@ function generateItfBarcodePng(string $nummer, int $imgWidth = 280, int $imgHeig
     // Stop: WNN
     $drawBar($wide); $drawSpace($narrow); $drawBar($narrow);
 
-    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_') . '.png';
+    $tmpFile = tempnam(sys_get_temp_dir(), 'barcode_');
+    rename($tmpFile, $tmpFile . '.png'); $tmpFile .= '.png'; // Stub umbenennen statt liegen lassen
     imagepng($img, $tmpFile);
     imagedestroy($img);
     return $tmpFile;
@@ -134,6 +178,7 @@ $codeToPlaceholder = [
 $replacements = [
     'year'   => (string) $jahr,
     'name'   => trim($vorname . ' ' . $nachname),
+    'waffe'  => $waffeBez,
 ];
 
 foreach ($codeToPlaceholder as $code => $placeholder) {
@@ -175,7 +220,8 @@ $spalteZuIndex = static function (string $col): int {
     return $n - 1;
 };
 
-$tmpXlsx = tempnam(sys_get_temp_dir(), 'standblatt_') . '.xlsx';
+$tmpXlsx = tempnam(sys_get_temp_dir(), 'standblatt_');
+rename($tmpXlsx, $tmpXlsx . '.xlsx'); $tmpXlsx .= '.xlsx'; // Stub umbenennen statt liegen lassen
 if (!copy($templatePath, $tmpXlsx)) {
     http_response_code(500);
     echo 'Vorlage konnte nicht kopiert werden';
@@ -260,18 +306,40 @@ foreach ($drawings as $dn => $xml) {
 
 $zip->close();
 
-// --- Download ausgeben ---
-$filename = "Endschiessen_{$jahr}_{$vorname}{$nachname}.xlsx";
+// --- Ausgabe: XLSX (Download) oder PDF (Direktdruck via QZ Tray) ---
+$alsPdf = (($_GET['format'] ?? '') === 'pdf');
+$basisname = "Endschiessen_{$jahr}_{$vorname}{$nachname}";
+$tmpPdf = null;
 
-header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
-header('Cache-Control: max-age=0');
-header('Content-Length: ' . filesize($tmpXlsx));
-readfile($tmpXlsx);
-
-// Temporäre Dateien aufräumen
-@unlink($tmpXlsx);
-if ($barcodePng && file_exists($barcodePng)) {
-    unlink($barcodePng);
+try {
+    if ($alsPdf) {
+        // XLSX → PDF über ConvertAPI (kostenpflichtiger Dienst, Kontingent beachten);
+        // Seiteneinrichtung der Vorlage (A4 quer, Druckbereich) wird übernommen.
+        require_once __DIR__ . '/../lib/convertapi_helper.php';
+        $tmpPdf = convertToPdf($tmpXlsx, 'xlsx');
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $basisname . '.pdf"');
+        header('Cache-Control: max-age=0');
+        header('Content-Length: ' . filesize($tmpPdf));
+        readfile($tmpPdf);
+    } else {
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $basisname . '.xlsx"');
+        header('Cache-Control: max-age=0');
+        header('Content-Length: ' . filesize($tmpXlsx));
+        readfile($tmpXlsx);
+    }
+} catch (Throwable $e) {
+    error_log('[generate_standblatt] ' . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'PDF-Konvertierung fehlgeschlagen: ' . $e->getMessage();
+} finally {
+    // Temporäre Dateien aufräumen
+    if ($tmpPdf && file_exists($tmpPdf)) @unlink($tmpPdf);
+    @unlink($tmpXlsx);
+    if ($barcodePng && file_exists($barcodePng)) {
+        unlink($barcodePng);
+    }
 }
 exit;
