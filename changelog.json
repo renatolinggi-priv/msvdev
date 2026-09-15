@@ -1,5 +1,65 @@
 [
   {
+    "version": "1.27.0",
+    "datum": "2026-09-15",
+    "aenderungen": [
+      {
+        "titel": "Definitionen / Ausdrucke: alle Hintergrund-Endpunkte geschützt",
+        "beschreibung": "Sämtliche Speicher-, Lade- und Export-Skripte der 13 Seiten unter «Definitionen / Ausdrucke» (Wanderpreise, Fragebogen, Sieger, Standblatt, Standbelegung, Mitglieder, JM-Definition, Termine, Monatsblatt, PDF-Vorlage) verlangen jetzt einheitlich eine Admin- oder Vorstands-Sitzung; ändernde Aufrufe zusätzlich das Sicherheits-Token. Vorher waren mehrere Endpunkte ohne Anmeldung aufrufbar. Nicht mehr verwendete Alt-Skripte (u.a. Sieger-Bereinigung, alte Mitglieder-Speicherung, JM-Backup) wurden entfernt.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Wanderpreis-Regeln: SQL wird vor dem Speichern und Testen geprüft",
+        "beschreibung": "Regel-SQL darf nur noch aus SET-Variablen und genau einer SELECT-Abfrage bestehen. Schreibende oder administrative Befehle, Datei-Zugriffe und ausführbare Kommentare werden mit einer klaren Fehlermeldung abgelehnt. Alle bestehenden Regeln erfüllen die Prüfung.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "JM-Definition: Schiesstage werden zuverlässig gespeichert",
+        "beschreibung": "Speichern schreibt Zusatztext, Ausschluss-Anzahl und Anlässe in einem Schritt; das Jahr stammt aus der Datenzeile, nicht aus dem Formular. Neu anlegen füllt die Schiesstage-Tabelle sofort, Löschen räumt Schiesstage und Gruppenzuordnungen mit auf. Jahr kopieren und ICS-Export nutzen denselben Datums-Parser. Die Informationstabelle wird per Migration 048 auf eine Zeile bereinigt.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Wichtige Termine, Sieger, Fragebogen, Gruppen: Fehler werden angezeigt statt verschluckt",
+        "beschreibung": "Datum und Jahr werden serverseitig geprüft, Löschen meldet, wenn nichts gelöscht wurde, doppelte Gruppenzuordnungen werden abgewiesen (409), und jede fehlgeschlagene Anfrage zeigt die Servermeldung als Toast. Der ICS-Export der Termine toleriert unvollständige Zeitangaben (ganztägig als Rückfall). Das Termine-PDF nutzt das zentrale PDF-Design und markiert Standbelegungs-Termine.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederverwaltung: Import/Export vollständig, Speichern nur noch pro Panel",
+        "beschreibung": "CSV-Import und -Export übertragen jetzt auch Anrede, Kommunikationsweg und Vereinsaufnahme und arbeiten mit vorbereiteten Abfragen. Der Import zeigt ein Ergebnis-Fenster mit Fehlerzeilen. Das Sammel-Speichern der ganzen Tabelle entfällt; Ctrl+S speichert das offene Panel. Die Adressliste heisst «Adressliste_MiFu_Datum_Zeit.xlsx».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Standbelegung und Dokumente verwalten neu strukturiert",
+        "beschreibung": "Standbelegung ist in Konfiguration (Arten, Kategorien, Erkennungsregeln), Datenladen, drei Tabs und ein eigenes Skript aufgeteilt; die Art-Erkennung beim JSK-PDF nutzt dieselben Regeln wie der Import. Dokumente verwalten prüft Dateityp und Datum zentral, erzwingt bei JSK-Dokumenten «alle Mitglieder», übernimmt beim Ersetzen die Admin-Rechte und behält beim Neuladen den aktiven Tab.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Standblatt, Monatsblatt, Fragebogen: Direktdruck und gemeinsame Generatoren",
+        "beschreibung": "Die drei Standblatt-Generatoren teilen sich eine Bibliothek (Vorlage, Barcode, Dateiname); «Alle herunterladen» meldet übersprungene Mitglieder. Monatsblatt und Fragebogen haben eine Export-Leiste mit Direktdruck. Monatsblatt lehnt Von > Bis mit Fehlermeldung ab. Das Fragebogen-PDF listet auch Mitglieder ohne Waffe.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Foto-Galerien und PDF-Vorlage: ohne Seiten-Reload, sauber abgesichert",
+        "beschreibung": "Galerie-Einstellungen und Löschen aktualisieren die Karte direkt; die Vorschau-Bibliothek Select2 (Release-Candidate) wurde durch ein natives Auswahlfeld ersetzt. Die PDF-Vorlage speichert über einen eigenen, nur für Administratoren erreichbaren Endpunkt; das Logo wird mit Sicherungskopie und atomarem Dateitausch ersetzt, zu grosse Bilder erhalten eine klare Meldung. Der Seitentitel heisst wie der Menüpunkt: «PDF-Vorlage».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Menü «Definitionen / Ausdrucke» geordnet",
+        "beschreibung": "Migration 049 benennt «Wanderpreis-Regeln» und «PDF-Vorlage» wie die Seiten, löst doppelte Sortierpositionen auf und trennt die Blöcke Stammdaten, Jahresmeisterschaft, Termine und Auswertung mit Trennlinien. Alle Seiten nutzen die zentralen Bausteine (Seitentitel, Seitenpanel, Export-Leiste, Tooltips, leere Tabellenzeile) und die einheitlichen Inhaltsbreiten.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.26.0",
     "datum": "2026-09-09",
     "aenderungen": [
