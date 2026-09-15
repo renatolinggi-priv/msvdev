@@ -3,17 +3,8 @@
 
 require_once __DIR__ . '/../pdf/pdf_theme.php';
 
-function imgToBase64($imgPath)
-{
-    if (!file_exists($imgPath)) {
-        return '';
-    }
-    $imageData = base64_encode(file_get_contents($imgPath));
-    $src = 'data:' . mime_content_type($imgPath) . ';base64,' . $imageData;
-    return $src;
-}
-
-$logoBase64 = imgToBase64('dat/MSVWilen_Logo.jpg');
+// Zentrales Logo (pdf_theme.php), unabhaengig vom Arbeitsverzeichnis
+$logoBase64 = pdf_logo_src();
 
 // Datei-spezifische Layout-Overrides (NACH dem Theme). Nur Layout, keine Farben:
 // kompakte Breittabelle + rotierte Spaltenüberschriften wie in load_jm.php.

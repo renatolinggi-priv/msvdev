@@ -18,7 +18,8 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 
 // 1) GET-Parameter: Jahr
-$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+if ($selectedYear < 2000 || $selectedYear > 2100) $selectedYear = (int)date('Y');
 
 // 2) HTML-Kopf zusammenbauen
 $htmlOutput = $header;
@@ -39,22 +40,24 @@ $htmlOutput .= $footer;
 // --- PDF-Erzeugung ---
 $options = new Options();
 $options->set('isHtml5ParserEnabled', true);
-$options->set('isRemoteEnabled', true);
+$options->set('isRemoteEnabled', false); // Logo ist als Data-URI eingebettet
 
 $dompdf = new Dompdf($options);
 $dompdf->setPaper('A4', 'landscape');
 $dompdf->loadHtml($htmlOutput);
 $dompdf->render();
 
-$pdfOutput = $dompdf->output();
-$date = new DateTime();
-$pdfFilePath = 'dat/Fragebogen_' . $date->format('Y-m-d_H-i-s') . '.pdf';
-file_put_contents($pdfFilePath, $pdfOutput);
+$pdfFile = 'Fragebogen_' . $selectedYear . '_' . date('Y-m-d_H-i-s') . '.pdf';
+$written = file_put_contents(__DIR__ . '/dat/' . $pdfFile, $dompdf->output());
 
 ob_end_clean();
-
-// JSON-Antwort mit dem PDF-Link zurückgeben
-echo json_encode(['pdf_link' => 'fragebogen/' . $pdfFilePath]);
+header('Content-Type: application/json; charset=utf-8');
+if ($written === false) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'PDF konnte nicht gespeichert werden']);
+    exit;
+}
+echo json_encode(['success' => true, 'pdf_link' => 'fragebogen/dat/' . $pdfFile]);
 exit();
 
 // ========================================================================
@@ -67,11 +70,12 @@ exit();
 // ========================================================================
 function buildFragebogenTableForPDF($year, $conn)
 {
-    // 1) Mitglieder laden â€“ inkl. Waffenkategorie (aus Tabelle Waffen)
+    // 1) Mitglieder laden – inkl. Waffenkategorie (LEFT JOIN: Mitglieder ohne Waffe fehlten vorher still)
     $sqlM = "
         SELECT m.ID, m.Vorname, m.Name, m.WaffenID, w.Kategorie
         FROM mitglieder m
-        JOIN Waffen w ON w.ID = m.WaffenID
+        LEFT JOIN Waffen w ON w.ID = m.WaffenID
+        WHERE m.Verstorben = 0
         ORDER BY m.Name, m.Vorname
     ";
     $resM = $conn->query($sqlM);
@@ -81,17 +85,16 @@ function buildFragebogenTableForPDF($year, $conn)
     }
     
     // 2) Erweitert=1 Definitionen laden
-    $sqlD = "
-        SELECT ID, Bezeichnung 
-        FROM JMDefinition 
-        WHERE year = $year AND Erweitert = 1
-        ORDER BY Reihenfolge
-    ";
-    $resD = $conn->query($sqlD);
+    $year = (int)$year;
+    $stmtD = $conn->prepare("SELECT ID, Bezeichnung FROM JMDefinition WHERE year = ? AND Erweitert = 1 ORDER BY Reihenfolge");
+    $stmtD->bind_param('i', $year);
+    $stmtD->execute();
+    $resD = $stmtD->get_result();
     $defs = [];
     while ($rd = $resD->fetch_assoc()) {
         $defs[] = $rd;
     }
+    $stmtD->close();
     
     // 3) Waffen laden (als Array indexiert nach ID)
     $sqlW = "SELECT ID, Bezeichnung FROM Waffen ORDER BY Bezeichnung";

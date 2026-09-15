@@ -1,54 +1,45 @@
 <?php
+// delete_fragebogen.php – alle Antworten eines Jahres loeschen (erweitert + Hauptzeilen, transaktional)
 include '../config.php';
-
-// CSRF-Schutz
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die('Ungültige Anfrage');
+require_once __DIR__ . '/../csrf.inc.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
+}
+csrf_require(true);
+
+$year = isset($_POST['year']) ? (int)$_POST['year'] : 0;
+if ($year < 2000 || $year > 2100) {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Ungültiges Jahr']));
 }
 
-// Jahr ermitteln
-$year = isset($_POST['year']) ? (int)$_POST['year'] : date('Y');
-
-// Prüfen, ob die Verbindung funktioniert
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Transaktion starten
 $conn->begin_transaction();
-
 try {
-    // Zuerst alle Einträge aus mitglieder_fragebogen_erweitert löschen, 
-    // deren zugehöriger Fragebogeneintrag im Jahr $year liegt.
-    $sqlDeleteExtended = "
-        DELETE fe
-        FROM mitglieder_fragebogen_erweitert fe
-        JOIN mitglieder_fragebogen fb ON fe.fragebogenID = fb.ID
-        WHERE fb.jahr = $year
-    ";
-    $conn->query($sqlDeleteExtended);
+    $stmt = $conn->prepare("DELETE fe FROM mitglieder_fragebogen_erweitert fe
+                            JOIN mitglieder_fragebogen fb ON fe.fragebogenID = fb.ID
+                            WHERE fb.jahr = ?");
+    $stmt->bind_param('i', $year);
+    if (!$stmt->execute()) throw new Exception($stmt->error);
+    $stmt->close();
 
-    // Anschliessend alle Einträge aus mitglieder_fragebogen löschen, die zum Jahr $year gehören.
-    $sqlDeleteMain = "DELETE FROM mitglieder_fragebogen WHERE jahr = $year";
-    $conn->query($sqlDeleteMain);
+    $stmt = $conn->prepare("DELETE FROM mitglieder_fragebogen WHERE jahr = ?");
+    $stmt->bind_param('i', $year);
+    if (!$stmt->execute()) throw new Exception($stmt->error);
+    $count = $stmt->affected_rows;
+    $stmt->close();
 
     $conn->commit();
-
-    echo json_encode([
-        'status'  => 'success',
-        'message' => "Einträge für Jahr $year wurden gelöscht."
-    ]);
-} catch (Exception $e) {
+    echo json_encode(['success' => true, 'message' => "Antworten für $year gelöscht", 'count' => $count]);
+} catch (Throwable $e) {
     $conn->rollback();
-    echo json_encode([
-        'status'  => 'error',
-        'message' => "Fehler beim Löschen: " . $e->getMessage()
-    ]);
+    error_log('[delete_fragebogen] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Fehler beim Löschen']);
 }
-
 $conn->close();
-?>

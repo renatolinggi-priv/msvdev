@@ -1,101 +1,126 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
+// save_fragebogen.php – alle Antworten eines Jahres speichern (Upsert je Mitglied + erweiterte Fragen)
+// Review 09.2026: Whitelist-Validierung der Werte; bestehende IDs werden einmal vorab geladen und die
+// Statements einmal vorbereitet (vorher pro Mitglied und pro Frage je SELECT + UPDATE/INSERT).
 require_once '../config.php';
-
-// CSRF-Schutz
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
+require_once __DIR__ . '/../csrf.inc.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true);
 
-// Jahr
-$year = isset($_POST['year']) ? (int)$_POST['year'] : date('Y');
-
+$year = isset($_POST['year']) ? (int)$_POST['year'] : (int)date('Y');
+if ($year < 2000 || $year > 2100) {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Ungültiges Jahr']));
+}
 if (!isset($_POST['fragebogen']) || !is_array($_POST['fragebogen'])) {
     http_response_code(400);
     die(json_encode(['success' => false, 'message' => 'Keine Daten empfangen']));
 }
 
-$conn->begin_transaction();
+$TEILNAHME = ['teil', 'nicht', 'evtl'];
+$JANEIN    = ['ja', 'nein'];
 
+$conn->begin_transaction();
 try {
+    // Bestehende Fragebogen-IDs des Jahres: [mitgliedID] => ID
+    $existing = [];
+    $stmt = $conn->prepare("SELECT ID, mitgliedID FROM mitglieder_fragebogen WHERE jahr = ?");
+    $stmt->bind_param('i', $year);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $existing[(int)$row['mitgliedID']] = (int)$row['ID'];
+    $stmt->close();
+
+    // Bestehende erweiterte Antworten: [fragebogenID][jmdefinitionID] => ID
+    $existingExt = [];
+    $stmt = $conn->prepare("SELECT fe.ID, fe.fragebogenID, fe.jmdefinitionID
+                            FROM mitglieder_fragebogen_erweitert fe
+                            JOIN mitglieder_fragebogen fb ON fb.ID = fe.fragebogenID
+                            WHERE fb.jahr = ?");
+    $stmt->bind_param('i', $year);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $existingExt[(int)$row['fragebogenID']][(int)$row['jmdefinitionID']] = (int)$row['ID'];
+    $stmt->close();
+
+    $stmtUpd    = $conn->prepare("UPDATE mitglieder_fragebogen SET waffenID = ?, mannschaft = ?, gruppen = ? WHERE ID = ?");
+    $stmtIns    = $conn->prepare("INSERT INTO mitglieder_fragebogen (mitgliedID, jahr, waffenID, mannschaft, gruppen) VALUES (?, ?, ?, ?, ?)");
+    $stmtMember = $conn->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
+    $stmtUpd2   = $conn->prepare("UPDATE mitglieder_fragebogen_erweitert SET antwort = ? WHERE ID = ?");
+    $stmtIns2   = $conn->prepare("INSERT INTO mitglieder_fragebogen_erweitert (fragebogenID, jmdefinitionID, antwort) VALUES (?, ?, ?)");
+    if (!$stmtUpd || !$stmtIns || !$stmtMember || !$stmtUpd2 || !$stmtIns2) {
+        throw new Exception('Prepare fehlgeschlagen: ' . $conn->error);
+    }
+
+    $gespeichert = 0;
     foreach ($_POST['fragebogen'] as $mid => $data) {
         $mid = (int)$mid;
-        $waffenID    = (int)$data['waffenID'];
-        $mannschaft  = $data['mannschaft'];
-        $gruppen     = $data['gruppen'];
+        if ($mid < 1 || !is_array($data)) continue;
 
-        // 1) Upsert in Tabelle mitglieder_fragebogen
-        //    Prüfen, ob bereits ein Eintrag existiert
-        $stmtCheck = $conn->prepare("SELECT ID FROM mitglieder_fragebogen WHERE mitgliedID = ? AND jahr = ? LIMIT 1");
-        $stmtCheck->bind_param("ii", $mid, $year);
-        $stmtCheck->execute();
-        $resCheck = $stmtCheck->get_result();
-        if ($resCheck && $resCheck->num_rows > 0) {
-            $rowF = $resCheck->fetch_assoc();
-            $fid  = (int)$rowF['ID'];
-            $stmtCheck->close();
-            // UPDATE in mitglieder_fragebogen
-            $stmtUpd = $conn->prepare("UPDATE mitglieder_fragebogen SET waffenID = ?, mannschaft = ?, gruppen = ? WHERE ID = ?");
-            $stmtUpd->bind_param("issi", $waffenID, $mannschaft, $gruppen, $fid);
-            $stmtUpd->execute();
-            $stmtUpd->close();
+        $waffenID   = (int)($data['waffenID'] ?? 0);
+        $mannschaft = (string)($data['mannschaft'] ?? 'nicht');
+        $gruppen    = (string)($data['gruppen'] ?? 'nicht');
+        if (!in_array($mannschaft, $TEILNAHME, true) || !in_array($gruppen, $TEILNAHME, true)) {
+            throw new InvalidArgumentException("Ungültiger Teilnahme-Wert bei Mitglied $mid");
+        }
+
+        if (isset($existing[$mid])) {
+            $fid = $existing[$mid];
+            $stmtUpd->bind_param('issi', $waffenID, $mannschaft, $gruppen, $fid);
+            if (!$stmtUpd->execute()) throw new Exception($stmtUpd->error);
         } else {
-            $stmtCheck->close();
-            // INSERT in mitglieder_fragebogen
-            $stmtIns = $conn->prepare("INSERT INTO mitglieder_fragebogen (mitgliedID, jahr, waffenID, mannschaft, gruppen) VALUES (?, ?, ?, ?, ?)");
-            $stmtIns->bind_param("iiiss", $mid, $year, $waffenID, $mannschaft, $gruppen);
-            $stmtIns->execute();
-            $fid = $conn->insert_id;
-            $stmtIns->close();
+            $stmtIns->bind_param('iiiss', $mid, $year, $waffenID, $mannschaft, $gruppen);
+            if (!$stmtIns->execute()) throw new Exception($stmtIns->error);
+            $fid = (int)$conn->insert_id;
+            $existing[$mid] = $fid;
         }
+        $gespeichert++;
 
-        // *** Hier wird auch die Mitglieder-Tabelle aktualisiert (nicht bei "Nehme nicht teil") ***
+        // Stammdaten-Waffe mitziehen (nicht bei "Nehme nicht teil")
         if ($waffenID !== 0) {
-            $stmtMember = $conn->prepare("UPDATE mitglieder SET WaffenID = ? WHERE ID = ?");
-            $stmtMember->bind_param("ii", $waffenID, $mid);
-            $stmtMember->execute();
-            $stmtMember->close();
+            $stmtMember->bind_param('ii', $waffenID, $mid);
+            if (!$stmtMember->execute()) throw new Exception($stmtMember->error);
         }
 
-        // 2) Erweitert – in Tabelle mitglieder_fragebogen_erweitert
+        // Erweiterte Fragen
         if (isset($data['erweitert']) && is_array($data['erweitert'])) {
             foreach ($data['erweitert'] as $defID => $ans) {
                 $defID = (int)$defID;
-                $ans   = (string)$ans; // 'ja' oder 'nein'
-
-                // Upsert in mitglieder_fragebogen_erweitert
-                $stmtCheck2 = $conn->prepare("SELECT ID FROM mitglieder_fragebogen_erweitert WHERE fragebogenID = ? AND jmdefinitionID = ? LIMIT 1");
-                $stmtCheck2->bind_param("ii", $fid, $defID);
-                $stmtCheck2->execute();
-                $resC2 = $stmtCheck2->get_result();
-                if ($resC2 && $resC2->num_rows > 0) {
-                    $rowE = $resC2->fetch_assoc();
-                    $eID  = (int)$rowE['ID'];
-                    $stmtCheck2->close();
-                    $stmtUpd2 = $conn->prepare("UPDATE mitglieder_fragebogen_erweitert SET antwort = ? WHERE ID = ?");
-                    $stmtUpd2->bind_param("si", $ans, $eID);
-                    $stmtUpd2->execute();
-                    $stmtUpd2->close();
+                $ans   = (string)$ans;
+                if ($defID < 1) continue;
+                if (!in_array($ans, $JANEIN, true)) {
+                    throw new InvalidArgumentException("Ungültige Antwort bei Mitglied $mid, Frage $defID");
+                }
+                if (isset($existingExt[$fid][$defID])) {
+                    $eID = $existingExt[$fid][$defID];
+                    $stmtUpd2->bind_param('si', $ans, $eID);
+                    if (!$stmtUpd2->execute()) throw new Exception($stmtUpd2->error);
                 } else {
-                    $stmtCheck2->close();
-                    $stmtIns2 = $conn->prepare("INSERT INTO mitglieder_fragebogen_erweitert (fragebogenID, jmdefinitionID, antwort) VALUES (?, ?, ?)");
-                    $stmtIns2->bind_param("iis", $fid, $defID, $ans);
-                    $stmtIns2->execute();
-                    $stmtIns2->close();
+                    $stmtIns2->bind_param('iis', $fid, $defID, $ans);
+                    if (!$stmtIns2->execute()) throw new Exception($stmtIns2->error);
+                    $existingExt[$fid][$defID] = (int)$conn->insert_id;
                 }
             }
         }
     }
 
     $conn->commit();
-    echo json_encode(['success' => true, 'message' => 'Daten gespeichert']);
-} catch (Exception $e) {
+    echo json_encode(['success' => true, 'message' => 'Daten gespeichert', 'count' => $gespeichert]);
+} catch (InvalidArgumentException $e) {
     $conn->rollback();
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} catch (Throwable $e) {
+    $conn->rollback();
+    error_log('[save_fragebogen] ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern']);
 }
-?>
