@@ -1,6 +1,8 @@
 <?php
 // save_jmdefinition.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // CSRF-Schutz
 require_once __DIR__ . '/../session_config.inc.php';

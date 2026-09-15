@@ -1,6 +1,8 @@
 <?php
 // upload_pdf.php - Lädt PDF für Standbelegung hoch
 require_once '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -8,6 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true); // Token im FormData-Feld csrf_token bzw. Header X-CSRF-TOKEN
 
 // Prüfe ob Datei hochgeladen wurde
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {

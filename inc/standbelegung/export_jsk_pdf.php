@@ -13,6 +13,8 @@ ini_set('display_errors', 0);
 try {
     require '../vendor/autoload.php';
     include '../config.php';
+    require_once __DIR__ . '/../admin_api_guard.inc.php';
+    adminApiGuard('plain');
     require_once '../pdf/pdf_theme.php';  // zentrales PDF-Theme (Palette/Logo)
 
     // Verbindung prüfen

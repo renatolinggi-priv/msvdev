@@ -1,6 +1,8 @@
 <?php
 // export_csv.php
-require_once 'config.php';
+require_once '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('plain');
 
 // Set headers for CSV download
 header('Content-Type: text/csv; charset=utf-8');

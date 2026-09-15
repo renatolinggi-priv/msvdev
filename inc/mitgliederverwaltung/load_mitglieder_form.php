@@ -1,6 +1,8 @@
 <?php
 // load_mitglieder_form.php - Hybrid-Version (Read-only Tabelle + Slide-Panel)
-include 'config.php';
+include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 require_once __DIR__ . '/../partials/empty_state.inc.php';
 
 $sql = "SELECT m.id, m.Anrede, m.vorname, m.name, m.waffenid, m.status, w.bezeichnung AS waffe,

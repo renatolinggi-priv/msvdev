@@ -1,6 +1,8 @@
 <?php
 // parse_excel.php - Parst den Standbelegungsplan aus Excel
 require_once '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once '../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -11,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true); // Token im FormData-Feld csrf_token bzw. Header X-CSRF-TOKEN
 
 // File Upload prüfen
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {

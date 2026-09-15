@@ -1,7 +1,9 @@
 <?php
 // generate_mitglieder_xlsx.php - Excel-Export Adressliste
 require '../vendor/autoload.php';
-require 'config.php';
+require '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;

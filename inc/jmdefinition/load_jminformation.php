@@ -1,5 +1,7 @@
 <?php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // Zusatztext aus der Datenbank abrufen
 $sql = "SELECT text FROM JMInformation ORDER BY created_at DESC LIMIT 1";

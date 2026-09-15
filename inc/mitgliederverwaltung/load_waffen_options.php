@@ -1,6 +1,8 @@
 <?php
 //load_waffen_option.php
-include 'config.php';
+include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 $waffenSql = "SELECT id, bezeichnung FROM Waffen";
 $waffenResult = $conn->query($waffenSql);
 

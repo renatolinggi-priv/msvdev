@@ -13,6 +13,8 @@ set_time_limit(600);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('plain'); // ein API-Aufruf pro Mitglied -> nie anonym erreichbar lassen
 require_once __DIR__ . '/../lib/convertapi_helper.php';
 
 use PhpOffice\PhpWord\TemplateProcessor;

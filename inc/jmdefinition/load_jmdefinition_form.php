@@ -1,6 +1,8 @@
 <?php
 // load_jmdefinition_form.php – Hybrid Layout (read-only Tabelle + hidden Inputs)
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 require_once __DIR__ . '/../partials/empty_state.inc.php';
 
 if (!function_exists('dv_format_adresse')) {

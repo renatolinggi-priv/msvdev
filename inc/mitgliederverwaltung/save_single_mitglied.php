@@ -1,8 +1,9 @@
 <?php
 // save_single_mitglied.php - Einzelnes Mitglied speichern (beim Panel-Schliessen)
-include 'config.php';
+include '../config.php';
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 $csrf = $_POST['csrf_token'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);

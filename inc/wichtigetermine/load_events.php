@@ -1,6 +1,8 @@
 <?php
 // load_events.php – JSON Response für Hybrid-Layout
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 header('Content-Type: application/json; charset=utf-8');
 

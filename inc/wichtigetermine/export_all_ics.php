@@ -2,6 +2,8 @@
 // export_all_ics.php
 
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // Aktuelles Jahr berechnen
 $currentYear = isset($_GET['year']) ? $_GET['year'] : date("Y");

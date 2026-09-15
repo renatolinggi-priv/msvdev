@@ -1,6 +1,8 @@
 <?php
 // manage_keywords.php - Verwaltet Art-Keywords
 require_once '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -8,6 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true); // Token kommt als Header X-CSRF-TOKEN ($.ajaxSetup in standbelegung.php)
 
 $input = json_decode(file_get_contents('php://input'), true);
 

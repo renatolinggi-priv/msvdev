@@ -1,6 +1,8 @@
 <?php
 // load_gruppen.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 $year = isset($_GET['jahr']) ? (int)$_GET['jahr'] : date('Y');
 $eventID = isset($_GET['eventID']) ? (int)$_GET['eventID'] : 0;

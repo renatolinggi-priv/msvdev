@@ -8,29 +8,17 @@
  ************************************************************/
 
 require_once '../config.php';
-require_once '../session_config.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Admin/Vorstand, nicht bloss "eingeloggt"
+require_once __DIR__ . '/../csrf.inc.php';
 require_once '../vendor/autoload.php';
 require_once '../pdf/pdf_theme.php';  // zentrales PDF-Theme (Palette/Logo)
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-// Auth: nur eingeloggte Nutzer (gleicher Schutz wie die aufrufende Seite)
-if (empty($_SESSION['user_id'])) {
-    header('Content-Type: application/json; charset=utf-8');
-    http_response_code(401);
-    echo json_encode(['message' => 'Nicht angemeldet']);
-    exit;
-}
-
 // CSRF: Token muss zur Session passen
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    header('Content-Type: application/json; charset=utf-8');
-    http_response_code(403);
-    echo json_encode(['message' => 'Ungültige Anfrage']);
-    exit;
-}
+csrf_require(true);
 
 class MonatsblattPDFExporter {
     private $conn;

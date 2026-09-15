@@ -1,6 +1,8 @@
 <?php
 // export_schiesstagemeldung.php - Exportiert Standbelegung als Schiesstagemeldung Excel
 require_once '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once '../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -15,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true); // JSON-Body -> Token kommt als Header X-CSRF-TOKEN
 
 $input = json_decode(file_get_contents('php://input'), true);
 

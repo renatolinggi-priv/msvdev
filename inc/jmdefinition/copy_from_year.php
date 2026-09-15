@@ -3,6 +3,8 @@
 // und angepasstem Namen) ins Zieljahr. Fügt JMDefinition ein und befüllt JMSchiesstage
 // direkt aus dem (kanonischen) Schiesstage-Text.
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // CSRF-Schutz (Muster wie save_jmdefinition.php)
 require_once __DIR__ . '/../session_config.inc.php';

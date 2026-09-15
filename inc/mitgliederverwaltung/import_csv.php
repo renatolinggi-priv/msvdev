@@ -1,7 +1,8 @@
 <?php
 // import_csv.php
-session_start();
-require_once 'config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
+require_once '../config.php';
 require_once __DIR__ . '/../csrf.inc.php';
 
 // CSRF check

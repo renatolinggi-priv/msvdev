@@ -1,6 +1,8 @@
 <?php
 // sort_by_date.php - Sortiert JMDefinition nach erstem Datum in Schiesstage
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 header('Content-Type: application/json');
 
@@ -8,6 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
     exit;
 }
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 $year = isset($_POST['year']) ? intval($_POST['year']) : date('Y');
 

@@ -1,6 +1,8 @@
 <?php
 // load_members.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // Erwartete GET-Parameter: jahr und eventID (JMDefinitionID)
 $year = isset($_GET['jahr']) ? intval($_GET['jahr']) : date('Y');

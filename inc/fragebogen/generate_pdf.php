@@ -10,6 +10,8 @@ ob_start();
 
 require_once '../vendor/autoload.php';  // Pfad zu Dompdf
 require_once '../config.php';           // Stellt $conn (mysqli) bereit
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once 'config_pdf.php';          // Enthält $header, $footer, CSS etc.
 
 use Dompdf\Dompdf;

@@ -1,6 +1,8 @@
 <?php
 // copy_list.php – Liefert die Anlässe eines Jahres als JSON (für "Vom Vorjahr übernehmen").
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 header('Content-Type: application/json; charset=utf-8');
 

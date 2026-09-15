@@ -1,6 +1,8 @@
 <?php
 // get_group_details.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 $groupUID = isset($_GET['groupID']) ? intval($_GET['groupID']) : 0; 
 if ($groupUID <= 0) {

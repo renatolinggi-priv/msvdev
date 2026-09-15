@@ -1,6 +1,8 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once '../config.php';  // $conn
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 
 // Jahr aus GET oder Standardjahr
 $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
