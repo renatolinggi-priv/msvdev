@@ -2,6 +2,7 @@
 // api/dokument_update.php - Dokument-Metadaten aktualisieren, optional neue Datei
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../inc/lib/dokument_datei.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 requireRoleJson(['admin', 'vorstand']);
@@ -11,120 +12,93 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']);
     exit;
 }
-
 if (!validateCsrf($_POST['csrf_token'] ?? '')) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Ungültiges CSRF-Token']);
     exit;
 }
 
-$doc_id = intval($_POST['id'] ?? 0);
-if ($doc_id < 1) {
-    echo json_encode(['success' => false, 'message' => 'Ungültige ID']);
+function update_fail(string $msg, int $code = 400): void {
+    http_response_code($code);
+    echo json_encode(['success' => false, 'message' => $msg]);
     exit;
 }
+
+$doc_id = (int)($_POST['id'] ?? 0);
+if ($doc_id < 1) update_fail('Ungültige ID');
 
 $db = getDB();
 $stmt = $db->prepare("SELECT * FROM vorstand_dokumente WHERE id = ?");
 $stmt->execute([$doc_id]);
 $doc = $stmt->fetch();
-
-if (!$doc) {
-    echo json_encode(['success' => false, 'message' => 'Dokument nicht gefunden']);
-    exit;
-}
+if (!$doc) update_fail('Dokument nicht gefunden', 404);
 
 // Nur eigene Uploads oder Admin darf bearbeiten
-if ($doc['hochgeladen_von'] != $_SESSION['user_id'] && ($_SESSION['user_role'] ?? '') != 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Keine Berechtigung']);
-    exit;
+if ((int)$doc['hochgeladen_von'] !== (int)$_SESSION['user_id'] && ($_SESSION['user_role'] ?? '') !== 'admin') {
+    update_fail('Keine Berechtigung', 403);
 }
 
-$titel = trim($_POST['titel'] ?? '');
+$titel        = trim($_POST['titel'] ?? '');
 $beschreibung = trim($_POST['beschreibung'] ?? '');
-$datum = $_POST['datum'] ?? null;
-$sichtbar_fuer = $_POST['sichtbar_fuer'] ?? $doc['sichtbar_fuer'];
-$jahr = !empty($datum) ? date('Y', strtotime($datum)) : ($doc['jahr'] ?? date('Y'));
+if ($titel === '') update_fail('Titel ist erforderlich');
 
-if (empty($titel)) {
-    echo json_encode(['success' => false, 'message' => 'Titel ist erforderlich']);
-    exit;
+try {
+    $datum = dokument_datum_pruefen($_POST['datum'] ?? '');
+} catch (InvalidArgumentException $e) {
+    update_fail($e->getMessage());
 }
-if (!in_array($sichtbar_fuer, ['admin', 'vorstand', 'alle_mitglieder'])) {
-    echo json_encode(['success' => false, 'message' => 'Ungültiger Sichtbarkeits-Wert']);
-    exit;
+$jahr = $datum ? (int)substr($datum, 0, 4) : (int)($doc['jahr'] ?? date('Y'));
+
+// Sichtbarkeit: JSK immer alle Mitglieder (Kommentar in der Verwaltung sagt das, der Endpoint
+// akzeptierte trotzdem "Nur Vorstand" und sperrte damit die Jungschuetzen aus)
+$sichtbar_fuer = $_POST['sichtbar_fuer'] ?? $doc['sichtbar_fuer'];
+if ($doc['typ'] === 'jsk') {
+    $sichtbar_fuer = 'alle_mitglieder';
+} elseif (!in_array($sichtbar_fuer, ['admin', 'vorstand', 'alle_mitglieder'], true)) {
+    update_fail('Ungültiger Sichtbarkeits-Wert');
 }
 
 // Neue Datei optional
-$new_filename = null;
-$new_filepath = null;
-$new_filesize = null;
-
-if (isset($_FILES['datei']) && $_FILES['datei']['error'] === UPLOAD_ERR_OK) {
-    $file = $_FILES['datei'];
-
-    $allowed_mimes = [
-        'application/pdf'                                                            => 'pdf',
-        'image/jpeg'                                                                 => 'jpg',
-        'image/png'                                                                  => 'png',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'    => 'docx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'          => 'xlsx',
-        'application/vnd.ms-excel'                                                   => 'xls',
-    ];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime  = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-
-    if (!isset($allowed_mimes[$mime])) {
-        echo json_encode(['success' => false, 'message' => 'Dateityp nicht erlaubt (PDF, DOCX, XLSX, JPG, PNG)']);
-        exit;
-    }
-    if ($file['size'] > 10 * 1024 * 1024) {
-        echo json_encode(['success' => false, 'message' => 'Datei zu gross (max. 10 MB)']);
-        exit;
-    }
+$new = null; // ['name','path','size','ext']
+if (isset($_FILES['datei']) && ($_FILES['datei']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+    $file  = $_FILES['datei'];
+    $check = dokument_datei_pruefen($file);
+    if (!$check['ok']) update_fail($check['message']);
 
     $upload_base = __DIR__ . '/../portal/uploads/dokumente/' . $doc['typ'] . '/';
-    if (!is_dir($upload_base)) {
-        mkdir($upload_base, 0755, true);
+    if (!is_dir($upload_base) && !mkdir($upload_base, 0755, true)) {
+        update_fail('Upload-Verzeichnis konnte nicht angelegt werden', 500);
     }
-
-    $safe_name  = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($file['name'], PATHINFO_FILENAME));
-    $extension  = $allowed_mimes[$mime];
-    $filename   = time() . '_' . $safe_name . '.' . $extension;
-    $filepath   = $upload_base . $filename;
-
+    $filepath = $upload_base . dokument_zielname($file['name'], $check['ext']);
     if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-        echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern der Datei']);
-        exit;
+        update_fail('Fehler beim Speichern der Datei', 500);
     }
+    $new = ['name' => $file['name'], 'path' => $filepath, 'size' => $file['size'], 'ext' => $check['ext']];
 
-    // Alte Datei löschen
-    if (file_exists($doc['dateipfad'])) {
-        unlink($doc['dateipfad']);
+    // Gleiche Regel wie beim Upload: DOCX/XLSX-Einsatzplaene sind "Nur Admin"
+    if ($doc['typ'] === 'einsatzplan' && in_array($check['ext'], ['docx', 'xlsx', 'xls'], true)) {
+        $sichtbar_fuer = 'admin';
     }
-
-    $new_filename = $file['name'];
-    $new_filepath = $filepath;
-    $new_filesize = $file['size'];
 }
 
-// Update
-if ($new_filename) {
-    $upd = $db->prepare("
-        UPDATE vorstand_dokumente
-        SET titel=?, beschreibung=?, datum=?, sichtbar_fuer=?, jahr=?, dateiname=?, dateipfad=?, dateigroesse=?
-        WHERE id=?
-    ");
-    $upd->execute([$titel, $beschreibung ?: null, $datum ?: null, $sichtbar_fuer, $jahr,
-                   $new_filename, $new_filepath, $new_filesize, $doc_id]);
-} else {
-    $upd = $db->prepare("
-        UPDATE vorstand_dokumente
-        SET titel=?, beschreibung=?, datum=?, sichtbar_fuer=?, jahr=?
-        WHERE id=?
-    ");
-    $upd->execute([$titel, $beschreibung ?: null, $datum ?: null, $sichtbar_fuer, $jahr, $doc_id]);
+try {
+    if ($new) {
+        $upd = $db->prepare("UPDATE vorstand_dokumente
+                             SET titel=?, beschreibung=?, datum=?, sichtbar_fuer=?, jahr=?, dateiname=?, dateipfad=?, dateigroesse=?
+                             WHERE id=?");
+        $upd->execute([$titel, $beschreibung !== '' ? $beschreibung : null, $datum, $sichtbar_fuer, $jahr,
+                       $new['name'], $new['path'], $new['size'], $doc_id]);
+        // Alte Datei erst nach erfolgreichem Update entfernen
+        if (!empty($doc['dateipfad']) && $doc['dateipfad'] !== $new['path'] && file_exists($doc['dateipfad'])) {
+            @unlink($doc['dateipfad']);
+        }
+    } else {
+        $upd = $db->prepare("UPDATE vorstand_dokumente SET titel=?, beschreibung=?, datum=?, sichtbar_fuer=?, jahr=? WHERE id=?");
+        $upd->execute([$titel, $beschreibung !== '' ? $beschreibung : null, $datum, $sichtbar_fuer, $jahr, $doc_id]);
+    }
+    echo json_encode(['success' => true, 'message' => 'Dokument aktualisiert', 'jahr' => $jahr, 'sichtbar_fuer' => $sichtbar_fuer]);
+} catch (Throwable $e) {
+    if ($new) @unlink($new['path']); // neue Datei nicht als Leiche liegen lassen
+    error_log('[dokument_update] ' . $e->getMessage());
+    update_fail('Dokument konnte nicht aktualisiert werden', 500);
 }
-
-echo json_encode(['success' => true, 'message' => 'Dokument aktualisiert']);

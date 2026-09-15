@@ -61,8 +61,11 @@ $mime = finfo_file($finfo, $filepath);
 finfo_close($finfo);
 
 $disposition = isset($_GET['force_download']) ? 'attachment' : 'inline';
+// Dateiname header-sicher: ASCII-Fallback ohne Anfuehrungszeichen + UTF-8-Variante (RFC 5987)
+$origName  = basename((string)$doc['dateiname']);
+$asciiName = preg_replace('/[^A-Za-z0-9._-]/', '_', $origName) ?: 'dokument';
 header('Content-Type: ' . $mime);
-header('Content-Disposition: ' . $disposition . '; filename="' . basename($doc['dateiname']) . '"');
+header('Content-Disposition: ' . $disposition . '; filename="' . $asciiName . '"; filename*=UTF-8\'\'' . rawurlencode($origName));
 header('Content-Length: ' . filesize($filepath));
 header('Cache-Control: no-cache, must-revalidate');
 
