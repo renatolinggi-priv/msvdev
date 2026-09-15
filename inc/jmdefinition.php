@@ -487,13 +487,8 @@ $(function () {
         showWarningToast = m => msvToast(m, 'warning');
 
   // Fehlertext aus einer XHR-Antwort ziehen (JSON message, sonst Statuscode)
-  function ajaxErrorMessage(xhr, fallback) {
-    try { const r = JSON.parse(xhr.responseText); if (r && r.message) return r.message; } catch (e) { /* kein JSON */ }
-    if (xhr && xhr.status === 0)   return 'Keine Verbindung zum Server';
-    if (xhr && xhr.status === 401) return 'Sitzung abgelaufen – bitte neu anmelden';
-    if (xhr && xhr.status === 403) return 'Keine Berechtigung';
-    return fallback;
-  }
+  // zentral in msv-toast.js (msvXhrMessage)
+  function ajaxErrorMessage(xhr, fallback) { return msvXhrMessage(xhr, fallback); }
 
   const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
   const currentYear = new Date().getFullYear();
@@ -839,10 +834,7 @@ $(function () {
   const COPY_WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
   let copyData = [];
 
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
-      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  }
+  function escapeHtml(s) { return msvEsc(s); } // zentral in msv-toast.js
   function isoToDate(iso) { const p = iso.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
   function dateToIso(dt) {
     return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');

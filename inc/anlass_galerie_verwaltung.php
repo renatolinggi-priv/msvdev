@@ -263,13 +263,8 @@ $page_show_mobile = true;
 
   function agEsc(s) { return $('<span>').text(s == null ? '' : String(s)).html(); }
   function agFmtD(d) { return d ? String(d).substring(0, 10).split('-').reverse().join('.') : null; }
-  function ajaxMsg(xhr, fb) { return (xhr && xhr.responseJSON && xhr.responseJSON.message) || (xhr && xhr.status === 401 ? 'Sitzung abgelaufen – bitte neu anmelden' : fb); }
-  // Gemeinsamer POST-Wrapper: JSON, Fehler-Toast bei Netz-/Serverfehler
-  function agPost(url, data, ok, failMsg) {
-    return $.post(url, $.extend({ csrf_token: CSRF }, data), null, 'json')
-      .done(function (r) { if (r && r.success) ok(r); else msvToast((r && r.message) || failMsg, 'error'); })
-      .fail(function (xhr) { msvToast(ajaxMsg(xhr, failMsg), 'error'); });
-  }
+  // Gemeinsamer POST-Wrapper -> zentral msvPost() in msv-toast.js (JSON, Fehler-Toast bei Netz-/Serverfehler)
+  function agPost(url, data, ok, failMsg) { return msvPost(url, data, ok, { csrf: CSRF, failMsg: failMsg }); }
   var API_GAL = '../api/anlass_galerie_admin.php', API_MOD = '../api/foto_moderate.php', API_PROG = '../api/galerie_programm_upload.php';
 
   // --- Galerie freischalten (neue Karte -> Seite neu laden) ---
@@ -329,7 +324,7 @@ $page_show_mobile = true;
         if (r && r.success) { msvToast(r.message, 'success'); $('#agSetProgName').text(r.dateiname); $('#agSetProgRemove').removeClass('d-none'); $('#agSetProgFile').val(''); $('#ag-' + $('#agModGid').val() + ' .btn-details').data('progname', r.dateiname); }
         else msvToast((r && r.message) || 'Upload fehlgeschlagen', 'error');
       })
-      .fail(function (xhr) { msvToast(ajaxMsg(xhr, xhr.status === 413 ? 'Datei zu gross für den Server' : 'Upload fehlgeschlagen'), 'error'); })
+      .fail(function (xhr) { msvToast(msvXhrMessage(xhr, 'Upload fehlgeschlagen'), 'error'); })
       .always(function () { $btn.prop('disabled', false).html('<i class="bi bi-upload"></i>'); });
   });
   $('#agSetProgRemove').on('click', function () {

@@ -137,9 +137,7 @@ $(function () {
         }
     })();
 
-    function ajaxMsg(xhr, fallback) {
-        return (xhr && xhr.responseJSON && xhr.responseJSON.message) || fallback;
-    }
+    function ajaxMsg(xhr, fallback) { return msvXhrMessage(xhr, fallback); } // zentral in msv-toast.js
 
     // Formular laden
     function loadFragebogen(year) {

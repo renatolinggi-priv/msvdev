@@ -500,10 +500,7 @@ $(function() {
 
   // ========== Vom Vorjahr übernehmen ==========
   let copyData = [];
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
-      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  }
+  function escapeHtml(s) { return msvEsc(s); } // zentral in msv-toast.js
   function isoToDate(iso) { const p = iso.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
   function dateToIso(dt) {
     return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');

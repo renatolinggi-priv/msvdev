@@ -506,11 +506,7 @@ $page_show_mobile = true;
   var editModal = new bootstrap.Modal(document.getElementById('dvEditModal'));
 
   function escHtml(str) { if (str == null || str === '') return ''; return $('<span>').text(String(str)).html(); }
-  function ajaxMsg(xhr, fallback) {
-    if (xhr && xhr.status === 401) return 'Sitzung abgelaufen – bitte neu anmelden';
-    if (xhr && xhr.status === 403) return 'Keine Berechtigung';
-    return (xhr && xhr.responseJSON && xhr.responseJSON.message) || fallback;
-  }
+  function ajaxMsg(xhr, fallback) { return msvXhrMessage(xhr, fallback); } // zentral in msv-toast.js
 
   // Aktiven Tab merken, damit ein Reload (nach Upload/Import) nicht auf "Einsatzpläne" zurückfällt
   function activeTabHash() {

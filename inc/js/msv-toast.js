@@ -72,3 +72,49 @@ function msvConfirm(message, title = 'Bestätigen', confirmText = 'Ja, fortfahre
         cancelButtonText: 'Abbrechen'
     });
 }
+
+// HTML-Escaping für Text, der per innerHTML/jQuery.html() eingesetzt wird.
+// null/undefined -> leerer String. (vorher in mehreren Seiten lokal als esc()/escapeHtml())
+function msvEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+// Lesbare Meldung aus einem fehlgeschlagenen jQuery-XHR: JSON-message des Servers,
+// sonst Standardtext je Status (0/401/403/413), sonst fallback.
+function msvXhrMessage(xhr, fallback) {
+    var r = xhr && xhr.responseJSON;
+    if (!r && xhr && xhr.responseText) {
+        try { r = JSON.parse(xhr.responseText); } catch (e) { r = null; }
+    }
+    if (r && (r.message || r.error)) return r.message || r.error;
+    var st = xhr ? xhr.status : -1;
+    if (st === 0)   return 'Keine Verbindung zum Server';
+    if (st === 401) return 'Sitzung abgelaufen – bitte neu anmelden';
+    if (st === 403) return 'Keine Berechtigung';
+    if (st === 413) return 'Anfrage zu gross für den Server';
+    return fallback || 'Serverfehler' + (st > 0 ? ' (' + st + ')' : '');
+}
+
+// Gemeinsamer JSON-POST für Admin-Endpunkte (jQuery). Hängt das CSRF-Token an
+// (opts.csrf, sonst <meta name="csrf-token"> oder das erste [name=csrf_token]),
+// ruft ok(r) bei r.success, zeigt sonst einen Fehler-Toast (r.message bzw. opts.failMsg).
+// Gibt das jqXHR zurück, damit .always()/.then() weiter angehängt werden kann.
+function msvPost(url, data, ok, opts) {
+    opts = opts || {};
+    var csrf = opts.csrf
+        || (document.querySelector('meta[name="csrf-token"]') || {}).content
+        || (document.querySelector('[name="csrf_token"]') || {}).value
+        || '';
+    var payload = Object.assign({ csrf_token: csrf }, data || {});
+    return jQuery.post(url, payload, null, 'json')
+        .done(function (r) {
+            if (r && r.success) { if (typeof ok === 'function') ok(r); }
+            else msvToast((r && (r.message || r.error)) || opts.failMsg || 'Aktion fehlgeschlagen', 'error');
+        })
+        .fail(function (xhr) {
+            if (typeof opts.fail === 'function') opts.fail(xhr);
+            msvToast(msvXhrMessage(xhr, opts.failMsg), 'error');
+        });
+}
