@@ -29,31 +29,24 @@ try {
         $year = $currentYear;
     }
 
-    // JSK-Termine aus Datenbank laden
-    $sql = "SELECT Datum, Wochentag, Bezeichnung, StartZeit, EndZeit 
-            FROM Standbelegung 
-            WHERE Jahr = ? 
-            AND (
-                Bezeichnung LIKE '%Einschreiben JS-Kurs%' 
-                OR Bezeichnung LIKE '%Jungschützenkurs Gewehr%' 
-                OR Bezeichnung LIKE '%JSK Wettschiessen%'
-                OR Bezeichnung LIKE '%Jungschützenwettschiessen%'
-                OR Bezeichnung LIKE '%JSK Gewehr%'
-            )
-            ORDER BY Datum ASC";
+    // JSK-Termine: gleiche Art-Erkennung wie Export/Übersicht (Keywords aus der DB + Standard-Regeln)
+    // statt eines zweiten, hart codierten LIKE-Katalogs.
+    require_once __DIR__ . '/standbelegung_config.inc.php';
+    $keywords = sb_load_keywords($conn);
 
-    $stmt = $conn->prepare($sql);
+    $stmt = $conn->prepare("SELECT Datum, Wochentag, Bezeichnung, StartZeit, EndZeit FROM Standbelegung WHERE Jahr = ? ORDER BY Datum ASC, StartZeit ASC");
     if (!$stmt) {
         throw new Exception("Fehler beim Vorbereiten der Abfrage: " . $conn->error);
     }
-    
     $stmt->bind_param("i", $year);
     $stmt->execute();
     $result = $stmt->get_result();
 
     $termine = [];
     while ($row = $result->fetch_assoc()) {
-        $termine[] = $row;
+        if (sb_detect_art((string)$row['Bezeichnung'], $keywords) === 'JSK') {
+            $termine[] = $row;
+        }
     }
     $stmt->close();
     $conn->close();

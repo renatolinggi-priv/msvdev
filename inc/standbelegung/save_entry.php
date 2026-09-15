@@ -1,115 +1,83 @@
 <?php
-// save_entry.php - Speichert oder aktualisiert einen einzelnen Standbelegung-Eintrag
+// save_entry.php – einzelnen Standbelegung-Eintrag anlegen oder aktualisieren (JSON-Body)
 require_once '../config.php';
-
-// CSRF-Schutz
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
-}
+require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/standbelegung_config.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
-    exit;
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true); // Token kommt als Header X-CSRF-TOKEN ($.ajaxSetup) – bei JSON-Body ist $_POST leer
 
 $input = json_decode(file_get_contents('php://input'), true);
+if (!is_array($input)) {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Keine Daten empfangen']));
+}
 
-if (!$input) {
-    echo json_encode(['success' => false, 'message' => 'Keine Daten empfangen']);
+function fail(string $msg, int $code = 400): void {
+    http_response_code($code);
+    echo json_encode(['success' => false, 'message' => $msg]);
     exit;
 }
 
-// Pflichtfelder prüfen
-if (empty($input['datum']) || empty($input['bezeichnung'])) {
-    echo json_encode(['success' => false, 'message' => 'Datum und Bezeichnung sind erforderlich']);
-    exit;
+$id          = !empty($input['id']) ? (int)$input['id'] : null;
+$datum       = trim((string)($input['datum'] ?? ''));
+$bezeichnung = trim((string)($input['bezeichnung'] ?? ''));
+$startZeit   = trim((string)($input['start_zeit'] ?? ''));
+$endZeit     = trim((string)($input['end_zeit'] ?? ''));
+$kategorie   = (string)($input['kategorie'] ?? 'Sonstiges');
+$inKalender  = !empty($input['in_kalender']) ? 1 : 0;
+
+if ($bezeichnung === '') fail('Bitte eine Bezeichnung angeben');
+$d = DateTime::createFromFormat('Y-m-d', $datum);
+if (!$d || $d->format('Y-m-d') !== $datum) fail('Ungültiges Datum (erwartet JJJJ-MM-TT)'); // vorher: strtotime('foo') -> Jahr 1970
+if (!in_array($kategorie, SB_KATEGORIEN, true)) fail('Ungültige Kategorie');
+foreach (['Von' => &$startZeit, 'Bis' => &$endZeit] as $label => &$zeit) {
+    if ($zeit === '') { $zeit = null; continue; }
+    if (!preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $zeit, $m) || (int)$m[1] > 23 || (int)$m[2] > 59) fail("Ungültige Zeit ($label)");
+    $zeit = sprintf('%02d:%02d:00', (int)$m[1], (int)$m[2]);
 }
+unset($zeit);
+if ($startZeit && $endZeit && $endZeit < $startZeit) fail('Die Endzeit liegt vor der Startzeit');
 
-$id = isset($input['id']) && $input['id'] ? intval($input['id']) : null;
-$datum = $input['datum'];
-$bezeichnung = trim($input['bezeichnung']);
-$startZeit = !empty($input['start_zeit']) ? $input['start_zeit'] : null;
-$endZeit = !empty($input['end_zeit']) ? $input['end_zeit'] : null;
-$kategorie = $input['kategorie'] ?? 'Sonstiges';
-$inKalender = isset($input['in_kalender']) ? intval($input['in_kalender']) : 0;
-
-// Jahr aus Datum extrahieren
-$jahr = date('Y', strtotime($datum));
-
-// Wochentag berechnen
-$wochentage = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
-$wochentag = $wochentage[date('w', strtotime($datum))];
+$jahr      = (int)$d->format('Y');
+$wochentag = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'][(int)$d->format('w')];
 
 try {
     if ($id) {
-        // Update bestehender Eintrag
-        $stmt = $conn->prepare("
-            UPDATE Standbelegung 
+        $stmt = $conn->prepare("UPDATE Standbelegung
             SET Datum = ?, Wochentag = ?, Bezeichnung = ?, StartZeit = ?, EndZeit = ?, Kategorie = ?, InKalender = ?, Jahr = ?
-            WHERE ID = ?
-        ");
-        
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $conn->error);
-        }
-        
-        $stmt->bind_param("ssssssiis", $datum, $wochentag, $bezeichnung, $startZeit, $endZeit, $kategorie, $inKalender, $jahr, $id);
-        
+            WHERE ID = ?");
+        if (!$stmt) throw new Exception($conn->error);
+        $stmt->bind_param('ssssssiii', $datum, $wochentag, $bezeichnung, $startZeit, $endZeit, $kategorie, $inKalender, $jahr, $id);
         if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
+            if ($conn->errno === 1062) fail('Ein Eintrag mit diesem Datum, dieser Bezeichnung und Startzeit existiert bereits', 409);
+            throw new Exception($stmt->error);
         }
-        
         $stmt->close();
-
-        echo json_encode([
-            'success' => true,
-            'id' => $id,
-            'wochentag' => $wochentag,
-            'action' => 'updated',
-            'message' => 'Eintrag aktualisiert'
-        ]);
-        
+        echo json_encode(['success' => true, 'id' => $id, 'wochentag' => $wochentag, 'jahr' => $jahr, 'action' => 'updated', 'message' => 'Eintrag aktualisiert']);
     } else {
-        // Neuer Eintrag
-        $stmt = $conn->prepare("
-            INSERT INTO Standbelegung (Datum, Wochentag, Bezeichnung, StartZeit, EndZeit, Kategorie, InKalender, Jahr)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $conn->error);
-        }
-        
-        $stmt->bind_param("ssssssii", $datum, $wochentag, $bezeichnung, $startZeit, $endZeit, $kategorie, $inKalender, $jahr);
-        
+        $stmt = $conn->prepare("INSERT INTO Standbelegung (Datum, Wochentag, Bezeichnung, StartZeit, EndZeit, Kategorie, InKalender, Jahr)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) throw new Exception($conn->error);
+        $stmt->bind_param('ssssssii', $datum, $wochentag, $bezeichnung, $startZeit, $endZeit, $kategorie, $inKalender, $jahr);
         if (!$stmt->execute()) {
-            // Prüfe ob Duplikat
-            if ($conn->errno === 1062) {
-                throw new Exception("Ein Eintrag mit diesem Datum, Bezeichnung und Startzeit existiert bereits");
-            }
-            throw new Exception("Execute failed: " . $stmt->error);
+            if ($conn->errno === 1062) fail('Ein Eintrag mit diesem Datum, dieser Bezeichnung und Startzeit existiert bereits', 409);
+            throw new Exception($stmt->error);
         }
-        
-        $newId = $stmt->insert_id;
+        $newId = (int)$stmt->insert_id;
         $stmt->close();
-
-        echo json_encode([
-            'success' => true,
-            'id' => $newId,
-            'wochentag' => $wochentag,
-            'action' => 'inserted',
-            'message' => 'Eintrag hinzugefügt'
-        ]);
+        echo json_encode(['success' => true, 'id' => $newId, 'wochentag' => $wochentag, 'jahr' => $jahr, 'action' => 'inserted', 'message' => 'Eintrag hinzugefügt']);
     }
-    
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} catch (Throwable $e) {
+    error_log('[standbelegung/save_entry] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Eintrag konnte nicht gespeichert werden']);
 }
-
 $conn->close();
