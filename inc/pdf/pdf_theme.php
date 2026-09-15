@@ -113,10 +113,9 @@ function pdf_theme_sanitize_value($val, array $def)
 }
 
 /**
- * Liest die gespeicherten Roh-Werte aus `pdf_theme_settings`.
- * Greift auf PDO (getDB) zurück, sonst auf die mysqli-Verbindung ($conn).
- * Schlägt etwas fehl (keine DB / keine Tabelle), wird [] zurückgegeben.
- * Kein DDL hier — die Tabelle wird von der Editor-Seite angelegt.
+ * Liest die gespeicherten Roh-Werte aus `pdf_theme_settings` (PDO via getDB(), das
+ * dbconnect.inc.php immer bereitstellt). Schlägt etwas fehl (keine DB / keine Tabelle),
+ * wird [] zurückgegeben. Kein DDL hier — die Tabelle kommt aus Migration 026.
  */
 function pdf_theme_settings_load(): array
 {
@@ -127,21 +126,9 @@ function pdf_theme_settings_load(): array
     $values = [];
     try {
         if (function_exists('getDB')) {
-            $pdo  = getDB();
-            $stmt = $pdo->query('SELECT skey, svalue FROM pdf_theme_settings');
+            $stmt = getDB()->query('SELECT skey, svalue FROM pdf_theme_settings');
             if ($stmt) {
                 $values = $stmt->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            }
-        } else {
-            global $conn;
-            if (isset($conn) && $conn instanceof mysqli && !$conn->connect_error) {
-                $res = @$conn->query('SELECT skey, svalue FROM pdf_theme_settings');
-                if ($res instanceof mysqli_result) {
-                    while ($row = $res->fetch_assoc()) {
-                        $values[$row['skey']] = $row['svalue'];
-                    }
-                    $res->free();
-                }
             }
         }
     } catch (\Throwable $e) {
@@ -168,20 +155,6 @@ function pdf_theme_palette(): array
         $palette[$key] = pdf_theme_sanitize_value($stored[$key] ?? null, $def);
     }
     return $palette;
-}
-
-/**
- * Legt die Settings-Tabelle an (selbstheilend). Von der Editor-Seite genutzt.
- * Akzeptiert eine PDO-Instanz; ohne Argument wird getDB() verwendet.
- */
-function pdf_theme_ensure_table(?PDO $pdo = null): void
-{
-    $pdo = $pdo ?: getDB();
-    $pdo->exec('CREATE TABLE IF NOT EXISTS pdf_theme_settings (
-        skey   VARCHAR(64)  NOT NULL,
-        svalue VARCHAR(64)  NOT NULL,
-        PRIMARY KEY (skey)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 }
 
 /**
@@ -328,8 +301,11 @@ CSS;
  * DRY-Ersatz für die in vielen Modulen duplizierte imgToBase64()-Funktion.
  * Gibt '' zurück, wenn die Datei fehlt (kein Fatal).
  */
-function pdf_logo_base64(string $path = 'dat/MSVWilen_Logo.jpg'): string
+function pdf_logo_base64(?string $path = null): string
 {
+    // Default: zentrales Logo (absoluter Pfad). Ein relativer Default ("dat/…") hing vom
+    // Arbeitsverzeichnis ab und lieferte bei include aus anderen Ordnern kein Bild.
+    $path = $path ?? pdf_logo_path();
     if (!is_file($path)) {
         return '';
     }
