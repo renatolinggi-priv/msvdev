@@ -1,57 +1,22 @@
 <?php
-// jmstandblatt.php - JM Standblatt generieren (Word) für aktive Mitglieder
-require_once 'config.php';
+// jmstandblatt.php - JM Standblatt generieren (Word/PDF/Direktdruck) für aktive Mitglieder
+require_once 'dbconnect.inc.php';               // $conn (header.inc.php bindet dieselbe Datei ein -> eine Verbindung)
+require_once 'partials/empty_state.inc.php';    // msv_empty_row()
 
-// Session-Kontrolle
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-$currentYear = date('Y');
+$currentYear = (int)date('Y');
 
 // Aktive Mitglieder laden
 $mitglieder = [];
-$sql = "SELECT ID, Vorname, Name FROM mitglieder WHERE Status = 1 AND Verstorben = 0 ORDER BY Name, Vorname";
-$result = $conn->query($sql);
+$result = $conn->query("SELECT ID, Vorname, Name FROM mitglieder WHERE Status = 1 AND Verstorben = 0 ORDER BY Name, Vorname");
 if ($result) {
     while ($row = $result->fetch_assoc()) {
         $mitglieder[] = $row;
     }
 }
 
+// Zeilen haben keinen Klick-Handler (nur Aktions-Buttons) -> kein Pointer-Cursor
 $page_specific_css = <<<'CSS'
-/* ===== JM Standblatt ===== */
-
-/* Karte/Container auf feste, kompakte Breite begrenzen (verlässlicher als col-Breite) */
-.main-content-wrapper { max-width: 1000px; }
-
-/* Auf dieser Seite kein Row-Click → cursor zurücksetzen */
-.hybrid-table tbody tr.hybrid-row {
-    cursor: default;
-}
-.hybrid-table tbody tr.hybrid-row:hover {
-    background: rgba(99, 102, 241, 0.03);
-}
-
-/* Etwas kompaktere Liste (Mittelweg) */
-.hybrid-table { font-size: 0.86rem; }
-.hybrid-table thead th { padding: 0.4rem 0.6rem; }
-.hybrid-table tbody td { padding: 0.32rem 0.6rem; }
-.hybrid-table tbody .btn-group-sm > .btn,
-.hybrid-table tbody .btn {
-    padding: 0.25rem 0.55rem;
-    font-size: 0.85rem;
-    line-height: 1.2;
-}
-
-/* Mobile */
-@media (max-width: 767.98px) {
-    .desktop-table-container { display: none !important; }
-    .mobile-cards-container { display: block !important; }
-}
-@media (min-width: 768px) {
-    .mobile-cards-container { display: none !important; }
-}
+.hybrid-table tbody tr.hybrid-row { cursor: default; }
 CSS;
 
 include 'header.inc.php';
@@ -61,7 +26,6 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-narrow">
-        <!-- Desktop-Header (unsichtbar auf Mobile) -->
         <?php $page_title = 'JM Standblatt'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
@@ -71,13 +35,13 @@ include 'header.inc.php';
             <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width:280px;">
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Mitglied suchen...">
+                <input type="text" class="form-control" id="searchInput" placeholder="Mitglied suchen..." aria-label="Mitglied suchen">
               </div>
             </div>
 
             <!-- Jahr-Auswahl -->
             <div class="d-flex align-items-center gap-2">
-              <label class="form-label mb-0 small fw-bold">Jahr:</label>
+              <label class="form-label mb-0 small fw-bold" for="yearSelect">Jahr:</label>
               <select id="yearSelect" class="form-select form-select-sm" style="width:100px">
                 <?php for ($y = $currentYear + 1; $y >= $currentYear - 3; $y--): ?>
                   <option value="<?= $y ?>" <?= $y == $currentYear ? 'selected' : '' ?>><?= $y ?></option>
@@ -85,16 +49,10 @@ include 'header.inc.php';
               </select>
             </div>
 
-            <!-- Aktionen (Collapse-Card wie Mitgliederverwaltung) -->
-            <div class="card action-card mb-0">
-              <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
-                   data-bs-toggle="collapse" data-bs-target="#sbActions"
-                   aria-expanded="false" aria-controls="sbActions">
-                <span class="fw-semibold"><i class="bi bi-tools me-2"></i>Aktionen</span>
-                <i class="bi bi-chevron-down action-chevron"></i>
-              </div>
-              <div class="collapse" id="sbActions">
-                <div class="card-body pt-2 pb-3 px-3">
+            <!-- Aktionen (zentrales Partial) -->
+            <?php
+            $ac_id = 'sbActions';
+            ob_start(); ?>
                   <div class="row g-2">
                     <div class="col-6">
                       <button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm w-100">
@@ -107,14 +65,18 @@ include 'header.inc.php';
                       </button>
                     </div>
                     <div class="col-6">
-                      <button type="button" id="btnPrintAll" class="btn btn-outline-info btn-sm w-100" disabled title="QZ Tray nicht verbunden">
+                      <button type="button" id="btnPrintAll" class="btn btn-outline-info btn-sm w-100" disabled data-tooltip="QZ Tray nicht verbunden">
                         <i class="bi bi-printer me-1"></i>Alle drucken
                       </button>
                     </div>
+                    <div class="col-6 d-flex align-items-center small text-muted">
+                      <span class="me-2">Direktdruck:</span><span id="qzBadge" class="badge bg-secondary">prüfe…</span>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
+            <?php
+            $ac_body = ob_get_clean();
+            include 'partials/action_card.inc.php';
+            ?>
           </div>
 
           <!-- Tabelle -->
@@ -136,31 +98,32 @@ include 'header.inc.php';
                   </tr>
                 </thead>
                 <tbody>
+                  <?php if (!$mitglieder): ?>
+                    <?= msv_empty_row(4, 'Keine aktiven Mitglieder gefunden') ?>
+                  <?php endif; ?>
                   <?php foreach ($mitglieder as $m): ?>
                   <tr class="hybrid-row"
-                      data-id="<?= $m['ID'] ?>"
+                      data-id="<?= (int)$m['ID'] ?>"
                       data-name="<?= htmlspecialchars($m['Name']) ?>"
                       data-vorname="<?= htmlspecialchars($m['Vorname']) ?>">
-                    <td class="h-nr"><?= htmlspecialchars($m['ID']) ?></td>
+                    <td class="h-nr"><?= (int)$m['ID'] ?></td>
                     <td class="h-name"><?= htmlspecialchars($m['Name']) ?></td>
                     <td><?= htmlspecialchars($m['Vorname']) ?></td>
                     <td class="text-center">
                       <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-info btn-standblatt"
-                                data-id="<?= $m['ID'] ?>"
+                                data-id="<?= (int)$m['ID'] ?>"
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
-                                title="DOCX herunterladen"
-                                onclick="event.stopPropagation();">
+                                data-tooltip="DOCX herunterladen">
                           <i class="bi bi-file-earmark-word"></i>
                         </button>
                         <button type="button" class="btn btn-outline-info btn-print-single"
-                                data-id="<?= $m['ID'] ?>"
+                                data-id="<?= (int)$m['ID'] ?>"
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
-                                title="Direktdruck"
-                                disabled
-                                onclick="event.stopPropagation();">
+                                data-tooltip="Direktdruck"
+                                disabled>
                           <i class="bi bi-printer"></i>
                         </button>
                       </div>
@@ -176,23 +139,26 @@ include 'header.inc.php';
               <div class="mobile-search">
                 <div class="position-relative">
                   <i class="bi bi-search search-icon"></i>
-                  <input type="text" class="form-control" placeholder="Mitglied suchen..."
+                  <input type="text" class="form-control" placeholder="Mitglied suchen..." aria-label="Mitglied suchen"
                          oninput="filterMobileStandblatt(this)">
                 </div>
               </div>
               <div class="mobile-cards-scroll" id="mobileStandblattCards">
+                <?php if (!$mitglieder): ?>
+                  <div class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>Keine aktiven Mitglieder gefunden</div>
+                <?php endif; ?>
                 <?php foreach ($mitglieder as $m): ?>
-                <div class="mobile-card" data-search="<?= strtolower($m['Name'] . ' ' . $m['Vorname'] . ' ' . $m['ID']) ?>">
+                <div class="mobile-card" data-search="<?= htmlspecialchars(mb_strtolower($m['Name'] . ' ' . $m['Vorname'] . ' ' . $m['ID'])) ?>">
                   <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
                       <div class="fw-bold"><?= htmlspecialchars($m['Name']) ?> <?= htmlspecialchars($m['Vorname']) ?></div>
-                      <small class="text-muted">Lizenz: <?= htmlspecialchars($m['ID']) ?></small>
+                      <small class="text-muted">Lizenz: <?= (int)$m['ID'] ?></small>
                     </div>
                     <i class="bi bi-chevron-down"></i>
                   </div>
                   <div class="mobile-card-body">
                     <button type="button" class="btn btn-outline-info btn-sm w-100 btn-standblatt"
-                            data-id="<?= $m['ID'] ?>"
+                            data-id="<?= (int)$m['ID'] ?>"
                             data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                             data-name="<?= htmlspecialchars($m['Name']) ?>">
                       <i class="bi bi-file-earmark-word me-1"></i>Standblatt herunterladen
@@ -212,17 +178,20 @@ include 'header.inc.php';
 <?php include 'partials/direktdruck_scripts.inc.php'; ?>
 
 <script>
-// --- Desktop-Suche ---
-$('#searchInput').on('keyup', function() {
+// --- Suche (Desktop): 'input' reagiert auch auf Einfügen/Löschen per Maus ---
+$('#searchInput').on('input', function() {
   const q = this.value.toLowerCase();
-  $('#mitgliederTable tbody tr.hybrid-row').each(function() {
+  let visible = 0;
+  $('#mitgliederTable tbody tr[data-id]').each(function() {
     const d = this.dataset;
-    const text = [d.id, d.name, d.vorname].join(' ').toLowerCase();
-    $(this).toggle(text.includes(q));
+    const hit = [d.id, d.name, d.vorname].join(' ').toLowerCase().includes(q);
+    $(this).toggle(hit);
+    if (hit) visible++;
   });
+  $('#memberCount').text(visible + ' Mitglieder');
 });
 
-// --- Mobile-Suche ---
+// --- Suche (Mobile) ---
 function filterMobileStandblatt(input) {
   const q = input.value.toLowerCase();
   document.querySelectorAll('#mobileStandblattCards .mobile-card').forEach(c => {
@@ -230,35 +199,51 @@ function filterMobileStandblatt(input) {
   });
 }
 
+function standblattUrl(script, mitgliedId) {
+  const p = new URLSearchParams({ jahr: document.getElementById('yearSelect').value });
+  if (mitgliedId != null) p.set('mitglied_id', mitgliedId);
+  return 'jmstandblatt/' + script + '?' + p.toString();
+}
+
+function saveBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
+// Uebersprungene Mitglieder aus den Antwort-Headern des Sammel-PDFs melden
+function meldeUebersprungene(response) {
+  const skipped = parseInt(response.headers.get('X-Skipped') || '0', 10);
+  if (!skipped) return;
+  let names = '';
+  try { names = decodeURIComponent(response.headers.get('X-Skipped-Names') || ''); } catch (e) { /* ignorieren */ }
+  msvToast(skipped + ' Mitglied(er) ohne Standblatt übersprungen' + (names ? ': ' + names : ''), 'warning');
+}
+
 async function downloadStandblatt(btn, mitgliedId, vorname, name) {
   const jahr = document.getElementById('yearSelect').value;
-  const originalHTML = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
 
   try {
-    const url = `jmstandblatt/generate_jmstandblatt.php?jahr=${jahr}&mitglied_id=${mitgliedId}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Fehler beim Generieren');
-
-    const blob = await response.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `JM_Standblatt_${jahr}_${vorname}${name}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
+    const response = await fetch(standblattUrl('generate_jmstandblatt.php', mitgliedId));
+    if (!response.ok) throw new Error(await response.text() || 'Fehler beim Generieren');
+    saveBlob(await response.blob(), `JM_Standblatt_${jahr}_${vorname}${name}.docx`);
+    return true;
   } catch (err) {
     console.error(err);
-    msvToast('Fehler beim Generieren des Standblatts', 'danger');
+    msvToast('Fehler beim Generieren des Standblatts: ' + err.message, 'error');
+    return false;
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
   }
 }
 
-// Einzelner Download
+// Einzelner Download (Desktop-Zeile und Mobile-Card tragen dieselbe Klasse)
 document.querySelectorAll('.btn-standblatt').forEach(btn => {
   btn.addEventListener('click', function() {
     downloadStandblatt(this, this.dataset.id, this.dataset.vorname, this.dataset.name);
@@ -281,14 +266,15 @@ function updateQzBadge() {
     if (badge) {
         badge.className = ready ? 'badge bg-success' : 'badge bg-danger';
         badge.textContent = ready ? 'QZ verbunden' : (grund.startsWith('Kein Druckprofil') ? 'Kein Profil' : 'QZ getrennt');
+        badge.dataset.tooltip = ready ? MsvDruck.profilText(JM_DOC) : grund;
     }
     if (btn) {
         btn.disabled = !ready;
-        btn.title = ready ? 'Alle Standblätter drucken (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
+        btn.dataset.tooltip = ready ? 'Alle Standblätter drucken (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
     }
     document.querySelectorAll('.btn-print-single').forEach(b => {
         b.disabled = !ready;
-        b.title = ready ? 'Direktdruck (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
+        b.dataset.tooltip = ready ? 'Direktdruck (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
     });
 }
 
@@ -303,7 +289,7 @@ async function printStandblatt(mitgliedId, vorname, name) {
     const jahr = document.getElementById('yearSelect').value;
     return MsvDruck.print({
         docType: JM_DOC,
-        url: `jmstandblatt/generate_jmstandblatt_pdf.php?jahr=${encodeURIComponent(jahr)}&mitglied_id=${encodeURIComponent(mitgliedId)}`,
+        url: standblattUrl('generate_jmstandblatt_pdf.php', mitgliedId),
         jobName: `JM Standblatt ${vorname} ${name} ${jahr}`,
         orientation: 'landscape',
     });
@@ -322,21 +308,18 @@ document.querySelectorAll('.btn-print-single').forEach(btn => {
   });
 });
 
-// "Alle drucken" — kombiniertes PDF als EIN Druckjob (Header X-Skipped = Mitglieder ohne Standblatt)
+// "Alle drucken" — kombiniertes PDF als EIN Druckjob
 document.getElementById('btnPrintAll').addEventListener('click', async function() {
     const btn = this;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF wird erstellt…';
-
     const jahr = document.getElementById('yearSelect').value;
 
     try {
         if (!printReady()) throw new Error('QZ Tray nicht verbunden oder kein Druckprofil');
-        const response = await fetch(`jmstandblatt/generate_jmstandblatt_all_pdf.php?jahr=${encodeURIComponent(jahr)}`);
+        const response = await fetch(standblattUrl('generate_jmstandblatt_all_pdf.php'));
         if (!response.ok) throw new Error(await response.text() || 'PDF-Generierung fehlgeschlagen');
-
-        const skipped = parseInt(response.headers.get('X-Skipped') || '0');
         const blob = await response.blob();
 
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Drucke…';
@@ -346,9 +329,7 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
             jobName: `JM Standblätter ${jahr} alle`,
             orientation: 'landscape',
         });
-        if (ok && skipped > 0) {
-            msvToast(skipped + ' Mitglieder ohne Standblatt übersprungen', 'warning');
-        }
+        if (ok) meldeUebersprungene(response);
     } catch (err) {
         console.error('Druckfehler:', err);
         msvToast('Druckfehler: ' + err.message, 'error');
@@ -367,20 +348,12 @@ document.getElementById('btnDownloadAllPdf').addEventListener('click', async fun
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF wird erstellt…';
 
     try {
-        const response = await fetch(`jmstandblatt/generate_jmstandblatt_all_pdf.php?jahr=${jahr}`);
+        const response = await fetch(standblattUrl('generate_jmstandblatt_all_pdf.php'));
         if (!response.ok) throw new Error(await response.text() || 'Fehler beim Generieren');
-
         const blob = await response.blob();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `JM_Standblaetter_${jahr}_alle.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(a.href);
-
-        const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
-        msvToast(`PDF heruntergeladen (${sizeMB} MB)`, 'success');
+        saveBlob(blob, `JM_Standblaetter_${jahr}_alle.pdf`);
+        msvToast(`PDF heruntergeladen (${(blob.size / 1024 / 1024).toFixed(1)} MB)`, 'success');
+        meldeUebersprungene(response);
     } catch (err) {
         console.error(err);
         msvToast('Fehler: ' + err.message, 'error');
@@ -390,30 +363,32 @@ document.getElementById('btnDownloadAllPdf').addEventListener('click', async fun
     }
 });
 
-// QZ Tray initialisieren
-$(function() { initPrint(); });
-
-// Alle herunterladen (sequenziell)
+// Alle als DOCX herunterladen (sequenziell) — ueber die Datenzeilen, nicht ueber Buttons
+// (Desktop-Zeile UND Mobile-Card tragen .btn-standblatt -> vorher jedes Blatt doppelt)
 document.getElementById('btnDownloadAll').addEventListener('click', async function() {
   const btn = this;
   const originalHTML = btn.innerHTML;
-  const buttons = document.querySelectorAll('.btn-standblatt');
+  const rows = Array.from(document.querySelectorAll('#mitgliederTable tbody tr[data-id]'));
+  if (!rows.length) { msvToast('Keine Mitglieder vorhanden', 'warning'); return; }
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>0 / ' + buttons.length;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>0 / ' + rows.length;
 
-  let count = 0;
-  for (const rowBtn of buttons) {
-    await downloadStandblatt(rowBtn, rowBtn.dataset.id, rowBtn.dataset.vorname, rowBtn.dataset.name);
-    count++;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + count + ' / ' + buttons.length;
+  let ok = 0;
+  for (const row of rows) {
+    const rowBtn = row.querySelector('.btn-standblatt');
+    if (await downloadStandblatt(rowBtn, row.dataset.id, row.dataset.vorname, row.dataset.name)) ok++;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + ok + ' / ' + rows.length;
     // Kurze Pause damit der Browser den Download verarbeiten kann
     await new Promise(r => setTimeout(r, 300));
   }
 
   btn.disabled = false;
   btn.innerHTML = originalHTML;
-  msvToast(count + ' Standblätter heruntergeladen', 'success');
+  msvToast(ok + ' von ' + rows.length + ' Standblättern heruntergeladen', ok === rows.length ? 'success' : 'warning');
 });
+
+// QZ Tray initialisieren
+$(function() { initPrint(); });
 </script>
 
 <?php include 'footer.inc.php'; ?>
