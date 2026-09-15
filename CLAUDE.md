@@ -123,3 +123,25 @@ Absicherung, falls der zentrale Hook einmal wegfällt. Ausserdem schreibt er abs
 
 Prod 8.3, lokaler Lint 8.2 (XAMPP, `C:\temp\xampp\php\php.exe -l <datei>`). Der Lint prüft
 nur Syntax — kein Runtime, keine DB.
+
+## Konventionen für Admin-Seiten und ihre Endpunkte
+
+- **Jeder Endpunkt unter `inc/<modul>/*.php` und `api/*.php` startet mit dem Guard**, direkt
+  nach dem DB-Include: `require_once __DIR__ . '/../admin_api_guard.inc.php'; adminApiGuard('json'|'html'|'plain');`
+  (Rollen admin/vorstand). Ändernde Aufrufe zusätzlich `require_once __DIR__ . '/../csrf.inc.php'; csrf_require(true);`
+  (Token per POST `csrf_token` oder Header `X-CSRF-TOKEN`). Nie `session_start()` direkt — die
+  Session kommt über den Guard bzw. `inc/session_config.inc.php`. Öffentliche Ausnahmen sind
+  dokumentiert (`inc/jmdefinition/export_jmdefinition_pdf.php`, `inc/standbelegung/get_pdf.php`).
+- Nur-Admin-Funktionen (PDF-Vorlage) prüfen zusätzlich `user_role === 'admin'` und antworten 403.
+- `$page_specific_css` **vor** `include 'header.inc.php'` setzen und **nur rohes CSS** hineinschreiben —
+  der Header wrappt es in `<style>`; ein `<link>` oder `<style>` darin bricht das Layout. Breite über
+  genau eine Klasse `.content-width-wide|default|narrow` am `.main-content-wrapper`, kein eigenes `max-width`.
+- Seitentitel = Menütext = Browser-Tab (Regel aus Migration 043/049). Partials nutzen:
+  `partials/page_header.inc.php` (`$page_title`, optional `$page_actions`, `$page_show_mobile`),
+  `partials/side_panel.inc.php`, `partials/action_card.inc.php`, `msv_empty_row()`.
+- JS-Helfer zentral in `inc/js/msv-toast.js`: `msvToast/msvError/msvConfirm/msvConfirmDelete`,
+  `msvEsc()` (HTML-Escaping), `msvXhrMessage(xhr, fallback)`, `msvPost(url, data, ok, {csrf, failMsg})`.
+  Keine lokalen Kopien von `esc()`/`ajaxMsg()` mehr anlegen.
+- Tooltips über `data-tooltip` (nie `title=`); Buttons Outline nach Zweck + `btn-sm`
+  (grün `outline-success` = Anlegen/Hochladen/Import, blau = Speichern/Bearbeiten, türkis = Export/PDF,
+  rot nur Löschen, grau = Abbrechen).
