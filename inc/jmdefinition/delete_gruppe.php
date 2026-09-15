@@ -1,39 +1,39 @@
 <?php
-// delete_gruppe.php
+// delete_gruppe.php – Gruppe (alle Zeilen einer GruppenUID) loeschen
 include '../config.php';
-
-// CSRF-Schutz
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+require_once __DIR__ . '/../csrf.inc.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
+}
+csrf_require(true);
+
+$groupID = (int)($_POST['groupID'] ?? 0);
+if ($groupID < 1) {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Ungültige Gruppen-ID']));
 }
 
-header('Content-Type: application/json');
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $groupID = isset($_POST['groupID']) ? intval($_POST['groupID']) : 0;
-    if ($groupID <= 0) {
-        echo json_encode(['message' => 'Ungültige Gruppen-ID.']);
-        exit;
-    }
-    
-    $stmt = $conn->prepare("DELETE FROM JMDefinition_Gruppen WHERE GruppenUID = ?");
-    if (!$stmt) {
-        echo json_encode(['message' => 'Fehler beim Vorbereiten: ' . $conn->error]);
-        exit;
-    }
-    $stmt->bind_param("i", $groupID);
-    if ($stmt->execute()) {
-        echo json_encode(['success' => 'Gruppe gelöscht.']);
-    } else {
-        echo json_encode(['message' => 'Fehler beim Löschen: ' . $stmt->error]);
-    }
-    $stmt->close();
+$stmt = $conn->prepare("DELETE FROM JMDefinition_Gruppen WHERE GruppenUID = ?");
+if (!$stmt) {
+    http_response_code(500);
+    die(json_encode(['success' => false, 'message' => 'Datenbankfehler']));
+}
+$stmt->bind_param('i', $groupID);
+if (!$stmt->execute()) {
+    error_log('[delete_gruppe] ' . $stmt->error);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Gruppe konnte nicht gelöscht werden']);
+} elseif ($stmt->affected_rows === 0) {
+    http_response_code(404);
+    echo json_encode(['success' => false, 'message' => 'Gruppe nicht gefunden']);
 } else {
-    echo json_encode(['message' => 'Ungültige Anfragemethode.']);
+    echo json_encode(['success' => true, 'message' => 'Gruppe gelöscht', 'geloescht' => $stmt->affected_rows]);
 }
+$stmt->close();
 $conn->close();
-?>

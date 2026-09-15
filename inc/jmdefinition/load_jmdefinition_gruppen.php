@@ -1,28 +1,17 @@
 <?php
-// get_events.php
+// load_jmdefinition_gruppen.php – Anlaesse mit Gruppenwettkampf (JMDefinition.Gruppe = 1) eines Jahres
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 
-$year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+header('Content-Type: application/json; charset=utf-8');
 
-// Wir gehen davon aus, dass die Anlässe in der Tabelle JMDefinition gespeichert sind 
-// und dass das Feld Gruppe (oder ein entsprechendes Kriterium) angibt, ob es sich um einen Anlass für Gruppen handelt.
-$sql = "SELECT ID, Bezeichnung 
-        FROM JMDefinition 
-        WHERE year = ? AND Gruppe = 1
-        ORDER BY Reihenfolge";
+$year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $year);
+$stmt = $conn->prepare("SELECT ID, Bezeichnung FROM JMDefinition WHERE year = ? AND Gruppe = 1 ORDER BY Reihenfolge");
+$stmt->bind_param('i', $year);
 $stmt->execute();
-$result = $stmt->get_result();
+$events = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
-$events = [];
-while ($row = $result->fetch_assoc()) {
-    $events[] = $row;
-}
-
-header('Content-Type: application/json');
 echo json_encode($events);
-?>

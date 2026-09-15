@@ -1,53 +1,38 @@
 <?php
-// load_members.php
+// load_gruppen_members.php – aktive Mitglieder, die fuer diesen Anlass/Jahr noch keiner Gruppe zugeteilt sind
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 
-// Erwartete GET-Parameter: jahr und eventID (JMDefinitionID)
-$year = isset($_GET['jahr']) ? intval($_GET['jahr']) : date('Y');
-$eventID = isset($_GET['eventID']) ? intval($_GET['eventID']) : 0;
+header('Content-Type: application/json; charset=utf-8');
 
-if ($eventID === 0) {
-    header('Content-Type: application/json');
+$year    = isset($_GET['jahr']) ? (int)$_GET['jahr'] : (int)date('Y');
+$eventID = isset($_GET['eventID']) ? (int)$_GET['eventID'] : 0;
+
+if ($eventID < 1) {
     echo json_encode([]);
     exit;
 }
 
-// Query: Alle aktiven Mitglieder, die nicht bereits einer Gruppe für diesen Anlass im angegebenen Jahr zugeordnet sind
-$sql = "
+$stmt = $conn->prepare("
     SELECT m.ID, m.Vorname, m.Name
     FROM mitglieder m
     WHERE m.Status = 1
       AND m.Verstorben = 0
       AND m.ID NOT IN (
-            SELECT mitgliederID 
-            FROM JMDefinition_Gruppen 
-            WHERE JMDefinitionID = ? 
-              AND Jahr = ?
+            SELECT mitgliederID FROM JMDefinition_Gruppen WHERE JMDefinitionID = ? AND Jahr = ?
           )
     ORDER BY m.Name, m.Vorname
-";
-
-$stmt = $conn->prepare($sql);
+");
 if (!$stmt) {
-    header('Content-Type: application/json');
-    echo json_encode(['message' => 'Fehler beim Vorbereiten des Statements: ' . $conn->error]);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Datenbankfehler']);
     exit;
 }
-
-$stmt->bind_param("ii", $eventID, $year);
+$stmt->bind_param('ii', $eventID, $year);
 $stmt->execute();
-$result = $stmt->get_result();
-
-$members = [];
-while ($row = $result->fetch_assoc()) {
-    $members[] = $row;
-}
-
-header('Content-Type: application/json');
-echo json_encode($members);
-
+$members = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 $conn->close();
-?>
+
+echo json_encode($members);
