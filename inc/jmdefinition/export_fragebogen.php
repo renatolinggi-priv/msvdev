@@ -11,17 +11,20 @@ adminApiGuard('json');
 $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 
 // SQL-Abfrage: Alle Einträge, bei denen Erweitert = 1 und year = $selectedYear
-$sql = "SELECT ID, Reihenfolge, Bezeichnung, Maxpunkte, Streicher, hidden, year, Erweitert, Schiesstage, Info 
-        FROM JMDefinition 
-        WHERE Erweitert = 1 AND year = '$selectedYear' 
-        ORDER BY Reihenfolge ASC";
-$result = $conn->query($sql);
+$stmt = $conn->prepare("SELECT ID, Reihenfolge, Bezeichnung, Maxpunkte, Streicher, hidden, year, Erweitert, Schiesstage, Info
+        FROM JMDefinition
+        WHERE Erweitert = 1 AND year = ?
+        ORDER BY Reihenfolge ASC");
+$stmt->bind_param('i', $selectedYear);
+$stmt->execute();
+$result = $stmt->get_result();
 $rows = array();
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $rows[] = $row;
     }
 }
+$stmt->close();
 
 // Zusätzlichen Zusatztext laden (optional)
 $sql = "SELECT text FROM JMInformation ORDER BY created_at DESC LIMIT 1";

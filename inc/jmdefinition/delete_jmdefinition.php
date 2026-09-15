@@ -1,66 +1,58 @@
 <?php
-// delete_jmdefinition.php
+// delete_jmdefinition.php – loescht einen Anlass samt Schiesstagen und Gruppen-Zuordnungen
+// (keine FKs im Schema, darum explizit in einer Transaktion; vorher blieben Waisen zurueck).
 include '../config.php';
-
-// CSRF-Schutz
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+require_once __DIR__ . '/../csrf.inc.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true);
 
 if ($conn->connect_error) {
-    die(json_encode([
-        "success" => false,
-        "message" => "Connection failed: " . $conn->connect_error
-    ]));
+    http_response_code(500);
+    die(json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $conn->connect_error]));
 }
 
-// Überprüfen, ob die ID gesetzt ist und numerisch ist
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && is_numeric($_POST['id'])) {
-    $id = intval($_POST['id']); // ID als Ganzzahl validieren
+$id = (int)($_POST['id'] ?? 0);
+if ($id < 1) {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Ungültige ID']));
+}
 
-    // Sicherstellen, dass die ID grösser als 0 ist
-    if ($id > 0) {
-        // SQL-Abfrage vorbereiten
-        $stmt = $conn->prepare("DELETE FROM JMDefinition WHERE ID = ?");
-        if (!$stmt) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Fehler beim Vorbereiten der Datenbankabfrage: " . $conn->error
-            ]);
-            $conn->close();
-            exit;
-        }
-
-        // Parameter binden und Abfrage ausführen
-        $stmt->bind_param("i", $id);
-        if ($stmt->execute()) {
-            echo json_encode([
-                "success" => true,
-                "message" => "Eintrag erfolgreich gelöscht."
-            ]);
-        } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Fehler beim Löschen des Eintrags: " . $stmt->error
-            ]);
+$conn->begin_transaction();
+try {
+    foreach ([
+        "DELETE FROM JMSchiesstage WHERE jm_id = ?",
+        "DELETE FROM JMDefinition_Gruppen WHERE JMDefinitionID = ?",
+        "DELETE FROM JMDefinition WHERE ID = ?",
+    ] as $i => $sql) {
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) throw new Exception('Prepare fehlgeschlagen: ' . $conn->error);
+        $stmt->bind_param('i', $id);
+        if (!$stmt->execute()) throw new Exception('Löschen fehlgeschlagen: ' . $stmt->error);
+        if ($i === 2 && $stmt->affected_rows === 0) {
+            $stmt->close();
+            throw new RuntimeException('Anlass nicht gefunden');
         }
         $stmt->close();
-    } else {
-        echo json_encode([
-            "success" => false,
-            "message" => "Ungültige ID. Die ID muss grösser als 0 sein."
-        ]);
     }
-} else {
-    echo json_encode([
-        "success" => false,
-        "message" => "ID nicht gesetzt oder ungültig."
-    ]);
+    $conn->commit();
+    echo json_encode(['success' => true, 'message' => 'Anlass gelöscht']);
+} catch (RuntimeException $e) {
+    $conn->rollback();
+    http_response_code(404);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} catch (Throwable $e) {
+    $conn->rollback();
+    error_log('[delete_jmdefinition] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Fehler beim Löschen: ' . $e->getMessage()]);
 }
 
 $conn->close();
-?>

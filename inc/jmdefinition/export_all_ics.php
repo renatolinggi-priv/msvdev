@@ -4,9 +4,13 @@
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
+require_once __DIR__ . '/jmdefinition_helpers.inc.php';
 
-// Aktuelles Jahr berechnen
-$currentYear = date("Y");
+header('Content-Type: application/json; charset=utf-8');
+
+// Jahr aus dem Dropdown der Seite (vorher hart date('Y') -> andere Jahre nicht exportierbar)
+$currentYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+if ($currentYear < 2000 || $currentYear > 2100) $currentYear = (int)date('Y');
 
 // Erstelle einen Dateinamen mit Zeitstempel
 $date = new DateTime();
@@ -14,85 +18,6 @@ $filename = "Jahresmeisterschaft_{$currentYear}_" . $date->format('Y-m-d_H-i-s')
 
 // Zielordner
 $outputPath = "dat/" . $filename;
-
-/**
- * Funktion zur Verarbeitung der Schiesstage
- * Erweitert um die Erkennung von Zeiten mit ":" ODER "." (z.B. "08.00" - "12.00")
- */
-function parseSchiesstage($input) {
-    // UTF-8 Gedankenstrich ersetzen durch normalen Bindestrich
-    $input = str_replace("\xe2\x80\x93", "-", $input);
-    // Zeilen aufsplitten
-    $lines = explode("\n", $input);
-    $termine = [];
-    // Default-Jahr = aktuelles Jahr (falls in Zeile kein Jahr angegeben)
-    $currentYear = date("Y");
-
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if (empty($line)) {
-            continue;
-        }
-
-        /**
-         * Regex: Erfasst 
-         * 1) ein Wochentag \w+ (optional, kann auch "Samstag" sein),
-         * 2) Tag (\d{1,2}).
-         * 3) Monat (z. B. "April")  => (\w+)
-         * 4) optional year (\d{4})
-         * 5) rest times => (.*)
-         */
-        if (preg_match('/(\w+)\s+(\d{1,2})\.\s+(\w+)(?:\s+(\d{4}))?\s+(.*)/u', $line, $matches)) {
-            $day   = $matches[2]; // z.B. "12"
-            $month = $matches[3]; // z.B. "April"
-            $year  = !empty($matches[4]) ? $matches[4] : $currentYear;
-            $times = $matches[5]; // z.B. "08:00 - 12:00 Uhr"
-
-            // Mapping deutscher Monatsname => Ziffer
-            $months = [
-                'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04',
-                'Mai' => '05', 'Juni' => '06', 'Juli' => '07', 'August' => '08',
-                'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
-            ];
-
-            if (!isset($months[$month])) {
-                continue; // unbekannter Monat => skip
-            }
-            $monthNum = $months[$month];
-
-            // Datums-String
-            $dateStr = sprintf("%04d-%02d-%02d", $year, $monthNum, $day);
-            // Prüfen, ob Datum valide ist
-            if (!strtotime($dateStr)) {
-                error_log("FEHLER: Konnte Datum nicht verarbeiten: $dateStr");
-                continue;
-            }
-
-            /**
-             * Regex für Zeit-Intervalle:
-             * (\d{1,2}[:\.]\d{2}) - (\d{1,2}[:\.]\d{2})
-             * => Erfasst z.B. "08:00 - 12:00" oder "08.00 - 12.00"
-             */
-            if (preg_match_all('/(\d{1,2}[:\.]\d{2})\s*-\s*(\d{1,2}[:\.]\d{2})/u', $times, $timeMatches, PREG_SET_ORDER)) {
-                foreach ($timeMatches as $time) {
-                    $startTime = $time[1]; // z.B. "08.00"
-                    $endTime   = $time[2]; // z.B. "12.00"
-
-                    // Ersetzung "." => ":" 
-                    $startTime = str_replace('.', ':', $startTime);
-                    $endTime   = str_replace('.', ':', $endTime);
-
-                    $termine[] = [
-                        "date"  => $dateStr,
-                        "start" => $startTime,
-                        "end"   => $endTime
-                    ];
-                }
-            }
-        }
-    }
-    return $termine;
-}
 
 // DB-Abfrage: Alle Einträge des aktuellen Jahres mit Schiesstage != null
 $sql = "SELECT Bezeichnung, Schiesstage, Adresse FROM JMDefinition WHERE year = ? AND Schiesstage IS NOT NULL";
@@ -116,7 +41,7 @@ while ($row = $result->fetch_assoc()) {
     }
     $schiesstage   = $row['Schiesstage'];
     $adresse       = $row['Adresse'];
-    $termine       = parseSchiesstage($schiesstage);
+    $termine       = jm_parse_schiesstage((string)$schiesstage, $currentYear); // gemeinsamer Parser
 
     foreach ($termine as $termin) {
         if (empty($termin["start"]) || empty($termin["end"])) {

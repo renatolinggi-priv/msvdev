@@ -486,16 +486,14 @@ $(function () {
         showErrorToast   = m => msvToast(m, 'error'),
         showWarningToast = m => msvToast(m, 'warning');
 
-  // Ajax-Fehler global
-  $(document).ajaxError(function (e, xhr, settings, err) {
-    console.error('Ajax Error:', { url: settings.url, err, response: xhr.responseText });
-    let msg = 'Ein Fehler ist aufgetreten';
-    if (xhr.status === 0)   msg = 'Keine Internetverbindung';
-    else if (xhr.status === 404) msg = 'Seite nicht gefunden';
-    else if (xhr.status === 500) msg = 'Serverfehler – bitte später erneut versuchen';
-    else if (xhr.status === 403) msg = 'Keine Berechtigung';
-    showErrorToast(msg);
-  });
+  // Fehlertext aus einer XHR-Antwort ziehen (JSON message, sonst Statuscode)
+  function ajaxErrorMessage(xhr, fallback) {
+    try { const r = JSON.parse(xhr.responseText); if (r && r.message) return r.message; } catch (e) { /* kein JSON */ }
+    if (xhr && xhr.status === 0)   return 'Keine Verbindung zum Server';
+    if (xhr && xhr.status === 401) return 'Sitzung abgelaufen – bitte neu anmelden';
+    if (xhr && xhr.status === 403) return 'Keine Berechtigung';
+    return fallback;
+  }
 
   const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
   const currentYear = new Date().getFullYear();
@@ -1007,7 +1005,8 @@ $(function () {
 
   // ========== Laden ==========
   function loadJMDefinition(year, done) {
-    JMEditPanel.close();
+    JMEditPanel.close(); // speichert ggf. noch unter currentLoadedYear (altes Jahr)
+    currentLoadedYear = String(year);
     showSkeleton();
     $.get(basePath + 'jmdefinition/load_jmdefinition_form.php', { year }, function(html) {
       $('#jmHybridTabelle tbody').html(html);
@@ -1057,7 +1056,8 @@ $(function () {
             if (cells.length < 6) return '';
 
             const d = row.dataset;
-            const title = (d.bezeichnung || '').split('\n')[0] || d.bezeichnung;
+            const title = escapeHtml((d.bezeichnung || '').split('\n')[0] || d.bezeichnung);
+            const bezEsc = escapeHtml(d.bezeichnung || ''), adrEsc = escapeHtml(d.adresse || ''), tageEsc = escapeHtml(d.schiesstage || '');
 
             const deleteHtml = `<button class="btn btn-outline-danger btn-sm flex-fill deleteJMDefinition" data-id="${d.id}">
                    <i class="bi bi-trash me-1"></i>Löschen
@@ -1075,15 +1075,15 @@ $(function () {
                 <div class="mobile-card-body jm-edit-body">
                   <div class="mb-2">
                     <label class="jm-field-label">Bezeichnung</label>
-                    <textarea class="form-control mobile-sync" data-field="bezeichnung" data-row="${d.id}" rows="3">${d.bezeichnung || ''}</textarea>
+                    <textarea class="form-control mobile-sync" data-field="bezeichnung" data-row="${d.id}" rows="3">${bezEsc}</textarea>
                   </div>
                   <div class="mb-2">
                     <label class="jm-field-label"><i class="bi bi-geo-alt me-1"></i>Adresse</label>
-                    <textarea class="form-control mobile-sync" data-field="adresse" data-row="${d.id}" rows="3">${d.adresse || ''}</textarea>
+                    <textarea class="form-control mobile-sync" data-field="adresse" data-row="${d.id}" rows="3">${adrEsc}</textarea>
                   </div>
                   <div class="mb-2">
                     <label class="jm-field-label"><i class="bi bi-calendar-event me-1"></i>Schiesstage</label>
-                    <textarea class="form-control mobile-sync" data-field="schiesstage" data-row="${d.id}" rows="4">${d.schiesstage || ''}</textarea>
+                    <textarea class="form-control mobile-sync" data-field="schiesstage" data-row="${d.id}" rows="4">${tageEsc}</textarea>
                   </div>
                   <div class="row g-2 mb-2">
                     <div class="col-6">
@@ -1154,17 +1154,20 @@ $(function () {
   function loadZusatztext() {
     $.getJSON(basePath + 'jmdefinition/load_jminformation.php', function(resp) {
       if (resp && resp.success) $('#zusatzText').val(resp.text);
-    });
+    }).fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Zusatztext konnte nicht geladen werden')));
   }
 
   function loadParameter(year) {
     $.getJSON(basePath + 'jmdefinition/load_parameter.php', { year }, function(resp) {
       if (resp && resp.success) $('#anzahlStreicherInput').val(resp.excludeCount);
-    });
+    }).fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Anzahl Streicher konnte nicht geladen werden')));
   }
 
   // ========== Aenderungs-Tracking ==========
   let hasChanges = false;
+  // Jahr der aktuell geladenen Tabelle. Beim Jahreswechsel speichert JMEditPanel.close()
+  // noch die ALTE Tabelle -> darf nicht das neue Dropdown-Jahr mitschicken.
+  let currentLoadedYear = null;
   $('body').on('change input', '#zusatzText, #anzahlStreicherInput', function() {
     hasChanges = true;
   });
@@ -1179,51 +1182,36 @@ $(function () {
     const txt = $btn.html();
     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
 
-    const $prog = $('<div class="progress" style="height:3px; position:fixed; top:0; left:0; right:0; z-index:9999;"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div></div>');
-    $('body').append($prog);
-    let w = 0;
-    const intv = setInterval(() => { w += 10; $prog.find('.progress-bar').css('width', w + '%'); if (w >= 90) clearInterval(intv); }, 100);
-
     const order = [];
     $('#jmHybridTabelle tbody tr').each(function() {
       const id = $(this).attr('id') ? $(this).attr('id').replace('row', '') : '';
       if (id) order.push(id);
     });
 
-    const selectedYear = $('#yearSelect').val();
-    const formData = $(this).serialize() + '&order=' + order.join(',') + '&year=' + selectedYear;
-    const zusatzText = $('#zusatzText').val();
-    const anzahlStreicher = parseInt($('#anzahlStreicherInput').val()) || 3;
+    // Jahr der geladenen Tabelle, nicht das Dropdown (beim Jahreswechsel laeuft dieser
+    // Handler noch fuer das alte Jahr)
+    const selectedYear = currentLoadedYear || $('#yearSelect').val();
+    const formData = $(this).serialize()
+      + '&order=' + order.join(',')
+      + '&year=' + encodeURIComponent(selectedYear)
+      + '&zusatztext=' + encodeURIComponent($('#zusatzText').val())
+      + '&excludeCount=' + encodeURIComponent(parseInt($('#anzahlStreicherInput').val()) || 3);
 
+    // Ein Request: Definition + Schiesstage + Zusatztext + Anzahl Streicher in einer Transaktion
     $.post(basePath + 'jmdefinition/save_jmdefinition.php', formData)
      .done(function(resp) {
+        if (!resp || !resp.success) { showErrorToast((resp && resp.message) || 'Fehler beim Speichern'); return; }
         showSuccessToast('Änderungen gespeichert!');
-        // Hinweis, falls einzelne Schiesstag-Zeilen nicht automatisch erkannt wurden
-        try {
-            var r = (typeof resp === 'string') ? JSON.parse(resp) : resp;
-            if (r && Array.isArray(r.warnings) && r.warnings.length) {
-                showWarningToast(r.warnings.length + ' Schiesstag-Zeile(n) nicht erkannt – bitte Format prüfen (z. B. „Samstag 12. April 2025 08:00 – 12:00 Uhr").');
-            }
-        } catch (e) { /* ignore */ }
+        if (Array.isArray(resp.warnings) && resp.warnings.length) {
+          showWarningToast(resp.warnings.length + ' Schiesstag-Zeile(n) nicht erkannt – bitte Format prüfen (z. B. „Samstag 12. April 2025 08:00 – 12:00 Uhr").');
+        }
         hasChanges = false;
         JMEditPanel.close();
-        $.post(basePath + 'jmdefinition/save_jminformation.php', {
-          zusatztext: zusatzText,
-          csrf_token: $('input[name="csrf_token"]').val()
-        });
-        $.post(basePath + 'jmdefinition/save_parameter.php', {
-          year: selectedYear,
-          excludeCount: anzahlStreicher,
-          csrf_token: $('input[name="csrf_token"]').val()
-        }).always(() => setTimeout(() => loadJMDefinition(selectedYear), 500));
+        // Nur neu laden, wenn inzwischen kein anderes Jahr geladen wurde
+        if (currentLoadedYear === String(selectedYear)) loadJMDefinition(selectedYear);
      })
-     .fail(() => showErrorToast('Fehler beim Speichern'))
-     .always(function() {
-        $btn.prop('disabled', false).html(txt);
-        clearInterval(intv);
-        $prog.find('.progress-bar').css('width', '100%');
-        setTimeout(() => $prog.remove(), 500);
-     });
+     .fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Fehler beim Speichern')))
+     .always(() => $btn.prop('disabled', false).html(txt));
   });
 
   // ========== Neuer Anlass ==========
@@ -1257,7 +1245,11 @@ $(function () {
     };
 
     $.post(basePath + 'jmdefinition/add_jmdefinition.php', payload)
-      .done(function() {
+      .done(function(resp) {
+        if (!resp || !resp.success) { showErrorToast((resp && resp.message) || 'Fehler beim Hinzufügen'); return; }
+        if (Array.isArray(resp.warnings) && resp.warnings.length) {
+          showWarningToast(resp.warnings.length + ' Schiesstag-Zeile(n) nicht erkannt – bitte Format prüfen.');
+        }
         $('#newAnlassModal').modal('hide');
         $('#neueJMDefinitionBezeichnung, #neueJMDefinitionAdresse, #neueJMDefinitionSchiesstage, #neueJMDefinitionMaxpunkte, #neueJMDefinitionZuschlag').val('');
         $('#neueJMDefinitionStreicher, #neueJMDefinitionErweitert, #neueJMDefinitionInfo, #neueJMDefinitionGruppe').prop('checked', false);
@@ -1265,7 +1257,7 @@ $(function () {
         showSuccessToast('Anlass hinzugefügt!');
         loadJMDefinition($('#yearSelect').val());
       })
-      .fail(() => showErrorToast('Fehler beim Hinzufügen'))
+      .fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Fehler beim Hinzufügen')))
       .always(() => $b.prop('disabled', false).html(t));
   });
 
@@ -1285,18 +1277,12 @@ $(function () {
         id: deleteId,
         csrf_token: $('input[name="csrf_token"]').val()
       })
-      .done(function() {
+      .done(function(resp) {
+        if (!resp || !resp.success) { showErrorToast((resp && resp.message) || 'Fehler beim Löschen'); return; }
         showSuccessToast('Eintrag gelöscht');
         loadJMDefinition($('#yearSelect').val());
       })
-      .fail(function(xhr) {
-        let msg = 'Fehler beim Löschen';
-        try {
-          const resp = JSON.parse(xhr.responseText);
-          if (resp.message) msg = resp.message;
-        } catch(e) {}
-        showErrorToast(msg);
-      });
+      .fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Fehler beim Löschen')));
     });
   }
 
@@ -1350,7 +1336,7 @@ $(function () {
     e.preventDefault();
     const $btn = $(this), originalText = $btn.html();
     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-    $.getJSON(basePath + 'jmdefinition/export_all_ics.php')
+    $.getJSON(basePath + 'jmdefinition/export_all_ics.php', { year: $('#yearSelect').val() })
       .done(function(resp) {
         if (resp && resp.success && resp.ics_link) { triggerDownload(resp.ics_link); showSuccessToast('ICS wird heruntergeladen'); }
         else { showErrorToast(resp.message || 'ICS konnte nicht generiert werden'); }

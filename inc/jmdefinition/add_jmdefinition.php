@@ -1,62 +1,76 @@
 <?php
-// add_jmdefinition.php
+// add_jmdefinition.php – legt einen neuen Anlass an und befuellt JMSchiesstage sofort
+// (vorher erschienen die Termine erst nach einem Voll-Speichern im Kalender/Portal).
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/jmdefinition_helpers.inc.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_require();
-    if (empty($_SESSION['user_id'])) { http_response_code(403); exit('Nicht angemeldet'); }
-    $bezeichnung = isset($_POST['bezeichnung']) ? trim($_POST['bezeichnung']) : '';
-    $adresse = isset($_POST['adresse']) ? trim($_POST['adresse']) : '';
-    $maxpunkte = isset($_POST['maxpunkte']) ? intval($_POST['maxpunkte']) : 0;
-    $streicher = intval($_POST['streicher'] ?? 0);
-    $erweitert = intval($_POST['erweitert'] ?? 0);
-    $info = intval($_POST['info'] ?? 0);
-    $gruppe = intval($_POST['gruppe'] ?? 0);
-    $zuschlag = isset($_POST['zuschlag']) ? intval($_POST['zuschlag']) : 0;
-    $schiesstage = isset($_POST['schiesstage']) ? trim($_POST['schiesstage']) : ''; // Schiesstage hinzufügen
-    $year = isset($_POST['year']) ? intval($_POST['year']) : date('Y');
-    $hidden = 0; // Standardwert für 'hidden'
+header('Content-Type: application/json; charset=utf-8');
 
-    // Beginne eine Transaktion
-    $conn->begin_transaction();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
+}
+csrf_require(true);
 
-    try {
-        // Abfrage der höchsten Reihenfolge für das aktuelle Jahr
-        $result = $conn->query("SELECT MAX(Reihenfolge) AS maxReihenfolge FROM JMDefinition WHERE year = $year");
-        if (!$result) {
-            throw new Exception("Fehler beim Abrufen der höchsten Reihenfolge: " . $conn->error);
-        }
-        $row = $result->fetch_assoc();
-        $maxReihenfolge = $row['maxReihenfolge'] ?? 0; // Wenn null, dann 0
-        $neueReihenfolge = $maxReihenfolge + 1;
+$bezeichnung = trim((string)($_POST['bezeichnung'] ?? ''));
+$adresse     = trim((string)($_POST['adresse'] ?? ''));
+$maxpunkte   = (int)($_POST['maxpunkte'] ?? 0);
+$streicher   = (int)($_POST['streicher'] ?? 0);
+$erweitert   = (int)($_POST['erweitert'] ?? 0);
+$info        = (int)($_POST['info'] ?? 0);
+$gruppe      = (int)($_POST['gruppe'] ?? 0);
+$zuschlag    = (int)($_POST['zuschlag'] ?? 0);
+$schiesstage = trim((string)($_POST['schiesstage'] ?? ''));
+$year        = isset($_POST['year']) ? (int)$_POST['year'] : (int)date('Y');
+$hidden      = 0;
 
-        // Füge den neuen Eintrag ein
-        $stmtInsert = $conn->prepare("
+if ($bezeichnung === '') {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Bitte eine Bezeichnung angeben']));
+}
+if ($year < 2000 || $year > 2100) {
+    http_response_code(400);
+    die(json_encode(['success' => false, 'message' => 'Ungültiges Jahr']));
+}
+
+$conn->begin_transaction();
+try {
+    $stmtMax = $conn->prepare("SELECT COALESCE(MAX(Reihenfolge), 0) + 1 AS next FROM JMDefinition WHERE year = ?");
+    $stmtMax->bind_param('i', $year);
+    $stmtMax->execute();
+    $neueReihenfolge = (int)$stmtMax->get_result()->fetch_assoc()['next'];
+    $stmtMax->close();
+
+    $stmtInsert = $conn->prepare("
         INSERT INTO JMDefinition (Reihenfolge, Bezeichnung, Maxpunkte, Streicher, Erweitert, Schiesstage, Info, Gruppe, hidden, year, Adresse, Zuschlag)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
-        if (!$stmtInsert) {
-            throw new Exception("Fehler beim Vorbereiten des Insert-Statements: " . $conn->error);
-        }
-
-        $stmtInsert->bind_param("isiiisiiiisi", $neueReihenfolge, $bezeichnung, $maxpunkte, $streicher, $erweitert, $schiesstage, $info, $gruppe, $hidden, $year, $adresse, $zuschlag);
-        if (!$stmtInsert->execute()) {
-            throw new Exception("Fehler beim Einfügen des neuen Eintrags: " . $stmtInsert->error);
-        }
-        $stmtInsert->close();
-
-        // Commit der Transaktion
-        $conn->commit();
-
-        echo json_encode(['success' => true, 'message' => 'Eintrag erfolgreich hinzugefügt.']);
-    } catch (Exception $e) {
-        // Rollback bei einem Fehler
-        $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+    if (!$stmtInsert) {
+        throw new Exception('Prepare (Insert) fehlgeschlagen: ' . $conn->error);
     }
+    $stmtInsert->bind_param('isiiisiiiisi', $neueReihenfolge, $bezeichnung, $maxpunkte, $streicher, $erweitert, $schiesstage, $info, $gruppe, $hidden, $year, $adresse, $zuschlag);
+    if (!$stmtInsert->execute()) {
+        throw new Exception('Anlass konnte nicht angelegt werden: ' . $stmtInsert->error);
+    }
+    $newId = (int)$conn->insert_id;
+    $stmtInsert->close();
 
-    $conn->close();
+    $warnings = [];
+    jm_schiesstage_replace($conn, $newId, $schiesstage, $year, $warnings);
+
+    $conn->commit();
+
+    $response = ['success' => true, 'message' => 'Anlass hinzugefügt', 'id' => $newId];
+    if ($warnings) $response['warnings'] = array_keys($warnings);
+    echo json_encode($response);
+} catch (Throwable $e) {
+    $conn->rollback();
+    error_log('[add_jmdefinition] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
 }
+
+$conn->close();

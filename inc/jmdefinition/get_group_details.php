@@ -3,10 +3,12 @@
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
+header('Content-Type: application/json; charset=utf-8');
 
-$groupUID = isset($_GET['groupID']) ? intval($_GET['groupID']) : 0; 
+$groupUID = isset($_GET['groupID']) ? intval($_GET['groupID']) : 0;
 if ($groupUID <= 0) {
-    echo json_encode(['message' => 'Ungültige groupID']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Ungültige groupID']);
     exit;
 }
 

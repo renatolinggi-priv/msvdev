@@ -5,14 +5,8 @@
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-
-// CSRF-Schutz (Muster wie save_jmdefinition.php)
-require_once __DIR__ . '/../session_config.inc.php';
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
-}
+require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/jmdefinition_helpers.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -20,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true);
 
 $targetYear = isset($_POST['target_year']) ? intval($_POST['target_year']) : 0;
 $events = isset($_POST['events']) && is_array($_POST['events']) ? $_POST['events'] : [];
@@ -42,13 +37,8 @@ try {
     if (!$stmt) {
         throw new Exception('Prepare fehlgeschlagen: ' . $conn->error);
     }
-    $stmtSch = $conn->prepare("INSERT INTO JMSchiesstage (jm_id, schiesstag, start_time, end_time, year) VALUES (?, ?, ?, ?, ?)");
-    if (!$stmtSch) {
-        throw new Exception('Prepare (Schiesstage) fehlgeschlagen: ' . $conn->error);
-    }
-    $monthsMap = ['Januar'=>1,'Februar'=>2,'März'=>3,'April'=>4,'Mai'=>5,'Juni'=>6,'Juli'=>7,'August'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Dezember'=>12];
-
     $count = 0;
+    $warnings = [];
     foreach ($events as $ev) {
         $reihenfolge++;
         $bezeichnung = trim((string)($ev['bezeichnung'] ?? ''));
@@ -74,31 +64,15 @@ try {
         $jmId = $conn->insert_id;
         $count++;
 
-        // JMSchiesstage aus kanonischem Text befüllen ("Wochentag TT. Monat JJJJ HH:MM – HH:MM Uhr, ...")
-        foreach (preg_split('/\r?\n/', $schiesstage) as $line) {
-            $line = trim($line);
-            if ($line === '') continue;
-            if (!preg_match('/^\S+\s+(\d{1,2})\.\s+(\S+)\s+(\d{4})\s+(.*)$/u', $line, $mm)) continue;
-            $mon = $monthsMap[$mm[2]] ?? 0;
-            if (!$mon) continue;
-            $dateStr = sprintf('%04d-%02d-%02d', (int)$mm[3], $mon, (int)$mm[1]);
-            if (preg_match_all('/(\d{1,2})[:.](\d{2})\s*[–-]\s*(\d{1,2})[:.](\d{2})/u', $mm[4], $tm, PREG_SET_ORDER)) {
-                foreach ($tm as $t) {
-                    $st = sprintf('%02d:%02d:00', (int)$t[1], (int)$t[2]);
-                    $et = sprintf('%02d:%02d:00', (int)$t[3], (int)$t[4]);
-                    $stmtSch->bind_param('isssi', $jmId, $dateStr, $st, $et, $targetYear);
-                    if (!$stmtSch->execute()) {
-                        throw new Exception('Schiesstage-Insert fehlgeschlagen: ' . $stmtSch->error);
-                    }
-                }
-            }
-        }
+        // JMSchiesstage aus dem (kanonischen) Schiesstage-Text befuellen – gemeinsamer Parser
+        jm_schiesstage_replace($conn, $jmId, $schiesstage, $targetYear, $warnings);
     }
     $stmt->close();
-    $stmtSch->close();
     $conn->commit();
 
-    echo json_encode(['success' => true, 'count' => $count]);
+    $response = ['success' => true, 'count' => $count];
+    if ($warnings) $response['warnings'] = array_keys($warnings);
+    echo json_encode($response);
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
