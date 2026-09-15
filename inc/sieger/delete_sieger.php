@@ -1,41 +1,40 @@
 <?php
-// delete_sieger.php
+// delete_sieger.php — Sieger-Eintrag loeschen
 require_once '../config.php';
-require_once __DIR__ . '/../csrf.inc.php';
-
-// CSRF Token prüfen
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
+require_once __DIR__ . '/../csrf.inc.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
+}
 csrf_require(true);
 
-// Eingaben validieren
-if (empty($_POST['sieger_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Sieger ID ist erforderlich']);
-    exit;
+$sieger_id = (int)($_POST['sieger_id'] ?? 0);
+if ($sieger_id < 1) {
+    http_response_code(422);
+    die(json_encode(['success' => false, 'message' => 'Sieger-ID ist erforderlich']));
 }
-
-$sieger_id = intval($_POST['sieger_id']);
 
 try {
-    // Sieger aus der Datenbank löschen
-    $sql = "DELETE FROM sieger WHERE ID = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $sieger_id);
-
-    if ($stmt->execute()) {
-        if ($stmt->affected_rows > 0) {
-            echo json_encode(['success' => true, 'message' => 'Sieger erfolgreich gelöscht']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Sieger nicht gefunden']);
-        }
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Fehler beim Löschen: ' . $stmt->error]);
+    $stmt = $conn->prepare("DELETE FROM sieger WHERE ID = ?");
+    $stmt->bind_param('i', $sieger_id);
+    if (!$stmt->execute()) {
+        throw new Exception($stmt->error);
     }
-
+    if ($stmt->affected_rows > 0) {
+        echo json_encode(['success' => true, 'message' => 'Sieger gelöscht']);
+    } else {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Sieger nicht gefunden']);
+    }
     $stmt->close();
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $e->getMessage()]);
+} catch (Throwable $e) {
+    error_log('[delete_sieger] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Sieger konnte nicht gelöscht werden']);
 }
-
 $conn->close();
-?>
