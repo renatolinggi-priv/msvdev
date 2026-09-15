@@ -59,7 +59,6 @@ try {
     echo '<div class="mb-3">';
     echo '<h6 class="mb-2"><i class="bi bi-award me-1"></i>' . htmlspecialchars($wanderpreis['bezeichnung']) . '</h6>';
     echo '<small class="text-muted">';
-    echo 'Kategorie: ' . htmlspecialchars($wanderpreis['kategorie']) . ' | ';
     echo 'Min. für definitiven Besitz: ' . $wanderpreis['min_anzahl_gewinne'] . ' Gewinne';
     echo '</small>';
     echo '</div>';

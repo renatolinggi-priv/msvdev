@@ -22,35 +22,19 @@ try {
     $options = '';
     
     if ($result && $result->num_rows > 0) {
-        $current_kategorie = '';
-        
+        // Flache Liste: die Tabelle wanderpreise hat keine Spalte "kategorie"; die frühere
+        // optgroup-Gruppierung las ein nicht vorhandenes Feld (leere Gruppenlabels + PHP-Warnungen).
         while ($row = $result->fetch_assoc()) {
-            // Optgroup für neue Kategorie
-            if ($current_kategorie !== $row['kategorie']) {
-                if ($current_kategorie !== '') {
-                    $options .= '</optgroup>';
-                }
-                $options .= '<optgroup label="' . htmlspecialchars($row['kategorie']) . '">';
-                $current_kategorie = $row['kategorie'];
-            }
-            
-            // Zusätzliche Info für die Option
             $zusatz_info = '';
             if ($row['anzahl_gewinner'] > 0) {
                 $zusatz_info = ' (' . $row['anzahl_gewinner'] . ' Gewinner)';
             }
-            
-            $options .= '<option value="' . $row['id'] . '" 
-                                data-kategorie="' . htmlspecialchars($row['kategorie']) . '"
-                                data-min-gewinne="' . $row['min_anzahl_gewinne'] . '"
-                                data-anzahl-gewinner="' . $row['anzahl_gewinner'] . '">';
+
+            $options .= '<option value="' . (int)$row['id'] . '"'
+                      . ' data-min-gewinne="' . (int)$row['min_anzahl_gewinne'] . '"'
+                      . ' data-anzahl-gewinner="' . (int)$row['anzahl_gewinner'] . '">';
             $options .= htmlspecialchars($row['bezeichnung']) . $zusatz_info;
             $options .= '</option>';
-        }
-        
-        // Letztes optgroup schliessen
-        if ($current_kategorie !== '') {
-            $options .= '</optgroup>';
         }
     } else {
         $options = '<option value="">Keine aktiven Wanderpreise vorhanden</option>';
