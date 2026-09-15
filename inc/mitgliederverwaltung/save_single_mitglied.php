@@ -4,18 +4,15 @@ include '../config.php';
 
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
-}
+require_once __DIR__ . '/../csrf.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    die(json_encode(['success' => false, 'message' => 'Method not allowed']));
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true);
 
 try {
     $id = intval($_POST['id'] ?? 0);
@@ -76,7 +73,11 @@ try {
     echo json_encode(['success' => true, 'message' => 'Mitglied gespeichert']);
 
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    // Validierungsfehler (Format-Hinweise) sind fuer den Benutzer bestimmt -> 422 mit Text,
+    // DB-Fehler werden geloggt und generisch gemeldet
+    $istDbFehler = str_starts_with($e->getMessage(), 'Datenbankfehler');
+    if ($istDbFehler) error_log('[save_single_mitglied] ' . $e->getMessage());
+    http_response_code($istDbFehler ? 500 : 422);
+    echo json_encode(['success' => false, 'message' => $istDbFehler ? 'Mitglied konnte nicht gespeichert werden' : $e->getMessage()]);
 }
 ?>

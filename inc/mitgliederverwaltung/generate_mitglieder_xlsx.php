@@ -121,10 +121,10 @@ try {
 
     // Speichern und JSON-Response
     $writer = new Xlsx($spreadsheet);
-    $date = new DateTime();
-    $filename = 'dat/Adressliste_MiFu_' . $date->format('Ymd') . '.xlsx';
-    $writer->save($filename);
-    echo json_encode(['excel_link' => $filename]);
+    // Zeitstempel im Projektformat _Y-m-d_H-i-s, damit das zentrale dat/-Cleanup die Datei erkennt
+    $filename = 'Adressliste_MiFu_' . date('Y-m-d_H-i-s') . '.xlsx';
+    $writer->save(__DIR__ . '/dat/' . $filename);
+    echo json_encode(['success' => true, 'excel_link' => 'dat/' . $filename]);
 
 } catch (Exception $e) {
     http_response_code(500);
