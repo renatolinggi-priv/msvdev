@@ -2,7 +2,8 @@
 // wanderpreise/delete_vergangener_gewinner.php
 // Löscht einen historischen Gewinner-Eintrag
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
 

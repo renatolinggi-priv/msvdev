@@ -2,7 +2,8 @@
 // wanderpreise/add_vergangener_gewinner.php
 // Legt einen historischen Gewinner an (belässt den „aktuellen“ unberührt)
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
 

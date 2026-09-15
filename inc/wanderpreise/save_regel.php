@@ -1,8 +1,9 @@
 <?php
 // save_regel.php
-session_start();
 require_once '../dbconnect.inc.php';
-require_once 'regel_builder.inc.php'; // wp_regel_typen(), wp_build_regel_sql()
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
+require_once 'regel_builder.inc.php'; // wp_regel_typen(), wp_build_regel_sql(), wp_validate_regel_sql()
 require_once __DIR__ . '/../csrf.inc.php';
 
 // Datenbankverbindung herstellen
@@ -36,8 +37,14 @@ try {
 
     $regel_params = null;
     if ($regel_typ === 'custom') {
-        // Experten-Modus: SQL kommt direkt aus dem Formular
+        // Experten-Modus: SQL kommt direkt aus dem Formular. Gleiche Lese-Only-
+        // Pruefung wie in der Vorschau (test_regel_sql.php) und bei der
+        // Ausfuehrung (auto_zuordnung.php) -> nichts Schreibendes gelangt in die DB.
         $sql_query = trim($_POST['sql_query'] ?? '');
+        if ($sql_query !== '' && ($sqlFehler = wp_validate_regel_sql($sql_query)) !== null) {
+            echo json_encode(['success' => false, 'message' => 'SQL abgelehnt: ' . $sqlFehler]);
+            exit;
+        }
     } else {
         // Gefuehrt (einzelwettbewerb/baukasten): SQL serverseitig aus geprueften
         // Vorlagen generieren. Gepostetes sql_query wird bewusst ignoriert.

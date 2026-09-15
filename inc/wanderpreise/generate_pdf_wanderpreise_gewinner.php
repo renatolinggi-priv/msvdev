@@ -5,6 +5,8 @@
  */
 
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once 'PDFReports.php';
 
 // Datenbankverbindung herstellen

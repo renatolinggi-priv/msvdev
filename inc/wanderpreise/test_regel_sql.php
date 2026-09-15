@@ -1,8 +1,9 @@
 <?php
 // test_regel_sql.php - Testet eine SQL-Regel gegen die aktuelle DB
-require_once '../session_config.inc.php';
 require_once '../dbconnect.inc.php';
-require_once 'regel_builder.inc.php'; // wp_normalize_kategorie()
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // nur Admin/Vorstand duerfen Regel-SQL ausfuehren
+require_once 'regel_builder.inc.php'; // wp_normalize_kategorie(), wp_validate_regel_sql()
 require_once __DIR__ . '/../csrf.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -10,14 +11,6 @@ header('Content-Type: application/json; charset=utf-8');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
-    exit;
-}
-
-// Auth pruefen: nur eingeloggte Admin-Nutzer duerfen Regel-SQL ausfuehren
-// (gleicher Schutz wie die aufrufende Seite via header.inc.php)
-if (empty($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Nicht angemeldet']);
     exit;
 }
 
@@ -39,33 +32,9 @@ try {
         exit;
     }
 
-    // Sicherheitscheck: Destruktive Statements blocken
-    $blocked = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'CREATE', 'TRUNCATE', 'GRANT', 'REVOKE', 'LOAD', 'CALL'];
-    // Kommentare und Strings fuer Keyword-Check entfernen
-    $sqlClean = preg_replace("/'[^']*'/", "''", $sql);        // Strings entfernen
-    $sqlClean = preg_replace('/--.*$/m', '', $sqlClean);       // Einzeilige Kommentare
-    $sqlClean = preg_replace('/\/\*.*?\*\//s', '', $sqlClean); // Block-Kommentare
-
-    foreach ($blocked as $keyword) {
-        // Nur als eigenstaendiges Keyword matchen (nicht in Spaltennamen etc.)
-        if (preg_match('/\b' . $keyword . '\b/i', $sqlClean)) {
-            echo json_encode(['success' => false, 'message' => "Nicht erlaubt: $keyword"]);
-            exit;
-        }
-    }
-
-    // Erlaubte Anfaenge: SELECT, SET, WITH (fuer CTEs und Variablen)
-    $sqlUpper = strtoupper(ltrim($sqlClean));
-    $allowedStarts = ['SELECT', 'SET', 'WITH'];
-    $validStart = false;
-    foreach ($allowedStarts as $start) {
-        if (str_starts_with($sqlUpper, $start)) {
-            $validStart = true;
-            break;
-        }
-    }
-    if (!$validStart) {
-        echo json_encode(['success' => false, 'message' => 'SQL muss mit SELECT, SET oder WITH beginnen']);
+    // Sicherheitscheck: nur "SET @var = ...; ... SELECT/WITH" (Whitelist, zentral)
+    if (($sqlFehler = wp_validate_regel_sql($sql)) !== null) {
+        echo json_encode(['success' => false, 'message' => $sqlFehler]);
         exit;
     }
 

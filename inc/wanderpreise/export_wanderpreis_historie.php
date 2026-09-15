@@ -12,6 +12,8 @@ declare(strict_types=1);
 // error_reporting(E_ALL);
 
 require_once 'wanderpreise_config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once '../dbconnect.inc.php';
 
 // Nur DIESE Datei, denn sie enthält bereits die Klasse WanderpreisHistorieReport

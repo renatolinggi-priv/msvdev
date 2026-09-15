@@ -5,6 +5,8 @@
  */
 
 require_once 'wanderpreise_config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // Nur POST erlauben
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

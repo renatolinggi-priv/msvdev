@@ -1,6 +1,8 @@
 <?php
 // get_gewinner_history.php - Historie der Gewinner für einen Wanderpreis anzeigen
 require_once 'wanderpreise_config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 require_once '../dbconnect.inc.php';
 
 // GET-Parameter einlesen

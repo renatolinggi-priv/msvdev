@@ -1,11 +1,18 @@
 <?php
 // inc/wanderpreise/auto_zuordnung.php
-// Automatische Zuordnung von Gewinnern basierend auf den in wanderpreise_regeln definierten SQL-Regeln
+// Automatische Zuordnung von Gewinnern basierend auf den in wanderpreise_regeln definierten SQL-Regeln.
+//
+// Sicherheit (Review 09.2026): Zugriff nur fuer Admin/Vorstand (adminApiGuard), CSRF-Pflicht,
+// und jedes Regel-SQL laeuft vor der Ausfuehrung nochmals durch wp_validate_regel_sql() --
+// dieselbe Whitelist wie beim Speichern und in der Vorschau. Damit kann auch eine frueher
+// gespeicherte Regel nichts Schreibendes mehr ausfuehren.
 
-if (session_status() === PHP_SESSION_NONE) session_start();
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once __DIR__ . '/../csrf.inc.php';
+require_once 'regel_builder.inc.php'; // wp_validate_regel_sql()
 header('Content-Type: application/json; charset=utf-8');
 if (function_exists('ob_get_level')) { while (ob_get_level()) { ob_end_clean(); } }
 
@@ -27,61 +34,58 @@ csrf_require(true);
 $jahr = isset($_POST['jahr']) ? (int)$_POST['jahr'] : (int)date('Y');
 if ($jahr < 1900 || $jahr > 2100) err_json('Ungültiges Jahr', 400);
 
+$conn = null;
+$inTransaction = false;
+
 try {
     $conn = get_db_connection();
+    if (!$conn) err_json('Datenbankverbindung fehlgeschlagen');
     $conn->set_charset('utf8mb4');
 
     $details = [];
     $zuordnungen = 0;
     $fehler = 0;
 
-    // Alle Wanderpreise mit aktivierter Auto-Verknüpfung und Regel
- // --- Wanderpreise laden (Option C: NULL oder 0 = alle Jahre, sonst nur spezifisches Jahr) ---
+    // Alle Wanderpreise mit aktivierter Auto-Verknuepfung und Regel
+    // (verknuepfung_jahr NULL oder 0 = alle Jahre, sonst nur das spezifische Jahr)
     $sqlW = "
         SELECT id, bezeichnung, min_anzahl_gewinne, verknuepfung_regel, verknuepfung_jahr
         FROM wanderpreise
         WHERE auto_verknuepfung = 1
-        AND verknuepfung_regel IS NOT NULL
-        AND (
-                verknuepfung_jahr IS NULL
-            OR verknuepfung_jahr = 0
-            OR verknuepfung_jahr = ?
-        )
+          AND verknuepfung_regel IS NOT NULL
+          AND (verknuepfung_jahr IS NULL OR verknuepfung_jahr = 0 OR verknuepfung_jahr = ?)
     ";
     $w = $conn->prepare($sqlW);
-    if (!$w) err_json('DB-Fehler (prepare Wanderpreise): '.$conn->error);
+    if (!$w) err_json('DB-Fehler (prepare Wanderpreise): ' . $conn->error);
     $w->bind_param("i", $jahr);
-    if (!$w->execute()) err_json('DB-Fehler (execute Wanderpreise): '.$w->error);
+    if (!$w->execute()) err_json('DB-Fehler (execute Wanderpreise): ' . $w->error);
     $resW = $w->get_result();
 
     // Regel-Statement vorbereiten (nur aktive Regeln)
-    $sqlRegel = "SELECT regel_name, sql_query FROM wanderpreise_regeln WHERE regel_code = ? AND aktiv = 1";
-    $getRegel = $conn->prepare($sqlRegel);
-    if (!$getRegel) err_json('DB-Fehler (prepare Regel): '.$conn->error);
+    $getRegel = $conn->prepare("SELECT regel_name, sql_query FROM wanderpreise_regeln WHERE regel_code = ? AND aktiv = 1");
+    if (!$getRegel) err_json('DB-Fehler (prepare Regel): ' . $conn->error);
 
-    // Prüfen, ob für das Jahr bereits ein Eintrag existiert
-    $sqlExists = "SELECT id FROM wanderpreise_gewinner WHERE wanderpreis_id = ? AND jahr = ?";
-    $exists = $conn->prepare($sqlExists);
-    if (!$exists) err_json('DB-Fehler (prepare Exists): '.$conn->error);
+    // Existiert fuer das Jahr bereits ein Eintrag?
+    $exists = $conn->prepare("SELECT id FROM wanderpreise_gewinner WHERE wanderpreis_id = ? AND jahr = ?");
+    if (!$exists) err_json('DB-Fehler (prepare Exists): ' . $conn->error);
 
-    // Zähler bisheriger Gewinne
-    $sqlCount = "SELECT COUNT(*) AS c FROM wanderpreise_gewinner WHERE wanderpreis_id = ? AND gewinner_id = ?";
-    $countStmt = $conn->prepare($sqlCount);
-    if (!$countStmt) err_json('DB-Fehler (prepare Count): '.$conn->error);
+    // Zaehler bisheriger Gewinne
+    $countStmt = $conn->prepare("SELECT COUNT(*) AS c FROM wanderpreise_gewinner WHERE wanderpreis_id = ? AND gewinner_id = ?");
+    if (!$countStmt) err_json('DB-Fehler (prepare Count): ' . $conn->error);
 
     // Insert
-    $sqlIns = "INSERT INTO wanderpreise_gewinner
+    $ins = $conn->prepare("INSERT INTO wanderpreise_gewinner
         (wanderpreis_id, gewinner_id, jahr, rang, resultat, bemerkung, ist_definitiv, anzahl_gewinne, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?, ?, NOW(), NOW())";
-    $ins = $conn->prepare($sqlIns);
-    if (!$ins) err_json('DB-Fehler (prepare Insert): '.$conn->error);
+        VALUES (?,?,?,?,?,?,?, ?, NOW(), NOW())");
+    if (!$ins) err_json('DB-Fehler (prepare Insert): ' . $conn->error);
 
-    // Optionales Update im Stamm bei definitivem Besitz
-    $sqlUpdDef = "UPDATE wanderpreise SET gewinner_id = ?, verknuepfung_jahr = ?, updated_at = NOW() WHERE id = ?";
-    $updDef = $conn->prepare($sqlUpdDef); // darf fehlschlagen, kein err_json()
+    // Optionales Update im Stamm bei definitivem Besitz (darf fehlschlagen)
+    $updDef = $conn->prepare("UPDATE wanderpreise SET gewinner_id = ?, verknuepfung_jahr = ?, updated_at = NOW() WHERE id = ?");
 
-    // Transaktion einmal global â€“ die einzelnen Preise laufen einzeln in Try/Catch
+    // Transaktion einmal global -- die einzelnen Preise laufen einzeln in Try/Catch,
+    // Teilerfolge bleiben bestehen.
     $conn->begin_transaction();
+    $inTransaction = true;
 
     while ($wp = $resW->fetch_assoc()) {
         $wpId   = (int)$wp['id'];
@@ -93,84 +97,81 @@ try {
             // Jahr schon belegt?
             $exists->bind_param("ii", $wpId, $jahr);
             $exists->execute();
-            $has = $exists->get_result()->fetch_assoc();
-            if ($has) {
-                $details[] = "â­ï¸ {$wpName}: Für {$jahr} existiert bereits ein Gewinner â€“ übersprungen.";
+            if ($exists->get_result()->fetch_assoc()) {
+                $details[] = "Übersprungen – {$wpName}: Für {$jahr} existiert bereits ein Gewinner.";
                 continue;
             }
 
             // Regel holen
             if ($code === '') {
-                $details[] = "âš ï¸ {$wpName}: Keine Regel verknüpft.";
+                $details[] = "Hinweis – {$wpName}: Keine Regel verknüpft.";
                 continue;
             }
             $getRegel->bind_param("s", $code);
             $getRegel->execute();
             $rRow = $getRegel->get_result()->fetch_assoc();
             if (!$rRow) {
-                $details[] = "âš ï¸ {$wpName}: Regel '{$code}' nicht gefunden oder inaktiv.";
+                $details[] = "Hinweis – {$wpName}: Regel '{$code}' nicht gefunden oder inaktiv.";
                 continue;
             }
 
-            // SQL aus DB holen
-$sql = (string)$rRow['sql_query'];
-
-// Kategorie aus dem Regelcode ableiten (A/B), sonst leer
-$kat = '';
-if (preg_match('/A$/i', $code))      $kat = 'Kat. A';
-elseif (preg_match('/B$/i', $code))  $kat = 'Kat. B';
-
-// Platzhalter ersetzen (falls {kategorie} in der Regel verwendet wird)
-$sql = str_replace(
-    ['{jahr}', '{wanderpreis_id}', '{kategorie}'],
-    [(int)$jahr, (int)$wpId, $kat],
-    $sql
-);
-
-// Falls die Regel noch SET-Variablen verwendet: rauswerfen & inline ersetzen
-if (stripos($sql, 'SET @year') !== false || stripos($sql, 'SET @kategorie') !== false) {
-    // SET-Zeilen entfernen
-    $sql = preg_replace('/\bSET\s+@year\s*=\s*[^;]+;?\s*/i', '', $sql);
-    $sql = preg_replace('/\bSET\s+@kategorie\s*=\s*[^;]+;?\s*/i', '', $sql);
-    // Verwendungen der Session-Variablen inline ersetzen
-    $sql = str_replace(
-        ['@year', '@kategorie'],
-        [(string)(int)$jahr, ($kat !== '' ? ("'".$conn->real_escape_string($kat)."'") : "''")],
-        $sql
-    );
-}
-
-// Ausführen â€“ wenn Semikola drin sind, Multi-Statements nutzen und letztes Resultat nehmen
-$r = null;
-if (strpos($sql, ';') !== false) {
-    if (!$conn->multi_query($sql)) {
-        $fehler++;
-        $details[] = "âŒ {$wpName}: SQL-Fehler ({$conn->errno}) ".$conn->error;
-        continue;
-    }
-    do {
-        if ($tmp = $conn->store_result()) {
-            if ($r) $r->free();
-            $r = $tmp; // letztes SELECT ist relevant
-        }
-    } while ($conn->more_results() && $conn->next_result());
-} else {
-    $r = $conn->query($sql);
-}
-
-if (!$r instanceof mysqli_result) {
-    $fehler++;
-    $details[] = "âŒ {$wpName}: Regel liefert kein Resultset.";
-    continue;
-}
-
-            if ($r === false) {
+            // Regel-SQL vor der Ausfuehrung pruefen (zweite Verteidigungslinie)
+            $sql = (string)$rRow['sql_query'];
+            $sqlFehler = wp_validate_regel_sql($sql);
+            if ($sqlFehler !== null) {
                 $fehler++;
-                $details[] = "âŒ {$wpName}: SQL-Fehler â€“ ".$conn->error;
+                $details[] = "Fehler – {$wpName}: Regel '{$code}' abgelehnt ({$sqlFehler}).";
+                continue;
+            }
+
+            // Kategorie aus dem Regelcode ableiten (A/B), sonst leer
+            $kat = '';
+            if (preg_match('/A$/i', $code))     $kat = 'Kat. A';
+            elseif (preg_match('/B$/i', $code)) $kat = 'Kat. B';
+
+            // Platzhalter ersetzen (falls {kategorie} in der Regel verwendet wird)
+            $sql = str_replace(
+                ['{jahr}', '{wanderpreis_id}', '{kategorie}'],
+                [(int)$jahr, (int)$wpId, $kat],
+                $sql
+            );
+
+            // Falls die Regel noch SET-Variablen verwendet: rauswerfen & inline ersetzen
+            if (stripos($sql, 'SET @year') !== false || stripos($sql, 'SET @kategorie') !== false) {
+                $sql = preg_replace('/\bSET\s+@year\s*=\s*[^;]+;?\s*/i', '', $sql);
+                $sql = preg_replace('/\bSET\s+@kategorie\s*=\s*[^;]+;?\s*/i', '', $sql);
+                $sql = str_replace(
+                    ['@year', '@kategorie'],
+                    [(string)(int)$jahr, ($kat !== '' ? ("'" . $conn->real_escape_string($kat) . "'") : "''")],
+                    $sql
+                );
+            }
+
+            // Ausfuehren -- bei Semikola Multi-Statements nutzen und das letzte Resultat nehmen
+            $r = null;
+            if (strpos($sql, ';') !== false) {
+                if (!$conn->multi_query($sql)) {
+                    $fehler++;
+                    $details[] = "Fehler – {$wpName}: SQL-Fehler ({$conn->errno}) " . $conn->error;
+                    continue;
+                }
+                do {
+                    if ($tmp = $conn->store_result()) {
+                        if ($r) $r->free();
+                        $r = $tmp; // letztes SELECT ist relevant
+                    }
+                } while ($conn->more_results() && $conn->next_result());
+            } else {
+                $r = $conn->query($sql);
+            }
+
+            if (!$r instanceof mysqli_result) {
+                $fehler++;
+                $details[] = "Fehler – {$wpName}: " . ($conn->error !== '' ? 'SQL-Fehler – ' . $conn->error : 'Regel liefert kein Resultset.');
                 continue;
             }
             if ($r->num_rows < 1) {
-                $details[] = "â„¹ï¸ {$wpName}: Keine Daten für {$jahr} â€“ keine Zuordnung.";
+                $details[] = "Info – {$wpName}: Keine Daten für {$jahr}, keine Zuordnung.";
                 continue;
             }
 
@@ -179,12 +180,12 @@ if (!$r instanceof mysqli_result) {
             $gewinnerId = (int)($row['gewinner_id'] ?? 0);
             if ($gewinnerId <= 0) {
                 $fehler++;
-                $details[] = "âŒ {$wpName}: Regel liefert keine gültige 'gewinner_id'.";
+                $details[] = "Fehler – {$wpName}: Regel liefert keine gültige 'gewinner_id'.";
                 continue;
             }
-            $rang     = isset($row['rang'])     ? (string)$row['rang']     : '';
-            $resultat = isset($row['resultat']) ? (string)$row['resultat'] : '';
-            $bemerk   = isset($row['bemerkung'])? (string)$row['bemerkung']: '';
+            $rang     = isset($row['rang'])      ? (string)$row['rang']      : '';
+            $resultat = isset($row['resultat'])  ? (string)$row['resultat']  : '';
+            $bemerk   = isset($row['bemerkung']) ? (string)$row['bemerkung'] : '';
 
             // Anzahl bisherige Gewinne
             $countStmt->bind_param("ii", $wpId, $gewinnerId);
@@ -197,7 +198,7 @@ if (!$r instanceof mysqli_result) {
             $ins->bind_param("iiisssii", $wpId, $gewinnerId, $jahr, $rang, $resultat, $bemerk, $istDef, $anzNeu);
             if (!$ins->execute()) {
                 $fehler++;
-                $details[] = "âŒ {$wpName}: Insert-Fehler â€“ ".$ins->error;
+                $details[] = "Fehler – {$wpName}: Insert-Fehler – " . $ins->error;
                 continue;
             }
 
@@ -208,20 +209,21 @@ if (!$r instanceof mysqli_result) {
             }
 
             $zuordnungen++;
-            $details[] = "âœ… {$wpName}: Gewinner ID {$gewinnerId} zugeordnet"
+            $details[] = "OK – {$wpName}: Gewinner ID {$gewinnerId} zugeordnet"
                        . ($istDef ? " (definitiver Besitz erreicht)" : "")
-                       . ($resultat !== '' ? " â€“ Resultat: {$resultat}" : "")
-                       . ($rang !== '' ? " â€“ Rang: {$rang}" : "");
+                       . ($resultat !== '' ? " – Resultat: {$resultat}" : "")
+                       . ($rang !== '' ? " – Rang: {$rang}" : "");
 
         } catch (Throwable $inner) {
             $fehler++;
-            $details[] = "âŒ {$wpName}: ".$inner->getMessage();
-            // weiter mit nächstem Preis
+            $details[] = "Fehler – {$wpName}: " . $inner->getMessage();
+            // weiter mit naechstem Preis
         }
     }
 
-    // Commit (wir lassen Teilerfolge bestehen)
+    // Commit (Teilerfolge bleiben bestehen)
     $conn->commit();
+    $inTransaction = false;
 
     ok_json([
         'message'      => "{$zuordnungen} Zuordnungen" . ($fehler ? ", {$fehler} Fehler" : ""),
@@ -232,9 +234,8 @@ if (!$r instanceof mysqli_result) {
     ]);
 
 } catch (Throwable $e) {
-    // Rollback auf Nummer sicher
-    if (isset($conn) && $conn instanceof mysqli && $conn->errno === 0) {
-        $conn->rollback();
+    if ($inTransaction && $conn instanceof mysqli) {
+        try { $conn->rollback(); } catch (Throwable $ignored) {}
     }
-    err_json('Fehler bei der automatischen Zuordnung: '.$e->getMessage());
+    err_json('Fehler bei der automatischen Zuordnung: ' . $e->getMessage());
 }

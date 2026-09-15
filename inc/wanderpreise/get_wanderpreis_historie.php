@@ -2,7 +2,8 @@
 // inc/wanderpreise/get_wanderpreis_historie.php
 // Liefert JSON ohne HTML-Vorabgaben (für Ajax).
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
 

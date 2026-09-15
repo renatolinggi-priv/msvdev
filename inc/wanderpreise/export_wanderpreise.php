@@ -1,6 +1,8 @@
 <?php
 // export_wanderpreise.php - CSV Export für Wanderpreise
 require_once 'wanderpreise_config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('plain');
 require_once '../dbconnect.inc.php';
 
 // Datenbankverbindung herstellen

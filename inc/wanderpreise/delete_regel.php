@@ -1,8 +1,9 @@
 <?php
 // delete_regel.php
-session_start();
 require_once 'wanderpreise_config.php';
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once __DIR__ . '/../csrf.inc.php';
 
 // Datenbankverbindung herstellen
@@ -22,8 +23,11 @@ csrf_require(true);
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    $regel_id = intval($_POST['id']);
-    
+    $regel_id = (int)($_POST['id'] ?? 0);
+    if ($regel_id < 1) {
+        wanderpreise_json_response(false, 'Ungültige Regel-ID', [], 400);
+    }
+
     // Prüfe ob Regel in Verwendung ist
     $check_sql = "SELECT COUNT(*) as count FROM wanderpreise 
                   WHERE verknuepfung_regel = (SELECT regel_code FROM wanderpreise_regeln WHERE id = ?)";

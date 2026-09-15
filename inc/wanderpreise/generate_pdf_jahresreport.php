@@ -1,6 +1,8 @@
 <?php
 // generate_wanderpreise_jahresreport.php
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once '../vendor/autoload.php';
 
 use Dompdf\Dompdf;

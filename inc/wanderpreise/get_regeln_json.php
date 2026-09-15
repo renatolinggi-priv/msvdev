@@ -1,6 +1,8 @@
 <?php
 // get_regeln_json.php - Liefert alle Regeln als JSON
 require_once '../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once 'regel_builder.inc.php'; // wp_regeln_has_builder_columns()
 
 header('Content-Type: application/json; charset=utf-8');

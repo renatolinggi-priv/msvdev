@@ -337,3 +337,74 @@ function wp_regel_schema_reference(): array {
         ['table' => 'Waffen',          'member' => '—',            'year' => '—',    'cols' => 'ID, Kategorie (\'Kat. A\' / \'Kat. B\') — Join über mitglieder.WaffenID'],
     ];
 }
+
+/**
+ * Prueft rohes Regel-SQL (Experten-Modus) auf "nur lesen".
+ *
+ * Erlaubt sind beliebig viele Statements der Form  SET @variable = ...  gefolgt
+ * von GENAU EINEM SELECT- oder WITH-Statement, das zugleich das letzte ist.
+ * Alles andere (INSERT/UPDATE/REPLACE/DROP/..., SET GLOBAL, INTO OUTFILE,
+ * mehrere SELECTs, unbekannte Statement-Anfaenge) wird abgelehnt. String-
+ * Literale, Backtick-Bezeichner und Kommentare werden vor der Pruefung
+ * entfernt, damit Schluesselwoerter darin weder blockieren noch verstecken.
+ *
+ * Wird an drei Stellen identisch benutzt: test_regel_sql.php (Vorschau),
+ * save_regel.php (Speichern, Typ custom) und auto_zuordnung.php (Ausfuehrung,
+ * zweite Verteidigungslinie fuer bereits gespeicherte Regeln).
+ *
+ * @return string|null  Fehlermeldung, oder null wenn das SQL zulaessig ist.
+ */
+function wp_validate_regel_sql(string $sql): ?string {
+    // MySQL/MariaDB fuehren "ausfuehrbare Kommentare" (/*! ... */, /*M! ... */,
+    // Optimizer-Hints /*+ ... */) als Code aus -> duerfen nicht als Kommentar durchrutschen.
+    if (preg_match('~/\*\s*[!M+]~', $sql)) {
+        return 'Nicht erlaubt: ausführbarer Kommentar (/*! … */)';
+    }
+    // Ein Durchlauf: Strings/Bezeichner durch leere Literale ersetzen, Kommentare
+    // durch Leerzeichen. Die Alternation greift an jeder Position zuerst -> ein
+    // "--" in einem String bleibt String, ein Apostroph im Kommentar bleibt Kommentar.
+    $clean = preg_replace_callback(
+        '/\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*"|`[^`]*`|\/\*.*?\*\/|--[^\r\n]*|#[^\r\n]*/s',
+        static function (array $m): string {
+            $t = $m[0];
+            if ($t[0] === "'" || $t[0] === '"') return "''";
+            if ($t[0] === '`') return '``';
+            return ' ';
+        },
+        $sql
+    );
+    if ($clean === null) return 'SQL konnte nicht analysiert werden';
+
+    $parts = array_values(array_filter(array_map('trim', explode(';', $clean)), static fn($p) => $p !== ''));
+    if (!$parts) return 'Kein SQL angegeben';
+
+    $blocked = [
+        'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'MERGE', 'DROP', 'ALTER', 'CREATE', 'TRUNCATE', 'RENAME',
+        'GRANT', 'REVOKE', 'LOAD', 'CALL', 'HANDLER', 'KILL', 'DO', 'OUTFILE', 'DUMPFILE', 'INTO',
+        'LOCK', 'UNLOCK', 'SHUTDOWN', 'INSTALL', 'UNINSTALL', 'PREPARE', 'EXECUTE', 'DEALLOCATE',
+        'FLUSH', 'RESET', 'PURGE', 'BEGIN', 'COMMIT', 'ROLLBACK', 'SAVEPOINT', 'START', 'XA',
+        'ANALYZE', 'OPTIMIZE', 'REPAIR', 'CHECKSUM', 'IMPORT', 'SLEEP', 'BENCHMARK',
+        'GET_LOCK', 'RELEASE_LOCK', 'LOAD_FILE',
+    ];
+
+    $last = count($parts) - 1;
+    foreach ($parts as $i => $stmt) {
+        $upper = strtoupper($stmt);
+        foreach ($blocked as $kw) {
+            if (preg_match('/\b' . $kw . '\b/', $upper)) {
+                return "Nicht erlaubt: $kw";
+            }
+        }
+        // Nur Session-Variablen (@name), keine System-Variablen (@@name, GLOBAL, SESSION)
+        if (preg_match('/^SET\s+@(?!@)[A-Za-z0-9_]+\s*(?::=|=)/i', $stmt)) {
+            if ($i === $last) return 'Das letzte Statement muss ein SELECT (oder WITH) sein';
+            continue;
+        }
+        if (preg_match('/^(SELECT|WITH)\b/i', $stmt)) {
+            if ($i !== $last) return 'Nur ein SELECT erlaubt, und es muss das letzte Statement sein';
+            continue;
+        }
+        return 'Statement nicht erlaubt: ' . mb_substr($stmt, 0, 40) . (mb_strlen($stmt) > 40 ? '…' : '');
+    }
+    return null;
+}

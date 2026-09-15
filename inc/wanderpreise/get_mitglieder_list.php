@@ -1,6 +1,8 @@
 <?php
 // get_mitglieder_list.php - Liste der aktiven Mitglieder für Dropdown
 require_once 'wanderpreise_config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 require_once '../dbconnect.inc.php';
 
 try {

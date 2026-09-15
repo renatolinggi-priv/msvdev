@@ -1,6 +1,8 @@
 <?php
 // get_wanderpreise_list.php - Dropdown-Liste aller Wanderpreise
 require_once 'wanderpreise_config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html');
 require_once '../dbconnect.inc.php';
 
 try {
