@@ -41,6 +41,7 @@ include 'header.inc.php';
                             <button class="btn btn-outline-info btn-sm pdf-btn">
                                 <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
                         </div>
                         <div id="pdf-link" class="mt-2"></div>
                     </div>
@@ -248,6 +249,7 @@ include 'header.inc.php';
         dataType: 'json',  // Das sagt jQuery, dass es JSON erwartet
         data: {
             year: selectedYear,
+            orientation: window.MsvDruck ? MsvDruck.orientierung('kantirang', 'portrait') : 'portrait' // Format aus dem Druckprofil
         },
         success: function(response) {
             // response ist bereits ein JavaScript-Objekt, NICHT JSON.parse verwenden!
@@ -309,6 +311,14 @@ include 'header.inc.php';
         loadKantonala();
         loadKantonalb();
     });
+</script>
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Kantonalstich Rangliste»
+MsvDruck.resolve('kantirang', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    return { url: 'kantirang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('kantirang', 'portrait'), jobName: 'Kantonalstich Rangliste ' + jahr };
+});
 </script>
 <?
 include 'footer.inc.php';

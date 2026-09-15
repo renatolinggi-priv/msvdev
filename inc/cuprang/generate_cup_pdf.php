@@ -14,6 +14,7 @@ try {
     require '../vendor/autoload.php';
     include '../config.php';
     require_once __DIR__ . '/../pdf/pdf_theme.php';
+    require_once __DIR__ . '/../pdf/pdf_orientation.inc.php'; // ?orientation= aus dem Druckprofil (setPaper + @page)
     
     if (!isset($conn) && function_exists('get_db_connection')) {
         $conn = get_db_connection();
@@ -122,9 +123,9 @@ try {
 <head>
 <meta charset="UTF-8">
 <style>
-@page { 
+@page {
     margin: 1.5cm 1.5cm 2cm 1.5cm;
-    size: A4;
+    size: A4 ' . pdfOrientationParam('portrait') . ';
 }
 body { 
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; 
@@ -553,7 +554,7 @@ tbody tr:hover {
     
     $dompdf = new Dompdf($options);
     $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch (auch in @page oben)
     $dompdf->render();
     
     // Verzeichnis prüfen

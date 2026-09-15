@@ -305,9 +305,11 @@ include 'header.inc.php';
                             <button class="btn btn-outline-info btn-sm pdfrang-btn">
                                 <i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Rang)</span>
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer"></i></button>
                             <button class="btn btn-outline-info btn-sm pdf-btn">
                                 <i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Name)</span>
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer"></i></button>
                         </div>
                         <div id="pdf-link" class="mt-2"></div>
                     </div>
@@ -608,7 +610,8 @@ $(document).ready(function() {
             type: 'GET',
             dataType: 'json',
             data: {
-                year: selectedYear
+                year: selectedYear,
+                orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
             },
             success: function(response) {
                 if (response.pdf_link) {
@@ -650,7 +653,8 @@ $(document).ready(function() {
             type: 'GET',
             dataType: 'json',
             data: {
-                year: selectedYear
+                year: selectedYear,
+                orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
             },
             success: function(response) {
                 if (response.pdf_link) {
@@ -756,6 +760,20 @@ $(document).ready(function() {
 });
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «JM Rangliste» (A4 quer). Achtung Pfad-Asymmetrie der Generatoren:
+// generate_pdf_jm.php liefert 'jmrang/dat/…', generate_pdf_all_results.php nur 'dat/…' → linkPrefix am Button.
+MsvDruck.resolve('jmrang', (btn) => {
+    const jahr = document.getElementById('yearSelect').value;
+    return {
+        url: 'jmrang/' + btn.dataset.druckScript + '?year=' + encodeURIComponent(jahr)
+            + '&orientation=' + MsvDruck.orientierung('jmrang', 'landscape'),
+        jobName: btn.dataset.druckJob + ' ' + jahr,
+        linkPrefix: btn.dataset.druckLinkprefix || ''
+    };
+});
+</script>
 <?php
 include 'footer.inc.php';
 ?>

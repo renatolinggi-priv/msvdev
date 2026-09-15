@@ -146,9 +146,14 @@ if (empty($_SESSION['csrf_token'])) {
                                                 </button>
                                             </div>
                                             <div class="col-6">
-                                                <button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm w-100" style="display: none;">
-                                                    <i class="bi bi-file-pdf me-1"></i>PDF
-                                                </button>
+                                                <div class="btn-group w-100">
+                                                    <button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm w-100" style="display: none;">
+                                                        <i class="bi bi-file-pdf me-1"></i>PDF
+                                                    </button>
+                                                    <button type="button" id="printPdfBtn" class="btn btn-outline-info btn-sm msv-druck flex-grow-0" style="display: none;" data-druck-doctype="einzelrangierung" data-druck-label="Einzelrangierungen" aria-label="Einzelrangierungen direkt drucken">
+                                                        <i class="bi bi-printer"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                             <?php
@@ -372,8 +377,8 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success && response.rankings.length > 0) {
                     displayRankings(response.rankings);
-                    // PDF Export Button anzeigen
-                    $('#exportPdfBtn').show();
+                    // PDF Export Button und Direktdruck anzeigen
+                    $('#exportPdfBtn, #printPdfBtn').show();
                 } else {
                     $('#rankingsList').html(`
                         <tr><td colspan="6" class="ranking-empty">
@@ -610,6 +615,7 @@ $(document).ready(function () {
             type: 'POST',
             data: {
                 year: selectedYear,
+                orientation: window.MsvDruck ? MsvDruck.orientierung('einzelrangierung', 'portrait') : 'portrait', // Format aus dem Druckprofil
                 csrf_token: $('input[name="csrf_token"]').val()
             },
             dataType: 'json',
@@ -667,6 +673,19 @@ $(document).ready(function () {
 
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): gleicher POST wie der PDF-Button (year, csrf_token) → JSON {pdf_url}
+MsvDruck.resolve('einzelrangierung', () => {
+    const jahr = $('#yearSelect').val();
+    return {
+        url: 'einzelrangierung/export_rankings_pdf.php',
+        method: 'POST',
+        body: new URLSearchParams({ year: jahr, orientation: MsvDruck.orientierung('einzelrangierung', 'portrait'), csrf_token: $('input[name="csrf_token"]').val() }),
+        jobName: 'Einzelrangierungen ' + jahr
+    };
+});
+</script>
 <?
 include 'footer.inc.php';
 ?>

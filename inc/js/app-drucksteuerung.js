@@ -5,6 +5,15 @@
  * Nutzt PrintManager, msvToast/msvError fuer Feedback.
  */
 
+// Format-Auswahl fuer Ranglisten: die Wahl landet in print_profiles.orientation (+ optionen.format) und wird
+// vom Direktdruck und von den PDF-Buttons der Seiten als ?orientation= an den Generator weitergegeben
+// (inc/pdf/pdf_orientation.inc.php). Erster Eintrag = Vorgabe = bisheriges Format des Generators.
+const FORMAT_A4_HOCH = [
+    { value: 'A4P', label: 'A4 Portrait',  paper: 'A4', orient: 'portrait' },
+    { value: 'A4L', label: 'A4 Landscape', paper: 'A4', orient: 'landscape' }
+];
+const FORMAT_A4_QUER = [FORMAT_A4_HOCH[1], FORMAT_A4_HOCH[0]];
+
 const Druck = {
 
     pm: null,
@@ -16,17 +25,38 @@ const Druck = {
     //  PROFIL-DEFINITIONEN (wird spaeter pro Seite erweitert)
     // ============================================================
     _profileDefinitions: [
+        // doc_type = Schluessel in print_profiles; die Seiten nutzen ihn ueber js/msv-direktdruck.js
+        // (data-druck-doctype). Ausrichtung = Seitenformat des jeweiligen PDF-Generators (Dompdf setPaper).
         {
-            section: 'JM Standblatt',
+            section: 'Jahresmeisterschaft',
             profiles: [
-                { doc_type: 'jm_standblatt', label: 'JM Standblatt', desc: 'Standblatt fuer Jahresmeisterschaft (PDF)', format_fixed: 'A4 Portrait', default_copies: 1 }
+                { doc_type: 'jm_standblatt',  label: 'JM Standblatt',    desc: 'Standblatt fuer Jahresmeisterschaft (Word-Vorlage A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
+                { doc_type: 'jmrang',         label: 'JM Rangliste',     desc: 'Rangliste nach Rang / nach Name (JM Rangliste)', format_select: FORMAT_A4_QUER, format_field: 'format', default_copies: 1 },
+                { doc_type: 'jmdurchschnitt', label: 'JM Durchschnitte', desc: 'PDF-Export der Durchschnitte pro Anlass', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
+                { doc_type: 'jmdefinition',   label: 'Jahresprogramm',   desc: 'Jahresprogramm-PDF (JM Definition)', format_fixed: 'A4 Portrait', default_copies: 1 }
             ]
         },
         {
             section: 'Endschiessen',
             profiles: [
-                // Excel-Vorlage → PDF (ConvertAPI) → QZ Tray; Duplex «Lange Seite» = beidseitig, Bindung an der langen Kante
-                { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt', desc: 'Standblatt aus «Endschiessen loesen» (A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 }
+                // Excel-Vorlage → PDF (Konvertierungsdienst) → QZ Tray; Duplex «Lange Seite» = beidseitig, Bindung an der langen Kante
+                { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt',   desc: 'Standblatt aus «Endschiessen loesen» (A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
+                { doc_type: 'endschiessen_abrechnung', label: 'Endschiessen Abrechnung',   desc: 'Abrechnung aus «Endschiessen loesen»', format_fixed: 'A4 Landscape', default_copies: 1 },
+                { doc_type: 'endschrang',              label: 'Endschiessen Ranglisten',   desc: 'Alle Ranglisten der Seite «Endschiessen Rangliste» (Gesamt, Zwischen, Anmeldung, Stiche, Partner)', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
+                { doc_type: 'absendenbuch',            label: 'Absendenbuch (Broschuere)', desc: 'A5-Broschuere auf A4 quer, 2 Seiten pro Blatt, gefaltet. Duplex «Kurze Seite» (ohne Angabe wird sie automatisch gesetzt)', format_fixed: 'A4 Landscape', default_copies: 1 },
+                { doc_type: 'endsch_targetprint',      label: 'Endschiessen Zielscheiben', desc: 'Zielscheiben-PDF aus der CSV-Datei', format_fixed: 'A4 Portrait', default_copies: 1 },
+                { doc_type: 'munitionskauf',           label: 'Munitionskauf Liste',       desc: 'PDF der Munitionskaeufe (aktiver Zeitraum-Filter)', format_fixed: 'A4 Portrait', default_copies: 1 }
+            ]
+        },
+        {
+            section: 'Ranglisten',
+            profiles: [
+                { doc_type: 'kantirang',            label: 'Kantonalstich Rangliste',        desc: 'Rangliste Kantonalstich (auch von «Kantonal Abrechnung» genutzt)', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
+                { doc_type: 'heimrang',             label: 'Heimmeisterschaft Rangliste',    desc: 'Rangliste Heimmeisterschaft', format_select: FORMAT_A4_QUER, format_field: 'format', default_copies: 1 },
+                { doc_type: 'sektionrang',          label: 'Sektionsmeisterschaft Rangliste', desc: 'Runde 1, Runde 2 und Schnitt', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
+                { doc_type: 'sektionsrangierungen', label: 'Sektionsrangierungen',           desc: 'PDF-Export der Sektionsrangierungen', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
+                { doc_type: 'einzelrangierung',     label: 'Einzelrangierungen',             desc: 'PDF-Export der Einzelrangierungen', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
+                { doc_type: 'cuprang',              label: 'Vereinscup Rangliste',           desc: 'Rangliste Vereinscup', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 }
             ]
         }
     ],
@@ -158,7 +188,7 @@ const Druck = {
         // Header-Zeile
         html += '<div class="profile-matrix-header">';
         html += '<span>Dokumenttyp</span><span>Drucker</span>';
-        html += '<span>Format / Modus</span><span>Kopien</span><span>Duplex</span><span>Test</span>';
+        html += '<span>Format / Modus</span><span>Kopien</span><span>Duplex</span><span>Farbe</span><span>Test</span>';
         html += '</div>';
 
         let configuredCount = 0;
@@ -211,7 +241,17 @@ const Druck = {
                 html += '<option value="long-edge"' + (duplexVal === 'long-edge' || duplexVal === '1' || duplexVal === 1 ? ' selected' : '') + '>Lange Seite</option>';
                 html += '<option value="short-edge"' + (duplexVal === 'short-edge' ? ' selected' : '') + '>Kurze Seite</option>';
                 html += '</select></div>';
-                html += '<div class="profile-test" data-label=""><button class="profile-test-btn" onclick="Druck.testProfile(\'' + def.doc_type + '\')" title="Testdruck"><i class="bi bi-printer"></i></button></div>';
+                // Farbe: QZ colorType color | grayscale | blackwhite (print_profiles.color_mode, Default Schwarzweiss)
+                const colorVal = (profile && profile.color_mode) ? profile.color_mode : 'blackwhite';
+                html += '<div class="profile-color" data-label="Farbe"><select class="profile-select" data-field="color_mode">';
+                html += '<option value="blackwhite"' + (colorVal === 'blackwhite' ? ' selected' : '') + '>Schwarzweiss</option>';
+                html += '<option value="grayscale"' + (colorVal === 'grayscale' ? ' selected' : '') + '>Graustufen</option>';
+                html += '<option value="color"' + (colorVal === 'color' ? ' selected' : '') + '>Farbe</option>';
+                html += '</select></div>';
+                html += '<div class="profile-test" data-label="">'
+                    + '<button class="profile-test-btn" onclick="Druck.testProfile(\'' + def.doc_type + '\')" title="Testdruck"><i class="bi bi-printer"></i></button>'
+                    + '<button class="profile-test-btn profile-copy-btn" onclick="Druck.copyToSection(\'' + def.doc_type + '\', event)" title="Drucker, Duplex, Farbe und Kopien dieser Zeile auf alle Profile der Sektion übertragen (Shift+Klick: auf alle Sektionen). Danach speichern."><i class="bi bi-arrow-bar-down"></i></button>'
+                    + '</div>';
                 html += '</div>';
             });
         });
@@ -248,7 +288,7 @@ const Druck = {
                 copies: parseInt($row.find('[data-field="copies"]').val()) || def.default_copies,
                 paper_size: 'A4',
                 orientation: 'portrait',
-                color_mode: 'blackwhite',
+                color_mode: $row.find('[data-field="color_mode"]').val() || 'blackwhite',
                 duplex: $row.find('[data-field="duplex"]').val() || '',
                 optionen: '{}',
             };
@@ -322,26 +362,89 @@ const Druck = {
         if (!printer) return;
         const copies = parseInt($row.find('[data-field="copies"]').val()) || 1;
         const def = this._findDefinition(docType);
-        const now = new Date().toLocaleString('de-CH');
+        const label = def?.label || docType;
 
-        // Generischer A4-Testdruck
-        const testHtml = '<div style="width:210mm;height:297mm;padding:20mm;font-family:Arial,sans-serif;box-sizing:border-box">'
-            + '<h2>Testdruck ' + this.esc(def?.label || docType) + '</h2>'
-            + '<p>Drucker: ' + this.esc(printer.name) + '</p>'
-            + '<p>Kopien: ' + copies + '</p>'
-            + '<p>Datum: ' + now + '</p></div>';
+        // Druckoptionen aus der ZEILE (auch ungespeicherte Werte), damit der Test zeigt, was gespeichert wuerde
+        let paper = 'A4', orientation = 'portrait';
+        if (def?.format_select) {
+            const fv = $row.find('[data-field="' + def.format_field + '"]').val();
+            const fd = def.format_select.find(o => o.value === fv) || def.format_select[0];
+            paper = fd.paper || paper; orientation = fd.orient || orientation;
+        } else if (def?.format_fixed) {
+            const parts = def.format_fixed.split(' ');
+            paper = parts[0] || paper; orientation = (parts[1] || 'portrait').toLowerCase();
+        }
+        const duplex = $row.find('[data-field="duplex"]').val() || '';
+        const color  = $row.find('[data-field="color_mode"]').val() || 'blackwhite';
+        const PAPIER = { A3: [297, 420], A4: [210, 297], A5: [148, 210], LETTER: [216, 279] };
+        const size = PAPIER[paper.toUpperCase()] || PAPIER.A4;
 
+        // Testseite als PDF vom Server (gleicher Druckpfad wie echte Dokumente, kein HTML-Rendering in QZ)
+        const params = new URLSearchParams({ doc_type: docType, label, printer: printer.name, orientation, paper, copies, duplex, color });
         try {
+            const r = await fetch('drucksteuerung/test_pdf.php?' + params, { credentials: 'same-origin' });
+            if (!r.ok) throw new Error('Testseite konnte nicht erzeugt werden (HTTP ' + r.status + ')');
+            const blob = await r.blob();
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
             await this.pm.printPixel(printer.name,
-                [{ type: 'html', format: 'plain', data: testHtml }],
-                { size: { width: 210, height: 297 }, units: 'mm', orientation: 'portrait', copies: copies, margins: { top: 0, right: 0, bottom: 0, left: 0 }, jobName: 'Testdruck ' + (def?.label || docType) }
+                [{ type: 'pdf', format: 'base64', data: base64 }],
+                {
+                    size: { width: size[0], height: size[1] }, units: 'mm', orientation,
+                    copies, duplex: duplex || false, colorType: color,
+                    margins: { top: 0, right: 0, bottom: 0, left: 0 }, rasterize: false,
+                    jobName: 'Testdruck ' + label
+                }
             );
-            await this.pm.logJob(docType, printer.name, 'Testdruck', 'erfolgreich');
-            msvToast('Testdruck "' + (def?.label || docType) + '" gesendet', 'success');
+            await this.pm.logJob(docType, printer.name, 'Testdruck ' + paper + ' ' + orientation, 'gesendet', copies);
+            msvToast('Testdruck "' + label + '" gesendet (' + paper + ' ' + (orientation === 'landscape' ? 'quer' : 'hoch') + ')', 'success');
             this.loadPrintLog();
         } catch (err) {
+            await this.pm.logJob(docType, printer.name, 'Testdruck', 'fehler', copies, err && err.message ? err.message : String(err));
             msvError('Testdruck fehlgeschlagen: ' + (err.message || err));
         }
+    },
+
+    // ============================================================
+    //  EINSTELLUNGEN AUF SEKTION UEBERTRAGEN
+    //  Drucker, Duplex, Farbe und Kopien der Quellzeile in alle Zeilen der Sektion (Shift: alle Sektionen)
+    //  kopieren. Das Format bleibt pro Zeile (Ausrichtung ist dokumentspezifisch). Speichern macht der Benutzer.
+    // ============================================================
+    copyToSection(docType, ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        const $src = $('.profile-row[data-doc-type="' + docType + '"]');
+        if (!$src.length) return;
+        const alle = !!(ev && ev.shiftKey);
+        const sectionKey = $src.data('section');
+        const werte = {
+            printer_id: $src.find('[data-field="printer_id"]').val(),
+            duplex:     $src.find('[data-field="duplex"]').val(),
+            color_mode: $src.find('[data-field="color_mode"]').val(),
+            copies:     $src.find('[data-field="copies"]').val(),
+        };
+        if (!werte.printer_id) {
+            msvToast('Bitte zuerst in dieser Zeile einen Drucker wählen', 'warning');
+            return;
+        }
+        const $ziel = (alle ? $('.profile-row') : $('.profile-row[data-section="' + sectionKey + '"]')).not($src);
+        let n = 0;
+        $ziel.each((_, row) => {
+            const $row = $(row);
+            Object.keys(werte).forEach(feld => {
+                const $f = $row.find('[data-field="' + feld + '"]');
+                if ($f.length && werte[feld] !== undefined && werte[feld] !== null) $f.val(werte[feld]);
+            });
+            $row.addClass('profile-row-copied');
+            n++;
+        });
+        setTimeout(() => $('.profile-row-copied').removeClass('profile-row-copied'), 1500);
+        const def = this._findDefinition(docType);
+        msvToast('Einstellungen von «' + (def?.label || docType) + '» auf ' + n + (alle ? ' Profile aller Sektionen' : ' Profile der Sektion')
+            + ' übertragen – jetzt «Speichern» klicken', 'success');
     },
 
     // ============================================================
@@ -537,18 +640,29 @@ const Druck = {
                 $body.html('<div class="print-log-empty">Keine Eintraege</div>');
                 return;
             }
+            // Status: gesendet = an den Spooler uebergeben (Normalfall, blau), erfolgreich = bestaetigt (gruen),
+            // fehler = rot mit Ursache im Tooltip. Dokumenttyp als Profil-Bezeichnung statt Schluessel.
+            const STATUS = {
+                gesendet:    { dot: 'sent', text: 'an Drucker übergeben' },
+                erfolgreich: { dot: 'ok',   text: 'gedruckt' },
+                fehler:      { dot: 'err',  text: 'Fehler' },
+            };
             let html = '';
             res.data.forEach(j => {
                 const zeit = new Date(j.erstellt_am).toLocaleString('de-CH', {
                     day: '2-digit', month: '2-digit',
                     hour: '2-digit', minute: '2-digit'
                 });
-                const dotClass = j.status === 'erfolgreich' ? 'ok' :
-                                 j.status === 'fehler' ? 'err' : 'warn';
-                html += '<div class="print-log-row">'
-                    + '<span class="print-log-dot ' + dotClass + '"></span>'
-                    + '<span class="print-log-type">' + this.esc(j.doc_type || '-') + '</span>'
-                    + '<span class="print-log-printer">' + this.esc(j.printer_name || '-') + '</span>'
+                const st = STATUS[j.status] || { dot: 'warn', text: j.status || '?' };
+                const def = this._findDefinition(j.doc_type);
+                const kopien = Number(j.copies) > 1 ? ' · ' + j.copies + '×' : '';
+                const tip = (j.status === 'fehler' && j.fehler_text) ? ' title="' + this.esc(j.fehler_text) + '"' : '';
+                html += '<div class="print-log-row' + (j.status === 'fehler' ? ' is-error' : '') + '"' + tip + '>'
+                    + '<span class="print-log-dot ' + st.dot + '"></span>'
+                    + '<span class="print-log-type">' + this.esc(def?.label || j.doc_type || '-') + '</span>'
+                    + '<span class="print-log-file">' + this.esc(j.dateiname || '') + '</span>'
+                    + '<span class="print-log-printer">' + this.esc(j.printer_name || '-') + kopien + '</span>'
+                    + '<span class="print-log-status ' + st.dot + '">' + this.esc(st.text) + '</span>'
                     + '<span class="print-log-time">' + zeit + '</span>'
                     + '</div>';
             });

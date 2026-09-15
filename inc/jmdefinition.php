@@ -234,9 +234,14 @@ if (empty($_SESSION['csrf_token'])) {
                       <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                       <div class="row g-2">
                         <div class="col-6">
-                          <button type="button" id="exportPdfButton" class="btn btn-outline-info btn-sm w-100">
-                            <i class="bi bi-file-pdf me-1"></i>PDF
-                          </button>
+                          <div class="btn-group w-100">
+                            <button type="button" id="exportPdfButton" class="btn btn-outline-info btn-sm w-100">
+                              <i class="bi bi-file-pdf me-1"></i>PDF
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck flex-grow-0" data-druck-doctype="jmdefinition" data-druck-label="Jahresprogramm" aria-label="Jahresprogramm direkt drucken">
+                              <i class="bi bi-printer"></i>
+                            </button>
+                          </div>
                         </div>
                         <div class="col-6">
                           <button type="button" id="exportPdfDraftButton" class="btn btn-outline-info btn-sm w-100"
@@ -1424,4 +1429,13 @@ $(function () {
 }
 </style>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Jahresprogramm»: gleicher Endpunkt wie der PDF-Button (ohne Entwurf-Wasserzeichen)
+MsvDruck.resolve('jmdefinition', () => {
+  const basePath = (/\/inc(\/|$)/.test(window.location.pathname)) ? '' : 'inc/';
+  const jahr = $('#yearSelect').val();
+  return { url: basePath + 'jmdefinition/export_jmdefinition_pdf.php?year=' + encodeURIComponent(jahr), jobName: 'Jahresprogramm ' + jahr };
+});
+</script>
 <?php include 'footer.inc.php'; ?>

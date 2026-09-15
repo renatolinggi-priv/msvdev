@@ -57,6 +57,7 @@ include 'header.inc.php';
                             <button type="button" class="btn btn-outline-info btn-sm pdf-btn">
                                 <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="sektionrang" data-druck-label="Sektionsmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
                         </div>
                         <div id="pdf-link" class="mt-2"></div>
                     </div>
@@ -208,7 +209,7 @@ include 'header.inc.php';
                 url: 'sektionrang/generate_pdf.php',
                 type: 'GET',
                 dataType: 'json',
-                data: { year: $('#yearSelect').val() },
+                data: { year: $('#yearSelect').val(), orientation: window.MsvDruck ? MsvDruck.orientierung('sektionrang', 'portrait') : 'portrait' },
                 success: function (response) {
                     if (response.pdf_link) {
                         const link = document.createElement('a');
@@ -238,5 +239,13 @@ include 'header.inc.php';
         initializeYearDropdown();
         loadRangliste();
     });
+</script>
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Sektionsmeisterschaft Rangliste»
+MsvDruck.resolve('sektionrang', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    return { url: 'sektionrang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('sektionrang', 'portrait'), jobName: 'Sektionsmeisterschaft Rangliste ' + jahr };
+});
 </script>
 <?php include 'footer.inc.php'; ?>

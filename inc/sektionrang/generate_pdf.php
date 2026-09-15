@@ -117,7 +117,8 @@ try {
     $options->set('defaultFont', 'Arial');
     $dompdf = new Dompdf($options);
     $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
+    require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
+    $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch
     $dompdf->render();
 
     $datDir = __DIR__ . '/dat';

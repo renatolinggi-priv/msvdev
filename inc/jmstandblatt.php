@@ -209,11 +209,7 @@ include 'header.inc.php';
   </div>
 </div>
 
-<!-- QZ Tray Scripts -->
-<script src="js/lib/rsvp.min.js"></script>
-<script src="js/lib/sha-256.min.js"></script>
-<script src="js/lib/qz-tray.js"></script>
-<script src="js/print-manager.js"></script>
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
 
 <script>
 // --- Desktop-Suche ---
@@ -269,120 +265,64 @@ document.querySelectorAll('.btn-standblatt').forEach(btn => {
   });
 });
 
-// --- QZ Tray Druck-Integration ---
-let _pm = null;
-let _printConfig = null;
+// --- QZ Tray Druck-Integration (gemeinsamer Baustein js/msv-direktdruck.js, Profil «jm_standblatt») ---
+// Die DOCX-Vorlage ist A4 QUER; die Ausrichtung wird darum explizit mitgegeben, Papier/Rand setzt MsvDruck.
+const JM_DOC = 'jm_standblatt';
 
-async function initPrint() {
-    if (typeof PrintManager === 'undefined' || typeof qz === 'undefined') return;
-
-    _pm = new PrintManager();
-    _pm.onStatusChange = (connected) => updateQzBadge(connected);
-
-    try {
-        await _pm.connect();
-    } catch (err) {
-        console.warn('QZ Tray nicht verfuegbar:', err.message);
-        _pm = null;
-        return;
-    }
-
-    await loadPrintConfig();
-    updateQzBadge(_pm?.connected ?? false);
+function printReady() {
+    return typeof MsvDruck !== 'undefined' && MsvDruck.bereit(JM_DOC);
 }
 
-async function loadPrintConfig() {
-    try {
-        const res = await $.getJSON('drucksteuerung/profiles_api.php', { doc_type: 'jm_standblatt' });
-        if (res.success && res.data.length > 0) {
-            _printConfig = res.data[0];
-        }
-    } catch (err) {
-        console.error('Druckprofil laden fehlgeschlagen:', err);
-    }
-}
-
-function updateQzBadge(connected) {
+function updateQzBadge() {
     const badge = document.getElementById('qzBadge');
     const btn = document.getElementById('btnPrintAll');
-    const hasConfig = _printConfig && _printConfig.printer_name;
-    const printReady = connected && hasConfig;
-
+    const ready = printReady();
+    const grund = typeof MsvDruck !== 'undefined' ? MsvDruck.grund(JM_DOC, 'JM Standblatt') : 'QZ Tray nicht verfügbar';
     if (badge) {
-        badge.className = printReady ? 'badge bg-success' : 'badge bg-danger';
-        badge.textContent = printReady ? 'QZ verbunden' : (connected ? 'Kein Profil' : 'QZ getrennt');
+        badge.className = ready ? 'badge bg-success' : 'badge bg-danger';
+        badge.textContent = ready ? 'QZ verbunden' : (grund.startsWith('Kein Druckprofil') ? 'Kein Profil' : 'QZ getrennt');
     }
     if (btn) {
-        btn.disabled = !printReady;
-        btn.title = !connected ? 'QZ Tray nicht verbunden' :
-                    !hasConfig ? 'Kein Drucker konfiguriert (Drucksteuerung)' : 'Alle Standblätter drucken';
+        btn.disabled = !ready;
+        btn.title = ready ? 'Alle Standblätter drucken (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
     }
     document.querySelectorAll('.btn-print-single').forEach(b => {
-        b.disabled = !printReady;
+        b.disabled = !ready;
+        b.title = ready ? 'Direktdruck (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
     });
 }
 
-async function printStandblatt(mitgliedId, vorname, name) {
-    if (!_pm || !_pm.connected || !_printConfig) return false;
-
-    const jahr = document.getElementById('yearSelect').value;
-    const url = `jmstandblatt/generate_jmstandblatt_pdf.php?jahr=${jahr}&mitglied_id=${mitgliedId}`;
-
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(await response.text() || 'PDF-Generierung fehlgeschlagen');
-        const blob = await response.blob();
-
-        const base64 = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-
-        await _pm.printPixel(
-            _printConfig.printer_name,
-            [{ type: 'pdf', format: 'base64', data: base64 }],
-            {
-                copies:      _printConfig.copies || 1,
-                orientation: 'landscape',
-                colorType:   _printConfig.color_mode || 'blackwhite',
-                duplex:      _printConfig.duplex || false,
-                rasterize:   false,
-                jobName:     `JM_Standblatt_${jahr}_${vorname}${name}`,
-            }
-        );
-
-        await _pm.logJob('jm_standblatt', _printConfig.printer_name, `${vorname} ${name}`, 'erfolgreich');
-        return true;
-    } catch (err) {
-        console.error('Druckfehler:', err);
-        await _pm.logJob('jm_standblatt', _printConfig.printer_name, `${vorname} ${name}`, 'fehler', 1, err.message);
-        return false;
-    }
+function initPrint() {
+    if (typeof MsvDruck === 'undefined') { updateQzBadge(); return; }
+    MsvDruck.onChange = updateQzBadge; // Verbindung/Profile laden im Hintergrund, Badge folgt
+    updateQzBadge();
 }
 
-// Einzelner Direktdruck
+async function printStandblatt(mitgliedId, vorname, name) {
+    if (!printReady()) return false;
+    const jahr = document.getElementById('yearSelect').value;
+    return MsvDruck.print({
+        docType: JM_DOC,
+        url: `jmstandblatt/generate_jmstandblatt_pdf.php?jahr=${encodeURIComponent(jahr)}&mitglied_id=${encodeURIComponent(mitgliedId)}`,
+        jobName: `JM Standblatt ${vorname} ${name} ${jahr}`,
+        orientation: 'landscape',
+    });
+}
+
+// Einzelner Direktdruck (Erfolgs-/Fehlermeldung kommt aus MsvDruck.print)
 document.querySelectorAll('.btn-print-single').forEach(btn => {
   btn.addEventListener('click', async function() {
     const b = this;
     const originalHTML = b.innerHTML;
     b.disabled = true;
     b.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-    const success = await printStandblatt(b.dataset.id, b.dataset.vorname, b.dataset.name);
-    if (success) {
-        msvToast(`${b.dataset.vorname} ${b.dataset.name} gedruckt`, 'success');
-    } else {
-        msvToast(`Druckfehler: ${b.dataset.vorname} ${b.dataset.name}`, 'error');
-    }
-
-    b.disabled = false;
+    await printStandblatt(b.dataset.id, b.dataset.vorname, b.dataset.name);
     b.innerHTML = originalHTML;
+    updateQzBadge();
   });
 });
 
-// "Alle drucken" — kombiniertes PDF als ein Druckjob
+// "Alle drucken" — kombiniertes PDF als EIN Druckjob (Header X-Skipped = Mitglieder ohne Standblatt)
 document.getElementById('btnPrintAll').addEventListener('click', async function() {
     const btn = this;
     const originalHTML = btn.innerHTML;
@@ -392,49 +332,29 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
     const jahr = document.getElementById('yearSelect').value;
 
     try {
-        const response = await fetch(`jmstandblatt/generate_jmstandblatt_all_pdf.php?jahr=${jahr}`);
+        if (!printReady()) throw new Error('QZ Tray nicht verbunden oder kein Druckprofil');
+        const response = await fetch(`jmstandblatt/generate_jmstandblatt_all_pdf.php?jahr=${encodeURIComponent(jahr)}`);
         if (!response.ok) throw new Error(await response.text() || 'PDF-Generierung fehlgeschlagen');
 
         const skipped = parseInt(response.headers.get('X-Skipped') || '0');
         const blob = await response.blob();
 
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Drucke…';
-
-        const base64 = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
+        const ok = await MsvDruck.print({
+            docType: JM_DOC,
+            blob,
+            jobName: `JM Standblätter ${jahr} alle`,
+            orientation: 'landscape',
         });
-
-        await _pm.printPixel(
-            _printConfig.printer_name,
-            [{ type: 'pdf', format: 'base64', data: base64 }],
-            {
-                copies:      _printConfig.copies || 1,
-                orientation: 'landscape',
-                colorType:   _printConfig.color_mode || 'blackwhite',
-                duplex:      _printConfig.duplex || false,
-                rasterize:   false,
-                jobName:     `JM_Standblaetter_${jahr}_alle`,
-            }
-        );
-
-        const total = document.querySelectorAll('.btn-standblatt').length;
-        await _pm.logJob('jm_standblatt', _printConfig.printer_name, `Alle Standblätter ${jahr}`, 'erfolgreich', total);
-
-        if (skipped > 0) {
-            msvToast((total - skipped) + ' Standblätter gedruckt, ' + skipped + ' übersprungen', 'warning');
-        } else {
-            msvToast(total + ' Standblätter gedruckt (1 Druckjob)', 'success');
+        if (ok && skipped > 0) {
+            msvToast(skipped + ' Mitglieder ohne Standblatt übersprungen', 'warning');
         }
     } catch (err) {
         console.error('Druckfehler:', err);
         msvToast('Druckfehler: ' + err.message, 'error');
     } finally {
-        btn.disabled = false;
         btn.innerHTML = originalHTML;
-        updateQzBadge(_pm?.connected ?? false);
+        updateQzBadge();
     }
 });
 

@@ -431,6 +431,9 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm" data-tooltip="Abrechnung als PDF">
                 <i class="bi bi-file-earmark-pdf me-1"></i>Abrechnung
               </button>
+              <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="endschiessen_abrechnung" data-druck-label="Endschiessen Abrechnung" aria-label="Abrechnung direkt drucken">
+                <i class="bi bi-printer"></i>
+              </button>
               <?php if ($kannDefinieren): ?>
               <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAdminSettings" data-tooltip="Stiche und Preise definieren">
                 <i class="bi bi-gear me-1"></i>Definition
@@ -554,11 +557,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<!-- QZ Tray Direktdruck (Profil «Endschiessen Standblatt» in der Drucksteuerung) -->
-<script src="js/lib/rsvp.min.js"></script>
-<script src="js/lib/sha-256.min.js"></script>
-<script src="js/lib/qz-tray.js"></script>
-<script src="js/print-manager.js?v=<?php echo @filemtime(__DIR__ . '/js/print-manager.js') ?: '1'; ?>"></script>
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
 <script>
 (function () {
   'use strict';
@@ -1157,82 +1156,52 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   }
 
   // =========================================================================
-  //  Direktdruck über QZ Tray (Profil doc_type «endschiessen_standblatt», Drucksteuerung)
-  //  Duplex/Kopien/Farbe kommen aus dem Profil; die XLSX wird serverseitig zu PDF gewandelt.
+  //  Direktdruck über QZ Tray – gemeinsamer Baustein js/msv-direktdruck.js (MsvDruck)
+  //  Profile «endschiessen_standblatt» (A4 quer, XLSX → PDF serverseitig) und
+  //  «endschiessen_abrechnung» (Abrechnungs-PDF) aus der Drucksteuerung.
   // =========================================================================
-  let pm = null;          // PrintManager
-  let printConfig = null; // Druckprofil des Benutzers/Arbeitsplatzes
+  const DRUCK_STANDBLATT = 'endschiessen_standblatt';
+  const hatMsvDruck = () => typeof MsvDruck !== 'undefined';
 
   function printReady() {
-    return !!(pm && pm.connected && printConfig && printConfig.printer_name);
+    return hatMsvDruck() && MsvDruck.bereit(DRUCK_STANDBLATT);
   }
 
   function updatePrintUI() {
     const btn = $id('btnStandblattDruck');
-    const verbunden = !!(pm && pm.connected);
-    btn.dataset.tooltip = !verbunden ? 'QZ Tray nicht verbunden'
-      : !printConfig || !printConfig.printer_name ? 'Kein Druckprofil «Endschiessen Standblatt» (Drucksteuerung)'
-      : 'Standblatt direkt drucken (' + printConfig.printer_name + (printConfig.duplex ? ', beidseitig' : '') + ')';
+    if (hatMsvDruck()) {
+      const grund = MsvDruck.grund(DRUCK_STANDBLATT, 'Endschiessen Standblatt');
+      btn.dataset.tooltip = grund || ('Standblatt direkt drucken (' + MsvDruck.profilText(DRUCK_STANDBLATT) + ')');
+    } else {
+      btn.dataset.tooltip = 'QZ Tray nicht verfügbar';
+    }
     recalcTotals();
     if (state.uebersicht.length) renderUebersicht();
   }
 
-  async function initPrint() {
-    if (typeof PrintManager === 'undefined' || typeof qz === 'undefined') return;
-    pm = new PrintManager();
-    pm.onStatusChange = () => updatePrintUI();
-    try {
-      await pm.connect();
-    } catch (err) {
-      console.warn('QZ Tray nicht verfügbar:', err && err.message ? err.message : err);
-      pm = null; updatePrintUI(); return;
-    }
-    try {
-      const j = await $.getJSON('drucksteuerung/profiles_api.php', { doc_type: 'endschiessen_standblatt' });
-      if (j.success && j.data && j.data.length) printConfig = j.data[0];
-    } catch (err) { console.error('Druckprofil laden fehlgeschlagen:', err); }
+  function initPrint() {
+    if (!hatMsvDruck()) { updatePrintUI(); return; }
+    MsvDruck.onChange = updatePrintUI;
+    // Abrechnung: Endpunkt liefert JSON {pdf_link} mit absolutem Pfad ins dat/-Verzeichnis
+    MsvDruck.resolve('endschiessen_abrechnung', () => {
+      const jahr = $id('yearSelect').value;
+      return {
+        url: `endschloesen/generate_pdf_endschloesen.php?action=generate_pdf&jahr=${encodeURIComponent(jahr)}`,
+        jobName: `Endschiessen Abrechnung ${jahr}`,
+      };
+    });
     updatePrintUI();
   }
 
   async function printStandblatt({ typ, entityId, name, stiche, waffenId = '' }) {
     if (!printReady()) return false;
     const jahr = $id('yearSelect').value;
-    const dateiname = `Endschiessen_${jahr}_${name.replace(/[^a-zA-ZäöüÄÖÜ0-9]/g, '_')}.pdf`;
-    const copies = parseInt(printConfig.copies, 10) || 1;
-    try {
-      const r = await fetch(standblattUrl({ typ, entityId, name, stiche, waffenId, format: 'pdf' }));
-      if (!r.ok) throw new Error((await r.text()) || 'PDF-Generierung fehlgeschlagen');
-      const blob = await r.blob();
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      await pm.printPixel(
-        printConfig.printer_name,
-        [{ type: 'pdf', format: 'base64', data: base64 }],
-        {
-          copies,
-          orientation: 'landscape',            // Vorlage ist A4 quer
-          size: { width: 210, height: 297 },   // QZ liest die Seitengrösse nicht aus dem PDF
-          units: 'mm',
-          margins: { top: 0, right: 0, bottom: 0, left: 0 },
-          colorType:   printConfig.color_mode || 'blackwhite',
-          duplex:      printConfig.duplex || false, // '' | 'long-edge' | 'short-edge' aus dem Profil
-          rasterize:   false,
-          jobName:     `Endschiessen Standblatt ${name} ${jahr}`,
-        }
-      );
-      await pm.logJob('endschiessen_standblatt', printConfig.printer_name, dateiname, 'gesendet', copies);
-      msvToast(`Standblatt ${name} an ${printConfig.printer_name} gesendet`, 'success');
-      return true;
-    } catch (err) {
-      console.error('Druckfehler:', err);
-      await pm.logJob('endschiessen_standblatt', printConfig.printer_name, dateiname, 'fehler', copies, err && err.message ? err.message : String(err));
-      msvToast('Druckfehler: ' + (err && err.message ? err.message : err), 'error');
-      return false;
-    }
+    return MsvDruck.print({
+      docType: DRUCK_STANDBLATT,
+      url: standblattUrl({ typ, entityId, name, stiche, waffenId, format: 'pdf' }),
+      jobName: `Endschiessen Standblatt ${name} ${jahr}`,
+      orientation: 'landscape', // Vorlage ist A4 quer
+    });
   }
 
   $id('btnStandblattDruck').addEventListener('click', async function () {
@@ -1482,7 +1451,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     if (!state.stiche.length) msvToast('Keine aktiven Stiche definiert', 'warning');
     setTyp('mitglied');
     await loadUebersicht();
-    initPrint(); // QZ Tray im Hintergrund verbinden (ohne QZ bleibt der Druck-Button deaktiviert)
+    initPrint(); // Druck-Resolver + Status-Callback registrieren (QZ verbindet MsvDruck im Hintergrund)
   })();
 })();
 </script>

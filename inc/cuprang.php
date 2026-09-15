@@ -55,6 +55,7 @@ include 'header.inc.php';
                             <button id="btnCupPdf" type="button" class="btn btn-outline-info btn-sm pdf-btn ms-auto">
                                 <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
                             <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
                             </button>
@@ -162,7 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             // 1) JSON vom Generator holen
-            const res = await fetch('cuprang/generate_cup_pdf.php?year=' + encodeURIComponent(year), {
+            const orientation = window.MsvDruck ? MsvDruck.orientierung('cuprang', 'portrait') : 'portrait'; // Format aus dem Druckprofil
+            const res = await fetch('cuprang/generate_cup_pdf.php?year=' + encodeURIComponent(year) + '&orientation=' + orientation, {
                 headers: { 'Accept': 'application/json' }
             });
             const raw = await res.text();
@@ -231,4 +233,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Vereinscup Rangliste»; Generator liefert JSON {pdf_link} mit absolutem Pfad
+MsvDruck.resolve('cuprang', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    return { url: 'cuprang/generate_cup_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('cuprang', 'portrait'), jobName: 'Vereinscup Rangliste ' + jahr };
+});
+</script>
 <?php include 'footer.inc.php'; ?>

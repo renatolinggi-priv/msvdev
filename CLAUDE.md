@@ -57,22 +57,27 @@ sha256sum inc/push_helper.php
 Also **täglich 09:00**. Der Key steht im Klartext im crontab und in der `settings`-Tabelle
 (`setting_key = 'cron_trigger_key'`); nie in Repo-Dateien oder Commits schreiben.
 
-### PITFALL: es gibt keinen PHP-Error-Log
+### PHP-Error-Log
 
-`error_log` ist in der PHP-ini **leer**, es gibt kein `~/logs` und keine Log-Datei im Home
-(`.user.ini` setzt nur `display_errors = stderr`). Alle `error_log()`-Aufrufe — u.a. die
-bewusst geschluckten Exceptions in `cron/check_benachrichtigungen.php` — sind damit **nicht
-einsehbar**. Ein Cron-Block kann still fehlschlagen und liefert trotzdem `"success": true`.
+Seit 05.08.2026 schreibt PHP nach `/home/bdebbd4/php_error.log`, gesetzt in der `.user.ini`
+im Docroot (`error_log = /home/bdebbd4/php_error.log`, bewusst **ausserhalb** des Docroots,
+sonst per Browser abrufbar). Lesen per SSH: `tail -50 /home/bdebbd4/php_error.log`. Keine
+Rotation eingerichtet. Änderungen an der `.user.ini` greifen erst nach `user_ini.cache_ttl`
+(300 s).
 
-Fix wäre eine Zeile in der `.user.ini` im Docroot, mit dem Logfile **ausserhalb** des
-Docroots (sonst per Browser abrufbar):
+**PITFALL:** `error_reporting(0)` in einer Datei schaltet auch das Logging ab. Die bewusst
+geschluckten Exceptions in `cron/check_benachrichtigungen.php` landen nur dann im Log, wenn
+`error_log()` dort tatsächlich aufgerufen wird — ein Cron-Block kann sonst still fehlschlagen
+und liefert trotzdem `"success": true`.
 
-```ini
-error_log = /home/bdebbd4/php_error.log
-```
+### Externe Werkzeuge auf dem Server
 
-Noch nicht gesetzt (Stand 05.08.2026) — vor dem Setzen mit dem Benutzer abklären, da es
-Prod-Verhalten ändert.
+Vorhanden unter `/usr/local/bin`: `gs`, `pdfinfo`, `pdfseparate`, `pdfunite`, `pdftoppm`,
+`wkhtmltopdf`, `pdfjam`/`pdfbook2` (TeX mit pdfpages), `psbook`. Nicht vorhanden: LibreOffice,
+`qpdf`, `pdftk`. Aus Web-PHP heraus (`exec` ist erlaubt) müssen PATH und HOME gesetzt werden,
+sonst findet `pdfjam` sein `pdflatex` nicht (Muster: `absendenShellEnv()` in
+`inc/absenden/generate_absendenbuch_pdf.php`). Office→PDF läuft über
+`inc/lib/convertapi_helper.php` (iLoveAPI, Fallback ConvertAPI, Konfig in `msvjm_config.php`).
 
 ## Generierte Exportdateien in `inc/<modul>/dat/`
 

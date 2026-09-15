@@ -22,7 +22,7 @@ $page_specific_css = '
     .profile-matrix-header,
     .profile-row {
         display: grid;
-        grid-template-columns: 1.8fr 2fr 1.3fr 70px 60px 50px;
+        grid-template-columns: 1.8fr 2fr 1.3fr 70px 110px 120px 76px; /* Typ, Drucker, Format, Kopien, Duplex, Farbe, Test+Übertragen */
         gap: 10px;
         padding: 10px 20px;
         align-items: center;
@@ -82,6 +82,9 @@ $page_specific_css = '
         color: #6c757d; cursor: pointer; font-size: 14px; transition: all 0.15s;
     }
     .profile-test-btn:hover { background: #f8f9fa; color: #212529; }
+    .profile-test { display: flex; gap: 4px; }
+    .profile-copy-btn:hover { color: #0d6efd; border-color: #0d6efd; }
+    .profile-row-copied { background: #e7f1ff !important; transition: background 0.6s ease; }
 
     /* Druckprotokoll */
     .print-log-list { max-height: 240px; overflow-y: auto; }
@@ -94,8 +97,15 @@ $page_specific_css = '
     .print-log-dot.ok { background: #22c55e; }
     .print-log-dot.err { background: #ef4444; }
     .print-log-dot.warn { background: #f59e0b; }
-    .print-log-type { font-weight: 600; }
-    .print-log-printer { color: #6c757d; }
+    .print-log-dot.sent { background: #3b82f6; }
+    .print-log-type { font-weight: 600; white-space: nowrap; }
+    .print-log-file { color: #495057; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+    .print-log-status { font-size: 0.7rem; white-space: nowrap; padding: 1px 6px; border-radius: 10px; background: #f1f5f9; color: #475569; }
+    .print-log-status.ok { background: #dcfce7; color: #166534; }
+    .print-log-status.err { background: #fee2e2; color: #991b1b; }
+    .print-log-status.sent { background: #dbeafe; color: #1e40af; }
+    .print-log-row.is-error { cursor: help; }
+    .print-log-printer { color: #6c757d; white-space: nowrap; }
     .print-log-time { color: #6c757d; margin-left: auto; white-space: nowrap; font-size: 0.72rem; }
     .print-log-empty { padding: 12px 16px; font-size: 0.8rem; color: #6c757d; text-align: center; }
 

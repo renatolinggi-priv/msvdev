@@ -199,6 +199,9 @@ if (empty($_SESSION['csrf_token'])) {
                                         <i class="bi bi-file-pdf me-2"></i>
                                         PDF exportieren
                                     </button>
+                                    <button type="button" class="btn btn-outline-info btn-sm msv-druck ms-1" data-druck-doctype="jmdurchschnitt" data-druck-label="JM Durchschnitte" aria-label="Durchschnitte direkt drucken">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -504,6 +507,7 @@ $(document).ready(function () {
             data: {
                 year: $('#yearSelect').val(),
                 definition_id: selectedDefinition,
+                orientation: window.MsvDruck ? MsvDruck.orientierung('jmdurchschnitt', 'portrait') : 'portrait', // Format aus dem Druckprofil
                 csrf_token: $('input[name="csrf_token"]').val()
             },
             dataType: 'json',
@@ -612,6 +616,22 @@ $(document).ready(function () {
 
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): gleicher POST wie der Export-Button (year, definition_id, csrf_token) → JSON {pdf_url}
+MsvDruck.resolve('jmdurchschnitt', () => {
+    const jahr = $('#yearSelect').val();
+    const definitionId = $('#anlassSelect').val();
+    if (!definitionId) { msvToast('Bitte zuerst einen Anlass wählen', 'warning'); return null; }
+    const anlass = $('#anlassSelect option:selected').text().trim();
+    return {
+        url: 'jmdurchschnitt/export_averages_pdf.php',
+        method: 'POST',
+        body: new URLSearchParams({ year: jahr, definition_id: definitionId, orientation: MsvDruck.orientierung('jmdurchschnitt', 'portrait'), csrf_token: $('input[name="csrf_token"]').val() }),
+        jobName: 'JM Durchschnitt ' + anlass + ' ' + jahr
+    };
+});
+</script>
 <?
 include 'footer.inc.php';
 ?>

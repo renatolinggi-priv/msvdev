@@ -41,6 +41,7 @@ include 'header.inc.php';
                             <button class="btn btn-outline-info btn-sm pdf-btn">
                                 <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="heimrang" data-druck-label="Heimmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
                         </div>
                         <div id="pdf-link" class="mt-2"></div>
                     </div>
@@ -230,7 +231,8 @@ include 'header.inc.php';
                     dataType: 'json',
                     data: {
                         year: selectedYear,
-                        kat: 'B'
+                        kat: 'B',
+                        orientation: window.MsvDruck ? MsvDruck.orientierung('heimrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
                     },
                     success: function (response) {
                         if (response.pdf_link) {
@@ -266,6 +268,14 @@ include 'header.inc.php';
             loadHeimresultatea();
             loadHeimresultateb();
         });
+    </script>
+    <?php include 'partials/direktdruck_scripts.inc.php'; ?>
+    <script>
+    // Direktdruck (QZ Tray), Profil «Heimmeisterschaft Rangliste» (A4 quer); kat=B wie beim PDF-Button
+    MsvDruck.resolve('heimrang', () => {
+        const jahr = document.getElementById('yearSelect').value;
+        return { url: 'heimrang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&kat=B&orientation=' + MsvDruck.orientierung('heimrang', 'landscape'), jobName: 'Heimmeisterschaft Rangliste ' + jahr };
+    });
     </script>
     <?php
     include 'footer.inc.php';

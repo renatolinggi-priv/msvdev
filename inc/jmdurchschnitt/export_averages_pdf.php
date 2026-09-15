@@ -5,6 +5,7 @@ include '../config.php';
 require_once '../vendor/autoload.php';
 require_once __DIR__ . '/config_helper.php';
 require_once __DIR__ . '/../pdf/pdf_theme.php';
+require_once __DIR__ . '/../pdf/pdf_orientation.inc.php'; // orientation aus dem Druckprofil (setPaper + @page)
 require_once __DIR__ . '/../csrf.inc.php';
 
 use Dompdf\Dompdf;
@@ -119,7 +120,7 @@ try {
     // DOMPDF initialisieren
     $dompdf = new Dompdf($options);
     $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch (auch in @page)
     $dompdf->render();
     
     // Dateiname generieren
@@ -183,7 +184,7 @@ function generatePdfHtml($result, $year) {
 <style>
 @page {
     margin: 1.5cm 1.5cm 2cm 1.5cm;
-    size: A4;
+    size: A4 ' . pdfOrientationParam('portrait') . ';
 }
 body {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;

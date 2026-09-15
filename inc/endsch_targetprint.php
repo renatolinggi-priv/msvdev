@@ -296,6 +296,9 @@ try {
                 <button type="button" class="btn btn-outline-info btn-sm" id="downloadPdfBtn">
                     <i class="bi bi-download me-2"></i>PDF Herunterladen
                 </button>
+                <button type="button" class="btn btn-outline-info btn-sm msv-druck" id="printPdfBtn" data-druck-doctype="endsch_targetprint" data-druck-label="Endschiessen Zielscheiben" data-druck-url="" data-druck-job="">
+                    <i class="bi bi-printer me-2"></i>Drucken
+                </button>
                 <button type="button" class="btn btn-outline-success btn-sm" data-bs-dismiss="modal" onclick="resetUpload();">
                     <i class="bi bi-arrow-clockwise me-2"></i>Neue CSV laden
                 </button>
@@ -679,6 +682,10 @@ function showSuccessModal(pdfLink, filename) {
     $('#downloadPdfBtn').off('click').on('click', function() {
         window.open(pdfLink, '_blank');
     });
+
+    // Direktdruck (QZ Tray): das eben erzeugte PDF ohne zweite Generierung drucken
+    $('#printPdfBtn').attr('data-druck-url', pdfLink).attr('data-druck-job', 'Zielscheiben ' + filename);
+    if (window.MsvDruck) MsvDruck.refresh();
     
     // Modal anzeigen
     const modal = new bootstrap.Modal(document.getElementById('successModal'));
@@ -697,6 +704,7 @@ function resetUpload() {
 
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
 <?php
 include 'footer.inc.php';
 ?>

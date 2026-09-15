@@ -30,29 +30,35 @@ $db = getDB();
 $userId = (int) $_SESSION['user_id'];
 $machineId = $_SERVER['HTTP_X_MACHINE_ID'] ?? null;
 
-$input = json_decode(file_get_contents('php://input'), true);
+$input = json_decode(file_get_contents('php://input'), true) ?: [];
 
-// Status-Update (wenn id vorhanden)
+// Status-Lebenszyklus: «gesendet» = an den OS-Spooler übergeben (qz.print() resolved bereits dann),
+// «erfolgreich» nur bei bestätigtem Druck, «fehler» mit fehler_text (Ursache aus QZ/Server).
+$erlaubteStatus = ['gesendet', 'erfolgreich', 'fehler'];
+$status = in_array($input['status'] ?? '', $erlaubteStatus, true) ? $input['status'] : 'gesendet';
+$fehlerText = isset($input['fehler_text']) && trim((string)$input['fehler_text']) !== ''
+    ? mb_substr(trim((string)$input['fehler_text']), 0, 2000)
+    : null;
+$kuerzen = static fn($v, int $max) => $v === null || $v === '' ? null : mb_substr((string)$v, 0, $max);
+
+// Status-Update (wenn id vorhanden) – nur eigene Einträge
 if (!empty($input['id']) && !empty($input['status'])) {
-    $stmt = $db->prepare("UPDATE print_jobs SET status=?, fehler_text=? WHERE id=?");
-    $stmt->execute([
-        $input['status'],
-        $input['fehler_text'] ?? null,
-        intval($input['id']),
-    ]);
+    $stmt = $db->prepare("UPDATE print_jobs SET status=?, fehler_text=? WHERE id=? AND benutzer_id=?");
+    $stmt->execute([$status, $fehlerText, intval($input['id']), $userId]);
     echo json_encode(['success' => true, 'message' => 'Status aktualisiert']);
     exit;
 }
 
-// Neuen Druckauftrag loggen
-$stmt = $db->prepare("INSERT INTO print_jobs (benutzer_id, machine_id, doc_type, printer_name, dateiname, status, copies) VALUES (?, ?, ?, ?, ?, ?, ?)");
+// Neuen Druckauftrag loggen (inkl. Fehlertext, damit gescheiterte Drucke nachvollziehbar sind)
+$stmt = $db->prepare("INSERT INTO print_jobs (benutzer_id, machine_id, doc_type, printer_name, dateiname, status, copies, fehler_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 $stmt->execute([
     $userId,
     $machineId,
-    $input['doc_type'] ?? null,
-    $input['printer_name'] ?? null,
-    $input['dateiname'] ?? null,
-    $input['status'] ?? 'gesendet',
-    intval($input['copies'] ?? 1),
+    $kuerzen($input['doc_type'] ?? null, 100),
+    $kuerzen($input['printer_name'] ?? null, 255),
+    $kuerzen($input['dateiname'] ?? null, 500),
+    $status,
+    max(1, min(99, intval($input['copies'] ?? 1))),
+    $fehlerText,
 ]);
 echo json_encode(['success' => true, 'message' => 'Druckauftrag geloggt', 'id' => (int)$db->lastInsertId()]);

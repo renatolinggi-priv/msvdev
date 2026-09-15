@@ -117,6 +117,7 @@ $page_specific_css = "
               <button class="btn btn-sm btn-outline-info pdf-btn">
                 <i class="bi bi-file-pdf me-2"></i>PDF generieren
               </button>
+              <button type="button" class="btn btn-sm btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
               <button class="btn btn-sm btn-outline-info word-btn">
                 <i class="bi bi-file-earmark-excel me-2"></i>Excel generieren
               </button>
@@ -235,7 +236,7 @@ $(document).ready(function() {
             url: 'kantirang/generate_pdf.php',
             type: 'GET',
             dataType: 'json',
-            data: { year: selectedYear },
+            data: { year: selectedYear, orientation: window.MsvDruck ? MsvDruck.orientierung('kantirang', 'portrait') : 'portrait' },
             success: function(response) {
                 if (response && response.pdf_link) {
                     // Automatischer Download
@@ -348,4 +349,12 @@ $(document).ready(function() {
 });
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): dieselbe Rangliste wie auf «Kantonal Rangliste» → gemeinsames Profil «Kantonalstich Rangliste»
+MsvDruck.resolve('kantirang', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    return { url: 'kantirang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('kantirang', 'portrait'), jobName: 'Kantonalstich Rangliste ' + jahr };
+});
+</script>
 <?php include 'footer.inc.php'; ?>

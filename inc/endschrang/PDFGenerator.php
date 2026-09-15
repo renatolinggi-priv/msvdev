@@ -215,6 +215,9 @@ class PDFGenerator {
      * Generiert das PDF und speichert es
      */
     protected function generatePDF($html, $filename, $orientation = 'portrait') {
+        // Ausrichtung aus dem Druckprofil (?orientation=portrait|landscape) übersteuert den Report-Default
+        require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
+        $orientation = pdfOrientationParam($orientation);
         $this->dompdf->loadHtml($html);
         $this->dompdf->setPaper('A4', $orientation);
         $this->dompdf->render();

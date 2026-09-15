@@ -69,7 +69,8 @@ try {
     $options->set('isPhpEnabled', true);
 
     $dompdf = new Dompdf($options);
-    $dompdf->setPaper('A4', 'landscape');
+    require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
+    $dompdf->setPaper('A4', pdfOrientationParam('landscape')); // Ausrichtung aus dem Druckprofil, Default quer
     $dompdf->loadHtml($htmlOutput);
     $dompdf->render();
 

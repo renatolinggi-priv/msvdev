@@ -4,6 +4,48 @@
     "datum": "2026-09-09",
     "aenderungen": [
       {
+        "titel": "Druckprotokoll: Fehlerursache wird gespeichert, Einträge sind lesbarer",
+        "beschreibung": "Fehlgeschlagene Drucke landeten im Protokoll ohne die Fehlermeldung, weil der Schreib-Endpunkt den Fehlertext beim Anlegen verwarf. Er wird jetzt gespeichert und erscheint in der Drucksteuerung als Tooltip auf der roten Zeile. Die Protokollzeilen zeigen neu die Profil-Bezeichnung statt des internen Schlüssels, den Dokumentnamen, den Drucker mit Kopienzahl und einen Status-Badge: blau «an Drucker übergeben» (Normalfall, weil QZ Tray nur die Übergabe an den Spooler bestätigt), grün «gedruckt», rot «Fehler». Status-Updates sind nur noch auf eigene Einträge möglich.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Drucksteuerung: Einstellungen einer Zeile auf die ganze Sektion übertragen",
+        "beschreibung": "Neben dem Testdruck-Knopf jeder Profilzeile gibt es neu einen Pfeil-Knopf. Er kopiert Drucker, Duplex, Farbe und Kopien dieser Zeile in alle anderen Profile derselben Sektion, mit Shift-Klick in alle Sektionen. Das Format bleibt pro Zeile erhalten, weil die Ausrichtung zum Dokument gehört. Die übertragenen Zeilen leuchten kurz auf; gespeichert wird wie bisher mit «Speichern».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "JM-Standblatt-Druck korrigiert, Testdruck als echte PDF-Testseite",
+        "beschreibung": "Der Direktdruck des JM-Standblatts hat die Ausrichtung fest auf quer gesetzt, aber kein Papierformat mitgegeben, und das Profil stand fälschlich auf «A4 Portrait»; je nach Drucker kam ein verschobenes oder verkleinertes Blatt heraus. Die Seite nutzt jetzt denselben Druck-Baustein wie alle anderen Seiten (Papier A4, quer, Rand 0, Vektordruck), das Profil ist auf «A4 Landscape» korrigiert. Der Testdruck in der Drucksteuerung schickte bisher eine HTML-Seite an QZ Tray, die dort unzuverlässig gerendert wurde. Neu kommt eine serverseitig erzeugte PDF-Testseite im Format des Profils mit Rahmen 10 mm innerhalb der Blattkante, 100-mm-Massband, Farbfeldern und allen Profilwerten, gedruckt mit den in der Zeile eingestellten Werten, auch vor dem Speichern.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Drucksteuerung: Farbmodus pro Druckprofil (Schwarzweiss, Graustufen, Farbe)",
+        "beschreibung": "Jedes Druckprofil hat neu eine Spalte «Farbe» mit den Optionen Schwarzweiss, Graustufen und Farbe. Die Wahl wird beim Direktdruck an QZ Tray übergeben und gilt für alle Dokumenttypen, etwa farbige Logos auf Standblättern oder Ranglisten. Bestehende Profile bleiben auf Schwarzweiss, bis man sie umstellt. Ob der Drucker die Vorgabe umsetzt, hängt vom Gerät und Treiber ab; ein Schwarzweiss-Gerät ignoriert sie.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Ranglisten wahlweise A4 hoch oder quer, gesteuert über das Druckprofil",
+        "beschreibung": "In der «Drucksteuerung» haben die Ranglisten-Profile neu ein Format-Feld mit «A4 Portrait» und «A4 Landscape»: Endschiessen Ranglisten, JM Rangliste, JM Durchschnitte, Kantonalstich, Heimmeisterschaft, Sektionsmeisterschaft, Sektions- und Einzelrangierungen sowie Vereinscup. Vorgabe ist jeweils das bisherige Format (quer bei JM Rangliste und Heimmeisterschaft). Die Wahl gilt für den Direktdruck und ebenso für den PDF-Button der Seite, beide erzeugen das PDF direkt in der gewählten Ausrichtung; die Tabellen füllen die Blattbreite. Ohne Profil bleibt alles wie bisher. Standblätter, Abrechnung, Zielscheiben, Munitionsliste, Jahresprogramm und Absendenbuch behalten ihr festes Format.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Absendenbuch als Broschüre: PDF zum Falten und Direktdruck",
+        "beschreibung": "Auf «Endschiessen Rangliste» stehen neben «Absendenbuch» (Word wie bisher) zwei neue Buttons: «Broschüre» lädt das Absendenbuch als fertig ausgeschossenes PDF, der Drucker-Button schickt es direkt an den Drucker. Dabei werden die A5-Seiten paarweise auf A4 quer gelegt, in der Reihenfolge, die nach dem Falten und Heften ein Heft ergibt; fehlende Seiten bis zum Vielfachen von vier werden leer aufgefüllt. Die Erfolgsmeldung nennt Seiten- und Blattzahl. Für den Druck gilt beidseitig mit Wenden an der kurzen Seite; ist im Profil «Absendenbuch (Broschüre)» kein Duplex gesetzt, wird es automatisch so gedruckt. Die Word-Vorlage bleibt die einzige Quelle, die Umwandlung läuft über den PDF-Dienst und das Ausschiessen serverseitig.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Direktdruck über QZ Tray auf 14 Admin-Seiten: Ranglisten, Abrechnungen, Jahresprogramm",
+        "beschreibung": "Neben jedem PDF-Button steht neu ein Drucker-Button, der das Dokument ohne Umweg über den Download direkt an den Drucker schickt: Endschiessen (Abrechnung, alle elf Ranglisten der Seite «Endschiessen Rangliste», Zielscheiben nach dem Erzeugen, Munitionskauf-Liste), Jahresmeisterschaft (Rangliste nach Rang und nach Name, Durchschnitte, Jahresprogramm) sowie Kantonalstich, Heimmeisterschaft, Sektionsmeisterschaft, Sektions- und Einzelrangierungen und Vereinscup. Jede Seite hat in der «Drucksteuerung» ein eigenes Profil mit Drucker, Kopien und Duplex; die Profile sind neu in die Sektionen Jahresmeisterschaft, Endschiessen und Ranglisten gegliedert. Ohne laufendes QZ Tray oder ohne Profil bleibt der Button deaktiviert, der Tooltip nennt den Grund. Die Ausrichtung folgt dem jeweiligen PDF (quer bei JM-Rangliste, Heimmeisterschaft und Endschiessen-Abrechnung). Technisch steckt die Logik in einem gemeinsamen Baustein, das Endschiessen-Standblatt nutzt ihn ebenfalls.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
         "titel": "PDF-Umwandlung: Wechsel von ConvertAPI auf iLoveAPI, per Konfiguration umschaltbar",
         "beschreibung": "Die Umwandlung der Office-Vorlagen zu PDF (JM-Standblatt aus Word, Endschiessen-Standblatt aus Excel) lief über ConvertAPI, dessen Gratis-Zugang nach 30 Tagen ausläuft und danach nur noch im Abo funktioniert. Neu wird iLoveAPI verwendet (2500 Gratis-Credits pro Monat, eine Office-Datei kostet 10 Credits). Der Dienst wird in der externen Konfigurationsdatei gewählt («pdf_converter»: iloveapi oder convertapi); ein Rückbau auf ConvertAPI ist damit ohne Code-Änderung möglich. Fehlermeldungen nennen jetzt den Dienst, der sie ausgelöst hat. Nebenbei behoben: Die Standblatt-Generatoren (Endschiessen und JM) liessen pro Aufruf eine leere Temporärdatei auf dem Server zurück; sie wird jetzt mitverwendet und aufgeräumt.",
         "typ": "verbesserung",

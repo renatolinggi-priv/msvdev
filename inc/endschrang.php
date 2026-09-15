@@ -107,15 +107,22 @@ include 'header.inc.php';
                                 <button class="btn btn-compact-standard btn-outline-info ges-btn">
                                     <i class="bi bi-trophy me-1"></i><span>Gesamt</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamt drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info zwi-btn">
                                     <i class="bi bi-list-ol me-1"></i><span>Zwischen</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_zwischenrangliste.php" data-druck-job="Endschiessen Zwischenrangliste" aria-label="Zwischenrangliste drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info anm-btn">
                                     <i class="bi bi-person-plus me-1"></i><span>Anmeldung</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_anmeldung.php" data-druck-job="Endschiessen Anmeldung" aria-label="Anmeldung drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info abs-btn">
                                     <i class="bi bi-journal-bookmark-fill me-1"></i><span>Absendenbuch</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info absbk-btn" data-tooltip="Absendenbuch als Broschüren-PDF: A5-Seiten paarweise auf A4 quer, Reihenfolge zum Falten">
+                                    <i class="bi bi-book me-1"></i><span>Broschüre</span>
+                                </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Absendenbuch als Broschüre drucken"><i class="bi bi-printer"></i></button>
                             </div>
                         </div>
                         <!-- Gruppe: Einzelwettbewerbe -->
@@ -125,21 +132,27 @@ include 'header.inc.php';
                                 <button class="btn btn-compact-standard btn-outline-info end-btn">
                                     <i class="bi bi-award me-1"></i><span>Endstich</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_end.php" data-druck-job="Endschiessen Endstich" aria-label="Endstich drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info sch-btn">
                                     <i class="bi bi-piggy-bank me-1"></i><span>Schwini</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_schwini.php" data-druck-job="Endschiessen Schwini" aria-label="Schwini drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info kun-btn">
                                     <i class="bi bi-palette me-1"></i><span>Kunst</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_kunst.php" data-druck-job="Endschiessen Kunst" aria-label="Kunst drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info glu-btn">
                                     <i class="bi bi-dice-3 me-1"></i><span>Glück</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_glueck.php" data-druck-job="Endschiessen Glück" aria-label="Glück drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info zab-btn">
                                     <i class="bi bi-cup-straw me-1"></i><span>Zabig</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_zabig.php" data-druck-job="Endschiessen Zabig" aria-label="Zabig drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info dif-btn">
                                     <i class="bi bi-sliders me-1"></i><span>Differenzler</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_diff.php" data-druck-job="Endschiessen Differenzler" aria-label="Differenzler drucken"><i class="bi bi-printer"></i></button>
                             </div>
                         </div>
                         <!-- Gruppe: Partner-Wettbewerbe -->
@@ -149,9 +162,11 @@ include 'header.inc.php';
                                 <button class="btn btn-compact-standard btn-outline-info part-btn">
                                     <i class="bi bi-people me-1"></i><span>Partner</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_partner.php" data-druck-job="Endschiessen Partner" aria-label="Partner drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info sieer-btn">
                                     <i class="bi bi-bullseye me-1"></i><span>Sie &amp; Er</span>
                                 </button>
+                                <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_sieer.php" data-druck-job="Endschiessen Sie und Er" aria-label="Sie und Er drucken"><i class="bi bi-printer"></i></button>
                             </div>
                         </div>
                     </div>
@@ -342,7 +357,8 @@ $(document).ready(function () {
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    year: selectedYear
+                    year: selectedYear,
+                    orientation: window.MsvDruck ? MsvDruck.orientierung('endschrang', 'portrait') : 'portrait' // Format aus dem Druckprofil
                 },
                 success: function (response) {
                     if (response.pdf_link) {
@@ -469,6 +485,55 @@ $(document).ready(function () {
 
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): ein Profil «Endschiessen Ranglisten» fuer alle PDFs dieser Seite.
+// Die Generatoren liefern JSON {pdf_link: 'dat/…'} relativ zum Modul → linkPrefix.
+MsvDruck.resolve('endschrang', (btn) => {
+    const jahr = document.getElementById('yearSelect').value;
+    return {
+        url: 'endschrang/' + btn.dataset.druckScript + '?year=' + encodeURIComponent(jahr)
+            + '&orientation=' + MsvDruck.orientierung('endschrang', 'portrait'),
+        jobName: btn.dataset.druckJob + ' ' + jahr,
+        linkPrefix: 'endschrang/'
+    };
+});
+
+// Absendenbuch als Broschüre (absenden/generate_absendenbuch_pdf.php: DOCX → PDF → pdfjam --booklet).
+// Broschüren brauchen beidseitigen Druck mit Wenden an der kurzen Seite; steht im Profil kein Duplex,
+// wird «short-edge» gesetzt, damit die Rückseiten nicht auf dem Kopf stehen.
+MsvDruck.resolve('absendenbuch', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    const profil = MsvDruck.profil('absendenbuch');
+    return {
+        url: 'absenden/generate_absendenbuch_pdf.php?year=' + encodeURIComponent(jahr),
+        jobName: 'Absendenbuch ' + jahr + ' (Broschüre)',
+        orientation: 'landscape',
+        duplex: (profil && profil.duplex) || 'short-edge'
+    };
+});
+
+// Broschüren-PDF herunterladen (gleicher Endpunkt, zum Prüfen der Seitenfolge oder für die Druckerei)
+$(document).on('click', '.absbk-btn', async function () {
+    const btn = this, orig = btn.innerHTML, jahr = document.getElementById('yearSelect').value;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat rotating-icon me-1"></i><span>Broschüre</span>';
+    msvToast('Broschüre wird erstellt…', 'info');
+    try {
+        const r = await fetch('absenden/generate_absendenbuch_pdf.php?year=' + encodeURIComponent(jahr), { credentials: 'same-origin' });
+        const j = await r.json();
+        if (!r.ok || !j.pdf_link) throw new Error(j.error || 'Keine Antwort vom Server');
+        const a = document.createElement('a');
+        a.href = j.pdf_link; a.download = 'Absendenbuch_' + jahr + '_Broschuere.pdf';
+        document.body.appendChild(a); a.click(); a.remove();
+        msvToast('Broschüre erstellt: ' + j.pages + ' Seiten auf ' + j.sheets + ' Blatt A4 (beidseitig)', 'success');
+    } catch (err) {
+        msvToast('Fehler: ' + (err && err.message ? err.message : err), 'error');
+    } finally {
+        btn.disabled = false; btn.innerHTML = orig;
+    }
+});
+</script>
 <?
 include 'footer.inc.php';
 ?>

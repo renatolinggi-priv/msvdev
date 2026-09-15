@@ -780,6 +780,9 @@ include 'header.inc.php';
                 <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm ms-2">
                   <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                 </button>
+                <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="munitionskauf" data-druck-label="Munitionskauf Liste" aria-label="Liste direkt drucken">
+                  <i class="bi bi-printer"></i>
+                </button>
               </div>
             </div>
             <div class="desktop-table-container">
@@ -923,4 +926,16 @@ include 'header.inc.php';
 
 <script src="munitionskauf/munitionskauf.js?v=<?= @filemtime(__DIR__ . '/munitionskauf/munitionskauf.js') ?: '1' ?>"></script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): gleiche Parameter wie der PDF-Button; der Zeitraum-Filter wird aus dem aktiven
+// Filter-Button gelesen (btnFilterToday/Week/Month/Year), weil der Modul-Zustand in munitionskauf.js gekapselt ist.
+MsvDruck.resolve('munitionskauf', () => {
+  const jahr = document.getElementById('yearSelect').value;
+  const aktiv = document.querySelector('[id^="btnFilter"].active');
+  const filter = aktiv ? aktiv.id.replace('btnFilter', '').toLowerCase() : 'year';
+  const params = new URLSearchParams({ action: 'generate_pdf', jahr: jahr, filter: filter });
+  return { url: 'munitionskauf/generate_pdf_munition.php?' + params, jobName: 'Munitionskauf ' + jahr + ' (' + filter + ')' };
+});
+</script>
 <?php include 'footer.inc.php'; ?>
