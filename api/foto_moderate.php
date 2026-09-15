@@ -136,10 +136,19 @@ switch ($action) {
             if ($v > 0) $ids[] = $v;
         }
         if (!$ids) json_error('Keine Reihenfolge übergeben.');
-        // sortierung = Position in der übergebenen Reihenfolge (galerie-gebunden gegen Manipulation)
-        $upd = $db->prepare("UPDATE anlass_fotos SET sortierung = ? WHERE id = ? AND galerie_id = ?");
-        $pos = 1;
-        foreach ($ids as $id) { $upd->execute([$pos, $id, $gid]); $pos++; }
+        // sortierung = Position in der übergebenen Reihenfolge (galerie-gebunden gegen Manipulation).
+        // In einer Transaktion, damit bei einem Abbruch keine halbe Reihenfolge stehen bleibt.
+        $db->beginTransaction();
+        try {
+            $upd = $db->prepare("UPDATE anlass_fotos SET sortierung = ? WHERE id = ? AND galerie_id = ?");
+            $pos = 1;
+            foreach ($ids as $id) { $upd->execute([$pos, $id, $gid]); $pos++; }
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            error_log('[foto_moderate reorder] ' . $e->getMessage());
+            json_error('Reihenfolge konnte nicht gespeichert werden.', 500);
+        }
         echo json_encode(['success' => true, 'message' => 'Reihenfolge gespeichert.']);
         break;
     }

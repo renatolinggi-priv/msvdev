@@ -1,6 +1,6 @@
 <?php
 // api/anlass_galerie_admin.php - Verwaltung der Foto-Galerien (Vorstand/Admin).
-// actions: list_year | enable | update | delete
+// actions: enable | update | set_cover | delete
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/fotogalerie.inc.php';
@@ -16,42 +16,6 @@ $userId = (int) ($_SESSION['user_id'] ?? 0);
 $action = $_POST['action'] ?? '';
 
 switch ($action) {
-
-    case 'list_year': {
-        $year = (int) ($_POST['year'] ?? date('Y'));
-        $stmt = $db->prepare(
-            "SELECT d.ID AS jmdefinition_id, d.Bezeichnung AS name, d.Schiesstage, d.Adresse,
-                    g.id AS galerie_id, g.freigeschaltet, g.moderation_aktiv, g.upload_offen,
-                    g.beschreibung, g.programm_dateiname,
-                    (SELECT COUNT(*) FROM anlass_fotos f WHERE f.galerie_id = g.id) AS total,
-                    (SELECT COUNT(*) FROM anlass_fotos f WHERE f.galerie_id = g.id AND f.status = 'pending') AS pending
-               FROM JMDefinition d
-               LEFT JOIN anlass_galerie g ON g.jmdefinition_id = d.ID
-              WHERE d.year = :y AND d.hidden = 0
-              ORDER BY d.Reihenfolge, d.Bezeichnung"
-        );
-        $stmt->execute([':y' => $year]);
-        $list = [];
-        foreach ($stmt->fetchAll() as $r) {
-            $hasGal = $r['galerie_id'] !== null;
-            $list[] = [
-                'jmdefinition_id'  => (int) $r['jmdefinition_id'],
-                'name'             => $r['name'],
-                'adresse'          => $r['Adresse'],
-                'schiesstage'      => trim((string) ($r['Schiesstage'] ?? '')) !== '',
-                'galerie_id'       => $hasGal ? (int) $r['galerie_id'] : null,
-                'freigeschaltet'   => $hasGal ? (int) $r['freigeschaltet'] : 0,
-                'moderation_aktiv' => $hasGal ? (int) $r['moderation_aktiv'] : 1,
-                'upload_offen'     => $hasGal ? (int) $r['upload_offen'] : 1,
-                'beschreibung'     => $r['beschreibung'],
-                'has_programm'     => !empty($r['programm_dateiname']),
-                'total'            => (int) $r['total'],
-                'pending'          => (int) $r['pending'],
-            ];
-        }
-        echo json_encode(['success' => true, 'anlaesse' => $list]);
-        break;
-    }
 
     case 'enable': {
         $jmId = (int) ($_POST['jmdefinition_id'] ?? 0);
@@ -118,6 +82,12 @@ switch ($action) {
             ':be'  => trim((string) ($_POST['beschreibung'] ?? '')) ?: null,
             ':id'  => $gid,
         ]);
+        // rowCount 0 = Galerie existiert nicht (unveraenderte Werte melden MySQL ebenfalls 0 -> Existenz pruefen)
+        if ($stmt->rowCount() === 0) {
+            $chk = $db->prepare("SELECT id FROM anlass_galerie WHERE id = ?");
+            $chk->execute([$gid]);
+            if (!$chk->fetchColumn()) json_error('Galerie nicht gefunden.', 404);
+        }
         echo json_encode(['success' => true, 'message' => 'Einstellungen gespeichert.']);
         break;
     }
@@ -141,9 +111,12 @@ switch ($action) {
     case 'delete': {
         $gid = (int) ($_POST['galerie_id'] ?? 0);
         if ($gid < 1) json_error('Ungültige Galerie.');
-        // Dateien zuerst entfernen (FK-CASCADE loescht nur die DB-Zeilen)
+        // Erst die DB-Zeilen (FK-CASCADE entfernt die Foto-Zeilen), dann die Dateien. Schlaegt der
+        // DB-Delete fehl, bleiben Dateien und Zeilen konsistent erhalten (vorher: Dateien weg, Zeilen da).
+        $del = $db->prepare("DELETE FROM anlass_galerie WHERE id = ?");
+        $del->execute([$gid]);
+        if ($del->rowCount() === 0) json_error('Galerie nicht gefunden.', 404);
         fotoLoescheGalerieDir($gid);
-        $db->prepare("DELETE FROM anlass_galerie WHERE id = ?")->execute([$gid]);
         echo json_encode(['success' => true, 'message' => 'Galerie und alle Fotos gelöscht.']);
         break;
     }
