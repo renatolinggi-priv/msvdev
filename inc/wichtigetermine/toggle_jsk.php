@@ -6,13 +6,8 @@ adminApiGuard('json');
 
 header('Content-Type: application/json; charset=utf-8');
 
-// CSRF prüfen (Muster wie add_event.php)
-$csrf = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF-Token']);
-    exit;
-}
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 $eventId = isset($_POST['event_id']) ? (int) $_POST['event_id'] : 0;
 $fuerJsk = !empty($_POST['fuer_jsk']) ? 1 : 0;

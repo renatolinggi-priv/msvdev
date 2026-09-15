@@ -249,7 +249,7 @@ if (empty($_SESSION['csrf_token'])) {
                     <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                     <div class="row g-2">
                       <div class="col-6">
-                        <button type="button" id="generatePDFButton" class="btn btn-outline-info btn-sm w-100">
+                        <button type="button" id="generatePDFButton" class="btn btn-outline-info btn-sm w-100" data-tooltip="PDF enthält zusätzlich die Standbelegungs-Termine mit Kalender-Markierung">
                           <i class="bi bi-file-pdf me-1"></i>PDF
                         </button>
                       </div>
@@ -273,7 +273,7 @@ if (empty($_SESSION['csrf_token'])) {
 
           <!-- Hybrid-Tabelle -->
           <div class="table-wrapper" id="eventsListContainer">
-            <h5 class="table-title"><i class="bi bi-calendar-event me-2"></i>Wichtige Termine</h5>
+            <h5 class="table-title"><i class="bi bi-calendar-event me-2"></i>Wichtige Termine <span class="badge bg-secondary ms-1" id="eventCount">0</span></h5>
             <div class="desktop-table-container">
               <table class="hybrid-table" id="eventsTable">
                 <thead>
@@ -460,7 +460,7 @@ $(function() {
         fuer_jsk: $('#panelJsk').is(':checked') ? 1 : 0, csrf_token: csrfToken
       })
       .done(resp => {
-        const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+        const r = resp || {};
         if (r.success) {
           msvToast('Termin aktualisiert', 'success');
           EditPanel.close();
@@ -607,7 +607,7 @@ $(function() {
       target_year: targetYear, events, csrf_token: csrfToken
     })
       .done(resp => {
-        const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+        const r = resp || {};
         if (r && r.success) {
           bootstrap.Modal.getInstance(document.getElementById('copyYearModal'))?.hide();
           msvToast(r.count + ' Termin(e) übernommen', 'success');
@@ -643,6 +643,8 @@ $(function() {
     })
     .fail(() => {
       $('#eventsTable tbody').html('<tr><td colspan="4" class="text-center text-danger py-3"><i class="bi bi-exclamation-triangle me-2"></i>Fehler beim Laden</td></tr>');
+      $('#eventCount').text(0);
+      buildMobileCards(); // sonst bleiben mobil die alten Karten stehen
       msvToast('Fehler beim Laden der Termine', 'error');
     });
   }
@@ -687,25 +689,28 @@ $(function() {
     const rows = document.querySelectorAll('#eventsTable tbody tr.hybrid-row, #eventsTable tbody tr.month-separator');
     if (!rows.length) { sc.innerHTML = '<div class="empty-state"><i class="bi bi-calendar-x"></i>Keine Termine</div>'; return; }
 
+    const esc = s => $('<span>').text(s == null ? '' : s).html();
     let html = '';
     rows.forEach(row => {
       if (row.classList.contains('month-separator')) {
-        html += `<div class="mobile-month-header">${row.querySelector('td')?.textContent?.trim() || ''}</div>`;
+        html += `<div class="mobile-month-header">${esc(row.querySelector('td')?.textContent?.trim() || '')}</div>`;
         return;
       }
       if (!row.classList.contains('hybrid-row')) return;
       const d = row.dataset, dt = new Date(d.date);
       const wd = weekdayNames[dt.getDay()];
       const ds = String(dt.getDate()).padStart(2,'0') + '.' + String(dt.getMonth()+1).padStart(2,'0') + '.' + dt.getFullYear();
+      // dataset liefert dekodierte Werte -> fuer innerHTML/Attribute wieder escapen (Stored XSS)
+      const nameEsc = esc(d.name), timeEsc = esc(d.time);
 
-      html += `<div class="mobile-event-card" data-id="${d.id}" data-name="${d.name}" data-date="${d.date}" data-time="${d.time}" data-jsk="${d.jsk || '0'}">
+      html += `<div class="mobile-event-card" data-id="${d.id}" data-name="${nameEsc}" data-date="${esc(d.date)}" data-time="${timeEsc}" data-jsk="${d.jsk || '0'}">
         <div class="d-flex justify-content-between align-items-center">
           <div style="min-width:0;">
-            <div style="font-weight:600; font-size:0.85rem;">${d.name} <span class="jsk-toggle badge ${d.jsk === '1' ? 'bg-info text-dark' : 'bg-light text-muted border'}" role="button" data-id="${d.id}" data-jsk="${d.jsk || '0'}" data-tooltip="Für Jungschützen ein-/ausschalten">JSK</span></div>
+            <div style="font-weight:600; font-size:0.85rem;">${nameEsc} <span class="jsk-toggle badge ${d.jsk === '1' ? 'bg-info text-dark' : 'bg-light text-muted border'}" role="button" data-id="${d.id}" data-jsk="${d.jsk || '0'}" data-tooltip="Für Jungschützen ein-/ausschalten">JSK</span></div>
             <div class="d-flex align-items-center gap-1" style="font-size:0.8rem; color:#6c757d; margin-top:0.15rem;">
               <span class="wd-badge">${wd}</span><span>${ds}</span>
               <span style="color:#ced4da;">·</span>
-              <span class="time-badge">${d.time}</span>
+              <span class="time-badge">${timeEsc}</span>
             </div>
           </div>
           <i class="bi bi-chevron-right" style="color:#cbd5e1; font-size:0.9rem; flex-shrink:0;"></i>
@@ -725,7 +730,7 @@ $(function() {
 
     $.post('wichtigetermine/add_event.php', { event_name: name, event_date: date, event_time: time, year: $('#eventYear').val(), fuer_jsk: $('#newEventJsk').is(':checked') ? 1 : 0, csrf_token: csrfToken })
     .done(resp => {
-      const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+      const r = resp || {};
       if (r.success) {
         $('#newEventModal').modal('hide');
         $('#newEventName, #newEventDate, #newEventTime').val('');
@@ -746,7 +751,7 @@ $(function() {
     const newVal = ($el.attr('data-jsk') === '1') ? 0 : 1;
     $.post('wichtigetermine/toggle_jsk.php', { event_id: id, fuer_jsk: newVal, csrf_token: csrfToken })
     .done(resp => {
-      const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+      const r = resp || {};
       if (r.success) {
         const v = String(r.fuer_jsk);
         // Zeile + Mobile-Card-Datensatz aktualisieren (fuer spaeteres Panel-Oeffnen)
@@ -769,7 +774,7 @@ $(function() {
       if (!res.isConfirmed) return;
       $.post('wichtigetermine/delete_event.php', { event_id: deleteId, csrf_token: csrfToken })
       .done(resp => {
-        const r = typeof resp === 'object' ? resp : JSON.parse(resp);
+        const r = resp || {};
         if (r.success) {
           msvToast('Termin gelöscht', 'success');
           setTimeout(() => loadEvents($('#eventYear').val()), 300);
@@ -807,7 +812,7 @@ $(function() {
 
     $.post('wichtigetermine/delete_all_events.php', { year, csrf_token: csrfToken })
     .done(resp => {
-      const r2 = typeof resp === 'object' ? resp : JSON.parse(resp);
+      const r2 = resp || {};
       if (r2.success) {
         msvToast((r2.count || 0) + ' Termin(e) gelöscht', 'success');
         loadEvents(year);

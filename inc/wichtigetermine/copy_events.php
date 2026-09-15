@@ -5,13 +5,15 @@ include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 
+require_once __DIR__ . '/../csrf.inc.php';
+
 header('Content-Type: application/json; charset=utf-8');
 
-// CSRF prüfen (Muster wie add_event.php)
-if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
-    echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF-Token']);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true); // 403 + JSON bei ungültigem Token
 
 $targetYear = isset($_POST['target_year']) ? intval($_POST['target_year']) : 0;
 $events = isset($_POST['events']) && is_array($_POST['events']) ? $_POST['events'] : [];

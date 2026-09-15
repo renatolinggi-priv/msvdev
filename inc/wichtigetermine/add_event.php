@@ -4,30 +4,34 @@ include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 
+require_once __DIR__ . '/../csrf.inc.php';
+
 header('Content-Type: application/json; charset=utf-8');
 
-// CSRF prüfen
-if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF-Token']);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    die(json_encode(['success' => false, 'message' => 'Methode nicht erlaubt']));
 }
+csrf_require(true);
 
-if (!isset($_POST['event_name'], $_POST['event_date'], $_POST['event_time'])) {
-    echo json_encode(['success' => false, 'message' => 'Bitte alle Felder ausfüllen']);
-    exit;
-}
-
-$eventName = trim($_POST['event_name']);
-$eventDate = $_POST['event_date'];
-$eventTime = trim($_POST['event_time']);
-$eventYear = isset($_POST['year']) ? intval($_POST['year']) : (isset($_POST['event_year']) ? intval($_POST['event_year']) : date('Y'));
+$eventName = trim((string)($_POST['event_name'] ?? ''));
+$eventDate = trim((string)($_POST['event_date'] ?? ''));
+$eventTime = trim((string)($_POST['event_time'] ?? ''));
 $fuerJsk   = !empty($_POST['fuer_jsk']) ? 1 : 0;
 
-if (empty($eventName) || empty($eventDate) || empty($eventTime)) {
+if ($eventName === '' || $eventDate === '' || $eventTime === '') {
+    http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Bitte alle Felder ausfüllen']);
     exit;
 }
+$d = DateTime::createFromFormat('Y-m-d', $eventDate);
+if (!$d || $d->format('Y-m-d') !== $eventDate) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Ungültiges Datum (erwartet JJJJ-MM-TT)']);
+    exit;
+}
+// Jahr aus dem Datum ableiten (vorher aus dem Dropdown -> Termin konnte im falschen Jahr landen)
+$eventYear = (int)$d->format('Y');
 
 $sql = "INSERT INTO wichtige_termine (name, date, time, year, fuer_jsk) VALUES (?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);

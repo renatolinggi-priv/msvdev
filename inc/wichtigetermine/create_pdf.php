@@ -1,194 +1,113 @@
 <?php
-// create_pdf.php
+// create_pdf.php – Wichtige Termine eines Jahres als PDF (zentrales PDF-Theme).
+// Enthaelt zusaetzlich die Standbelegungs-Termine mit Kalender-Markierung (InKalender = 1);
+// diese sind im PDF als "Standbelegung" gekennzeichnet, weil die Admin-Tabelle sie nicht zeigt.
 
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 require_once '../vendor/autoload.php';
+require_once __DIR__ . '/../pdf/pdf_theme.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-// Jahr aus der URL lesen oder aktuelles Jahr verwenden
-$year = isset($_GET['year']) ? (int)$_GET['year'] : date("Y");
+header('Content-Type: application/json; charset=utf-8');
 
-// Wichtige Termine aus der Tabelle abfragen
-$sql = "SELECT name, date, time FROM wichtige_termine WHERE year = ? ORDER BY date";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $year);
+$year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+if ($year < 2000 || $year > 2100) $year = (int)date('Y');
+
+// Wichtige Termine
+$stmt = $conn->prepare("SELECT name, date, time FROM wichtige_termine WHERE year = ? ORDER BY date");
+$stmt->bind_param('i', $year);
 $stmt->execute();
 $result = $stmt->get_result();
 
 $termine = [];
+$existingLookup = [];
 while ($row = $result->fetch_assoc()) {
+    $row['quelle'] = '';
     $termine[] = $row;
+    $existingLookup[strtolower($row['date'] . '|' . $row['name'])] = true;
 }
 $stmt->close();
 
-// Standbelegung-Termine (InKalender = 1) laden und zusammenführen
-$sql = "SELECT Bezeichnung, Datum, StartZeit, EndZeit FROM Standbelegung WHERE Jahr = ? AND InKalender = 1 ORDER BY Datum, StartZeit";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $year);
+// Standbelegung-Termine (InKalender = 1) ergaenzen, sofern nicht schon als wichtiger Termin erfasst
+$stmt = $conn->prepare("SELECT Bezeichnung, Datum, StartZeit, EndZeit FROM Standbelegung WHERE Jahr = ? AND InKalender = 1 ORDER BY Datum, StartZeit");
+$stmt->bind_param('i', $year);
 $stmt->execute();
 $result = $stmt->get_result();
-
-// Existierende Termine als Lookup für Duplikaterkennung (Datum + Name)
-$existingLookup = [];
-foreach ($termine as $t) {
-    $existingLookup[strtolower($t['date'] . '|' . $t['name'])] = true;
-}
-
+$anzStandbelegung = 0;
 while ($row = $result->fetch_assoc()) {
-    $sbDate = $row['Datum'];
-    $sbName = $row['Bezeichnung'];
-
-    // Nur hinzufügen wenn nicht bereits als wichtiger Termin vorhanden
-    $lookupKey = strtolower($sbDate . '|' . $sbName);
-    if (isset($existingLookup[$lookupKey])) {
-        continue;
-    }
-
-    // Zeit formatieren: "HH:MM - HH:MM"
+    $lookupKey = strtolower($row['Datum'] . '|' . $row['Bezeichnung']);
+    if (isset($existingLookup[$lookupKey])) continue;
     $sbTime = '';
     if (!empty($row['StartZeit']) && !empty($row['EndZeit'])) {
         $sbTime = substr($row['StartZeit'], 0, 5) . ' - ' . substr($row['EndZeit'], 0, 5);
     }
-
-    $termine[] = [
-        'name' => $sbName,
-        'date' => $sbDate,
-        'time' => $sbTime
-    ];
+    $termine[] = ['name' => $row['Bezeichnung'], 'date' => $row['Datum'], 'time' => $sbTime, 'quelle' => 'Standbelegung'];
+    $anzStandbelegung++;
 }
 $stmt->close();
 $conn->close();
 
-// Nach Datum sortieren
-usort($termine, function($a, $b) {
-    return strcmp($a['date'], $b['date']);
-});
+usort($termine, static fn($a, $b) => strcmp($a['date'], $b['date']));
 
-$logoBase64 = imgToBase64('dat/MSVWilen_Logo.jpg');
+$wochentage = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+$rows = '';
+foreach ($termine as $t) {
+    $ts = strtotime($t['date']);
+    $datum = $ts ? $wochentage[(int)date('w', $ts)] . ' ' . date('d.m.Y', $ts) : htmlspecialchars($t['date']);
+    $quelle = $t['quelle'] !== '' ? ' <span class="quelle">(' . htmlspecialchars($t['quelle']) . ')</span>' : '';
+    $rows .= '<tr>'
+           . '<td class="datum">' . $datum . '</td>'
+           . '<td>' . htmlspecialchars($t['name']) . $quelle . '</td>'
+           . '<td class="zeit">' . htmlspecialchars($t['time']) . '</td>'
+           . '</tr>';
+}
+if ($rows === '') {
+    $rows = '<tr><td colspan="3" class="text-center text-muted">Keine Termine für ' . $year . ' erfasst.</td></tr>';
+}
 
-// HTML-Inhalt für das PDF erstellen
+$hinweis = $anzStandbelegung > 0
+    ? '<p class="text-muted hinweis">Enthält zusätzlich ' . $anzStandbelegung . ' Termin(e) aus der Standbelegung mit Kalender-Markierung, gekennzeichnet mit „(Standbelegung)".</p>'
+    : '';
+
 $html = '<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
   <title>Wichtige Termine ' . $year . '</title>
   <style>
-    @page {
-      margin: 20px 20px 20px 20px;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      margin: 20px 20px 60px 20px;
-      position: relative;
-    }
-
-    /* Tabelle für Logo und Titel */
-    .header-table {
-      width: 100%;
-      border: none;
-      margin-bottom: 10px;
-      border-collapse: collapse;
-    }
-    .header-table td {
-      border: none; /* Keine Rahmen in der Header-Tabelle */
-      vertical-align: middle;
-    }
-    /* Linke Spalte: Breite für Logo */
-    .header-left {
-      width: 120px;
-    }
-    /* Rechte Spalte: ebenfalls 120px, damit die Mitte wirklich zentral liegt */
-    .header-right {
-      width: 120px;
-    }
-    /* Mittlere Spalte: hier wird zentriert */
-    .header-center {
-      text-align: center;
-    }
-    .header-center h1 {
-      margin: 0; /* Standardabstand bei H1 entfernen */
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #e2e8f0;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #eef2f7;
-      color: #2d3748;
-      border-bottom: 2px solid #cbd5e0;
-    }
-
-    /* Footer-Styles */
-    .footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 40px;
-      border-top: 1px solid #cbd5e0;
-      text-align: center;
-      font-size: 10px;
-      padding-top: 5px;
-    }
+    @page { margin: 20px 20px 50px 20px; }
+    ' . pdf_theme_css() . '
+    /* Terminliste: einfache Tabelle ohne Rang-/Total-Hervorhebung des Themes */
+    .table td:first-child { text-align: left; font-weight: normal; white-space: nowrap; }
+    .table td:last-child  { text-align: left; font-weight: normal; background-color: transparent; color: inherit; white-space: nowrap; }
+    .table td.datum { width: 22%; }
+    .table td.zeit  { width: 20%; }
+    .quelle { color: #64748b; font-size: 9px; }
+    .hinweis { font-size: 9px; margin: 0 10px 8px 10px; }
   </style>
 </head>
 <body>
-
-<!-- Kopfzeile: 3-spaltige Tabelle -->
-<table class="header-table">
-  <tr>
-    <td class="header-left">
-      <img src="' . $logoBase64 . '" alt="Logo" style="width:100px; height:auto;">
-    </td>
-    <td class="header-center">
-      <h1>Wichtige Termine ' . $year . '</h1>
-    </td>
-    <td class="header-right"></td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <th>Datum</th>
-    <th>Termin</th>
-    <th>Uhrzeit</th>
-  </tr>';
-
-foreach ($termine as $termin) {
-    $datum = date("d.m.Y", strtotime($termin['date']));
-    $html .= '<tr>
-                <td>' . $datum . '</td>
-                <td>' . htmlspecialchars($termin['name']) . '</td>
-                <td>' . htmlspecialchars($termin['time']) . '</td>
-              </tr>';
-}
-
-// Abschliessender Teil des HTML mit Footer
-$html .= '
-  </table>
-
-  <div class="footer">
-    Erstellt am ' . date('d.m.Y') . '
+  <div class="header">
+    <img class="logo" src="' . pdf_logo_src() . '" alt="Logo">
+    <div class="header-text"><h1>Wichtige Termine ' . $year . '</h1></div>
   </div>
-
+  <div class="container">
+    ' . $hinweis . '
+    <table class="table">
+      <thead><tr><th>Datum</th><th>Termin</th><th>Uhrzeit</th></tr></thead>
+      <tbody>' . $rows . '</tbody>
+    </table>
+  </div>
+  ' . pdf_footer_html('MSV Wilen · erstellt am ' . date('d.m.Y')) . '
 </body>
 </html>';
 
-// DomPDF konfigurieren und PDF erstellen
 $options = new Options();
-$options->set('isRemoteEnabled', true);
+$options->set('isRemoteEnabled', false); // Logo ist als Data-URI eingebettet
 $options->set('isHtml5ParserEnabled', true);
 
 $dompdf = new Dompdf($options);
@@ -196,31 +115,15 @@ $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
-$pdfOutput = $dompdf->output();
-
-// Erstelle einen Dateinamen mit Zeitstempel
-$filename = 'Wichtige_Termine_' . $year . '_' . date('Y-m-d_H-i-s') . '.pdf';
-// Definiere den Zielordner (bitte sicherstellen, dass der Ordner existiert und beschreibbar ist)
-$outputPath = "../wichtigetermine/dat/" . $filename;
-
-file_put_contents($outputPath, $pdfOutput);
-
-// JSON-Antwort zurückgeben (Content-Type auf application/json setzen)
-header('Content-Type: application/json');
-echo json_encode([
-    'success' => true,
-    'pdf_link' => "wichtigetermine/dat/" . $filename
-]);
-exit();
-
-// Hilfsfunktion, um ein Bild in Base64 zu konvertieren
-function imgToBase64($imgPath)
-{
-    if (file_exists($imgPath)) {
-        $imageData = base64_encode(file_get_contents($imgPath));
-        $mimeType  = mime_content_type($imgPath);
-        return 'data:' . $mimeType . ';base64,' . $imageData;
-    }
-    return "";
+$filename   = 'Wichtige_Termine_' . $year . '_' . date('Y-m-d_H-i-s') . '.pdf';
+$outputPath = __DIR__ . '/dat/' . $filename;
+if (file_put_contents($outputPath, $dompdf->output()) === false) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'PDF konnte nicht gespeichert werden']);
+    exit;
 }
-?>
+
+echo json_encode([
+    'success'  => true,
+    'pdf_link' => 'wichtigetermine/dat/' . $filename,
+]);

@@ -6,13 +6,8 @@ adminApiGuard('json');
 
 header('Content-Type: application/json; charset=utf-8');
 
-// CSRF prüfen
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Ungültige Anfrage']);
-    exit;
-}
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 if (!isset($_POST['year']) || !is_numeric($_POST['year'])) {
     echo json_encode(['success' => false, 'message' => 'Ungültiges Jahr']);
