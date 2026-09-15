@@ -1,10 +1,12 @@
 <?php
 
 /************************************************************
- * export_monatsblatt_pdf.php
+ * inc/monatsblatt/export_monatsblatt.php
  *
  * Liest Daten (JMDefinition / JMSchiesstage), filtert sie
  * nach Jahr und Monatsbereich und erzeugt ein PDF via DomPDF.
+ * POST: year, start_month, end_month, bemerkung, csrf_token
+ * Antwort: PDF-Stream; bei Fehlern Klartext mit 400/500.
  ************************************************************/
 
 require_once '../config.php';
@@ -84,6 +86,13 @@ class MonatsblattPDFExporter {
         // Sicherstellen, dass die Monate im gültigen Bereich sind
         $this->startMonth = max(1, min(12, $this->startMonth ?: 1));
         $this->endMonth = max(1, min(12, $this->endMonth ?: 12));
+        if ($this->startMonth > $this->endMonth) {
+            // Vorher entstand still ein leeres PDF (invertierter Bereich)
+            throw new InvalidArgumentException('Der Von-Monat liegt nach dem Bis-Monat');
+        }
+        if ($this->year < 2000 || $this->year > 2100) {
+            throw new InvalidArgumentException('Ungültiges Jahr');
+        }
 
         // Bemerkung mit XSS-Schutz
         $this->bemerkung = htmlspecialchars($_POST['bemerkung'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -121,7 +130,7 @@ class MonatsblattPDFExporter {
             // PDF erstellen
             return $this->createPDF($htmlContent);
             
-        } catch (Exception $e) {
+        } catch (Throwable $e) { // auch \Error (z. B. aus Dompdf), sonst PHP-Fatal statt Meldung
             error_log("PDF Generation Error: " . $e->getMessage());
             return ['message' => 'Fehler bei der PDF-Erstellung: ' . $e->getMessage()];
         }
@@ -417,10 +426,23 @@ class MonatsblattPDFExporter {
         </div>
         
         <div style="text-align: right; margin-top: 100px;">
-            ' . date('d.m.Y') . ' / RC
+            ' . date('d.m.Y') . $this->erstellerKuerzel() . '
         </div>
         
         <div style="page-break-after: always;"></div>';
+    }
+
+    /**
+     * Initialen des angemeldeten Benutzers fuer das Titelblatt (" / RL"); vorher fest "/ RC".
+     */
+    private function erstellerKuerzel(): string {
+        $name = trim((string)($_SESSION['user_name'] ?? ''));
+        if ($name === '') return '';
+        $initialen = '';
+        foreach (preg_split('/[\s\-_.]+/u', $name) as $teil) {
+            if ($teil !== '') $initialen .= mb_strtoupper(mb_substr($teil, 0, 1));
+        }
+        return $initialen !== '' ? ' / ' . htmlspecialchars(mb_substr($initialen, 0, 3), ENT_QUOTES, 'UTF-8') : '';
     }
 
     private function buildDayBlock($ymd, $ts, $parsedDates, $eventsByDate, $gruppenMapping) {
@@ -582,7 +604,7 @@ class MonatsblattPDFExporter {
 
     private function createPDF($htmlContent) {
         $options = new Options();
-        $options->set('isRemoteEnabled', true);
+        $options->set('isRemoteEnabled', false); // Logo ist als Data-URI eingebettet
         $options->set('isHtml5ParserEnabled', true);
         $options->set('defaultFont', 'Arial');
         
@@ -621,7 +643,13 @@ try {
     header('Content-Type: text/plain; charset=utf-8');
     echo (is_array($result) && !empty($result['message'])) ? $result['message'] : 'PDF konnte nicht erstellt werden';
 
-} catch (Exception $e) {
+} catch (InvalidArgumentException $e) {
+    http_response_code(400);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo $e->getMessage();
+
+} catch (Throwable $e) {
+    error_log('[export_monatsblatt] ' . $e->getMessage());
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
     echo $e->getMessage();
