@@ -187,7 +187,7 @@ class NavigationManager {
 
         // Trennlinie als horizontale Linie
         if (!empty($item['IstTrennlinie'])) {
-            echo '<li class="mobile-nav-item"><hr style="margin:0;border:0;border-top:1px solid #e9ecef;"></li>';
+            echo '<li class="mobile-nav-item nav-separator"><hr class="nav-menu-divider"></li>';
             return;
         }
 
@@ -238,7 +238,7 @@ class NavigationManager {
 
         // Trennlinie als horizontale Linie
         if (!empty($item['IstTrennlinie'])) {
-            echo '<li class="mobile-submenu-item"><hr style="margin:0;border:0;border-top:1px solid #e2e8f0;"></li>';
+            echo '<li class="mobile-submenu-item nav-separator"><hr class="nav-menu-divider"></li>';
             return;
         }
 
@@ -738,9 +738,30 @@ class NavigationManager {
     to { opacity: 1; transform: translateX(0); }
 }
 
-.navbar .dropdown-divider {
-    margin: 0.3rem 0;
-    opacity: 0.2;
+/* Deutliche Gruppentrennung in Topbar, Sidebar und mobilem Menue. */
+.navbar .dropdown-divider,
+.offcanvas-nav .nav-menu-divider {
+    height: 0;
+    margin: 0 0;
+    border: 0;
+    border-top: 1px solid #b0bac8;
+    opacity: 1;
+}
+
+.offcanvas-nav .nav-menu-divider {
+    margin: 0 1rem;
+}
+/* Trennlinie in Untermenues buendig mit dem Text der Untereintraege */
+.offcanvas-nav .mobile-submenu .nav-menu-divider {
+    margin-left: 40px;
+    border-top-color: #cfd6e0;
+}
+.offcanvas-nav .mobile-nested-submenu .nav-menu-divider {
+    margin-left: 60px;
+}
+
+.offcanvas-nav .nav-separator {
+    border-bottom: none;
 }
 
 /* === MOBILE OFF-CANVAS MENU === */
@@ -1127,7 +1148,7 @@ class NavigationManager {
     body.nav-sidebar .offcanvas-nav .mobile-nav-link {
         padding: 0.75rem 1.25rem;
         font-size: 0.85rem;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--sb-text);
         border-bottom: 1px solid var(--sb-border);
         min-height: 44px;
@@ -1149,10 +1170,30 @@ class NavigationManager {
        (verursachten Bullet + grossen Abstand zum Text). */
     body.nav-sidebar .offcanvas-nav .mobile-submenu,
     body.nav-sidebar .offcanvas-nav .mobile-nested-submenu {
-        background: #fff;
         list-style: none;
         margin: 0;
         padding-left: 0;
+    }
+    /* Untermenue als hell hinterlegte Gruppe -> Haupteintraege (weiss, fett) heben sich ab */
+    body.nav-sidebar .offcanvas-nav .mobile-submenu {
+        background: #f6f8fb;
+    }
+    /* Rand nur im aufgeklappten Zustand (zugeklappt = max-height 0, Rand waere sonst Doppellinie) */
+    body.nav-sidebar .offcanvas-nav .mobile-submenu.show {
+        border-bottom: 1px solid var(--sb-border);
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-nested-submenu,
+    body.nav-sidebar .offcanvas-nav .mobile-nested-submenu.show {
+        background: #eef2f7;
+        border-bottom: none;
+    }
+    /* Trennlinie buendig mit dem Text der Untereintraege (Einrueckung 1.75rem / 2.5rem) */
+    body.nav-sidebar .offcanvas-nav .mobile-submenu .nav-menu-divider {
+        margin: 0 1rem 0 1.75rem;
+        border-top-color: #c9d2de;
+    }
+    body.nav-sidebar .offcanvas-nav .mobile-nested-submenu .nav-menu-divider {
+        margin-left: 2.5rem;
     }
     body.nav-sidebar .offcanvas-nav .mobile-submenu-item {
         border-bottom: none;
@@ -1163,8 +1204,8 @@ class NavigationManager {
         padding: 0.5rem 1rem 0.5rem 1.75rem;
         min-height: 38px;
         font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--sb-text);
+        font-weight: 400;
+        color: #3c4858;
         white-space: nowrap;
     }
     body.nav-sidebar .offcanvas-nav .mobile-nested-submenu .mobile-submenu-link {

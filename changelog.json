@@ -8,6 +8,12 @@
         "beschreibung": "Alle Einsatzlisten werden gleich dargestellt (Funktionen × Termine, Personen als Chips), die Chilbi mit dynamischen Positionen, Soll je Schicht und «offen»-Platzhaltern. Mitgliederliste rechts mit Suche, Gruppen (nicht eingeplant / eingeplant / externe), Drag & Drop zum Einteilen, Verschieben und Entfernen; eingeklappte Funktionszeilen mit Zähler. Neuer Plantyp Schlossturmschiessen mit Anfrage-Rollen und Treffpunkt-Infos je Schicht, Import der OK-Einsatzliste mit allen drei Vereinen. Verfügbarkeiten (wer kann wann in welcher Rolle) aus der Portal-Umfrage, aus dem Excel «Personalanfrage» je Verein oder manuell; Export der Personalanfrage im Format des OK. Automatische Einteilung als Vorschlag: Vereine pro Schicht möglichst ausgeglichen, wenig belastete Personen zuerst, gleiche Funktion über mehrere Schichten; Vorschläge erscheinen blau gestrichelt, werden kontrolliert und übernommen oder verworfen; eingeteilt wird erst, wenn alle drei Vereine ihre Personalanfrage geliefert haben. Helferstunden je Verein unter der Mitgliederliste. Anwesenheit pro Schicht im Portal per Tastendruck erfassen (Vorstand/Admin, fürs Handy) mit Auswertung je Plan, Jahr, Verein und Person im Admin. Word in zwei Ansichten (Funktionen, Personen). Migrationen 051 bis 054.",
         "typ": "neu",
         "admin_only": true
+      },
+      {
+        "titel": "Navigation: Sidebar-Menü übersichtlicher",
+        "beschreibung": "Haupteinträge sind fett auf weiss, aufgeklappte Untermenüs hell hinterlegt (verschachtelte eine Stufe dunkler). Trennlinien in Untermenüs beginnen bündig mit dem Text der Untereinträge und haben keinen Abstand mehr nach oben und unten. Gilt für Sidebar und mobiles Menü.",
+        "typ": "verbessert",
+        "admin_only": true
       }
     ]
   },
@@ -87,6 +93,18 @@
     "version": "1.26.0",
     "datum": "2026-09-09",
     "aenderungen": [
+      {
+        "titel": "Endschiessen lösen: Aktionsmenü der Übersicht wird nicht mehr abgeschnitten",
+        "beschreibung": "Das Drei-Punkte-Menü in der Übersichtstabelle (Bearbeiten, Standblatt, Standblatt drucken, Löschen) verschwand bei den unteren Zeilen teilweise im scrollbaren Tabellenbereich. Das Menü wird jetzt unabhängig vom Container positioniert und liegt vollständig sichtbar über der Tabelle; bei Platzmangel nach unten klappt es nach oben auf.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen-Standblatt: Direktdruck füllt das A4-Blatt wieder aus",
+        "beschreibung": "Beim Direktdruck des Endschiessen-Standblatts blieb rundum ein breiter weisser Rand, der Inhalt war rund 18 Prozent zu klein. Ursache: Der PDF-Dienst rendert Excel-Dateien immer im amerikanischen Letter-Format, auch wenn die Vorlage A4 vorgibt, und verkleinert den Inhalt auf die schmalere Letter-Breite; QZ Tray passte die Letter-Seite dann nochmals in A4 ein. Der Generator misst den Inhalt jetzt serverseitig und legt ihn passgenau auf A4 quer, mit den Rändern der Excel-Vorlage. Zweite Ursache in QZ Tray: Bei ausdrücklich gesetzter Ausrichtung «quer» drehte QZ die Querseite nochmals und druckte sie auf rund 70 Prozent verkleinert. Der Direktdruck und der Testdruck überlassen die Ausrichtung jetzt der automatischen Erkennung von QZ aus der PDF-Seitengrösse; das betrifft alle Querformat-Ausgaben (JM-Standblatt, JM-Rangliste, Heimmeisterschaft, Endschiessen-Abrechnung, Absendenbuch). Der Excel-Download und die Word-basierten Standblätter waren vom ersten Punkt nicht betroffen. Nachjustiert: Der Inhalt sitzt zentriert mit 8 mm Sicherheitsrand rundum, damit die unterste Zeile nicht im nicht bedruckbaren Bereich des Druckers landet und Vorder- und Rückseite gleich ausgerichtet sind.",
+        "typ": "fix",
+        "admin_only": true
+      },
       {
         "titel": "Druckprotokoll: Fehlerursache wird gespeichert, Einträge sind lesbarer",
         "beschreibung": "Fehlgeschlagene Drucke landeten im Protokoll ohne die Fehlermeldung, weil der Schreib-Endpunkt den Fehlertext beim Anlegen verwarf. Er wird jetzt gespeichert und erscheint in der Drucksteuerung als Tooltip auf der roten Zeile. Die Protokollzeilen zeigen neu die Profil-Bezeichnung statt des internen Schlüssels, den Dokumentnamen, den Drucker mit Kopienzahl und einen Status-Badge: blau «an Drucker übergeben» (Normalfall, weil QZ Tray nur die Übergabe an den Spooler bestätigt), grün «gedruckt», rot «Fehler». Status-Updates sind nur noch auf eigene Einträge möglich.",
