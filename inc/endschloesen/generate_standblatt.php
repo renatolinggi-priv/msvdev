@@ -316,7 +316,12 @@ try {
         // XLSX → PDF über ConvertAPI (kostenpflichtiger Dienst, Kontingent beachten);
         // Seiteneinrichtung der Vorlage (A4 quer, Druckbereich) wird übernommen.
         require_once __DIR__ . '/../lib/convertapi_helper.php';
+        require_once __DIR__ . '/../lib/pdf_tools.inc.php';
         $tmpPdf = convertToPdf($tmpXlsx, 'xlsx');
+        // iLoveAPI rendert Excel auf Letter statt A4 und skaliert den Inhalt dabei herunter; QZ passt Letter dann
+        // nochmals in A4 ein → Blatt nur ~80 % gefüllt. Darum den Inhalt per Ghostscript auf A4 quer einpassen.
+        $pdfA4 = pdfAufA4QuerFallsNoetig($tmpPdf);
+        if ($pdfA4 !== $tmpPdf) { @unlink($tmpPdf); $tmpPdf = $pdfA4; }
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $basisname . '.pdf"');
         header('Cache-Control: max-age=0');

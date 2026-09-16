@@ -58,6 +58,13 @@ const Druck = {
                 { doc_type: 'einzelrangierung',     label: 'Einzelrangierungen',             desc: 'PDF-Export der Einzelrangierungen', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
                 { doc_type: 'cuprang',              label: 'Vereinscup Rangliste',           desc: 'Rangliste Vereinscup', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 }
             ]
+        },
+        {
+            section: 'Einsätze',
+            profiles: [
+                // Word-Einsatzliste (PhpWord) → PDF über den Konvertierungsdienst → QZ Tray; Ausrichtung kommt je Plan von der Seite
+                { doc_type: 'einsatzplan', label: 'Einsatzplan', desc: 'Einsatzliste aus der Einsatzplanung (Obligatorisch, Feldschiessen, Chilbi quer; Schlossturm hoch), PDF', format_fixed: 'A4 (Ausrichtung je Plan)', default_copies: 1 }
+            ]
         }
     ],
 
@@ -394,7 +401,9 @@ const Druck = {
             await this.pm.printPixel(printer.name,
                 [{ type: 'pdf', format: 'base64', data: base64 }],
                 {
-                    size: { width: size[0], height: size[1] }, units: 'mm', orientation,
+                    // orientation:null wie im Direktdruck (js/msv-direktdruck.js): QZ erkennt die Ausrichtung aus dem PDF;
+                    // explizites 'landscape' fuehrte zu doppelt gedrehtem, verkleinertem Druck
+                    size: { width: size[0], height: size[1] }, units: 'mm', orientation: null,
                     copies, duplex: duplex || false, colorType: color,
                     margins: { top: 0, right: 0, bottom: 0, left: 0 }, rasterize: false,
                     jobName: 'Testdruck ' + label

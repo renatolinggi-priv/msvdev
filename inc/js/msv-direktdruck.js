@@ -193,15 +193,19 @@
         if (!blob) blob = await this._holePdf(url, request || {}, linkPrefix || '');
         const base64 = await this._blobZuBase64(blob);
 
-        const orient = String(orientation || p.orientation || 'portrait').toLowerCase();
         const papier = PAPIER[String(paper || p.paper_size || 'A4').toUpperCase()] || PAPIER.A4;
 
+        // Ausrichtung NICHT explizit setzen: QZ Tray erkennt sie für PDFs aus der Seitengrösse selbst
+        // (orientation:null). Mit explizitem 'landscape' wurde die Querseite zusätzlich gedreht und auf
+        // ~70 % verkleinert gedruckt (Endschiessen-Standblatt, 16.09.2026). Papier immer in Hochformat-
+        // Massen angeben (A4 = 210×297), QZ dreht die Fläche passend zur erkannten Ausrichtung.
+        // Der Parameter orientation bleibt für die Generatoren (Seitenformat) und den Job-Namen relevant.
         await this.pm.printPixel(
           p.printer_name,
           [{ type: 'pdf', format: 'base64', data: base64 }],
           {
             copies,
-            orientation: orient === 'landscape' ? 'landscape' : 'portrait',
+            orientation: null,
             size: { width: papier[0], height: papier[1] },
             units: 'mm',
             margins: { top: 0, right: 0, bottom: 0, left: 0 },
