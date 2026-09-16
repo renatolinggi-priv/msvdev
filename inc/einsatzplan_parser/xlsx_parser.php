@@ -13,9 +13,12 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
  * Erkennt automatisch das Format (Schlossturm oder Chilbi).
  *
  * @param string $filepath Pfad zur XLSX-Datei
- * @return array ['success' => bool, 'data' => [...], 'message' => string]
+ * @param bool   $vereineBehalten Schlossturm: alle drei Vereine liefern (Eintrag mit 'verein' =>
+ *                                msv|freienbach|wollerau) statt nur MSV Wilen; zusätzlich 'info' je Block
+ *                                (Treffpunkt/Büro). Für die Einsatzplanung (plan_import.inc.php).
+ * @return array ['success' => bool, 'data' => [...], 'message' => string, 'format' => 'chilbi'|'schlossturm']
  */
-function parseEinsatzplanXlsx($filepath) {
+function parseEinsatzplanXlsx($filepath, $vereineBehalten = false) {
     if (!file_exists($filepath)) {
         return ['success' => false, 'data' => [], 'message' => 'Datei nicht gefunden'];
     }
@@ -38,13 +41,13 @@ function parseEinsatzplanXlsx($filepath) {
         if (empty($zuweisungen)) {
             return ['success' => false, 'data' => [], 'message' => 'Keine Chilbi-Einsätze gefunden'];
         }
-        return ['success' => true, 'data' => $zuweisungen, 'message' => count($zuweisungen) . ' Einsätze erkannt'];
+        return ['success' => true, 'data' => $zuweisungen, 'message' => count($zuweisungen) . ' Einsätze erkannt', 'format' => 'chilbi'];
     }
 
     // --- Schlossturm-Format ---
 
     // Header-Struktur erkennen
-    $header = parseXlsxHeader($sheet);
+    $header = parseXlsxHeader($sheet, $vereineBehalten);
     if (empty($header['events'])) {
         return ['success' => false, 'data' => [], 'message' => 'Keine Event-Blöcke im Header erkannt'];
     }
@@ -54,13 +57,13 @@ function parseEinsatzplanXlsx($filepath) {
     $bezeichnung = $titel ?: 'Schlossturmschiessen';
 
     // Datenzeilen parsen
-    $zuweisungen = parseXlsxDataRows($sheet, $header, $bezeichnung);
+    $zuweisungen = parseXlsxDataRows($sheet, $header, $bezeichnung, $vereineBehalten);
 
     if (empty($zuweisungen)) {
-        return ['success' => false, 'data' => [], 'message' => 'Keine MSV Wilen Einsätze gefunden'];
+        return ['success' => false, 'data' => [], 'message' => $vereineBehalten ? 'Keine Einsätze gefunden' : 'Keine MSV Wilen Einsätze gefunden'];
     }
 
-    return ['success' => true, 'data' => $zuweisungen, 'message' => count($zuweisungen) . ' Einsätze erkannt'];
+    return ['success' => true, 'data' => $zuweisungen, 'message' => count($zuweisungen) . ' Einsätze erkannt', 'format' => 'schlossturm'];
 }
 
 // ============================================================
@@ -254,7 +257,7 @@ function selectSheet($spreadsheet) {
  *
  * @return array ['events' => [...], 'data_start' => int]
  */
-function parseXlsxHeader($sheet) {
+function parseXlsxHeader($sheet, $vereineBehalten = false) {
     $result = ['events' => [], 'data_start' => 1];
 
     $maxRow = min($sheet->getHighestRow(), 15); // Header ist in den ersten ~10 Zeilen
@@ -263,6 +266,7 @@ function parseXlsxHeader($sheet) {
     $datumRow = null;
     $zeitRow = null;
     $nameRow = null;
+    $treffRow = null;
 
     // Marker-Zeilen finden
     for ($row = 1; $row <= $maxRow; $row++) {
@@ -272,6 +276,8 @@ function parseXlsxHeader($sheet) {
             $datumRow = $row;
         } elseif (mb_stripos($colA, 'Zeit') !== false) {
             $zeitRow = $row;
+        } elseif (mb_stripos($colA, 'Treffpunkt') !== false) {
+            $treffRow = $row;
         }
 
         // "Name / Vorname" kann in Spalte B stehen
@@ -293,9 +299,21 @@ function parseXlsxHeader($sheet) {
     // Event-Blöcke erkennen: Spalten mit Datumswerten in der Datum-Zeile
     $eventBlocks = detectEventBlocks($sheet, $datumRow, $highestCol);
 
-    // MSV Wilen Spalten identifizieren
+    // MSV Wilen Spalten identifizieren (und für die Einsatzplanung alle Vereins-Spalten + Info-Zeilen)
     foreach ($eventBlocks as &$block) {
         $block['msvCol'] = findMsvWilenColumn($sheet, $datumRow, $block);
+        $block['vereinCols'] = findVereinColumns($sheet, $datumRow, $block);
+        // Info-Zeile: «Treffpunkt 07.30 Uhr · Büro 07:15 Uhr» (Zeilen unter der Zeit-Zeile, in der Name-Spalte)
+        $infoTeile = [];
+        if ($treffRow) {
+            $tv = trim((string)($sheet->getCell($block['nameCol'] . $treffRow)->getValue() ?? ''));
+            if ($tv !== '') $infoTeile[] = 'Treffpunkt ' . $tv;
+        }
+        for ($r = ($zeitRow ?? $datumRow) + 1; $r <= $datumRow + 5; $r++) {
+            $v = trim((string)($sheet->getCell($block['nameCol'] . $r)->getValue() ?? ''));
+            if ($v !== '' && mb_stripos($v, 'Büro') === 0) $infoTeile[] = $v;
+        }
+        $block['info'] = implode(' · ', $infoTeile);
         // Zeit aus Zeit-Zeile (Text oder Excel-Dezimal)
         if ($zeitRow) {
             $zeitCell = $sheet->getCell($block['nameCol'] . $zeitRow);
@@ -314,8 +332,8 @@ function parseXlsxHeader($sheet) {
         }
     }
 
-    // Blöcke ohne MSV-Wilen-Spalte entfernen
-    $eventBlocks = array_filter($eventBlocks, fn($b) => $b['msvCol'] !== null);
+    // Blöcke ohne MSV-Wilen-Spalte entfernen (Einsatzplanung: Blöcke ohne jede Vereins-Spalte)
+    $eventBlocks = array_filter($eventBlocks, fn($b) => $vereineBehalten ? !empty($b['vereinCols']) : $b['msvCol'] !== null);
 
     $result['events'] = array_values($eventBlocks);
     $result['data_start'] = ($nameRow ?? $datumRow) + 1;
@@ -407,9 +425,31 @@ function findMsvWilenColumn($sheet, $datumRow, $block) {
 }
 
 /**
- * Parst die Datenzeilen und extrahiert MSV Wilen Einsätze.
+ * Findet alle Vereins-Check-Spalten eines Event-Blocks: [Spalte => msv|freienbach|wollerau].
+ * Sucht in den Header-Zeilen der 1–4 Spalten nach der Name-Spalte nach den Vereinsnamen
+ * («SV F'bach-Pf'kon», «MSV Wilen», «SV Wollerau»).
  */
-function parseXlsxDataRows($sheet, $header, $titelBezeichnung) {
+function findVereinColumns($sheet, $datumRow, $block) {
+    $nameColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($block['nameCol']);
+    $out = [];
+    for ($offset = 1; $offset <= 4; $offset++) {
+        $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($nameColIdx + $offset);
+        for ($row = max(1, $datumRow - 1); $row <= $datumRow + 5; $row++) {
+            $val = mb_strtolower(trim((string)($sheet->getCell($col . $row)->getValue() ?? '')));
+            if ($val === '') continue;
+            if (str_contains($val, 'msv') || str_contains($val, 'wilen'))            { $out[$col] = 'msv'; break; }
+            if (str_contains($val, 'wollerau'))                                        { $out[$col] = 'wollerau'; break; }
+            if (str_contains($val, 'freienbach') || str_contains($val, "f'bach") || str_contains($val, 'fbach') || str_contains($val, "pf'kon") || str_contains($val, 'pfäffikon')) { $out[$col] = 'freienbach'; break; }
+        }
+    }
+    return $out;
+}
+
+/**
+ * Parst die Datenzeilen und extrahiert MSV Wilen Einsätze
+ * ($vereineBehalten: alle Vereine, Eintrag erhält 'verein' und 'info').
+ */
+function parseXlsxDataRows($sheet, $header, $titelBezeichnung, $vereineBehalten = false) {
     $zuweisungen = [];
     $maxRow = $sheet->getHighestRow();
     $currentFunktion = '';
@@ -450,9 +490,19 @@ function parseXlsxDataRows($sheet, $header, $titelBezeichnung) {
             // Nur Einträge mit Buchstaben (keine reinen Zahlen)
             if (!preg_match('/[a-zA-ZäöüÄÖÜéèêàáâ]/u', $name)) continue;
 
-            // MSV Wilen Check prüfen
-            $msvCheck = $sheet->getCell($event['msvCol'] . $row)->getValue();
-            if ($msvCheck === null || $msvCheck === '') continue;
+            // Verein über die Check-Spalte bestimmen
+            $verein = null;
+            if ($vereineBehalten) {
+                foreach ($event['vereinCols'] ?? [] as $col => $v) {
+                    $chk = $sheet->getCell($col . $row)->getValue();
+                    if ($chk !== null && trim((string)$chk) !== '') { $verein = $v; break; }
+                }
+                if ($verein === null) $verein = 'msv';   // kein Kreuz: als eigener Eintrag behandeln
+            } else {
+                // MSV Wilen Check prüfen
+                $msvCheck = $sheet->getCell($event['msvCol'] . $row)->getValue();
+                if ($msvCheck === null || $msvCheck === '') continue;
+            }
 
             // Klammerzusätze aus Namen entfernen, z.B. "Schuler Werner (Büro)"
             $cleanName = preg_replace('/\s*\(.*?\)\s*/', '', $name);
@@ -460,7 +510,7 @@ function parseXlsxDataRows($sheet, $header, $titelBezeichnung) {
 
             if (empty($cleanName)) continue;
 
-            $zuweisungen[] = [
+            $eintrag = [
                 'typ'           => 'einsatz',
                 'bezeichnung'   => $titelBezeichnung,
                 'event_datum'   => $event['datum'],
@@ -468,6 +518,8 @@ function parseXlsxDataRows($sheet, $header, $titelBezeichnung) {
                 'funktion'      => $currentFunktion,
                 'mitglied_name' => $cleanName,
             ];
+            if ($vereineBehalten) { $eintrag['verein'] = $verein; $eintrag['info'] = $event['info'] ?? ''; $eintrag['zeile'] = $row; }
+            $zuweisungen[] = $eintrag;
         }
     }
 

@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.29.0",
+    "datum": "2026-09-16",
+    "aenderungen": [
+      {
+        "titel": "Einsatzplanung: Wiler Chilbi und Schlossturmschiessen, Drag & Drop, Verfügbarkeiten und automatische Einteilung",
+        "beschreibung": "Alle Einsatzlisten werden gleich dargestellt (Funktionen × Termine, Personen als Chips), die Chilbi mit dynamischen Positionen, Soll je Schicht und «offen»-Platzhaltern. Mitgliederliste rechts mit Suche, Gruppen (nicht eingeplant / eingeplant / externe), Drag & Drop zum Einteilen, Verschieben und Entfernen; eingeklappte Funktionszeilen mit Zähler. Neuer Plantyp Schlossturmschiessen mit Anfrage-Rollen und Treffpunkt-Infos je Schicht, Import der OK-Einsatzliste mit allen drei Vereinen. Verfügbarkeiten (wer kann wann in welcher Rolle) aus der Portal-Umfrage, aus dem Excel «Personalanfrage» je Verein oder manuell; Export der Personalanfrage im Format des OK. Automatische Einteilung als Vorschlag: Vereine pro Schicht möglichst ausgeglichen, wenig belastete Personen zuerst, gleiche Funktion über mehrere Schichten; Vorschläge erscheinen blau gestrichelt, werden kontrolliert und übernommen oder verworfen; eingeteilt wird erst, wenn alle drei Vereine ihre Personalanfrage geliefert haben. Helferstunden je Verein unter der Mitgliederliste. Anwesenheit pro Schicht im Portal per Tastendruck erfassen (Vorstand/Admin, fürs Handy) mit Auswertung je Plan, Jahr, Verein und Person im Admin. Word in zwei Ansichten (Funktionen, Personen). Migrationen 051 bis 054.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.28.0",
+    "datum": "2026-09-15",
+    "aenderungen": [
+      {
+        "titel": "Einsatzplanung: Arbeitseinsätze Obligatorisch, Feldschiessen und Wiler Chilbi in der App",
+        "beschreibung": "Neue Seite «Einsatzplanung» unter «Definitionen / Ausdrucke». Ein Plan pro Anlass und Jahr mit Terminen (Schiesstage bzw. Schichten), Funktionen und Positionen; jede Position gehört MSV Wilen, SV Freienbach oder SV Wollerau und trägt ein Mitglied oder einen Namen. Word- und PDF-Export im bisherigen Layout (Chilbi zusätzlich Excel), ausgefülltes Word der Vereine wird positionsgenau wieder eingelesen. Freigabe überträgt die Einsätze ins Portal («Meine Einsätze», Tausch, Erinnerungen) und zeigt den ganzen Plan als Tabelle unter «Einsatzpläne». Ein neuer Plan entsteht leer, als Kopie des Vorjahrs (Endstand nach Tausch) oder aus einem hochgeladenen Einsatzplan-Dokument; Termine können aus der JM-Definition übernommen werden. Migration 050 erforderlich.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.27.0",
     "datum": "2026-09-15",
     "aenderungen": [

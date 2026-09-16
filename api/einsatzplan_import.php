@@ -253,6 +253,17 @@ function handleUpdate($db) {
     ");
     $stmt->execute([$funktion, $mitglied_name, $mitglied_id, $event_datum, $event_zeit ?: null, $id]);
 
+    // Einsatzplanung (Migration 050): zugehörigen Slot mitführen, falls die Zeile aus einem Plan stammt.
+    // Best effort – vor der Migration fehlt die Tabelle.
+    try {
+        $db->prepare("UPDATE einsatz_plan_slots s JOIN einsatz_zuweisungen z ON z.slot_id = s.id
+                         SET s.mitglied_id = z.mitglied_id,
+                             s.name_text = CASE WHEN z.mitglied_id IS NULL THEN z.mitglied_name ELSE NULL END
+                       WHERE z.id = ?")->execute([$id]);
+    } catch (Throwable $e) {
+        error_log('einsatzplan_import: Slot-Rückschreibung übersprungen: ' . $e->getMessage());
+    }
+
     echo json_encode(['success' => true, 'message' => 'Eintrag aktualisiert']);
 }
 

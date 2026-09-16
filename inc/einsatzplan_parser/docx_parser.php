@@ -12,9 +12,12 @@ use PhpOffice\PhpWord\Element\Text;
  * Gibt ein Array von Zuweisungen zurück.
  *
  * @param string $filepath Pfad zur DOCX-Datei
+ * @param bool   $vereineBehalten true: Platzhalter «SV Freienbach»/«SV Wollerau» nicht verwerfen,
+ *                                sondern als Eintrag mit 'verein' => freienbach|wollerau liefern
+ *                                (Einsatzplanung, plan_from_dokument.php). Default unverändert.
  * @return array ['success' => bool, 'data' => [...], 'message' => string]
  */
-function parseEinsatzplanDocx($filepath) {
+function parseEinsatzplanDocx($filepath, $vereineBehalten = false) {
     if (!file_exists($filepath)) {
         return ['success' => false, 'data' => [], 'message' => 'Datei nicht gefunden'];
     }
@@ -30,7 +33,7 @@ function parseEinsatzplanDocx($filepath) {
     foreach ($phpWord->getSections() as $section) {
         foreach ($section->getElements() as $element) {
             if ($element instanceof Table) {
-                $parsed = parseEinsatzTable($element);
+                $parsed = parseEinsatzTable($element, $vereineBehalten);
                 $zuweisungen = array_merge($zuweisungen, $parsed);
             }
         }
@@ -46,7 +49,7 @@ function parseEinsatzplanDocx($filepath) {
 /**
  * Parst eine einzelne Tabelle aus dem Einsatzplan.
  */
-function parseEinsatzTable($table) {
+function parseEinsatzTable($table, $vereineBehalten = false) {
     $rows = $table->getRows();
     if (count($rows) < 2) return [];
 
@@ -78,7 +81,11 @@ function parseEinsatzTable($table) {
             for ($nameIdx = 0; $nameIdx < count($nameLines); $nameIdx++) {
                 $nameText = trim($nameLines[$nameIdx]);
                 if (empty($nameText)) continue;
-                if (isIgnoredEntry($nameText)) continue;
+                $verein = 'msv';
+                if (isIgnoredEntry($nameText)) {
+                    if (!$vereineBehalten) continue;
+                    $verein = mb_stripos($nameText, 'Wollerau') !== false ? 'wollerau' : 'freienbach';
+                }
 
                 // Funktion für diesen Name-Index ermitteln
                 $funktion = $funktionMap[$nameIdx] ?? end($funktionMap) ?: 'Unbekannt';
@@ -90,6 +97,8 @@ function parseEinsatzTable($table) {
                     'event_zeit'  => $dateInfo['zeit'],
                     'funktion'    => $funktion,
                     'mitglied_name' => $nameText,
+                    'verein'      => $verein,
+                    'zeile'       => $r,
                 ];
             }
         }

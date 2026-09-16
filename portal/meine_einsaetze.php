@@ -15,6 +15,7 @@ $csrf = ensureCsrfToken();
 // Offene Tausch-/Übernahme-Anfragen (an mich = eingehend, von mir = ausgehend)
 $tausch_eingehend = [];
 $tausch_ausgehend = [];
+$plan_links = [];   // einsatz_zuweisungen.id => einsatz_plaene.id (Einsatzplanung)
 
 if ($mitglied_id) {
     try {
@@ -39,6 +40,20 @@ if ($mitglied_id) {
         $einsaetze_vergangen = array_reverse($einsaetze_vergangen);
     } catch (Exception $e) {
         $table_exists = false;
+    }
+
+    // Zugehöriger Einsatzplan (Einsatzplanung, Migration 050) -> Link «Ganzen Plan anzeigen».
+    // Eigene Abfrage, damit die Einsatzliste auch ohne die neuen Tabellen funktioniert.
+    try {
+        $pl = $db->prepare("SELECT z.id, s.plan_id
+                              FROM einsatz_zuweisungen z
+                              JOIN einsatz_plan_slots s ON s.id = z.slot_id
+                              JOIN einsatz_plaene p ON p.id = s.plan_id
+                             WHERE z.mitglied_id = ? AND p.status <> 'entwurf'");
+        $pl->execute([$mitglied_id]);
+        foreach ($pl->fetchAll() as $r) $plan_links[(int) $r['id']] = (int) $r['plan_id'];
+    } catch (Exception $e) {
+        // Migration 050 evtl. noch nicht eingespielt
     }
 
     // Tausch-Anfragen laden (Tabelle existiert evtl. noch nicht -> still ignorieren)
@@ -340,7 +355,9 @@ if (!$mitglied_id): ?>
             </div>
             <div class="p-list-title einsatz-name"><?php echo htmlspecialchars($e['bezeichnung']); ?></div>
             <?php if (!empty($e['funktion'])): ?>
-            <div class="einsatz-funktion"><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($e['funktion']); ?></div>
+            <div class="einsatz-funktion"><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($e['funktion']); ?>
+                <?php if (isset($plan_links[(int) $e['id']])): ?> · <a href="einsatzplan.php?id=<?php echo $plan_links[(int) $e['id']]; ?>" class="text-decoration-none"><i class="bi bi-table me-1"></i>Ganzer Plan</a><?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
         <?php if (!empty($e['event_zeit'])): ?>

@@ -448,6 +448,7 @@ $page_show_mobile = true;
       </div>
       <div class="modal-body">
         <p class="text-muted mb-3" id="importDocTitle"></p>
+        <div class="alert alert-info py-2 px-3 small mb-3"><i class="bi bi-lightbulb me-1"></i>Obligatorisch, Feldschiessen und Wiler Chilbi werden neu in der <a href="einsatzplanung.php">Einsatzplanung</a> geführt (dort «Neuer Plan → aus hochgeladenem Dokument»). Dieser Import bleibt für fremde Einsatzpläne (z.B. Rangeure Eidgenössisches).</div>
         <div id="importLoading" class="text-center py-4">
           <div class="spinner-border text-primary" role="status"></div>
           <p class="text-muted mt-2">Dokument wird analysiert...</p>

@@ -176,6 +176,16 @@ if ($action === 'accept') {
             $updEz2 = $db->prepare("UPDATE einsatz_zuweisungen SET mitglied_id = :mid, mitglied_name = :nm WHERE id = :id");
             $updEz2->execute([':mid' => $von, ':nm' => nameVornameDb($db, $von), ':id' => $bId]);
         }
+        // Einsatzplanung (Migration 050): Slot mitführen, damit der Plan den Endstand hält.
+        // Best effort – vor der Migration fehlt die Tabelle; der Tausch selbst bleibt gültig.
+        try {
+            $db->prepare("UPDATE einsatz_plan_slots s JOIN einsatz_zuweisungen z ON z.slot_id = s.id
+                             SET s.mitglied_id = z.mitglied_id, s.name_text = NULL
+                           WHERE z.id IN (:ea, :eb)")
+               ->execute([':ea' => $aId, ':eb' => $bId > 0 ? $bId : $aId]);
+        } catch (Throwable $e) {
+            error_log('einsatz_tausch: Slot-Rückschreibung übersprungen: ' . $e->getMessage());
+        }
 
         // Antrag bestätigen
         $db->prepare("UPDATE einsatz_tausch SET status='bestaetigt', entschieden_von=:uid, entschieden_am=NOW() WHERE id=:id")
