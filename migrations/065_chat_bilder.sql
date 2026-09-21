@@ -1,4 +1,4 @@
--- Migration 063: Bilder im Jungschuetzenchat
+-- Migration 065: Bilder im Jungschuetzenchat
 --
 -- chat_nachrichten.bild        Dateiname (JPG) unter portal/uploads/chat/<conversation_id>/,
 --                              Thumbnail = gleicher Name mit Suffix _t. Auslieferung nur ueber

@@ -104,7 +104,7 @@ if (!function_exists('chatEnsureMatchConversation')) {
 if (!function_exists('chatEnsureLeiterConversation')) {
     /**
      * Findet/erstellt den Leiter-Chat eines Jungschützen (partner NULL = „Leitung").
-     * Ab Migration 062 faengt der UNIQUE-Key (typ, js_user_id, partner_key) gleichzeitige
+     * Ab Migration 064 faengt der UNIQUE-Key (typ, js_user_id, partner_key) gleichzeitige
      * Anlagen ab; davor deckt der SELECT den Normalfall ab.
      */
     function chatEnsureLeiterConversation(PDO $db, int $jsUserId): int {
@@ -178,7 +178,7 @@ if (!function_exists('chatUnreadCount')) {
 }
 
 // ---------------------------------------------------------------------------
-// Bilder im Chat (Migration 063). Ablage: portal/uploads/chat/<conversation_id>/<name>.jpg
+// Bilder im Chat (Migration 065). Ablage: portal/uploads/chat/<conversation_id>/<name>.jpg
 // + <name>_t.jpg (Thumbnail). Verarbeitung ueber Intervention Image wie in der Foto-Galerie
 // (Auto-Orientierung, Neukodierung als JPG -> EXIF/GPS werden entfernt).
 // ---------------------------------------------------------------------------
@@ -187,7 +187,7 @@ if (!defined('CHAT_BILD_THUMB'))     define('CHAT_BILD_THUMB', 640);           /
 if (!defined('CHAT_BILD_MAX_BYTES')) define('CHAT_BILD_MAX_BYTES', 15 * 1024 * 1024);
 
 if (!function_exists('chatBilderAktiv')) {
-    /** Bild-Spalten vorhanden (Migration 063 eingespielt)? */
+    /** Bild-Spalten vorhanden (Migration 065 eingespielt)? */
     function chatBilderAktiv(PDO $db): bool {
         return jskDbHatSpalte($db, 'chat_nachrichten', 'bild');
     }

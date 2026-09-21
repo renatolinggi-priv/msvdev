@@ -320,7 +320,7 @@ if ($action === 'read') {
 if ($action === 'delete') {
     $msgId = (int) ($input['id'] ?? 0);
     if (!jskDbHatSpalte($db, 'chat_nachrichten', 'geloescht_am')) {
-        json_error('Zurücknehmen ist erst nach der Datenbank-Aktualisierung 062 möglich.');
+        json_error('Zurücknehmen ist erst nach der Datenbank-Aktualisierung 064 möglich.');
     }
     $bildCol = chatBilderAktiv($db) ? 'bild' : 'NULL AS bild';
     $st = $db->prepare("SELECT conversation_id, sender_user_id, erstellt_am, geloescht_am, $bildCol FROM chat_nachrichten WHERE id = ?");
@@ -339,7 +339,7 @@ if ($action === 'delete') {
 
 // ---------------------------------------------------------------- POST: upload (Bild, multipart)
 if ($action === 'upload') {
-    if (!chatBilderAktiv($db)) json_error('Bilder sind erst nach der Datenbank-Aktualisierung 063 möglich.');
+    if (!chatBilderAktiv($db)) json_error('Bilder sind erst nach der Datenbank-Aktualisierung 065 möglich.');
     $convId = (int) ($_POST['c'] ?? 0);
     $text   = trim((string) ($_POST['text'] ?? ''));
     $conv = chatGetConversation($db, $convId);

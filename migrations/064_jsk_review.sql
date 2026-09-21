@@ -1,4 +1,4 @@
--- Migration 062: JSK-Review (Matching + Chat)
+-- Migration 064: JSK-Review (Matching + Chat)
 --
 -- 1. chat_conversations.partner_key: generierte Spalte COALESCE(partner_user_id, 0), damit
 --    der UNIQUE-Key auch Leiter-Chats (partner NULL) dedupt. Bisher konnten zwei gleichzeitige

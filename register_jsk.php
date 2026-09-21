@@ -20,7 +20,7 @@ $form_data = ['vorname' => '', 'nachname' => '', 'email' => '', 'username' => ''
 
 /**
  * Einfacher Schutz gegen Durchprobieren von E-Mail-Adressen: max. 10 Versuche pro IP und Stunde
- * (Tabelle jsk_register_versuche, Migration 062). Fehlt die Tabelle noch, wird nicht gebremst.
+ * (Tabelle jsk_register_versuche, Migration 064). Fehlt die Tabelle noch, wird nicht gebremst.
  */
 function jskRegisterGebremst(PDO $db, string $ip): bool {
     try {
