@@ -268,7 +268,7 @@ function ep_docx_ansicht_schlossturm($section, array $plan, array $mitglieder, a
                 $table->addCell($nameW, ['valign' => 'center'] + ($offen ? $offenBg : []))->addText($offen ? 'offen' : $text, $offen ? ['size' => 7, 'italic' => true, 'color' => 'B91C1C'] : $fs, $p0);
                 foreach ($vereine as $v) {
                     // Kreuz beim zuständigen Verein; OK-Mitglieder mit «OK» statt «X» (wie im Original, Kennzeichen slots.ok, Migration 058)
-                    $x = $s && ($s['verein'] ?? 'msv') === $v && ($text !== '' || $v !== 'msv') ? ((int)($s['ok'] ?? 0) === 1 ? 'OK' : 'X') : '';
+                    $x = $s && ($s['verein'] ?? 'msv') === $v && ($text !== '' || $v !== 'msv') ? (ep_slot_ist_ok($s, $f) ? 'OK' : 'X') : '';
                     $table->addCell($xW, ['valign' => 'center'] + ($offen ? $offenBg : []))->addText($x, ['size' => $x === 'OK' ? 6.5 : 7.5, 'bold' => true], $mitte);
                 }
             }

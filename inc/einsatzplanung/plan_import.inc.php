@@ -198,6 +198,7 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
         ep_slots_sicherstellen($db, $planId);
     }
     $verknuepft = ep_legacy_verknuepfen($db, $planId);
+    ep_ok_stammliste_anwenden($db, $planId);   // dauerhafte OK-Personen (Migration 060) kennzeichnen
 
     return [
         'plan_id' => $planId, 'titel' => $titel, 'typ' => $typ, 'layout' => $layout,

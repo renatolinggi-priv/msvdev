@@ -52,6 +52,8 @@ try {
            ->execute([$verein, $mid > 0 ? $mid : null, $nameText !== '' ? $nameText : null, $bemerkung !== '' ? $bemerkung : null, $slotId]);
     }
     $ok = (int)($slot['ok'] ?? 0);
+    // Stammliste (Migration 060): Person ist dauerhaft OK → Kennzeichen setzen, auch ohne Parameter (Drag & Drop)
+    if ($okNeu === null && ($mid > 0 || $nameText !== '') && ep_ok_stamm_hat(ep_ok_stamm_laden($db), $mid, $nameText)) $okNeu = 1;
     if ($okNeu !== null) {
         try { $db->prepare("UPDATE einsatz_plan_slots SET ok = ? WHERE id = ?")->execute([$okNeu, $slotId]); $ok = $okNeu; }
         catch (Throwable $e) { /* vor Migration 058 */ }

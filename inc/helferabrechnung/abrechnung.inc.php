@@ -67,7 +67,8 @@ function ha_zuteilungen(array $plan, array $mitglieder, bool $okMitzaehlen = fal
         $ansatz    = ep_termin_stunden($t);
         $korrektur = ($s['stunden_korrektur'] ?? null) !== null && $s['stunden_korrektur'] !== '' ? round((float)$s['stunden_korrektur'], 2) : null;
         $anwesend  = $s['anwesend'] === null ? null : (int)$s['anwesend'];
-        $ok        = (int)($s['ok'] ?? 0) === 1;
+        $ok        = ep_slot_ist_ok($s, $f);                 // Position oder Funktion mit Rolle 'OK'
+        $okQuelle  = !$ok ? '' : (($f['rolle'] ?? '') === 'OK' ? 'funktion' : 'position');
         $grund = '';
         if ($anwesend === 0) $grund = 'nicht_da';
         elseif ($ok && !$okMitzaehlen) $grund = 'ok';
@@ -86,6 +87,7 @@ function ha_zuteilungen(array $plan, array $mitglieder, bool $okMitzaehlen = fal
             'verein'       => $s['verein'] ?? 'msv',
             'mitglied_id'  => (int)$s['mitglied_id'] ?: null,
             'ok'           => $ok,
+            'ok_quelle'    => $okQuelle,
             'anwesend'     => $anwesend,
             'korrektur'    => $korrektur,
             'bemerkung'    => (string)($s['bemerkung'] ?? ''),

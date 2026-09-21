@@ -20,7 +20,7 @@ $termineOpt = []; foreach ($plan['termine'] as $t) $termineOpt[(int)$t['id']] = 
         <?php if (!$a['zuteilungen']) echo msv_empty_row(10, 'Keine besetzten Positionen gefunden'); ?>
         <?php foreach ($a['zuteilungen'] as $z): ?>
         <tr class="hybrid-row js-slot <?= $z['zaehlt'] ? '' : 'ha-zero' ?>" id="slot<?= $z['slot_id'] ?>"
-            data-slot="<?= $z['slot_id'] ?>" data-verein="<?= $h($z['verein']) ?>" data-termin="<?= $z['termin_id'] ?>" data-ok="<?= $z['ok'] ? 1 : 0 ?>"
+            data-slot="<?= $z['slot_id'] ?>" data-verein="<?= $h($z['verein']) ?>" data-termin="<?= $z['termin_id'] ?>" data-ok="<?= $z['ok'] ? 1 : 0 ?>" data-okfn="<?= $z['ok_quelle'] === 'funktion' ? 1 : 0 ?>"
             data-anwesend="<?= $z['anwesend'] === null ? '' : $z['anwesend'] ?>" data-korrektur="<?= $z['korrektur'] === null ? '' : $h(ha_fmt($z['korrektur'])) ?>"
             data-bemerkung="<?= $h($z['bemerkung']) ?>" data-person="<?= $h($z['person']) ?>" data-funktion="<?= $h($z['funktion']) ?>" data-termin-label="<?= $h($z['termin_label']) ?>"
             data-grund="<?= $h($z['grund']) ?>" data-suche="<?= $h(mb_strtolower($z['person'] . ' ' . $z['funktion'])) ?>">
@@ -28,7 +28,7 @@ $termineOpt = []; foreach ($plan['termine'] as $t) $termineOpt[(int)$t['id']] = 
           <td><?= $h($z['funktion']) ?></td>
           <td class="fw-semibold"><?= $h($z['person']) ?></td>
           <td><span class="ha-v ha-v-<?= $h($z['verein']) ?>"><?= $h(EP_VEREINE[$z['verein']] ?? $z['verein']) ?></span></td>
-          <td class="text-center"><?php if ($z['ok']): ?><span class="badge bg-warning text-dark">OK</span><?php endif; ?></td>
+          <td class="text-center"><?php if ($z['ok']): ?><span class="badge bg-warning text-dark" data-tooltip="<?= $z['ok_quelle'] === 'funktion' ? 'über die Funktion (Rolle «OK»)' : 'Kennzeichen der Position' ?>">OK<?= $z['ok_quelle'] === 'funktion' ? '·F' : '' ?></span><?php endif; ?></td>
           <td class="text-center"><?php if ($z['anwesend'] === 1): ?><i class="bi bi-check-circle-fill text-success" data-tooltip="da"></i><?php elseif ($z['anwesend'] === 0): ?><i class="bi bi-x-circle-fill text-danger" data-tooltip="nicht da"></i><?php else: ?><i class="bi bi-dash-circle text-muted" data-tooltip="nicht erfasst"></i><?php endif; ?></td>
           <td class="text-end text-muted"><?= $h(ha_fmt($z['ansatz'])) ?></td>
           <td class="text-end"><?= $z['korrektur'] !== null ? $h(ha_fmt($z['korrektur'])) : '' ?></td>

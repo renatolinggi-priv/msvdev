@@ -20,7 +20,7 @@ const EP_TYPEN   = ['obligatorisch' => 'Obligatorisch', 'feldschiessen' => 'Feld
 const EP_LAYOUTS = ['funktion_x_termin' => 'Funktionen × Termine', 'person_x_schicht' => 'Personen × Schichten'];
 const EP_STATUS  = ['entwurf' => 'Entwurf', 'freigegeben' => 'Freigegeben', 'final' => 'Final'];
 /** Anfrage-Rollen (Personalanfrage / Umfrage). 'OK' = vom OK fest besetzt, keine automatische Einteilung. */
-const EP_ROLLEN  = ['Büro' => 'Büro', 'Schützenmeister' => 'Schützenmeister', 'Warner' => 'Warner', 'Türkontrolle' => 'Türkontrolle', 'Parkdienst' => 'Parkdienst', 'OK' => 'OK Schlossturm'];
+const EP_ROLLEN  = ['Büro' => 'Büro', 'Schützenmeister' => 'Schützenmeister', 'Warner' => 'Warner', 'Türkontrolle' => 'Türkontrolle', 'Parkdienst' => 'Parkdienst', 'OK' => 'OK Schlossturm (Positionen zählen als OK)'];
 const EP_QUELLEN = ['umfrage' => 'Umfrage', 'excel' => 'Excel', 'manuell' => 'manuell'];
 
 const EP_FUSSTEXT_DEFAULT = "Bei Verhinderung bitte SELBST für Ersatz oder Abtausch sorgen!\n"
@@ -265,6 +265,55 @@ function ep_termin_aus_text(array $plan, string $text): ?int
 function ep_slot_fix(array $slot): bool
 {
     return ep_slot_besetzt($slot) && (int)($slot['vorschlag'] ?? 0) === 0;
+}
+
+// ---------------------------------------------------------------------------
+//  OK-Mitglieder (Schlossturm, Helferabrechnung): drei Quellen
+//    1. Funktion mit Rolle 'OK' → alle Positionen zählen als OK (EDV/Anlage, Schiessleitung)
+//    2. Stammliste einsatz_ok_personen (Migration 060) → Person ist in jedem Plan OK (wird auf slots.ok übertragen)
+//    3. slots.ok je Position (Migration 058) – Import «OK» statt «x», Panel, Dialog «OK-Mitglieder»
+// ---------------------------------------------------------------------------
+
+/** Zählt die Position als OK? (slots.ok oder Funktion mit Rolle 'OK') */
+function ep_slot_ist_ok(array $slot, ?array $funktion = null): bool
+{
+    return (int)($slot['ok'] ?? 0) === 1 || ($funktion !== null && ($funktion['rolle'] ?? '') === 'OK');
+}
+
+/** Stammliste der OK-Personen: ['m' => [mitglied_id => bemerkung], 'n' => [name klein => bemerkung]]; leer vor Migration 060. */
+function ep_ok_stamm_laden(PDO $db): array
+{
+    $out = ['m' => [], 'n' => []];
+    try {
+        foreach ($db->query("SELECT mitglied_id, name_text, bemerkung FROM einsatz_ok_personen") as $r) {
+            if (!empty($r['mitglied_id'])) $out['m'][(int)$r['mitglied_id']] = (string)$r['bemerkung'];
+            elseif (trim((string)$r['name_text']) !== '') $out['n'][mb_strtolower(trim((string)$r['name_text']))] = (string)$r['bemerkung'];
+        }
+    } catch (Throwable $e) { /* Migration 060 noch nicht ausgeführt */ }
+    return $out;
+}
+
+/** Person in der Stammliste? */
+function ep_ok_stamm_hat(array $stamm, int $mitgliedId, string $nameText): bool
+{
+    if ($mitgliedId > 0) return isset($stamm['m'][$mitgliedId]);
+    $n = mb_strtolower(trim($nameText));
+    return $n !== '' && isset($stamm['n'][$n]);
+}
+
+/** Stammliste auf einen Plan anwenden: slots.ok = 1 für alle Positionen von Stamm-Personen. Rückgabe: geänderte Slots. */
+function ep_ok_stammliste_anwenden(PDO $db, int $planId): int
+{
+    $stamm = ep_ok_stamm_laden($db);
+    if (!$stamm['m'] && !$stamm['n']) return 0;
+    try {
+        $st = $db->prepare("SELECT id, mitglied_id, name_text FROM einsatz_plan_slots WHERE plan_id = ? AND ok = 0 AND (mitglied_id IS NOT NULL OR (name_text IS NOT NULL AND name_text <> ''))");
+        $st->execute([$planId]);
+        $ids = [];
+        foreach ($st->fetchAll() as $s) if (ep_ok_stamm_hat($stamm, (int)$s['mitglied_id'], (string)$s['name_text'])) $ids[] = (int)$s['id'];
+        if ($ids) $db->prepare("UPDATE einsatz_plan_slots SET ok = 1 WHERE id IN (" . implode(',', $ids) . ")")->execute();
+        return count($ids);
+    } catch (Throwable $e) { return 0; }   // vor Migration 058
 }
 
 /** Plan-Kopie ohne Vorschlags-Personen (für Word/PDF/Excel/Portal/Projektion). */
@@ -666,6 +715,7 @@ function ep_plan_kopieren(PDO $db, array $quelle, int $zielJahr, string $titel, 
             try { $db->prepare("UPDATE einsatz_plan_slots SET ok = 1 WHERE id = ?")->execute([(int)$db->lastInsertId()]); } catch (Throwable $e) {}
         }
     }
+    ep_ok_stammliste_anwenden($db, $neuId);   // dauerhafte OK-Personen (Migration 060)
     return $neuId;
 }
 

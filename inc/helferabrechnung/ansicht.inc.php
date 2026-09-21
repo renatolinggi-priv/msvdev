@@ -97,6 +97,7 @@
     <input class="form-check-input" type="checkbox" role="switch" id="sOk">
     <label class="form-check-label" for="sOk">OK-Position (Organisationskomitee)</label>
     <div class="form-text">Zählt nur mit dem Schalter «OK-Einsätze mitzählen». Im Original-Einsatzplan steht «OK» statt «x».</div>
+    <div class="form-text text-warning" id="sOkFn" style="display:none"><i class="bi bi-info-circle me-1"></i>Die Funktion dieser Position hat die Rolle «OK» – alle ihre Positionen zählen als OK (Funktionen-Dialog im Editor).</div>
   </div>
   <div class="mb-3">
     <label class="form-label small text-muted mb-1">Stundenkorrektur</label>
@@ -224,7 +225,8 @@ $(function () {
   $(document).on('click', '.js-slot', function () {
     const d = this.dataset;
     $('.hybrid-row').removeClass('selected'); $(this).addClass('selected');
-    $('#sSlot').val(d.slot); $('#sOk').prop('checked', d.ok === '1'); $('#sKorrektur').val(d.korrektur || ''); $('#sBemerkung').val(d.bemerkung || '');
+    $('#sSlot').val(d.slot); $('#sOk').prop('checked', d.ok === '1').prop('disabled', d.okfn === '1'); $('#sKorrektur').val(d.korrektur || ''); $('#sBemerkung').val(d.bemerkung || '');
+    $('#sOkFn').toggle(d.okfn === '1');
     $('#slotPanelTitel').text(d.person); $('#sInfo').text(d.terminLabel + ' · ' + d.funktion);
     Panel.open('slotPanel', 'slotOverlay');
   });
