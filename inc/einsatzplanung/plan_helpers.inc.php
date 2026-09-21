@@ -221,7 +221,8 @@ function ep_rolle_vorbelegung(string $bezeichnung, ?array $okFunktionen = null):
 {
     if ($okFunktionen !== null && in_array(ep_funktion_norm($bezeichnung), $okFunktionen, true)) return 'OK';   // Definition «immer vom OK besetzt»
     $b = mb_strtolower(trim($bezeichnung));
-    if (in_array($b, ['standblätter', 'kasse', 'munition', 'auszahlung', 'auszeichnungen'], true)) return 'Büro';
+    // Kurier und Znüni / Zvieri: normale Helferpositionen, aus dem Büro-Pool einteilen (Benutzerentscheid 21.09.2026, Migration 062)
+    if (in_array($b, ['standblätter', 'kasse', 'munition', 'auszahlung', 'auszeichnungen', 'kurier', 'znüni / zvieri', 'znüni/zvieri'], true)) return 'Büro';
     foreach (['Schützenmeister', 'Warner', 'Türkontrolle', 'Parkdienst'] as $k) if (str_contains($b, mb_strtolower($k))) return $k;
     return null;
 }
