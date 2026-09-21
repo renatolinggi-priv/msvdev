@@ -1,479 +1,169 @@
 <?php
-require_once __DIR__ . '/../debug_log.inc.php';
-// munitionskauf_api.php - Backend API für Munitionsbestellungen
-
-// Error handling - Fehler loggen aber nicht anzeigen
+/**
+ * inc/munitionskauf/munitionskauf_api.php – Backend der Munitionsbestellungen (PDO, seit 21.09.2026).
+ *
+ * GET  ?action=list_mitglieder                 → {success, data:[{id, Vorname, Name}]}
+ * POST ?action=save_bestellung  (JSON-Body)    → {success, message}
+ * GET  ?action=get_bestellungen&jahr&filter    → {success, data:[…], totals:{gp11_total, gp90_total, total_preis}}
+ * POST ?action=delete_bestellung (JSON {id})   → {success, message}
+ * GET  ?action=get_statistics&jahr             → {success, data:{today, week, month, year, top_buyers}}
+ * Zugriff nur Admin-Bereich (adminApiGuard), CSRF bei POST (Header X-CSRF-TOKEN, siehe munitionskauf.js).
+ * Preis: 50 Rappen pro Schuss (total_preis in Rappen, wie bisher).
+ */
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-
-// Set timezone to Swiss time - WICHTIG!
 date_default_timezone_set('Europe/Zurich');
 
-// Zentrale Session-Konfiguration (Cross-Subdomain Cookies, CSRF)
-require_once __DIR__ . '/../session_config.inc.php';
+require_once __DIR__ . '/../debug_log.inc.php';
+require_once __DIR__ . '/../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once __DIR__ . '/../csrf.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CSRF-TOKEN');
 
-// Helper function für JSON Response
-function jsonResponse($success, $data = null, $message = '') {
-    echo json_encode([
-        'success' => $success,
-        'data' => $data,
-        'message' => $message
-    ]);
+const MK_RAPPEN_PRO_SCHUSS = 50;
+
+/** JSON-Antwort {success, data, message} und Ende. */
+function jsonResponse(bool $success, $data = null, string $message = '', int $code = 200): void
+{
+    http_response_code($code);
+    echo json_encode(['success' => $success, 'data' => $data, 'message' => $message]);
     exit;
 }
 
-// Bei OPTIONS Request (Preflight) direkt beenden
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
+/** JSON-Body eines POST lesen (Fehler → 400). */
+function mkInput(): array
+{
+    $raw = file_get_contents('php://input');
+    msv_debug_log('munitionskauf', 'Received data: ' . $raw);
+    $input = json_decode($raw ?: '[]', true);
+    if (json_last_error() !== JSON_ERROR_NONE) jsonResponse(false, null, 'Ungültige Anfrage: ' . json_last_error_msg(), 400);
+    return is_array($input) ? $input : [];
+}
+
+/** Datumsbereich eines Filters (Kalenderwoche Mo–So, Monat) als [von, bis] oder null (ganzes Jahr). */
+function mkZeitraum(string $filter): ?array
+{
+    switch ($filter) {
+        case 'today': $t = date('Y-m-d'); return [$t, $t];
+        case 'week':
+            $tag = (int)date('N');   // 1 = Montag … 7 = Sonntag
+            return [date('Y-m-d', strtotime('-' . ($tag - 1) . ' days')), date('Y-m-d', strtotime('+' . (7 - $tag) . ' days'))];
+        case 'month': return [date('Y-m-01'), date('Y-m-t')];
+        default: return null;
+    }
 }
 
 try {
-    // Include database connection
-    $dbFile = __DIR__ . '/../dbconnect.inc.php';
-    
-    if (!file_exists($dbFile)) {
-        error_log("DB file not found at: " . $dbFile);
-        jsonResponse(false, null, 'Database configuration error');
-    }
-    
-    require_once $dbFile;
-require_once __DIR__ . '/../admin_api_guard.inc.php';
-adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
-    
-    // Prüfe Verbindung
-    if (!isset($conn)) {
-        error_log("Connection not initialized after including dbconnect");
-        jsonResponse(false, null, 'Database connection not initialized');
-    }
-    
-    if ($conn->connect_error) {
-        error_log("Database connection error: " . $conn->connect_error);
-        jsonResponse(false, null, 'Database connection failed');
-    }
-
-    // CSRF validation for POST requests (zentraler Helfer)
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        csrf_require(true);
-    }
-
-    // Get action
+    $db = getDB();
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') csrf_require(true);
     $action = $_GET['action'] ?? '';
 
     switch ($action) {
         case 'list_mitglieder':
-            listMitglieder();
-            break;
-            
+            $rows = $db->query("SELECT ID AS id, Vorname, Name FROM mitglieder WHERE Status = 1 ORDER BY Name, Vorname")->fetchAll();
+            jsonResponse(true, $rows);
+
         case 'save_bestellung':
-            saveBestellung();
-            break;
-            
-        case 'get_bestellungen':
-            getBestellungen();
-            break;
-            
-        case 'delete_bestellung':
-            deleteBestellung();
-            break;
-            
-        case 'get_statistics':
-            getStatistics();
-            break;
-            
-        default:
-            http_response_code(400);
-            jsonResponse(false, null, 'Invalid action');
-    }
+            $input      = mkInput();
+            $jahr       = (int)($input['jahr'] ?? date('Y'));
+            $kaufDatum  = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($input['kauf_datum'] ?? '')) ? $input['kauf_datum'] : date('Y-m-d');
+            $anlass     = mb_substr(trim((string)($input['anlass'] ?? '')), 0, 100);
+            $mitgliedId = (int)($input['mitglied_id'] ?? 0) ?: null;
+            $gastName   = mb_substr(trim((string)($input['gast_name'] ?? '')), 0, 100) ?: null;
+            $munition   = is_array($input['munition'] ?? null) ? $input['munition'] : [];
+            if (!$mitgliedId && !$gastName) jsonResponse(false, null, 'Kein Käufer angegeben', 422);
+            if (!$munition) jsonResponse(false, null, 'Keine Munition ausgewählt', 422);
 
-} catch (Exception $e) {
-    error_log("API Error in munitionskauf_api.php: " . $e->getMessage());
-    jsonResponse(false, null, 'Systemfehler: ' . $e->getMessage());
-}
-
-// === Functions ===
-
-function listMitglieder() {
-    global $conn;
-    
-    try {
-        $sql = "SELECT ID as id, Vorname, Name 
-                FROM mitglieder 
-                WHERE Status = 1 
-                ORDER BY Name, Vorname";
-        
-        $result = $conn->query($sql);
-        
-        if ($result) {
-            $mitglieder = [];
-            while ($row = $result->fetch_assoc()) {
-                $mitglieder[] = $row;
-            }
-            
-            jsonResponse(true, $mitglieder);
-        } else {
-            error_log('Query error in listMitglieder: ' . $conn->error);
-            jsonResponse(false, null, 'Database error');
-        }
-    } catch (Exception $e) {
-        error_log('Error in listMitglieder: ' . $e->getMessage());
-        jsonResponse(false, null, 'Error: ' . $e->getMessage());
-    }
-}
-
-function saveBestellung() {
-    global $conn;
-    
-    try {
-        // Get POST data
-        $raw_input = file_get_contents('php://input');
-        $input = json_decode($raw_input, true);
-        
-        // Debug logging
-        msv_debug_log('munitionskauf', 'Received data: ' . $raw_input);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Invalid JSON: ' . json_last_error_msg());
-        }
-        
-        $jahr = intval($input['jahr'] ?? date('Y'));
-        $kauf_datum = $conn->real_escape_string($input['kauf_datum'] ?? date('Y-m-d'));
-        $anlass = $conn->real_escape_string($input['anlass'] ?? '');
-        $mitglied_id = isset($input['mitglied_id']) ? intval($input['mitglied_id']) : null;
-        $gast_name = isset($input['gast_name']) ? $conn->real_escape_string($input['gast_name']) : null;
-        $munition = $input['munition'] ?? [];
-        
-        // Validation
-        if (!$mitglied_id && !$gast_name) {
-            jsonResponse(false, null, 'Kein Käufer angegeben');
-        }
-        
-        if (empty($munition)) {
-            jsonResponse(false, null, 'Keine Munition ausgewählt');
-        }
-        
-        // Calculate totals
-        $gp11_total = 0;
-        $gp90_total = 0;
-        $total_preis = 0;
-        
-        foreach ($munition as $item) {
-            $anzahl = intval($item['anzahl'] ?? 0);
-            $typ = $item['typ'] ?? '';
-            
-            if (strpos($typ, 'GP11') !== false) {
-                $gp11_total += $anzahl;
-            } elseif (strpos($typ, 'GP90') !== false) {
-                $gp90_total += $anzahl;
-            }
-            
-            $total_preis += $anzahl * 50; // 50 Rappen pro Schuss
-        }
-        
-        // Start transaction
-        $conn->begin_transaction();
-        
-        try {
-            // Insert main record
-            $sql = "INSERT INTO munitionskauf (
-                        jahr, kauf_datum, anlass, mitglied_id, gast_name, 
-                        gp11_total, gp90_total, total_preis, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-            
-            $stmt = $conn->prepare($sql);
-            
-            // Korrigierte bind_param Typen
-            if ($mitglied_id !== null) {
-                $stmt->bind_param('issisiid', 
-                    $jahr, $kauf_datum, $anlass, $mitglied_id, $gast_name,
-                    $gp11_total, $gp90_total, $total_preis
-                );
-            } else {
-                // Wenn mitglied_id null ist
-                $null_id = null;
-                $stmt->bind_param('issisiid', 
-                    $jahr, $kauf_datum, $anlass, $null_id, $gast_name,
-                    $gp11_total, $gp90_total, $total_preis
-                );
-            }
-            
-            if (!$stmt->execute()) {
-                throw new Exception('Failed to insert main record: ' . $stmt->error);
-            }
-            
-            $bestellung_id = $conn->insert_id;
-            
-            // Insert detail records
-            $sql = "INSERT INTO munitionskauf_details (bestellung_id, typ, anzahl, preis_pro_schuss) 
-                    VALUES (?, ?, ?, 50)";
-            
-            $stmt = $conn->prepare($sql);
-            
+            $gp11 = 0; $gp90 = 0; $total = 0; $details = [];
             foreach ($munition as $item) {
-                $typ = $item['typ'];
-                $anzahl = intval($item['anzahl']);
-                
-                $stmt->bind_param('isi', $bestellung_id, $typ, $anzahl);
-                
-                if (!$stmt->execute()) {
-                    throw new Exception('Failed to insert detail record: ' . $stmt->error);
-                }
+                $anzahl = (int)($item['anzahl'] ?? 0);
+                $typ    = mb_substr(trim((string)($item['typ'] ?? '')), 0, 50);
+                if ($anzahl <= 0 || $typ === '') continue;
+                if (str_contains($typ, 'GP11')) $gp11 += $anzahl; elseif (str_contains($typ, 'GP90')) $gp90 += $anzahl;
+                $total += $anzahl * MK_RAPPEN_PRO_SCHUSS;
+                $details[] = [$typ, $anzahl];
             }
-            
-            $conn->commit();
-            jsonResponse(true, null, 'Bestellung erfolgreich gespeichert');
-            
-        } catch (Exception $e) {
-            $conn->rollback();
-            error_log('Error in saveBestellung (transaction): ' . $e->getMessage());
-            jsonResponse(false, null, 'Fehler beim Speichern: ' . $e->getMessage());
-        }
-    } catch (Exception $e) {
-        error_log('Error in saveBestellung: ' . $e->getMessage());
-        jsonResponse(false, null, 'Error: ' . $e->getMessage());
-    }
-}
+            if (!$details) jsonResponse(false, null, 'Keine Munition ausgewählt', 422);
 
-function getBestellungen() {
-    global $conn;
-    
-    try {
-        $jahr = intval($_GET['jahr'] ?? date('Y'));
-        $filter = $_GET['filter'] ?? 'today';
-        
-        // Debug logging
-        msv_debug_log('munitionskauf', "getBestellungen - Jahr: $jahr, Filter: $filter");
-        
-        // Build date filter
-        $date_condition = '';
-        $today = date('Y-m-d');
-        
-        switch ($filter) {
-            case 'today':
-                $date_condition = "AND munitionskauf.kauf_datum = '$today'";
-                msv_debug_log('munitionskauf', "Today filter applied: $today");
-                break;
-                
-            case 'week':
-                // Korrigierte Wochenberechnung
-                $currentDayOfWeek = date('N'); // 1 (Monday) to 7 (Sunday)
-                $daysFromMonday = $currentDayOfWeek - 1;
-                $daysToSunday = 7 - $currentDayOfWeek;
-                
-                $week_start = date('Y-m-d', strtotime("-$daysFromMonday days"));
-                $week_end = date('Y-m-d', strtotime("+$daysToSunday days"));
-                $date_condition = "AND munitionskauf.kauf_datum BETWEEN '$week_start' AND '$week_end'";
-                msv_debug_log('munitionskauf', "Week filter applied: $week_start to $week_end");
-                break;
-                
-            case 'month':
-                $month_start = date('Y-m-01');
-                $month_end = date('Y-m-t');
-                $date_condition = "AND munitionskauf.kauf_datum BETWEEN '$month_start' AND '$month_end'";
-                msv_debug_log('munitionskauf', "Month filter applied: $month_start to $month_end");
-                break;
-                
-            case 'year':
-                // Jahr-Filter ist bereits in WHERE-Klausel
-                $date_condition = '';
-                msv_debug_log('munitionskauf', "Year filter applied: showing all for year $jahr");
-                break;
-                
-            default:
-                // Fallback: show all for year
-                $date_condition = '';
-                msv_debug_log('munitionskauf', "Unknown filter '$filter', showing all for year");
-                break;
-        }
-        
-        // Get bestellungen - KORRIGIERT: Entferne das falsche Alias "mk"
-        $sql = "SELECT munitionskauf.*, 
-                COALESCE(CONCAT(mitglieder.Name, ' ', mitglieder.Vorname), munitionskauf.gast_name) as kaeufer_name
-                FROM munitionskauf 
-                LEFT JOIN mitglieder ON munitionskauf.mitglied_id = mitglieder.ID
-                WHERE munitionskauf.jahr = ?
-                $date_condition
-                ORDER BY munitionskauf.kauf_datum DESC, munitionskauf.created_at DESC";
-        
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $conn->error);
-        }
-        
-        $stmt->bind_param('i', $jahr);
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
-        }
-        
-        $result = $stmt->get_result();
-        
-        $bestellungen = [];
-        while ($row = $result->fetch_assoc()) {
-            $bestellungen[] = $row;
-        }
-        
-        msv_debug_log('munitionskauf', "Found " . count($bestellungen) . " records for filter '$filter'");
-        
-        // Get totals - mit COALESCE für NULL-Werte
-        $sql = "SELECT 
-                COALESCE(SUM(gp11_total), 0) as gp11_total,
-                COALESCE(SUM(gp90_total), 0) as gp90_total,
-                COALESCE(SUM(total_preis), 0) as total_preis
-                FROM munitionskauf
-                WHERE jahr = ?
-                $date_condition";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $jahr);
-        $stmt->execute();
-        $totals = $stmt->get_result()->fetch_assoc();
-        
-        // Sicherstellen, dass Totals nie null sind
-        $totals = [
-            'gp11_total' => $totals['gp11_total'] ?? 0,
-            'gp90_total' => $totals['gp90_total'] ?? 0,
-            'total_preis' => $totals['total_preis'] ?? 0
-        ];
-        
-        // Behalte die ursprüngliche Struktur bei, da JS data.data erwartet
-        echo json_encode([
-            'success' => true,
-            'data' => $bestellungen,
-            'totals' => $totals
-        ]);
-        exit;
-    } catch (Exception $e) {
-        error_log('Error in getBestellungen: ' . $e->getMessage());
-        jsonResponse(false, null, 'Error: ' . $e->getMessage());
-    }
-}
+            $db->beginTransaction();
+            try {
+                $db->prepare("INSERT INTO munitionskauf (jahr, kauf_datum, anlass, mitglied_id, gast_name, gp11_total, gp90_total, total_preis, created_at)
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())")
+                   ->execute([$jahr, $kaufDatum, $anlass, $mitgliedId, $gastName, $gp11, $gp90, $total]);
+                $bestellungId = (int)$db->lastInsertId();
+                $ins = $db->prepare("INSERT INTO munitionskauf_details (bestellung_id, typ, anzahl, preis_pro_schuss) VALUES (?, ?, ?, ?)");
+                foreach ($details as [$typ, $anzahl]) $ins->execute([$bestellungId, $typ, $anzahl, MK_RAPPEN_PRO_SCHUSS]);
+                $db->commit();
+            } catch (Throwable $e) {
+                $db->rollBack();
+                throw $e;
+            }
+            jsonResponse(true, ['id' => $bestellungId], 'Bestellung erfolgreich gespeichert');
 
-function deleteBestellung() {
-    global $conn;
-    
-    try {
-        $input = json_decode(file_get_contents('php://input'), true);
-        $id = intval($input['id'] ?? 0);
-        
-        if (!$id) {
-            jsonResponse(false, null, 'Invalid ID');
-        }
-        
-        $conn->begin_transaction();
-        
-        // Delete details first
-        $sql = "DELETE FROM munitionskauf_details WHERE bestellung_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        
-        // Delete main record
-        $sql = "DELETE FROM munitionskauf WHERE id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        
-        if ($stmt->affected_rows > 0) {
-            $conn->commit();
+        case 'get_bestellungen':
+            $jahr   = (int)($_GET['jahr'] ?? date('Y'));
+            $filter = (string)($_GET['filter'] ?? 'today');
+            $zr     = mkZeitraum($filter);
+            msv_debug_log('munitionskauf', "getBestellungen - Jahr: $jahr, Filter: $filter" . ($zr ? " ({$zr[0]} bis {$zr[1]})" : ''));
+            $where  = 'munitionskauf.jahr = ?' . ($zr ? ' AND munitionskauf.kauf_datum BETWEEN ? AND ?' : '');
+            $params = $zr ? [$jahr, $zr[0], $zr[1]] : [$jahr];
+
+            $st = $db->prepare("SELECT munitionskauf.*, COALESCE(CONCAT(mitglieder.Name, ' ', mitglieder.Vorname), munitionskauf.gast_name) AS kaeufer_name
+                                FROM munitionskauf LEFT JOIN mitglieder ON munitionskauf.mitglied_id = mitglieder.ID
+                                WHERE $where ORDER BY munitionskauf.kauf_datum DESC, munitionskauf.created_at DESC");
+            $st->execute($params);
+            $bestellungen = $st->fetchAll();
+
+            $st = $db->prepare("SELECT COALESCE(SUM(gp11_total), 0) AS gp11_total, COALESCE(SUM(gp90_total), 0) AS gp90_total, COALESCE(SUM(total_preis), 0) AS total_preis
+                                FROM munitionskauf WHERE $where");
+            $st->execute($params);
+            $totals = $st->fetch() ?: [];
+            msv_debug_log('munitionskauf', 'Found ' . count($bestellungen) . " records for filter '$filter'");
+            // Struktur wie bisher: JS erwartet data (Liste) und totals auf oberster Ebene
+            echo json_encode(['success' => true, 'data' => $bestellungen,
+                              'totals' => ['gp11_total' => (int)($totals['gp11_total'] ?? 0), 'gp90_total' => (int)($totals['gp90_total'] ?? 0), 'total_preis' => (float)($totals['total_preis'] ?? 0)]]);
+            exit;
+
+        case 'delete_bestellung':
+            $id = (int)(mkInput()['id'] ?? 0);
+            if ($id <= 0) jsonResponse(false, null, 'Ungültige ID', 422);
+            $db->beginTransaction();
+            try {
+                $db->prepare("DELETE FROM munitionskauf_details WHERE bestellung_id = ?")->execute([$id]);
+                $st = $db->prepare("DELETE FROM munitionskauf WHERE id = ?");
+                $st->execute([$id]);
+                if ($st->rowCount() === 0) { $db->rollBack(); jsonResponse(false, null, 'Bestellung nicht gefunden', 404); }
+                $db->commit();
+            } catch (Throwable $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                throw $e;
+            }
             jsonResponse(true, null, 'Bestellung gelöscht');
-        } else {
-            throw new Exception('Bestellung nicht gefunden');
-        }
-        
-    } catch (Exception $e) {
-        $conn->rollback();
-        error_log('Error in deleteBestellung: ' . $e->getMessage());
-        jsonResponse(false, null, $e->getMessage());
-    }
-}
 
-function getStatistics() {
-    global $conn;
-    
-    try {
-        $jahr = intval($_GET['jahr'] ?? date('Y'));
-        
-        $stats = [];
-        
-        // Today
-        $today = date('Y-m-d');
-        $sql = "SELECT COALESCE(SUM(total_preis), 0) as total 
-                FROM munitionskauf 
-                WHERE kauf_datum = ? AND jahr = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('si', $today, $jahr);
-        $stmt->execute();
-        $stats['today'] = $stmt->get_result()->fetch_assoc()['total'];
-        
-        // This week - korrigierte Berechnung
-        $currentDayOfWeek = date('N');
-        $daysFromMonday = $currentDayOfWeek - 1;
-        $daysToSunday = 7 - $currentDayOfWeek;
-        
-        $week_start = date('Y-m-d', strtotime("-$daysFromMonday days"));
-        $week_end = date('Y-m-d', strtotime("+$daysToSunday days"));
-        
-        $sql = "SELECT COALESCE(SUM(total_preis), 0) as total 
-                FROM munitionskauf 
-                WHERE kauf_datum BETWEEN ? AND ? AND jahr = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('ssi', $week_start, $week_end, $jahr);
-        $stmt->execute();
-        $stats['week'] = $stmt->get_result()->fetch_assoc()['total'];
-        
-        // This month
-        $month_start = date('Y-m-01');
-        $month_end = date('Y-m-t');
-        $sql = "SELECT COALESCE(SUM(total_preis), 0) as total 
-                FROM munitionskauf 
-                WHERE kauf_datum BETWEEN ? AND ? AND jahr = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('ssi', $month_start, $month_end, $jahr);
-        $stmt->execute();
-        $stats['month'] = $stmt->get_result()->fetch_assoc()['total'];
-        
-        // Year total
-        $sql = "SELECT COALESCE(SUM(total_preis), 0) as total 
-                FROM munitionskauf 
-                WHERE jahr = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $jahr);
-        $stmt->execute();
-        $stats['year'] = $stmt->get_result()->fetch_assoc()['total'];
-        
-        // Top buyers
-        $sql = "SELECT 
-                COALESCE(CONCAT(mitglieder.Name, ' ', mitglieder.Vorname), munitionskauf.gast_name) as name,
-                SUM(munitionskauf.total_preis) as total
-                FROM munitionskauf 
-                LEFT JOIN mitglieder ON munitionskauf.mitglied_id = mitglieder.ID
-                WHERE munitionskauf.jahr = ?
-                GROUP BY munitionskauf.mitglied_id, munitionskauf.gast_name, mitglieder.Name, mitglieder.Vorname
-                ORDER BY total DESC
-                LIMIT 5";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $jahr);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $top_buyers = [];
-        while ($row = $result->fetch_assoc()) {
-            $top_buyers[] = $row;
-        }
-        
-        $stats['top_buyers'] = $top_buyers;
-        
-        jsonResponse(true, $stats);
-    } catch (Exception $e) {
-        error_log('Error in getStatistics: ' . $e->getMessage());
-        jsonResponse(false, null, 'Error: ' . $e->getMessage());
+        case 'get_statistics':
+            $jahr  = (int)($_GET['jahr'] ?? date('Y'));
+            $summe = function (?array $zr) use ($db, $jahr): float {
+                $st = $db->prepare("SELECT COALESCE(SUM(total_preis), 0) FROM munitionskauf WHERE jahr = ?" . ($zr ? ' AND kauf_datum BETWEEN ? AND ?' : ''));
+                $st->execute($zr ? [$jahr, $zr[0], $zr[1]] : [$jahr]);
+                return (float)$st->fetchColumn();
+            };
+            $stats = ['today' => $summe(mkZeitraum('today')), 'week' => $summe(mkZeitraum('week')), 'month' => $summe(mkZeitraum('month')), 'year' => $summe(null)];
+            $st = $db->prepare("SELECT COALESCE(CONCAT(mitglieder.Name, ' ', mitglieder.Vorname), munitionskauf.gast_name) AS name, SUM(munitionskauf.total_preis) AS total
+                                FROM munitionskauf LEFT JOIN mitglieder ON munitionskauf.mitglied_id = mitglieder.ID
+                                WHERE munitionskauf.jahr = ?
+                                GROUP BY munitionskauf.mitglied_id, munitionskauf.gast_name, mitglieder.Name, mitglieder.Vorname
+                                ORDER BY total DESC LIMIT 5");
+            $st->execute([$jahr]);
+            $stats['top_buyers'] = $st->fetchAll();
+            jsonResponse(true, $stats);
+
+        default:
+            jsonResponse(false, null, 'Ungültige Aktion', 400);
     }
+} catch (Throwable $e) {
+    error_log('[munitionskauf_api] ' . $e->getMessage());
+    jsonResponse(false, null, 'Systemfehler beim Verarbeiten der Anfrage', 500);
 }
-?>
