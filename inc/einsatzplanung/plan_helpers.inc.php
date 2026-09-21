@@ -382,17 +382,32 @@ function ep_zeit_text(array $t): string
 function ep_termin_stunden(array $t): float
 {
     if (isset($t['pauschale_std']) && $t['pauschale_std'] !== '') return round((float)$t['pauschale_std'], 2);
-    if (empty($t['zeit_von']) || empty($t['zeit_bis'])) return 0.0;
-    $d = (strtotime($t['zeit_bis']) - strtotime($t['zeit_von'])) / 3600;
-    if ($d < 0) $d += 24;
-    return round($d, 2);
+    return ep_termin_dauer($t);
 }
 
-/** Schichtdauer rein aus zeit_von/zeit_bis (ohne Pauschale) – für die Anzeige «Ist-Dauer» im Tab Ansätze. */
+/** Schichtende bei offenen Chilbi-Angaben («17:00-fertig», «19:45-Ende»): fertig = 04:00 Uhr (Benutzerentscheid 21.09.2026). */
+const EP_SCHICHTENDE_OFFEN = '04:00';
+
+/**
+ * Schichtdauer in Stunden aus zeit_von/zeit_bis; fehlen die Zeiten (Chilbi speichert nur zeit_text), wird der Text
+ * gelesen: «16:00-19:00» → 3.0, «17:00-fertig»/«19:45-Ende» → bis EP_SCHICHTENDE_OFFEN (11.0 bzw. 8.25).
+ * Mitternachtsüberlauf +24 h. 0 ohne verwertbare Angabe. Ohne Pauschale – für «Ist-Dauer» und als Basis von ep_termin_stunden().
+ */
 function ep_termin_dauer(array $t): float
 {
-    if (empty($t['zeit_von']) || empty($t['zeit_bis'])) return 0.0;
-    $d = (strtotime($t['zeit_bis']) - strtotime($t['zeit_von'])) / 3600;
+    $von = !empty($t['zeit_von']) ? substr((string)$t['zeit_von'], 0, 5) : null;
+    $bis = !empty($t['zeit_bis']) ? substr((string)$t['zeit_bis'], 0, 5) : null;
+    if ($von === null || $bis === null) {
+        $txt = trim((string)($t['zeit_text'] ?? ''));
+        if (preg_match('/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/u', $txt, $m)) {
+            $von = sprintf('%02d:%02d', $m[1], $m[2]); $bis = sprintf('%02d:%02d', $m[3], $m[4]);
+        } elseif (preg_match('/(\d{1,2})[:.](\d{2})\s*[-–]\s*(fertig|ende|schluss|open)/iu', $txt, $m)) {
+            $von = sprintf('%02d:%02d', $m[1], $m[2]); $bis = EP_SCHICHTENDE_OFFEN;
+        } else {
+            return 0.0;
+        }
+    }
+    $d = (strtotime($bis) - strtotime($von)) / 3600;
     if ($d < 0) $d += 24;
     return round($d, 2);
 }

@@ -4,7 +4,8 @@ $gruppen = ['vorarbeit' => [], 'ok_funktion' => [], 'einsatz' => []];
 foreach ($a['manuell'] as $z) $gruppen[$z['kategorie']][] = $z;
 $titel = ['vorarbeit' => ['Vor- & Nacharbeiten', 'bi-tools'], 'ok_funktion' => ['OK-Funktionen', 'bi-award'], 'einsatz' => ['Nachträge zu Einsätzen', 'bi-plus-circle']];
 ?>
-<div class="d-flex justify-content-end mb-2">
+<div class="d-flex justify-content-end gap-2 mb-2">
+  <button type="button" class="btn btn-outline-primary btn-sm js-zeile-vorjahr" data-tooltip="Vor-/Nacharbeiten und OK-Funktionen des letzten Schlossturm-Plans übernehmen (Stunden als Startwert, Nachträge nicht)"><i class="bi bi-arrow-repeat me-1"></i>Aus Vorjahr übernehmen</button>
   <button type="button" class="btn btn-outline-success btn-sm js-zeile-neu"><i class="bi bi-plus-lg me-1"></i>Neue Zeile</button>
 </div>
 <?php foreach ($gruppen as $kat => $zeilen): [$lbl, $icon] = $titel[$kat]; $sum = array_sum(array_column($zeilen, 'stunden')); ?>

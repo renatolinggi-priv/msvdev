@@ -184,6 +184,21 @@ $(function () {
   $('#zMitglied').on('change', function () { if (Number(this.value) > 0) $('#zName').val(''); });
   $('#zName').on('input', function () { if (this.value.trim() !== '') $('#zMitglied').val(0); });
   $('.js-zeile-neu').on('click', () => zeileOeffnen({}));
+  // Vor-/Nacharbeiten und OK-Funktionen aus dem letzten Schlossturm-Plan übernehmen (Vorschau → Bestätigung → Kopie)
+  $('.js-zeile-vorjahr').on('click', function () {
+    const $b = $(this);
+    $.getJSON(haPath + 'zeile_copy.php', { plan_id: PLAN_ID }).done(r => {
+      if (!r || !r.success) { msvToast((r && r.message) || 'Vorschau fehlgeschlagen', 'error'); return; }
+      if (!r.quelle) { msvToast('Kein früherer Schlossturm-Plan mit manuellen Zeilen gefunden', 'info'); return; }
+      msvConfirm(r.quelle.anzahl + ' Zeile(n) aus «' + r.quelle.titel + '» (' + r.quelle.jahr + ') übernehmen? Stunden werden als Startwert kopiert, bereits vorhandene Zeilen (gleiche Tätigkeit und Person) übersprungen.', 'Aus Vorjahr übernehmen', 'Ja, übernehmen')
+        .then(res => {
+          if (!res || !res.isConfirmed) return;
+          $b.prop('disabled', true);
+          post('zeile_copy.php', { quelle_id: r.quelle.id }, rr => { msvToast(rr.message, 'success'); reloadKeepTab(600); }, 'Übernahme fehlgeschlagen');
+          $b.prop('disabled', false);
+        });
+    }).fail(xhr => msvToast(msvXhrMessage(xhr, 'Vorschau fehlgeschlagen'), 'error'));
+  });
   $(document).on('click', '.js-zeile', function (e) {
     if (e.target.closest('button')) return;
     $('.hybrid-row').removeClass('selected'); $(this).addClass('selected');

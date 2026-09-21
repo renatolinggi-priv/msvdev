@@ -8,6 +8,24 @@
         "beschreibung": "Neue Ansicht «Abrechnung» im Einsatzplan-Editor (Umschalter Planung / Abrechnung bei Schlossturm-Plänen): Die Helferstunden pro Verein (SV Freienbach, MSV Wilen, SV Wollerau) werden direkt aus dem Schlossturm-Einsatzplan gerechnet – die bisherige Excel-Mappe wird nicht mehr von Hand geführt. Je Schicht wird eine Pauschale hinterlegt (Samstag 5, Sonntag 3 Stunden, Vorschlag per Klick), OK-Positionen werden getrennt ausgewiesen und nur auf Wunsch mitgezählt, einzelne Positionen lassen sich mit einer Stundenkorrektur und Bemerkung versehen. Vor- und Nacharbeiten, OK-Funktionen und Nachträge werden als manuelle Zeilen erfasst. Wer bei der Anwesenheit als «nicht da» markiert ist, erhält keine Stunden; nicht erfasste Anwesenheit zählt gemäss Plan. Ausgabe als Excel in der bisherigen Arbeitsmappe «Helferstunden» (alle sieben Blätter inklusive Formeln, Abbild der Einsatzliste und Korrekturenliste; die Mappe rechnet in Excel weiter) und als PDF quer. Beim Import der OK-Einsatzliste wird «OK» in der Vereinsspalte neu als OK-Kennzeichen übernommen, Positionen ohne Kreuz erhalten die Bemerkung «Verein unklar». Die Auswertung «Std. da» im Einsatzplan rechnet neu ebenfalls mit der Pauschale, wo eine gesetzt ist. Datenbank-Aktualisierung 058 und 059 nötig.",
         "typ": "neu",
         "admin_only": true
+      },
+      {
+        "titel": "OK-Kennzeichen im Einsatzplan und im Word, Vorjahr-Übernahme der manuellen Zeilen",
+        "beschreibung": "Das OK-Kennzeichen lässt sich bei Schlossturm-Plänen direkt im Positions-Panel des Editors setzen; OK-Positionen tragen im Raster ein kleines «OK». Der Word-Export der Schlossturm-Liste druckt bei diesen Positionen «OK» statt «X» – das Dokument entspricht damit wieder dem Original und ein späterer Import erkennt die OK-Mitglieder. In der Abrechnung übernimmt «Aus Vorjahr übernehmen» die Vor-/Nacharbeiten und OK-Funktionen des letzten Schlossturm-Plans als Startwerte (Bemerkung mit Vorjahreswert), Nachträge werden nicht kopiert.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Chilbi-Schichten mit offenem Ende zählen Stunden",
+        "beschreibung": "Schichten wie «17:00-fertig» oder «19:45-Ende» ergaben in der Anwesenheits-Auswertung und der Helferstunden-Box bisher 0 Stunden. Neu gilt für ein offenes Ende 04:00 Uhr (17:00-fertig = 11 Std., 19:45-Ende = 8.25 Std.); Angaben wie «16:00-19:00» werden direkt aus dem Text gelesen.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Munitionskauf-Backend auf PDO umgestellt",
+        "beschreibung": "Die Munitionsbestellungen liefen als letzter Endpunkt noch über die alte Datenbankschicht mit teils zusammengesetzten Abfragen. Neu durchgehend vorbereitete Abfragen, gleiche Schnittstelle für die Seite, Wochen-/Monatsfilter in einer gemeinsamen Funktion.",
+        "typ": "fix",
+        "admin_only": true
       }
     ]
   },

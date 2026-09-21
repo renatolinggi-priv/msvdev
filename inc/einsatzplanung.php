@@ -242,6 +242,7 @@ $page_specific_css = <<<'CSS'
 .ep-preview td, .ep-preview th { font-size: .8rem; }
 #epMitgliedFilter { margin-bottom: .3rem; }
 .ep-hint { font-size: .78rem; color: #94a3b8; }
+.ep-chip .ep-ok { font-size: .55rem; font-weight: 700; line-height: 1.1; background: #fde68a; color: #7c2d12; border-radius: .3rem; padding: 0 .2rem; margin-left: .15rem; }
 CSS;
 if ($ansichtAbr) $page_specific_css .= "\n" . require __DIR__ . '/helferabrechnung/ansicht_css.inc.php';
 
@@ -539,9 +540,10 @@ $page_show_mobile = true;
                         $flabel = $flabelBase . ($istA && $anzMax > 1 ? ' (' . $pos . ')' : '');
                     ?>
                       <button type="button" class="<?= $cls ?>" data-slot="<?= (int)$s['id'] ?>" data-verein="<?= $h($s['verein']) ?>" data-mid="<?= (int)$s['mitglied_id'] ?>" data-vorschlag="<?= (int)($s['vorschlag'] ?? 0) ?>"
-                              data-name="<?= $h($s['name_text']) ?>" data-bem="<?= $h($s['bemerkung']) ?>" data-warn="<?= $warn ?>"
+                              data-name="<?= $h($s['name_text']) ?>" data-bem="<?= $h($s['bemerkung']) ?>" data-warn="<?= $warn ?>" data-ok="<?= (int)($s['ok'] ?? 0) ?>"
                               data-funktion="<?= $h($flabel) ?>" data-termin="<?= $h($tlabel) ?>">
                         <span class="ep-dot"></span><span class="ep-txt"<?= $eng && $text !== '' ? ' data-tooltip="' . $h($text) . '"' : '' ?>><?= $text !== '' ? $h($text) : 'offen' ?></span>
+                        <?php if ((int)($s['ok'] ?? 0) === 1): ?><span class="ep-ok" data-tooltip="OK-Mitglied">OK</span><?php endif; ?>
                         <?php if (trim((string)$s['bemerkung']) !== ''): ?><i class="bi bi-chat-left-text ep-bem" data-tooltip="<?= $h($s['bemerkung']) ?>"></i><?php endif; ?>
                         <?php if ($s['anwesend'] !== null): ?><i class="bi <?= (int)$s['anwesend'] === 1 ? 'bi-check-circle-fill ep-anw ep-anw-da' : 'bi-x-circle-fill ep-anw ep-anw-nein' ?>" data-tooltip="<?= (int)$s['anwesend'] === 1 ? 'anwesend' : 'nicht erschienen' ?>"></i><?php endif; ?>
                       </button>
@@ -590,9 +592,9 @@ $page_show_mobile = true;
     <div class="mb-3<?= $istA ? '' : ' d-none' ?>">
       <label class="panel-label d-block">Verein</label>
       <div class="btn-group btn-group-sm w-100" role="group" id="epVerein">
-        <input type="radio" class="btn-check" name="epVerein" id="epVereinMsv" value="msv"><label class="btn btn-outline-secondary" for="epVereinMsv">MSV Wilen</label>
-        <input type="radio" class="btn-check" name="epVerein" id="epVereinFb" value="freienbach"><label class="btn btn-outline-secondary" for="epVereinFb">SV Freienbach</label>
-        <input type="radio" class="btn-check" name="epVerein" id="epVereinWo" value="wollerau"><label class="btn btn-outline-secondary" for="epVereinWo">SV Wollerau</label>
+        <?php foreach (EP_VEREINE as $vk => $vl): ?>
+        <input type="radio" class="btn-check" name="epVerein" id="epVerein_<?= $vk ?>" value="<?= $vk ?>"><label class="btn btn-outline-secondary" for="epVerein_<?= $vk ?>"><?= $h($vl) ?></label>
+        <?php endforeach; ?>
       </div>
     </div>
     <div class="mb-3" id="epMitgliedBlock">
@@ -614,6 +616,12 @@ $page_show_mobile = true;
       <label class="panel-label" for="epBemerkung">Bemerkung</label>
       <input type="text" class="form-control form-control-sm" id="epBemerkung" maxlength="100">
     </div>
+    <?php if ($plan['typ'] === 'schlossturm'): ?>
+    <div class="form-check form-switch mb-3" data-tooltip="Im Original-Einsatzplan «OK» statt «x»; zählt in der Helferabrechnung nur mit dem Schalter «OK-Einsätze mitzählen»">
+      <input class="form-check-input" type="checkbox" role="switch" id="epOk">
+      <label class="form-check-label" for="epOk">OK-Mitglied (Organisationskomitee)</label>
+    </div>
+    <?php endif; ?>
     <div class="d-flex gap-2 flex-wrap">
       <button type="button" class="btn btn-outline-success btn-sm d-none" id="epSlotVorschlagOk" data-tooltip="Diesen Einteilungs-Vorschlag als fest übernehmen"><i class="bi bi-check2 me-1"></i>Vorschlag übernehmen</button>
       <button type="button" class="btn btn-outline-<?= $istA ? 'secondary' : 'danger' ?> btn-sm" id="epSlotLeeren"><i class="bi bi-<?= $istA ? 'eraser' : 'trash' ?> me-1"></i><?= $istA ? 'Leeren' : 'Position entfernen' ?></button>
@@ -950,6 +958,7 @@ $(function () {
   const basePath = (/\/inc(\/|$)/.test(location.pathname)) ? 'einsatzplanung/' : 'inc/einsatzplanung/';
   const CSRF = document.getElementById('csrfToken').value;
   const PLAN_ID = <?= $planId ?>;
+  const EP_VEREINE_JS = <?= json_encode(EP_VEREINE) ?>;   // Vereins-Labels zentral aus plan_helpers (EP_VEREINE)
   const post = (file, data, ok, failMsg) => msvPost(basePath + file, Object.assign({ plan_id: PLAN_ID }, data || {}), ok, { csrf: CSRF, failMsg });
 
   // ---------- Export (Liste + Editor) ----------
@@ -971,7 +980,7 @@ $(function () {
     new bootstrap.Modal(document.getElementById('epAuswModal')).show();
     $.getJSON(basePath + 'anwesenheit_auswertung.php', q).done(r => {
       if (!r || !r.success) { $('#epAuswBody').html('<div class="alert alert-warning small">' + msvEsc((r && r.message) || 'Fehler') + '</div>'); return; }
-      const V = { msv: 'MSV Wilen', freienbach: 'SV Freienbach', wollerau: 'SV Wollerau' };
+      const V = EP_VEREINE_JS;
       const zelle = (n, cls) => '<td class="num ' + (cls || '') + '">' + n + '</td>';
       let html = '<div class="row g-3"><div class="col-lg-5"><h6 class="small text-uppercase text-muted mb-1">Je Verein</h6><table class="table table-sm table-bordered ep-ausw-table mb-3"><thead><tr><th>Verein</th><th>eingeteilt</th><th>da</th><th>nicht da</th><th>offen</th><th>Std. da</th></tr></thead><tbody>';
       Object.keys(r.vereine).forEach(v => { const z = r.vereine[v]; html += '<tr><td>' + V[v] + '</td>' + zelle(z.eingeteilt) + zelle(z.da) + zelle(z.nein, z.nein ? 'ep-fehlt' : '') + zelle(z.offen) + zelle(z.stunden_da.toLocaleString('de-CH')) + '</tr>'; });
@@ -1228,7 +1237,7 @@ $(function () {
 
   // Neuen Chip in eine Zelle einsetzen (vor Platzhalter/«+»), aus dem Server-Payload befüllen
   function chipEinsetzen($td, s) {
-    const $chip = $('<button type="button" class="ep-chip ep-v-msv ep-offen" data-mid="0" data-verein="msv" data-name="" data-bem=""><span class="ep-dot"></span><span class="ep-txt"></span></button>');
+    const $chip = $('<button type="button" class="ep-chip ep-v-msv ep-offen" data-mid="0" data-verein="msv" data-name="" data-bem="" data-ok="0"><span class="ep-dot"></span><span class="ep-txt"></span></button>');
     $chip.attr({ 'data-slot': s.id, 'data-funktion': $td.attr('data-flabel'), 'data-termin': $td.attr('data-tlabel') });
     const $anker = $td.children('.ep-ph, .ep-add').first();
     if ($anker.length) $chip.insertBefore($anker); else $td.append($chip);
@@ -1336,6 +1345,7 @@ $(function () {
       $('#epMitgliedFilter').val('').trigger('input');
       $('#epNameText').val(d.name || '');
       $('#epBemerkung').val(d.bem || '');
+      $('#epOk').prop('checked', d.ok === '1');
       this.vereinUi(d.verein);
       $('#epSlotLeeren').show();
       $('#epSlotVorschlagOk').toggleClass('d-none', d.vorschlag !== '1');
@@ -1348,7 +1358,7 @@ $(function () {
       $('#epSlotTermin').text(this.$addTd.attr('data-tlabel'));
       $('input[name=epVerein][value="msv"]').prop('checked', true);
       $('#epMitglied').val('0'); $('#epMitgliedFilter').val('').trigger('input');
-      $('#epNameText').val(''); $('#epBemerkung').val('');
+      $('#epNameText').val(''); $('#epBemerkung').val(''); $('#epOk').prop('checked', false);
       this.vereinUi('msv');
       $('#epSlotLeeren').hide(); $('#epSlotVorschlagOk').addClass('d-none');
       $('.ep-chip').removeClass('selected'); this.$addTd.children('.ep-add').addClass('selected');
@@ -1374,8 +1384,10 @@ $(function () {
       if (!this.$chip) return;
       const $chip = this.$chip;
       const verein = $('input[name=epVerein]:checked').val() || 'msv';
-      post('slot_save.php', { slot_id: $chip.data('slot'), verein, mitglied_id: verein === 'msv' ? ($('#epMitglied').val() || 0) : 0,
-        name_text: $('#epNameText').val(), bemerkung: $('#epBemerkung').val() }, r => {
+      const daten = { slot_id: $chip.data('slot'), verein, mitglied_id: verein === 'msv' ? ($('#epMitglied').val() || 0) : 0,
+        name_text: $('#epNameText').val(), bemerkung: $('#epBemerkung').val() };
+      if ($('#epOk').length) daten.ok = $('#epOk').is(':checked') ? 1 : 0;   // OK-Kennzeichen nur bei Schlossturm-Plänen im Panel
+      post('slot_save.php', daten, r => {
           applySlotToChip($chip, r.slot);
           if (r.slot.mitglied_id) $('#epNameText').val('');
           if (r.slot.warnung) msvToast('Mitglied ist ' + r.slot.warnung + ' – bitte prüfen', 'warning');
@@ -1394,7 +1406,9 @@ $(function () {
          .addClass('ep-v-' + s.verein).addClass(s.besetzt ? 'ep-besetzt' : 'ep-offen').toggleClass('ep-warn', !!s.warnung);
     $chip.find('.ep-txt').text(s.anzeige || 'offen');
     if ($('#epGrid').hasClass('ep-eng')) $chip.find('.ep-txt').attr('data-tooltip', s.anzeige || null);   // Kompaktmodus: voller Name im Tooltip
-    $chip.find('.ep-bem').remove();
+    $chip.find('.ep-bem, .ep-ok').remove();
+    if (s.ok) $chip.append('<span class="ep-ok" data-tooltip="OK-Mitglied">OK</span>');
+    $chip.attr('data-ok', s.ok ? '1' : '0');
     if (s.bemerkung) $chip.append('<i class="bi bi-chat-left-text ep-bem" data-tooltip="' + msvEsc(s.bemerkung) + '"></i>');
     const neuName = chipExternName($chip);
     $chip.attr('draggable', (s.mitglied_id || neuName) ? 'true' : 'false');
@@ -1498,7 +1512,7 @@ $(function () {
 
 <?php if ($plan && !$ansichtAbr && $plan['termine']): ?>
   // ---------- Anwesenheit erfassen (Desktop-Dialog; Daten aus den Chips, API wie im Portal; alle Layouts) ----------
-  const VEREIN_LABEL = { msv: 'MSV Wilen', freienbach: 'SV Freienbach', wollerau: 'SV Wollerau' };
+  const VEREIN_LABEL = EP_VEREINE_JS;
   let anwTermin = 0;
   function chipAnwSetzen($chip, wert) {
     $chip.find('.ep-anw').remove();

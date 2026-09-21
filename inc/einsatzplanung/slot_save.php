@@ -2,9 +2,11 @@
 /**
  * inc/einsatzplanung/slot_save.php – eine Position (Slot) im Layout Funktionen × Termine setzen.
  *
- * POST plan_id, slot_id, verein=msv|freienbach|wollerau, mitglied_id (0 = keins), name_text, bemerkung
+ * POST plan_id, slot_id, verein=msv|freienbach|wollerau, mitglied_id (0 = keins), name_text, bemerkung, [ok=0|1]
  * Regeln: Fremdverein → mitglied_id wird verworfen (Name als Klartext); MSV mit Mitglied → name_text leer.
- * Antwort: {success, slot:{id, verein, mitglied_id, name_text, bemerkung, anzeige, besetzt, warnung}}
+ *         ok (OK-Mitglied, Helferabrechnung/Migration 058) wird nur geändert, wenn der Parameter mitkommt
+ *         (Drag & Drop schickt ihn nicht) – vor Migration 058 wird er ignoriert.
+ * Antwort: {success, slot:{id, verein, mitglied_id, name_text, bemerkung, ok, anzeige, besetzt, warnung}}
  */
 require_once __DIR__ . '/../dbconnect.inc.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
@@ -30,6 +32,7 @@ if (!isset(EP_VEREINE[$verein])) ep_json(['success' => false, 'message' => 'Ung�
 $mid       = (int)($_POST['mitglied_id'] ?? 0);
 $nameText  = mb_substr(trim((string)($_POST['name_text'] ?? '')), 0, 100);
 $bemerkung = mb_substr(trim((string)($_POST['bemerkung'] ?? '')), 0, 100);
+$okNeu     = array_key_exists('ok', $_POST) ? ((int)$_POST['ok'] === 1 ? 1 : 0) : null;
 
 $mitglieder = ep_mitglieder_map($db);
 if ($verein !== 'msv') {
@@ -48,10 +51,15 @@ try {
         $db->prepare("UPDATE einsatz_plan_slots SET verein = ?, mitglied_id = ?, name_text = ?, bemerkung = ? WHERE id = ?")
            ->execute([$verein, $mid > 0 ? $mid : null, $nameText !== '' ? $nameText : null, $bemerkung !== '' ? $bemerkung : null, $slotId]);
     }
+    $ok = (int)($slot['ok'] ?? 0);
+    if ($okNeu !== null) {
+        try { $db->prepare("UPDATE einsatz_plan_slots SET ok = ? WHERE id = ?")->execute([$okNeu, $slotId]); $ok = $okNeu; }
+        catch (Throwable $e) { /* vor Migration 058 */ }
+    }
     $slot['vorschlag'] = 0;
     ep_projizieren_wenn_freigegeben($db, $planId);
 
-    $slot = array_merge($slot, ['verein' => $verein, 'mitglied_id' => $mid ?: null, 'name_text' => $nameText ?: null, 'bemerkung' => $bemerkung ?: null]);
+    $slot = array_merge($slot, ['verein' => $verein, 'mitglied_id' => $mid ?: null, 'name_text' => $nameText ?: null, 'bemerkung' => $bemerkung ?: null, 'ok' => $ok]);
     $warnung = '';
     if ($mid > 0) {
         $m = $mitglieder[$mid];
@@ -59,7 +67,7 @@ try {
         elseif ((int)$m['Status'] !== 1) $warnung = 'inaktiv';
     }
     ep_json(['success' => true, 'message' => 'Gespeichert', 'slot' => [
-        'id' => $slotId, 'verein' => $verein, 'mitglied_id' => $mid ?: 0, 'name_text' => $nameText, 'bemerkung' => $bemerkung,
+        'id' => $slotId, 'verein' => $verein, 'mitglied_id' => $mid ?: 0, 'name_text' => $nameText, 'bemerkung' => $bemerkung, 'ok' => $ok,
         'anzeige' => ep_slot_text($slot, $mitglieder), 'besetzt' => ep_slot_besetzt($slot), 'warnung' => $warnung,
     ]]);
 } catch (Throwable $e) {
