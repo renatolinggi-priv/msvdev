@@ -265,3 +265,90 @@ function msvLogRotieren(string $logPfad, int $behalten = 3, int $abBytes = 10485
 
     return ['rotiert' => true, 'meldung' => 'Log rotiert (' . $groesse . ' Bytes archiviert)'];
 }
+
+/**
+ * Spiegelt die hochgeladenen Dateien (Fotos, Dokumente) in ein Verzeichnis AUSSERHALB
+ * des Docroots. Der DB-Dump enthaelt nur die Pfade, nicht die Bilder - ohne diesen
+ * Spiegel waeren die Fotos bei einem Fehlgriff (Galerie geloescht, Ordner geleert) weg.
+ *
+ * Kopiert nur neue oder geaenderte Dateien (Groesse/mtime) und loescht im Spiegel NIE:
+ * ein versehentlich geloeschtes Foto bleibt dort erhalten. Der Spiegel waechst darum
+ * langsam ueber den Live-Stand hinaus - gewollt.
+ *
+ * @return array{ok:bool, kopiert:int, unveraendert:int, fehler:int, bytes:int, ziel:string, meldung:string}
+ */
+function msvUploadsSpiegeln(string $quelle, string $ziel): array
+{
+    $res = ['ok' => false, 'kopiert' => 0, 'unveraendert' => 0, 'fehler' => 0, 'bytes' => 0, 'ziel' => $ziel, 'meldung' => ''];
+
+    if (!is_dir($quelle)) {
+        $res['meldung'] = 'Upload-Verzeichnis fehlt: ' . $quelle;
+        return $res;
+    }
+    if (!is_dir($ziel) && !@mkdir($ziel, 0750, true)) {
+        $res['meldung'] = 'Spiegel-Verzeichnis kann nicht angelegt werden: ' . $ziel;
+        return $res;
+    }
+    if (!is_writable($ziel)) {
+        $res['meldung'] = 'Spiegel-Verzeichnis ist nicht beschreibbar: ' . $ziel;
+        return $res;
+    }
+
+    $quelleReal = realpath($quelle);
+    $rii = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($quelleReal, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+    foreach ($rii as $eintrag) {
+        /** @var SplFileInfo $eintrag */
+        $rel  = substr($eintrag->getPathname(), strlen($quelleReal));
+        $rel  = str_replace(DIRECTORY_SEPARATOR, '/', ltrim($rel, '/' . DIRECTORY_SEPARATOR));
+        $nach = $ziel . '/' . $rel;
+
+        if ($eintrag->isDir()) {
+            if (!is_dir($nach) && !@mkdir($nach, 0750, true)) {
+                $res['fehler']++;
+            }
+            continue;
+        }
+        if (!$eintrag->isFile()) {
+            continue;
+        }
+        // .htaccess der Upload-Ordner ist im Spiegel unnoetig (liegt ausserhalb des Webs)
+        if ($eintrag->getFilename() === '.htaccess') {
+            continue;
+        }
+
+        $groesse = $eintrag->getSize();
+        $mtime   = $eintrag->getMTime();
+        if (is_file($nach) && filesize($nach) === $groesse && filemtime($nach) >= $mtime) {
+            $res['unveraendert']++;
+            continue;
+        }
+
+        $dirNach = dirname($nach);
+        if (!is_dir($dirNach) && !@mkdir($dirNach, 0750, true)) {
+            $res['fehler']++;
+            continue;
+        }
+        // erst temporaer, dann umbenennen: nie eine halbe Datei im Spiegel
+        $tmp = $nach . '.tmp';
+        if (@copy($eintrag->getPathname(), $tmp) && @rename($tmp, $nach)) {
+            @touch($nach, $mtime);
+            @chmod($nach, 0640);
+            $res['kopiert']++;
+            $res['bytes'] += $groesse;
+        } else {
+            @unlink($tmp);
+            $res['fehler']++;
+        }
+    }
+
+    $res['ok'] = ($res['fehler'] === 0);
+    $res['meldung'] = sprintf(
+        'Uploads gespiegelt: %d neu/geaendert (%.1f MB), %d unveraendert%s',
+        $res['kopiert'], $res['bytes'] / 1048576, $res['unveraendert'],
+        $res['fehler'] ? ', ' . $res['fehler'] . ' FEHLER' : ''
+    );
+    return $res;
+}

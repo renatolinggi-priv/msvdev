@@ -20,6 +20,9 @@
  *   1. Dump erstellen, pruefen, packen  -> backups/<db>_<zeitstempel>.sql.gz
  *   2. Alte Sicherungen aufraeumen      -> die neuesten BEHALTEN bleiben
  *   3. PHP-Error-Log rotieren           -> ab 1 MB, 3 gepackte Staende
+ *   4. Uploads spiegeln                 -> portal/uploads (Fotos, Dokumente) nach
+ *                                          UPLOADS_SPIEGEL ausserhalb des Docroots;
+ *                                          nur neue/geaenderte Dateien, nie loeschen
  */
 
 declare(strict_types=1);
@@ -28,6 +31,11 @@ const BACKUP_BEHALTEN   = 14;        // Anzahl aufzubewahrender Sicherungen
 const LOG_BEHALTEN      = 3;         // Anzahl archivierter Logstaende
 const LOG_ROTATE_AB     = 1048576;   // 1 MB
 const LOG_PFAD          = '/home/bdebbd4/php_error.log';
+
+// Spiegel der Uploads: zwei Ebenen ueber dem Docroot (Prod: /home/bdebbd4/backup_uploads),
+// damit er weder per Web erreichbar ist noch beim Deploy mitgezogen wird.
+define('UPLOADS_QUELLE',  dirname(__DIR__) . '/portal/uploads');
+define('UPLOADS_SPIEGEL', dirname(__DIR__, 3) . '/backup_uploads');
 
 require_once __DIR__ . '/../inc/backup_dump.inc.php';
 
@@ -98,17 +106,29 @@ if ($rotation['rotiert']) {
     error_log('[backup_db] ' . $rotation['meldung']);
 }
 
+// --- 4. Uploads spiegeln --------------------------------------------------
+$spiegel = msvUploadsSpiegeln(UPLOADS_QUELLE, UPLOADS_SPIEGEL);
+$ergebnis['uploads'] = $spiegel;
+if ($spiegel['ok']) {
+    if ($spiegel['kopiert'] > 0) {
+        error_log('[backup_db] ' . $spiegel['meldung']);
+    }
+} else {
+    error_log('[backup_db] FEHLER Uploads-Spiegel: ' . $spiegel['meldung']);
+}
+
 // --- Ausgabe -------------------------------------------------------------
-$ergebnis['success'] = (bool)$backup['ok'];
+$ergebnis['success'] = (bool)$backup['ok'] && $spiegel['ok'];
 
 if ($istCli) {
     echo 'Sicherung : ' . ($backup['ok'] ? $backup['datei'] . ' (' . $backup['groesse'] . " Bytes)\n" : 'FEHLER - ' . $backup['meldung'] . "\n");
     echo 'Aufgeraeumt: ' . $geloescht . " alte Sicherung(en)\n";
     echo 'Log       : ' . $rotation['meldung'] . "\n";
-    exit($backup['ok'] ? 0 : 1);
+    echo 'Uploads   : ' . $spiegel['meldung'] . ' -> ' . $spiegel['ziel'] . "\n";
+    exit($ergebnis['success'] ? 0 : 1);
 }
 
-if (!$backup['ok']) {
+if (!$ergebnis['success']) {
     http_response_code(500);
 }
 echo json_encode($ergebnis, JSON_UNESCAPED_UNICODE);
