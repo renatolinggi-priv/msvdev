@@ -33,7 +33,7 @@ if ($action === 'public_key') {
     exit;
 }
 
-requireRoleJson(['admin', 'vorstand', 'mitglied']); // alle eingeloggten, freigegebenen User
+requireRoleJson(['admin', 'vorstand', 'mitglied', 'jungschuetze']); // alle eingeloggten, freigegebenen User (auch JSK)
 
 $db     = getDB();
 $userId = (int) ($_SESSION['user_id'] ?? 0);

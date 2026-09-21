@@ -7,7 +7,7 @@ require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
-requireRoleJson(['admin', 'vorstand', 'mitglied']);
+requireRoleJson(['admin', 'vorstand', 'mitglied', 'jungschuetze']);   // JSK: Master + Chat-Toggle
 
 $db     = getDB();
 $userId = (int) ($_SESSION['user_id'] ?? 0);

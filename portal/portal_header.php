@@ -21,11 +21,7 @@ try {
     if (isJungschuetze()) {
         $chatAccess = true;
     } else {
-        try {
-            $__cs = $__cdb->prepare('SELECT jsk_betreuung FROM benachrichtigung_prefs WHERE user_id = ?');
-            $__cs->execute([$__cuid]);
-            $chatAccess = ((int) $__cs->fetchColumn() === 1);
-        } catch (Throwable $e) { /* prefs evtl. n/a */ }
+        $chatAccess = jskIstBetreuer($__cdb, $__cuid);
         if (!$chatAccess) { try { $chatAccess = isJskLeiter($__cdb, $__cuid); } catch (Throwable $e) {} }
     }
     // Ungelesen-Zähler getrennt absichern: ein Fehler hier darf den Chat-Zugriff NICHT aufheben
@@ -43,9 +39,11 @@ try {
 // Jungschuetzen haben einen eingeschraenkten Portal-Zugang: nur ihre eigenen Seiten.
 // Member-Seiten (mit mitglied_id-Bezug) wuerden sonst brechen -> zentrale Weiche.
 if (isJungschuetze()) {
-    $jsAllowed = ['jsk_dashboard.php', 'jsk_termin.php', 'jsk_termine.php', 'jsk_dokumente.php', 'jsk_profil.php', 'chat.php', 'benachrichtigungen.php', 'mitteilungen.php', 'changelog.php', 'check_session.php'];
+    // Alle jsk_*.php-Seiten sind automatisch erlaubt (neue JSK-Seiten muessen nur noch in die Nav),
+    // dazu die geteilten Seiten aus der Allowlist.
+    $jsAllowed = ['chat.php', 'benachrichtigungen.php', 'mitteilungen.php', 'changelog.php', 'check_session.php'];
     $curScript = basename($_SERVER['SCRIPT_NAME'] ?? ($_SERVER['PHP_SELF'] ?? ''));
-    if (!in_array($curScript, $jsAllowed, true)) {
+    if (strpos($curScript, 'jsk_') !== 0 && !in_array($curScript, $jsAllowed, true)) {
         header('Location: jsk_dashboard.php');
         exit;
     }
@@ -577,6 +575,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             ['type' => 'link', 'link' => 'chat.php', 'text' => 'Jungschützenchat', 'icon' => 'bi-chat-dots'],
             ['type' => 'link', 'link' => 'jsk_termin.php', 'text' => 'Schiessanfrage', 'icon' => 'bi-calendar-plus'],
             ['type' => 'link', 'link' => 'jsk_termine.php', 'text' => 'Termine', 'icon' => 'bi-calendar3'],
+            ['type' => 'link', 'link' => 'jsk_resultate.php', 'text' => 'Meine Resultate', 'icon' => 'bi-trophy'],
             ['type' => 'link', 'link' => 'jsk_dokumente.php', 'text' => 'JSK-Dokumente', 'icon' => 'bi-mortarboard'],
             ['type' => 'link', 'link' => 'jsk_profil.php', 'text' => 'Meine Daten', 'icon' => 'bi-person-vcard'],
         ];
@@ -616,14 +615,10 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
             $nav_groups[] = ['type' => 'dropdown', 'text' => 'Dokumente', 'icon' => 'bi-folder', 'items' => $dokItems];
         }
 
-        // Jungschuetzen-Betreuung: Board nur fuer aktivierte Betreuer + global aktive Funktion
+        // Jungschuetzen-Betreuung: Board fuer aktivierte Betreuer und Jungschuetzenleiter + global aktive Funktion
         if (jskFeatureAktiv()) {
-            $__jsBetreuer = false;
-            try {
-                $__st = getDB()->prepare('SELECT jsk_betreuung FROM benachrichtigung_prefs WHERE user_id = ?');
-                $__st->execute([(int) ($_SESSION['user_id'] ?? 0)]);
-                $__jsBetreuer = ((int) $__st->fetchColumn() === 1);
-            } catch (Throwable $e) { $__jsBetreuer = false; }
+            $__jsBetreuer = jskIstBetreuer(getDB(), (int) ($_SESSION['user_id'] ?? 0));
+            if (!$__jsBetreuer) { try { $__jsBetreuer = isJskLeiter(getDB(), (int) ($_SESSION['user_id'] ?? 0)); } catch (Throwable $e) {} }
             if ($__jsBetreuer) {
                 $nav_groups[] = ['type' => 'link', 'link' => 'jsk_betreuung.php', 'text' => 'Jungschützen', 'icon' => 'bi-people'];
             }

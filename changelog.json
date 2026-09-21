@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.31.0",
+    "datum": "2026-09-21",
+    "aenderungen": [
+      {
+        "titel": "JSK-Verwaltung: Tab «Anfragen», Leitungs-Einsicht, Leiter-Stand",
+        "beschreibung": "Neuer Tab «Anfragen» in der JSK-Verwaltung: alle Schiessanfragen der Jungschützen (kommende und vergangene 120 Tage) mit Status und Betreuer. Der Vorstand kann Betreuer manuell zuteilen oder umteilen, Betreuungen freigeben und Anfragen stornieren – alle Beteiligten werden benachrichtigt. Dazu eine Statistik «Betreuungen pro Mitglied» fürs laufende Jahr inklusive Anfragen, die ohne Betreuer blieben. Oben auf der Seite steht neu, welche Jungschützenleiter im Portal erreichbar sind (Warnung, wenn ein Leiter kein freigegebenes Login hat oder gar keiner) und wie viele Betreuer aktiviert sind. Neuer Admin-Schalter «Leitung liest Betreuer-Chats mit» (Standard aus): ist er an, sehen Jungschützenleiter die Chats zwischen Jungschützen und Betreuern nur lesend, und beide Seiten sehen im Chat den Hinweis «Die Jungschützenleitung kann mitlesen». Das Zuteilen aus der Verwaltung, die Schnellauswahl in der Schiessanfrage (Termin-Bezug) und das Zurücknehmen von Chat-Nachrichten brauchen die Datenbank-Aktualisierung 062.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Jungschützenchat: Bilder senden, WhatsApp-Layout",
+        "beschreibung": "Im Chat lassen sich Bilder senden (Büroklammer, Einfügen aus der Zwischenablage oder Hineinziehen), mit optionaler Bildunterschrift und Vorschau vor dem Senden. Bilder werden serverseitig auf 1600 Pixel verkleinert, als JPG ohne Metadaten abgelegt (portal/uploads/chat, per .htaccess gesperrt) und nur über api/chat_bild.php mit Berechtigungsprüfung ausgeliefert; die nächtliche Sicherung spiegelt sie mit. Zurückgenommene Nachrichten löschen ihr Bild sofort. Dazu ein WhatsApp-näheres Layout: auf dem Handy Liste vollbreit und Thread als Vollbild mit Zurück-Pfeil, Sprechblasen mit Schwänzchen, Häkchen für gesendet und gelesen (Doppelhäkchen blau), Untertitel im Kopf, Suche in der Liste, Knopf «nach unten» mit Zähler bei neuen Nachrichten, Bild-Lightbox. Datenbank-Aktualisierung 063 nötig; ohne sie bleibt der Chat ohne Bild-Knopf lauffähig.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Jungschützen-Betreuung: acht Fehler aus dem Review behoben",
+        "beschreibung": "Jungschützen konnten keine Push-Benachrichtigungen einrichten und ihre Einstellungen nicht speichern (die Schnittstellen liessen die Rolle nicht zu) – «Betreuer gefunden» und Chat-Nachrichten kamen nur in der Glocke an. Die Seite «Meine Resultate» war für Jungschützen nicht erreichbar (fehlte in Menü und Rollenweiche; neue jsk_-Seiten sind jetzt automatisch erlaubt). Gab ein Betreuer einen Termin frei, erfuhr weder der Jungschütze noch der Betreuer-Kreis davon – jetzt werden beide informiert. Der tägliche Erinnerungslauf schickte Jungschützen alle Vereinstermine, JM- und Umfrage-Erinnerungen mit Links auf Seiten, die sie nicht öffnen dürfen; sie erhalten nur noch ihre eigenen Termine mit Link auf ihre Termin-Seite. Vergangene Anfragen wechseln neu automatisch auf «Erledigt». Betreuer mit ausgeschaltetem Push bekamen auch keinen Glocken-Eintrag mehr (jetzt konsistent: Glocke immer, Push nach Einstellung). Der Leitungs-Chat konnte bei gleichzeitigen Aufrufen doppelt entstehen (Datenbank-Aktualisierung 062 führt Duplikate zusammen und verhindert neue). Die Lesequittung wurde beim Abfragen im Hintergrund gesetzt, obwohl niemand hinschaute – der Zähler verschwand zu früh.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Erinnerungslauf: Vortag-Erinnerung und Eskalation für Schiessanfragen",
+        "beschreibung": "Der tägliche Lauf um 09:00 erinnert am Vortag sowohl den Jungschützen als auch den Betreuer an den vereinbarten Schiesstermin. Ist eine Anfrage zwei Tage vor dem Datum noch ohne Betreuer, geht eine Meldung an die Jungschützenleiter (ersatzweise Vorstand und Admin). Jungschützenleiter sehen das Betreuer-Board neu auch ohne die Einstellung «Jungschützen betreuen». Neue Registrierungen von Jungschützen melden sich sofort bei der Leitung; bei der Freischaltung erhält der Jungschütze eine E-Mail mit Login-Link. Die Registrierung ist auf zehn Versuche pro Stunde und Adresse begrenzt.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.30.0",
     "datum": "2026-09-21",
     "aenderungen": [

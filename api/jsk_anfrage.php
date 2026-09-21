@@ -4,6 +4,7 @@
 
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
+require_once __DIR__ . '/../inc/jsk.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
 requireRoleJson(['jungschuetze', 'admin']);
@@ -48,6 +49,7 @@ if ($action === 'create') {
     $datum     = trim((string) ($input['datum'] ?? ''));
     $zeit      = trim((string) ($input['zeit'] ?? ''));
     $bemerkung = trim((string) ($input['bemerkung'] ?? ''));
+    $terminId  = (int) ($input['termin_id'] ?? 0);
 
     // Datum validieren (Format + nicht in der Vergangenheit)
     $d = DateTime::createFromFormat('Y-m-d', $datum);
@@ -61,6 +63,13 @@ if ($action === 'create') {
     if (mb_strlen($bemerkung) > 500) $bemerkung = mb_substr($bemerkung, 0, 500);
     if (mb_strlen($zeit) > 20) $zeit = mb_substr($zeit, 0, 20);
 
+    // Termin-Bezug (Schnellauswahl) nur uebernehmen, wenn er zum Datum passt und fuer JSK geflaggt ist
+    if ($terminId > 0) {
+        $tchk = $db->prepare("SELECT 1 FROM wichtige_termine WHERE ID = ? AND fuer_jsk = 1 AND `date` = ? LIMIT 1");
+        $tchk->execute([$terminId, $datum]);
+        if (!$tchk->fetchColumn()) $terminId = 0;
+    }
+
     // Dedupe: pro JSK + Datum nur eine offene/vergebene Anfrage
     $chk = $db->prepare("SELECT id FROM jsk_betreuung_anfragen WHERE jungschuetze_id = ? AND datum = ? AND status IN ('offen','vergeben') LIMIT 1");
     $chk->execute([$jsId, $datum]);
@@ -68,11 +77,18 @@ if ($action === 'create') {
         json_error('Für dieses Datum besteht bereits eine Anmeldung.');
     }
 
-    $ins = $db->prepare("INSERT INTO jsk_betreuung_anfragen (jungschuetze_id, datum, zeit, bemerkung, status) VALUES (?, ?, ?, ?, 'offen')");
-    $ins->execute([$jsId, $datum, ($zeit !== '' ? $zeit : null), ($bemerkung !== '' ? $bemerkung : null)]);
+    $zeitVal = ($zeit !== '' ? $zeit : null);
+    $bemVal  = ($bemerkung !== '' ? $bemerkung : null);
+    if ($terminId > 0 && jskDbHatSpalte($db, 'jsk_betreuung_anfragen', 'termin_id')) {
+        $ins = $db->prepare("INSERT INTO jsk_betreuung_anfragen (jungschuetze_id, datum, termin_id, zeit, bemerkung, status) VALUES (?, ?, ?, ?, ?, 'offen')");
+        $ins->execute([$jsId, $datum, $terminId, $zeitVal, $bemVal]);
+    } else {
+        $ins = $db->prepare("INSERT INTO jsk_betreuung_anfragen (jungschuetze_id, datum, zeit, bemerkung, status) VALUES (?, ?, ?, ?, 'offen')");
+        $ins->execute([$jsId, $datum, $zeitVal, $bemVal]);
+    }
     $anfrageId = (int) $db->lastInsertId();
 
-    // Name des Jungschuetzen fuer die Push-Nachricht
+    // Name des Jungschuetzen fuer die Benachrichtigung
     $jsName = '';
     try {
         $n = $db->prepare('SELECT Vorname, Name FROM jungschuetzen WHERE id = ?');
@@ -81,8 +97,10 @@ if ($action === 'create') {
     } catch (Throwable $e) { /* egal */ }
 
     $datumDe = $d->format('d.m.Y');
-    jskNotifyBetreuer($db, 'Jungschütze sucht Begleitung',
-        ($jsName !== '' ? $jsName : 'Ein Jungschütze') . ' möchte am ' . $datumDe . ' schiessen.');
+    $text = ($jsName !== '' ? $jsName : 'Ein Jungschütze') . ' möchte am ' . $datumDe . ' schiessen.';
+    if ($zeitVal !== null) $text .= ' (' . $zeitVal . ')';
+    // Glocke fuer alle aktivierten Betreuer, Push je nach deren push_aktiv
+    jskBenachrichtigeBetreuer($db, 'Jungschütze sucht Begleitung', $text, 'portal/jsk_betreuung.php', 0, 'jsk-anfrage-' . $anfrageId);
 
     echo json_encode(['success' => true, 'message' => 'Termin angemeldet – Betreuer wurden benachrichtigt.', 'id' => $anfrageId]);
     exit;
@@ -111,10 +129,8 @@ if ($action === 'cancel') {
     if ($anf['status'] === 'vergeben' && !empty($anf['betreut_von_user_id'])) {
         $datumDe = date('d.m.Y', strtotime($anf['datum']));
         $jsName = trim($anf['Vorname'] . ' ' . $anf['Name']);
-        try {
-            jskSendPush((int) $anf['betreut_von_user_id'], 'Termin abgesagt',
-                $jsName . ' hat den Termin am ' . $datumDe . ' abgesagt.', 'portal/jsk_betreuung.php');
-        } catch (Throwable $e) { /* Push best effort */ }
+        jskBenachrichtigen((int) $anf['betreut_von_user_id'], 'Termin abgesagt',
+            $jsName . ' hat den Termin am ' . $datumDe . ' abgesagt.', 'portal/jsk_betreuung.php');
     }
 
     echo json_encode(['success' => true, 'message' => 'Anmeldung abgesagt.']);
@@ -122,35 +138,3 @@ if ($action === 'cancel') {
 }
 
 json_error('Unbekannte Aktion.');
-
-// ---------------------------------------------------------------------------
-// Push-Helfer (best effort – Fehler brechen die Aktion nie ab)
-// ---------------------------------------------------------------------------
-function jskSendPush(int $userId, string $titel, string $text, string $url): void {
-    $helper = __DIR__ . '/../inc/push_helper.php';
-    if (!file_exists($helper)) return;
-    require_once $helper;
-    if (function_exists('benachrichtigungZustellen')) {
-        benachrichtigungZustellen($userId, $titel, $text, $url, 'jsk_betreuung');
-    }
-}
-
-function jskNotifyBetreuer(PDO $db, string $titel, string $text): void {
-    try {
-        $rows = $db->query(
-            "SELECT u.id
-               FROM users u
-               JOIN benachrichtigung_prefs p ON p.user_id = u.id
-              WHERE u.status = 'approved'
-                AND u.role IN ('mitglied','vorstand','admin')
-                AND p.jsk_betreuung = 1
-                AND COALESCE(p.push_aktiv, 1) = 1"
-        )->fetchAll();
-        foreach ($rows as $r) {
-            try { jskSendPush((int) $r['id'], $titel, $text, 'portal/jsk_betreuung.php'); }
-            catch (Throwable $e) { /* einzelne Push-Fehler ignorieren */ }
-        }
-    } catch (Throwable $e) {
-        error_log('jskNotifyBetreuer: ' . $e->getMessage());
-    }
-}

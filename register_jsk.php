@@ -7,6 +7,7 @@ require_once __DIR__ . '/inc/dbconnect.inc.php';
 // Zentrale Session-Konfiguration (inkl. Cross-Subdomain Cookie-Domain)
 require_once __DIR__ . '/inc/session_config.inc.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/inc/jsk.inc.php';
 
 // CSRF-Token
 if (empty($_SESSION['csrf_token'])) {
@@ -17,9 +18,26 @@ $featureAktiv = jskFeatureAktiv();
 $errors = [];
 $form_data = ['vorname' => '', 'nachname' => '', 'email' => '', 'username' => ''];
 
+/**
+ * Einfacher Schutz gegen Durchprobieren von E-Mail-Adressen: max. 10 Versuche pro IP und Stunde
+ * (Tabelle jsk_register_versuche, Migration 062). Fehlt die Tabelle noch, wird nicht gebremst.
+ */
+function jskRegisterGebremst(PDO $db, string $ip): bool {
+    try {
+        $db->prepare('DELETE FROM jsk_register_versuche WHERE zeitpunkt < (NOW() - INTERVAL 1 DAY)')->execute();
+        $st = $db->prepare('SELECT COUNT(*) FROM jsk_register_versuche WHERE ip = ? AND zeitpunkt > (NOW() - INTERVAL 1 HOUR)');
+        $st->execute([$ip]);
+        if ((int) $st->fetchColumn() >= 10) return true;
+        $db->prepare('INSERT INTO jsk_register_versuche (ip) VALUES (?)')->execute([$ip]);
+    } catch (Throwable $e) { /* Tabelle evtl. noch nicht vorhanden */ }
+    return false;
+}
+
 if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
         $errors[] = "Ungültiges Formular. Bitte versuche es erneut.";
+    } elseif (jskRegisterGebremst(getDB(), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45))) {
+        $errors[] = "Zu viele Versuche. Bitte warte eine Stunde oder wende dich an den Jungschützenleiter.";
     } else {
         $vorname  = trim($_POST['vorname'] ?? '');
         $nachname = trim($_POST['nachname'] ?? '');
@@ -86,6 +104,15 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_param("ssssi", $username, $full_name, $email, $password_hash, $jsId);
 
             if ($stmt->execute()) {
+                // Leitung (ersatzweise Vorstand/Admin) informieren – bisher blieb eine offene
+                // Registrierung unbemerkt, bis jemand zufaellig in die JSK-Verwaltung schaute.
+                try {
+                    foreach (jskLeitungOderVorstandUserIds(getDB()) as $uid) {
+                        jskBenachrichtigen((int) $uid, 'Neue Jungschützen-Registrierung',
+                            $full_name . ' hat sich registriert und wartet auf die Freischaltung.',
+                            'inc/jsk_verwaltung.php', 'jsk_betreuung', 'jsk-reg-' . $jsId);
+                    }
+                } catch (Throwable $e) { error_log('register_jsk notify: ' . $e->getMessage()); }
                 header("Location: login.php?registered=1");
                 exit();
             } else {

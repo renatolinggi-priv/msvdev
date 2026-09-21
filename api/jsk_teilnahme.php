@@ -8,7 +8,7 @@ require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 
 header('Content-Type: application/json; charset=utf-8');
-requireRoleJson(['jungschuetze', 'mitglied', 'vorstand', 'admin']);
+requireRoleJson(['jungschuetze', 'vorstand', 'admin']);   // Mitglieder haben hier keine Funktion
 
 $db     = getDB();
 $userId = (int) ($_SESSION['user_id'] ?? 0);

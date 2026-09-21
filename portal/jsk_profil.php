@@ -37,7 +37,7 @@ $csrf_token = ensureCsrfToken();
 
   <div class="profil-card">
     <h6 class="mb-1"><i class="bi bi-person me-1 text-club"></i>Anzeigename</h6>
-    <p class="text-muted small mb-2">Dieser Name erscheint im Jungschützenchat.</p>
+    <p class="text-muted small mb-2">Dieser Name gilt für die Begrüssung im Portal. Im Jungschützenchat und auf dem Betreuer-Board erscheint immer dein Name aus den Kursdaten.</p>
     <div class="mb-2">
       <input type="text" class="form-control" id="fullName" maxlength="100" value="<?= htmlspecialchars($me['full_name'], ENT_QUOTES, 'UTF-8') ?>">
     </div>

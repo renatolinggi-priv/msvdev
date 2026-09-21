@@ -453,6 +453,8 @@ if (!empty($_SESSION['user_id'])) {
             });
         }
         renderChatBadge(initial);
+        // chat.php meldet den aktuellen Stand aus seinem eigenen Sync-Poller
+        window.addEventListener('msv-chat-unread', function (e) { renderChatBadge(parseInt(e.detail, 10) || 0); });
         function pollChat() {
             fetch('../api/chat.php?action=unread').then(function (r) { return r.json(); })
                 .then(function (d) { if (d && d.success) renderChatBadge(d.unread); }).catch(function () {});

@@ -18,6 +18,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../inc/push_helper.php'; // getDB(), sendePushAnBenutzer(), pushGetSetting(), pushLeadTime()
+require_once __DIR__ . '/../inc/jsk.inc.php';     // jskLeitungOderVorstandUserIds(), jskAnfrageInfo() (ohne Session)
 
 $cli = (PHP_SAPI === 'cli');
 
@@ -42,15 +43,20 @@ $db = getDB();
 const PUSH_MAX_WINDOW = 30;
 
 /** Approved Benutzer mit aktivem Haupt- und Themen-Schalter (fehlende Zeile = an).
- *  'lead' = persoenliche Vorlaufzeit in Tagen (null = globaler Standard verwenden). */
-function eligibleUsers(PDO $db, string $topicCol): array {
+ *  'lead' = persoenliche Vorlaufzeit in Tagen (null = globaler Standard verwenden).
+ *  Jungschuetzen (Rolle jungschuetze) sind standardmaessig AUSGESCHLOSSEN: JM, Umfragen und
+ *  Mitglieder-Termine betreffen sie nicht (und die Links fuehren auf Seiten, die die
+ *  Rollenweiche fuer sie sperrt). Nur der Termine-Block holt sie mit $mitJsk = true dazu
+ *  und filtert dort auf fuer_jsk-Termine. */
+function eligibleUsers(PDO $db, string $topicCol, bool $mitJsk = false): array {
     // $topicCol stammt aus festem Whitelist-Set -> Interpolation unkritisch.
     // push_aktiv steuert nur den Push-Versand (in benachrichtigungZustellen), NICHT die
     // In-App-Glocke -> hier bewusst kein push_aktiv-Filter.
+    $rollen = $mitJsk ? '' : " AND u.role <> 'jungschuetze'";
     $sql = "SELECT u.id, u.role, u.mitglied_id, p.lead_tage
             FROM users u
             LEFT JOIN benachrichtigung_prefs p ON p.user_id = u.id
-            WHERE u.status = 'approved'
+            WHERE u.status = 'approved'$rollen
               AND COALESCE(p.$topicCol, 1) = 1";
     $out = [];
     foreach ($db->query($sql) as $r) {
@@ -275,16 +281,16 @@ try {
 try {
     $def   = (int) pushLeadTime('push_lead_termine', 2);
     $win   = PUSH_MAX_WINDOW;
-    $users = eligibleUsers($db, 'termine');
+    $users = eligibleUsers($db, 'termine', true);   // inkl. Jungschuetzen (nur fuer_jsk-Termine, s.u.)
     if ($users) {
         $n0 = $stats['sent'];
-        // 4a) Standbelegung (nur Kalender-relevante)
-        $sql1 = "SELECT ID AS id, Datum AS datum, StartZeit AS zeit, Bezeichnung,
+        // 4a) Standbelegung (nur Kalender-relevante) – nicht fuer Jungschuetzen
+        $sql1 = "SELECT ID AS id, Datum AS datum, StartZeit AS zeit, Bezeichnung, 0 AS fuer_jsk,
                         DATEDIFF(Datum, CURDATE()) AS tage_bis
                  FROM Standbelegung
                  WHERE InKalender = 1 AND Datum BETWEEN CURDATE() AND (CURDATE() + INTERVAL $win DAY)";
-        // 4b) wichtige_termine (Training etc.)
-        $sql2 = "SELECT ID AS id, date AS datum, time AS zeit, name AS Bezeichnung,
+        // 4b) wichtige_termine (Training etc.) – fuer_jsk-Termine auch an Jungschuetzen
+        $sql2 = "SELECT ID AS id, date AS datum, time AS zeit, name AS Bezeichnung, COALESCE(fuer_jsk, 0) AS fuer_jsk,
                         DATEDIFF(date, CURDATE()) AS tage_bis
                  FROM wichtige_termine
                  WHERE date BETWEEN CURDATE() AND (CURDATE() + INTERVAL $win DAY)";
@@ -296,8 +302,10 @@ try {
             foreach ($db->query($sql)->fetchAll() as $r) {
                 $datum   = (string) $r['datum'];
                 $tageBis = (int) $r['tage_bis'];
+                $fuerJsk = ((int) $r['fuer_jsk'] === 1);
                 $item    = ['bez' => (string) $r['Bezeichnung'], 'zeit' => fmtZeit($r['zeit'])];
                 foreach ($users as $uid => $info) {
+                    if ($info['role'] === 'jungschuetze' && !$fuerJsk) continue; // JSK: nur ihre Termine
                     if ($tageBis > ($info['lead'] ?? $def)) continue; // ausserhalb persoenlicher Vorlaufzeit
                     $buf[$uid][$datum][] = $item;
                 }
@@ -305,16 +313,80 @@ try {
         }
         foreach ($buf as $uid => $tage) {
             ksort($tage); // Quellen wurden nacheinander eingelesen -> Tage wieder chronologisch
+            $istJsk = (($users[$uid]['role'] ?? '') === 'jungschuetze');
             foreach ($tage as $datum => $items) {
-                [$titel, $text, $key] = buendeln('Vereinstermin', $items, (string) $datum, 'Vereinstermine', 'Termine');
+                [$titel, $text, $key] = buendeln($istJsk ? 'Jungschützen-Termin' : 'Vereinstermin', $items, (string) $datum,
+                                                 $istJsk ? 'Jungschützen-Termine' : 'Vereinstermine', 'Termine');
                 zustellen($db, (int) $uid, 'termine', 'termin_tag', $key, (string) $datum,
-                          $titel, $text, 'portal/dashboard.php', $stats, 'termin-' . $datum);
+                          $titel, $text, $istJsk ? 'portal/jsk_termine.php' : 'portal/dashboard.php', $stats, 'termin-' . $datum);
             }
         }
         $details['termine'] = $stats['sent'] - $n0;
     }
 } catch (\Throwable $e) {
     error_log('cron benachrichtigungen [termine]: ' . $e->getMessage());
+}
+
+// =====================  5. Jungschuetzen-Betreuung  ==========================
+// a) Abschluss: vergangene Anfragen auf 'erledigt' (Statistik in der JSK-Verwaltung)
+// b) Erinnerung am Vortag an Jungschuetze UND Betreuer (vergebene Anfragen)
+// c) Eskalation an die Leitung: Anfrage 2 Tage vor dem Datum noch ohne Betreuer
+try {
+    $n0 = $stats['sent'];
+    $db->exec("UPDATE jsk_betreuung_anfragen SET status = 'erledigt'
+                WHERE status IN ('offen','vergeben') AND datum < CURDATE()");
+
+    if ((string) (pushGetSetting('jsk_betreuung_aktiv') ?? '0') === '1') {
+        $rows = $db->query(
+            "SELECT a.id, a.datum, a.zeit, a.status, a.betreut_von_user_id,
+                    TRIM(CONCAT(j.Vorname, ' ', j.Name)) AS js_name,
+                    (SELECT u.id FROM users u WHERE u.jungschuetze_id = j.id AND u.status = 'approved' LIMIT 1) AS js_user_id,
+                    bu.full_name AS betreuer_name,
+                    DATEDIFF(a.datum, CURDATE()) AS tage_bis
+               FROM jsk_betreuung_anfragen a
+               JOIN jungschuetzen j ON j.id = a.jungschuetze_id
+               LEFT JOIN users bu ON bu.id = a.betreut_von_user_id
+              WHERE a.status IN ('offen','vergeben')
+                AND a.datum BETWEEN CURDATE() AND (CURDATE() + INTERVAL 2 DAY)
+              ORDER BY a.datum"
+        )->fetchAll();
+
+        $leitung = null;   // lazy
+        foreach ($rows as $r) {
+            $id      = (int) $r['id'];
+            $datum   = (string) $r['datum'];
+            $tageBis = (int) $r['tage_bis'];
+            $wann    = fmtDatum($datum) . (fmtZeit($r['zeit']) !== '' ? ' (' . fmtZeit($r['zeit']) . ')' : '');
+
+            if ($r['status'] === 'vergeben' && $tageBis <= 1) {
+                // b) Vortag-Erinnerung an beide Seiten
+                if (!empty($r['js_user_id'])) {
+                    zustellen($db, (int) $r['js_user_id'], 'jsk_betreuung', 'jsk_anfrage', $id, $datum,
+                              'Schiesstermin ' . ($tageBis === 0 ? 'heute' : 'morgen'),
+                              ($r['betreuer_name'] ?: 'Dein Betreuer') . ' begleitet dich am ' . $wann . '.',
+                              'portal/jsk_dashboard.php', $stats, 'jsk-anfrage-' . $id);
+                }
+                if (!empty($r['betreut_von_user_id'])) {
+                    zustellen($db, (int) $r['betreut_von_user_id'], 'jsk_betreuung', 'jsk_anfrage', $id, $datum,
+                              'Betreuung ' . ($tageBis === 0 ? 'heute' : 'morgen'),
+                              'Du betreust ' . $r['js_name'] . ' am ' . $wann . '.',
+                              'portal/jsk_betreuung.php', $stats, 'jsk-anfrage-' . $id);
+                }
+            } elseif ($r['status'] === 'offen' && $tageBis <= 2) {
+                // c) Eskalation an die Leitung (ersatzweise Vorstand/Admin)
+                if ($leitung === null) $leitung = jskLeitungOderVorstandUserIds($db);
+                foreach ($leitung as $uid) {
+                    zustellen($db, (int) $uid, 'jsk_betreuung', 'jsk_offen', $id, $datum,
+                              'Jungschütze noch ohne Begleitung',
+                              $r['js_name'] . ' sucht für den ' . $wann . ' noch eine Begleitung – bisher hat niemand übernommen.',
+                              'portal/jsk_betreuung.php', $stats, 'jsk-offen-' . $id);
+                }
+            }
+        }
+    }
+    $details['jsk_betreuung'] = $stats['sent'] - $n0;
+} catch (\Throwable $e) {
+    error_log('cron benachrichtigungen [jsk_betreuung]: ' . $e->getMessage());
 }
 
 // =====================  Aufraeumen: alte Log-Eintraege  ======================

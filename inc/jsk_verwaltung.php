@@ -72,6 +72,11 @@ try {
     }
 } catch (Throwable $e) { /* settings evtl. noch leer */ }
 
+// Leitungs-Einsicht in Match-Chats (Jugendschutz-Entscheid des Vorstands, Schalter nur Admin)
+require_once __DIR__ . '/jsk.inc.php';
+$einsichtAktiv = false;
+try { $einsichtAktiv = jskChatLeiterEinsichtAktiv(getDB()); } catch (Throwable $e) { $einsichtAktiv = false; }
+
 // Teilnehmerlisten vorbereiten (kommende + vergangene; Standard = teilnehmend)
 $ttData = [];
 $ttError = false;
@@ -121,9 +126,23 @@ try {
             <label class="form-check-label fs-6" for="featureSwitch" id="featureSwitchLabel"><?= $featureAktiv ? 'Aktiv' : 'Deaktiviert' ?></label>
           </div>
         </div>
+        <!-- Leitungs-Einsicht in Betreuer-Chats -->
+        <div class="feature-switch-card p-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div style="max-width:720px;">
+            <div class="fw-semibold"><i class="bi bi-shield-check me-2"></i>Leitung liest Betreuer-Chats mit</div>
+            <small class="text-muted">Jugendschutz: Jungschützenleiter sehen die Chats zwischen Jungschützen und betreuenden Mitgliedern (nur lesen, kein Schreiben). Beide Seiten sehen im Chat den Hinweis «Die Jungschützenleitung kann mitlesen». Aus = Match-Chats bleiben privat.</small>
+          </div>
+          <div class="form-check form-switch fs-5 mb-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="einsichtSwitch"
+                   <?= $einsichtAktiv ? 'checked' : '' ?> <?= $canToggle ? '' : 'disabled' ?>>
+            <label class="form-check-label fs-6" for="einsichtSwitch" id="einsichtSwitchLabel"><?= $einsichtAktiv ? 'Aktiv' : 'Aus' ?></label>
+          </div>
+        </div>
         <?php if (!$canToggle): ?>
           <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i>Nur Administratoren können die Funktion global ein-/ausschalten.</p>
         <?php endif; ?>
+        <!-- Leiter-/Betreuer-Stand (wird per JS aus anfragen.php gefüllt) -->
+        <div id="leiterStand" class="small mb-3"></div>
 
         <!-- Info-Text fürs JSK-Dashboard (einklappbar, Standard zu) -->
         <div class="feature-switch-card mb-4">
@@ -162,6 +181,9 @@ try {
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTeilnahme" type="button"><i class="bi bi-check2-square me-1"></i>Teilnehmerlisten</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAnfragen" type="button"><i class="bi bi-person-hearts me-1"></i>Anfragen <span class="badge bg-warning text-dark ms-1" id="anOffenBadge" style="display:none;"></span></button>
           </li>
         </ul>
 
@@ -228,7 +250,57 @@ try {
               <?php endif; ?>
             </div>
           </div>
+
+          <!-- TAB: Anfragen (Betreuungs-Matching) -->
+          <div class="tab-pane fade" id="tabAnfragen" role="tabpanel">
+            <div class="content-background">
+              <p class="text-muted small">Schiessanfragen der Jungschützen: wer sucht eine Begleitung, wer betreut. Betreuer lassen sich hier manuell zuteilen oder umteilen; Beteiligte werden benachrichtigt. Vergangene Anfragen wechseln automatisch auf «Erledigt».</p>
+              <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-outline-primary active an-filter" data-f="kommend">Kommende</button>
+                  <button type="button" class="btn btn-outline-primary an-filter" data-f="vergangen">Vergangene</button>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" id="anReload"><i class="bi bi-arrow-clockwise me-1"></i>Aktualisieren</button>
+              </div>
+              <div class="table-wrapper">
+                <table class="hybrid-table" id="anTable">
+                  <thead>
+                    <tr>
+                      <th style="width:110px">Datum</th><th>Jungschütze</th><th>Termin / Bemerkung</th>
+                      <th style="width:110px">Status</th><th>Betreuer</th><th style="width:220px; text-align:right">Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody><tr><td colspan="6" class="text-center text-muted py-4">Lädt…</td></tr></tbody>
+                </table>
+              </div>
+              <div class="table-wrapper mt-4">
+                <h5 class="table-title"><span><i class="bi bi-bar-chart me-2"></i>Betreuungen <?= (int) date('Y') ?></span></h5>
+                <div id="anStats" class="small text-muted"></div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Betreuer zuteilen -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-person-check me-2"></i>Betreuer zuteilen</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="small text-muted mb-2" id="assignInfo"></div>
+        <select class="form-select form-select-sm" id="assignSelect"></select>
+        <small class="text-muted d-block mt-2">Aktivierte Betreuer stehen zuoberst (★). Der Jungschütze, der neue und ein allfälliger bisheriger Betreuer werden benachrichtigt.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="assignConfirm"><i class="bi bi-check-lg me-1"></i>Zuteilen</button>
       </div>
     </div>
   </div>
@@ -542,7 +614,119 @@ $(function () {
   $(document).on('click', '.mobile-edit-btn', function (e) { e.stopPropagation(); const tr = document.getElementById('jrow' + $(this).data('id')); if (tr) Panel.open(tr); });
   window.matchMedia('(max-width: 767.98px)').addEventListener('change', buildMobile);
 
+  // ---------- Leitungs-Einsicht ----------
+  $('#einsichtSwitch').on('change', function () {
+    const on = this.checked;
+    $.post(ep + 'set_feature_active.php', { setting: 'jsk_chat_leiter_einsicht', aktiv: on ? 1 : 0, csrf_token: csrf })
+      .done(r => { const data = typeof r === 'string' ? JSON.parse(r) : r;
+        if (data.success) { $('#einsichtSwitchLabel').text(on ? 'Aktiv' : 'Aus'); msvToast(data.message, 'success'); }
+        else { msvToast(data.message || 'Fehler', 'error'); $('#einsichtSwitch').prop('checked', !on); } })
+      .fail(() => { msvToast('Fehler beim Speichern', 'error'); $('#einsichtSwitch').prop('checked', !on); });
+  });
+
+  // ---------- Anfragen (Tab) ----------
+  let anData = null, anFilter = 'kommend', assignId = 0;
+  const anEsc = s => $('<div>').text(s == null ? '' : s).html();
+  const anBadge = { offen: '<span class="badge bg-warning text-dark">Offen</span>', vergeben: '<span class="badge bg-success">Vergeben</span>',
+                    abgesagt: '<span class="badge bg-secondary">Abgesagt</span>', erledigt: '<span class="badge bg-info text-dark">Erledigt</span>' };
+
+  function loadAnfragen() {
+    $.get(ep + 'anfragen.php', { action: 'list' })
+      .done(r => { const d = typeof r === 'string' ? JSON.parse(r) : r;
+        if (!d.success) { msvToast(d.message || 'Fehler', 'error'); return; }
+        anData = d; renderAnfragen(); renderLeiterStand(); })
+      .fail(() => $('#anTable tbody').html('<tr><td colspan="6" class="text-center text-danger py-4">Fehler beim Laden</td></tr>'));
+  }
+
+  function renderLeiterStand() {
+    const d = anData; if (!d) return;
+    let html = '';
+    if (!d.leiter_mit.length) {
+      html += '<div class="alert alert-warning py-2 mb-2"><i class="bi bi-exclamation-triangle me-1"></i><strong>Kein Jungschützenleiter mit Portal-Login.</strong> Leitungs-Chat und Eskalationen laufen ins Leere – in der Mitgliederverwaltung das Flag «Jungschützenleiter» setzen (Mitglied braucht ein freigegebenes Login).</div>';
+    } else {
+      html += '<span class="text-muted"><i class="bi bi-person-badge me-1"></i>Leitung im Portal: <strong>' + d.leiter_mit.map(anEsc).join(', ') + '</strong></span>';
+    }
+    if (d.leiter_ohne.length) html += '<div class="text-warning mt-1"><i class="bi bi-exclamation-circle me-1"></i>Als Leiter markiert, aber ohne freigegebenes Login: ' + d.leiter_ohne.map(anEsc).join(', ') + '</div>';
+    html += '<div class="text-muted mt-1"><i class="bi bi-people me-1"></i>Aktivierte Betreuer: <strong>' + d.aktive_betreuer + '</strong>' + (d.aktive_betreuer === 0 ? ' – niemand erhält Anfragen!' : '') + '</div>';
+    $('#leiterStand').html(html);
+  }
+
+  function renderAnfragen() {
+    const d = anData; if (!d) return;
+    const rows = d.anfragen.filter(a => anFilter === 'kommend' ? !a.vergangen : a.vergangen);
+    const offen = d.anfragen.filter(a => !a.vergangen && a.status === 'offen').length;
+    $('#anOffenBadge').text(offen).toggle(offen > 0);
+    if (!rows.length) {
+      $('#anTable tbody').html('<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Keine ' + (anFilter === 'kommend' ? 'kommenden' : 'vergangenen') + ' Anfragen gefunden</td></tr>');
+    } else {
+      let html = '';
+      rows.forEach(a => {
+        const aktiv = !a.vergangen && (a.status === 'offen' || a.status === 'vergeben');
+        let akt = '';
+        if (aktiv) {
+          akt += '<button type="button" class="btn btn-outline-primary btn-sm an-assign" data-id="' + a.id + '" data-tooltip="' + (a.status === 'offen' ? 'Betreuer zuteilen' : 'Betreuer umteilen') + '"><i class="bi bi-person-check"></i></button> ';
+          if (a.status === 'vergeben') akt += '<button type="button" class="btn btn-outline-secondary btn-sm an-release" data-id="' + a.id + '" data-tooltip="Betreuung freigeben"><i class="bi bi-arrow-counterclockwise"></i></button> ';
+          akt += '<button type="button" class="btn btn-outline-danger btn-sm an-cancel" data-id="' + a.id + '" data-tooltip="Anfrage stornieren"><i class="bi bi-x-lg"></i></button>';
+        }
+        const info = (a.termin ? '<span class="text-primary"><i class="bi bi-flag me-1"></i>' + anEsc(a.termin) + '</span>' : '')
+                   + (a.termin && a.bemerkung ? '<br>' : '') + (a.bemerkung ? '<span class="text-muted">' + anEsc(a.bemerkung) + '</span>' : '');
+        html += '<tr' + (a.vergangen ? ' style="opacity:.6"' : '') + '>'
+          + '<td class="h-date"><strong>' + anEsc(a.datum_de) + '</strong>' + (a.zeit ? '<br><small class="text-muted">' + anEsc(a.zeit) + '</small>' : '') + '</td>'
+          + '<td class="h-name">' + anEsc(a.js_name) + (a.hat_login ? '' : ' <small class="text-muted" data-tooltip="Kein Portal-Login">(ohne Login)</small>') + '<br><small class="text-muted">gemeldet ' + anEsc(a.erstellt_de) + '</small></td>'
+          + '<td class="h-sub">' + info + '</td>'
+          + '<td>' + (anBadge[a.status] || anEsc(a.status)) + (a.status === 'erledigt' && !a.betreuer ? '<br><small class="text-danger">ohne Betreuer</small>' : '') + '</td>'
+          + '<td>' + (a.betreuer ? anEsc(a.betreuer) : '<span class="text-muted">–</span>') + '</td>'
+          + '<td class="text-end text-nowrap">' + akt + '</td></tr>';
+      });
+      $('#anTable tbody').html(html);
+    }
+    // Statistik
+    let st = '';
+    if (d.stats.length) {
+      st = '<table class="tl-table"><tbody>' + d.stats.map(s => '<tr><td class="tl-t">' + anEsc(s.name) + '</td><td class="tl-c"><span class="tl-pill ja">' + s.n + ' Betreuung' + (s.n === 1 ? '' : 'en') + '</span></td>'
+         + '<td class="text-muted">' + s.erledigt + ' erledigt' + (s.offen ? ', ' + s.offen + ' geplant' : '') + '</td></tr>').join('') + '</tbody></table>';
+    } else {
+      st = '<div class="text-muted"><i class="bi bi-inbox me-2"></i>Noch keine Betreuungen in diesem Jahr.</div>';
+    }
+    if (d.ohne_betreuer > 0) st += '<div class="text-danger mt-2"><i class="bi bi-exclamation-circle me-1"></i>' + d.ohne_betreuer + ' Anfrage' + (d.ohne_betreuer === 1 ? '' : 'n') + ' blieb' + (d.ohne_betreuer === 1 ? '' : 'en') + ' ohne Betreuer.</div>';
+    $('#anStats').html(st);
+  }
+
+  function anPost(payload, okCb) {
+    payload.csrf_token = csrf;
+    $.post(ep + 'anfragen.php', payload)
+      .done(r => { const data = typeof r === 'string' ? JSON.parse(r) : r;
+        msvToast(data.message || (data.success ? 'OK' : 'Fehler'), data.success ? 'success' : 'error');
+        if (data.success && okCb) okCb(); loadAnfragen(); })
+      .fail(x => msvToast((x.responseJSON && x.responseJSON.message) || 'Fehler bei der Verarbeitung', 'error'));
+  }
+
+  $(document).on('click', '.an-filter', function () { $('.an-filter').removeClass('active'); $(this).addClass('active'); anFilter = this.dataset.f; renderAnfragen(); });
+  $('#anReload').on('click', loadAnfragen);
+  $(document).on('click', '.an-assign', function () {
+    assignId = parseInt(this.dataset.id, 10);
+    const a = anData.anfragen.find(x => x.id === assignId); if (!a) return;
+    $('#assignInfo').text(a.js_name + ' · ' + a.datum_de + (a.zeit ? ' · ' + a.zeit : '') + (a.betreuer ? ' · bisher: ' + a.betreuer : ''));
+    $('#assignSelect').html('<option value="0">– Betreuer wählen –</option>' + anData.betreuer.map(b =>
+      '<option value="' + b.id + '"' + (a.betreuer_id === b.id ? ' selected' : '') + '>' + (b.aktiv ? '★ ' : '') + anEsc(b.name) + '</option>').join(''));
+    new bootstrap.Modal('#assignModal').show();
+  });
+  $('#assignConfirm').on('click', function () {
+    const uid = parseInt($('#assignSelect').val(), 10);
+    if (!uid) { msvToast('Bitte einen Betreuer wählen', 'warning'); return; }
+    anPost({ action: 'assign', id: assignId, user_id: uid }, () => bootstrap.Modal.getInstance(document.getElementById('assignModal')).hide());
+  });
+  $(document).on('click', '.an-release', function () {
+    const id = parseInt(this.dataset.id, 10);
+    msvConfirm('Betreuung freigeben? Der bisherige Betreuer, der Jungschütze und alle aktivierten Betreuer werden informiert.').then(r => { if (r.isConfirmed) anPost({ action: 'release', id: id }); });
+  });
+  $(document).on('click', '.an-cancel', function () {
+    const id = parseInt(this.dataset.id, 10);
+    msvConfirm('Anfrage stornieren? Jungschütze und Betreuer werden informiert.').then(r => { if (r.isConfirmed) anPost({ action: 'cancel', id: id }); });
+  });
+
   loadJs();
+  loadAnfragen();
 });
 </script>
 

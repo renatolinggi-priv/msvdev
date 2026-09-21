@@ -50,6 +50,10 @@ try {
     $termine = $tt->fetchAll();
 } catch (Throwable $e) { $termine = []; }
 
+// Ist die Leitung im Portal erreichbar? (Leiter-Flag + Login) – sonst Hinweis statt Chat ins Leere
+$leiterAnzahl = 0;
+try { $leiterAnzahl = chatLeiterAnzahl($db); } catch (Throwable $e) { $leiterAnzahl = 0; }
+
 include 'portal_header.php';
 $csrf_token = ensureCsrfToken();
 
@@ -98,6 +102,10 @@ $statusBadge = function ($s) {
     </div>
   <?php endif; ?>
 
+  <?php if ($leiterAnzahl === 0): ?>
+    <div class="alert alert-warning py-2 small"><i class="bi bi-exclamation-triangle me-2"></i>Derzeit ist kein Jungschützenleiter im Portal erreichbar – der Leitungs-Chat ist deshalb pausiert. Bitte wende dich direkt an die Leitung.</div>
+  <?php endif; ?>
+
   <?php if (!$featureAktiv): ?>
     <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert. Bitte später erneut versuchen.</div>
   <?php else: ?>
@@ -131,8 +139,10 @@ $statusBadge = function ($s) {
                 <?php endif; ?>
               </div>
               <?php if ($a['status'] === 'vergeben' && !empty($a['betreut_von_user_id'])):
-                $matchConv = chatEnsureMatchConversation($db, $jsUserId, (int) $a['betreut_von_user_id']); ?>
-                <a href="chat.php?c=<?= (int) $matchConv ?>" class="btn btn-outline-club btn-sm mt-2"><i class="bi bi-chat-dots me-1"></i>Chat mit Betreuer</a>
+                // Nur lesen; fehlt der Chat noch (Altbestand), legt chat.php?anfrage= ihn genau einmal an
+                $matchConv = chatFindMatchConversation($db, $jsUserId, (int) $a['betreut_von_user_id']);
+                $chatHref  = $matchConv > 0 ? 'chat.php?c=' . (int) $matchConv : 'chat.php?anfrage=' . (int) $a['id']; ?>
+                <a href="<?= $chatHref ?>" class="btn btn-outline-club btn-sm mt-2"><i class="bi bi-chat-dots me-1"></i>Chat mit Betreuer</a>
               <?php endif; ?>
             </div>
             <?php if ($kannAbsagen): ?>
