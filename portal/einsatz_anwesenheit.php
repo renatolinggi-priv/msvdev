@@ -13,12 +13,13 @@ $db   = getDB();
 $csrf = ensureCsrfToken();
 $heute = date('Y-m-d');
 
-// Pläne (freigegeben/final), nächstgelegener Termin zuerst
+// Pläne inkl. Entwürfe (die Seite ist nur für Vorstand/Admin – so lässt sich die Erfassung vor der Freigabe testen),
+// nächstgelegener Termin zuerst
 $plaene = [];
 try {
     $plaene = $db->query("SELECT p.id, p.titel, p.jahr, p.status,
                                  (SELECT MIN(ABS(DATEDIFF(t.datum, CURDATE()))) FROM einsatz_plan_termine t WHERE t.plan_id = p.id) AS abstand
-                            FROM einsatz_plaene p WHERE p.status <> 'entwurf' AND p.layout = 'funktion_x_termin'
+                            FROM einsatz_plaene p WHERE p.layout = 'funktion_x_termin'
                            ORDER BY abstand IS NULL, abstand, p.jahr DESC, p.titel")->fetchAll();
 } catch (Throwable $e) { $plaene = []; }
 
@@ -26,7 +27,6 @@ $planId = (int)($_GET['id'] ?? 0);
 if ($planId <= 0 && $plaene) $planId = (int)$plaene[0]['id'];
 $plan = null;
 try { $plan = $planId > 0 ? ep_plan_laden($db, $planId) : null; } catch (Throwable $e) { $plan = null; }
-if ($plan && $plan['status'] === 'entwurf' && !isAdmin()) $plan = null;
 
 $termin = null; $mitglieder = [];
 if ($plan) {
@@ -90,7 +90,7 @@ include 'portal_header.php';
 <?php else: ?>
   <form method="get" class="an-select">
     <select name="id" class="form-select" onchange="this.form.submit()">
-      <?php foreach ($plaene as $p): ?><option value="<?= (int)$p['id'] ?>" <?= (int)$p['id'] === $planId ? 'selected' : '' ?>><?= htmlspecialchars($p['titel']) ?> (<?= (int)$p['jahr'] ?>)</option><?php endforeach; ?>
+      <?php foreach ($plaene as $p): ?><option value="<?= (int)$p['id'] ?>" <?= (int)$p['id'] === $planId ? 'selected' : '' ?>><?= htmlspecialchars($p['titel']) ?> (<?= (int)$p['jahr'] ?>)<?= $p['status'] === 'entwurf' ? ' · Entwurf' : '' ?></option><?php endforeach; ?>
     </select>
   </form>
   <?php if ($plan): ?>

@@ -30,6 +30,13 @@ const EP_FUSSTEXT_CHILBI = "Bei Verhinderung bitte selbst für Abtausch oder Ers
     . "Getränke sind nur während des persönlichen Arbeitseinsatzes gratis. Ausnahme: Eis-Shot schiessen muss bezahlt werden.\n"
     . "Wir bitten euch Alkohol nur in Massen zu konsumieren, es ist ein Arbeitseinsatz!";
 
+const EP_FUSSTEXT_SCHLOSSTURM = "Wichtige Infos:\n"
+    . "- Bei Verhinderung unbedingt selber im eigenen Verein für Ersatz / Abtausch sorgen\n"
+    . "- Für alle Helfer, die am 1. Samstag den ganzen Tag eingeteilt sind, wird das Mittagessen organisiert und bezahlt\n"
+    . "- Znüni / Zvieri inkl. Kaffee / Mineralwasser werden organisiert\n"
+    . "- Es können keine kostenlosen Getränke vom Restaurant bezogen werden\n"
+    . "Herzlichen Dank an alle Helferinnen und Helfer!";
+
 const EP_WOCHENTAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 const EP_WOCHENTAGE_KURZ = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
 const EP_MONATE = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -51,7 +58,9 @@ function ep_layout_fuer_typ(string $typ): string
 /** Standard-Fusstext für einen Plantyp. */
 function ep_fusstext_default(string $typ): string
 {
-    return $typ === 'chilbi' ? EP_FUSSTEXT_CHILBI : EP_FUSSTEXT_DEFAULT;
+    if ($typ === 'chilbi') return EP_FUSSTEXT_CHILBI;
+    if ($typ === 'schlossturm') return EP_FUSSTEXT_SCHLOSSTURM;
+    return EP_FUSSTEXT_DEFAULT;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,10 +157,20 @@ function ep_plan_laden(PDO $db, int $planId): ?array
     }
 
     // Spalten späterer Migrationen tolerant ergänzen (052: info, 053: rolle/umfrage_id/vorschlag)
-    foreach ($plan['termine'] as &$t) { if (!array_key_exists('info', $t)) $t['info'] = null; } unset($t);
+    foreach ($plan['termine'] as &$t) {
+        if (!array_key_exists('info', $t)) $t['info'] = null;
+        if (!array_key_exists('pauschale_std', $t)) $t['pauschale_std'] = null;   // Migration 058
+    } unset($t);
     foreach ($plan['funktionen'] as &$f) { if (!array_key_exists('rolle', $f)) $f['rolle'] = null; } unset($f);
     if (!array_key_exists('umfrage_id', $plan)) $plan['umfrage_id'] = null;
-    $slotDefaults = function (array $s): array { $s['vorschlag'] ??= 0; if (!array_key_exists('anwesend', $s)) $s['anwesend'] = null; return $s; };
+    if (!array_key_exists('farbe', $plan)) $plan['farbe'] = null;   // Migration 055
+    $slotDefaults = function (array $s): array {
+        $s['vorschlag'] ??= 0;
+        if (!array_key_exists('anwesend', $s)) $s['anwesend'] = null;
+        $s['ok'] ??= 0;                                                          // Migration 058
+        if (!array_key_exists('stunden_korrektur', $s)) $s['stunden_korrektur'] = null;
+        return $s;
+    };
     $plan['slots'] = array_map($slotDefaults, $plan['slots']);
     $plan['slot_index'] = array_map($slotDefaults, $plan['slot_index']);
     foreach ($plan['zellen'] as $k => $z) $plan['zellen'][$k] = array_map($slotDefaults, $z);
@@ -272,7 +291,7 @@ function ep_besetzung(array $plan, int $terminId): array
         $key = $terminId . '|' . $f['id'];
         $slots = $plan['zellen'][$key] ?? [];
         $ist = count(array_filter($slots, 'ep_slot_besetzt'));
-        if ($plan['layout'] === 'funktion_x_termin') $soll = max(1, (int)$f['anzahl']);
+        if ($plan['layout'] === 'funktion_x_termin') $soll = ep_anzahl_pos($plan, $terminId, $f);
         else $soll = $plan['soll'][$key] ?? null;
         if ($ist === 0 && !$soll) continue;
         $out[] = ['funktion' => $f, 'ist' => $ist, 'soll' => $soll];
@@ -355,6 +374,29 @@ function ep_zeit_text(array $t): string
     return $von;
 }
 
+/**
+ * Abgerechnete Stunden einer Schicht (Helferabrechnung, Migration 058): pauschale_std, falls gesetzt,
+ * sonst die Dauer aus zeit_von/zeit_bis (Mitternachtsüberlauf +24 h); 0 ohne Zeitangabe.
+ * Einzige Rechenstelle – genutzt von Editor (Helferstunden-Box), Anwesenheits-Auswertung und Helferabrechnung.
+ */
+function ep_termin_stunden(array $t): float
+{
+    if (isset($t['pauschale_std']) && $t['pauschale_std'] !== '') return round((float)$t['pauschale_std'], 2);
+    if (empty($t['zeit_von']) || empty($t['zeit_bis'])) return 0.0;
+    $d = (strtotime($t['zeit_bis']) - strtotime($t['zeit_von'])) / 3600;
+    if ($d < 0) $d += 24;
+    return round($d, 2);
+}
+
+/** Schichtdauer rein aus zeit_von/zeit_bis (ohne Pauschale) – für die Anzeige «Ist-Dauer» im Tab Ansätze. */
+function ep_termin_dauer(array $t): float
+{
+    if (empty($t['zeit_von']) || empty($t['zeit_bis'])) return 0.0;
+    $d = (strtotime($t['zeit_bis']) - strtotime($t['zeit_von'])) / 3600;
+    if ($d < 0) $d += 24;
+    return round($d, 2);
+}
+
 /** «Mittwoch 27. Mai» */
 function ep_datum_lang(string $datum): string
 {
@@ -371,6 +413,21 @@ function ep_datum_kurz(string $datum): string
     return EP_WOCHENTAGE_KURZ[(int)date('w', $ts)] . ' ' . date('d.m.Y', $ts);
 }
 
+/** Titelfarbe als 6-stelliges Hex ohne «#» (Word) – Standard D9D9D9. */
+function ep_farbe_hex(?string $farbe, string $default = 'D9D9D9'): string
+{
+    $f = ltrim(trim((string)$farbe), '#');
+    return preg_match('/^[0-9a-fA-F]{6}$/', $f) ? strtoupper($f) : $default;
+}
+
+/** Ist die Farbe dunkel (→ weisse Schrift)? */
+function ep_farbe_dunkel(string $hex): bool
+{
+    $hex = ep_farbe_hex($hex);
+    [$r, $g, $b] = [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
+    return (0.299 * $r + 0.587 * $g + 0.114 * $b) < 150;
+}
+
 /** Dateiname-tauglicher Stamm: «Obligatorisch_2026» */
 function ep_dateistamm(array $plan): string
 {
@@ -383,7 +440,25 @@ function ep_dateistamm(array $plan): string
 // ---------------------------------------------------------------------------
 
 /**
- * Layout funktion_x_termin: fehlende Slots anlegen (Termin × Funktion × pos 1..anzahl).
+ * Layout funktion_x_termin: Anzahl Positionen einer Funktion an einem Termin.
+ * Standard = funktion.anzahl; abweichend je Termin über einsatz_plan_soll (Schlossturm: Warner Sa 11, So 8 …).
+ */
+function ep_anzahl_pos(array $plan, int $terminId, array $f): int
+{
+    $soll = $plan['soll'][$terminId . '|' . $f['id']] ?? null;
+    return max(1, $soll !== null && $soll > 0 ? (int)$soll : (int)$f['anzahl']);
+}
+
+/** Grösste Positionszahl einer Funktion über alle Termine (Zeilenzahl im Word / Raster). */
+function ep_anzahl_max(array $plan, array $f): int
+{
+    $max = 1;
+    foreach ($plan['termine'] as $t) $max = max($max, ep_anzahl_pos($plan, (int)$t['id'], $f));
+    return $max;
+}
+
+/**
+ * Layout funktion_x_termin: fehlende Slots anlegen (Termin × Funktion × pos 1..Anzahl je Termin).
  * Bestehende Slots bleiben unverändert (INSERT IGNORE auf uq_slot_pos).
  */
 function ep_slots_sicherstellen(PDO $db, int $planId): int
@@ -394,7 +469,7 @@ function ep_slots_sicherstellen(PDO $db, int $planId): int
     $n = 0;
     foreach ($plan['termine'] as $t) {
         foreach ($plan['funktionen'] as $f) {
-            for ($pos = 1; $pos <= max(1, (int)$f['anzahl']); $pos++) {
+            for ($pos = 1; $pos <= ep_anzahl_pos($plan, (int)$t['id'], $f); $pos++) {
                 if (isset($plan['slot_index'][$t['id'] . '|' . $f['id'] . '|' . $pos])) continue;
                 $ins->execute([$planId, $t['id'], $f['id'], $pos]);
                 $n += $ins->rowCount();
@@ -421,6 +496,21 @@ function ep_slots_kuerzen(PDO $db, int $planId, int $funktionId, int $anzahl): i
 }
 
 /**
+ * Layout A: leere Slots einer Zelle (Termin × Funktion) oberhalb der neuen Anzahl löschen.
+ * Rückgabe: Anzahl besetzter Slots, die das Kürzen verhindern (0 = ok).
+ */
+function ep_slots_kuerzen_zelle(PDO $db, int $planId, int $terminId, int $funktionId, int $anzahl): int
+{
+    $st = $db->prepare("SELECT COUNT(*) FROM einsatz_plan_slots WHERE plan_id = ? AND termin_id = ? AND funktion_id = ? AND pos > ?
+                          AND (mitglied_id IS NOT NULL OR (name_text IS NOT NULL AND name_text <> ''))");
+    $st->execute([$planId, $terminId, $funktionId, $anzahl]);
+    $blockiert = (int)$st->fetchColumn();
+    if ($blockiert > 0) return $blockiert;
+    $db->prepare("DELETE FROM einsatz_plan_slots WHERE plan_id = ? AND termin_id = ? AND funktion_id = ? AND pos > ?")->execute([$planId, $terminId, $funktionId, $anzahl]);
+    return 0;
+}
+
+/**
  * Schiesstage eines JM-Anlasses (JMDefinition.Bezeichnung passend zum Typ) als Termin-Vorschläge.
  * Rückgabe: [['datum' => 'Y-m-d', 'zeit_von' => 'HH:MM:SS', 'zeit_bis' => ...], ...]
  */
@@ -439,6 +529,63 @@ function ep_termine_aus_jm(PDO $db, string $typ, int $jahr): array
         $out[] = ['datum' => $r['schiesstag'], 'zeit_von' => $r['start_time'], 'zeit_bis' => $r['end_time']];
     }
     return $out;
+}
+
+/**
+ * Datum um n Jahre verschieben, so dass der Wochentag erhalten bleibt (nächstliegender gleicher Wochentag):
+ * Mi 27.05.2026 +1 Jahr → Mi 26.05.2027.
+ */
+function ep_datum_gleicher_wochentag(string $datum, int $jahrDiff): string
+{
+    $quelle = new DateTime($datum);
+    $ziel = (clone $quelle)->modify(($jahrDiff >= 0 ? '+' : '') . $jahrDiff . ' year');
+    $diff = ((int)$quelle->format('N') - (int)$ziel->format('N') + 7) % 7;   // Tage vorwärts bis gleicher Wochentag
+    if ($diff > 3) $diff -= 7;                                                  // näher rückwärts
+    return $ziel->modify(($diff >= 0 ? '+' : '') . $diff . ' day')->format('Y-m-d');
+}
+
+/**
+ * Termine eines Quellplans in ein Zieljahr übernehmen (Datum auf gleichen Wochentag verschoben,
+ * Zeiten/Info/Bezeichnung unverändert). Rückgabe: [quell_termin_id => neue_termin_id].
+ */
+function ep_termine_uebernehmen(PDO $db, array $quelle, int $neuId, int $zielJahr): array
+{
+    $ins = $db->prepare("INSERT INTO einsatz_plan_termine (plan_id, bezeichnung, datum, zeit_von, zeit_bis, zeit_text, info, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $map = [];
+    $jahrDiff = $zielJahr - (int)$quelle['jahr'];
+    foreach ($quelle['termine'] as $i => $t) {
+        $datum = ep_termin_datum_vorschlag($quelle['typ'] ?? '', $t, $i, $zielJahr, $jahrDiff);
+        $ins->execute([$neuId, $t['bezeichnung'], $datum, $t['zeit_von'], $t['zeit_bis'], $t['zeit_text'], $t['info'] ?? null, $t['sort']]);
+        $map[(int)$t['id']] = (int)$db->lastInsertId();
+        ep_termin_pauschale_kopieren($db, $t, $map[(int)$t['id']]);
+    }
+    return $map;
+}
+
+/** Pauschale (Migration 058) eines Quelltermins auf den neuen Termin übertragen – tolerant, falls Spalte fehlt. */
+function ep_termin_pauschale_kopieren(PDO $db, array $quelle, int $neuTerminId): void
+{
+    if (!isset($quelle['pauschale_std']) || $quelle['pauschale_std'] === '') return;
+    try { $db->prepare("UPDATE einsatz_plan_termine SET pauschale_std = ? WHERE id = ?")->execute([$quelle['pauschale_std'], $neuTerminId]); } catch (Throwable $e) {}
+}
+
+/**
+ * Datumsvorschlag für einen übernommenen Termin. Standard: gleicher Wochentag im Zieljahr.
+ * Regel Obligatorisch: das 3. Obligatorisch liegt immer auf dem letzten Mittwoch bzw. Freitag im August
+ * (Wochentag wie im Vorjahr; ist er weder Mi noch Fr, gilt der letzte gleiche Wochentag im August).
+ */
+function ep_termin_datum_vorschlag(string $typ, array $termin, int $index, int $zielJahr, int $jahrDiff): string
+{
+    $quelle = new DateTime($termin['datum']);
+    $istDrittes = $index === 2 || preg_match('/^3\s*\./', (string)$termin['bezeichnung']);
+    if ($typ === 'obligatorisch' && $istDrittes && (int)$quelle->format('n') === 8) {
+        // Regel: spätester Tag im August, der ein Mittwoch (3) oder Freitag (5) ist – der Wochentag darf
+        // wechseln (Bundesprogramm endet am 31.08.): 2027 → Fr 27.08., 2028 → Mi 30.08., 2029 → Fr 31.08.
+        $d = new DateTime(sprintf('%04d-08-31', $zielJahr));
+        while (!in_array((int)$d->format('N'), [3, 5], true)) $d->modify('-1 day');
+        return $d->format('Y-m-d');
+    }
+    return ep_datum_gleicher_wochentag($termin['datum'], $jahrDiff);
 }
 
 /** Termin-Bezeichnung für Obligatorisch: «1.Obligatorisch», «2.Obligatorisch» … sonst leer. */
@@ -463,25 +610,22 @@ function ep_plan_kopieren(PDO $db, array $quelle, int $zielJahr, string $titel, 
                   VALUES (?, ?, ?, ?, 'entwurf', ?, ?, ?)")
        ->execute([$zielJahr, $quelle['typ'], $titel, $quelle['layout'], $quelle['fusstext'], $quelle['id'], $userId]);
     $neuId = (int)$db->lastInsertId();
+    // Titelfarbe und Umfrage-Verknüpfung nicht zwingend vorhanden (Migrationen 053/055) → separat, tolerant
+    try { $db->prepare("UPDATE einsatz_plaene SET farbe = ? WHERE id = ?")->execute([$quelle['farbe'] ?? null, $neuId]); } catch (Throwable $e) {}
 
-    // Termine
+    // Termine: aus der JM-Definition des Zieljahrs (wenn gleich viele), sonst auf den gleichen Wochentag verschoben
     $jmTermine = $termineAusJm ? ep_termine_aus_jm($db, $quelle['typ'], $zielJahr) : [];
     $nutzeJm = count($jmTermine) > 0 && count($jmTermine) === count($quelle['termine']);
-    $insT = $db->prepare("INSERT INTO einsatz_plan_termine (plan_id, bezeichnung, datum, zeit_von, zeit_bis, zeit_text, info, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $terminMap = [];
-    foreach ($quelle['termine'] as $i => $t) {
-        $jahrDiff = $zielJahr - (int)$quelle['jahr'];
-        if ($nutzeJm) {
-            $datum = $jmTermine[$i]['datum'];
-            $von   = $jmTermine[$i]['zeit_von'];
-            $bis   = $jmTermine[$i]['zeit_bis'];
-        } else {
-            $datum = date('Y-m-d', strtotime($t['datum'] . ' +' . $jahrDiff . ' year'));
-            $von   = $t['zeit_von'];
-            $bis   = $t['zeit_bis'];
+    if ($nutzeJm) {
+        $insT = $db->prepare("INSERT INTO einsatz_plan_termine (plan_id, bezeichnung, datum, zeit_von, zeit_bis, zeit_text, info, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $terminMap = [];
+        foreach ($quelle['termine'] as $i => $t) {
+            $insT->execute([$neuId, $t['bezeichnung'], $jmTermine[$i]['datum'], $jmTermine[$i]['zeit_von'], $jmTermine[$i]['zeit_bis'], $t['zeit_text'], $t['info'] ?? null, $t['sort']]);
+            $terminMap[(int)$t['id']] = (int)$db->lastInsertId();
+            ep_termin_pauschale_kopieren($db, $t, $terminMap[(int)$t['id']]);
         }
-        $insT->execute([$neuId, $t['bezeichnung'], $datum, $von, $bis, $t['zeit_text'], $t['info'] ?? null, $t['sort']]);
-        $terminMap[(int)$t['id']] = (int)$db->lastInsertId();
+    } else {
+        $terminMap = ep_termine_uebernehmen($db, $quelle, $neuId, $zielJahr);
     }
 
     // Funktionen (inkl. Anfrage-Rolle)
@@ -502,6 +646,10 @@ function ep_plan_kopieren(PDO $db, array $quelle, int $zielJahr, string $titel, 
         // Externe (MSV ohne Mitglied, nur Klartext) nicht übernehmen – ist im neuen Jahr offen
         $mid = (int)($s['vorschlag'] ?? 0) === 1 ? null : ($s['mitglied_id'] ?: null);
         $insS->execute([$neuId, $tid, $fid, $s['pos'], $s['verein'], $mid]);
+        // OK-Kennzeichen (Migration 058) mitnehmen, nur wenn die Person übernommen wurde – tolerant, falls Spalte fehlt
+        if ($mid && (int)($s['ok'] ?? 0) === 1) {
+            try { $db->prepare("UPDATE einsatz_plan_slots SET ok = 1 WHERE id = ?")->execute([(int)$db->lastInsertId()]); } catch (Throwable $e) {}
+        }
     }
     return $neuId;
 }

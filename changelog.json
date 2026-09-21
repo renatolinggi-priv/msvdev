@@ -1,8 +1,50 @@
 [
   {
+    "version": "1.30.0",
+    "datum": "2026-09-21",
+    "aenderungen": [
+      {
+        "titel": "Helferabrechnung Schlossturmschiessen",
+        "beschreibung": "Neue Ansicht «Abrechnung» im Einsatzplan-Editor (Umschalter Planung / Abrechnung bei Schlossturm-Plänen): Die Helferstunden pro Verein (SV Freienbach, MSV Wilen, SV Wollerau) werden direkt aus dem Schlossturm-Einsatzplan gerechnet – die bisherige Excel-Mappe wird nicht mehr von Hand geführt. Je Schicht wird eine Pauschale hinterlegt (Samstag 5, Sonntag 3 Stunden, Vorschlag per Klick), OK-Positionen werden getrennt ausgewiesen und nur auf Wunsch mitgezählt, einzelne Positionen lassen sich mit einer Stundenkorrektur und Bemerkung versehen. Vor- und Nacharbeiten, OK-Funktionen und Nachträge werden als manuelle Zeilen erfasst. Wer bei der Anwesenheit als «nicht da» markiert ist, erhält keine Stunden; nicht erfasste Anwesenheit zählt gemäss Plan. Ausgabe als Excel in der bisherigen Arbeitsmappe «Helferstunden» (alle sieben Blätter inklusive Formeln, Abbild der Einsatzliste und Korrekturenliste; die Mappe rechnet in Excel weiter) und als PDF quer. Beim Import der OK-Einsatzliste wird «OK» in der Vereinsspalte neu als OK-Kennzeichen übernommen, Positionen ohne Kreuz erhalten die Bemerkung «Verein unklar». Die Auswertung «Std. da» im Einsatzplan rechnet neu ebenfalls mit der Pauschale, wo eine gesetzt ist. Datenbank-Aktualisierung 058 und 059 nötig.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.29.0",
     "datum": "2026-09-16",
     "aenderungen": [
+      {
+        "titel": "Tägliche Datensicherung der Datenbank",
+        "beschreibung": "Bisher gab es keine automatische Sicherung, der Ordner dafür war leer. Neu läuft jede Nacht um 03:30 ein Lauf, der die ganze Datenbank sichert, gepackt ablegt und die 14 neuesten Stände behält. Die Sicherung wird vor dem Ablegen geprüft: zu kleine oder abgebrochene Dateien werden verworfen und im Fehlerlog gemeldet, damit ein stiller Ausfall auffällt. Der Ordner ist per Webzugriff gesperrt, das Datenbank-Passwort läuft über eine kurzlebige Datei statt über die Kommandozeile. Der Lauf kann nur sichern, nicht wiederherstellen oder löschen. Im selben Durchgang wird das PHP-Fehlerlog ab einem Megabyte gepackt archiviert, drei Stände bleiben erhalten.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Cup-Auswertungen nur noch für Angemeldete",
+        "beschreibung": "Elf Hintergrund-Skripte der Bereiche Cup und Cup-Rangliste waren ohne Anmeldung aufrufbar und gaben Teilnehmer, Paarungen und Resultate heraus; zwei davon erzeugten bei jedem fremden Aufruf ein PDF. Sie verlangen jetzt wie alle übrigen Endpunkte eine Admin- oder Vorstands-Sitzung. Die speichernden und löschenden Cup-Funktionen waren bereits geschützt, es konnte also nie jemand Daten verändern.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Fehlerlog zeigt wieder Fehler",
+        "beschreibung": "Rund die Hälfte aller Zeilen im Fehlerlog waren Entwicklungs-Ausgaben aus der Endschiessen-Erfassung, dem Munitionskauf, den Heim- und Kantonalstich-Formularen und der Absendenbuch-Berechnung. Echte Fehler gingen darin unter. Solche Ausgaben laufen neu über einen zentralen Schalter und sind standardmässig aus; einschalten lässt er sich in der Konfiguration. Dabei kam heraus, dass 23 SQL-Fehlermeldungen der Absendenbuch-Berechnung über dieselbe Debug-Funktion liefen – die haben jetzt einen eigenen Weg und erscheinen immer.",
+        "typ": "verbessert",
+        "admin_only": true
+      },
+      {
+        "titel": "Startseite zeigt offene Punkte, Kennzahlen, Termine und Jubiläen",
+        "beschreibung": "Zuoberst steht neu die eingeklappte Zeile «Das wartet auf dich» mit der Anzahl offener Punkte. Aufgeklappt listet sie, was liegen geblieben ist: Anlässe ohne Resultate, Umfragen deren Frist abgelaufen ist, ein Einsatzplan der fertig besetzt aber noch nicht freigegeben ist, Pläne mit offenen Positionen im nächsten Monat, offene Tauschanfragen, Registrierungen und Fotos die auf Freigabe warten sowie ausstehende Datenbank-Aktualisierungen (nur Admin). Jede Zeile führt direkt zur zuständigen Seite; ist nichts offen, steht dort «Nichts offen – alles erledigt». Darunter stehen nebeneinander drei Felder: «Nächste Termine» führt die Schiesstage aus der JM-Definition und die wichtigen Termine in einer Liste zusammen, mehrtägige Anlässe als Bereich und mit Angabe, in wie vielen Tagen es so weit ist; «Vereinsjubiläen» zeigt die runden Vereinsjahre des laufenden Jahres; «Geburtstage» listet alle Geburtstage der nächsten drei Monate mit dem Alter, das erreicht wird, runde Geburtstage hervorgehoben. Auf schmalen Bildschirmen rutschen die Felder untereinander. Alles stammt aus vorhandenen Daten, es ist nichts einzustellen.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
+        "titel": "Startseite richtet sich nach der Saison",
+        "beschreibung": "Die Kacheln der Startseite erscheinen neu dann, wenn sie gebraucht werden. Oben unter «Jetzt aktuell» steht, was ansteht, mit kurzem Hinweis wie «Endstich in 24 Tagen · 4 Personen gelöst»; alles Übrige rutscht in die eingeklappte Liste «Weitere Bereiche» und bleibt einen Klick entfernt. Der Stichverkauf erscheint einen Monat vor dem Endstich, die Resultaterfassung und die Rangliste am Endstich selbst, der Cup am Cup-Tag und verschwindet, sobald die Final-Resultate erfasst sind. Die Einsatzplanung meldet sich sechs Wochen vor dem nächsten Arbeitseinsatz, Anlässe und Termine melden sich nach dem Absenden für die neue Saison. Munitionsverkauf, Heimmeisterschaft, Kantonalstich, Mitgliederverwaltung und Portal bleiben dauerhaft oben. Alle Termine stammen aus der JM-Definition und den Einsatzplänen, es ist nichts einzustellen; fehlt ein Datum, bleibt die Kachel sichtbar. Der Hinweis auf ausstehende Resultate rechnet neu mit den echten Schiesstagen statt mit dem Monatsnamen und zeigt, seit wann ein Anlass offen ist. Der Cup-Link der Startseite zeigte bisher ins Leere. Die Kacheln stehen neu je nach Bildschirmbreite in zwei bis sechs Spalten; auf schmalen Kacheln bricht der Text um, statt abgeschnitten zu werden.",
+        "typ": "verbessert",
+        "admin_only": true
+      },
       {
         "titel": "Einsatzplanung: Wiler Chilbi und Schlossturmschiessen, Drag & Drop, Verfügbarkeiten und automatische Einteilung",
         "beschreibung": "Alle Einsatzlisten werden gleich dargestellt (Funktionen × Termine, Personen als Chips), die Chilbi mit dynamischen Positionen, Soll je Schicht und «offen»-Platzhaltern. Mitgliederliste rechts mit Suche, Gruppen (nicht eingeplant / eingeplant / externe), Drag & Drop zum Einteilen, Verschieben und Entfernen; eingeklappte Funktionszeilen mit Zähler. Neuer Plantyp Schlossturmschiessen mit Anfrage-Rollen und Treffpunkt-Infos je Schicht, Import der OK-Einsatzliste mit allen drei Vereinen. Verfügbarkeiten (wer kann wann in welcher Rolle) aus der Portal-Umfrage, aus dem Excel «Personalanfrage» je Verein oder manuell; Export der Personalanfrage im Format des OK. Automatische Einteilung als Vorschlag: Vereine pro Schicht möglichst ausgeglichen, wenig belastete Personen zuerst, gleiche Funktion über mehrere Schichten; Vorschläge erscheinen blau gestrichelt, werden kontrolliert und übernommen oder verworfen; eingeteilt wird erst, wenn alle drei Vereine ihre Personalanfrage geliefert haben. Helferstunden je Verein unter der Mitgliederliste. Anwesenheit pro Schicht im Portal per Tastendruck erfassen (Vorstand/Admin, fürs Handy) mit Auswertung je Plan, Jahr, Verein und Person im Admin. Word in zwei Ansichten (Funktionen, Personen). Migrationen 051 bis 054.",
@@ -93,6 +135,18 @@
     "version": "1.26.0",
     "datum": "2026-09-09",
     "aenderungen": [
+      {
+        "titel": "Endschiessen lösen: Gäste können optional alle Stiche lösen",
+        "beschreibung": "Gäste waren bisher auf Endstich, Schwini P1/P2 und Sie und Er beschränkt. Neu stehen ihnen auch Kunst, Glück, Zabig und Differenzler offen; diese Kacheln sind gestrichelt umrandet, mit einem Plus-Symbol markiert und stehen hinter den Standard-Stichen. Der Kombi-Preis (2 Stiche, ab 3 Stiche) rechnet weiterhin nur mit Endstich und Schwini, Sie und Er bleibt beim Gäste-Sonderpreis, jeder optionale Stich kommt zum normalen Einzelpreis dazu. Der Button «Alle» wählt bei Gästen bewusst nur die Standard-Stiche; «Keine» leert alles. Probeschüsse bleiben den Jungschützen vorbehalten. Neu gibt es zudem unter «Spezialpreise» den Eintrag «Gäste: alle Stiche»: Löst ein Gast jeden Stich, gilt dieser Pauschalpreis anstelle der Einzelrechnung; der Startwert 0 bedeutet, dass die Pauschale aus ist und wie bisher gerechnet wird. Dafür ist Migration 057 nötig («Aktualisierung» ausführen). Server und Anzeige rechnen nach derselben Regel.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen lösen: Neue Gäste liessen sich nicht speichern (Datenbank-Trigger)",
+        "beschreibung": "Beim Anlegen eines neuen Gastes oder Jungschützen kam die Meldung «Can't update table endstich_gaeste in stored function/trigger …». Ursache war ein Datenbank-Trigger aus einer älteren Migration, der nach dem Einfügen die Gast-Tabelle selbst beschreiben wollte, was MariaDB verbietet. Der Trigger wird mit Migration 056 entfernt («Aktualisierung» ausführen); die synthetische Mitgliedernummer für den CSV-Export der Schiessanlage (999000 plus laufende Nummer) setzt jetzt die Anwendung direkt nach dem Speichern. Bestehende Gäste ohne Nummer werden von der Migration nachgefüllt.",
+        "typ": "fix",
+        "admin_only": true
+      },
       {
         "titel": "Endschiessen lösen: Aktionsmenü der Übersicht wird nicht mehr abgeschnitten",
         "beschreibung": "Das Drei-Punkte-Menü in der Übersichtstabelle (Bearbeiten, Standblatt, Standblatt drucken, Löschen) verschwand bei den unteren Zeilen teilweise im scrollbaren Tabellenbereich. Das Menü wird jetzt unabhängig vom Container positioniert und liegt vollständig sichtbar über der Tabelle; bei Platzmangel nach unten klappt es nach oben auf.",

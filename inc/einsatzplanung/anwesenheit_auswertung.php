@@ -35,8 +35,7 @@ try {
         foreach ($plan['slots'] as $s) {
             if (!ep_slot_fix($s)) continue;
             $t = $termine[(int)$s['termin_id']] ?? null; if (!$t) continue;
-            $std = 0.0;
-            if (!empty($t['zeit_von']) && !empty($t['zeit_bis'])) { $d = (strtotime($t['zeit_bis']) - strtotime($t['zeit_von'])) / 3600; if ($d < 0) $d += 24; $std = $d; }
+            $std = ep_termin_stunden($t);   // Pauschale (Migration 058) bzw. Schichtdauer
             $key = ep_person_key((int)$s['mitglied_id'], (string)$s['name_text']);
             $personen[$key] ??= ['name' => ep_slot_text($s, $mitglieder), 'verein' => $s['verein'], 'mitglied_id' => (int)$s['mitglied_id'] ?: null, 'plaene' => []] + $leer();
             $status = $s['anwesend'] === null ? 'offen' : ((int)$s['anwesend'] === 1 ? 'da' : 'nein');

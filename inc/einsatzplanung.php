@@ -19,6 +19,7 @@ if (!(isAdmin() || isVorstand()) && (int)($_SESSION['user_id'] ?? 0) !== 1) {
     exit();
 }
 require_once __DIR__ . '/einsatzplanung/plan_helpers.inc.php';
+require_once __DIR__ . '/helferabrechnung/abrechnung.inc.php';   // Ansicht «Abrechnung» (Schlossturm, Migration 058)
 require_once __DIR__ . '/partials/empty_state.inc.php';   // msv_empty_row()
 
 $db            = getDB();
@@ -47,6 +48,18 @@ try {
 } catch (Throwable $e) {
     $dbFehler = 'Die Tabellen der Einsatzplanung fehlen noch – bitte Migration 050 über «Aktualisierung» ausführen.';
     error_log('[einsatzplanung] ' . $e->getMessage());
+}
+// Ansicht «Abrechnung» (Helferabrechnung pro Verein, nur Schlossturm-Pläne): ?id=…&ansicht=abrechnung[&ok=1]
+// Logik in helferabrechnung/abrechnung.inc.php, Markup in helferabrechnung/ansicht.inc.php
+$ansichtAbr = $plan && $plan['typ'] === 'schlossturm' && ($_GET['ansicht'] ?? '') === 'abrechnung';
+$okMit      = (int)($_GET['ok'] ?? 0) === 1;
+$a = null; $haFehler = '';
+if ($ansichtAbr) {
+    try { $a = ha_abrechnung($db, $plan, $okMit); }
+    catch (Throwable $e) {
+        $haFehler = 'Die Abrechnung konnte nicht geladen werden – bitte Migration 058 über «Aktualisierung» ausführen.';
+        error_log('[einsatzplanung/abrechnung] ' . $e->getMessage());
+    }
 }
 $istA  = $plan ? $plan['layout'] === 'funktion_x_termin' : false;   // Layout A = Funktionen × Termine
 // Portal-Umfragen als mögliche Quelle der Verfügbarkeiten (Migration 053)
@@ -121,6 +134,10 @@ $page_specific_css = <<<'CSS'
 .ep-chip:hover, .ep-cell:hover { border-color: #94a3b8; background: #f8fafc; }
 .ep-chip.selected, .ep-cell.selected { outline: 2px solid var(--primary-color, #2d4373); outline-offset: 1px; }
 .ep-chip.ep-offen, .ep-cell.ep-leer { color: #94a3b8; border-style: dashed; }
+/* offene Positionen (kein Name, MSV) und Soll-Platzhalter: leicht rot, damit sie nach dem Einteilen auffallen */
+.ep-chip.ep-offen.ep-v-msv, .ep-chip.ep-offen:not([data-verein]), .ep-chip.ep-ph { background: #fff1f2; border-color: #fca5a5; color: #b91c1c; }
+.ep-chip.ep-offen.ep-v-msv .ep-dot, .ep-chip.ep-offen:not([data-verein]) .ep-dot, .ep-chip.ep-ph .ep-dot { background: #fca5a5; }
+.ep-chip.ep-offen.ep-v-msv:hover, .ep-chip.ep-ph:hover { background: #ffe4e6; border-color: #f87171; }
 .ep-chip.ep-v-freienbach { background: #e8f0fe; border-color: #b6c8f0; color: #2d4373; }
 .ep-chip.ep-v-wollerau   { background: #e8f5e9; border-color: #b5dcb8; color: #2e7d32; }
 .ep-chip.ep-warn { border-color: #f0ad4e; background: #fff7ec; }
@@ -226,6 +243,7 @@ $page_specific_css = <<<'CSS'
 #epMitgliedFilter { margin-bottom: .3rem; }
 .ep-hint { font-size: .78rem; color: #94a3b8; }
 CSS;
+if ($ansichtAbr) $page_specific_css .= "\n" . require __DIR__ . '/helferabrechnung/ansicht_css.inc.php';
 
 include 'header.inc.php';
 $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -244,6 +262,13 @@ foreach ($mitglieder as $m) {
 ob_start();
 if ($plan) { ?>
   <a href="einsatzplanung.php?year=<?= (int)$plan['jahr'] ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Zur Liste</a>
+  <?php if ($plan['typ'] === 'schlossturm'): ?>
+  <!-- Umschalter Planung ↔ Abrechnung (Helferstunden pro Verein, nur Schlossturm) -->
+  <div class="btn-group btn-group-sm" role="group">
+    <a href="einsatzplanung.php?id=<?= $planId ?>" class="btn <?= $ansichtAbr ? 'btn-outline-primary' : 'btn-primary' ?>"><i class="bi bi-grid-3x3 me-1"></i>Planung</a>
+    <a href="einsatzplanung.php?id=<?= $planId ?>&ansicht=abrechnung" class="btn <?= $ansichtAbr ? 'btn-primary' : 'btn-outline-primary' ?>" data-tooltip="Helferstunden pro Verein: Pauschalen, OK, Vor-/Nacharbeiten, Excel/PDF"><i class="bi bi-calculator me-1"></i>Abrechnung</a>
+  </div>
+  <?php endif; ?>
   <span class="badge ep-status <?= $h($plan['status']) ?>" id="epStatusBadge"><?= $h(EP_STATUS[$plan['status']] ?? $plan['status']) ?></span>
 <?php } else { ?>
   <form method="get" class="d-flex align-items-center gap-2">
@@ -279,15 +304,17 @@ $page_show_mobile = true;
               <tbody>
               <?php if (!$plaene) { echo msv_empty_row(6, 'Keine Einsatzpläne für ' . $selected_year . ' gefunden', 'bi-inbox'); } ?>
               <?php foreach ($plaene as $p): $offen = (int)$p['anz_slots'] - (int)$p['anz_besetzt']; ?>
-                <tr class="hybrid-row" onclick="location.href='einsatzplanung.php?id=<?= (int)$p['id'] ?>'" style="cursor:pointer">
+                <tr class="hybrid-row" onclick="if (!event.target.closest('button, a')) location.href='einsatzplanung.php?id=<?= (int)$p['id'] ?>'" style="cursor:pointer">
                   <td class="fw-semibold"><?= $h($p['titel']) ?></td>
                   <td><?= $h(EP_TYPEN[$p['typ']] ?? $p['typ']) ?> <small class="text-muted">· <?= $h(EP_LAYOUTS[$p['layout']] ?? '') ?></small></td>
                   <td><span class="badge ep-status <?= $h($p['status']) ?>"><?= $h(EP_STATUS[$p['status']] ?? $p['status']) ?></span></td>
                   <td class="text-center"><?= (int)$p['anz_termine'] ?></td>
                   <td class="text-center"><?= (int)$p['anz_besetzt'] ?> / <?= (int)$p['anz_slots'] ?><?php if ($offen > 0 && $p['layout'] === 'funktion_x_termin'): ?> <span class="badge bg-warning text-dark" data-tooltip="offene Positionen"><?= $offen ?></span><?php endif; ?></td>
-                  <td class="text-end" onclick="event.stopPropagation()">
+                  <td class="text-end text-nowrap">
                     <a class="btn btn-outline-primary btn-sm" href="einsatzplanung.php?id=<?= (int)$p['id'] ?>" data-tooltip="Bearbeiten"><i class="bi bi-pencil"></i></a>
                     <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= (int)$p['id'] ?>" data-fmt="docx" data-tooltip="Word"><i class="bi bi-file-earmark-word"></i></button>
+                    <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= (int)$p['id'] ?>" data-fmt="pdf" data-tooltip="PDF (Konvertierung, dauert einige Sekunden)"><i class="bi bi-file-earmark-pdf"></i></button>
+                    <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="einsatzplan" data-druck-label="Einsatzplan" data-plan="<?= (int)$p['id'] ?>" data-typ="<?= $h($p['typ']) ?>" data-titel="<?= $h($p['titel']) ?>" data-tooltip="Direkt drucken (Druckprofil «Einsatzplan»)"><i class="bi bi-printer"></i></button>
                     <button type="button" class="btn btn-outline-danger btn-sm js-plan-delete" data-plan="<?= (int)$p['id'] ?>" data-titel="<?= $h($p['titel']) ?>" data-tooltip="Löschen"><i class="bi bi-trash"></i></button>
                   </td>
                 </tr>
@@ -297,14 +324,17 @@ $page_show_mobile = true;
           </div>
         </div>
 
-        <?php else:
+        <?php elseif ($ansichtAbr):
+          // ================= ANSICHT ABRECHNUNG (Schlossturm) =================
+          include __DIR__ . '/helferabrechnung/ansicht.inc.php';
+        else:
           // ================= PLAN-EDITOR =================
           $terminIndex = []; foreach ($plan['termine'] as $t) $terminIndex[(int)$t['id']] = $t;
         ?>
         <div class="content-background">
           <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
             <div>
-              <h5 class="mb-1"><?= $h($plan['titel']) ?> <small class="text-muted fw-normal">· <?= $h(EP_TYPEN[$plan['typ']] ?? $plan['typ']) ?> <?= (int)$plan['jahr'] ?></small></h5>
+              <h5 class="mb-1"><?php if (!empty($plan['farbe'])): ?><span class="d-inline-block rounded me-2" style="width:14px;height:14px;background:<?= $h($plan['farbe']) ?>;vertical-align:-2px" data-tooltip="Titelfarbe im Word/PDF"></span><?php endif; ?><?= $h($plan['titel']) ?> <small class="text-muted fw-normal">· <?= $h(EP_TYPEN[$plan['typ']] ?? $plan['typ']) ?> <?= (int)$plan['jahr'] ?></small></h5>
               <div class="ep-hint"><?= count($plan['termine']) ?> Termine · <?= count($plan['funktionen']) ?> <?= $istA ? 'Funktionen' : 'Einsatztypen' ?> · <?= count(array_filter($plan['slots'], 'ep_slot_besetzt')) ?> / <?= count($plan['slots']) ?> Positionen besetzt<?php if ($plan['vorlage_plan_id']): ?> · kopiert aus Plan #<?= (int)$plan['vorlage_plan_id'] ?><?php endif; ?></div>
             </div>
             <div class="ep-toolbar">
@@ -313,7 +343,7 @@ $page_show_mobile = true;
                 <div class="btn-group btn-group-sm">
                   <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#epTermineModal"><i class="bi bi-calendar3 me-1"></i><?= $istA ? 'Termine' : 'Schichten' ?></button>
                   <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#epFunktionenModal"><i class="bi bi-list-task me-1"></i><?= $istA ? 'Funktionen' : 'Einsatztypen' ?></button>
-                  <?php if (!$istA): ?><button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#epSollModal" data-tooltip="Soll-Besetzung je Schicht und Funktion"><i class="bi bi-bullseye me-1"></i>Soll</button><?php endif; ?>
+                  <?php if ($plan['termine']): ?><button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#epSollModal" data-tooltip="<?= $istA ? 'Positionen je Termin – Abweichungen von der Standardanzahl der Funktion (z.B. Warner Sa 11, So 8)' : 'Soll-Besetzung je Schicht und Funktion' ?>"><i class="bi bi-bullseye me-1"></i><?= $istA ? 'Pos. je Termin' : 'Soll' ?></button><?php endif; ?>
                   <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#epMetaModal"><i class="bi bi-gear me-1"></i>Titel / Fusstext</button>
                 </div>
               </div>
@@ -335,9 +365,10 @@ $page_show_mobile = true;
               </div>
               <?php endif; ?>
 
-              <!-- Gruppe: Ausgabe (Dropdown) -->
+              <!-- Gruppe: Ausgabe (Dropdown + Direktdruck) -->
               <div class="ep-tb-group"><span class="ep-tb-label">Ausgabe</span>
                 <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="einsatzplan" data-druck-label="Einsatzplan" data-plan="<?= $planId ?>" data-typ="<?= $h($plan['typ']) ?>" data-titel="<?= $h($plan['titel']) ?>" data-tooltip="Einsatzliste direkt drucken (PDF, Druckprofil «Einsatzplan»)"><i class="bi bi-printer me-1"></i>Drucken</button>
                   <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-download me-1"></i>Export</button>
                   <ul class="dropdown-menu dropdown-menu-sm">
                     <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="docx"><i class="bi bi-file-earmark-word me-2"></i>Word <small class="text-muted">· <?= $istA ? 'Funktionen × Termine' : 'Personen × Schichten' ?></small></a></li>
@@ -354,8 +385,8 @@ $page_show_mobile = true;
                 </div>
               </div>
 
-              <?php if ($istA && $plan['termine']): ?>
-              <!-- Gruppe: Anwesenheit -->
+              <?php if ($plan['termine']): ?>
+              <!-- Gruppe: Anwesenheit (alle Layouts) -->
               <div class="ep-tb-group"><span class="ep-tb-label">Anwesenheit</span>
                 <div class="btn-group btn-group-sm">
                   <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#epAnwModal" data-tooltip="Wer war da, wer nicht – pro Schicht erfassen"><i class="bi bi-person-check me-1"></i>Erfassen</button>
@@ -440,7 +471,7 @@ $page_show_mobile = true;
               </div>
             </div>
             <?php if ($istA): ?>
-            <div class="ep-side-stunden" id="epStunden" data-tooltip="Feste Positionen und Helferstunden (Schichtdauer × Positionen) je Verein; Vorschläge separat in Klammern">
+            <div class="ep-side-stunden" id="epStunden" data-tooltip="Feste Positionen und Helferstunden (Pauschale bzw. Schichtdauer × Positionen) je Verein, ohne Anwesenheit/OK; Vorschläge separat in Klammern. Abrechnung: Menü «Helferabrechnung»">
               <div class="ep-side-sub" style="border-top:1px solid #e2e8f0;cursor:default"><i class="bi bi-clock-history"></i>Helferstunden je Verein</div>
               <table class="ep-stunden-table"><tbody>
                 <?php foreach (EP_VEREINE as $vk => $vl): ?><tr data-verein="<?= $vk ?>"><td><?= $h($vl) ?></td><td class="ep-st-pos">–</td><td class="ep-st-std">–</td><td class="ep-st-vs text-muted"></td></tr><?php endforeach; ?>
@@ -480,16 +511,19 @@ $page_show_mobile = true;
               <tbody>
               <?php foreach (ep_funktionen_gruppiert($plan['funktionen']) as $g): ?>
                 <?php if ($g['gruppe'] !== ''): ?><tr class="ep-gruppe"><td colspan="<?= count($plan['termine']) + 1 ?>"><?= $h($g['gruppe']) ?></td></tr><?php endif; ?>
-                <?php foreach ($g['funktionen'] as $f): $anz = max(1, (int)$f['anzahl']);
+                <?php foreach ($g['funktionen'] as $f): $anz = max(1, (int)$f['anzahl']); $anzMax = $istA ? ep_anzahl_max($plan, $f) : $anz;
+                    $proTermin = $istA ? array_map(fn($t) => ep_anzahl_pos($plan, (int)$t['id'], $f), $plan['termine']) : [];
+                    $variabel = $istA && count(array_unique($proTermin)) > 1;
                     $flabelBase = (trim((string)$f['gruppe']) !== '' ? $f['gruppe'] . ': ' : '') . $f['bezeichnung']; ?>
                 <?php $fnTotal = 0; foreach ($plan['termine'] as $t) foreach ($plan['zellen'][$t['id'] . '|' . $f['id']] ?? [] as $s) if (ep_slot_besetzt($s)) $fnTotal++; ?>
                 <tr data-fid="<?= (int)$f['id'] ?>" class="ep-collapsed">
-                  <td class="ep-fn" data-tooltip="Ein-/ausklappen"><i class="bi bi-chevron-down ep-caret"></i><?= $h($f['bezeichnung']) ?> <span class="ep-fn-n" data-tooltip="eingeteilte Personen über alle Termine"><?= $fnTotal ?></span><?php if ($istA): ?><small><?= $anz ?> pro Termin</small><?php endif; ?></td>
+                  <td class="ep-fn" data-tooltip="Ein-/ausklappen"><i class="bi bi-chevron-down ep-caret"></i><?= $h($f['bezeichnung']) ?> <span class="ep-fn-n" data-tooltip="eingeteilte Personen über alle Termine"><?= $fnTotal ?></span><?php if ($istA): ?><small><?= $variabel ? 'je Termin ' . $h(implode(' / ', $proTermin)) : $anz . ' pro Termin' ?></small><?php endif; ?></td>
                   <?php foreach ($plan['termine'] as $t): $key = $t['id'] . '|' . $f['id'];
                       $tlabel = (trim((string)$t['bezeichnung']) !== '' ? $t['bezeichnung'] . ' · ' : '') . ($istA ? ep_datum_lang($t['datum']) : ep_datum_kurz($t['datum']) . ' ' . ep_zeit_text($t));
-                      if ($istA) { $zellSlots = []; for ($pos = 1; $pos <= $anz; $pos++) $zellSlots[] = $plan['slot_index'][$key . '|' . $pos] ?? null; }
+                      $anzT = $istA ? ep_anzahl_pos($plan, (int)$t['id'], $f) : 0;
+                      if ($istA) { $zellSlots = []; for ($pos = 1; $pos <= $anzT; $pos++) $zellSlots[] = $plan['slot_index'][$key . '|' . $pos] ?? null; }
                       else { $zellSlots = array_values(array_filter($plan['zellen'][$key] ?? [], 'ep_slot_besetzt')); }
-                      $soll = $istA ? $anz : (int)($plan['soll'][$key] ?? 0);
+                      $soll = $istA ? $anzT : (int)($plan['soll'][$key] ?? 0);
                   ?>
                     <td data-termin="<?= (int)$t['id'] ?>" data-funktion="<?= (int)$f['id'] ?>" data-soll="<?= $soll ?>" data-flabel="<?= $h($flabelBase) ?>" data-tlabel="<?= $h($tlabel) ?>">
                     <?php foreach ($zellSlots as $i => $s): $pos = $i + 1;
@@ -502,7 +536,7 @@ $page_show_mobile = true;
                             if ((int)$mm['Verstorben'] === 1) $warn = 'verstorben'; elseif ((int)$mm['Status'] !== 1) $warn = 'inaktiv';
                         }
                         $cls = 'ep-chip ep-v-' . $h($s['verein']) . ($besetzt ? ' ep-besetzt' : ' ep-offen') . ($warn ? ' ep-warn' : '') . ((int)($s['vorschlag'] ?? 0) === 1 ? ' ep-vorschlag' : '');
-                        $flabel = $flabelBase . ($istA && $anz > 1 ? ' (' . $pos . ')' : '');
+                        $flabel = $flabelBase . ($istA && $anzMax > 1 ? ' (' . $pos . ')' : '');
                     ?>
                       <button type="button" class="<?= $cls ?>" data-slot="<?= (int)$s['id'] ?>" data-verein="<?= $h($s['verein']) ?>" data-mid="<?= (int)$s['mitglied_id'] ?>" data-vorschlag="<?= (int)($s['vorschlag'] ?? 0) ?>"
                               data-name="<?= $h($s['name_text']) ?>" data-bem="<?= $h($s['bemerkung']) ?>" data-warn="<?= $warn ?>"
@@ -533,7 +567,7 @@ $page_show_mobile = true;
             <span><span class="ep-dot" style="background:#3b5998"></span>SV Freienbach</span>
             <span><span class="ep-dot" style="background:#2e7d32"></span>SV Wollerau</span>
             <span><span class="ep-dot" style="background:#f0ad4e"></span>Mitglied inaktiv / verstorben – prüfen</span>
-            <span><span class="ep-dot" style="background:#cbd5e1"></span>offen</span>
+            <span><span class="ep-dot" style="background:#fca5a5"></span>offen (noch niemand eingeteilt)</span>
           </div>
           </div><!-- /ep-grid-col -->
           <?= $sideHtml ?>
@@ -547,7 +581,7 @@ $page_show_mobile = true;
   </div>
 </div>
 
-<?php if ($plan):
+<?php if ($plan && !$ansichtAbr):
   // ---------- Slide-Panel: Position bearbeiten (beide Layouts; Verein nur bei Obli/Feld) ----------
   $panel_id = 'epSlotPanel'; $panel_class = 'hybrid-edit-panel'; $panel_overlay_id = 'epSlotOverlay'; $panel_close_id = 'epSlotClose';
   $panel_title = '<i class="bi bi-person-badge me-2"></i><span id="epSlotTitle">Position</span>';
@@ -588,8 +622,8 @@ $page_show_mobile = true;
   <?php $panel_body = ob_get_clean(); include 'partials/side_panel.inc.php'; ?>
 <?php endif; ?>
 
-<?php if ($plan && $istA && $plan['termine']): ?>
-<!-- ================= MODAL: Anwesenheit erfassen (Desktop) ================= -->
+<?php if ($plan && !$ansichtAbr && $plan['termine']): ?>
+<!-- ================= MODAL: Anwesenheit erfassen (Desktop, alle Layouts) ================= -->
 <div class="modal fade" id="epAnwModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
   <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-person-check me-2"></i>Anwesenheit erfassen – wer war da, wer nicht</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
@@ -626,7 +660,9 @@ $page_show_mobile = true;
       <div class="col-12"><label class="form-label small mb-1">Titel</label><input type="text" class="form-control form-control-sm" id="epNeuTitel" maxlength="100"></div>
     </div>
     <label class="form-label small mb-1">Quelle</label>
-    <div class="form-check"><input class="form-check-input" type="radio" name="epNeuQuelle" id="epQuelleLeer" value="leer" checked><label class="form-check-label" for="epQuelleLeer">Leer (Startfunktionen je Typ)</label></div>
+    <div class="form-check"><input class="form-check-input" type="radio" name="epNeuQuelle" id="epQuelleLeer" value="leer" checked><label class="form-check-label" for="epQuelleLeer">Leer, ohne Personen</label></div>
+    <div class="form-check ms-4" id="epStrukturBlock"><input class="form-check-input" type="checkbox" id="epNeuStruktur" checked><label class="form-check-label small" for="epNeuStruktur">Stammdaten aus <strong id="epStrukturVon">–</strong> übernehmen: Funktionen mit Anzahl, Gruppe und Rolle, Titelfarbe, Fusstext, Termine auf den gleichen Wochentag verschoben (falls nicht aus der JM-Definition)</label></div>
+    <div class="ep-hint ms-4 d-none" id="epStrukturHint">Noch kein Plan dieses Typs vorhanden – es werden die Standard-Funktionen angelegt.</div>
     <div class="form-check"><input class="form-check-input" type="radio" name="epNeuQuelle" id="epQuelleKopie" value="kopie" <?= $allePlaene ? '' : 'disabled' ?>><label class="form-check-label" for="epQuelleKopie">Kopie eines bestehenden Plans (Endstand nach Tausch)</label></div>
     <div class="ep-hint ms-4 d-none" id="epKopieHint">Für den gewählten Typ gibt es noch keinen Plan zum Kopieren.</div>
     <select class="form-select form-select-sm ms-4 mb-2 d-none" id="epNeuQuellePlan" style="width:calc(100% - 1.5rem)">
@@ -644,7 +680,7 @@ $page_show_mobile = true;
   </div>
 </div></div></div>
 
-<?php if ($plan): ?>
+<?php if ($plan && !$ansichtAbr): ?>
 <!-- ================= MODAL: Termine / Schichten ================= -->
 <div class="modal fade" id="epTermineModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
   <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-calendar3 me-2"></i><?= $istA ? 'Termine' : 'Schichten' ?></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -724,26 +760,28 @@ $page_show_mobile = true;
   <div class="modal-footer py-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Schliessen</button></div>
 </div></div></div>
 
-<?php if (!$istA): ?>
-<!-- ================= MODAL: Soll-Besetzung (Chilbi) ================= -->
+<?php if ($plan['termine']): ?>
+<!-- ================= MODAL: Soll / Positionen je Termin ================= -->
 <div class="modal fade" id="epSollModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
-  <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-bullseye me-2"></i>Soll-Besetzung je Schicht</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-bullseye me-2"></i><?= $istA ? 'Positionen je Termin' : 'Soll-Besetzung je Schicht' ?></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body">
     <div class="table-responsive">
       <table class="table table-sm ep-soll-table mb-2">
-        <thead><tr><th>Funktion</th><?php foreach ($plan['termine'] as $t): ?><th class="text-center small"><?= $h(ep_datum_kurz($t['datum'])) ?><br><span class="fw-normal text-muted"><?= $h(ep_zeit_text($t)) ?></span></th><?php endforeach; ?></tr></thead>
+        <thead><tr><th>Funktion<?php if ($istA): ?> <small class="text-muted fw-normal">(Standard)</small><?php endif; ?></th><?php foreach ($plan['termine'] as $t): ?><th class="text-center small"><?= $h(ep_datum_kurz($t['datum'])) ?><br><span class="fw-normal text-muted"><?= $h(ep_zeit_text($t)) ?></span></th><?php endforeach; ?></tr></thead>
         <tbody>
           <?php foreach ($plan['funktionen'] as $f): ?>
-          <tr><td class="fw-semibold align-middle"><?= $h($f['bezeichnung']) ?></td>
-            <?php foreach ($plan['termine'] as $t): $key = $t['id'] . '|' . $f['id']; ?>
-            <td class="text-center"><input type="number" min="0" max="99" class="form-control form-control-sm d-inline-block ep-soll" data-key="<?= $key ?>" value="<?= (int)($plan['soll'][$key] ?? 0) ?>" placeholder="0"></td>
+          <tr><td class="fw-semibold align-middle"><?= $h($f['bezeichnung']) ?><?php if ($istA): ?> <span class="badge bg-light text-dark border"><?= (int)$f['anzahl'] ?></span><?php endif; ?></td>
+            <?php foreach ($plan['termine'] as $t): $key = $t['id'] . '|' . $f['id']; $wert = $istA ? ep_anzahl_pos($plan, (int)$t['id'], $f) : (int)($plan['soll'][$key] ?? 0); ?>
+            <td class="text-center"><input type="number" min="<?= $istA ? 1 : 0 ?>" max="99" class="form-control form-control-sm d-inline-block ep-soll<?= $istA && $wert !== (int)$f['anzahl'] ? ' border-primary' : '' ?>" data-key="<?= $key ?>" value="<?= $wert ?>" placeholder="0"></td>
             <?php endforeach; ?>
           </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
     </div>
-    <div class="ep-hint">0 = kein Soll (keine Anzeige). Ist &lt; Soll wird im Raster und im Word rot bzw. als «offen» ausgewiesen.</div>
+    <div class="ep-hint"><?= $istA
+        ? 'Anzahl Positionen dieser Funktion am jeweiligen Termin; blau umrandet = weicht vom Standard der Funktion ab. Kürzen geht nur, wenn die oberen Positionen leer sind. Im Word bekommt jede Funktion so viele Zeilen wie der Termin mit den meisten Positionen; Termine mit weniger Positionen bleiben dort grau.'
+        : '0 = kein Soll (keine Anzeige). Ist &lt; Soll wird im Raster und im Word rot bzw. als «offen» ausgewiesen.' ?></div>
   </div>
   <div class="modal-footer py-2">
     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
@@ -758,6 +796,16 @@ $page_show_mobile = true;
   <div class="modal-body">
     <label class="form-label small mb-1" for="epMetaTitel">Titel</label>
     <input type="text" class="form-control form-control-sm mb-3" id="epMetaTitel" maxlength="100" value="<?= $h($plan['titel']) ?>">
+    <label class="form-label small mb-1" for="epMetaFarbe">Titelfarbe im Word/PDF</label>
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <input type="color" class="form-control form-control-color form-control-sm" id="epMetaFarbe" value="<?= $h(preg_match('/^#[0-9a-fA-F]{6}$/', (string)($plan['farbe'] ?? '')) ? $plan['farbe'] : '#D9D9D9') ?>" data-tooltip="Hintergrund der zentrierten Titelzeile; Schrift wird auf dunklen Farben automatisch weiss">
+      <div class="d-flex gap-1" id="epMetaFarbePalette">
+        <?php foreach (['#D9D9D9' => 'Grau (Standard)', '#2D4373' => 'Vereinsblau', '#C62828' => 'Rot', '#2E7D32' => 'Grün', '#E65100' => 'Orange', '#6A1B9A' => 'Violett', '#F9A825' => 'Gelb'] as $hex => $name): ?>
+          <button type="button" class="btn btn-sm p-0 border" style="width:22px;height:22px;background:<?= $hex ?>" data-farbe="<?= $hex ?>" data-tooltip="<?= $name ?>"></button>
+        <?php endforeach; ?>
+      </div>
+      <span class="ep-hint">leer/grau = Standard</span>
+    </div>
     <label class="form-label small mb-1" for="epMetaFuss">Fusstext im Word/PDF (eine Zeile pro Absatz)</label>
     <textarea class="form-control form-control-sm" id="epMetaFuss" rows="5"><?= $h($plan['fusstext']) ?></textarea>
     <?php if ($istA): ?>
@@ -935,7 +983,7 @@ $(function () {
       }
       html += '</div><div class="col-lg-7"><h6 class="small text-uppercase text-muted mb-1">Je Person (nicht erschienen zuerst)</h6><div class="ep-preview" style="max-height:460px"><table class="table table-sm table-hover ep-ausw-table mb-0"><thead><tr><th>Person</th><th>Verein</th><th>eingeteilt</th><th>da</th><th>nicht da</th><th>offen</th><th>Std. da</th></tr></thead><tbody>';
       (r.personen || []).forEach(p => html += '<tr' + (p.nein ? ' class="table-danger"' : '') + '><td data-tooltip="' + msvEsc((p.plaene || []).join(', ')) + '">' + msvEsc(p.name) + '</td><td>' + V[p.verein] + '</td>' + zelle(p.eingeteilt) + zelle(p.da) + zelle(p.nein, p.nein ? 'ep-fehlt' : '') + zelle(p.offen) + zelle(p.stunden_da.toLocaleString('de-CH')) + '</tr>');
-      html += '</tbody></table></div><div class="ep-hint mt-1">Erfassung pro Schicht im Portal unter «Anwesenheit» (Vorstand/Admin). Std. da = Schichtdauer der Einsätze mit Anwesenheit «da».</div></div></div>';
+      html += '</tbody></table></div><div class="ep-hint mt-1">Erfassung pro Schicht im Portal unter «Anwesenheit» (Vorstand/Admin). Std. da = Pauschale bzw. Schichtdauer der Einsätze mit Anwesenheit «da».</div></div></div>';
       $('#epAuswBody').html(html);
     }).fail(xhr => $('#epAuswBody').html('<div class="alert alert-warning small">' + msvEsc(msvXhrMessage(xhr, 'Auswertung nicht verfügbar')) + '</div>'));
   });
@@ -972,6 +1020,10 @@ $(function () {
     if (erster !== null) { $('#epNeuQuellePlan').val(erster); $kopie.prop('disabled', false); }
     else { $kopie.prop('disabled', true); if ($kopie.is(':checked')) $('#epQuelleLeer').prop('checked', true).trigger('change'); }
     $('#epKopieHint').toggleClass('d-none', erster !== null);
+    // Stammdaten-Vorlage für «Leer»: neuester Plan gleichen Typs (Liste ist nach Jahr absteigend sortiert)
+    const $v = $('#epNeuQuellePlan option').filter(function () { return $(this).data('typ') === typ; }).first();
+    $('#epStrukturBlock').toggleClass('d-none', !$v.length); $('#epStrukturHint').toggleClass('d-none', !!$v.length);
+    $('#epStrukturVon').text($v.length ? $v.text().replace(/\s*\(.*\)$/, '') : '–').data('id', $v.length ? $v.val() : 0);
   }
   $('#epNeuTyp').on('change', function () { filterQuellePlaene(); neuTitelVorschlag(); });
   $('#epNeuJahr').on('change', neuTitelVorschlag);
@@ -979,6 +1031,7 @@ $(function () {
     const q = this.value;
     $('#epNeuQuellePlan').toggleClass('d-none', q !== 'kopie');
     $('#epNeuQuelleDok').toggleClass('d-none', q !== 'dokument');
+    $('#epStrukturBlock, #epStrukturHint').toggle(q === 'leer');
     $('#epNeuTyp').prop('disabled', q === 'dokument'); // Typ kommt beim Dokument aus der Datei
     if (q === 'dokument') { const o = $('#epNeuQuelleDok option:selected'); if (o.data('jahr')) $('#epNeuJahr').val(String(o.data('jahr'))); $('#epNeuTitel').val(o.text().split(' – ')[0]); }
     else neuTitelVorschlag();
@@ -993,12 +1046,12 @@ $(function () {
     let file = 'plan_save.php';
     if (q === 'kopie') { data.action = 'copy'; data.quelle_id = $('#epNeuQuellePlan').val(); }
     else if (q === 'dokument') { file = 'plan_from_dokument.php'; data.dokument_id = $('#epNeuQuelleDok').val(); }
-    else { data.action = 'create'; data.typ = $('#epNeuTyp').val(); }
+    else { data.action = 'create'; data.typ = $('#epNeuTyp').val(); if ($('#epNeuStruktur').is(':checked') && !$('#epStrukturBlock').hasClass('d-none')) data.struktur_von = $('#epStrukturVon').data('id') || 0; }
     msvPost(basePath + file, data, r => { msvToast(r.message, 'success'); setTimeout(() => location.href = 'einsatzplanung.php?id=' + r.plan_id, 500); }, { csrf: CSRF })
       .always(() => $b.prop('disabled', false));
   });
 
-<?php if ($plan): ?>
+<?php if ($plan && !$ansichtAbr): ?>
   // ---------- Struktur: Termine ----------
   // Termine-Dialog bleibt offen (mehrere Daten nacheinander); Raster wird erst beim Schliessen neu geladen
   let termineGeaendert = false;
@@ -1054,8 +1107,9 @@ $(function () {
   });
 
   // ---------- Titel / Fusstext ----------
+  $('#epMetaFarbePalette').on('click', 'button', function () { $('#epMetaFarbe').val(this.dataset.farbe); });
   $('#epMetaSpeichern').on('click', function () {
-    const meta = { action: 'update', titel: $('#epMetaTitel').val(), fusstext: $('#epMetaFuss').val() };
+    const meta = { action: 'update', titel: $('#epMetaTitel').val(), fusstext: $('#epMetaFuss').val(), farbe: $('#epMetaFarbe').val() || '' };
     if ($('#epMetaUmfrage').length) meta.umfrage_id = $('#epMetaUmfrage').val() || 0;
     post('plan_save.php', meta, r => { msvToast(r.message, 'success'); setTimeout(() => location.reload(), 500); });
   });
@@ -1168,7 +1222,7 @@ $(function () {
   });
 <?php endif; ?>
 
-<?php if ($plan): ?>
+<?php if ($plan && !$ansichtAbr): ?>
   // ---------- Positions-Panel (beide Layouts) ----------
   const IST_A = <?= $istA ? 'true' : 'false' ?>;   // false = Chilbi: Positionen dynamisch (add/delete)
 
@@ -1182,12 +1236,8 @@ $(function () {
     refreshOffen($td);
     return $chip;
   }
-  // Helferstunden je Verein (Schichtdauer × feste Positionen), Vorschläge separat
-  const EP_TERMIN_STD = <?= json_encode(array_column(array_map(function ($t) {
-      $std = 0.0;
-      if (!empty($t['zeit_von']) && !empty($t['zeit_bis'])) { $d = (strtotime($t['zeit_bis']) - strtotime($t['zeit_von'])) / 3600; if ($d < 0) $d += 24; $std = round($d, 2); }
-      return ['id' => (int)$t['id'], 'std' => $std];
-  }, $plan['termine']), 'std', 'id')) ?>;
+  // Helferstunden je Verein (Pauschale bzw. Schichtdauer × feste Positionen), Vorschläge separat – Formel zentral in ep_termin_stunden()
+  const EP_TERMIN_STD = <?= json_encode(array_column(array_map(fn($t) => ['id' => (int)$t['id'], 'std' => ep_termin_stunden($t)], $plan['termine']), 'std', 'id')) ?>;
   function updateStunden() {
     const $box = $('#epStunden'); if (!$box.length) return;
     const acc = {}; let tPos = 0, tStd = 0, tVs = 0;
@@ -1438,14 +1488,16 @@ $(function () {
     $('.ep-soll').each(function () { map[this.dataset.key] = parseInt(this.value || '0', 10) || 0; });
     post('struktur_save.php', { action: 'soll_save', soll: JSON.stringify(map) }, r => { msvToast(r.message, 'success'); setTimeout(() => location.reload(), 500); });
   });
+  // Layout A: Standardanzahl der Funktion als Vorbelegung markieren (blau = Abweichung)
+  $('.ep-soll').on('input', function () { const std = parseInt($(this).closest('tr').find('.badge').text() || '0', 10); if (std) $(this).toggleClass('border-primary', parseInt(this.value || '0', 10) !== std); });
   $('#epMitgliedFilter').on('input', function () {
     const q = this.value.trim().toLowerCase();
     $('#epMitglied option').each(function () { if (this.value === '0') return; $(this).toggle(!q || this.text.toLowerCase().indexOf(q) !== -1); });
   });
 <?php endif; ?>
 
-<?php if ($plan && $plan['layout'] === 'funktion_x_termin'): ?>
-  // ---------- Anwesenheit erfassen (Desktop-Dialog; Daten aus den Chips, API wie im Portal) ----------
+<?php if ($plan && !$ansichtAbr && $plan['termine']): ?>
+  // ---------- Anwesenheit erfassen (Desktop-Dialog; Daten aus den Chips, API wie im Portal; alle Layouts) ----------
   const VEREIN_LABEL = { msv: 'MSV Wilen', freienbach: 'SV Freienbach', wollerau: 'SV Wollerau' };
   let anwTermin = 0;
   function chipAnwSetzen($chip, wert) {
@@ -1497,6 +1549,9 @@ $(function () {
     });
   });
 
+<?php endif; ?>
+
+<?php if ($plan && !$ansichtAbr && $plan['layout'] === 'funktion_x_termin'): ?>
   // ---------- Verfügbarkeiten: Anzeige in Liste und Panel ----------
   const EP_VERF = <?= json_encode(array_column(array_map(fn($v) => ['k' => $v['person_key'], 'r' => $v['rollen'], 't' => array_map('intval', $v['termin_ids']), 'n' => $v['name']], $plan['verfuegbarkeit']), null, 'k'), JSON_UNESCAPED_UNICODE) ?>;
   const EP_TERMIN_LABEL = <?= json_encode(array_column(array_map(fn($t) => ['id' => (int)$t['id'], 'l' => ep_datum_kurz($t['datum']) . ' ' . ep_zeit_text($t)], $plan['termine']), 'l', 'id')) ?>;
@@ -1664,6 +1719,21 @@ $(function () {
   });
 <?php endif; ?>
 });
+</script>
+
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): PDF der Einsatzliste über export_pdf.php (JSON mit «link» relativ zu inc/einsatzplanung/)
+(function () {
+  if (!window.MsvDruck) return;
+  const basePath = (/\/inc(\/|$)/.test(location.pathname)) ? 'einsatzplanung/' : 'inc/einsatzplanung/';
+  MsvDruck.resolve('einsatzplan', btn => ({
+    url: basePath + 'export_pdf.php?plan_id=' + encodeURIComponent(btn.dataset.plan || 0),
+    jobName: 'Einsatzplan ' + (btn.dataset.titel || ''),
+    linkPrefix: basePath,
+    orientation: btn.dataset.typ === 'schlossturm' ? 'portrait' : 'landscape'   // Schlossturm-Liste ist A4 hoch
+  }));
+})();
 </script>
 
 <?php include 'footer.inc.php'; ?>

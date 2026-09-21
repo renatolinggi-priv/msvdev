@@ -144,8 +144,10 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
             $funktionIds[$key] = (int)$db->lastInsertId();
         }
 
-        // Slots in Dokument-Reihenfolge
-        $insS = $db->prepare("INSERT INTO einsatz_plan_slots (plan_id, termin_id, funktion_id, pos, verein, mitglied_id, name_text) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        // Slots in Dokument-Reihenfolge. OK-Kennzeichen (Migration 058) nur schreiben, wenn die Spalte existiert.
+        $hatOk = false;
+        try { $hatOk = (bool)$db->query("SHOW COLUMNS FROM einsatz_plan_slots LIKE 'ok'")->fetch(); } catch (Throwable $e) { $hatOk = false; }
+        $insS = $db->prepare("INSERT INTO einsatz_plan_slots (plan_id, termin_id, funktion_id, pos, verein, mitglied_id, name_text, bemerkung" . ($hatOk ? ", ok" : "") . ") VALUES (?, ?, ?, ?, ?, ?, ?, ?" . ($hatOk ? ", ?" : "") . ")");
         $posZaehler = []; $slots = 0; $mi = 0;
         foreach ($daten as $z) {
             $tkey = $z['event_datum'] . '|' . ($z['event_zeit'] ?? '');
@@ -169,7 +171,11 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
                 $istPlatzhalter = preg_match('/^(sv|msv)\s/i', $n) && preg_match('/freienbach|wollerau|wilen/i', $n);
                 if ($n !== '' && !$istPlatzhalter) $nameText = mb_substr($n, 0, 100);
             }
-            $insS->execute([$planId, $tid, $fid, $pos, $verein, $mid, $nameText]);
+            // Kein Kreuz im Original (Schlossturm-OK-Liste): Verein ist geraten → Bemerkung, damit die Helferabrechnung warnt
+            $bemerkung = !empty($z['verein_unklar']) ? 'Verein unklar (kein Kreuz im Original)' : null;
+            $params = [$planId, $tid, $fid, $pos, $verein, $mid, $nameText, $bemerkung];
+            if ($hatOk) $params[] = !empty($z['ok']) ? 1 : 0;
+            $insS->execute($params);
             $slots++;
         }
         $db->commit();
@@ -178,7 +184,19 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
         throw $e;
     }
 
-    if ($layout === 'funktion_x_termin') ep_slots_sicherstellen($db, $planId);
+    // Layout A: Positionszahl je Termin aus dem Dokument (z.B. Warner Sa 11 / So 8) als Abweichung vom Maximum speichern
+    if ($layout === 'funktion_x_termin') {
+        try {
+            $upS = $db->prepare("INSERT INTO einsatz_plan_soll (plan_id, termin_id, funktion_id, soll) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE soll = VALUES(soll)");
+            foreach ($funktionen as $fkey => $f) {
+                foreach ($termine as $tkey => $t) {
+                    $n = $zaehler[$fkey . '#' . $tkey] ?? 0;
+                    if ($n > 0 && $n < (int)$f['anzahl'] && isset($terminIds[$tkey], $funktionIds[$fkey])) $upS->execute([$planId, $terminIds[$tkey], $funktionIds[$fkey], $n]);
+                }
+            }
+        } catch (Throwable $e) { error_log('[plan_import] soll: ' . $e->getMessage()); }   // vor Migration 051
+        ep_slots_sicherstellen($db, $planId);
+    }
     $verknuepft = ep_legacy_verknuepfen($db, $planId);
 
     return [

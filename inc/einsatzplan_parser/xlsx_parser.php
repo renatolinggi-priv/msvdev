@@ -490,14 +490,14 @@ function parseXlsxDataRows($sheet, $header, $titelBezeichnung, $vereineBehalten 
             // Nur Einträge mit Buchstaben (keine reinen Zahlen)
             if (!preg_match('/[a-zA-ZäöüÄÖÜéèêàáâ]/u', $name)) continue;
 
-            // Verein über die Check-Spalte bestimmen
-            $verein = null;
+            // Verein über die Check-Spalte bestimmen; Zellinhalt «OK» = OK-Mitglied (Helferabrechnung, Migration 058)
+            $verein = null; $istOk = false; $vereinUnklar = false;
             if ($vereineBehalten) {
                 foreach ($event['vereinCols'] ?? [] as $col => $v) {
-                    $chk = $sheet->getCell($col . $row)->getValue();
-                    if ($chk !== null && trim((string)$chk) !== '') { $verein = $v; break; }
+                    $chk = trim((string)($sheet->getCell($col . $row)->getValue() ?? ''));
+                    if ($chk !== '') { $verein = $v; $istOk = strcasecmp($chk, 'OK') === 0; break; }
                 }
-                if ($verein === null) $verein = 'msv';   // kein Kreuz: als eigener Eintrag behandeln
+                if ($verein === null) { $verein = 'msv'; $vereinUnklar = true; }   // kein Kreuz: als eigener Eintrag, aber markiert
             } else {
                 // MSV Wilen Check prüfen
                 $msvCheck = $sheet->getCell($event['msvCol'] . $row)->getValue();
@@ -518,7 +518,7 @@ function parseXlsxDataRows($sheet, $header, $titelBezeichnung, $vereineBehalten 
                 'funktion'      => $currentFunktion,
                 'mitglied_name' => $cleanName,
             ];
-            if ($vereineBehalten) { $eintrag['verein'] = $verein; $eintrag['info'] = $event['info'] ?? ''; $eintrag['zeile'] = $row; }
+            if ($vereineBehalten) { $eintrag['verein'] = $verein; $eintrag['info'] = $event['info'] ?? ''; $eintrag['zeile'] = $row; $eintrag['ok'] = $istOk; $eintrag['verein_unklar'] = $vereinUnklar; }
             $zuweisungen[] = $eintrag;
         }
     }
