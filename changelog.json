@@ -22,6 +22,12 @@
         "admin_only": true
       },
       {
+        "titel": "Personalanfrage: eigene Rollen «Verpflegung» und «Kurier»",
+        "beschreibung": "Die Anfrage an die Vereine («als:») kennt neben Büro, Schützenmeister, Warner, Türkontrolle und Parkdienst neu die Ankreuzfelder Verpflegung (Znüni / Zvieri) und Kurier – im Excel-Export, beim Einlesen der ausgefüllten Anfragen und bei der Umfrage-Erkennung. Die Funktionen Znüni / Zvieri und Kurier der Schlossturm-Pläne erhalten diese Rollen (Datenbank-Aktualisierung 063) und werden von der automatischen Einteilung aus den passenden Meldungen besetzt, statt aus dem Büro-Pool.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
         "titel": "Chilbi-Schichten mit offenem Ende zählen Stunden",
         "beschreibung": "Schichten wie «17:00-fertig» oder «19:45-Ende» ergaben in der Anwesenheits-Auswertung und der Helferstunden-Box bisher 0 Stunden. Neu gilt für ein offenes Ende 04:00 Uhr (17:00-fertig = 11 Std., 19:45-Ende = 8.25 Std.); Angaben wie «16:00-19:00» werden direkt aus dem Text gelesen.",
         "typ": "fix",

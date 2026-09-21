@@ -20,7 +20,9 @@ const EP_TYPEN   = ['obligatorisch' => 'Obligatorisch', 'feldschiessen' => 'Feld
 const EP_LAYOUTS = ['funktion_x_termin' => 'Funktionen × Termine', 'person_x_schicht' => 'Personen × Schichten'];
 const EP_STATUS  = ['entwurf' => 'Entwurf', 'freigegeben' => 'Freigegeben', 'final' => 'Final'];
 /** Anfrage-Rollen (Personalanfrage / Umfrage). 'OK' = vom OK fest besetzt, keine automatische Einteilung. */
-const EP_ROLLEN  = ['Büro' => 'Büro', 'Schützenmeister' => 'Schützenmeister', 'Warner' => 'Warner', 'Türkontrolle' => 'Türkontrolle', 'Parkdienst' => 'Parkdienst', 'OK' => 'OK Schlossturm (Positionen zählen als OK)'];
+const EP_ROLLEN  = ['Büro' => 'Büro', 'Schützenmeister' => 'Schützenmeister', 'Warner' => 'Warner', 'Türkontrolle' => 'Türkontrolle', 'Parkdienst' => 'Parkdienst',
+                    'Verpflegung' => 'Verpflegung (Znüni / Zvieri)', 'Kurier' => 'Kurier',   // seit 21.09.2026 eigene Ankreuzfelder in der Personalanfrage (Migration 063)
+                    'OK' => 'OK Schlossturm (Positionen zählen als OK)'];
 const EP_QUELLEN = ['umfrage' => 'Umfrage', 'excel' => 'Excel', 'manuell' => 'manuell'];
 
 const EP_FUSSTEXT_DEFAULT = "Bei Verhinderung bitte SELBST für Ersatz oder Abtausch sorgen!\n"
@@ -221,9 +223,9 @@ function ep_rolle_vorbelegung(string $bezeichnung, ?array $okFunktionen = null):
 {
     if ($okFunktionen !== null && in_array(ep_funktion_norm($bezeichnung), $okFunktionen, true)) return 'OK';   // Definition «immer vom OK besetzt»
     $b = mb_strtolower(trim($bezeichnung));
-    // Kurier und Znüni / Zvieri: normale Helferpositionen, aus dem Büro-Pool einteilen (Benutzerentscheid 21.09.2026, Migration 062)
-    if (in_array($b, ['standblätter', 'kasse', 'munition', 'auszahlung', 'auszeichnungen', 'kurier', 'znüni / zvieri', 'znüni/zvieri'], true)) return 'Büro';
-    foreach (['Schützenmeister', 'Warner', 'Türkontrolle', 'Parkdienst'] as $k) if (str_contains($b, mb_strtolower($k))) return $k;
+    if (in_array($b, ['standblätter', 'kasse', 'munition', 'auszahlung', 'auszeichnungen'], true)) return 'Büro';
+    if (str_contains($b, 'znüni') || str_contains($b, 'zvieri') || str_contains($b, 'verpflegung')) return 'Verpflegung';   // Migration 063
+    foreach (['Schützenmeister', 'Warner', 'Türkontrolle', 'Parkdienst', 'Kurier'] as $k) if (str_contains($b, mb_strtolower($k))) return $k;
     return null;
 }
 
@@ -299,7 +301,8 @@ function ep_rolle_aus_text(string $text): ?string
     }
     if (str_contains($t, 'ok')) return 'OK';
     if (str_contains($t, 'büro') || str_contains($t, 'buero')) return 'Büro';
-    foreach (['Schützenmeister', 'Warner', 'Türkontrolle', 'Parkdienst'] as $k) if (str_contains($t, mb_strtolower($k))) return $k;
+    if (str_contains($t, 'znüni') || str_contains($t, 'zvieri') || str_contains($t, 'verpflegung') || str_contains($t, 'küche')) return 'Verpflegung';
+    foreach (['Schützenmeister', 'Warner', 'Türkontrolle', 'Parkdienst', 'Kurier'] as $k) if (str_contains($t, mb_strtolower($k))) return $k;
     return null;
 }
 
