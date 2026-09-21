@@ -1,6 +1,8 @@
 <?php
 // rangcup.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 require '../vendor/autoload.php';
 //require '../functions.inc.php';
 //include 'config_pdf.php';

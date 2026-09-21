@@ -1,5 +1,7 @@
 <?php
 include '../config.php'; // Konfigurationsdatei
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 // SQL-Abfrage, um die Daten für den Standcup Final abzurufen

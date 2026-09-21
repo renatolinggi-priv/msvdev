@@ -13,6 +13,8 @@ try {
     // Includes
     require '../vendor/autoload.php';
     include '../config.php';
+    require_once __DIR__ . '/../admin_api_guard.inc.php';
+    adminApiGuard('json');
     require_once __DIR__ . '/../pdf/pdf_theme.php';
     require_once __DIR__ . '/../pdf/pdf_orientation.inc.php'; // ?orientation= aus dem Druckprofil (setPaper + @page)
     

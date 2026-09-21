@@ -1,6 +1,8 @@
 <?php
 //fetch_pairs.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 $round = isset($_GET['round']) ? (int)$_GET['round'] : 1;
 $year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
