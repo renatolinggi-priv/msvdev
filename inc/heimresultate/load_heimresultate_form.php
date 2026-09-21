@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../debug_log.inc.php';
 /**
  * Load Heimresultate Form
  * Lädt die Heimresultate für das ausgewählte Jahr mit Sicherheitsverbesserungen
@@ -205,7 +206,7 @@ try {
     $heimresultateStmt->close();
     
     // Erfolg loggen
-    logError("Successfully loaded heimresultate form", [
+    msv_debug_log_ctx('heimresultate', "Successfully loaded heimresultate form", [
         'year' => $year,
         'member_count' => $memberCount
     ]);

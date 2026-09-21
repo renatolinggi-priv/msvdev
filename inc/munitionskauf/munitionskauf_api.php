@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../debug_log.inc.php';
 // munitionskauf_api.php - Backend API für Munitionsbestellungen
 
 // Error handling - Fehler loggen aber nicht anzeigen
@@ -135,7 +136,7 @@ function saveBestellung() {
         $input = json_decode($raw_input, true);
         
         // Debug logging
-        error_log('Received data: ' . $raw_input);
+        msv_debug_log('munitionskauf', 'Received data: ' . $raw_input);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception('Invalid JSON: ' . json_last_error_msg());
@@ -247,7 +248,7 @@ function getBestellungen() {
         $filter = $_GET['filter'] ?? 'today';
         
         // Debug logging
-        error_log("getBestellungen - Jahr: $jahr, Filter: $filter");
+        msv_debug_log('munitionskauf', "getBestellungen - Jahr: $jahr, Filter: $filter");
         
         // Build date filter
         $date_condition = '';
@@ -256,7 +257,7 @@ function getBestellungen() {
         switch ($filter) {
             case 'today':
                 $date_condition = "AND munitionskauf.kauf_datum = '$today'";
-                error_log("Today filter applied: $today");
+                msv_debug_log('munitionskauf', "Today filter applied: $today");
                 break;
                 
             case 'week':
@@ -268,26 +269,26 @@ function getBestellungen() {
                 $week_start = date('Y-m-d', strtotime("-$daysFromMonday days"));
                 $week_end = date('Y-m-d', strtotime("+$daysToSunday days"));
                 $date_condition = "AND munitionskauf.kauf_datum BETWEEN '$week_start' AND '$week_end'";
-                error_log("Week filter applied: $week_start to $week_end");
+                msv_debug_log('munitionskauf', "Week filter applied: $week_start to $week_end");
                 break;
                 
             case 'month':
                 $month_start = date('Y-m-01');
                 $month_end = date('Y-m-t');
                 $date_condition = "AND munitionskauf.kauf_datum BETWEEN '$month_start' AND '$month_end'";
-                error_log("Month filter applied: $month_start to $month_end");
+                msv_debug_log('munitionskauf', "Month filter applied: $month_start to $month_end");
                 break;
                 
             case 'year':
                 // Jahr-Filter ist bereits in WHERE-Klausel
                 $date_condition = '';
-                error_log("Year filter applied: showing all for year $jahr");
+                msv_debug_log('munitionskauf', "Year filter applied: showing all for year $jahr");
                 break;
                 
             default:
                 // Fallback: show all for year
                 $date_condition = '';
-                error_log("Unknown filter '$filter', showing all for year");
+                msv_debug_log('munitionskauf', "Unknown filter '$filter', showing all for year");
                 break;
         }
         
@@ -317,7 +318,7 @@ function getBestellungen() {
             $bestellungen[] = $row;
         }
         
-        error_log("Found " . count($bestellungen) . " records for filter '$filter'");
+        msv_debug_log('munitionskauf', "Found " . count($bestellungen) . " records for filter '$filter'");
         
         // Get totals - mit COALESCE für NULL-Werte
         $sql = "SELECT 

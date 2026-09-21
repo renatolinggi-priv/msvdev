@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../debug_log.inc.php';
 /**
  * Load Kantiresultate Form
  * Lädt die Kantiresultate für das ausgewählte Jahr mit Sicherheitsverbesserungen
@@ -212,7 +213,7 @@ try {
     $kantiresultateStmt->close();
     
     // Erfolg loggen
-    logError("Successfully loaded kantiresultate form", [
+    msv_debug_log_ctx('kantiresultate', "Successfully loaded kantiresultate form", [
         'year' => $year,
         'member_count' => $memberCount
     ]);

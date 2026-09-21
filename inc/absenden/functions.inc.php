@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../debug_log.inc.php';
 //functions.inc.php - Überarbeitete Version
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Style\Cell;
@@ -35,9 +36,18 @@ function formatBold($text) {
     return '<w:r><w:rPr><w:b/></w:rPr><w:t>' . htmlspecialchars($text) . '</w:t></w:r>';
 }
 
-// Debug-Logging
+// Debug-Logging: nur bei eingeschaltetem Debug-Schalter (inc/debug_log.inc.php).
+// Ablaufprotokolle sollen das Fehlerlog nicht mehr zumuellen.
 function logDebug($message) {
+    if (!msv_debug_log_aktiv()) { return; }
     error_log("[JM Debug] " . date('Y-m-d H:i:s') . " - " . $message);
+}
+
+// Echte Fehler: gehen IMMER ins Log, unabhaengig vom Debug-Schalter.
+// Frueher liefen auch die SQL-Fehler durch logDebug() - mit dem Schalter
+// waeren sie unsichtbar geworden.
+function logFehler($message) {
+    error_log("[JM Fehler] " . date('Y-m-d H:i:s') . " - " . $message);
 }
 
 // ========================================
@@ -149,7 +159,7 @@ function getEndstich($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getEndstich prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getEndstich prepare: " . $conn->error);
         $templateProcessor->cloneRow('ESRang', 0);
         return;
     }
@@ -335,7 +345,7 @@ function getSchwini($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getSchwini prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getSchwini prepare: " . $conn->error);
         $templateProcessor->cloneRow('SRang', 0);
         return;
     }
@@ -433,7 +443,7 @@ function getZabig($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getZabig prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getZabig prepare: " . $conn->error);
         $templateProcessor->cloneRow('ZRang', 0);
         return;
     }
@@ -545,7 +555,7 @@ function getGlueck($templateProcessor, $conn, $textRun)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getGlueck prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getGlueck prepare: " . $conn->error);
         $templateProcessor->cloneRow('GRang', 0);
         return;
     }
@@ -624,7 +634,7 @@ function getKunst($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getKunst prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getKunst prepare: " . $conn->error);
         $templateProcessor->cloneRow('KRang', 0);
         return;
     }
@@ -724,7 +734,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getEndschGesamt prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getEndschGesamt prepare: " . $conn->error);
         $kategorie = "E" . trim(strrchr($kat, ' '));
         $templateProcessor->cloneRow($kategorie . 'Rang', 0);
         return;
@@ -901,7 +911,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getJungschuetzenResultate prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getJungschuetzenResultate prepare: " . $conn->error);
         $templateProcessor->cloneRow('JRang', 0);
         return;
     }
@@ -1119,7 +1129,7 @@ function getPartnerResultate($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getPartnerResultate prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getPartnerResultate prepare: " . $conn->error);
         $templateProcessor->cloneRow('PRang', 0);
         return;
     }
@@ -1207,7 +1217,7 @@ function getHeim($templateProcessor, $conn, $kat)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getHeim prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getHeim prepare: " . $conn->error);
         $kategorie = "H" . trim(strrchr($kat, ' '));
         $templateProcessor->cloneRow($kategorie . 'Rang', 0);
         return;
@@ -1288,7 +1298,7 @@ function getKanti($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getKanti prepare (Kat. A): " . $conn->error);
+        logFehler("SQL-Fehler in getKanti prepare (Kat. A): " . $conn->error);
         $templateProcessor->cloneRow('aRang', 0);
         return;
     }
@@ -1355,7 +1365,7 @@ function getKanti($templateProcessor, $conn)
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getKanti prepare (Kat. B): " . $conn->error);
+        logFehler("SQL-Fehler in getKanti prepare (Kat. B): " . $conn->error);
         $templateProcessor->cloneRow('bRang', 0);
         return;
     }
@@ -1418,7 +1428,7 @@ function getSieger($templateProcessor, $conn)
     $sql = "SELECT * FROM siegerdef";
     $result = $conn->query($sql);
     if (!$result) {
-        logDebug("SQL-Fehler in getSieger: " . $conn->error);
+        logFehler("SQL-Fehler in getSieger: " . $conn->error);
         return;
     }
     while ($rowdef = $result->fetch_assoc()) {
@@ -1434,7 +1444,7 @@ function getSieger($templateProcessor, $conn)
                          ORDER BY s.year ASC";
         $stmt = $conn->prepare($sqlSiegerDef);
         if (!$stmt) {
-            logDebug("SQL-Fehler in getSieger prepare: " . $conn->error);
+            logFehler("SQL-Fehler in getSieger prepare: " . $conn->error);
             continue;
         }
         $stmt->bind_param("s", $siegerdef);
@@ -1669,7 +1679,7 @@ function getCup($templateProcessor, $conn)
     $pairsQuery = "SELECT * FROM cupPairs WHERE Year = ? ORDER BY Round, ID";
     $stmt = $conn->prepare($pairsQuery);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getCup prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getCup prepare: " . $conn->error);
         return;
     }
     $stmt->bind_param("i", $selectedYear);
@@ -1690,7 +1700,7 @@ function getCup($templateProcessor, $conn)
     $finalQuery = "SELECT * FROM cupFinalResults WHERE Year = ? ORDER BY Result DESC, LowShot DESC";
     $stmt = $conn->prepare($finalQuery);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getCup Final prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getCup Final prepare: " . $conn->error);
         return;
     }
     $stmt->bind_param("i", $selectedYear);
@@ -1731,7 +1741,7 @@ function getCup($templateProcessor, $conn)
     $finalStandQuery = "SELECT * FROM cupStandFinal WHERE Year = ? ORDER BY Result DESC";
     $stmt = $conn->prepare($finalStandQuery);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getCup Stand prepare: " . $conn->error);
+        logFehler("SQL-Fehler in getCup Stand prepare: " . $conn->error);
         return;
     }
     $stmt->bind_param("i", $selectedYear);
@@ -1801,7 +1811,7 @@ function getJMA($templateProcessor, $conn)
             Reihenfolge
     ";
     $stmt = $conn->prepare($jmQuery);
-    if (!$stmt) { logDebug("SQL-Fehler in GetJMA prepare: ".$conn->error); return; }
+    if (!$stmt) { logFehler("SQL-Fehler in GetJMA prepare: ".$conn->error); return; }
     $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $jmResult = $stmt->get_result();
@@ -2045,7 +2055,7 @@ function getJMB($templateProcessor, $conn)
             Reihenfolge
     ";
     $stmt = $conn->prepare($jmQuery);
-    if (!$stmt) { logDebug("SQL-Fehler in GetJMB prepare: ".$conn->error); return; }
+    if (!$stmt) { logFehler("SQL-Fehler in GetJMB prepare: ".$conn->error); return; }
     $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $jmResult = $stmt->get_result();
@@ -2375,7 +2385,7 @@ function getParticipantData($kategorie, $conn) {
                       WHERE w.Kategorie = ? AND m.Status = 1";
     $stmt = $conn->prepare($sqlMitglieder);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getParticipantData: " . $conn->error);
+        logFehler("SQL-Fehler in getParticipantData: " . $conn->error);
         return array();
     }
     $stmt->bind_param("s", $kategorie);
@@ -2544,7 +2554,7 @@ function getTotal($kategorie, $conn) {
                        ORDER BY Reihenfolge";
     $stmt = $conn->prepare($sqlWettkaempfe);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getTotal (Wettkämpfe): " . $conn->error);
+        logFehler("SQL-Fehler in getTotal (Wettkämpfe): " . $conn->error);
         return array();
     }
     $stmt->bind_param("i", $selectedYear);
@@ -2623,7 +2633,7 @@ function getTotal($kategorie, $conn) {
                        WHERE w.Kategorie = ? AND m.Status = 1";
     $stmt = $conn->prepare($sqlMitgliederA);
     if (!$stmt) {
-        logDebug("SQL-Fehler in getTotal: " . $conn->error);
+        logFehler("SQL-Fehler in getTotal: " . $conn->error);
         return array();
     }
     $stmt->bind_param("s", $kategorie);
@@ -2750,7 +2760,7 @@ function GetStreicher($kategorie, $conn) {
     $sqlWettkaempfe .= " ORDER BY Reihenfolge";
     $stmt = $conn->prepare($sqlWettkaempfe);
     if (!$stmt) {
-        logDebug("SQL-Fehler in GetStreicher (Wettkämpfe): " . $conn->error);
+        logFehler("SQL-Fehler in GetStreicher (Wettkämpfe): " . $conn->error);
         return array();
     }
     $stmt->bind_param("i", $selectedYear);
@@ -2814,7 +2824,7 @@ function GetStreicher($kategorie, $conn) {
                       WHERE w.Kategorie = ? AND m.Status = 1";
     $stmt = $conn->prepare($sqlMitglieder);
     if (!$stmt) {
-        logDebug("SQL-Fehler in GetStreicher (Mitglieder): " . $conn->error);
+        logFehler("SQL-Fehler in GetStreicher (Mitglieder): " . $conn->error);
         return array();
     }
     $stmt->bind_param("s", $kategorie);
@@ -2968,7 +2978,7 @@ function jmDebugMemberTotals($conn, $selectedYear, $mitgliedId, $defsLeft, $defs
             }
         }
         unset($side, $cell);
-        error_log("[JM Debug] DBG Endstich raw=$raw scaled=$scal");
+        logDebug("DBG Endstich raw=$raw scaled=$scal");
     }
     if ($kantiDef) {
         $raw  = $calcBestKanti($mitgliedId);
@@ -2984,12 +2994,12 @@ function jmDebugMemberTotals($conn, $selectedYear, $mitgliedId, $defsLeft, $defs
             }
         }
         unset($side, $cell);
-        error_log("[JM Debug] DBG Kanti raw=$raw scaled=$scal");
+        logDebug("DBG Kanti raw=$raw scaled=$scal");
     }
 
     // Ausgeben
     $dumpSide = function($label, $defs, $cells) {
-        error_log("[JM Debug] ---- $label ----");
+        logDebug("---- $label ----");
         foreach ($cells as $idx => $c) {
             $defId = $c['defId'] ?? null;
             $bez   = '';
@@ -2997,7 +3007,7 @@ function jmDebugMemberTotals($conn, $selectedYear, $mitgliedId, $defsLeft, $defs
             $w = $c['wert'] ?? '';
             $n = array_key_exists('num',$c) ? $c['num'] : null;
             $s = !empty($c['isStreicher']) ? ' (Streicher)' : '';
-            error_log("[JM Debug] ".sprintf("#%02d %-25s ID=%s  wert=%s  num=%s%s",
+            logDebug(sprintf("#%02d %-25s ID=%s  wert=%s  num=%s%s",
                 $idx+1, $bez, $defId, var_export($w,true), var_export($n,true), $s));
         }
     };
@@ -3005,7 +3015,7 @@ function jmDebugMemberTotals($conn, $selectedYear, $mitgliedId, $defsLeft, $defs
     $dumpSide('RIGHT', $defsRight, $right);
     $tA = $calcTotal($left);
     $tB = $calcTotal($right);
-    error_log("[JM Debug] TOTAL_A=$tA TOTAL_B=$tB TOTAL=".($tA+$tB));
+    logDebug("TOTAL_A=$tA TOTAL_B=$tB TOTAL=".($tA+$tB));
 }
 
 // Ende der Datei
