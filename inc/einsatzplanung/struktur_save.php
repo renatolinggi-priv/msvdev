@@ -142,19 +142,40 @@ try {
             if (!is_array($map)) ep_json(['success' => false, 'message' => 'Ungültige Soll-Daten'], 422);
             $terminIds = array_map(fn($t) => (int)$t['id'], $plan['termine']);
             $funktionIds = array_map(fn($f) => (int)$f['id'], $plan['funktionen']);
+            $funktionenById = []; foreach ($plan['funktionen'] as $f) $funktionenById[(int)$f['id']] = $f;
+            $istA = $plan['layout'] === 'funktion_x_termin';
+            // Layout A: erst prüfen, ob irgendwo besetzte Positionen oberhalb der neuen Anzahl liegen
+            if ($istA) {
+                foreach ($map as $key => $wert) {
+                    [$tid, $fid] = array_map('intval', explode('|', (string)$key) + [0, 0]);
+                    if (!in_array($tid, $terminIds, true) || !isset($funktionenById[$fid])) continue;
+                    $neu = (int)$wert > 0 ? (int)$wert : (int)$funktionenById[$fid]['anzahl'];
+                    $st = $db->prepare("SELECT COUNT(*) FROM einsatz_plan_slots WHERE plan_id = ? AND termin_id = ? AND funktion_id = ? AND pos > ? AND (mitglied_id IS NOT NULL OR (name_text IS NOT NULL AND name_text <> ''))");
+                    $st->execute([$planId, $tid, $fid, $neu]);
+                    if ((int)$st->fetchColumn() > 0) ep_json(['success' => false, 'message' => 'Kürzen nicht möglich: «' . $funktionenById[$fid]['bezeichnung'] . '» hat an diesem Termin besetzte Positionen oberhalb der neuen Anzahl. Zuerst leeren.'], 409);
+                }
+            }
             $db->beginTransaction();
             $up  = $db->prepare("INSERT INTO einsatz_plan_soll (plan_id, termin_id, funktion_id, soll) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE soll = VALUES(soll)");
             $del = $db->prepare("DELETE FROM einsatz_plan_soll WHERE plan_id = ? AND termin_id = ? AND funktion_id = ?");
             $n = 0;
             foreach ($map as $key => $wert) {
                 [$tid, $fid] = array_map('intval', explode('|', (string)$key) + [0, 0]);
-                if (!in_array($tid, $terminIds, true) || !in_array($fid, $funktionIds, true)) continue;
+                if (!in_array($tid, $terminIds, true) || !isset($funktionenById[$fid])) continue;
                 $soll = max(0, min(99, (int)$wert));
-                if ($soll > 0) $up->execute([$planId, $tid, $fid, $soll]); else $del->execute([$planId, $tid, $fid]);
+                if ($istA) {
+                    // Wert = Standardanzahl der Funktion → keine Abweichung speichern; leere Slots oberhalb entfernen
+                    $anz = $soll > 0 ? $soll : (int)$funktionenById[$fid]['anzahl'];
+                    if ($soll > 0 && $soll !== (int)$funktionenById[$fid]['anzahl']) $up->execute([$planId, $tid, $fid, $soll]); else $del->execute([$planId, $tid, $fid]);
+                    ep_slots_kuerzen_zelle($db, $planId, $tid, $fid, $anz);
+                } else {
+                    if ($soll > 0) $up->execute([$planId, $tid, $fid, $soll]); else $del->execute([$planId, $tid, $fid]);
+                }
                 $n++;
             }
             $db->commit();
-            ep_json(['success' => true, 'message' => 'Soll gespeichert (' . $n . ' Zellen)']);
+            if ($istA) { ep_slots_sicherstellen($db, $planId); ep_projizieren_wenn_freigegeben($db, $planId); }
+            ep_json(['success' => true, 'message' => ($istA ? 'Positionen je Termin gespeichert' : 'Soll gespeichert') . ' (' . $n . ' Zellen)']);
 
         default:
             ep_json(['success' => false, 'message' => 'Unbekannte Aktion'], 400);

@@ -87,9 +87,9 @@ include 'portal_header.php';
       <tbody>
       <?php foreach ($gruppen as $g): ?>
         <?php if ($g['gruppe'] !== ''): ?><tr class="epp-gruppe"><td colspan="<?= count($termine) + 1 ?>"><?= htmlspecialchars($g['gruppe']) ?></td></tr><?php endif; ?>
-        <?php foreach ($g['funktionen'] as $f): $anz = max(1, (int)$f['anzahl']); ?>
+        <?php foreach ($g['funktionen'] as $f): ?>
         <tr><td class="epp-fn"><?= htmlspecialchars($f['bezeichnung']) ?></td>
-          <?php foreach ($termine as $t): ?><td><?php for ($p = 1; $p <= $anz; $p++) echo $slotHtml($plan['slot_index'][$t['id'] . '|' . $f['id'] . '|' . $p] ?? null); ?></td><?php endforeach; ?>
+          <?php foreach ($termine as $t): $anz = ep_anzahl_pos($plan, (int)$t['id'], $f); ?><td><?php for ($p = 1; $p <= $anz; $p++) echo $slotHtml($plan['slot_index'][$t['id'] . '|' . $f['id'] . '|' . $p] ?? null); ?></td><?php endforeach; ?>
         </tr>
         <?php endforeach; ?>
       <?php endforeach; ?>
@@ -102,7 +102,7 @@ include 'portal_header.php';
     <div class="epp-card">
       <div class="epp-card-head"><strong><?= htmlspecialchars(trim((string)$t['bezeichnung']) !== '' ? $t['bezeichnung'] . ' · ' : '') . htmlspecialchars(ep_datum_lang($t['datum'])) ?></strong><span class="text-muted small"><?= htmlspecialchars(ep_zeit_text($t)) ?></span></div>
       <div class="epp-card-body">
-        <?php foreach ($gruppen as $g): foreach ($g['funktionen'] as $f): $anz = max(1, (int)$f['anzahl']); ?>
+        <?php foreach ($gruppen as $g): foreach ($g['funktionen'] as $f): $anz = ep_anzahl_pos($plan, (int)$t['id'], $f); ?>
           <div class="epp-row"><div class="epp-row-fn"><?= htmlspecialchars(($g['gruppe'] !== '' ? $g['gruppe'] . ': ' : '') . $f['bezeichnung']) ?></div>
             <div><?php for ($p = 1; $p <= $anz; $p++) echo $slotHtml($plan['slot_index'][$t['id'] . '|' . $f['id'] . '|' . $p] ?? null); ?></div></div>
         <?php endforeach; endforeach; ?>

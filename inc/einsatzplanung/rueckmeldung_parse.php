@@ -100,7 +100,9 @@ for ($j = 0; $j < $nRows; $j++) {
         // erwartete Positionen in Dokumentreihenfolge
         $erwartet = [];
         foreach ($g['funktionen'] as $f) {
-            for ($pos = 1; $pos <= max(1, (int)$f['anzahl']); $pos++) {
+            // Zeilen im Word = grösste Positionszahl der Funktion; Termine mit weniger Positionen enthalten «–»
+            for ($pos = 1; $pos <= ep_anzahl_max($plan, $f); $pos++) {
+                if ($pos > ep_anzahl_pos($plan, (int)$t['id'], $f)) { $erwartet[] = ['slot' => null, 'funktion' => $f, 'pos' => $pos]; continue; }
                 $s = $plan['slot_index'][$t['id'] . '|' . $f['id'] . '|' . $pos] ?? null;
                 if ($s) $erwartet[] = ['slot' => $s, 'funktion' => $f, 'pos' => $pos];
             }
@@ -113,6 +115,7 @@ for ($j = 0; $j < $nRows; $j++) {
         foreach ($erwartet as $k => $e) {
             $s = $e['slot']; $f = $e['funktion'];
             $text = $lines[$k];
+            if ($s === null) continue;   // Platzhalter «–»: Position gibt es an diesem Termin nicht
             $platzhalter = ep_docx_platzhalter_verein($text);
             $aktuell = ep_slot_text($s, $mitglieder);
             $flabel = (trim((string)$f['gruppe']) !== '' ? $f['gruppe'] . ': ' : '') . $f['bezeichnung'] . ((int)$f['anzahl'] > 1 ? ' (' . $e['pos'] . ')' : '');
