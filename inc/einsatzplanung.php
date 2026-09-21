@@ -171,6 +171,10 @@ $page_specific_css = <<<'CSS'
 .ep-mitglied.geplant .ep-m-count { display: inline-block; }
 .ep-mitglied.inaktiv .ep-m-name { color: #94a3b8; font-style: italic; }
 .ep-mitglied.extern { border-style: dashed; }
+.ep-mitglied .ep-m-v { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #cbd5e1; }
+.ep-mitglied .ep-m-v.ep-v-msv { background: #c62828; } .ep-mitglied .ep-m-v.ep-v-freienbach { background: #3b5998; } .ep-mitglied .ep-m-v.ep-v-wollerau { background: #2e7d32; }
+.ep-mitglied .ep-m-count-gem { display: inline-block; background: #f1f5f9; color: #64748b; }   /* eingeteilt/angeboten, immer sichtbar */
+.ep-mitglied.geplant .ep-m-count-gem { background: #dcfce7; color: #15803d; }
 .ep-mitglied.extern .ep-m-name::after { content: " (extern)"; color: #94a3b8; font-size: .7rem; }
 .ep-side-sub { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #64748b; font-weight: 600; margin: .35rem 0 .25rem; padding: .3rem .2rem .15rem; border-top: 1px dashed #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; gap: .3rem; }
 .ep-side-group:first-child .ep-side-sub { border-top: 0; margin-top: 0; }
@@ -458,6 +462,27 @@ $page_show_mobile = true;
                 <div class="ep-side-sub"><i class="bi bi-chevron-down ep-caret"></i>Eingeplant <span class="ep-g-n"><?= $nGeplant ?></span></div>
                 <div class="ep-side-items" id="epGruppeGeplant"><?= $geplant ?></div>
               </div>
+              <?php if ($istA && $plan['verfuegbarkeit']):
+                // Gemeldete Personen (Verfügbarkeiten aller Vereine) als ziehbare Chips – auch Partnervereine, die sonst
+                // nur im Word-Platzhalter stehen. Zähler «eingeteilt/angeboten» wird per JS aus dem Raster nachgeführt.
+                $gemeldetZaehler = [];
+                foreach ($plan['slots'] as $s) if (ep_slot_besetzt($s)) { $pk = ep_person_key((int)$s['mitglied_id'], (string)$s['name_text']); $gemeldetZaehler[$pk] = ($gemeldetZaehler[$pk] ?? 0) + 1; }
+                $gemeldet = $plan['verfuegbarkeit'];
+                usort($gemeldet, fn($a, $b) => [array_search($a['verein'], array_keys(EP_VEREINE)), mb_strtolower($a['name'])] <=> [array_search($b['verein'], array_keys(EP_VEREINE)), mb_strtolower($b['name'])]);
+              ?>
+              <div class="ep-side-group ep-collapsed" data-gruppe="gemeldet">
+                <div class="ep-side-sub"><i class="bi bi-chevron-down ep-caret"></i>Gemeldet <span class="fw-normal text-lowercase">· alle Vereine</span> <span class="ep-g-n"><?= count($gemeldet) ?></span></div>
+                <div class="ep-side-items" id="epGemeldet">
+              <?php foreach ($gemeldet as $v): $mid = (int)$v['mitglied_id']; $anz = $gemeldetZaehler[$v['person_key']] ?? 0; [$nn, $vn] = $mid ? [$v['Name'] ?? '', $v['Vorname'] ?? ''] : ep_name_split((string)$v['name']); $angeb = count($v['termin_ids']); ?>
+              <div class="ep-mitglied gemeldet<?= $anz > 0 ? ' geplant' : '' ?>" draggable="true" data-mid="<?= $mid ?>" data-name="<?= $h($v['name']) ?>" data-nachname="<?= $h($nn) ?>" data-vorname="<?= $h($vn) ?>" data-verein="<?= $h($v['verein']) ?>" data-angeboten="<?= $angeb ?>"
+                   data-tooltip="<?= $h(EP_VEREINE[$v['verein']] ?? $v['verein']) ?> · <?= $h(implode(', ', $v['rollen']) ?: 'keine Rolle') ?> · <?= $angeb ?> Schicht(en) angeboten">
+                <span class="ep-m-v ep-v-<?= $h($v['verein']) ?>"></span><span class="ep-m-name"><?= $h($v['name']) ?></span>
+                <span class="ep-m-count ep-m-count-gem"><?= $anz ?>/<?= $angeb ?></span>
+              </div>
+              <?php endforeach; ?>
+                </div>
+              </div>
+              <?php endif; ?>
               <div class="ep-side-group ep-collapsed" data-gruppe="extern">
                 <div class="ep-side-sub"><i class="bi bi-chevron-down ep-caret"></i>Externe <span class="fw-normal text-lowercase">· ohne Mitgliedschaft</span> <span class="ep-g-n"><?= count($externe) ?></span></div>
                 <div class="ep-side-items" id="epExterne">
@@ -1197,9 +1222,9 @@ $(function () {
   // ---------- Mitgliederliste rechts (beide Layouts): Zähler, Suche, Drag-Quelle ----------
   // Personen sind Mitglieder (mid > 0) oder Externe (mid = 0, Schlüssel = Name)
   const MitgliederListe = {
-    eintrag(mid, name) {
-      return mid > 0 ? $('#epSideList .ep-mitglied[data-mid="' + mid + '"]')
-                     : $('#epSideList .ep-mitglied[data-mid="0"]').filter(function () { return (this.dataset.name || '') === (name || ''); });
+    eintrag(mid, name) {   // ohne die Gruppe «Gemeldet» – die hat ihren eigenen Zähler (GemeldetListe)
+      return mid > 0 ? $('#epSideList .ep-mitglied[data-mid="' + mid + '"]').not('.gemeldet')
+                     : $('#epSideList .ep-mitglied[data-mid="0"]').not('.gemeldet').filter(function () { return (this.dataset.name || '') === (name || ''); });
     },
     verschiebe(altMid, neuMid, altName, neuName) {
       if (altMid === neuMid && (altMid > 0 || (altName || '') === (neuName || ''))) return;
@@ -1241,6 +1266,18 @@ $(function () {
       return $el;
     }
   };
+  // Gruppe «Gemeldet» (Verfügbarkeiten aller Vereine): Zähler eingeteilt/angeboten aus dem Raster (feste + vorgeschlagene Positionen)
+  const GemeldetListe = {
+    refresh() {
+      const $chips = $('#epGrid .ep-chip[data-slot].ep-besetzt');
+      $('#epGemeldet .ep-mitglied').each(function () {
+        const mid = parseInt(this.dataset.mid || '0', 10), name = this.dataset.name || '';
+        const n = $chips.filter(function () { return mid > 0 ? parseInt(this.dataset.mid || '0', 10) === mid : (parseInt(this.dataset.mid || '0', 10) === 0 && (this.dataset.name || '') === name); }).length;
+        $(this).toggleClass('geplant', n > 0).find('.ep-m-count').text(n + '/' + (this.dataset.angeboten || 0));
+      });
+    }
+  };
+  GemeldetListe.refresh();
   // Gruppen der Mitgliederliste ein-/ausklappen (Standard zu; Zustand pro Plan gemerkt)
   const sideKey = 'ep_side_open_' + PLAN_ID;
   try { JSON.parse(localStorage.getItem(sideKey) || '[]').forEach(g => $('#epSideList .ep-side-group[data-gruppe="' + g + '"]').removeClass('ep-collapsed')); } catch (e) {}
@@ -1259,8 +1296,9 @@ $(function () {
   let dragQuelleZelle = null;     // Layout B: Zelle, von der gezogen wird
   let sideDropHandler = null;     // wird je Layout gesetzt; liefert true, wenn behandelt
   let dragName = '';              // Name der gezogenen Person (für Externe ohne Mitglieds-ID)
+  let dragVerein = 'msv';         // Verein der gezogenen Person (Gruppe «Gemeldet» liefert auch Partnervereine)
   $(document).on('dragstart', '.ep-mitglied', function (e) {
-    dragQuelle = null; dragQuelleZelle = null; dragName = this.dataset.name || '';
+    dragQuelle = null; dragQuelleZelle = null; dragName = this.dataset.name || ''; dragVerein = this.dataset.verein || 'msv';
     e.originalEvent.dataTransfer.setData('text/plain', this.dataset.mid);
     e.originalEvent.dataTransfer.effectAllowed = 'copy';
     $(this).addClass('dragging');
@@ -1340,6 +1378,7 @@ $(function () {
   // Zusammenfassung einer Zelle (eingeklappte Zeile) nachführen
   function refreshSummary($td) {
     updateStunden();
+    if (typeof GemeldetListe !== 'undefined') GemeldetListe.refresh();
     if (!$td || !$td.length) return;
     const namen = $td.children('.ep-chip[data-slot].ep-besetzt').map(function () { return $(this).find('.ep-txt').text() + (this.dataset.ok === '1' ? ' (OK)' : ''); }).get();
     const n = namen.length, offen = $td.children('.ep-ph').length + $td.children('.ep-chip[data-slot].ep-offen').length;
@@ -1510,7 +1549,7 @@ $(function () {
     });
   }
   $(document).on('dragstart', '.ep-chip[data-slot][draggable="true"]', function (e) {
-    dragQuelle = this; dragName = chipExternName($(this));
+    dragQuelle = this; dragName = parseInt(this.dataset.mid || '0', 10) > 0 ? '' : (this.dataset.name || ''); dragVerein = this.dataset.verein || 'msv';   // auch Fremdvereins-Namen verschiebbar
     e.originalEvent.dataTransfer.setData('text/plain', this.dataset.mid);
     e.originalEvent.dataTransfer.effectAllowed = 'move';
     $(this).addClass('dragging');
@@ -1551,17 +1590,19 @@ $(function () {
     $('#epSide').removeClass('ep-drop-remove');
     if (!mid && !name) return;
     if ($q && $q.is($chip)) return;                                  // auf sich selbst
-    const zielMid = parseInt($chip.attr('data-mid') || '0', 10), zielName = chipExternName($chip);
+    // Ziel-Person: Mitglied oder Klartextname (MSV-Externer oder Partnerverein), Verein des Ziels für den Tausch merken
+    const zielMid = parseInt($chip.attr('data-mid') || '0', 10), zielName = zielMid > 0 ? '' : ($chip.attr('data-name') || ''), zielVerein = $chip.attr('data-verein') || 'msv';
+    const verein = dragVerein || 'msv'; dragVerein = 'msv';
     if (!$q && zielMid === mid && (mid || zielName === name)) return;
     if ($q) {
-      // Verschieben: Ziel bekommt die Person, Quelle die bisherige Ziel-Person (Tausch) oder wird leer
+      // Verschieben: Ziel bekommt die Person (mit ihrem Verein), Quelle die bisherige Ziel-Person (Tausch) oder wird leer
       const zielBesetzt = zielMid > 0 || zielName !== '';
-      slotSetzen($chip, mid, 'msv', () => {
-        if (IST_A || zielBesetzt) slotSetzen($q, zielMid, zielBesetzt ? 'msv' : $q.attr('data-verein'), () => msvToast(zielBesetzt ? 'Positionen getauscht' : 'Person verschoben', 'success'), zielName);
+      slotSetzen($chip, mid, verein, () => {
+        if (IST_A || zielBesetzt) slotSetzen($q, zielMid, zielBesetzt ? zielVerein : $q.attr('data-verein'), () => msvToast(zielBesetzt ? 'Positionen getauscht' : 'Person verschoben', 'success'), zielName);
         else positionLoeschen($q, () => msvToast('Person verschoben', 'success'));   // Chilbi: Quelle wird nicht leer, sondern verschwindet
       }, name);
     } else {
-      slotSetzen($chip, mid, 'msv', null, name);
+      slotSetzen($chip, mid, verein, null, name);
     }
   });
   $(document).on('click', '.ep-chip[data-slot]', function () { Slot.open(this); });
@@ -1754,7 +1795,13 @@ $(function () {
       });
       html += '</tbody></table></div><div class="col-lg-5">';
       html += '<h6 class="small text-uppercase text-muted mb-1">Offen (' + (r.offen || []).length + ')</h6><div class="ep-preview small mb-2" style="max-height:180px">' + ((r.offen || []).map(o => '<div>' + msvEsc(o.termin + ' · ' + o.funktion + ' #' + o.pos) + ' <span class="text-muted">– ' + msvEsc(o.grund) + '</span></div>').join('') || '<span class="text-muted">keine</span>') + '</div>';
-      html += '<h6 class="small text-uppercase text-muted mb-1">Verfügbar, aber nicht eingeteilt (' + (r.ungenutzt || []).length + ')</h6><div class="ep-preview small" style="max-height:140px">' + ((r.ungenutzt || []).map(u => '<div>' + msvEsc(u.person) + ' <span class="text-muted">(' + msvEsc(u.verein + ', ' + u.rollen.join('/') + ', ' + u.angeboten + ' Schichten') + ')</span></div>').join('') || '<span class="text-muted">keine</span>') + '</div></div></div>';
+      // Alle gemeldeten Personen: nicht eingeteilte zuerst (rot), dann nach grösstem Rest angeboten − eingeteilt
+      const gem = r.gemeldet || [];
+      const nNull = gem.filter(g => !g.eingeteilt).length;
+      html += '<h6 class="small text-uppercase text-muted mb-1">Gemeldete Personen (' + gem.length + ', davon ' + nNull + ' nicht eingeteilt)</h6><div class="ep-preview small" style="max-height:220px"><table class="table table-sm mb-0"><thead><tr><th>Person</th><th>Verein</th><th>Rollen</th><th class="text-end">angeb.</th><th class="text-end">eingeteilt</th></tr></thead><tbody>';
+      gem.forEach(g => { const cls = !g.eingeteilt ? 'ep-fehlt' : (g.eingeteilt < g.angeboten ? 'text-warning' : ''); html += '<tr class="' + cls + '"><td class="fw-semibold">' + msvEsc(g.person) + '</td><td>' + msvEsc(EP_VEREINE_JS[g.verein] || g.verein) + '</td><td class="text-muted">' + msvEsc(g.rollen.join('/')) + '</td><td class="text-end">' + g.angeboten + '</td><td class="text-end">' + g.eingeteilt + '</td></tr>'; });
+      html += (gem.length ? '' : '<tr><td colspan="5" class="text-muted">keine Verfügbarkeiten</td></tr>') + '</tbody></table></div>';
+      html += '<div class="ep-hint mt-2"><i class="bi bi-hand-index me-1"></i>Anpassen: Dialog schliessen – die Vorschläge stehen gestrichelt («?») im Raster. Gemeldete Personen aller Vereine findest du rechts in der Liste unter «Gemeldet» (Zähler eingeteilt/angeboten) und ziehst sie auf eine Position; anschliessend «Vorschläge übernehmen».</div></div></div>';
       html += '<h6 class="small text-uppercase text-muted mt-2 mb-1">Vorschläge (' + (r.vorschlaege || []).length + ')</h6><div class="ep-preview" style="max-height:220px"><table class="table table-sm table-hover mb-0"><thead><tr><th>Schicht</th><th>Funktion</th><th>Verein</th><th>Person</th><th>Begründung</th></tr></thead><tbody>';
       (r.vorschlaege || []).forEach(v => html += '<tr><td>' + msvEsc(v.termin) + '</td><td>' + msvEsc(v.funktion) + '</td><td>' + msvEsc(v.verein) + '</td><td class="fw-semibold">' + msvEsc(v.person) + '</td><td class="small text-muted">' + msvEsc(v.grund) + '</td></tr>');
       html += '</tbody></table></div>';

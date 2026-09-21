@@ -149,14 +149,18 @@ function ep_einteilung_berechnen(array $plan, array $verfuegbarkeit, array $opt 
         $tabelle[$tid] = ['termin' => ep_datum_kurz($t['datum']) . ' ' . ep_zeit_text($t), 'positionen' => $posProTermin[$tid] ?? 0, 'vereine' => []];
         foreach ($vereine as $v) $tabelle[$tid]['vereine'][$v] = ['ist' => $ist[$tid][$v], 'ziel' => round($ziel[$tid][$v], 1)];
     }
-    $ungenutzt = [];
+    $ungenutzt = []; $gemeldet = [];
     foreach ($personen as $p) {
         if (!empty($p['ohne_meldung']) || $p['angeboten'] === 0 || !$p['rollen']) continue;
         if ($p['einsaetze'] === 0) $ungenutzt[] = ['person' => $p['name'], 'verein' => $p['verein'], 'rollen' => $p['rollen'], 'angeboten' => $p['angeboten']];
+        // Alle gemeldeten Personen mit angeboten/eingeteilt (feste + vorgeschlagene Positionen) – Übersicht im Dialog
+        $gemeldet[] = ['person' => $p['name'], 'verein' => $p['verein'], 'rollen' => $p['rollen'], 'angeboten' => $p['angeboten'], 'eingeteilt' => $p['einsaetze'],
+                       'mitglied_id' => $p['mitglied_id'], 'name_text' => $p['name_text']];
     }
+    usort($gemeldet, fn($a, $b) => [$a['eingeteilt'] > 0 ? 1 : 0, -($a['angeboten'] - $a['eingeteilt']), $a['verein'], $a['person']] <=> [$b['eingeteilt'] > 0 ? 1 : 0, -($b['angeboten'] - $b['eingeteilt']), $b['verein'], $b['person']]);
     $warnungen = [];
     foreach ($personen as $p) if (!empty($p['ohne_meldung']) && ($p['mitglied_id'] || $p['name_text'] !== '')) { /* still ok */ }
     if (!$verfuegbarkeit) $warnungen[] = 'Keine Verfügbarkeiten erfasst – nichts einzuteilen.';
 
-    return ['vorschlaege' => $vorschlaege, 'offen' => $unbesetzt, 'ungenutzt' => $ungenutzt, 'tabelle' => $tabelle, 'warnungen' => $warnungen];
+    return ['vorschlaege' => $vorschlaege, 'offen' => $unbesetzt, 'ungenutzt' => $ungenutzt, 'gemeldet' => $gemeldet, 'tabelle' => $tabelle, 'warnungen' => $warnungen];
 }
