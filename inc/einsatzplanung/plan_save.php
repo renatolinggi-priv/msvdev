@@ -91,7 +91,8 @@ try {
         }
         $db->commit();
         ep_slots_sicherstellen($db, $planId);
-        if ($action === 'create' && !empty($vorlage)) $msg .= ' – Funktionen, Farbe und Fusstext aus «' . $vorlage['titel'] . '» übernommen' . ($termineHinweis ?? '');
+        ep_ok_funktionen_anwenden($db, $planId);   // Funktionen «immer vom OK besetzt» (settings), nur Schlossturm
+        if ($action === 'create' && !empty($vorlage)) $msg .=' – Funktionen, Farbe und Fusstext aus «' . $vorlage['titel'] . '» übernommen' . ($termineHinweis ?? '');
         ep_json(['success' => true, 'plan_id' => $planId, 'message' => $msg]);
     }
 

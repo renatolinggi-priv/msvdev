@@ -139,7 +139,8 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
         $insF = $db->prepare("INSERT INTO einsatz_plan_funktionen (plan_id, gruppe, bezeichnung, rolle, anzahl, sort) VALUES (?, ?, ?, ?, ?, ?)");
         $funktionIds = []; $i = 0;
         foreach ($funktionen as $key => $f) {
-            $rolle = $typ === 'schlossturm' ? ep_rolle_vorbelegung($f['bezeichnung']) : null;
+            $okFunktionen ??= ep_ok_funktionen_laden($db);
+            $rolle = $typ === 'schlossturm' ? ep_rolle_vorbelegung($f['bezeichnung'], $okFunktionen) : null;
             $insF->execute([$planId, $f['gruppe'], $f['bezeichnung'], $rolle, $f['anzahl'], (++$i) * 10]);
             $funktionIds[$key] = (int)$db->lastInsertId();
         }

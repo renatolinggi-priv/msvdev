@@ -217,13 +217,75 @@ function ep_person_key(int $mitgliedId, string $nameText): string
 }
 
 /** Vorbelegung der Anfrage-Rolle aus dem Funktionsnamen (Schlossturm-OK-Liste). */
-function ep_rolle_vorbelegung(string $bezeichnung): ?string
+function ep_rolle_vorbelegung(string $bezeichnung, ?array $okFunktionen = null): ?string
 {
+    if ($okFunktionen !== null && in_array(ep_funktion_norm($bezeichnung), $okFunktionen, true)) return 'OK';   // Definition «immer vom OK besetzt»
     $b = mb_strtolower(trim($bezeichnung));
     if (in_array($b, ['standblätter', 'kasse', 'munition', 'auszahlung', 'auszeichnungen'], true)) return 'Büro';
-    if (in_array($b, ['edv / anlage', 'edv/anlage', 'schiessleitung', 'kurier', 'znüni / zvieri', 'znüni/zvieri'], true)) return 'OK';
     foreach (['Schützenmeister', 'Warner', 'Türkontrolle', 'Parkdienst'] as $k) if (str_contains($b, mb_strtolower($k))) return $k;
     return null;
+}
+
+// ---------------------------------------------------------------------------
+//  Funktionen, die immer vom OK besetzt sind (Definition über alle Jahre, settings.einsatzplan_ok_funktionen)
+//  → Rolle 'OK' auf der Planfunktion; alle Positionen zählen als OK (ep_slot_ist_ok). Pflege im Dialog «OK-Mitglieder».
+// ---------------------------------------------------------------------------
+
+const EP_OK_FUNKTIONEN_KEY     = 'einsatzplan_ok_funktionen';
+const EP_OK_FUNKTIONEN_DEFAULT = ['edv / anlage', 'schiessleitung'];   // Abrechnung 2025/2026: alle Positionen OK
+
+/** Funktionsname normalisiert für Vergleiche: klein, Leerzeichen um «/» und «-» vereinheitlicht. */
+function ep_funktion_norm(string $bezeichnung): string
+{
+    $b = mb_strtolower(trim($bezeichnung));
+    $b = preg_replace('/\s*([\/–-])\s*/u', ' $1 ', $b);
+    return trim(preg_replace('/\s+/u', ' ', $b));
+}
+
+/** Definierte OK-Funktionen (normalisierte Namen); Default, solange nichts gespeichert ist. */
+function ep_ok_funktionen_laden(PDO $db): array
+{
+    try {
+        $st = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+        $st->execute([EP_OK_FUNKTIONEN_KEY]);
+        $v = $st->fetchColumn();
+        if ($v !== false && $v !== null) {
+            $arr = json_decode((string)$v, true);
+            if (is_array($arr)) return array_values(array_unique(array_map('ep_funktion_norm', array_filter($arr, 'is_string'))));
+        }
+    } catch (Throwable $e) {}
+    return EP_OK_FUNKTIONEN_DEFAULT;
+}
+
+/** Definierte OK-Funktionen speichern (normalisiert, ohne Doppel). */
+function ep_ok_funktionen_speichern(PDO $db, array $namen): void
+{
+    $namen = array_values(array_unique(array_filter(array_map(fn($n) => ep_funktion_norm((string)$n), $namen), fn($n) => $n !== '')));
+    sort($namen);
+    $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")
+       ->execute([EP_OK_FUNKTIONEN_KEY, json_encode($namen, JSON_UNESCAPED_UNICODE)]);
+}
+
+/**
+ * Definition auf einen Schlossturm-Plan anwenden: Funktion in der Liste → Rolle 'OK'; Rolle 'OK' ohne Listeneintrag →
+ * zurück auf die übrige Vorbelegung (Büro/Warner/… oder NULL). Rückgabe: [funktion_id => ist_ok].
+ */
+function ep_ok_funktionen_anwenden(PDO $db, int $planId): array
+{
+    $liste = ep_ok_funktionen_laden($db);
+    $out = [];
+    try {
+        $st = $db->prepare("SELECT f.id, f.bezeichnung, f.rolle FROM einsatz_plan_funktionen f JOIN einsatz_plaene p ON p.id = f.plan_id WHERE f.plan_id = ? AND p.typ = 'schlossturm'");
+        $st->execute([$planId]);
+        $upd = $db->prepare("UPDATE einsatz_plan_funktionen SET rolle = ? WHERE id = ?");
+        foreach ($st->fetchAll() as $f) {
+            $soll = in_array(ep_funktion_norm((string)$f['bezeichnung']), $liste, true);
+            $out[(int)$f['id']] = $soll;
+            if ($soll && $f['rolle'] !== 'OK') $upd->execute(['OK', (int)$f['id']]);
+            elseif (!$soll && $f['rolle'] === 'OK') $upd->execute([ep_rolle_vorbelegung((string)$f['bezeichnung']), (int)$f['id']]);
+        }
+    } catch (Throwable $e) { /* vor Migration 053 */ }
+    return $out;
 }
 
 /** Optionstext («OK Schlossturm», «Schützenmeister ») → Rollenschlüssel aus EP_ROLLEN oder null. */
@@ -735,6 +797,7 @@ function ep_plan_kopieren(PDO $db, array $quelle, int $zielJahr, string $titel, 
             try { $db->prepare("UPDATE einsatz_plan_slots SET ok = 1 WHERE id = ?")->execute([(int)$db->lastInsertId()]); } catch (Throwable $e) {}
         }
     }
+    ep_ok_funktionen_anwenden($db, $neuId);   // Funktionen «immer OK» (settings), nur Schlossturm
     ep_ok_stammliste_anwenden($db, $neuId);   // dauerhafte OK-Personen (Migration 060)
     return $neuId;
 }

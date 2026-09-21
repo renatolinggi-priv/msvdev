@@ -520,7 +520,7 @@ $page_show_mobile = true;
                     $variabel = $istA && count(array_unique($proTermin)) > 1;
                     $flabelBase = (trim((string)$f['gruppe']) !== '' ? $f['gruppe'] . ': ' : '') . $f['bezeichnung']; ?>
                 <?php $fnTotal = 0; foreach ($plan['termine'] as $t) foreach ($plan['zellen'][$t['id'] . '|' . $f['id']] ?? [] as $s) if (ep_slot_besetzt($s)) $fnTotal++; ?>
-                <tr data-fid="<?= (int)$f['id'] ?>" class="ep-collapsed">
+                <tr data-fid="<?= (int)$f['id'] ?>" data-okfn="<?= ($f['rolle'] ?? '') === 'OK' ? 1 : 0 ?>" class="ep-collapsed">
                   <td class="ep-fn" data-tooltip="Ein-/ausklappen"><i class="bi bi-chevron-down ep-caret"></i><?= $h($f['bezeichnung']) ?> <span class="ep-fn-n" data-tooltip="eingeteilte Personen über alle Termine"><?= $fnTotal ?></span><?php if ($istA): ?><small><?= $variabel ? 'je Termin ' . $h(implode(' / ', $proTermin)) : $anz . ' pro Termin' ?></small><?php endif; ?></td>
                   <?php foreach ($plan['termine'] as $t): $key = $t['id'] . '|' . $f['id'];
                       $tlabel = (trim((string)$t['bezeichnung']) !== '' ? $t['bezeichnung'] . ' · ' : '') . ($istA ? ep_datum_lang($t['datum']) : ep_datum_kurz($t['datum']) . ' ' . ep_zeit_text($t));
@@ -543,7 +543,7 @@ $page_show_mobile = true;
                         $flabel = $flabelBase . ($istA && $anzMax > 1 ? ' (' . $pos . ')' : '');
                     ?>
                       <button type="button" class="<?= $cls ?>" data-slot="<?= (int)$s['id'] ?>" data-verein="<?= $h($s['verein']) ?>" data-mid="<?= (int)$s['mitglied_id'] ?>" data-vorschlag="<?= (int)($s['vorschlag'] ?? 0) ?>"
-                              data-name="<?= $h($s['name_text']) ?>" data-bem="<?= $h($s['bemerkung']) ?>" data-warn="<?= $warn ?>" data-ok="<?= ep_slot_ist_ok($s, $f) ? 1 : 0 ?>" data-okfn="<?= ($f['rolle'] ?? '') === 'OK' ? 1 : 0 ?>"
+                              data-name="<?= $h($s['name_text']) ?>" data-bem="<?= $h($s['bemerkung']) ?>" data-warn="<?= $warn ?>" data-ok="<?= ep_slot_ist_ok($s, $f) ? 1 : 0 ?>" data-okslot="<?= (int)($s['ok'] ?? 0) ?>" data-okfn="<?= ($f['rolle'] ?? '') === 'OK' ? 1 : 0 ?>"
                               data-funktion="<?= $h($flabel) ?>" data-termin="<?= $h($tlabel) ?>">
                         <span class="ep-dot"></span><span class="ep-txt"<?= $eng && $text !== '' ? ' data-tooltip="' . $h($text) . '"' : '' ?>><?= $text !== '' ? $h($text) : 'offen' ?></span>
                         <?php if ($besetzt && ep_slot_ist_ok($s, $f)): ?><span class="ep-ok" data-tooltip="<?= ($f['rolle'] ?? '') === 'OK' ? 'OK über die Funktion (Rolle «OK»)' : 'OK-Mitglied' ?>">OK</span><?php endif; ?>
@@ -677,7 +677,25 @@ $page_show_mobile = true;
         </tbody>
       </table>
     </div>
-    <div class="ep-hint mt-2"><b>OK im Plan</b> setzt das Kennzeichen auf allen Positionen der Person in diesem Plan – wie im Original-Einsatzplan, wo bei OK-Mitgliedern «OK» statt «x» steht. <b>Dauerhaft</b> merkt die Person in der Stammliste: in jedem künftigen Plan (Import, Kopie, Einteilen) ist sie automatisch OK; Ausschalten entfernt nur den Stammeintrag. Funktionen mit Rolle «OK» (Dialog «Funktionen») zählen immer als OK. Im Word wird «OK» gedruckt; in der Abrechnung zählen OK-Positionen nur mit dem Schalter «OK-Einsätze mitzählen».</div>
+    <div class="ep-hint mt-2"><b>OK im Plan</b> setzt das Kennzeichen auf allen Positionen der Person in diesem Plan – wie im Original-Einsatzplan, wo bei OK-Mitgliedern «OK» statt «x» steht. <b>Dauerhaft</b> merkt die Person in der Stammliste: in jedem künftigen Plan (Import, Kopie, Einteilen) ist sie automatisch OK; Ausschalten entfernt nur den Stammeintrag. Im Word wird «OK» gedruckt; in der Abrechnung zählen OK-Positionen nur mit dem Schalter «OK-Einsätze mitzählen».</div>
+
+    <?php $okFnListe = ep_ok_funktionen_laden($db); $slotsProFn = []; foreach ($plan['slots'] as $s) if (ep_slot_fix($s)) $slotsProFn[(int)$s['funktion_id']] = ($slotsProFn[(int)$s['funktion_id']] ?? 0) + 1; ?>
+    <h6 class="small text-uppercase text-muted mt-4 mb-1"><i class="bi bi-list-task me-1"></i>Funktionen, die immer vom OK besetzt sind</h6>
+    <div class="table-responsive">
+      <table class="table table-sm ep-ok-liste mb-0" id="epOkFunktionen">
+        <thead><tr><th>Funktion</th><th class="text-center">besetzte Positionen</th><th class="text-center" style="width:110px" data-tooltip="Definition für alle Jahre: alle Positionen dieser Funktion zählen als OK (Rolle «OK» wird gesetzt)">immer OK</th></tr></thead>
+        <tbody>
+        <?php foreach ($plan['funktionen'] as $f): $inListe = in_array(ep_funktion_norm((string)$f['bezeichnung']), $okFnListe, true); ?>
+          <tr data-fid="<?= (int)$f['id'] ?>">
+            <td class="fw-semibold"><?= $h(trim(($f['gruppe'] ? $f['gruppe'] . ': ' : '') . $f['bezeichnung'])) ?><?php if (($f['rolle'] ?? '') === 'OK' && !$inListe): ?> <span class="badge bg-light text-dark border" data-tooltip="Rolle «OK» nur in diesem Plan (Dialog «Funktionen»)">nur dieser Plan</span><?php endif; ?></td>
+            <td class="text-center"><?= (int)($slotsProFn[(int)$f['id']] ?? 0) ?></td>
+            <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input ep-ok-fn" type="checkbox" role="switch" data-fid="<?= (int)$f['id'] ?>" <?= $inListe ? 'checked' : '' ?>></div></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <div class="ep-hint mt-2">Die Definition gilt für alle Jahre (z.B. EDV / Anlage, Schiessleitung) und wird beim Import, beim Anlegen und Kopieren eines Plans angewendet – hier sofort auf diesen Plan. Personen in solchen Funktionen brauchen kein eigenes Häkchen.</div>
   </div>
   <div class="modal-footer py-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Schliessen</button></div>
 </div></div></div>
@@ -1289,7 +1307,7 @@ $(function () {
 
   // Neuen Chip in eine Zelle einsetzen (vor Platzhalter/«+»), aus dem Server-Payload befüllen
   function chipEinsetzen($td, s) {
-    const $chip = $('<button type="button" class="ep-chip ep-v-msv ep-offen" data-mid="0" data-verein="msv" data-name="" data-bem="" data-ok="0"><span class="ep-dot"></span><span class="ep-txt"></span></button>');
+    const $chip = $('<button type="button" class="ep-chip ep-v-msv ep-offen" data-mid="0" data-verein="msv" data-name="" data-bem="" data-ok="0" data-okslot="0" data-okfn="' + ($td.closest('tr').attr('data-okfn') || '0') + '"><span class="ep-dot"></span><span class="ep-txt"></span></button>');
     $chip.attr({ 'data-slot': s.id, 'data-funktion': $td.attr('data-flabel'), 'data-termin': $td.attr('data-tlabel') });
     const $anker = $td.children('.ep-ph, .ep-add').first();
     if ($anker.length) $chip.insertBefore($anker); else $td.append($chip);
@@ -1450,6 +1468,7 @@ $(function () {
 
   // OK-Kennzeichen am Chip (Badge vor dem Namen, data-ok) – genutzt vom Panel-Speichern und vom Dialog «OK-Mitglieder»
   function chipOkSetzen($chip, ok) {
+    $chip.attr('data-okslot', ok ? '1' : '0');      // eigenes Kennzeichen der Position
     const fn = $chip.attr('data-okfn') === '1';   // Funktion mit Rolle «OK»: immer OK, unabhängig vom Kennzeichen der Position
     ok = ok || fn;
     $chip.find('.ep-ok').remove();
@@ -1642,6 +1661,19 @@ $(function () {
   }
   $('#epOkModal').on('change', '.ep-ok-toggle', function () { okPersonSpeichern(this, { ok: this.checked ? 1 : 0 }); });
   $('#epOkModal').on('change', '.ep-ok-stamm',  function () { okPersonSpeichern(this, { dauerhaft: this.checked ? 1 : 0 }); });
+  // Funktion «immer vom OK besetzt» (Definition für alle Jahre) – Chips sofort nachführen, Personenliste beim Schliessen neu laden
+  let okFnGeaendert = false;
+  $('#epOkModal').on('change', '.ep-ok-fn', function () {
+    const cb = this; cb.disabled = true;
+    msvPost(basePath + 'ok_funktion_save.php', { csrf_token: CSRF, plan_id: PLAN_ID, funktion_id: cb.dataset.fid, ok: cb.checked ? 1 : 0 }, r => {
+      okFnGeaendert = true;
+      $('#epGrid tr[data-fid]').each(function () { const fid = this.dataset.fid; if (fid in r.funktionen) this.dataset.okfn = r.funktionen[fid] ? '1' : '0'; });
+      (r.slots || []).forEach(s => { const $c = $('.ep-chip[data-slot="' + s.id + '"]'); if (!$c.length) return; $c.attr('data-okfn', r.funktionen[s.funktion_id] ? '1' : '0'); chipOkSetzen($c, !!s.ok); });
+      $('#epGrid td[data-termin]').each(function () { refreshSummary($(this)); });
+      msvToast(r.message, 'success');
+    }, { csrf: CSRF, failMsg: 'Definition konnte nicht gespeichert werden', fail: () => { cb.checked = !cb.checked; } }).always(() => { cb.disabled = false; });
+  });
+  $('#epOkModal').on('hidden.bs.modal', () => { if (okFnGeaendert) location.reload(); });
   $('#epOkFilter').on('input', function () {
     const q = this.value.trim().toLowerCase();
     $('#epOkModal tbody tr[data-suche]').each(function () { $(this).toggle(!q || this.dataset.suche.indexOf(q) >= 0); });
