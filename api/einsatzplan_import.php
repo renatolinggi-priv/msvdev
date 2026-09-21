@@ -260,6 +260,11 @@ function handleUpdate($db) {
                          SET s.mitglied_id = z.mitglied_id,
                              s.name_text = CASE WHEN z.mitglied_id IS NULL THEN z.mitglied_name ELSE NULL END
                        WHERE z.id = ?")->execute([$id]);
+        // OK-Kennzeichen (Schlossturm, Migration 058/060) folgt der Person, nicht der Position
+        require_once __DIR__ . '/../inc/einsatzplanung/plan_helpers.inc.php';
+        $stS = $db->prepare("SELECT slot_id FROM einsatz_zuweisungen WHERE id = ? AND slot_id IS NOT NULL");
+        $stS->execute([$id]);
+        ep_ok_nach_personenwechsel($db, $stS->fetchAll(PDO::FETCH_COLUMN));
     } catch (Throwable $e) {
         error_log('einsatzplan_import: Slot-Rückschreibung übersprungen: ' . $e->getMessage());
     }

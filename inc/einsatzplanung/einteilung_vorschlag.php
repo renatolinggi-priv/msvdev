@@ -51,6 +51,7 @@ try {
         $params = [$planId];
         if ($slotIds) { $sql .= " AND id IN (" . implode(',', array_fill(0, count($slotIds), '?')) . ")"; $params = array_merge($params, $slotIds); }
         $st = $db->prepare($sql); $st->execute($params);
+        ep_ok_stammliste_anwenden($db, $planId);   // übernommene Stamm-OK-Personen kennzeichnen (Migration 060)
         ep_projizieren_wenn_freigegeben($db, $planId);
         ep_json(['success' => true, 'message' => $st->rowCount() . ' Vorschlag/Vorschläge übernommen', 'anzahl' => $st->rowCount()]);
     }

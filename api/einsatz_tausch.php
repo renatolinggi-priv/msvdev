@@ -183,6 +183,11 @@ if ($action === 'accept') {
                              SET s.mitglied_id = z.mitglied_id, s.name_text = NULL
                            WHERE z.id IN (:ea, :eb)")
                ->execute([':ea' => $aId, ':eb' => $bId > 0 ? $bId : $aId]);
+            // OK-Kennzeichen (Schlossturm, Migration 058/060) folgt der Person, nicht der Position
+            require_once __DIR__ . '/../inc/einsatzplanung/plan_helpers.inc.php';
+            $stS = $db->prepare("SELECT slot_id FROM einsatz_zuweisungen WHERE id IN (:ea2, :eb2) AND slot_id IS NOT NULL");
+            $stS->execute([':ea2' => $aId, ':eb2' => $bId > 0 ? $bId : $aId]);
+            ep_ok_nach_personenwechsel($db, $stS->fetchAll(PDO::FETCH_COLUMN));
         } catch (Throwable $e) {
             error_log('einsatz_tausch: Slot-Rückschreibung übersprungen: ' . $e->getMessage());
         }

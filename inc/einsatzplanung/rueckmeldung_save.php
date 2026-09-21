@@ -45,8 +45,10 @@ try {
         }
         $upd->execute([$mid, $nameText, $sid, $planId]);
         $n += $upd->rowCount();
+        $geaendert[] = $sid;
     }
     $db->commit();
+    ep_ok_nach_personenwechsel($db, $geaendert ?? []);   // OK-Kennzeichen: Stammliste → 1, sonst 0 (Migration 058/060)
     ep_projizieren_wenn_freigegeben($db, $planId);
     ep_json(['success' => true, 'uebernommen' => $n, 'message' => $n . ' Position(en) übernommen']);
 } catch (Throwable $e) {

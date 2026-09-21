@@ -21,6 +21,8 @@
 require_once __DIR__ . '/../einsatzplanung/plan_helpers.inc.php';
 
 const HA_KATEGORIEN = ['einsatz' => 'Nachtrag Einsatz', 'vorarbeit' => 'Vor- & Nacharbeit', 'ok_funktion' => 'OK-Funktion'];
+/** Vorschlagswert je OK-Funktion (Abrechnung 2025: Präsident, Kasse, Schützenmeister … je 50 h). */
+const HA_OK_FUNKTION_STD = 50.0;
 const HA_ZEILEN     = ['einsaetze' => 'Einsätze gemäss Einsatzliste', 'vorarbeiten' => 'Vor- & Nacharbeiten', 'ok_funktionen' => 'OK-Funktionen'];
 /** Vorlagen-Tätigkeiten aus der Abrechnung 2025 (Tab «Manuelle Zeilen», Auswahlliste; Freitext bleibt möglich). */
 const HA_TAETIGKEITEN = [

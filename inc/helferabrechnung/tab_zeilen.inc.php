@@ -5,6 +5,7 @@ foreach ($a['manuell'] as $z) $gruppen[$z['kategorie']][] = $z;
 $titel = ['vorarbeit' => ['Vor- & Nacharbeiten', 'bi-tools'], 'ok_funktion' => ['OK-Funktionen', 'bi-award'], 'einsatz' => ['Nachträge zu Einsätzen', 'bi-plus-circle']];
 ?>
 <div class="d-flex justify-content-end gap-2 mb-2">
+  <button type="button" class="btn btn-outline-primary btn-sm js-zeile-ok" data-tooltip="Für jedes OK-Mitglied des Plans ohne OK-Funktion eine Zeile mit <?= (int)HA_OK_FUNKTION_STD ?> h anlegen (Bezeichnung danach anpassen)"><i class="bi bi-award me-1"></i>OK-Funktionen vorschlagen</button>
   <button type="button" class="btn btn-outline-primary btn-sm js-zeile-vorjahr" data-tooltip="Vor-/Nacharbeiten und OK-Funktionen des letzten Schlossturm-Plans übernehmen (Stunden als Startwert, Nachträge nicht)"><i class="bi bi-arrow-repeat me-1"></i>Aus Vorjahr übernehmen</button>
   <button type="button" class="btn btn-outline-success btn-sm js-zeile-neu"><i class="bi bi-plus-lg me-1"></i>Neue Zeile</button>
 </div>

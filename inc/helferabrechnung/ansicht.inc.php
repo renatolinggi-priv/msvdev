@@ -185,6 +185,16 @@ $(function () {
   $('#zMitglied').on('change', function () { if (Number(this.value) > 0) $('#zName').val(''); });
   $('#zName').on('input', function () { if (this.value.trim() !== '') $('#zMitglied').val(0); });
   $('.js-zeile-neu').on('click', () => zeileOeffnen({}));
+  // OK-Funktionen (je 50 h) für die OK-Mitglieder des Plans vorschlagen (Vorschau → Bestätigung → Anlegen)
+  $('.js-zeile-ok').on('click', function () {
+    $.getJSON(haPath + 'zeile_ok_vorschlag.php', { plan_id: PLAN_ID }).done(r => {
+      if (!r || !r.success) { msvToast((r && r.message) || 'Vorschau fehlgeschlagen', 'error'); return; }
+      if (!r.vorschlag.length) { msvToast(r.vorhanden ? 'Alle OK-Mitglieder haben bereits eine OK-Funktion' : 'Keine OK-Mitglieder im Plan – im Editor unter «OK-Mitglieder» kennzeichnen', 'info'); return; }
+      const liste = r.vorschlag.map(p => msvEsc(p.name) + ' (' + msvEsc(p.verein) + ')').join(', ');
+      msvConfirm(r.vorschlag.length + ' OK-Funktion(en) à ' + Number(r.stunden).toFixed(2) + ' h anlegen für: ' + liste + '? Die Bezeichnung (Präsident, Kasse …) passt du danach in der Zeile an.', 'OK-Funktionen vorschlagen', 'Ja, anlegen')
+        .then(res => { if (res && res.isConfirmed) post('zeile_ok_vorschlag.php', {}, rr => { msvToast(rr.message, 'success'); reloadKeepTab(600); }, 'Anlegen fehlgeschlagen'); });
+    }).fail(xhr => msvToast(msvXhrMessage(xhr, 'Vorschau fehlgeschlagen'), 'error'));
+  });
   // Vor-/Nacharbeiten und OK-Funktionen aus dem letzten Schlossturm-Plan übernehmen (Vorschau → Bestätigung → Kopie)
   $('.js-zeile-vorjahr').on('click', function () {
     const $b = $(this);

@@ -301,6 +301,26 @@ function ep_ok_stamm_hat(array $stamm, int $mitgliedId, string $nameText): bool
     return $n !== '' && isset($stamm['n'][$n]);
 }
 
+/**
+ * Nach einem Personenwechsel auf Positionen: OK-Kennzeichen neu bewerten (Stammliste → 1, sonst 0), damit das
+ * Kennzeichen der vorherigen Person nicht stehen bleibt. Für Rückmeldung, Tausch, Import-Korrektur, Drag & Drop.
+ */
+function ep_ok_nach_personenwechsel(PDO $db, array $slotIds): void
+{
+    $slotIds = array_values(array_filter(array_map('intval', $slotIds)));
+    if (!$slotIds) return;
+    try {
+        $stamm = ep_ok_stamm_laden($db);
+        $st = $db->prepare("SELECT id, mitglied_id, name_text FROM einsatz_plan_slots WHERE id IN (" . implode(',', $slotIds) . ")");
+        $st->execute();
+        $upd = $db->prepare("UPDATE einsatz_plan_slots SET ok = ? WHERE id = ?");
+        foreach ($st->fetchAll() as $s) {
+            $besetzt = !empty($s['mitglied_id']) || trim((string)$s['name_text']) !== '';
+            $upd->execute([$besetzt && ep_ok_stamm_hat($stamm, (int)$s['mitglied_id'], (string)$s['name_text']) ? 1 : 0, (int)$s['id']]);
+        }
+    } catch (Throwable $e) { /* vor Migration 058 */ }
+}
+
 /** Stammliste auf einen Plan anwenden: slots.ok = 1 für alle Positionen von Stamm-Personen. Rückgabe: geänderte Slots. */
 function ep_ok_stammliste_anwenden(PDO $db, int $planId): int
 {
