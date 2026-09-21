@@ -358,7 +358,7 @@ $page_show_mobile = true;
                    : (f.tag_datum ? ('eigener Tag, ' + agFmtD(f.tag_datum)) : 'Weitere Fotos');
     var cap = '<div class="mod-cap">' +
       (f.uploader ? '<i class="bi bi-person"></i> ' + agEsc(f.uploader) : '<span class="warn">unbekannter Uploader</span>') + '<br>' +
-      '<i class="bi bi-camera"></i> ' + (ad ? agEsc(ad) : '<span class="warn">kein Datum</span>') +
+      '<i class="bi bi-camera"></i> ' + (ad ? agEsc(ad) + (f.zeit_quelle === 'mtime' ? ' <span class="warn" data-tooltip="Kein EXIF im Bild – Datum stammt vom Dateidatum des Uploads">(Dateidatum)</span>' : '') : '<span class="warn">kein Datum</span>') +
       ' → ' + agEsc(dayLabel) + (f.tag_manuell ? ' <span class="mod-manual">· manuell</span>' : '') + '</div>';
     var stateText = { pending: 'Wartet', approved: 'Freigegeben', rejected: 'Abgelehnt' }[f.status] || f.status;
     return '<div class="mod-item" id="modf-' + agEsc(f.id) + '">' +

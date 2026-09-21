@@ -48,23 +48,35 @@ if ($file['size'] > FOTO_MAX_BYTES) {
     json_error('Datei zu gross (max. ' . (int) (FOTO_MAX_BYTES / 1024 / 1024) . ' MB).');
 }
 
-// MIME echt pruefen (Whitelist). HEIC wird damit abgelehnt.
+// MIME echt pruefen (Whitelist). HEIC nur, wenn der Server es lesen kann (Imagick).
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mime  = finfo_file($finfo, $file['tmp_name']);
 finfo_close($finfo);
-if (!isset($GLOBALS['FOTO_ALLOWED_MIMES'][$mime])) {
-    $hint = ($mime === 'image/heic' || $mime === 'image/heif')
-        ? 'HEIC wird nicht unterstützt – bitte als JPG hochladen (iPhone: Einstellungen › Kamera › Formate › „Maximale Kompatibilität").'
-        : 'Nur JPG, PNG oder WebP erlaubt.';
+$erlaubt = fotoErlaubteMimes();
+if (!isset($erlaubt[$mime])) {
+    if ($mime === 'image/heic' || $mime === 'image/heif') {
+        $hint = 'HEIC wird auf diesem Server nicht unterstützt – bitte als JPG hochladen (iPhone: Einstellungen › Kamera › Formate › „Maximale Kompatibilität").';
+    } elseif (strpos((string) $mime, 'video/') === 0) {
+        $hint = 'Videos werden nicht unterstützt – nur Fotos (JPG, PNG, WebP' . (fotoHeicUnterstuetzt() ? ', HEIC' : '') . ').';
+    } else {
+        $hint = 'Nur JPG, PNG' . (fotoHeicUnterstuetzt() ? ', WebP oder HEIC' : ' oder WebP') . ' erlaubt.';
+    }
     json_error($hint);
 }
 
-// EXIF-Aufnahmedatum aus der Originaldatei (vor der Verarbeitung) lesen
+// Aufnahmedatum: EXIF aus der Originaldatei (vor der Verarbeitung). Ohne EXIF (WhatsApp,
+// Screenshots) faellt es auf das vom Browser mitgeschickte Dateidatum zurueck.
 [$aufnahme, $quelle] = fotoExifAufnahme($file['tmp_name']);
-$segmente = fotoSchiesstageSegmente($g['Schiesstage'] ?? null);
+if ($aufnahme === null) {
+    $aufnahme = fotoAufnahmeAusDateidatum($_POST['datei_mtime'] ?? null);
+    $quelle   = $aufnahme !== null ? 'mtime' : null;
+}
+$segmente = fotoGalerieSegmente($g);
 $tag = fotoTagInfo($aufnahme, $segmente);
 
-// Bild verarbeiten (Full + Thumbnail)
+// Bild verarbeiten (Full + Medium + Thumbnail). Grosse Originale (40+ Megapixel) brauchen
+// mit GD viel Speicher -> Limit fuer diesen Request anheben; Imagick kommt mit weniger aus.
+@ini_set('memory_limit', '512M');
 try {
     $bild = fotoSpeichereBild($file['tmp_name'], $galerieId, $file['name']);
 } catch (Throwable $e) {
@@ -77,11 +89,11 @@ $stmt = $db->prepare(
     "INSERT INTO anlass_fotos
         (galerie_id, dateiname, dateipfad, thumb_pfad, original_name, dateigroesse,
          breite, hoehe, aufnahme_zeit, zeit_quelle, tag_datum, tag_index,
-         status, hochgeladen_von, moderiert_von, moderiert_am)
+         status, hochgeladen_von, moderiert_von, moderiert_am, sortierung)
      VALUES
         (:gid, :dn, :dp, :tp, :on, :sz,
          :br, :ho, :az, :zq, :td, :ti,
-         :st, :uid, :mv, :ma)"
+         :st, :uid, :mv, :ma, :so)"
 );
 $nowApproved = ($status === 'approved');
 $stmt->execute([
@@ -101,13 +113,18 @@ $stmt->execute([
     ':uid' => $userId,
     ':mv'  => $nowApproved ? $userId : null,
     ':ma'  => $nowApproved ? date('Y-m-d H:i:s') : null,
+    // Neue Fotos reihen sich hinten ein (0 wuerde vor die vom Vorstand sortierten Fotos springen)
+    ':so'  => fotoSortierungNaechste($db, $galerieId),
 ]);
 
+$neuId = (int) $db->lastInsertId();
 echo json_encode([
-    'success'   => true,
-    'id'        => (int) $db->lastInsertId(),
-    'status'    => $status,
-    'thumb_url' => '../api/foto_serve.php?id=' . (int) $db->lastInsertId() . '&size=thumb',
+    'success'     => true,
+    'id'          => $neuId,
+    'status'      => $status,
+    'zeit_quelle' => $quelle,
+    'thumb_url'   => '../api/foto_serve.php?id=' . $neuId . '&size=thumb',
+    'medium_url'  => '../api/foto_serve.php?id=' . $neuId . '&size=medium',
     'message'   => $status === 'pending'
         ? 'Foto hochgeladen – wartet auf Freigabe durch den Vorstand.'
         : 'Foto hochgeladen.',

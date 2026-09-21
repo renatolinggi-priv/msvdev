@@ -20,7 +20,7 @@ if (fotoFeatureAktiv()) {
                     COALESCE(
                       (SELECT f.id FROM anlass_fotos f WHERE f.id = g.cover_foto_id AND f.galerie_id = g.id AND f.status = 'approved'),
                       (SELECT f.id FROM anlass_fotos f WHERE f.galerie_id = g.id AND f.status = 'approved'
-                         ORDER BY (f.tag_index IS NULL), f.tag_index, f.sortierung, f.aufnahme_zeit, f.id LIMIT 1)
+                         ORDER BY " . fotoOrderBySql('f.') . " LIMIT 1)
                     ) AS cover_id
                FROM anlass_galerie g
                JOIN JMDefinition d ON d.ID = g.jmdefinition_id
@@ -80,7 +80,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
         <div class="ga-card" data-id="<?= (int) $g['id'] ?>">
           <div class="ga-cover">
             <?php if (!empty($g['cover_id'])): ?>
-              <img src="../api/foto_serve.php?id=<?= (int) $g['cover_id'] ?>&size=full" loading="lazy" alt="">
+              <img src="../api/foto_serve.php?id=<?= (int) $g['cover_id'] ?>&size=medium" loading="lazy" alt="">
               <span class="ga-play"><i class="bi bi-play-fill"></i></span>
             <?php else: ?>
               <i class="bi bi-camera ph"></i>
@@ -99,7 +99,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   <?php endif; ?>
 </div>
 
-<input type="file" id="gaFileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
+<input type="file" id="gaFileInput" accept="<?= htmlspecialchars(fotoAcceptAttribut()) ?>" multiple hidden>
 
 <script>window.MSV_FOTO = { csrf: <?php echo json_encode($csrf); ?> };</script>
 <script src="js/foto-slideshow.js?v=<?php echo @filemtime(__DIR__ . '/js/foto-slideshow.js'); ?>"></script>
@@ -162,6 +162,8 @@ $csrf = $_SESSION['csrf_token'] ?? '';
       fd.append('galerie_id', gid);
       fd.append('datei', file);
       fd.append('csrf_token', CSRF);
+      // Dateidatum als Fallback fuer die Tageszuordnung, wenn das Bild kein EXIF hat (WhatsApp, Screenshots)
+      if (file.lastModified) fd.append('datei_mtime', String(file.lastModified));
       $.ajax({ url: '../api/foto_upload.php', type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json',
         success: function (r) { if (r.success) { ok++; if (r.status === 'pending') pending++; } else { fail++; if (r.message) msvToast(r.message, 'error'); } },
         error: function () { fail++; },

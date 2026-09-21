@@ -1,8 +1,8 @@
 <?php
 // api/foto_serve.php - liefert Galerie-Bilder/Programm-PDF mit Berechtigungspruefung.
 // Direktzugriff auf portal/uploads/ ist per .htaccess gesperrt; Auslieferung nur hier.
-//   ?id=<fotoId>&size=thumb|full   -> Bild
-//   ?programm=<galerieId>          -> Programm-PDF der Galerie
+//   ?id=<fotoId>&size=thumb|medium|full -> Bild (medium wird bei Bedarf aus full erzeugt)
+//   ?programm=<galerieId>               -> Programm-PDF der Galerie
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/fotogalerie.inc.php';
@@ -21,8 +21,12 @@ $istVorst  = isVorstand();
 // Ab hier wird die Session nicht mehr gebraucht (nur noch DB-Lesezugriff + Datei).
 if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
 
-/** Datei mit Cache-Headern + 304-Unterstuetzung ausliefern. */
-function foto_send_file(string $path, string $disposition = 'inline'): void {
+/**
+ * Datei mit Cache-Headern + 304-Unterstuetzung ausliefern.
+ * $unveraenderlich = true fuer Fotos: eine Foto-ID zeigt immer dieselbe Datei, darum darf der
+ * Browser ein Jahr cachen, ohne taeglich per ETag nachzufragen (Programm-PDF kann ersetzt werden).
+ */
+function foto_send_file(string $path, string $disposition = 'inline', bool $unveraenderlich = false): void {
     if (!fotoPfadErlaubt($path) || !is_file($path)) { http_response_code(404); die('Datei nicht gefunden'); }
 
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -31,11 +35,12 @@ function foto_send_file(string $path, string $disposition = 'inline'): void {
 
     $mtime = filemtime($path);
     $etag  = '"' . md5($path . '|' . $mtime) . '"';
+    $cache = $unveraenderlich ? 'private, max-age=31536000, immutable' : 'private, max-age=86400';
 
     $ifNone = trim($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
     if ($ifNone !== '' && $ifNone === $etag) {
         header('ETag: ' . $etag);
-        header('Cache-Control: private, max-age=86400');
+        header('Cache-Control: ' . $cache);
         http_response_code(304);
         exit;
     }
@@ -43,7 +48,7 @@ function foto_send_file(string $path, string $disposition = 'inline'): void {
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . filesize($path));
     header('Content-Disposition: ' . $disposition . '; filename="' . basename($path) . '"');
-    header('Cache-Control: private, max-age=86400');
+    header('Cache-Control: ' . $cache);
     header('ETag: ' . $etag);
     readfile($path);
     exit;
@@ -81,6 +86,14 @@ if ($foto['status'] !== 'approved' && !$istVorst && (int) $foto['hochgeladen_von
     die('Zugriff verweigert');
 }
 
-$size = ($_GET['size'] ?? 'thumb') === 'full' ? 'full' : 'thumb';
-$path = ($size === 'full') ? $foto['dateipfad'] : ($foto['thumb_pfad'] ?: $foto['dateipfad']);
-foto_send_file($path, 'inline');
+$size = $_GET['size'] ?? 'thumb';
+if ($size === 'full') {
+    $path = $foto['dateipfad'];
+} elseif ($size === 'medium') {
+    // Uebersichts-Cover und Handy-Slideshow: 1280 px statt 2560 px. Aeltere Fotos ohne
+    // Medium-Datei werden beim ersten Aufruf nachgerechnet.
+    $path = fotoMediumSicherstellen($foto);
+} else {
+    $path = $foto['thumb_pfad'] ?: $foto['dateipfad'];
+}
+foto_send_file($path, 'inline', true);

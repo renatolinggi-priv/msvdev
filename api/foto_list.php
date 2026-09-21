@@ -22,14 +22,14 @@ $stmt = $db->prepare(
     "SELECT id, titel, status, hochgeladen_von, aufnahme_zeit, tag_datum, tag_index, breite, hoehe
        FROM anlass_fotos
       WHERE galerie_id = :gid AND (status = 'approved' OR hochgeladen_von = :uid)
-      ORDER BY (tag_datum IS NULL) ASC, tag_datum ASC, tag_index ASC, sortierung ASC, aufnahme_zeit ASC, id ASC"
+      ORDER BY " . fotoOrderBySql()
 );
 $stmt->execute([':gid' => $galerieId, ':uid' => $userId]);
 $rows = $stmt->fetchAll();
 
 // Schiesstage -> Label-Map fuer nummerierte Tage
 $segMap = [];
-foreach (fotoSchiesstageSegmente($g['Schiesstage'] ?? null) as $s) {
+foreach (fotoGalerieSegmente($g) as $s) {
     $segMap[$s['index']] = $s['label'];
 }
 
@@ -63,8 +63,9 @@ foreach ($rows as $r) {
         'mine'      => ((int) $r['hochgeladen_von'] === $userId),
         'breite'    => $r['breite'] !== null ? (int) $r['breite'] : null,
         'hoehe'     => $r['hoehe'] !== null ? (int) $r['hoehe'] : null,
-        'thumb_url' => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=thumb',
-        'full_url'  => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=full',
+        'thumb_url'  => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=thumb',
+        'medium_url' => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=medium',
+        'full_url'   => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=full',
     ];
 }
 

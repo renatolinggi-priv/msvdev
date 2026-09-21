@@ -38,7 +38,7 @@ switch ($action) {
         if ($gid < 1) json_error('Ungültige Galerie.');
         $g = fotoGalerieLaden($db, $gid);
         if (!$g) json_error('Galerie nicht gefunden.', 404);
-        $segmente = fotoSchiesstageSegmente($g['Schiesstage'] ?? null);
+        $segmente = fotoGalerieSegmente($g);
 
         $only = $_POST['status'] ?? ''; // optional Filter
         $sql = "SELECT f.id, f.status, f.titel, f.aufnahme_zeit, f.zeit_quelle, f.tag_index, f.tag_datum, f.tag_manuell,
@@ -53,8 +53,7 @@ switch ($action) {
         }
         // Gleiche Reihenfolge wie Galerie/Slideshow (Tag + manuelle Sortierung) -> Drag&Drop
         // im Admin spiegelt exakt, was die Mitglieder sehen.
-        $sql .= " ORDER BY (f.tag_datum IS NULL) ASC, f.tag_datum ASC, f.tag_index ASC,
-                           f.sortierung ASC, f.aufnahme_zeit ASC, f.id ASC";
+        $sql .= " ORDER BY " . fotoOrderBySql('f.');
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $fotos = [];
@@ -70,6 +69,7 @@ switch ($action) {
                 'tag_datum'     => $r['tag_datum'],
                 'tag_manuell'   => (int) ($r['tag_manuell'] ?? 0),
                 'thumb_url'     => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=thumb',
+                'medium_url'    => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=medium',
                 'full_url'      => '../api/foto_serve.php?id=' . (int) $r['id'] . '&size=full',
             ];
         }
@@ -111,7 +111,7 @@ switch ($action) {
         if ($gid < 1) json_error('Ungültige Galerie.');
         $g = fotoGalerieLaden($db, $gid);
         if (!$g) json_error('Galerie nicht gefunden.', 404);
-        $segmente = fotoSchiesstageSegmente($g['Schiesstage'] ?? null);
+        $segmente = fotoGalerieSegmente($g);
 
         // Manuell verschobene Fotos (tag_manuell=1) NICHT ueberschreiben
         $sel = $db->prepare("SELECT id, aufnahme_zeit FROM anlass_fotos WHERE galerie_id = ? AND tag_manuell = 0");

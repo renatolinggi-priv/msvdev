@@ -9,6 +9,13 @@
 
   var INTERVAL = 5000;   // ms pro Bild
   var slides = [];       // [{id,url,title,day}]
+
+  // Bildgroesse nach Anzeige: auf Handys reicht die Medium-Version (1280 px), auf
+  // Beamer/Desktop/Tablet die volle (2560 px). Massstab = groesste Bildschirmkante in Geraetepixeln.
+  function pickUrl(f) {
+    var px = Math.max(window.screen.width || 0, window.screen.height || 0) * (window.devicePixelRatio || 1);
+    return (px <= 1600 && f.medium_url) ? f.medium_url : f.full_url;
+  }
   var idx = 0;
   var activeLayer = 0;
   var playing = true;
@@ -157,7 +164,7 @@
     (gruppen || []).forEach(function (grp) {
       grp.fotos.forEach(function (f) {
         if (f.status && f.status !== 'approved') return;
-        slides.push({ id: f.id, url: f.full_url, title: f.titel, day: grp.label });
+        slides.push({ id: f.id, url: pickUrl(f), title: f.titel, day: grp.label });
       });
     });
     if (gruppen && gruppen[gi] && gruppen[gi].fotos[fi]) clickedId = gruppen[gi].fotos[fi].id;

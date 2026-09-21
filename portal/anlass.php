@@ -34,7 +34,9 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 .an-photo { position:relative; aspect-ratio:1/1; border-radius:0.5rem; overflow:hidden; background:#eef2f7; cursor:pointer; }
 .an-photo img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
 .an-photo:hover img { transform:scale(1.04); }
-.an-photo .an-pending { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fff3cd; color:#8a6d3b; padding:0.1rem 0.4rem; border-radius:0.4rem; }
+.an-photo .an-pending { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fff3cd; color:#8a6d3b; padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
+.an-photo .an-rejected { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fde2e2; color:#c0392b; padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
+.an-photo.is-rejected img { opacity:0.45; filter:grayscale(60%); }
 .an-photo .an-del { position:absolute; top:4px; right:4px; width:24px; height:24px; border:none; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; font-size:0.7rem; display:none; align-items:center; justify-content:center; }
 .an-photo:hover .an-del { display:flex; }
 .an-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
@@ -81,7 +83,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
         <a class="btn btn-sm btn-outline-club" href="../api/foto_serve.php?programm=<?= (int) $g['id'] ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i>Programm</a>
       <?php endif; ?>
       <button class="btn btn-sm btn-club" id="anSlideshowBtn" disabled><i class="bi bi-play-circle me-1"></i>Slideshow</button>
-      <input type="file" id="anFileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
+      <input type="file" id="anFileInput" accept="<?= htmlspecialchars(fotoAcceptAttribut()) ?>" multiple hidden>
     </div>
   </div>
 
@@ -172,8 +174,9 @@ window.MSV_GALLERY = {
     data.gruppen.forEach(function (grp, gi) {
       html += '<div class="an-daygroup"><div class="an-daytitle">' + esc(grp.label) + '</div><div class="an-photos">';
       grp.fotos.forEach(function (f, fi) {
-        html += '<div class="an-photo" data-gi="' + gi + '" data-fi="' + fi + '">' +
+        html += '<div class="an-photo' + (f.status === 'rejected' ? ' is-rejected' : '') + '" data-gi="' + gi + '" data-fi="' + fi + '">' +
           (f.status === 'pending' ? '<span class="an-pending">wartet auf Freigabe</span>' : '') +
+          (f.status === 'rejected' ? '<span class="an-rejected">abgelehnt</span>' : '') +
           '<img src="' + f.thumb_url + '" loading="lazy" alt="">' +
           (f.mine ? '<button class="an-del" data-id="' + f.id + '" title="Löschen"><i class="bi bi-trash"></i></button>' : '') +
           '</div>';
@@ -240,6 +243,8 @@ window.MSV_GALLERY = {
       fd.append('galerie_id', GID);
       fd.append('datei', file);
       fd.append('csrf_token', CSRF);
+      // Dateidatum als Fallback fuer die Tageszuordnung, wenn das Bild kein EXIF hat (WhatsApp, Screenshots)
+      if (file.lastModified) fd.append('datei_mtime', String(file.lastModified));
       $.ajax({ url: '../api/foto_upload.php', type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json',
         success: function (r) { if (r.success) ok++; else { fail++; if (r.message) msvToast(r.message, 'error'); } },
         error: function () { fail++; },
