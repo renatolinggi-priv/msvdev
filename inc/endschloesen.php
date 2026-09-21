@@ -102,6 +102,13 @@ $page_specific_css = "
 .stich-tile-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.5rem; margin-top: auto; font-size: 0.78rem; color: #64748b; }
 .stich-tile-meta .stich-price { font-weight: 600; color: #334155; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .stich-tile.selected { background: #f0fdf4; border-color: #86cfa2; }
+/* Gast: optionale Stiche (nicht im Kombi-Preis) leicht abgesetzt, mit Badge */
+.stich-tile-optional { border-style: dashed; background: #fafbfd; }
+.stich-tile-optional.selected { border-style: solid; }
+/* Symbol oben rechts in der Kachel (wie der Partner-Schalter bei Mitgliedern) */
+.stich-tile-badge { position: absolute; top: 0.55rem; right: 0.6rem; font-size: 0.85rem; line-height: 1; color: #94a3b8; pointer-events: auto; }
+.stich-tile-optional .stich-tile-head { padding-right: 1.5rem; }
+.stich-tile.selected .stich-tile-badge { color: #15803d; }
 .stich-tile .form-check-input:checked { background-color: #15803d; border-color: #15803d; }
 .stich-tile.selected .stich-tile-meta .stich-price { color: #15803d; }
 .stich-tile-partner {
@@ -571,8 +578,9 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   // Regeln – identisch zu inc/endschloesen/preislogik.inc.php (Server ist verbindlich)
   const JS_PAKET_CODES   = ['END', 'SCHWINI_P1', 'ZABIG', 'PROBE'];
   const GAST_KOMBI_CODES = ['END', 'SCHWINI_P1', 'SCHWINI_P2'];
-  const GAST_ERLAUBT     = ['END', 'SCHWINI_P1', 'SCHWINI_P2', 'SIEUNDER'];
-  const PREIS_DEFAULTS   = { munition_pro_schuss: 50, gast_kombi_2: 3500, gast_kombi_3: 4900, gast_sie_und_er: 1000, partner_zabig: 1000, js_paket_preis: 0 };
+  const GAST_ERLAUBT     = ['END', 'SCHWINI_P1', 'SCHWINI_P2', 'SIEUNDER']; // Standard-Stiche (Button «Alle»); weitere optional zum Einzelpreis
+  const GAST_GESPERRT    = ['PROBE'];
+  const PREIS_DEFAULTS   = { munition_pro_schuss: 50, gast_kombi_2: 3500, gast_kombi_3: 4900, gast_alle: 0, gast_sie_und_er: 1000, partner_zabig: 1000, js_paket_preis: 0 };
 
   const state = {
     typ: 'mitglied',          // mitglied | gast | js
@@ -615,12 +623,16 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       return codes.some(c => JS_PAKET_CODES.includes(c)) ? preis('js_paket_preis') : 0;
     }
     if (typ === 'gast') {
+      // Pauschale, wenn alle lösbaren Stiche gewählt sind (0 = Pauschale aus) – Server: preislogik.inc.php
+      if (preis('gast_alle') > 0 && gastAlleGeloest(codes)) return preis('gast_alle');
       const kombi = codes.filter(c => GAST_KOMBI_CODES.includes(c));
       let p = 0;
       if (kombi.length === 1) p = preisVon(kombi[0]);
       else if (kombi.length === 2) p = preis('gast_kombi_2');
       else if (kombi.length >= 3) p = preis('gast_kombi_3');
       if (codes.includes('SIEUNDER')) p += preis('gast_sie_und_er');
+      // optional dazugelöste Stiche zum Einzelpreis (Server: preislogik.inc.php)
+      codes.forEach(c => { if (!GAST_ERLAUBT.includes(c) && !GAST_GESPERRT.includes(c)) p += preisVon(c); });
       return p;
     }
     return codes.reduce((sum, c) => {
@@ -632,8 +644,24 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
   function erlaubteCodes(typ) {
     if (typ === 'js') return JS_PAKET_CODES;
-    if (typ === 'gast') return GAST_ERLAUBT;
+    if (typ === 'gast') return state.stiche.map(s => s.code).filter(c => !GAST_GESPERRT.includes(c));
     return state.stiche.map(s => s.code).filter(c => c !== 'PROBE');
+  }
+
+  /** Gast: alle fuer ihn loesbaren Stiche gewaehlt? (Pauschalpreis gast_alle) */
+  function gastAlleGeloest(codes) {
+    const noetig = state.stiche.map(s => s.code).filter(c => !GAST_GESPERRT.includes(c));
+    return noetig.length > 0 && noetig.every(c => codes.includes(c));
+  }
+
+  /** Gast: Stich ist optional (zaehlt nicht zum Kombi-Preis, wird zum Einzelpreis dazugeloest) */
+  function istGastOptional(code) {
+    return state.typ === 'gast' && !GAST_ERLAUBT.includes(code);
+  }
+
+  /** Checkboxen, die der Button «Alle» betrifft: bei Gaesten nur die Standard-Stiche */
+  function standardChecks() {
+    return [...document.querySelectorAll('.stich-check')].filter(cb => !istGastOptional(cb.dataset.code));
   }
 
   // =========================================================================
@@ -723,9 +751,13 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const erlaubt = erlaubteCodes(state.typ);
     let stiche = [...state.stiche].filter(s => erlaubt.includes(s.code)).sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
     if (state.typ === 'js') stiche.sort((a, b) => (a.code === 'PROBE' ? -1 : b.code === 'PROBE' ? 1 : 0));
+    // Gast: Standard-Stiche zuerst, optionale Stiche dahinter
+    if (state.typ === 'gast') stiche.sort((a, b) => Number(istGastOptional(a.code)) - Number(istGastOptional(b.code)));
 
     $id('stichHint').textContent = state.typ === 'js' ? 'Paketpreis ' + (preis('js_paket_preis') > 0 ? fmtCHF(preis('js_paket_preis')) : 'gratis')
       : state.typ === 'gast' ? 'Kombi-Preise: 2 Stiche ' + fmtCHF(preis('gast_kombi_2')) + ', ab 3 ' + fmtCHF(preis('gast_kombi_3'))
+          + ' · weitere Stiche optional zum Einzelpreis'
+          + (preis('gast_alle') > 0 ? ' · alle Stiche ' + fmtCHF(preis('gast_alle')) : '')
       : '';
 
     stiche.forEach(s => {
@@ -734,6 +766,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       if (state.typ === 'js') preisText = 'im Paket';
       if (state.typ === 'gast' && s.code === 'SIEUNDER') preisText = fmtCHF(preis('gast_sie_und_er'));
       if (s.code === 'PROBE' && state.typ !== 'js') preisText = 'gratis';
+      const optional = istGastOptional(s.code);
 
       const partner = (s.code === 'ZABIG' && state.typ === 'mitglied') ? `
         <label class="stich-tile-partner" for="partner_zabig" data-tooltip="Zabig mit Partner: ${fmtCHF(preis('partner_zabig'))}">
@@ -741,12 +774,12 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
         </label>` : '';
 
       const tile = document.createElement('div');
-      tile.className = 'stich-tile';
+      tile.className = 'stich-tile' + (optional ? ' stich-tile-optional' : '');
       tile.dataset.stichId = s.id;
       tile.innerHTML = `
         <label class="stich-tile-main" for="stich_${s.id}">
           <input class="form-check-input stich-check" type="checkbox" value="${s.id}" id="stich_${s.id}" data-code="${esc(s.code)}" data-shots="${shots}" ${vorher.has(String(s.id)) ? 'checked' : ''}>
-          <span class="stich-tile-head"><span class="stich-tile-name">${esc(s.name)}</span></span>
+          <span class="stich-tile-head"><span class="stich-tile-name">${esc(s.name)}</span>${optional ? '<i class="bi bi-plus-circle stich-tile-badge" data-tooltip="Optional: zählt nicht zum Kombi-Preis, wird zum Einzelpreis dazugelöst" aria-label="Optionaler Stich"></i>' : ''}</span>
           <span class="stich-tile-meta"><span>${shots} Schuss</span><span class="stich-price" id="price_${s.id}">${preisText}</span></span>
         </label>${partner}`;
       list.appendChild(tile);
@@ -759,7 +792,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       const cb = t.querySelector('.stich-check');
       t.classList.toggle('selected', !!(cb && cb.checked));
     });
-    const alle = [...document.querySelectorAll('.stich-check')];
+    // «Alle» bezieht sich bei Gaesten nur auf die Standard-Stiche (optionale bleiben Handarbeit)
+    const alle = standardChecks();
     const alleAn = alle.length > 0 && alle.every(cb => cb.checked);
     $id('btnSelectAll').innerHTML = alleAn ? '<i class="bi bi-square me-1"></i>Keine' : '<i class="bi bi-check2-square me-1"></i>Alle';
   }
@@ -780,9 +814,11 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     }
   });
   $id('btnSelectAll').addEventListener('click', () => {
-    const alle = [...document.querySelectorAll('.stich-check')];
+    const alle = standardChecks();
     const alleAn = alle.length > 0 && alle.every(cb => cb.checked);
     alle.forEach(cb => { cb.checked = !alleAn; });
+    // «Keine» leert auch die optionalen Stiche der Gaeste
+    if (alleAn) document.querySelectorAll('.stich-check').forEach(cb => { cb.checked = false; });
     if (alleAn && $id('partner_zabig')) $id('partner_zabig').checked = false;
     updateTiles(); recalcTotals();
   });
@@ -1232,6 +1268,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     { typ: 'munition_pro_schuss', label: 'Munition pro Schuss', hint: 'für zusätzliche Munition', rp: true },
     { typ: 'gast_kombi_2', label: 'Gäste: 2 Stiche', hint: 'aus Endstich / Schwini' },
     { typ: 'gast_kombi_3', label: 'Gäste: ab 3 Stiche', hint: 'aus Endstich / Schwini' },
+    { typ: 'gast_alle', label: 'Gäste: alle Stiche', hint: 'Pauschale, wenn ein Gast jeden Stich löst; 0 = aus (dann normal gerechnet)' },
     { typ: 'gast_sie_und_er', label: 'Gäste: Sie und Er', hint: 'zusätzlich zum Kombi-Preis' },
     { typ: 'partner_zabig', label: 'Zabig mit Partner', hint: 'ersetzt den Einzelpreis des Zabig (Mitglieder)' },
     { typ: 'js_paket_preis', label: 'Jungschützen-Paket', hint: 'Endstich + Schwini P1 + Zabig + Probe; 0 = gratis' }

@@ -344,7 +344,7 @@ try {
                 if ($typ === 'js' && !in_array($code, ENDSCH_JS_PAKET_CODES, true)) {
                     continue;
                 }
-                if ($typ === 'gast' && !in_array($code, ENDSCH_GAST_ERLAUBT, true)) {
+                if ($typ === 'gast' && in_array($code, ENDSCH_GAST_GESPERRT, true)) { // Gäste: alles ausser PROBE (optionale Stiche zum Einzelpreis)
                     continue;
                 }
                 if ($typ === 'mitglied' && $code === 'PROBE') {
@@ -357,7 +357,7 @@ try {
             if ($stichIds && $waffenId === null) {
                 jsonResponse(false, null, 'Keine Waffe gewählt');
             }
-            $preis    = endschBerechnePreis(array_values($codes), $typ, $zabigPartner, $stiche, $spezial);
+            $preis    = endschBerechnePreis(array_values($codes), $typ, $zabigPartner, $stiche, $spezial, array_keys($stiche));
             $createdBy = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'system';
             $hatWaffeSpalte = endschHatWaffeSpalte($conn);
 
@@ -389,6 +389,9 @@ try {
                         q($conn, "INSERT INTO endstich_gaeste (name, geburtsdatum, waffen_id, jahr, created_by) VALUES (?, ?, ?, ?, ?)",
                             'ssiis', [$gastName, $geburtDb, $waffenId, $jahr, $createdBy]);
                         $id = (int)$conn->insert_id;
+                        // Synthetische Mitgliedernummer für den CSV-Export (999000 + id). Früher per Trigger,
+                        // der aber auf die eigene Tabelle schrieb und jeden INSERT scheitern liess (Migration 056).
+                        q($conn, "UPDATE endstich_gaeste SET mitgliedernr = 999000 + id WHERE id = ? AND mitgliedernr IS NULL", 'i', [$id]);
                     }
                     $spalte = 'gast_id';
                 }
@@ -481,6 +484,7 @@ try {
         case 'get_year_details':
             $jahr = (int)($_GET['jahr'] ?? date('Y'));
             $spezial = endschLadeSpezialpreise($conn);
+            $alleStichCodes = array_keys(endschLadeStiche($conn)); // für die Gäste-Pauschale «alle Stiche»
 
             // Teilnehmer: Mitglieder und Gäste mit Stichen ODER Zusatzmunition
             $teilnehmer = rows(q($conn, "
@@ -591,7 +595,7 @@ try {
                     foreach ($selByKey[$k] ?? [] as $s) {
                         $defs[$s['code']] = ['id' => (int)$s['stich_id'], 'price_cents' => (int)$s['price_cents']];
                     }
-                    $e['total_price'] = endschBerechnePreis($codes, $teilTyp, false, $defs, $spezial);
+                    $e['total_price'] = endschBerechnePreis($codes, $teilTyp, false, $defs, $spezial, $alleStichCodes);
                 }
 
                 foreach ($zusByKey[$k] ?? [] as $z) {
