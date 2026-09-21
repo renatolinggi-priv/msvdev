@@ -1,5 +1,7 @@
 <?php
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/dashboard_phasen.inc.php';
+require_once __DIR__ . '/dashboard_widgets.inc.php';
 include 'header.inc.php';
 ?>
 
@@ -56,49 +58,34 @@ include 'header.inc.php';
     margin-right: 0.25rem;
 }
 
-/* Ausstehende Resultate – kompakter Bereich */
-.home-pending {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.25rem;
-}
-
-.home-pending-ok {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-}
-
-.home-pending h6 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #92400e;
-}
-
-.home-pending-ok h6 {
-    color: #166534;
-}
-
-.home-pending .pending-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.35rem 0;
-    font-size: 0.82rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.home-pending .pending-item:last-child {
-    border-bottom: none;
-}
-
-/* Quick Access Grid – kompakt */
+/* Quick Access Grid – die Spaltenzahl waechst in festen Stufen mit der
+   Bildschirmbreite. Feste Stufen statt auto-fill, damit auf sehr breiten
+   Schirmen nicht zehn schmale Kacheln nebeneinander stehen, deren Text
+   abgeschnitten wird. */
 .home-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: 1fr;
     gap: 0.75rem;
+}
+
+@media (min-width: 576px) {
+    .home-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 768px) {
+    .home-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1200px) {
+    .home-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1600px) {
+    .home-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+@media (min-width: 1900px) {
+    .home-grid { grid-template-columns: repeat(6, 1fr); }
 }
 
 .home-card {
@@ -159,6 +146,124 @@ include 'header.inc.php';
     color: #dc3545;
 }
 
+.home-card-icon.green {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.home-card-icon.info {
+    background: #ecfeff;
+    color: #0e7490;
+}
+
+/* Zonen-Überschrift */
+.home-zone-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    margin: 0 0 0.6rem;
+}
+
+.home-zone-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+/* Saison-Hinweis auf der Kachel */
+.home-card-note {
+    font-size: 0.7rem;
+    color: #3b5998;
+    margin: 0.15rem 0 0;
+    overflow-wrap: anywhere;
+}
+
+/* Zone 2 – eingeklappte Liste */
+.home-more {
+    margin-top: 1.5rem;
+}
+
+.home-more > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    list-style: none;
+    padding: 0.35rem 0;
+}
+
+.home-more > summary::-webkit-details-marker {
+    display: none;
+}
+
+.home-more > summary:hover {
+    color: #3b5998;
+}
+
+.home-more > summary .home-more-caret {
+    transition: transform 0.2s ease;
+}
+
+.home-more[open] > summary .home-more-caret {
+    transform: rotate(90deg);
+}
+
+.home-more-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.home-more-item a {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: #fff;
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.82rem;
+    transition: all 0.15s ease;
+}
+
+.home-more-item a:hover {
+    border-color: #cbd5e1;
+    color: #2d3748;
+}
+
+.home-more-item i.home-more-icon {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+}
+
+.home-more-item .home-more-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-more-item .home-more-status {
+    font-size: 0.68rem;
+    color: #a0aec0;
+    white-space: nowrap;
+}
+
 .home-card-text {
     flex: 1;
     min-width: 0;
@@ -172,13 +277,14 @@ include 'header.inc.php';
     line-height: 1.3;
 }
 
+/* Umbrechen statt abschneiden: bei vier bis fünf Spalten sind die Kacheln
+   schmal, und ein abgeschnittener Hinweis ist wertlos. Die Grid-Zeile gleicht
+   unterschiedlich hohe Kacheln ohnehin aus. */
 .home-card-desc {
     font-size: 0.75rem;
     color: #94a3b8;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
 }
 
 .home-card-arrow {
@@ -192,13 +298,210 @@ include 'header.inc.php';
     transform: translateX(3px);
 }
 
-/* Mobile */
+/* Aufgaben – "Das wartet auf dich", standardmässig eingeklappt */
+.home-tasks {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.home-tasks h6 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+    color: #92400e;
+    padding: 0 0.25rem;
+}
+
+.home-tasks > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #92400e;
+    padding: 0 0.25rem;
+}
+
+.home-tasks > summary::-webkit-details-marker {
+    display: none;
+}
+
+.home-tasks > summary .home-tasks-caret {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.home-tasks[open] > summary .home-tasks-caret {
+    transform: rotate(90deg);
+}
+
+.home-tasks-count {
+    background: #f59e0b;
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.05rem 0.4rem;
+}
+
+.home-tasks-list {
+    margin-top: 0.35rem;
+}
+
+.home-task a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.25rem;
+    text-decoration: none;
+    color: #4a5568;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.home-task:last-child a {
+    border-bottom: none;
+}
+
+.home-task a:hover {
+    color: #2d3748;
+}
+
+.home-task a:hover .home-task-text {
+    text-decoration: underline;
+}
+
+.home-task-icon {
+    color: #d97706;
+    font-size: 0.9rem;
+}
+
+.home-task-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-task-badge {
+    font-size: 0.68rem;
+    color: #92400e;
+    background: #fef3c7;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.35rem;
+    white-space: nowrap;
+}
+
+/* Alles erledigt */
+.home-tasks-ok {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.home-tasks-ok h6 {
+    color: #166534;
+    margin: 0;
+}
+
+/* Termine und Jubiläen: nebeneinander, sobald je 300px Platz da sind,
+   sonst untereinander. Steht zwischen Aufgaben und Kacheln. */
+.home-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.home-panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.6rem;
+    padding: 0.75rem 0.9rem;
+}
+
+.home-panel h6 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    margin: 0 0 0.5rem;
+}
+
+.home-panel-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.32rem 0;
+    font-size: 0.82rem;
+    color: #4a5568;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.home-panel-row:last-child {
+    border-bottom: none;
+}
+
+.home-panel-datum {
+    font-variant-numeric: tabular-nums;
+    color: #3b5998;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 0.78rem;
+}
+
+.home-panel-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-panel-tag {
+    font-size: 0.68rem;
+    color: #a0aec0;
+    white-space: nowrap;
+}
+
+/* Runder Geburtstag – faellt in der Liste auf */
+.home-panel-rund .home-panel-name {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.home-panel-rund .home-panel-tag {
+    color: #b45309;
+    font-weight: 600;
+}
+
+.home-panel-leer {
+    font-size: 0.8rem;
+    color: #a0aec0;
+    padding: 0.32rem 0;
+}
+
+/* Mobile – die Spaltenzahl des Kachelrasters regeln die Stufen oben,
+   hier nur der engere Abstand und die Touch-Anpassungen. */
 @media (max-width: 767.98px) {
     .home-grid {
+        gap: 0.5rem;
+    }
+
+    .home-more-list {
         grid-template-columns: 1fr;
         gap: 0.5rem;
     }
-    
+
     .home-welcome {
         flex-direction: column;
         align-items: flex-start;
@@ -216,12 +519,6 @@ include 'header.inc.php';
     }
 }
 
-/* Tablet: 2 Spalten */
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .home-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
 </style>
 
 <div class="main-content-wrapper">
@@ -243,170 +540,159 @@ include 'header.inc.php';
         </div>
     </div>
 
-    <!-- Ausstehende Resultate -->
+    <!-- Offene Punkte quer durch die App -->
     <?php
-    $current_year = date('Y');
+    $current_year = (int)date('Y');
     $today = date('Y-m-d');
-    
-    $pending_query = "
-        SELECT
-            jd.ID,
-            jd.Bezeichnung,
-            jd.Schiesstage,
-            jd.Reihenfolge,
-            CASE
-                WHEN jd.Schiesstage LIKE '%Dezember%' THEN CONCAT(jd.year, '-12-31')
-                WHEN jd.Schiesstage LIKE '%November%' THEN CONCAT(jd.year, '-11-30')
-                WHEN jd.Schiesstage LIKE '%Oktober%' THEN CONCAT(jd.year, '-10-31')
-                WHEN jd.Schiesstage LIKE '%September%' THEN CONCAT(jd.year, '-09-30')
-                WHEN jd.Schiesstage LIKE '%August%' THEN CONCAT(jd.year, '-08-31')
-                WHEN jd.Schiesstage LIKE '%Juli%' THEN CONCAT(jd.year, '-07-31')
-                WHEN jd.Schiesstage LIKE '%Juni%' THEN CONCAT(jd.year, '-06-30')
-                WHEN jd.Schiesstage LIKE '%Mai%' THEN CONCAT(jd.year, '-05-31')
-                WHEN jd.Schiesstage LIKE '%April%' THEN CONCAT(jd.year, '-04-30')
-                WHEN jd.Schiesstage LIKE '%März%' THEN CONCAT(jd.year, '-03-31')
-                WHEN jd.Schiesstage LIKE '%Februar%' THEN CONCAT(jd.year, '-02-28')
-                WHEN jd.Schiesstage LIKE '%Januar%' THEN CONCAT(jd.year, '-01-31')
-                ELSE CONCAT(jd.year, '-12-31')
-            END as approx_date,
-            (SELECT COUNT(*) FROM jmresultate jr WHERE jr.jmdefinitionID = jd.ID) as result_count
-        FROM JMDefinition jd
-        WHERE
-            jd.year = ?
-            AND jd.hidden = 0
-            AND jd.Info = 0
-            AND jd.Erweitert = 0
-            AND jd.Maxpunkte > 0
-            AND LENGTH(jd.Schiesstage) > 0
-        HAVING
-            approx_date < ?
-            AND result_count = 0
-        ORDER BY jd.Reihenfolge ASC
-        LIMIT 10
-    ";
+    $ist_admin = ($_SESSION['user_role'] ?? '') === 'admin' || (int)($_SESSION['user_id'] ?? 0) === 1;
 
-    $pending_stmt = $conn->prepare($pending_query);
-    $pending_stmt->bind_param("ss", $current_year, $today);
-    $pending_stmt->execute();
-    $pending_result = $pending_stmt->get_result();
-    $has_pending = $pending_result && $pending_result->num_rows > 0;
+    // Termine und Saisonphasen kommen aus dashboard_phasen.inc.php. Die
+    // ausstehenden Anlaesse stuetzen sich dort auf die echten Schiesstage
+    // (JMSchiesstage) statt auf den Monatsnamen im Freitext.
+    $pending_rows = msvDashboardAusstehend($conn, $current_year, $today);
+    $dashboard    = msvDashboardKarten($conn, $current_year, $today, count($pending_rows));
+    $aufgaben     = msvDashAufgaben($conn, $today, $pending_rows, $ist_admin);
     ?>
-    
-    <div class="home-pending <?php echo $has_pending ? '' : 'home-pending-ok'; ?>">
-        <?php if ($has_pending): ?>
-            <h6><i class="bi bi-exclamation-triangle me-1"></i>Ausstehende Resultate</h6>
-            <?php while ($row = $pending_result->fetch_assoc()): ?>
-                <div class="pending-item">
-                    <span><i class="bi bi-circle-fill text-danger me-1" style="font-size:0.5rem;vertical-align:middle;"></i><?php echo htmlspecialchars($row['Bezeichnung']); ?></span>
-                    <span class="badge bg-warning text-dark" style="font-size:0.7rem;">Ausstehend</span>
-                </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <h6><i class="bi bi-check-circle me-1"></i>Alle Resultate erfasst</h6>
-        <?php endif; ?>
+
+    <?php if ($aufgaben): ?>
+        <details class="home-tasks">
+            <summary>
+                <i class="bi bi-chevron-right home-tasks-caret"></i>
+                <i class="bi bi-exclamation-triangle"></i>
+                Das wartet auf dich
+                <span class="home-tasks-count"><?php echo count($aufgaben); ?></span>
+            </summary>
+            <div class="home-tasks-list">
+                <?php foreach ($aufgaben as $aufgabe): ?>
+                    <div class="home-task">
+                        <a href="<?php echo htmlspecialchars($aufgabe['link']); ?>">
+                            <i class="bi <?php echo htmlspecialchars($aufgabe['icon']); ?> home-task-icon"></i>
+                            <span class="home-task-text"><?php echo htmlspecialchars($aufgabe['text']); ?></span>
+                            <?php if (!empty($aufgabe['badge'])): ?>
+                                <span class="home-task-badge"><?php echo htmlspecialchars($aufgabe['badge']); ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </details>
+    <?php else: ?>
+        <div class="home-tasks home-tasks-ok">
+            <h6><i class="bi bi-check-circle me-1"></i>Nichts offen – alles erledigt</h6>
+        </div>
+    <?php endif; ?>
+
+    <!-- Nächste Termine und Jubiläen – nebeneinander, sobald Platz da ist -->
+    <?php
+    $naechste_termine = msvDashTermine($conn, $today);
+    $jubilaeen        = msvDashJubilaeen($conn, $current_year, $today);
+    ?>
+    <div class="home-cols">
+        <div class="home-panel">
+            <h6><i class="bi bi-calendar-event"></i>Nächste Termine</h6>
+            <?php if ($naechste_termine): ?>
+                <?php foreach ($naechste_termine as $termin): ?>
+                    <div class="home-panel-row">
+                        <span class="home-panel-datum"><?php echo htmlspecialchars(msvDashDatumBereich($termin['von'], $termin['bis'])); ?></span>
+                        <span class="home-panel-name"><?php echo htmlspecialchars($termin['titel']); ?></span>
+                        <span class="home-panel-tag"><?php echo htmlspecialchars(msvDashRelativ($termin['von'], $today)); ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="home-panel-leer">Keine kommenden Termine gefunden</div>
+            <?php endif; ?>
+        </div>
+
+        <div class="home-panel">
+            <h6><i class="bi bi-award"></i>Vereinsjubiläen <?php echo (int)$current_year; ?></h6>
+            <?php if ($jubilaeen['jubilaeen']): ?>
+                <?php foreach ($jubilaeen['jubilaeen'] as $j): ?>
+                    <div class="home-panel-row">
+                        <span class="home-panel-datum"><?php echo (int)$j['jahre']; ?> Jahre</span>
+                        <span class="home-panel-name"><?php echo htmlspecialchars($j['person']); ?></span>
+                        <span class="home-panel-tag">seit <?php echo (int)$j['seit']; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="home-panel-leer">Keine Vereinsjubiläen gefunden</div>
+            <?php endif; ?>
+        </div>
+
+        <div class="home-panel">
+            <h6><i class="bi bi-balloon"></i>Geburtstage</h6>
+            <?php if ($jubilaeen['geburtstage']): ?>
+                <?php foreach ($jubilaeen['geburtstage'] as $g): ?>
+                    <div class="home-panel-row<?php echo !empty($g['rund']) ? ' home-panel-rund' : ''; ?>">
+                        <span class="home-panel-datum"><?php echo htmlspecialchars(msvDashDatum($g['datum'])); ?></span>
+                        <span class="home-panel-name"><?php echo htmlspecialchars($g['person']); ?></span>
+                        <span class="home-panel-tag">wird <?php echo (int)$g['alter']; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="home-panel-leer">Keine Geburtstage in den nächsten 90 Tagen</div>
+            <?php endif; ?>
+        </div>
     </div>
 
-    <!-- Quick Access -->
+    <!-- Quick Access – saisonal gesteuert, siehe dashboard_phasen.inc.php -->
+    <?php
+    // Oben zuerst das, was gerade Saison hat - die Dauerbrenner (Munition,
+    // Heim, Kanti, Mitglieder, Portal) folgen danach.
+    $aktiv_saison   = [];
+    $aktiv_dauernd  = [];
+    $karten_weitere = [];
+    foreach ($dashboard['karten'] as $karte) {
+        if (!$karte['aktiv']) {
+            $karten_weitere[] = $karte;
+        } elseif ($karte['dauerhaft']) {
+            $aktiv_dauernd[] = $karte;
+        } else {
+            $aktiv_saison[] = $karte;
+        }
+    }
+    $karten_aktiv = array_merge($aktiv_saison, $aktiv_dauernd);
+    ?>
+
+    <p class="home-zone-title"><i class="bi bi-lightning-charge-fill"></i>Jetzt aktuell</p>
     <div class="home-grid">
-        <div class="home-card">
-            <a href="munitionskauf.php">
-                <div class="home-card-icon red"><i class="bi bi-cart-check"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Munitionverkauf</p>
-                    <p class="home-card-desc">Munitionskäufe erfassen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="endschloesen.php">
-                <div class="home-card-icon red"><i class="bi bi-bullseye"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Endschiessen Stichausgabe</p>
-                    <p class="home-card-desc">Stiche ausgeben</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="jmresultate.php">
-                <div class="home-card-icon"><i class="bi bi-trophy"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Jahresmeisterschaft</p>
-                    <p class="home-card-desc">Resultate erfassen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="heimresultate.php">
-                <div class="home-card-icon"><i class="bi bi-house"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Heimmeisterschaft</p>
-                    <p class="home-card-desc">Resultate erfassen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="kantiresultate.php">
-                <div class="home-card-icon"><i class="bi bi-geo-alt"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Kantonalstich</p>
-                    <p class="home-card-desc">Resultate erfassen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="endresultate.php">
-                <div class="home-card-icon"><i class="bi bi-calendar-event"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Endschiessen</p>
-                    <p class="home-card-desc">Resultate erfassen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="cup2.php">
-                <div class="home-card-icon"><i class="bi bi-journals"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">CUP</p>
-                    <p class="home-card-desc">CUP Resultate erfassen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="mitgliederverwaltung.php">
-                <div class="home-card-icon"><i class="bi bi-people"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Mitgliederverwaltung</p>
-                    <p class="home-card-desc">Mitglieder verwalten</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
-
-        <div class="home-card">
-            <a href="../portal/dashboard.php">
-                <div class="home-card-icon" style="background:#f0fdf4; color:#16a34a;"><i class="bi bi-box-arrow-up-right"></i></div>
-                <div class="home-card-text">
-                    <p class="home-card-title">Mitgliederportal</p>
-                    <p class="home-card-desc">Portal-Ansicht öffnen</p>
-                </div>
-                <i class="bi bi-chevron-right home-card-arrow"></i>
-            </a>
-        </div>
+        <?php foreach ($karten_aktiv as $karte): ?>
+            <div class="home-card">
+                <a href="<?php echo htmlspecialchars($karte['link']); ?>">
+                    <div class="home-card-icon <?php echo htmlspecialchars($karte['iconClass']); ?>"><i class="bi <?php echo htmlspecialchars($karte['icon']); ?>"></i></div>
+                    <div class="home-card-text">
+                        <p class="home-card-title"><?php echo htmlspecialchars($karte['titel']); ?></p>
+                        <p class="home-card-desc"><?php echo htmlspecialchars($karte['desc']); ?></p>
+                        <?php if (!empty($karte['hinweis'])): ?>
+                            <p class="home-card-note"><?php echo htmlspecialchars($karte['hinweis']); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <i class="bi bi-chevron-right home-card-arrow"></i>
+                </a>
+            </div>
+        <?php endforeach; ?>
     </div>
+
+    <?php if ($karten_weitere): ?>
+        <details class="home-more">
+            <summary>
+                <i class="bi bi-chevron-right home-more-caret"></i>
+                Weitere Bereiche (<?php echo count($karten_weitere); ?>)
+            </summary>
+            <div class="home-more-list">
+                <?php foreach ($karten_weitere as $karte): ?>
+                    <div class="home-more-item">
+                        <a href="<?php echo htmlspecialchars($karte['link']); ?>">
+                            <i class="bi <?php echo htmlspecialchars($karte['icon']); ?> home-more-icon"></i>
+                            <span class="home-more-name"><?php echo htmlspecialchars($karte['titel']); ?></span>
+                            <?php if (!empty($karte['status'])): ?>
+                                <span class="home-more-status"><?php echo htmlspecialchars($karte['status']); ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </details>
+    <?php endif; ?>
 
 </div>
 
