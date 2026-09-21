@@ -248,6 +248,16 @@ h2.h4 {
     top: 0;
     z-index: 10; /* unter Navigation */
 }
+/* Titel mit Zähler/Aktion rechts: <h5 class="table-title"><span>Titel</span><span class="badge">n</span></h5>
+   (Einsatzplanung, Helferabrechnung, Gruppen). Nur bei dieser Struktur – Titel mit Icon + Textknoten bleiben unverändert. */
+.table-title:has(> span:first-child) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.table-title:has(> span:first-child) .badge { font-weight: 600; }
 
 /* ==========================================
    HYBRID-TABLE (Mitglieder-/Listen-Pattern)
