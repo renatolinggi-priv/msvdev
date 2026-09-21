@@ -1541,7 +1541,7 @@ $(function () {
   $(document).on('keydown', e => { if ($('#epSlotPanel').hasClass('open') && e.key === 'Escape') { Slot.close(); e.stopImmediatePropagation(); } });
   $('input[name=epVerein]').on('change', function () { Slot.vereinUi(this.value); if (this.value !== 'msv') $('#epMitglied').val('0'); Slot.save(); });
   $('#epMitglied').on('change', () => { if ($('#epMitglied').val() !== '0') $('#epNameText').val(''); Slot.save(); });
-  $('#epNameText, #epBemerkung').on('change', () => Slot.save());
+  $('#epNameText, #epBemerkung, #epOk').on('change', () => Slot.save());   // Auto-Save; #epOk nur bei Schlossturm im Panel
   $('#epNameText').on('input', function () { if (this.value.trim() !== '') $('#epMitglied').val('0'); });
   $('#epSlotLeeren').on('click', () => {
     if (IST_A) { $('#epMitglied').val('0'); $('#epNameText').val(''); $('#epBemerkung').val(''); Slot.save(); }
