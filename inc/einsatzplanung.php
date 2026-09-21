@@ -646,6 +646,7 @@ $page_show_mobile = true;
       $okPersonen[$k] ??= ['name' => ep_slot_text($s, $mitglieder), 'verein' => $s['verein'] ?? 'msv', 'mid' => (int)$s['mitglied_id'], 'name_text' => (string)$s['name_text'], 'n' => 0, 'ok' => 0, 'fn' => 0,
                            'stamm' => ep_ok_stamm_hat($okStamm, (int)$s['mitglied_id'], (string)$s['name_text'])];
       $okPersonen[$k]['n']++;
+      $okPersonen[$k]['vereine'][$s['verein'] ?? 'msv'] = true;
       if ((int)($s['ok'] ?? 0) === 1) $okPersonen[$k]['ok']++;
       if (($fById[(int)$s['funktion_id']]['rolle'] ?? '') === 'OK') $okPersonen[$k]['fn']++;
   }
@@ -668,7 +669,7 @@ $page_show_mobile = true;
         <?php foreach ($okPersonen as $p): $nurFn = $p['fn'] >= $p['n']; ?>
           <tr data-suche="<?= $h(mb_strtolower($p['name'])) ?>">
             <td class="fw-semibold"><?= $h($p['name']) ?><?php if ($p['fn'] > 0): ?> <span class="badge bg-light text-dark border" data-tooltip="<?= $p['fn'] ?> Position(en) in Funktionen mit Rolle «OK» – zählen immer als OK">Funktion OK<?= $nurFn ? '' : ' ' . $p['fn'] . '/' . $p['n'] ?></span><?php endif; ?></td>
-            <td><span class="ep-dot d-inline-block me-1" style="width:8px;height:8px;border-radius:50%;background:<?= $p['verein'] === 'msv' ? '#c62828' : ($p['verein'] === 'freienbach' ? '#3b5998' : '#2e7d32') ?>"></span><?= $h(EP_VEREINE[$p['verein']] ?? $p['verein']) ?></td>
+            <td><span class="ep-dot d-inline-block me-1" style="width:8px;height:8px;border-radius:50%;background:<?= $p['verein'] === 'msv' ? '#c62828' : ($p['verein'] === 'freienbach' ? '#3b5998' : '#2e7d32') ?>"></span><?= $h(EP_VEREINE[$p['verein']] ?? $p['verein']) ?><?php if (count($p['vereine']) > 1): ?> <span class="badge bg-danger" data-tooltip="Diese Person ist in diesem Plan bei mehreren Vereinen eingetragen (<?= $h(implode(' / ', array_map(fn($k) => EP_VEREINE[$k] ?? $k, array_keys($p['vereine'])))) ?>) – im Raster korrigieren"><?= count($p['vereine']) ?> Vereine</span><?php endif; ?></td>
             <td class="text-center"><?= (int)$p['n'] ?></td>
             <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input ep-ok-toggle" type="checkbox" role="switch" data-mid="<?= $p['mid'] ?>" data-name="<?= $h($p['name_text']) ?>" <?= $p['ok'] > 0 || $nurFn ? 'checked' : '' ?> <?= $nurFn ? 'disabled' : '' ?>></div></td>
             <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input ep-ok-stamm" type="checkbox" role="switch" data-mid="<?= $p['mid'] ?>" data-name="<?= $h($p['name_text']) ?>" <?= $p['stamm'] ? 'checked' : '' ?>></div></td>

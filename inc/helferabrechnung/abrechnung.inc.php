@@ -216,8 +216,14 @@ function ha_warnungen(array $plan, array $zuteilungen, array $kennzahlen): array
     $ohne = array_filter($plan['termine'], fn($t) => !isset($t['pauschale_std']) || $t['pauschale_std'] === '' || $t['pauschale_std'] === null);
     if ($ohne) $w[] = ['typ' => 'pauschale', 'text' => count($ohne) . ' Schicht(en) ohne Pauschale – es zählt die Schichtdauer aus den Zeiten. Pauschale im Tab «Ansätze» setzen.'];
     if ($kennzahlen['anwesenheit_offen'] > 0) $w[] = ['typ' => 'anwesenheit', 'text' => $kennzahlen['anwesenheit_offen'] . ' Position(en) ohne erfasste Anwesenheit – sie zählen gemäss Plan. Nur «nicht da» streicht Stunden.'];
-    $unklar = array_filter($zuteilungen, fn($z) => stripos($z['bemerkung'], 'Verein unklar') !== false);
-    if ($unklar) $w[] = ['typ' => 'verein', 'text' => count($unklar) . ' Position(en) mit Bemerkung «Verein unklar» (kein Kreuz im Original) – Verein im Einsatzplan-Editor prüfen.'];
+    $unklar = array_filter($zuteilungen, fn($z) => preg_match('/Verein (unklar|abweichend|widersprüchlich|ergänzt)/iu', $z['bemerkung']));
+    if ($unklar) $w[] = ['typ' => 'verein', 'text' => count($unklar) . ' Position(en) mit Vereins-Hinweis in der Bemerkung (kein Kreuz, abweichend oder widersprüchlich) – Verein im Einsatzplan-Editor prüfen (Tab Detail, Filter «mit Bemerkung»).'];
+    // Eine Person mit mehreren Vereinen im Plan ist fast immer ein Erfassungsfehler (Kreuz in der falschen Spalte)
+    $vereineJePerson = [];
+    foreach ($zuteilungen as $z) $vereineJePerson[$z['person_key']]['name'] = $z['person'];
+    foreach ($zuteilungen as $z) $vereineJePerson[$z['person_key']]['v'][$z['verein']] = true;
+    $gemischt = array_filter($vereineJePerson, fn($p) => count($p['v']) > 1);
+    if ($gemischt) $w[] = ['typ' => 'verein', 'text' => 'Person(en) mit mehreren Vereinen im Plan: ' . implode(', ', array_map(fn($p) => $p['name'] . ' (' . implode('/', array_map(fn($k) => EP_VEREINE[$k] ?? $k, array_keys($p['v']))) . ')', $gemischt)) . ' – Verein im Einsatzplan-Editor korrigieren.'];
     if ($plan['status'] === 'entwurf') $w[] = ['typ' => 'status', 'text' => 'Der Plan hat den Status «Entwurf».'];
     return $w;
 }

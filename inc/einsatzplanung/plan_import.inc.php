@@ -150,6 +150,13 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
         try { $hatOk = (bool)$db->query("SHOW COLUMNS FROM einsatz_plan_slots LIKE 'ok'")->fetch(); } catch (Throwable $e) { $hatOk = false; }
         $insS = $db->prepare("INSERT INTO einsatz_plan_slots (plan_id, termin_id, funktion_id, pos, verein, mitglied_id, name_text, bemerkung" . ($hatOk ? ", ok" : "") . ") VALUES (?, ?, ?, ?, ?, ?, ?, ?" . ($hatOk ? ", ?" : "") . ")");
         $posZaehler = []; $slots = 0; $mi = 0;
+        // Plausibilisierung des Vereins (Schlossturm-OK-Liste): Kreuze derselben Person in diesem Dokument + bekannte
+        // Zuordnung aus früheren Plänen/Verfügbarkeiten. Fehlendes Kreuz wird daraus ergänzt, Widersprüche werden vermerkt.
+        $imDokument = [];
+        foreach ($daten as $z) {
+            if (empty($z['verein_unklar']) && !empty($z['verein'])) { $n = mb_strtolower(trim((string)$z['mitglied_name'])); if ($n !== '') $imDokument[$n][$z['verein']] = ($imDokument[$n][$z['verein']] ?? 0) + 1; }
+        }
+        $bekannt = ep_personen_vereine($db, $planId);
         foreach ($daten as $z) {
             $tkey = $z['event_datum'] . '|' . ($z['event_zeit'] ?? '');
             [$gruppe, $bez] = $splitFunktion((string)$z['funktion']);
@@ -159,6 +166,18 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
             $match = null;
             if ($verein === 'msv') $match = $gematcht[$mi++] ?? null;   // Index synchron zu $msvEintraege halten
             if (!$tid || !$fid) continue;
+            $hinweis = null;
+            $nameRoh = trim((string)$z['mitglied_name']);
+            if (!empty($z['verein_unklar'])) {
+                $erg = ep_verein_bekannt($imDokument, $nameRoh) ?? ep_verein_bekannt($bekannt, $nameRoh);
+                if ($erg !== null) { $verein = $erg; $hinweis = 'Verein ergänzt (kein Kreuz im Original): ' . (EP_VEREINE[$erg] ?? $erg); if ($erg !== 'msv') $match = null; }
+                else $hinweis = 'Verein unklar (kein Kreuz im Original)';
+            } elseif ($nameRoh !== '') {
+                $andere = array_diff_key($imDokument[mb_strtolower($nameRoh)] ?? [], [$verein => 1]);
+                $hist = ep_verein_bekannt($bekannt, $nameRoh);
+                if ($andere) $hinweis = 'Verein widersprüchlich im Original (auch als ' . implode('/', array_map(fn($k) => EP_VEREINE[$k] ?? $k, array_keys($andere))) . ')';
+                elseif ($hist !== null && $hist !== $verein) $hinweis = 'Verein abweichend: bisher ' . (EP_VEREINE[$hist] ?? $hist);
+            }
             $pk = $tid . '|' . $fid;
             $pos = ($posZaehler[$pk] ?? 0) + 1; $posZaehler[$pk] = $pos;
 
@@ -172,8 +191,8 @@ function ep_plan_aus_dokument(PDO $db, string $pfad, int $userId, array $opt = [
                 $istPlatzhalter = preg_match('/^(sv|msv)\s/i', $n) && preg_match('/freienbach|wollerau|wilen/i', $n);
                 if ($n !== '' && !$istPlatzhalter) $nameText = mb_substr($n, 0, 100);
             }
-            // Kein Kreuz im Original (Schlossturm-OK-Liste): Verein ist geraten → Bemerkung, damit die Helferabrechnung warnt
-            $bemerkung = !empty($z['verein_unklar']) ? 'Verein unklar (kein Kreuz im Original)' : null;
+            // Hinweis aus der Plausibilisierung als Bemerkung, damit die Helferabrechnung warnt
+            $bemerkung = $hinweis !== null ? mb_substr($hinweis, 0, 100) : null;
             $params = [$planId, $tid, $fid, $pos, $verein, $mid, $nameText, $bemerkung];
             if ($hatOk) $params[] = !empty($z['ok']) ? 1 : 0;
             $insS->execute($params);

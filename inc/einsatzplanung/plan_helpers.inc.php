@@ -342,6 +342,42 @@ function ep_slot_ist_ok(array $slot, ?array $funktion = null): bool
     return (int)($slot['ok'] ?? 0) === 1 || ($funktion !== null && ($funktion['rolle'] ?? '') === 'OK');
 }
 
+// ---------------------------------------------------------------------------
+//  Vereinszuordnung von Klartext-Personen (Partnervereine): keine Stammtabelle, sondern das, was das Tool schon weiss –
+//  Positionen aller Pläne und Verfügbarkeiten. Dient der Plausibilisierung bei Import und Rückmeldung.
+// ---------------------------------------------------------------------------
+
+/** Bekannte Vereine je Klartextname: [name klein => [verein => Anzahl]] aus allen Plänen (ausser $ohnePlanId) und Verfügbarkeiten. */
+function ep_personen_vereine(PDO $db, int $ohnePlanId = 0): array
+{
+    $map = [];
+    $add = function (?string $name, ?string $verein) use (&$map) {
+        $n = mb_strtolower(trim((string)$name));
+        if ($n === '' || !$verein) return;
+        $map[$n][$verein] = ($map[$n][$verein] ?? 0) + 1;
+    };
+    try {
+        $st = $db->prepare("SELECT name_text, verein FROM einsatz_plan_slots WHERE mitglied_id IS NULL AND name_text IS NOT NULL AND name_text <> '' AND plan_id <> ?");
+        $st->execute([$ohnePlanId]);
+        foreach ($st as $r) $add($r['name_text'], $r['verein']);
+    } catch (Throwable $e) {}
+    try {
+        foreach ($db->query("SELECT name_text, verein FROM einsatz_plan_verfuegbarkeit WHERE mitglied_id IS NULL AND name_text IS NOT NULL AND name_text <> ''") as $r) $add($r['name_text'], $r['verein']);
+    } catch (Throwable $e) {}
+    return $map;
+}
+
+/** Eindeutig dominanter Verein einer Person aus einer Zählung [verein => n] (null bei unbekannt oder Gleichstand). */
+function ep_verein_bekannt(array $map, string $name): ?string
+{
+    $z = $map[mb_strtolower(trim($name))] ?? [];
+    if (!$z) return null;
+    arsort($z);
+    $keys = array_keys($z);
+    if (count($keys) > 1 && $z[$keys[0]] === $z[$keys[1]]) return null;
+    return $keys[0];
+}
+
 /** Stammliste der OK-Personen: ['m' => [mitglied_id => bemerkung], 'n' => [name klein => bemerkung]]; leer vor Migration 060. */
 function ep_ok_stamm_laden(PDO $db): array
 {

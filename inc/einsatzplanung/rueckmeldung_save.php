@@ -48,9 +48,22 @@ try {
         $geaendert[] = $sid;
     }
     $db->commit();
+    // Plausibilisierung: Klartextname in einem Slot, dessen Verein von der bekannten Zuordnung abweicht → Bemerkung
+    $bekannt = ep_personen_vereine($db, $planId);
+    $bem = $db->prepare("UPDATE einsatz_plan_slots SET bemerkung = ? WHERE id = ?");
+    $abw = 0;
+    foreach ($aenderungen as $a) {
+        $sid = (int)($a['slot_id'] ?? 0); $text = trim((string)($a['name_text'] ?? ''));
+        if (!isset($slots[$sid]) || $text === '') continue;
+        $hist = ep_verein_bekannt($bekannt, $text);
+        if ($hist !== null && $hist !== $slots[$sid]['verein']) {
+            $bem->execute([mb_substr(trim(($slots[$sid]['bemerkung'] ?? '') . ' Verein abweichend: bisher ' . (EP_VEREINE[$hist] ?? $hist)), 0, 100), $sid]);
+            $abw++;
+        }
+    }
     ep_ok_nach_personenwechsel($db, $geaendert ?? []);   // OK-Kennzeichen: Stammliste → 1, sonst 0 (Migration 058/060)
     ep_projizieren_wenn_freigegeben($db, $planId);
-    ep_json(['success' => true, 'uebernommen' => $n, 'message' => $n . ' Position(en) übernommen']);
+    ep_json(['success' => true, 'uebernommen' => $n, 'message' => $n . ' Position(en) übernommen' . ($abw ? ' – ' . $abw . ' mit abweichendem Verein (Bemerkung gesetzt, bitte prüfen)' : '')]);
 } catch (Throwable $e) {
     if ($db->inTransaction()) $db->rollBack();
     error_log('[einsatzplanung/rueckmeldung_save] ' . $e->getMessage());
