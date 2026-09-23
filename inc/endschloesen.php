@@ -272,7 +272,11 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 <div class="row">
 <div class="col-12 ps-0">
   <div class="main-content-wrapper content-width-wide">
-    <?php $page_title = 'Endschiessen – Stiche lösen'; include 'partials/page_header.inc.php'; ?>
+    <?php
+    $page_title   = 'Endschiessen – Stiche lösen';
+    $page_actions = '<button type="button" class="btn-help" data-help="endschloesen.uebersicht" aria-label="Hilfe"></button>';
+    include 'partials/page_header.inc.php';
+    ?>
 
     <div class="erfassung-layout">
 
@@ -286,7 +290,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <!-- Teilnehmer -->
           <div class="shot-section shot-first">
             <div class="shot-section-head">
-              <span class="shot-section-title"><i class="bi bi-person"></i>Teilnehmer</span>
+              <span class="shot-section-title"><i class="bi bi-person"></i>Teilnehmer <button type="button" class="btn-help" data-help="endschloesen.teilnehmer" aria-label="Hilfe"></button></span>
               <div class="d-flex align-items-center gap-2">
                 <label for="yearSelect" class="shot-hint mb-0">Jahr</label>
                 <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
@@ -337,7 +341,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <!-- Stiche -->
           <div class="shot-section">
             <div class="shot-section-head">
-              <span class="shot-section-title"><i class="bi bi-bullseye"></i>Stiche <span class="shot-hint" id="stichHint"></span></span>
+              <span class="shot-section-title"><i class="bi bi-bullseye"></i>Stiche <span class="shot-hint" id="stichHint"></span> <button type="button" class="btn-help" data-help="endschloesen.stiche" aria-label="Hilfe"></button></span>
               <button type="button" id="btnSelectAll" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-check2-square me-1"></i>Alle
               </button>
@@ -495,7 +499,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   <div class="panel-body">
     <div class="shot-section shot-first">
       <div class="shot-section-head">
-        <span class="shot-section-title"><i class="bi bi-card-list"></i>Stiche</span>
+        <span class="shot-section-title"><i class="bi bi-card-list"></i>Stiche <button type="button" class="btn-help" data-help="endschloesen.definition" aria-label="Hilfe"></button></span>
         <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddNewStich"><i class="bi bi-plus-lg me-1"></i>Neuer Stich</button>
       </div>
       <div class="shot-section-body">
@@ -547,7 +551,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
     <div class="shot-section">
       <div class="shot-section-head">
-        <span class="shot-section-title"><i class="bi bi-currency-exchange"></i>Spezialpreise</span>
+        <span class="shot-section-title"><i class="bi bi-currency-exchange"></i>Spezialpreise <button type="button" class="btn-help" data-help="endschloesen.spezialpreise" aria-label="Hilfe"></button></span>
       </div>
       <div class="shot-section-body" id="spezialpreiseContainer"></div>
     </div>

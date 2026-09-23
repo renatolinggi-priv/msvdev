@@ -125,6 +125,14 @@ $page_specific_css = "
 // Header binden (zieht globale Styles/Variablen/Bootstrap/Icons)
 include 'header.inc.php';
 
+// Nur Admin (nach header.inc.php, da dieser user_role setzt). Bisher war die Seite nur im Menü
+// versteckt, aber für den Vorstand per Adresse erreichbar – ein Restore ersetzt die ganze Datenbank.
+if (($_SESSION['user_role'] ?? '') !== 'admin' && (int)($_SESSION['user_id'] ?? 0) !== 1) {
+    ob_end_clean();
+    header('Location: home.php');
+    exit();
+}
+
 // CSRF Token (nur falls Du ihn anderweitig brauchst – API nutzt Key)
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -145,7 +153,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
       <!-- Aussen-Container -->
       <div class="main-content-wrapper content-width-default">
         <!-- Header-Zeile -->
-        <?php $page_title = 'Backup &amp; Restore'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Backup &amp; Restore'; $page_actions = '<button type="button" class="btn-help" data-help="backup_restore.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <!-- Weisser Hintergrund-Container -->
         <div class="content-background">
@@ -155,7 +163,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
               <div class="sidebar-card">
                 <h5 class="card-title">
                   <i class="bi bi-shield-lock"></i>
-                  Hinweise & Schnellaktionen
+                  Hinweise & Schnellaktionen <button type="button" class="btn-help" data-help="backup_restore.backup" aria-label="Hilfe"></button>
                 </h5>
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                   <div class="text-muted">
@@ -179,7 +187,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
               <div class="group-creation-card">
                 <h5 class="card-title">
                   <i class="bi bi-upload"></i>
-                  Restore aus Datei
+                  Restore aus Datei <button type="button" class="btn-help" data-help="backup_restore.restore" aria-label="Hilfe"></button>
                 </h5>
                 <form id="formRestore" class="d-flex flex-column gap-2" enctype="multipart/form-data"
                   autocomplete="off">
@@ -198,7 +206,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
           <div class="existing-groups-card">
             <h5 class="card-title">
               <i class="bi bi-archive"></i>
-              Verfügbare Backups
+              Verfügbare Backups <button type="button" class="btn-help" data-help="backup_restore.liste" aria-label="Hilfe"></button>
             </h5>
             <div class="table-responsive">
               <table class="table table-sm align-middle" id="tblBackups">

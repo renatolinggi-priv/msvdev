@@ -506,7 +506,7 @@ try {
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Erfassung Jahresmeisterschaft'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Erfassung Jahresmeisterschaft'; $page_actions = '<button type="button" class="btn-help" data-help="jmresultate.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
@@ -578,7 +578,7 @@ try {
                         <div class="rank-table-wrapper mb-3">
                             <h5 class="table-title">
                                 <i class="bi bi-star me-2"></i>
-                                Jahresmeisterschaft Kat. A
+                                Jahresmeisterschaft Kat. A <button type="button" class="btn-help" data-help="jmresultate.rangliste" aria-label="Hilfe"></button>
                             </h5>
                             <div class="desktop-table-container">
                                 <div class="table-responsive">
@@ -661,8 +661,9 @@ try {
     <div class="anlass-panel-header" id="anlassPanelHeader">
         <div class="d-flex justify-content-between align-items-start">
             <div>
-                <h6 class="mb-0" id="anlassPanelTitle" style="font-weight:700;">
-                    <i class="bi bi-crosshair me-2"></i>Anlass
+                <h6 class="mb-0" style="font-weight:700;">
+                    <span id="anlassPanelTitle"><i class="bi bi-crosshair me-2"></i>Anlass</span>
+                    <button type="button" class="btn-help" data-help="jmresultate.erfassung" aria-label="Hilfe"></button>
                 </h6>
                 <div id="anlassPanelMeta" style="font-size:0.85rem; color:#64748b;"></div>
             </div>

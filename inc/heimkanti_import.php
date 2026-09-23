@@ -68,7 +68,7 @@ include 'header.inc.php';
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'CSV Import - Heim- und Kantimeisterschaft'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'CSV Import - Heim- und Kantimeisterschaft'; $page_actions = '<button type="button" class="btn-help" data-help="heimkanti_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                     <!-- Phase 1: Upload -->
                     <div id="phase1" class="workflow-phase active">
@@ -91,7 +91,7 @@ include 'header.inc.php';
                         <div class="table-wrapper mb-4">
                             <h5 class="table-title">
                                 <i class="bi bi-person-check me-2"></i>
-                                Import-Einstellungen
+                                Import-Einstellungen <button type="button" class="btn-help" data-help="heimkanti_import.einstellungen" aria-label="Hilfe"></button>
                             </h5>
                             <div class="p-3">
                                 <div class="row">

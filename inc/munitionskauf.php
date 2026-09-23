@@ -642,7 +642,7 @@ include 'header.inc.php';
       <!-- Page Title -->
       <div class="row mb-3 d-none d-md-flex">
         <div class="col-md-12">
-          <h2 class="h4 mb-0 page-title">Munitionskauf erfassen
+          <h2 class="h4 mb-0 page-title">Munitionskauf erfassen <button type="button" class="btn-help" data-help="munitionskauf.uebersicht" aria-label="Hilfe"></button>
           </h2>
         </div>
       </div>
@@ -702,7 +702,7 @@ include 'header.inc.php';
 
             <!-- Munition: Nebeneinander -->
             <div class="munitions-section">
-              <h6><i class="bi bi-box-seam me-1"></i>Munition (CHF 0.50/Schuss)</h6>
+              <h6><i class="bi bi-box-seam me-1"></i>Munition (CHF 0.50/Schuss) <button type="button" class="btn-help" data-help="munitionskauf.munition" aria-label="Hilfe"></button></h6>
               <div class="munitions-grid">
                 <!-- Standard-Pakete -->
                 <div class="munitions-col">
@@ -771,7 +771,7 @@ include 'header.inc.php';
         <div class="erfassung-table-col d-none d-md-block" id="desktopKaeufeContainer">
           <div class="table-wrapper">
             <div class="table-title">
-              <span><i class="bi bi-table me-2"></i>Vergangene Bezüge</span>
+              <span><i class="bi bi-table me-2"></i>Vergangene Bezüge <button type="button" class="btn-help" data-help="munitionskauf.bezuege" aria-label="Hilfe"></button></span>
               <div class="button-group">
                 <button type="button" id="btnFilterToday" class="btn btn-outline-secondary btn-sm">Heute</button>
                 <button type="button" id="btnFilterWeek" class="btn btn-outline-secondary btn-sm">Woche</button>
@@ -862,7 +862,7 @@ include 'header.inc.php';
           <div class="stats-grid">
             <!-- Umsatz -->
             <div class="stats-card-inner">
-              <h6><i class="bi bi-cash-stack me-2"></i>Umsatz <span class="badge bg-secondary" id="statsYear">2026</span></h6>
+              <h6><i class="bi bi-cash-stack me-2"></i>Umsatz <span class="badge bg-secondary" id="statsYear">2026</span> <button type="button" class="btn-help" data-help="munitionskauf.statistiken" aria-label="Hilfe"></button></h6>
               <div class="stat-row">
                 <span>Heute</span>
                 <strong id="statsToday">CHF 0.00</strong>

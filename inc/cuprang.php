@@ -38,7 +38,7 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = "MSV Wilen Vereinscup – Übersicht"; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = "MSV Wilen Vereinscup – Übersicht"; $page_actions = '<button type="button" class="btn-help" data-help="cuprang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
@@ -80,7 +80,7 @@ include 'header.inc.php';
                         <div class="table-wrapper">
                             <h5 class="table-title">
                                 <i class="bi bi-diagram-2 me-2"></i>
-                                Paarungen <?= (int)$selectedYear ?>
+                                Paarungen <?= (int)$selectedYear ?> <button type="button" class="btn-help" data-help="cuprang.paarungen" aria-label="Hilfe"></button>
                             </h5>
                             <?php
                             if (empty($pairs)) {
@@ -103,7 +103,7 @@ include 'header.inc.php';
                         <div class="table-wrapper">
                             <h5 class="table-title">
                                 <i class="bi bi-trophy-fill me-2"></i>
-                                Finale Rangliste <?= (int)$selectedYear ?>
+                                Finale Rangliste <?= (int)$selectedYear ?> <button type="button" class="btn-help" data-help="cuprang.finale" aria-label="Hilfe"></button>
                             </h5>
                             <?php
                             if (empty($final)) {
@@ -118,7 +118,7 @@ include 'header.inc.php';
                         <div class="table-wrapper">
                             <h5 class="table-title">
                                 <i class="bi bi-award me-2"></i>
-                                Standcup Final <?= (int)$selectedYear ?>
+                                Standcup Final <?= (int)$selectedYear ?> <button type="button" class="btn-help" data-help="cuprang.standcup" aria-label="Hilfe"></button>
                             </h5>
                             <?php
                             if (empty($stand)) {

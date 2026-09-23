@@ -80,7 +80,7 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = "Endschiessen Ranglisten"; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = "Endschiessen Ranglisten"; $page_actions = '<button type="button" class="btn-help" data-help="endschrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 <!-- Weisser Container für den Rest -->
                 <div class="content-background">
                 <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
@@ -95,6 +95,7 @@ include 'header.inc.php';
                         <span class="export-toolbar-divider" aria-hidden="true"></span>
                         <i class="bi bi-file-earmark-arrow-down"></i>
                         <span>Dokumente erstellen</span>
+                        <button type="button" class="btn-help" data-help="endschrang.dokumente" aria-label="Hilfe"></button>
                         <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
                             <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
                         </button>
@@ -173,7 +174,7 @@ include 'header.inc.php';
                 </div>
                 <!-- Tabellenbereich Kat. A -->
                 <div class="table-wrapper mb-4">
-                    <h5 class="table-title">Endschiessen Kat. A</h5>
+                    <h5 class="table-title">Endschiessen Kat. A <button type="button" class="btn-help" data-help="endschrang.wertung" aria-label="Hilfe"></button></h5>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
                             <table class="table table-bordered mb-0" id="EndA">
@@ -212,7 +213,7 @@ include 'header.inc.php';
                 </div>
                 <!-- Tabellenbereich Kat. B -->
                 <div class="table-wrapper mb-4">
-                    <h5 class="table-title">Endschiessen Kat. B</h5>
+                    <h5 class="table-title">Endschiessen Kat. B <button type="button" class="btn-help" data-help="endschrang.kategorien" aria-label="Hilfe"></button></h5>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
                             <table class="table table-bordered mb-0" id="EndB">

@@ -26,7 +26,7 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-narrow">
-        <?php $page_title = 'JM Standblatt'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'JM Standblatt'; $page_actions = '<button type="button" class="btn-help" data-help="jmstandblatt.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <!-- Filter-Bereich -->
@@ -82,7 +82,7 @@ include 'header.inc.php';
           <!-- Tabelle -->
           <div class="table-wrapper">
             <h5 class="table-title">
-              <span><i class="bi bi-file-earmark-word me-2"></i>Mitglieder</span>
+              <span><i class="bi bi-file-earmark-word me-2"></i>Mitglieder <button type="button" class="btn-help" data-help="jmstandblatt.ausgabe" aria-label="Hilfe"></button></span>
               <span class="badge bg-secondary" id="memberCount"><?= count($mitglieder) ?> Mitglieder</span>
             </h5>
 

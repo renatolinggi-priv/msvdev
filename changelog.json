@@ -1,5 +1,24 @@
 [
   {
+    "version": "1.32.0",
+    "datum": "2026-09-22",
+    "aenderungen": [
+      {
+        "titel": "Neuer Menüpunkt «Einstellungen», Menüeinträge nur für Administratoren",
+        "beschreibung": "Das Hauptmenü hat einen neuen Punkt «Einstellungen», der die Konfiguration bündelt: Hilfetexte, PDF-Vorlage, Drucksteuerung und CSV-Schnittstelle sowie Benutzerverwaltung, Navigation verwalten, Datenbank aktualisieren und Backup & Restore. Die bisher im Benutzermenü versteckten Admin-Links entfallen dort, sobald die Aktualisierung 069 gelaufen ist; im Benutzermenü bleiben Passwort ändern, Mitgliederportal, Changelog und Abmelden. Menüeinträge haben neu ein Häkchen «Nur für Administratoren sichtbar» (Navigation verwalten), der Vorstand sieht solche Einträge nicht. Menülinks funktionieren jetzt auch von den Seiten «Datenbank aktualisieren» und «Navigation verwalten» aus. Backup & Restore ist neu auf Administratoren beschränkt, bisher war die Seite für den Vorstand per Adresse erreichbar. Braucht die Datenbank-Aktualisierung 069.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Hilfesystem: Fragezeichen mit Erklärungen im Admin-Bereich",
+        "beschreibung": "Neben Seitentiteln, Abschnitten und einzelnen Feldern erscheinen neu kleine Fragezeichen. Wer mit der Maus darauf zeigt, sieht eine Kurzansicht; ein Klick öffnet die volle Erklärung. Beim ersten Besuch weist ein einmaliger Hinweis darauf hin. Die Texte pflegt der Administrator auf der neuen Seite «Hilfetexte» (Definitionen / Ausdrucke) mit Format-Knöpfen, Vorschau und Link-Dialog; ein Code-Scan zeigt, welche Fragezeichen noch keinen Text haben. Ausgerüstet sind alle Admin-Seiten: Jahresmeisterschaft (Definition, Erfassung, Ranglisten, Sektionsabrechnungen, Standblatt, Gruppen, Einzel- und Sektionsrangierungen), Endschiessen (Lösen, Erfassen, Partnerinnen, CSV-Import, Zielscheiben, Ranglisten, Stichnummern, Schützenabrechnung), Heim- und Kantonalstich mit Import und Ranglisten, Sektionsmeisterschaft, Cup, Einsatzplanung mit Helferabrechnung, Mitglieder-, Benutzer-, Dokumente- und Galerie-Verwaltung, JSK-Verwaltung und Helferstunden, Wichtige Termine, Wanderpreise und Regeln, Sieger, Fragebogen, Monatsblatt, Standbelegung, PDF-Vorlage, CSV-Schnittstelle, Drucksteuerung, Backup, Munitionskauf, Startseite, Datenbank-Aktualisierung und Navigation. Insgesamt 157 Texte. Braucht die Datenbank-Aktualisierungen 066 bis 068.",
+        "typ": "neu",
+        "admin_only": true
+      }
+
+    ]
+  },
+  {
     "version": "1.31.0",
     "datum": "2026-09-21",
     "aenderungen": [

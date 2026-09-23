@@ -95,7 +95,7 @@ if (WANDERPREISE_DEBUG) {
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-default">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Wanderpreise verwalten'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Wanderpreise verwalten'; $page_actions = '<button type="button" class="btn-help" data-help="wanderpreise.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Container für den Rest -->
                 <div class="content-background">
@@ -104,6 +104,7 @@ if (WANDERPREISE_DEBUG) {
 <?php
                     $ac_id = 'wanderpreiseActions';
                     $ac_card_class = 'mb-3';
+                    $ac_title = 'Aktionen <button type="button" class="btn-help" data-help="wanderpreise.aktionen" aria-label="Hilfe"></button>';
                     ob_start();
                     ?>
                                 <!-- Verwaltung -->
@@ -252,7 +253,7 @@ if (WANDERPREISE_DEBUG) {
                         </div>
                         <div class="col-md-6">
                             <label for="min_anzahl_gewinne" class="form-label">
-                                <i class="bi bi-hash me-1"></i>Min. Gewinne:
+                                <i class="bi bi-hash me-1"></i>Min. Gewinne: <button type="button" class="btn-help" data-help="wanderpreise.definitiv" aria-label="Hilfe"></button>
                             </label>
                             <input type="number" id="min_anzahl_gewinne" name="min_anzahl_gewinne" class="form-control"
                                 min="1" value="3" required>
@@ -279,7 +280,7 @@ if (WANDERPREISE_DEBUG) {
                                 <input class="form-check-input" type="checkbox" id="auto_verknuepfung"
                                     name="auto_verknuepfung">
                                 <label class="form-check-label" for="auto_verknuepfung">
-                                    <i class="bi bi-magic me-1"></i>Auto-Zuordnung aktivieren
+                                    <i class="bi bi-magic me-1"></i>Auto-Zuordnung aktivieren <button type="button" class="btn-help" data-help="wanderpreise.autozuordnung" aria-label="Hilfe"></button>
                                 </label>
                             </div>
                             <div class="row mt-2" id="verknuepfung_details" style="display: none;">
@@ -615,7 +616,7 @@ if (WANDERPREISE_DEBUG) {
                         </div>
                         <div class="col-md-6">
                             <label for="edit_min_anzahl_gewinne" class="form-label">
-                                <i class="bi bi-hash me-1"></i>Min. Anzahl Gewinne bis definitiv:
+                                <i class="bi bi-hash me-1"></i>Min. Anzahl Gewinne bis definitiv: <button type="button" class="btn-help" data-help="wanderpreise.definitiv" aria-label="Hilfe"></button>
                             </label>
                             <input type="number" id="edit_min_anzahl_gewinne" name="min_anzahl_gewinne"
                                 class="form-control" min="1" required>
@@ -643,7 +644,7 @@ if (WANDERPREISE_DEBUG) {
                                 <input class="form-check-input" type="checkbox" id="edit_auto_verknuepfung"
                                     name="auto_verknuepfung">
                                 <label class="form-check-label" for="edit_auto_verknuepfung">
-                                    <i class="bi bi-magic me-1"></i>Automatische Zuordnung aktivieren
+                                    <i class="bi bi-magic me-1"></i>Automatische Zuordnung aktivieren <button type="button" class="btn-help" data-help="wanderpreise.autozuordnung" aria-label="Hilfe"></button>
                                 </label>
 
                             </div>

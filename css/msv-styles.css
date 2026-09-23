@@ -1290,3 +1290,115 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     .shot-input-dec { width: 52px; }
     .shot-input-wide { width: 80px; }
 }
+
+/* ==========================================
+   Hilfesystem («?»-Buttons, Modal, Hover-Kurzansicht, Erstbesuch-Hinweis)
+   JS: inc/js/msv-help.js · Markup: inc/footer.inc.php · Pflege: inc/hilfetexte.php
+   z-index über Slide-Panel (1055/1060): Overlay 1070, Modal 1080, Hover 1085, Hint 1086.
+   .btn-help ist bewusst KEIN .btn (Inline-Button-CSS im Header greift nicht).
+   ========================================== */
+.btn-help {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; padding: 0; margin-left: 0.5rem;
+    border-radius: 50%; border: 1px solid #cbd5e1;
+    background: #fff; color: #64748b;
+    cursor: pointer; font-size: 0.9rem; line-height: 1; vertical-align: middle;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex: 0 0 auto;
+}
+.btn-help::before {
+    content: "\f505"; /* bi-question-lg */
+    font-family: "bootstrap-icons"; line-height: 1; font-weight: bold;
+}
+.btn-help:hover { background: #1e293b; color: #fff; border-color: #1e293b; }
+.btn-help:focus-visible { outline: 2px solid #1e293b; outline-offset: 2px; }
+.page-title .btn-help, .table-title .btn-help, h5 .btn-help, h6 .btn-help { margin-top: -2px; }
+.shot-section-title .btn-help { margin-left: 0.35rem; width: 20px; height: 20px; font-size: 0.75rem; }
+
+.help-overlay {
+    position: fixed; inset: 0; z-index: 1070;
+    background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);
+    opacity: 0; visibility: hidden; transition: opacity 0.2s;
+}
+.help-overlay.active { opacity: 1; visibility: visible; }
+
+.help-modal {
+    position: fixed; top: 50%; left: 50%; z-index: 1080;
+    transform: translate(-50%, -48%) scale(0.96);
+    width: min(560px, 92vw); max-height: 80vh;
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.help-modal[hidden] { display: none; }
+.help-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+.help-modal-header {
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6; padding: 0.85rem 1.1rem;
+}
+.help-modal-header h5 {
+    margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--dark-color);
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.help-modal-header h5::before {
+    content: "\f431"; /* bi-info-circle-fill */
+    font-family: "bootstrap-icons"; color: #1e293b; font-size: 1.1rem;
+}
+.help-modal-close {
+    border: none; background: transparent; width: 30px; height: 30px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #64748b; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.help-modal-close:hover { background: rgba(15, 23, 42, 0.08); color: #1e293b; }
+.help-modal-body { padding: 1.1rem 1.25rem; overflow-y: auto; line-height: 1.55; color: #334155; font-size: 0.9rem; }
+.help-modal-body :first-child { margin-top: 0; }
+.help-modal-body :last-child { margin-bottom: 0; }
+.help-modal-body code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
+.help-modal-body pre { background: #f1f5f9; padding: 0.75rem 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85em; }
+.help-modal-body ul, .help-modal-body ol { padding-left: 1.4rem; }
+.help-modal-body h4, .help-modal-body h5, .help-modal-body h6 { margin-top: 1rem; margin-bottom: 0.4rem; color: #1e293b; font-size: 0.95rem; font-weight: 600; }
+.help-modal-body a { color: #1e40af; text-decoration: underline; }
+@media (max-width: 576px) { .help-modal { width: 96vw; max-height: 86vh; } }
+
+#help-hover-popup {
+    position: absolute; z-index: 1085;
+    max-width: 360px; max-height: 60vh; overflow-y: auto;
+    background: #fff; border: 1px solid #d8dee5; border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    padding: 0.65rem 0.85rem; font-size: 0.83rem; line-height: 1.45; color: #1e293b;
+}
+#help-hover-popup[hidden] { display: none; }
+#help-hover-popup .help-hover-title { font-weight: 600; font-size: 0.83rem; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid #e8ecf1; }
+#help-hover-popup .help-hover-body :first-child { margin-top: 0; }
+#help-hover-popup .help-hover-body :last-child  { margin-bottom: 0; }
+#help-hover-popup .help-hover-body ul, #help-hover-popup .help-hover-body ol { padding-left: 1.2rem; margin: 0.35rem 0; }
+#help-hover-popup .help-hover-body code { background: rgba(15, 23, 42, 0.06); padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }
+#help-hover-popup .help-hover-body h4, #help-hover-popup .help-hover-body h5, #help-hover-popup .help-hover-body h6 { font-size: 0.85rem; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+#help-hover-popup .help-hover-body a { color: #1e40af; text-decoration: underline; }
+#help-hover-popup .help-hover-footer { margin-top: 0.5rem; padding-top: 0.3rem; border-top: 1px solid #e8ecf1; font-size: 0.7rem; color: #6c757d; font-style: italic; text-align: right; }
+
+#help-firsthint {
+    position: absolute; z-index: 1086;
+    background: #334155; color: #fff;
+    padding: 0.55rem 0.75rem 0.55rem 0.9rem; border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.30);
+    font-size: 0.83rem; line-height: 1.4; max-width: 320px;
+    display: flex; align-items: center; gap: 0.5rem;
+    opacity: 0; transform: translateY(-6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+#help-firsthint.show { opacity: 1; transform: translateY(0); }
+#help-firsthint .help-firsthint-arrow {
+    position: absolute; top: -7px; left: 14px; width: 0; height: 0;
+    border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #334155;
+}
+#help-firsthint .help-firsthint-body { flex: 1; }
+#help-firsthint .help-firsthint-close { background: transparent; border: 0; color: #fff; font-size: 1.25rem; line-height: 1; padding: 0 0.25rem; cursor: pointer; opacity: 0.75; }
+#help-firsthint .help-firsthint-close:hover { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    #help-firsthint { transition: opacity 0.01s; transform: none; }
+    #help-firsthint.show { transform: none; }
+}

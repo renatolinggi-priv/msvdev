@@ -38,7 +38,7 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-narrow">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Interne Stiche - Imetron Stichnummerverwaltung'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Interne Stiche - Imetron Stichnummerverwaltung'; $page_actions = '<button type="button" class="btn-help" data-help="internestichedef.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
@@ -64,7 +64,7 @@ include 'header.inc.php';
 
                     <!-- Tabelle -->
                     <div class="table-wrapper">
-                        <h3 class="table-title">Interne Stiche – Stichnummern</h3>
+                        <h3 class="table-title">Interne Stiche – Stichnummern <button type="button" class="btn-help" data-help="internestichedef.stichnummern" aria-label="Hilfe"></button></h3>
                         <div class="desktop-table-container">
                             <div class="table-responsive">
                                 <table id="stichdefTabelle" class="table table-striped table-bordered align-middle">

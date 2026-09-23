@@ -164,7 +164,7 @@ try {
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'Partner Scheiben Ausdruck'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Partner Scheiben Ausdruck'; $page_actions = '<button type="button" class="btn-help" data-help="endsch_targetprint.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     
@@ -247,7 +247,7 @@ try {
                             <div class="card-header bg-success text-white">
                                 <h5 class="mb-0">
                                     <i class="bi bi-eye me-2"></i>
-                                    Gefundene Stiche
+                                    Gefundene Stiche <button type="button" class="btn-help" data-help="endsch_targetprint.stiche" aria-label="Hilfe"></button>
                                 </h5>
                             </div>
                             <div class="card-body" id="stichePreviewContainer">

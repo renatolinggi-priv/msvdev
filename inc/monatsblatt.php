@@ -19,7 +19,7 @@ $aktMonat = (int)date('n');
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <?php $page_title = 'Monatsblatt'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Monatsblatt'; $page_actions = '<button type="button" class="btn-help" data-help="monatsblatt.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="pdfExportForm">
@@ -59,7 +59,7 @@ $aktMonat = (int)date('n');
                         <!-- Bemerkungsfeld -->
                         <div class="mb-3">
                             <label for="bemerkung" class="form-label fw-bold mb-1">
-                                <i class="bi bi-chat-text me-1"></i>Bemerkungen
+                                <i class="bi bi-chat-text me-1"></i>Bemerkungen <button type="button" class="btn-help" data-help="monatsblatt.bemerkungen" aria-label="Hilfe"></button>
                             </label>
                             <textarea id="bemerkung" name="bemerkung" rows="4" class="form-control form-control-sm"
                                       placeholder="Optional: Zusätzliche Bemerkungen für das Monatsblatt..."></textarea>

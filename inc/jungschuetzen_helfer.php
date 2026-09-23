@@ -10,11 +10,11 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
-        <?php $page_title = 'Helferstunden erfassen'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Helferstunden erfassen'; $page_actions = '<button type="button" class="btn-help" data-help="jungschuetzen_helfer.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
         <div class="content-background">
           <form id="helferstundenForm">
             <div class="table-wrapper">
-              <h5 class="table-title"><i class="bi bi-people-fill me-2"></i>Helfereinsätze Jungschützenkurs – <?= date('Y') ?></h5>
+              <h5 class="table-title"><i class="bi bi-people-fill me-2"></i>Helfereinsätze Jungschützenkurs – <?= date('Y') ?> <button type="button" class="btn-help" data-help="jungschuetzen_helfer.erfassung" aria-label="Hilfe"></button></h5>
               <div id="helferstundenTabelle"></div>
             </div>
             <div class="d-flex flex-wrap gap-2 mt-3">

@@ -134,7 +134,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper">
-        <?php $page_title = 'Drucksteuerung'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Drucksteuerung'; $page_actions = '<button type="button" class="btn-help" data-help="drucksteuerung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
         <div class="content-background">
 
     <!-- Karte 1: Druckprofile (QZ-Bar + Matrix) -->
@@ -143,7 +143,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
         <div class="qz-bar">
             <div id="qzDot" class="qz-dot disconnected"></div>
             <span id="qzStatusText" class="qz-text">Nicht verbunden mit QZ Tray</span>
-            <span id="machineIdBadge" class="badge bg-secondary ms-2" style="font-size:.7rem; font-weight:normal; cursor:help" title=""></span>
+            <span id="machineIdBadge" class="badge bg-secondary ms-2" style="font-size:.7rem; font-weight:normal; cursor:help" title=""></span> <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe"></button>
             <div class="qz-actions">
                 <button id="btnConnect" class="btn btn-outline-primary btn-sm" onclick="Druck.connect()">
                     <i class="bi bi-plug me-1"></i>Verbinden
@@ -156,7 +156,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
 
         <!-- Toolbar -->
         <div class="card-header d-flex align-items-center">
-            <span class="fw-bold">Druckprofile</span>
+            <span class="fw-bold">Druckprofile <button type="button" class="btn-help" data-help="drucksteuerung.profile" aria-label="Hilfe"></button></span>
             <span class="badge bg-primary ms-2" id="profileCount">0</span>
             <button class="btn btn-outline-primary btn-sm ms-auto" onclick="Druck.saveAllProfiles()">
                 <i class="bi bi-save me-1"></i>Speichern

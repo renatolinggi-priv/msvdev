@@ -198,7 +198,7 @@ if (empty($_SESSION['csrf_token'])) {
     <div class="col-12 ps-lg-3">
       <div class="main-content-wrapper content-width-narrow">
         <?php
-        $page_title = 'Wichtige Termine';
+        $page_title = 'Wichtige Termine'; $page_actions = '<button type="button" class="btn-help" data-help="wichtigetermine.uebersicht" aria-label="Hilfe"></button>';
         include 'partials/page_header.inc.php';
         ?>
 
@@ -246,7 +246,7 @@ if (empty($_SESSION['csrf_token'])) {
                     </button>
                   </div>
                   <div class="border-top pt-2">
-                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
+                    <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte <button type="button" class="btn-help" data-help="wichtigetermine.exporte" aria-label="Hilfe"></button></small>
                     <div class="row g-2">
                       <div class="col-6">
                         <button type="button" id="generatePDFButton" class="btn btn-outline-info btn-sm w-100" data-tooltip="PDF enthält zusätzlich die Standbelegungs-Termine mit Kalender-Markierung">
@@ -273,7 +273,7 @@ if (empty($_SESSION['csrf_token'])) {
 
           <!-- Hybrid-Tabelle -->
           <div class="table-wrapper" id="eventsListContainer">
-            <h5 class="table-title"><i class="bi bi-calendar-event me-2"></i>Wichtige Termine <span class="badge bg-secondary ms-1" id="eventCount">0</span></h5>
+            <h5 class="table-title"><i class="bi bi-calendar-event me-2"></i>Wichtige Termine <span class="badge bg-secondary ms-1" id="eventCount">0</span> <button type="button" class="btn-help" data-help="wichtigetermine.liste" aria-label="Hilfe"></button></h5>
             <div class="desktop-table-container">
               <table class="hybrid-table" id="eventsTable">
                 <thead>
@@ -320,7 +320,7 @@ ob_start();
     </div>
     <div class="mb-3 form-check form-switch">
       <input class="form-check-input" type="checkbox" id="panelJsk">
-      <label class="form-check-label" for="panelJsk"><i class="bi bi-person-bounding-box me-1"></i>Für Jungschützen</label>
+      <label class="form-check-label" for="panelJsk"><i class="bi bi-person-bounding-box me-1"></i>Für Jungschützen</label> <button type="button" class="btn-help" data-help="wichtigetermine.jsk" aria-label="Hilfe"></button>
     </div>
     <hr>
     <div class="d-flex gap-2">

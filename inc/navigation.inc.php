@@ -5,8 +5,9 @@ class NavigationManager {
     private static $navigationCache = null;
     private static $instance = null;
 
-    // Diese Links erscheinen nur im Usermenu, nicht in der Hauptnavigation
-    private $userMenuOnlyLinks = ['password_change.php', 'backup_restore.php'];
+    // Diese Links erscheinen nur im Usermenu, nicht in der Hauptnavigation.
+    // (backup_restore.php haengt seit Migration 069 unter «Einstellungen».)
+    private $userMenuOnlyLinks = ['password_change.php'];
 
     public static function getInstance() {
         if (self::$instance === null) self::$instance = new self();
@@ -29,11 +30,15 @@ class NavigationManager {
             return [];
         }
 
+        // NurAdmin (Migration 069): Eintraege mit 1 sieht nur die Rolle admin.
+        $istAdmin = (($_SESSION['user_role'] ?? '') === 'admin') || (int)($_SESSION['user_id'] ?? 0) === 1;
+
         $byParent = [];
         $flat = [];
         while ($row = $result->fetch_assoc()) {
             $row['Icon'] = $row['Icon'] ?? null;
             $row['IstTrennlinie'] = (int)($row['IstTrennlinie'] ?? 0);
+            if (!$istAdmin && (int)($row['NurAdmin'] ?? 0) === 1) continue;
             $parentId = (int)$row['ParentID'];
             if (!isset($byParent[$parentId])) $byParent[$parentId] = [];
             $byParent[$parentId][] = $row;
@@ -121,34 +126,36 @@ class NavigationManager {
             $icon = $userMenuIcons[$link] ?? 'bi-circle';
             $colorClass = $link === 'backup_restore.php' ? ' text-warning' : '';
             echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+            echo '<a class="mobile-user-menu-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
             echo '<i class="bi '.$icon.$colorClass.' me-2"></i>';
             echo $this->escape($item['Text']);
             echo '</a></li>';
         }
 
-        // Admin links
-        if ($isAdmin) {
-            echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link" href="benutzerverwaltung.php">';
-            echo '<i class="bi bi-people-fill text-warning me-2"></i>Benutzerverwaltung';
-            echo '</a></li>';
-            $aktHrefM = file_exists('admin/aktualisierung.php') ? 'admin/aktualisierung.php' : '../admin/aktualisierung.php';
-            echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link" href="'.$this->escape($aktHrefM).'">';
-            echo '<i class="bi bi-database-gear text-secondary me-2"></i>Datenbank aktualisieren';
-            echo '</a></li>';
-        }
-        // Admin + Vorstand
-        if ($isAdmin || ($_SESSION['user_role'] ?? '') === 'vorstand') {
-            echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link" href="drucksteuerung.php">';
-            echo '<i class="bi bi-printer text-info me-2"></i>Drucksteuerung';
-            echo '</a></li>';
-            echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link" href="csv_schnittstelle.php">';
-            echo '<i class="bi bi-arrow-left-right text-success me-2"></i>CSV Schiessanlage';
-            echo '</a></li>';
+        // Legacy: hart verdrahtete Admin-/Vorstands-Links – nur solange Migration 069 den
+        // Menuepunkt «Einstellungen» (mit drucksteuerung.php als Unterpunkt) noch nicht angelegt hat.
+        if (!$this->linkExists('drucksteuerung.php')) {
+            if ($isAdmin) {
+                echo '<li class="mobile-nav-item">';
+                echo '<a class="mobile-user-menu-link" href="benutzerverwaltung.php">';
+                echo '<i class="bi bi-people-fill text-warning me-2"></i>Benutzerverwaltung';
+                echo '</a></li>';
+                $aktHrefM = file_exists('admin/aktualisierung.php') ? 'admin/aktualisierung.php' : '../admin/aktualisierung.php';
+                echo '<li class="mobile-nav-item">';
+                echo '<a class="mobile-user-menu-link" href="'.$this->escape($aktHrefM).'">';
+                echo '<i class="bi bi-database-gear text-secondary me-2"></i>Datenbank aktualisieren';
+                echo '</a></li>';
+            }
+            if ($isAdmin || ($_SESSION['user_role'] ?? '') === 'vorstand') {
+                echo '<li class="mobile-nav-item">';
+                echo '<a class="mobile-user-menu-link" href="drucksteuerung.php">';
+                echo '<i class="bi bi-printer text-info me-2"></i>Drucksteuerung';
+                echo '</a></li>';
+                echo '<li class="mobile-nav-item">';
+                echo '<a class="mobile-user-menu-link" href="csv_schnittstelle.php">';
+                echo '<i class="bi bi-arrow-left-right text-success me-2"></i>CSV Schiessanlage';
+                echo '</a></li>';
+            }
         }
 
         // Portal-Link
@@ -210,7 +217,7 @@ class NavigationManager {
             if (!empty($link) && $link !== '#') {
                 $parentIsActive = (basename($currentPage) === basename($link));
                 echo '<li class="mobile-submenu-item">';
-                echo '<a class="mobile-submenu-link '.($parentIsActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+                echo '<a class="mobile-submenu-link '.($parentIsActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
                 echo $icon.$text;
                 echo '</a></li>';
             }
@@ -220,7 +227,7 @@ class NavigationManager {
             echo '</ul>';
         } else {
             // No submenu - direct link
-            echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+            echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
             echo $icon.$text;
             echo '</a>';
         }
@@ -259,7 +266,7 @@ class NavigationManager {
             if (!empty($link) && $link !== '#') {
                 $parentIsActive = (basename($currentPage) === basename($link));
                 echo '<li class="mobile-submenu-item">';
-                echo '<a class="mobile-submenu-link '.($parentIsActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+                echo '<a class="mobile-submenu-link '.($parentIsActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
                 echo $icon.$text;
                 echo '</a></li>';
             }
@@ -268,12 +275,35 @@ class NavigationManager {
             }
             echo '</ul>';
         } else {
-            echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>';
+            echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
             echo $icon.$text;
             echo '</a>';
         }
 
         echo '</li>';
+    }
+
+    // Gibt es einen (fuer den aktuellen Benutzer sichtbaren) Eintrag mit diesem Link?
+    // Dient als Weiche fuer die frueher hart verdrahteten Admin-Links im Benutzermenu:
+    // sobald Migration 069 die Eintraege unter «Einstellungen» angelegt hat, entfallen sie dort.
+    private function linkExists($link) {
+        $data = $this->loadNavigationData();
+        foreach ($data['flat'] ?? [] as $item) {
+            if (trim((string)$item['Link']) === $link) return true;
+        }
+        return false;
+    }
+
+    // href fuer einen Nav-Link: relative Dateinamen (hilfetexte.php) werden ueber $incBase
+    // absolut (/inc/hilfetexte.php), damit sie auch von Seiten unter /admin/ funktionieren.
+    // Externe URLs, absolute Pfade (/admin/…) und ../-Pfade bleiben unveraendert.
+    private function href($link) {
+        $link = trim((string)$link);
+        if ($link === '' || $link === '#') return '#';
+        if (preg_match('#^(https?://|/|\.\./|\./)#i', $link)) return $this->escape($link);
+        global $incBase;
+        $base = (isset($incBase) && is_string($incBase)) ? $incBase : '';
+        return $this->escape($base . $link);
     }
 
     // Icon-HTML fuer einen Eintrag (leerer String wenn kein Icon gesetzt)
@@ -324,7 +354,7 @@ class NavigationManager {
                 echo '</li>';
             } else {
                 echo '<li class="nav-item">';
-                echo '<a class="nav-link '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
+                echo '<a class="nav-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
                 echo '</li>';
             }
         } else {
@@ -334,7 +364,7 @@ class NavigationManager {
                 echo '<div class="dropdown-item-wrapper">';
 
                 if (!empty($link) && $link !== '#') {
-                    echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
+                    echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
                 } else {
                     echo '<span class="dropdown-item dropdown-text '.($isActive?'active':'').'">'.$icon.$text.'</span>';
                 }
@@ -351,7 +381,7 @@ class NavigationManager {
                 echo '</ul>';
                 echo '</li>';
             } else {
-                echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->escape($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a></li>';
+                echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a></li>';
             }
         }
     }
@@ -432,24 +462,26 @@ class NavigationManager {
             if ($link === 'backup_restore.php' && !$isAdmin) continue;
             $icon = $icons[$item['Text']] ?? 'bi-circle';
             $colorClass = $link === 'backup_restore.php' ? ' text-warning' : '';
-            echo '<li><a class="dropdown-item" href="'.$this->escape($link).'"><i class="bi '.$icon.' me-2'.$colorClass.'"></i>'.$this->escape($item['Text']).'</a></li>';
+            echo '<li><a class="dropdown-item" href="'.$this->href($link).'"><i class="bi '.$icon.' me-2'.$colorClass.'"></i>'.$this->escape($item['Text']).'</a></li>';
             $hasUserItems = true;
         }
         if ($hasUserItems) echo '<li><hr class="dropdown-divider"></li>';
 
-        // Admin-Einträge (Benutzerverwaltung + Navigation verwalten)
-        if (($_SESSION['user_role'] ?? '') === 'admin') {
-            echo '<li><a class="dropdown-item" href="benutzerverwaltung.php"><i class="bi bi-people-fill me-2 text-warning"></i>Benutzerverwaltung</a></li>';
-            $adminHref = file_exists('admin/nav_admin.php') ? 'admin/nav_admin.php' : '../admin/nav_admin.php';
-            echo '<li><a class="dropdown-item" href="'.$this->escape($adminHref).'"><i class="bi bi-menu-button-wide me-2"></i>Navigation verwalten</a></li>';
-            $aktHref = file_exists('admin/aktualisierung.php') ? 'admin/aktualisierung.php' : '../admin/aktualisierung.php';
-            echo '<li><a class="dropdown-item" href="'.$this->escape($aktHref).'"><i class="bi bi-database-gear me-2 text-secondary"></i>Datenbank aktualisieren</a></li>';
-            echo '<li><hr class="dropdown-divider"></li>';
-        }
-        // Drucksteuerung: Admin + Vorstand
-        if (in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
-            echo '<li><a class="dropdown-item" href="drucksteuerung.php"><i class="bi bi-printer me-2 text-info"></i>Drucksteuerung</a></li>';
-            echo '<li><a class="dropdown-item" href="csv_schnittstelle.php"><i class="bi bi-arrow-left-right me-2 text-success"></i>CSV Schiessanlage</a></li>';
+        // Legacy: hart verdrahtete Admin-/Vorstands-Links – nur solange Migration 069 den
+        // Menuepunkt «Einstellungen» (mit drucksteuerung.php als Unterpunkt) noch nicht angelegt hat.
+        if (!$this->linkExists('drucksteuerung.php')) {
+            if (($_SESSION['user_role'] ?? '') === 'admin') {
+                echo '<li><a class="dropdown-item" href="benutzerverwaltung.php"><i class="bi bi-people-fill me-2 text-warning"></i>Benutzerverwaltung</a></li>';
+                $adminHref = file_exists('admin/nav_admin.php') ? 'admin/nav_admin.php' : '../admin/nav_admin.php';
+                echo '<li><a class="dropdown-item" href="'.$this->escape($adminHref).'"><i class="bi bi-menu-button-wide me-2"></i>Navigation verwalten</a></li>';
+                $aktHref = file_exists('admin/aktualisierung.php') ? 'admin/aktualisierung.php' : '../admin/aktualisierung.php';
+                echo '<li><a class="dropdown-item" href="'.$this->escape($aktHref).'"><i class="bi bi-database-gear me-2 text-secondary"></i>Datenbank aktualisieren</a></li>';
+                echo '<li><hr class="dropdown-divider"></li>';
+            }
+            if (in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
+                echo '<li><a class="dropdown-item" href="drucksteuerung.php"><i class="bi bi-printer me-2 text-info"></i>Drucksteuerung</a></li>';
+                echo '<li><a class="dropdown-item" href="csv_schnittstelle.php"><i class="bi bi-arrow-left-right me-2 text-success"></i>CSV Schiessanlage</a></li>';
+            }
         }
 
         // Portal-Link fuer Admin/Vorstand
@@ -490,7 +522,7 @@ class NavigationManager {
                 if ($i === count($breadcrumbs) - 1) {
                     echo '<li class="breadcrumb-item active">'.$this->escape($crumb['Text']).'</li>';
                 } else {
-                    echo '<li class="breadcrumb-item"><a href="'.$this->escape($crumb['Link']).'">'.$this->escape($crumb['Text']).'</a></li>';
+                    echo '<li class="breadcrumb-item"><a href="'.$this->href($crumb['Link']).'">'.$this->escape($crumb['Text']).'</a></li>';
                 }
             }
             echo '</ol></nav>';

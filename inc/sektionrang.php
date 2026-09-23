@@ -33,7 +33,7 @@ include 'header.inc.php';
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <?php $page_title = "Sektionsmeisterschaft Rangliste"; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = "Sektionsmeisterschaft Rangliste"; $page_actions = '<button type="button" class="btn-help" data-help="sektionrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                 <form id="sektionrangForm">
@@ -68,7 +68,7 @@ include 'header.inc.php';
                             <div class="table-wrapper">
                                 <h5 class="table-title d-flex align-items-center">
                                     <i class="bi bi-1-circle me-2"></i>
-                                    Runde 1
+                                    Runde 1 <button type="button" class="btn-help" data-help="sektionrang.runden" aria-label="Hilfe"></button>
                                     <span class="sektionrang-count" id="countRunde1"></span>
                                 </h5>
                                 <div class="desktop-table-container">

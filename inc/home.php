@@ -528,7 +528,7 @@ include 'header.inc.php';
         <div class="home-welcome-left">
             <img src="jmrang/dat/MSVWilen_Logo.jpg" alt="MSV Wilen" class="home-welcome-logo">
             <div class="home-welcome-text">
-                <h1>Willkommen, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Benutzer'); ?></h1>
+                <h1>Willkommen, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Benutzer'); ?> <button type="button" class="btn-help" data-help="home.uebersicht" aria-label="Hilfe"></button></h1>
                 <p class="subtitle">MSV Wilen – Resultaterfassung & Verwaltung</p>
             </div>
         </div>
@@ -653,7 +653,7 @@ include 'header.inc.php';
     $karten_aktiv = array_merge($aktiv_saison, $aktiv_dauernd);
     ?>
 
-    <p class="home-zone-title"><i class="bi bi-lightning-charge-fill"></i>Jetzt aktuell</p>
+    <p class="home-zone-title"><i class="bi bi-lightning-charge-fill"></i>Jetzt aktuell <button type="button" class="btn-help" data-help="home.zonen" aria-label="Hilfe"></button></p>
     <div class="home-grid">
         <?php foreach ($karten_aktiv as $karte): ?>
             <div class="home-card">

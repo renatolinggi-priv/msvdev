@@ -22,6 +22,7 @@ if (empty($_SESSION['csrf_token'])) {
     <div class="row mb-3 d-none d-md-flex">
         <div class="col-auto">
             <h2 class="h4 mb-0" style="color: var(--cup4-primary);">CUP Resultaterfassung
+                <button type="button" class="btn-help" data-help="cup.uebersicht" aria-label="Hilfe"></button>
             </h2>
         </div>
     </div>
@@ -128,7 +129,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Runde 1 -->
         <div class="cup4-round active" id="round1-col">
             <div class="cup4-round-header">
-                <span class="cup4-round-title">Runde 1</span>
+                <span class="cup4-round-title">Runde 1 <button type="button" class="btn-help" data-help="cup.runden" aria-label="Hilfe"></button></span>
                 <span class="cup4-round-badge" id="r1-badge">0 Paarungen</span>
             </div>
             <div id="r1-pairs"></div>
@@ -169,7 +170,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Finale -->
             <div class="cup4-round cup4-final-section" id="final-col">
                 <div class="cup4-round-header">
-                    <span class="cup4-round-title"><i class="bi bi-trophy-fill me-1"></i>Finale</span>
+                    <span class="cup4-round-title"><i class="bi bi-trophy-fill me-1"></i>Finale <button type="button" class="btn-help" data-help="cup.finale" aria-label="Hilfe"></button></span>
                     <span class="cup4-round-badge" id="final-badge">0 Finalisten</span>
                 </div>
                 <div class="cup4-katb-switch" data-tooltip="Qualifiziert sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale?">
@@ -507,7 +508,8 @@ $(document).ready(function() {
                 $('#katb-final-switch').prop('checked', cupKatBToFinal);
                 if (typeof callback === 'function') callback();
             },
-            error: function() {
+            error: function(xhr) {
+                msvToast(msvXhrMessage(xhr, 'Cup-Einstellungen konnten nicht geladen werden – Standard (Kat. B ins Finale) angenommen'), 'warning');
                 cupKatBToFinal = true;
                 $('#katb-final-switch').prop('checked', true);
                 if (typeof callback === 'function') callback();

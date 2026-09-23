@@ -71,7 +71,7 @@ include 'header.inc.php';
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <?php $page_title = 'Gruppenschiessen'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Gruppenschiessen'; $page_actions = '<button type="button" class="btn-help" data-help="jmdefinition_gruppen.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -96,7 +96,7 @@ include 'header.inc.php';
                         <!-- Bestehende Gruppen -->
                         <div class="col-xl-3 col-lg-4">
                             <div class="table-wrapper">
-                                <h5 class="table-title"><span><i class="bi bi-collection me-2"></i>Bestehende Gruppen</span><span class="badge bg-secondary" id="groupsCount"></span></h5>
+                                <h5 class="table-title"><span><i class="bi bi-collection me-2"></i>Bestehende Gruppen <button type="button" class="btn-help" data-help="jmdefinition_gruppen.gruppen" aria-label="Hilfe"></button></span><span class="badge bg-secondary" id="groupsCount"></span></h5>
                                 <div id="existingGroups" class="p-2">
                                     <div class="text-center text-muted py-3"><i class="bi bi-info-circle me-2"></i>Bitte zuerst einen Anlass wählen</div>
                                 </div>
@@ -115,7 +115,7 @@ include 'header.inc.php';
                                         <input type="hidden" id="editGroupId" value="">
 
                                         <div class="mb-3">
-                                            <label for="gruppenname" class="form-label fw-semibold small"><i class="bi bi-tag me-1"></i>Gruppenname</label>
+                                            <label for="gruppenname" class="form-label fw-semibold small"><i class="bi bi-tag me-1"></i>Gruppenname <button type="button" class="btn-help" data-help="jmdefinition_gruppen.gruppe" aria-label="Hilfe"></button></label>
                                             <input type="text" id="gruppenname" class="form-control form-control-sm" placeholder="Name der Gruppe" required>
                                         </div>
 

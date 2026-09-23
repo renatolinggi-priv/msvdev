@@ -106,7 +106,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
-                <?php $page_title = 'Benutzerverwaltung'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Benutzerverwaltung'; $page_actions = '<button type="button" class="btn-help" data-help="benutzerverwaltung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <!-- Info Card -->
@@ -139,9 +139,9 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                         <th style="width:50px;">ID</th>
                                         <th>Benutzer</th>
                                         <th>E-Mail</th>
-                                        <th>Rolle</th>
-                                        <th>Status</th>
-                                        <th>Mitglied</th>
+                                        <th>Rolle <button type="button" class="btn-help" data-help="benutzerverwaltung.rollen" aria-label="Hilfe"></button></th>
+                                        <th>Status <button type="button" class="btn-help" data-help="benutzerverwaltung.status" aria-label="Hilfe"></button></th>
+                                        <th>Mitglied <button type="button" class="btn-help" data-help="benutzerverwaltung.zuordnung" aria-label="Hilfe"></button></th>
                                         <th style="width:180px;" class="text-center">Aktionen</th>
                                     </tr>
                                 </thead>

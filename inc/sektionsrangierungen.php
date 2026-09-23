@@ -110,7 +110,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Sektionsrangierungen'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Sektionsrangierungen'; $page_actions = '<button type="button" class="btn-help" data-help="sektionsrangierungen.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
@@ -163,7 +163,7 @@ if (empty($_SESSION['csrf_token'])) {
                         <div class="add-ranking-card mb-3" id="addRankingCard" style="display: none;">
                             <h6 class="mb-3">
                                 <i class="bi bi-plus-circle me-2"></i>
-                                Neue Rangierung hinzufügen
+                                Neue Rangierung hinzufügen <button type="button" class="btn-help" data-help="sektionsrangierungen.erfassen" aria-label="Hilfe"></button>
                             </h6>
 
                             <div class="row">

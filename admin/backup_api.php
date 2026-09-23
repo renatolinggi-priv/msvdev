@@ -51,7 +51,10 @@ function require_key(string $expected){
   $csrfOk = $csrf && $hasSess && hash_equals($_SESSION['csrf_token'], $csrf);
 
   dbg('Auth check: csrf_sent='.(bool)$csrf.' sess_has='.($hasSess?'1':'0').' csrf_ok='.($csrfOk?'1':'0'));
-  if ($csrfOk) return;
+  // Session-Weg zusaetzlich auf Rolle admin beschraenken (Restore ersetzt die ganze DB);
+  // der API-Key-Weg fuer externe Aufrufe (Cron) bleibt unveraendert.
+  $istAdmin = (($_SESSION['user_role'] ?? '') === 'admin') || (int)($_SESSION['user_id'] ?? 0) === 1;
+  if ($csrfOk && $istAdmin) return;
 
   // 2) API-Key (extern)
   $got = $_GET['key'] ?? $_POST['key'] ?? '';

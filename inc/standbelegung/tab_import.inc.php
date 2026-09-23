@@ -19,7 +19,7 @@
 
     <div class="row mb-3">
         <div class="col-md-4">
-            <label for="importYear" class="form-label fw-bold"><i class="bi bi-calendar3 me-1"></i>Jahr für Import</label>
+            <label for="importYear" class="form-label fw-bold"><i class="bi bi-calendar3 me-1"></i>Jahr für Import <button type="button" class="btn-help" data-help="standbelegung.import" aria-label="Hilfe"></button></label>
             <select id="importYear" class="form-select form-select-sm">
                 <?php for ($y = $currentYear - 1; $y <= $currentYear + 1; $y++): ?>
                 <option value="<?= $y ?>" <?= $y === $currentYear ? 'selected' : '' ?>><?= $y ?></option>

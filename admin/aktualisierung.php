@@ -97,7 +97,7 @@ include 'header.inc.php';
 
         <div class="row mb-3 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Datenbank aktualisieren
+            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Datenbank aktualisieren <button type="button" class="btn-help" data-help="aktualisierung.uebersicht" aria-label="Hilfe"></button>
             </h2>
           </div>
         </div>
@@ -148,7 +148,7 @@ include 'header.inc.php';
               <!-- Erstmalige Einrichtung: Baseline -->
               <div class="akt-card" style="border-color:#fcd34d;">
                 <div class="akt-card-header" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);">
-                  <span><i class="bi bi-info-circle me-2 text-warning"></i>Erstmalige Einrichtung</span>
+                  <span><i class="bi bi-info-circle me-2 text-warning"></i>Erstmalige Einrichtung <button type="button" class="btn-help" data-help="aktualisierung.baseline" aria-label="Hilfe"></button></span>
                 </div>
                 <div class="p-3">
                   <p class="mb-2">
@@ -176,7 +176,7 @@ include 'header.inc.php';
             <!-- Ausstehend -->
             <div class="akt-card">
               <div class="akt-card-header">
-                <span><i class="bi bi-hourglass-split me-2"></i>Ausstehend <span class="count"><?= count($pendingFiles) ?></span></span>
+                <span><i class="bi bi-hourglass-split me-2"></i>Ausstehend <span class="count"><?= count($pendingFiles) ?></span> <button type="button" class="btn-help" data-help="aktualisierung.ausstehend" aria-label="Hilfe"></button></span>
                 <?php if (!empty($pendingFiles) && !$trackingEmpty): ?>
                   <form method="POST" class="m-0" id="aktRunForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">

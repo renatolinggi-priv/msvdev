@@ -293,7 +293,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header -->
-                <?php $page_title = 'Endschiessen Resultaterfassung'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Endschiessen Resultaterfassung'; $page_actions = '<button type="button" class="btn-help" data-help="endresultate.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="endresultateForm">
@@ -429,7 +429,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Endstich -->
         <div class="shot-section shot-first" id="endstichSchuesse" data-stich="END">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-bullseye"></i>Endstich</span>
+                <span class="shot-section-title"><i class="bi bi-bullseye"></i>Endstich <button type="button" class="btn-help" data-help="endresultate.endstich" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
                 <span class="shot-total" id="endstichSumme">0</span>
             </div>
@@ -451,7 +451,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Schwini -->
         <div class="shot-section" id="schwiniSchuesse" data-stich="SCHWINI">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-piggy-bank"></i>Schwini</span>
+                <span class="shot-section-title"><i class="bi bi-piggy-bank"></i>Schwini <button type="button" class="btn-help" data-help="endresultate.schwini" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
             </div>
             <div class="shot-section-body">
@@ -528,7 +528,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Sie und Er -->
         <div class="shot-section" id="sieunderSchuesse" data-stich="SIEUNDER">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">Schüsse 6–10, Mitglied</span></span>
+                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">Schüsse 6–10, Mitglied</span> <button type="button" class="btn-help" data-help="endresultate.sieunder" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
                 <span class="shot-total" id="uniqueTotal" data-tooltip="Total der eindeutigen Werte">0</span>
             </div>
@@ -554,7 +554,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="shot-cols">
             <div class="shot-section" id="Differenzler">
                 <div class="shot-section-head">
-                    <span class="shot-section-title"><i class="bi bi-chat-square-text"></i>Ansage <span class="shot-hint">Differenzler</span></span>
+                    <span class="shot-section-title"><i class="bi bi-chat-square-text"></i>Ansage <span class="shot-hint">Differenzler</span> <button type="button" class="btn-help" data-help="endresultate.ansage" aria-label="Hilfe"></button></span>
                     <span class="shot-status">Nicht gelöst</span>
                 </div>
                 <div class="shot-section-body">

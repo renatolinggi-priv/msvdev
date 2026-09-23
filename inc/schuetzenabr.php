@@ -19,7 +19,7 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Schützenabrechnung'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Schützenabrechnung'; $page_actions = '<button type="button" class="btn-help" data-help="schuetzenabr.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="schuetzenabr-form">
@@ -54,7 +54,7 @@ include 'header.inc.php';
                     <div class="table-wrapper">
                         <h5 class="table-title">
                             <i class="bi bi-info-circle me-2"></i>
-                            Informationen zur Schützenabrechnung
+                            Informationen zur Schützenabrechnung <button type="button" class="btn-help" data-help="schuetzenabr.inhalt" aria-label="Hilfe"></button>
                         </h5>
                         <div class="alert alert-info">
                             <h6 class="fw-bold">Was ist enthalten:</h6>

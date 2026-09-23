@@ -36,7 +36,7 @@ include 'header.inc.php';
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
 
-        <?php $page_title = 'Wanderpreis-Regeln'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Wanderpreis-Regeln'; $page_actions = '<button type="button" class="btn-help" data-help="wanderpreise_regeln.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -122,7 +122,7 @@ ob_start(); ?>
       </div>
 
       <div class="mb-3">
-        <label class="panel-label" for="regelTyp">Regel-Typ</label>
+        <label class="panel-label" for="regelTyp">Regel-Typ <button type="button" class="btn-help" data-help="wanderpreise_regeln.typ" aria-label="Hilfe"></button></label>
         <select name="regel_typ" id="regelTyp" class="form-select form-select-sm">
           <option value="einzelwettbewerb">Geführt: Bester in einem Wettbewerb</option>
           <option value="baukasten">Baukasten: Bedingungen &amp; Sortierung selbst zusammenstellen</option>
@@ -158,7 +158,7 @@ ob_start(); ?>
         </div>
         <div id="baukastenFields">
           <div class="mb-3">
-            <span class="panel-label">Bedingungen <span class="hint text-muted">(optional, mit UND verknüpft)</span></span>
+            <span class="panel-label">Bedingungen <span class="hint text-muted">(optional, mit UND verknüpft)</span> <button type="button" class="btn-help" data-help="wanderpreise_regeln.baukasten" aria-label="Hilfe"></button></span>
             <div id="builderFilterRows"></div>
             <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="btnAddFilter"><i class="bi bi-plus-lg me-1"></i>Bedingung</button>
             <div class="form-text fs-xxs">Jahr (= {jahr}) und „kein Leertreffer" werden automatisch ergänzt. Werte: Zahl oder <code>{jahr}</code>.</div>
@@ -175,7 +175,7 @@ ob_start(); ?>
 
       <!-- SQL: Experte = editierbar, Geführt = read-only Vorschau -->
       <div class="mb-3" id="sqlBlock">
-        <label class="panel-label" id="sqlLabel" for="regelSql">SQL-Query <span class="text-danger">*</span></label>
+        <label class="panel-label" id="sqlLabel" for="regelSql">SQL-Query <span class="text-danger">*</span> <button type="button" class="btn-help" data-help="wanderpreise_regeln.sql" aria-label="Hilfe"></button></label>
         <div class="form-text mb-2 fs-xs" id="sqlCustomHelp">
           Muss <code>gewinner_id</code> zurückgeben. Optional: <code>resultat</code>, <code>rang</code>, <code>bemerkung</code>.<br>
           Platzhalter: <span class="code-badge fs-xs">{jahr}</span> <span class="code-badge fs-xs">{kategorie}</span> <span class="code-badge fs-xs">{wanderpreis_id}</span><br>

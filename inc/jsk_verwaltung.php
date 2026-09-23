@@ -112,12 +112,12 @@ try {
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-wide">
-        <?php $page_title = 'JSK-Verwaltung'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'JSK-Verwaltung'; $page_actions = '<button type="button" class="btn-help" data-help="jsk_verwaltung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <!-- Master-Schalter -->
         <div class="feature-switch-card p-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
-            <div class="fw-semibold"><i class="bi bi-toggle2-on me-2"></i>Jungschützen-Betreuung</div>
+            <div class="fw-semibold"><i class="bi bi-toggle2-on me-2"></i>Jungschützen-Betreuung <button type="button" class="btn-help" data-help="jsk_verwaltung.betreuung" aria-label="Hilfe"></button></div>
             <small class="text-muted">Schaltet das Anmelden von Schiess-Terminen, das Betreuer-Board und die Benachrichtigungen frei.</small>
           </div>
           <div class="form-check form-switch fs-5 mb-0">
@@ -129,7 +129,7 @@ try {
         <!-- Leitungs-Einsicht in Betreuer-Chats -->
         <div class="feature-switch-card p-3 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div style="max-width:720px;">
-            <div class="fw-semibold"><i class="bi bi-shield-check me-2"></i>Leitung liest Betreuer-Chats mit</div>
+            <div class="fw-semibold"><i class="bi bi-shield-check me-2"></i>Leitung liest Betreuer-Chats mit <button type="button" class="btn-help" data-help="jsk_verwaltung.einsicht" aria-label="Hilfe"></button></div>
             <small class="text-muted">Jugendschutz: Jungschützenleiter sehen die Chats zwischen Jungschützen und betreuenden Mitgliedern (nur lesen, kein Schreiben). Beide Seiten sehen im Chat den Hinweis «Die Jungschützenleitung kann mitlesen». Aus = Match-Chats bleiben privat.</small>
           </div>
           <div class="form-check form-switch fs-5 mb-0">
@@ -202,7 +202,7 @@ try {
 
               <div class="table-wrapper">
                 <h5 class="table-title">
-                  <span><i class="bi bi-people me-2"></i>Jungschützen</span>
+                  <span><i class="bi bi-people me-2"></i>Jungschützen <button type="button" class="btn-help" data-help="jsk_verwaltung.jungschuetzen" aria-label="Hilfe"></button></span>
                   <span class="badge bg-secondary" id="jsCount"></span>
                 </h5>
                 <div class="desktop-table-container">
@@ -254,7 +254,7 @@ try {
           <!-- TAB: Anfragen (Betreuungs-Matching) -->
           <div class="tab-pane fade" id="tabAnfragen" role="tabpanel">
             <div class="content-background">
-              <p class="text-muted small">Schiessanfragen der Jungschützen: wer sucht eine Begleitung, wer betreut. Betreuer lassen sich hier manuell zuteilen oder umteilen; Beteiligte werden benachrichtigt. Vergangene Anfragen wechseln automatisch auf «Erledigt».</p>
+              <p class="text-muted small">Schiessanfragen der Jungschützen: wer sucht eine Begleitung, wer betreut. Betreuer lassen sich hier manuell zuteilen oder umteilen; Beteiligte werden benachrichtigt. Vergangene Anfragen wechseln automatisch auf «Erledigt». <button type="button" class="btn-help" data-help="jsk_verwaltung.anfragen" aria-label="Hilfe"></button></p>
               <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
                 <div class="btn-group btn-group-sm" role="group">
                   <button type="button" class="btn btn-outline-primary active an-filter" data-f="kommend">Kommende</button>
@@ -344,7 +344,7 @@ ob_start();
       <input class="form-check-input" type="checkbox" id="panelAktiv" checked>
       <label class="form-check-label" for="panelAktiv">Aktiv</label>
     </div>
-    <div class="panel-section"><i class="bi bi-box-arrow-in-right me-1"></i>Login-Konto</div>
+    <div class="panel-section"><i class="bi bi-box-arrow-in-right me-1"></i>Login-Konto <button type="button" class="btn-help" data-help="jsk_verwaltung.konto" aria-label="Hilfe"></button></div>
     <div id="panelKontoArea" class="mb-3"></div>
     <button class="btn btn-outline-primary btn-sm w-100 mb-2" id="panelSaveBtn"><i class="bi bi-save me-1"></i>Speichern</button>
     <button class="btn btn-outline-danger btn-sm w-100" id="panelDeleteBtn" style="display:none;"><i class="bi bi-trash me-1"></i>Jungschütze löschen</button>

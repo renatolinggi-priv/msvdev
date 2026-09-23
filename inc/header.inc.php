@@ -199,6 +199,9 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     <script src="<?php echo $incBase; ?>js/msv-tooltips.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-tooltips.js') ?: '1'; ?>"></script>
     <!-- MSV Mobile Cards Helper -->
     <script src="<?php echo $incBase; ?>js/mobile-cards.js?v=<?php echo @filemtime(__DIR__ . '/js/mobile-cards.js') ?: '1'; ?>"></script>
+    <!-- MSV Hilfesystem («?»-Buttons, Modal in footer.inc.php, Pflege in hilfetexte.php) -->
+    <script>window.MSV_HELP_API = <?php echo json_encode($incBase . 'hilfetexte/api.php'); ?>;</script>
+    <script src="<?php echo $incBase; ?>js/msv-help.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-help.js') ?: '1'; ?>"></script>
 
     <style>
         /* Kompakte Basis-Styles */

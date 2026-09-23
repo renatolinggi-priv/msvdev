@@ -43,7 +43,7 @@ $page_specific_css = "
     <div class="col-xl-9 col-lg-8">
       <div class="main-card">
         <div class="d-none d-md-flex align-items-center justify-content-between mb-3">
-          <h2 class="h4 mb-0 page-title">Kantonalstich – Ranglisten</h2>
+          <h2 class="h4 mb-0 page-title">Kantonalstich – Ranglisten <button type="button" class="btn-help" data-help="kantiabr.uebersicht" aria-label="Hilfe"></button></h2>
           <div class="d-flex gap-2">
             <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
             <button id="reload-btn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Neu laden</button>
@@ -159,6 +159,7 @@ $(document).ready(function() {
     }
 
     function setStatus(message, type) {
+              <button type="button" class="btn-help" data-help="kantiabr.sksg" aria-label="Hilfe"></button>
         $('#pdf-link').html(
             '<div class="alert alert-' + (type === 'loading' ? 'info' : type) + ' d-flex align-items-center">' +
             (type === 'success' ? '<i class="bi bi-check-circle-fill me-2"></i>' :

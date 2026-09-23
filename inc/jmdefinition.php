@@ -174,7 +174,11 @@ if (empty($_SESSION['csrf_token'])) {
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
-        <?php $page_title = 'Jahresmeisterschaft Definition'; include 'partials/page_header.inc.php'; ?>
+        <?php
+        $page_title   = 'Jahresmeisterschaft Definition';
+        $page_actions = '<button type="button" class="btn-help" data-help="jmdefinition.uebersicht" aria-label="Hilfe"></button>';
+        include 'partials/page_header.inc.php';
+        ?>
 
         <div class="content-background">
           <form id="jmdefinitionForm">
@@ -270,7 +274,7 @@ if (empty($_SESSION['csrf_token'])) {
 
             <!-- Desktop: Hybrid-Tabelle -->
             <div class="table-wrapper">
-              <h5 class="table-title"><i class="bi bi-trophy me-2"></i>Jahresmeisterschaft Definition</h5>
+              <h5 class="table-title"><i class="bi bi-trophy me-2"></i>Jahresmeisterschaft Definition <button type="button" class="btn-help" data-help="jmdefinition.stiche" aria-label="Hilfe"></button></h5>
               <div class="desktop-table-container">
                 <table class="hybrid-table" id="jmHybridTabelle">
                   <thead>
@@ -342,7 +346,7 @@ ob_start();
     </div>
     <div class="row g-3 mb-3">
       <div class="col-6">
-        <label class="panel-label"><i class="bi bi-bullseye me-1"></i>Max. Punkte</label>
+        <label class="panel-label"><i class="bi bi-bullseye me-1"></i>Max. Punkte <button type="button" class="btn-help" data-help="jmdefinition.punkte" aria-label="Hilfe"></button></label>
         <input type="number" class="form-control" id="panelMaxpunkte" min="0">
       </div>
       <div class="col-6">
@@ -351,7 +355,7 @@ ob_start();
       </div>
     </div>
     <div class="mb-3">
-      <label class="panel-label mb-2">Optionen</label>
+      <label class="panel-label mb-2">Optionen <button type="button" class="btn-help" data-help="jmdefinition.optionen" aria-label="Hilfe"></button></label>
       <div class="row g-2">
         <div class="col-6">
           <div class="form-check">

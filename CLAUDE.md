@@ -136,12 +136,28 @@ nur Syntax — kein Runtime, keine DB.
 - `$page_specific_css` **vor** `include 'header.inc.php'` setzen und **nur rohes CSS** hineinschreiben —
   der Header wrappt es in `<style>`; ein `<link>` oder `<style>` darin bricht das Layout. Breite über
   genau eine Klasse `.content-width-wide|default|narrow` am `.main-content-wrapper`, kein eigenes `max-width`.
+- **Navigation** (Tabelle `navigation`, Renderer `inc/navigation.inc.php`, Editor `admin/nav_admin.php`): Root
+  «Einstellungen» (seit Mig. 069) bündelt Konfiguration und Admin-Werkzeuge – neue Konfigurationsseiten gehören
+  dorthin, nicht ins Benutzermenü (dort nur Passwort, Portal, Changelog, Abmelden). Spalte `NurAdmin` blendet
+  einen Eintrag für den Vorstand aus (Häkchen im Editor); die Seite muss den Zugriff trotzdem selbst prüfen.
+  Links relativ zu `inc/` (`seite.php`), Seiten unter `admin/` mit führendem Slash (`/admin/seite.php`); der
+  Renderer macht relative Links über `$incBase` absolut. Menüeinträge per idempotenter Migration (Muster 030/069).
 - Seitentitel = Menütext = Browser-Tab (Regel aus Migration 043/049). Partials nutzen:
   `partials/page_header.inc.php` (`$page_title`, optional `$page_actions`, `$page_show_mobile`),
   `partials/side_panel.inc.php`, `partials/action_card.inc.php`, `msv_empty_row()`.
 - JS-Helfer zentral in `inc/js/msv-toast.js`: `msvToast/msvError/msvConfirm/msvConfirmDelete`,
   `msvEsc()` (HTML-Escaping), `msvXhrMessage(xhr, fallback)`, `msvPost(url, data, ok, {csrf, failMsg})`.
   Keine lokalen Kopien von `esc()`/`ajaxMsg()` mehr anlegen.
+- **Hilfesystem** (seit 22.09.2026, Mig. 066/067, Vorbild jungschuetzen.sksg.ch): `<button type="button"
+  class="btn-help" data-help="seite.thema" aria-label="Hilfe"></button>` neben Seitentitel
+  (`$page_actions`), Abschnitts-/Card-Titel oder einem erklärungsbedürftigen Feld – **nicht pro Button**
+  (dafür `data-tooltip`). Text in Tabelle `hilfetexte`, Anzeige `inc/js/msv-help.js` (Klick = Modal in
+  `footer.inc.php`, Hover = Kurzansicht, Erstbesuch-Hinweis), Lookup `inc/hilfetexte/api.php`
+  (admin/vorstand), Pflege `inc/hilfetexte.php` (**nur admin**). **Neue Funktion → Hilfetext gehört zur
+  Änderung**: Schlüssel im Markup setzen und Text als Migration `INSERT … ON DUPLICATE KEY UPDATE`
+  (Muster 067) mitliefern; die Migration ist die Quelle der Wahrheit, der Editor dient Schnellkorrekturen.
+  Vor Release Code-Scan auf der Seite «Hilfetexte»: 0 «ohne Text». Erlaubtes HTML siehe
+  `inc/hilfetexte/html_sanitizer.inc.php`. PITFALL Runner: keine Zeile im SQL-String darf mit `--` beginnen.
 - Tooltips über `data-tooltip` (nie `title=`); Buttons Outline nach Zweck + `btn-sm`
   (grün `outline-success` = Anlegen/Hochladen/Import, blau = Speichern/Bearbeiten, türkis = Export/PDF,
   rot nur Löschen, grau = Abbrechen).

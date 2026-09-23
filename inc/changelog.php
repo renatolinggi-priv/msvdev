@@ -119,7 +119,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 <div class="content-wrapper">
     <div class="content-background">
         <div class="changelog-header">
-            <h2><i class="bi bi-megaphone me-2"></i>Changelog</h2>
+            <h2><i class="bi bi-megaphone me-2"></i>Changelog <button type="button" class="btn-help" data-help="changelog.uebersicht" aria-label="Hilfe"></button></h2>
             <p class="subtitle">Alle Änderungen und Neuerungen am System</p>
         </div>
 

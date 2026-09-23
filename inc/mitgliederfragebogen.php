@@ -12,7 +12,7 @@ include 'header.inc.php';
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
-                <?php $page_title = 'Auswertung Fragebogen'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Auswertung Fragebogen'; $page_actions = '<button type="button" class="btn-help" data-help="mitgliederfragebogen.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="fragebogenForm" class="fragebogen-form">
@@ -26,7 +26,7 @@ include 'header.inc.php';
                                 <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
                                 <span class="export-toolbar-divider" aria-hidden="true"></span>
                                 <i class="bi bi-file-earmark-arrow-down"></i>
-                                <span>Dokumente erstellen</span>
+                                <span>Dokumente erstellen <button type="button" class="btn-help" data-help="mitgliederfragebogen.pdf" aria-label="Hilfe"></button></span>
                                 <button type="submit" class="btn btn-outline-primary btn-sm ms-auto" id="btnSave">
                                     <i class="bi bi-save me-1"></i>Speichern
                                 </button>

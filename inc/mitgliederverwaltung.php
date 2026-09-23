@@ -23,7 +23,7 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-wide">
-        <?php $page_title = 'Mitgliederverwaltung'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Mitgliederverwaltung'; $page_actions = '<button type="button" class="btn-help" data-help="mitgliederverwaltung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -72,7 +72,7 @@ include 'header.inc.php';
           <!-- Desktop: Hybrid-Tabelle -->
           <div class="table-wrapper">
             <h5 class="table-title">
-              <span><i class="bi bi-people me-2"></i>Mitglieder</span>
+              <span><i class="bi bi-people me-2"></i>Mitglieder <button type="button" class="btn-help" data-help="mitgliederverwaltung.liste" aria-label="Hilfe"></button></span>
               <span class="badge bg-secondary" id="memberCount"></span>
             </h5>
             <div class="desktop-table-container">
@@ -120,7 +120,7 @@ $panel_title = '<i class="bi bi-pencil-square me-2"></i><span id="panelTitle">Mi
 ob_start();
 ?>
     <!-- Stammdaten -->
-    <div class="panel-section"><i class="bi bi-person me-1"></i>Stammdaten</div>
+    <div class="panel-section"><i class="bi bi-person me-1"></i>Stammdaten <button type="button" class="btn-help" data-help="mitgliederverwaltung.stammdaten" aria-label="Hilfe"></button></div>
     <div class="row g-2 mb-2">
       <div class="col-4">
         <label class="panel-label" for="panelAnrede">Anrede</label>
@@ -204,7 +204,7 @@ ob_start();
     </div>
 
     <!-- Status -->
-    <div class="panel-section"><i class="bi bi-toggles me-1"></i>Status</div>
+    <div class="panel-section"><i class="bi bi-toggles me-1"></i>Status <button type="button" class="btn-help" data-help="mitgliederverwaltung.status" aria-label="Hilfe"></button></div>
     <div class="row g-2 mb-2">
       <div class="col-4">
         <div class="form-check">

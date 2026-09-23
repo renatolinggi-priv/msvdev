@@ -348,7 +348,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header -->
-                <?php $page_title = 'Endschiessen Partner'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Endschiessen Partner'; $page_actions = '<button type="button" class="btn-help" data-help="endresultate_partner.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="partnerResultateForm">
@@ -508,7 +508,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Endstich (10 Schüsse) -->
         <div class="shot-section">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-bullseye"></i>Endstich</span>
+                <span class="shot-section-title"><i class="bi bi-bullseye"></i>Endstich <button type="button" class="btn-help" data-help="endresultate_partner.endstich" aria-label="Hilfe"></button></span>
                 <span class="shot-total" id="endstichSumme">0</span>
             </div>
             <div class="shot-section-body">
@@ -523,7 +523,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Sie und Er (Partnerin 1-5) -->
         <div class="shot-section">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">Schüsse 1–5, Partnerin</span></span>
+                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">Schüsse 1–5, Partnerin</span> <button type="button" class="btn-help" data-help="endresultate_partner.sieunder" aria-label="Hilfe"></button></span>
                 <span class="shot-total" id="uniqueTotal" data-tooltip="Total der eindeutigen Werte">0</span>
             </div>
             <div class="shot-section-body">
@@ -547,7 +547,7 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Partner Schwini (2 Passen à 6 Schüsse) -->
         <div class="shot-section">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-piggy-bank"></i>Partner Schwini</span>
+                <span class="shot-section-title"><i class="bi bi-piggy-bank"></i>Partner Schwini <button type="button" class="btn-help" data-help="endresultate_partner.schwini" aria-label="Hilfe"></button></span>
                 <span class="shot-total" id="schwiniSummeTotal">0</span>
             </div>
             <div class="shot-section-body">

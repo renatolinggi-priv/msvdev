@@ -137,7 +137,7 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Sektionsabrechnungen'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Sektionsabrechnungen'; $page_actions = '<button type="button" class="btn-help" data-help="jmdurchschnitt.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
@@ -158,7 +158,7 @@ if (empty($_SESSION['csrf_token'])) {
                             <label for="zaehlendeInput" class="form-label fw-bold mb-0 text-nowrap"
                                    data-bs-toggle="tooltip"
                                    title="Anzahl der besten Resultate, die in den Durchschnitt einfliessen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
-                                <i class="bi bi-list-ol me-1"></i>Zählende Resultate:
+                                <i class="bi bi-list-ol me-1"></i>Zählende Resultate: <button type="button" class="btn-help" data-help="jmdurchschnitt.zaehlende" aria-label="Hilfe"></button>
                             </label>
                             <input type="number" id="zaehlendeInput" class="form-control form-control-sm"
                                    style="width: 80px;" min="1" max="99" step="1">
@@ -187,7 +187,7 @@ if (empty($_SESSION['csrf_token'])) {
                             <div class="row align-items-end">
                                 <div class="col-md-8">
                                     <label for="anlassSelect" class="form-label fw-bold">
-                                        <i class="bi bi-target me-1"></i>Schiessanlass auswählen:
+                                        <i class="bi bi-target me-1"></i>Schiessanlass auswählen: <button type="button" class="btn-help" data-help="jmdurchschnitt.berechnung" aria-label="Hilfe"></button>
                                     </label>
                                     <select id="anlassSelect" class="form-select">
                                         <option value="">-- Bitte Anlass auswählen --</option>

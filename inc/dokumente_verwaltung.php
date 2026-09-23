@@ -177,7 +177,7 @@ function dv_upload_form(string $typ, string $titelHint, string $accept, bool $is
     $uid = 'dvUp' . ucfirst($typ);
     ?>
     <div class="dv-upload">
-      <h6 class="mb-3"><i class="bi bi-cloud-upload me-2"></i>Neues Dokument hochladen</h6>
+      <h6 class="mb-3"><i class="bi bi-cloud-upload me-2"></i>Neues Dokument hochladen <?php if ($typ === 'einsatzplan'): ?><button type="button" class="btn-help" data-help="dokumente_verwaltung.einsatzplan" aria-label="Hilfe"></button><?php elseif ($typ === 'protokoll'): ?><button type="button" class="btn-help" data-help="dokumente_verwaltung.protokoll" aria-label="Hilfe"></button><?php elseif ($typ === 'jsk'): ?><button type="button" class="btn-help" data-help="dokumente_verwaltung.jsk" aria-label="Hilfe"></button><?php endif; ?></h6>
       <form class="js-upload-form" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
         <input type="hidden" name="typ" value="<?= $typ ?>">
@@ -227,7 +227,7 @@ ob_start(); ?>
   </select>
 </form>
 <?php
-$page_actions     = ob_get_clean();
+$page_actions     = ob_get_clean() . '<button type="button" class="btn-help" data-help="dokumente_verwaltung.uebersicht" aria-label="Hilfe"></button>';
 $page_show_mobile = true;
 ?>
 
@@ -284,7 +284,7 @@ $page_show_mobile = true;
             <?php if (!empty($einsaetze_grouped)): ?>
             <div class="table-wrapper">
               <h5 class="table-title d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-people-fill me-2"></i>Importierte Einsätze <?= $selected_year ?>
+                <span><i class="bi bi-people-fill me-2"></i>Importierte Einsätze <?= $selected_year ?> <button type="button" class="btn-help" data-help="dokumente_verwaltung.einsaetze" aria-label="Hilfe"></button>
                   <span class="text-muted fw-normal ez-note">· <?= count($einsaetze) ?> Einträge, <?= count($einsaetze_grouped) ?> Anlässe</span>
                 </span>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="ezExpandAll" data-state="mixed">
@@ -356,7 +356,7 @@ $page_show_mobile = true;
           <div class="tab-pane fade" id="tabTausch" role="tabpanel">
             <?php if (!empty($tausch_log)): ?>
             <div class="table-wrapper">
-              <h5 class="table-title"><i class="bi bi-arrow-left-right me-2"></i>Einsatz-Tausche &amp; Übernahmen <?= $selected_year ?></h5>
+              <h5 class="table-title"><i class="bi bi-arrow-left-right me-2"></i>Einsatz-Tausche &amp; Übernahmen <?= $selected_year ?> <button type="button" class="btn-help" data-help="dokumente_verwaltung.tausche" aria-label="Hilfe"></button></h5>
               <p class="text-muted small px-3 pt-2 mb-2">Von den Mitgliedern selbst abgewickelt. Bei Bedarf über die Einsatz-Bearbeitung korrigierbar.</p>
               <div class="table-responsive">
                 <table class="table table-sm table-hover">

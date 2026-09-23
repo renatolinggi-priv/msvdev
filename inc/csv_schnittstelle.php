@@ -38,12 +38,12 @@ include 'header.inc.php';
 ?>
 
 <div class="container-fluid mt-3">
-    <h2 class="h4 mb-3 page-title">CSV-Schnittstelle (Schiessanlage)</h2>
+    <h2 class="h4 mb-3 page-title">CSV-Schnittstelle (Schiessanlage) <button type="button" class="btn-help" data-help="csv_schnittstelle.uebersicht" aria-label="Hilfe"></button></h2>
 
     <!-- Einstellungen -->
     <div class="card data-card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-gear me-1"></i>Einstellungen</span>
+            <span><i class="bi bi-gear me-1"></i>Einstellungen <button type="button" class="btn-help" data-help="csv_schnittstelle.einstellungen" aria-label="Hilfe"></button></span>
             <button class="btn btn-outline-primary btn-sm" onclick="CsvSettings.save()">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
@@ -73,7 +73,7 @@ include 'header.inc.php';
     <!-- Status & Export -->
     <div class="card data-card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-file-earmark-spreadsheet me-1"></i>Export-Status</span>
+            <span><i class="bi bi-file-earmark-spreadsheet me-1"></i>Export-Status <button type="button" class="btn-help" data-help="csv_schnittstelle.export" aria-label="Hilfe"></button></span>
             <button class="btn btn-outline-info btn-sm" onclick="CsvSettings.exportNow()" id="btnExport">
                 <i class="bi bi-download me-1"></i>Jetzt exportieren
             </button>

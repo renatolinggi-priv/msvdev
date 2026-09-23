@@ -31,6 +31,16 @@ if (!empty($page_specific_js)) {
 
  -->
 <!-- WICHTIG: Keine erneute Ausgabe von render_logout_modal() hier! Das Modal wird bereits im Header gerendert. -->
+
+<!-- Hilfesystem: globales Modal, gefüllt von inc/js/msv-help.js bei Klick auf [data-help]. Einmal pro Seite. -->
+<div class="help-overlay" id="help-overlay"></div>
+<div class="help-modal" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title" hidden>
+    <div class="help-modal-header">
+        <h5 id="help-modal-title">Hilfe</h5>
+        <button type="button" class="help-modal-close" aria-label="Schliessen"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="help-modal-body" id="help-modal-body"></div>
+</div>
 </div> <!-- /.col-12 -->
 </div> <!-- /.row -->
 </div> <!-- /.container-fluid -->

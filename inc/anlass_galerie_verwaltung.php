@@ -113,7 +113,7 @@ ob_start(); ?>
   </select>
 </form>
 <?php
-$page_actions     = ob_get_clean();
+$page_actions     = ob_get_clean() . '<button type="button" class="btn-help" data-help="anlass_galerie_verwaltung.uebersicht" aria-label="Hilfe"></button>';
 $page_show_mobile = true;
 ?>
 
@@ -128,7 +128,7 @@ $page_show_mobile = true;
 
         <!-- Galerie freischalten -->
         <div class="ag-enable-box">
-          <h6><i class="bi bi-plus-circle me-2"></i>Galerie freischalten</h6>
+          <h6><i class="bi bi-plus-circle me-2"></i>Galerie freischalten <button type="button" class="btn-help" data-help="anlass_galerie_verwaltung.freischalten" aria-label="Hilfe"></button></h6>
           <?php if ($ohneGalerie): ?>
             <div class="d-flex flex-wrap align-items-center gap-2">
               <label class="visually-hidden" for="agEnableSelect">Anlass</label>
@@ -147,7 +147,7 @@ $page_show_mobile = true;
         </div>
 
         <!-- Eingerichtete Galerien -->
-        <div class="ag-section-title"><i class="bi bi-images me-2"></i>Eingerichtete Galerien <?= $selected_year ?> <span class="badge bg-secondary ms-1" id="agCount"><?= count($mitGalerie) ?></span></div>
+        <div class="ag-section-title"><i class="bi bi-images me-2"></i>Eingerichtete Galerien <?= $selected_year ?> <span class="badge bg-secondary ms-1" id="agCount"><?= count($mitGalerie) ?></span> <button type="button" class="btn-help" data-help="anlass_galerie_verwaltung.galerien" aria-label="Hilfe"></button></div>
 
         <div id="agList">
         <?php if (!$mitGalerie): ?>
@@ -205,7 +205,7 @@ $page_show_mobile = true;
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="agModTitle"><i class="bi bi-images me-2"></i>Galerie-Details</h5>
+        <h5 class="modal-title" id="agModTitle"><i class="bi bi-images me-2"></i>Galerie-Details <button type="button" class="btn-help" data-help="anlass_galerie_verwaltung.moderation" aria-label="Hilfe"></button></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
       </div>
       <div class="modal-body">

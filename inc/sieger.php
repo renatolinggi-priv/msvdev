@@ -106,7 +106,7 @@ rsort($years);
             <div class="main-content-wrapper content-width-default">
                 <input type="hidden" id="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-                <?php $page_title = 'Sieger der letzten Jahre'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Sieger der letzten Jahre'; $page_actions = '<button type="button" class="btn-help" data-help="sieger.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <!-- Jahr + Erfassen (Toolbar wie auf den Ranglisten-Seiten) -->
@@ -164,7 +164,7 @@ ob_start();
             </div>
 
             <div class="mb-3">
-                <label class="panel-label" for="siegerdefSelect"><i class="bi bi-trophy me-1"></i>Auszeichnung</label>
+                <label class="panel-label" for="siegerdefSelect"><i class="bi bi-trophy me-1"></i>Auszeichnung <button type="button" class="btn-help" data-help="sieger.auszeichnung" aria-label="Hilfe"></button></label>
                 <select name="siegerdef" class="form-select form-select-sm" id="siegerdefSelect" required>
                     <option value="">– Kategorie wählen –</option>
                     <?php

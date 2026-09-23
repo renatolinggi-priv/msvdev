@@ -68,7 +68,7 @@ include 'header.inc.php';
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'CSV Import - Endschiessen'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'CSV Import - Endschiessen'; $page_actions = '<button type="button" class="btn-help" data-help="endsch_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     
@@ -94,7 +94,7 @@ include 'header.inc.php';
                             <div class="table-wrapper mb-4">
                                 <h5 class="table-title">
                                     <i class="bi bi-person-check me-2"></i>
-                                    Import-Einstellungen
+                                    Import-Einstellungen <button type="button" class="btn-help" data-help="endsch_import.einstellungen" aria-label="Hilfe"></button>
                                 </h5>
                                 <div class="p-3">
                                     <div class="row">

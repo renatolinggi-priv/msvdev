@@ -260,7 +260,7 @@ include 'header.inc.php';
         <!-- Titel -->
         <div class="row mb-3 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Navigation verwalten
+            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Navigation verwalten <button type="button" class="btn-help" data-help="nav_admin.uebersicht" aria-label="Hilfe"></button>
             </h2>
           </div>
         </div>
@@ -296,7 +296,7 @@ include 'header.inc.php';
           <!-- Hybrid-Tabelle -->
           <div class="nav-admin-wrapper">
             <h5 class="nav-admin-title">
-              <span><i class="bi bi-menu-button-wide me-2"></i>Navigationsstruktur</span>
+              <span><i class="bi bi-menu-button-wide me-2"></i>Navigationsstruktur <button type="button" class="btn-help" data-help="nav_admin.struktur" aria-label="Hilfe"></button></span>
               <span class="badge bg-primary rounded-pill" id="navCount">0 Einträge</span>
             </h5>
             <div class="desktop-table-container">
@@ -348,13 +348,18 @@ include 'header.inc.php';
         </label>
         <div class="form-text">Eintrag wird im Menü als horizontale Linie gerendert. Titel/Link/Icon werden ignoriert.</div>
       </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="panelNurAdmin">
+        <label class="form-check-label" for="panelNurAdmin"><i class="bi bi-lock-fill me-1 text-warning"></i>Nur für Administratoren sichtbar</label>
+        <button type="button" class="btn-help" data-help="nav_admin.nuradmin" aria-label="Hilfe"></button>
+      </div>
       <div class="mb-3">
         <label class="panel-label">Titel <span class="text-danger panel-required-mark">*</span></label>
         <input type="text" class="form-control form-control-sm" id="panelText" maxlength="50">
         <div class="form-text">Max. 50 Zeichen</div>
       </div>
       <div class="mb-3">
-        <label class="panel-label">Link / Datei <span class="text-danger">*</span></label>
+        <label class="panel-label">Link / Datei <span class="text-danger">*</span> <button type="button" class="btn-help" data-help="nav_admin.link" aria-label="Hilfe"></button></label>
         <input type="text" class="form-control form-control-sm" id="panelLink" maxlength="255"
                placeholder="z.B. home.php oder /ordner/seite.php">
       </div>
@@ -375,7 +380,7 @@ include 'header.inc.php';
     </div>
 
     <div class="panel-section">
-      <label class="panel-label mb-2"><i class="bi bi-arrows-move me-1"></i>Ebene verschieben</label>
+      <label class="panel-label mb-2"><i class="bi bi-arrows-move me-1"></i>Ebene verschieben <button type="button" class="btn-help" data-help="nav_admin.ebene" aria-label="Hilfe"></button></label>
       <div class="panel-level-info mb-2" id="panelLevelDisplay">Ebene 0 – Hauptebene</div>
       <div class="panel-level-controls">
         <button class="btn btn-outline-secondary" id="panelLevelUp" data-tooltip="Eine Ebene höher">
@@ -410,6 +415,10 @@ include 'header.inc.php';
             <i class="bi bi-dash-lg me-1"></i>Als Trennlinie anzeigen
           </label>
           <div class="form-text">Eintrag wird im Menü als horizontale Linie gerendert. Titel/Link/Icon werden ignoriert.</div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="newNurAdmin">
+          <label class="form-check-label" for="newNurAdmin"><i class="bi bi-lock-fill me-1 text-warning"></i>Nur für Administratoren sichtbar</label>
         </div>
         <div class="mb-3">
           <label class="form-label">Titel <span class="text-danger new-required-mark">*</span></label>
@@ -614,12 +623,14 @@ function renderTable() {
         + '</span></span></div></td>'
       : '<td><div class="level-indent">' + indentHtml + toggleHtml
         + '<i class="bi ' + iconClass + ' item-icon"></i>'
-        + '<span class="h-title">' + iconPrev + esc(item.text) + '</span>' + collapsedBadge + '</div></td>';
+        + '<span class="h-title">' + iconPrev + esc(item.text) + '</span>'
+        + (item.nur_admin ? '<i class="bi bi-lock-fill text-warning ms-1 small" data-tooltip="Nur für Administratoren sichtbar"></i>' : '')
+        + collapsedBadge + '</div></td>';
 
     const $tr = $('<tr class="hybrid-row row-l' + item.level + (hidden ? ' row-collapsed' : '') + (isTrenn ? ' row-trennlinie' : '') + '" id="navRow' + item.id + '"'
       + ' data-id="' + item.id + '" data-text="' + esc(item.text) + '" data-link="' + esc(item.link) + '"'
       + ' data-icon="' + esc(item.icon || '') + '" data-parent="' + item.parent_id + '" data-level="' + item.level + '"'
-      + ' data-sort="' + item.sort_order + '" data-ist-trennlinie="' + (isTrenn ? '1' : '0') + '"'
+      + ' data-sort="' + item.sort_order + '" data-ist-trennlinie="' + (isTrenn ? '1' : '0') + '" data-nur-admin="' + (item.nur_admin ? '1' : '0') + '"'
       + ' data-has-children="' + (hasKids ? '1' : '0') + '">'
       + '<td><i class="bi bi-grip-vertical drag-grip" data-tooltip="Verschieben"></i></td>'
       + titleCell
@@ -762,6 +773,7 @@ const NavPanel = {
     this.fillParentSelect(this.currentId);
     $('#panelParent').val(d.parent);
     $('#panelIstTrennlinie').prop('checked', d.istTrennlinie === '1');
+    $('#panelNurAdmin').prop('checked', d.nurAdmin === '1');
     applyTrennlinieMode('panel');
     this.updateLevelDisplay(parseInt(d.level));
 
@@ -820,7 +832,8 @@ const NavPanel = {
       text, link,
       icon: $('#panelIcon').val().trim(),
       parent_id: parseInt($('#panelParent').val()) || 0,
-      ist_trennlinie: istTrenn
+      ist_trennlinie: istTrenn,
+      nur_admin: $('#panelNurAdmin').prop('checked') ? 1 : 0
     })
     .done(resp => {
       if (!resp.success) { msvToast(resp.message || 'Fehler', 'error'); return; }
@@ -850,7 +863,7 @@ $(document).on('keydown', e => {
   }
 });
 $('#panelText, #panelLink, #panelIcon').on('input', () => NavPanel.dirty = true);
-$('#panelParent, #panelIstTrennlinie').on('change', () => NavPanel.dirty = true);
+$('#panelParent, #panelIstTrennlinie, #panelNurAdmin').on('change', () => NavPanel.dirty = true);
 $('#panelIstTrennlinie').on('change', () => applyTrennlinieMode('panel'));
 $('#newIstTrennlinie').on('change', () => applyTrennlinieMode('new'));
 
@@ -980,7 +993,8 @@ function normalizeItems(items) {
     icon: i.Icon || '',
     parent_id: parseInt(i.ParentID) || 0,
     sort_order: parseInt(i.SortOrder) || 0,
-    ist_trennlinie: parseInt(i.IstTrennlinie) ? 1 : 0
+    ist_trennlinie: parseInt(i.IstTrennlinie) ? 1 : 0,
+    nur_admin: parseInt(i.NurAdmin) ? 1 : 0
   }));
 }
 
@@ -1046,6 +1060,7 @@ $('#btnAddEntry').on('click', function() {
   $('#newText, #newLink, #newIcon').val('');
   updateIconPreview('newIcon', '');
   $('#newIstTrennlinie').prop('checked', false);
+  $('#newNurAdmin').prop('checked', false);
   applyTrennlinieMode('new');
   const $sel = $('#newParent').empty();
   $sel.append('<option value="0">[Hauptebene]</option>');
@@ -1071,7 +1086,8 @@ $('#btnCreateEntry').on('click', function() {
     text, link,
     icon: $('#newIcon').val().trim(),
     parent_id: parseInt($('#newParent').val()) || 0,
-    ist_trennlinie: istTrenn
+    ist_trennlinie: istTrenn,
+    nur_admin: $('#newNurAdmin').prop('checked') ? 1 : 0
   })
   .done(resp => {
     if (!resp.success) { msvToast(resp.message || 'Fehler', 'error'); return; }

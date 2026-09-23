@@ -71,7 +71,7 @@
     <!-- Tabelle -->
     <div class="table-wrapper">
         <h5 class="table-title">
-            <span><i class="bi bi-table me-2"></i>Einträge <span class="badge bg-secondary ms-1" id="overviewVisibleCount">0</span></span>
+            <span><i class="bi bi-table me-2"></i>Einträge <span class="badge bg-secondary ms-1" id="overviewVisibleCount">0</span> <button type="button" class="btn-help" data-help="standbelegung.eintraege" aria-label="Hilfe"></button></span>
             <span class="d-flex align-items-center gap-2 small text-muted">
                 <span><span id="overviewCount">0</span> ausgewählt</span>
                 <button type="button" class="btn btn-outline-secondary btn-sm py-0" data-action="overview-select-all"><i class="bi bi-check-all"></i> Alle</button>

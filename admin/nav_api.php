@@ -58,13 +58,18 @@ function ensure_extra_columns(mysqli $conn){
     if ($res && $res->num_rows === 0) {
         $conn->query("ALTER TABLE `navigation` ADD COLUMN `IstTrennlinie` TINYINT NOT NULL DEFAULT 0 AFTER `SortOrder`");
     }
+    // NurAdmin (Migration 069): Eintrag nur fuer Rolle admin sichtbar
+    $res = $conn->query("SHOW COLUMNS FROM `navigation` LIKE 'NurAdmin'");
+    if ($res && $res->num_rows === 0) {
+        $conn->query("ALTER TABLE `navigation` ADD COLUMN `NurAdmin` TINYINT NOT NULL DEFAULT 0 AFTER `IstTrennlinie`");
+    }
 }
 
 function fetch_all(mysqli $conn){
     ensure_sortorder_column($conn);
     ensure_extra_columns($conn);
     $items = [];
-    $sql = "SELECT ID, Text, Link, Icon, ParentID, SortOrder, IstTrennlinie FROM navigation ORDER BY ParentID, SortOrder, ID";
+    $sql = "SELECT ID, Text, Link, Icon, ParentID, SortOrder, IstTrennlinie, NurAdmin FROM navigation ORDER BY ParentID, SortOrder, ID";
     if ($res = $conn->query($sql)) {
         while($row = $res->fetch_assoc()){
             $items[] = $row;
@@ -103,6 +108,7 @@ switch($action){
         $icon = trim($_POST['icon'] ?? '');
         $parent = (int)($_POST['parent_id'] ?? 0);
         $istTrenn = !empty($_POST['ist_trennlinie']) ? 1 : 0;
+        $nurAdmin = !empty($_POST['nur_admin']) ? 1 : 0;
         // Trennlinien brauchen weder Titel noch Link
         if (!$istTrenn && ($text==='' || $link==='')) {
             bad('Text und Link sind Pflichtfelder');
@@ -122,8 +128,8 @@ switch($action){
 
         // Insert new item
         $iconVal = $icon !== '' ? $icon : null;
-        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, Icon, ParentID, SortOrder, IstTrennlinie) VALUES (?,?,?,?,?,?)");
-        $stmt->bind_param('sssiii', $text, $link, $iconVal, $parent, $next, $istTrenn);
+        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, Icon, ParentID, SortOrder, IstTrennlinie, NurAdmin) VALUES (?,?,?,?,?,?,?)");
+        $stmt->bind_param('sssiiii', $text, $link, $iconVal, $parent, $next, $istTrenn, $nurAdmin);
         if (!$stmt->execute()) {
             bad('Einfügen fehlgeschlagen: '.$conn->error, 500);
         }
@@ -137,6 +143,7 @@ switch($action){
         $icon = trim($_POST['icon'] ?? '');
         $parent = (int)($_POST['parent_id'] ?? 0);
         $istTrenn = !empty($_POST['ist_trennlinie']) ? 1 : 0;
+        $nurAdmin = !empty($_POST['nur_admin']) ? 1 : 0;
         if ($id<=0) bad('Ungültige ID');
         if (!$istTrenn && ($text==='' || $link==='')) bad('Text und Link sind Pflichtfelder');
         if ($istTrenn && $text === '') $text = '— Trennlinie —';
@@ -159,8 +166,8 @@ switch($action){
             }
         }
         $iconVal = $icon !== '' ? $icon : null;
-        $stmt = $conn->prepare("UPDATE navigation SET Text=?, Link=?, Icon=?, ParentID=?, IstTrennlinie=? WHERE ID=?");
-        $stmt->bind_param('sssiii', $text, $link, $iconVal, $parent, $istTrenn, $id);
+        $stmt = $conn->prepare("UPDATE navigation SET Text=?, Link=?, Icon=?, ParentID=?, IstTrennlinie=?, NurAdmin=? WHERE ID=?");
+        $stmt->bind_param('sssiiii', $text, $link, $iconVal, $parent, $istTrenn, $nurAdmin, $id);
         if (!$stmt->execute()) {
             bad('Speichern fehlgeschlagen: '.$conn->error, 500);
         }
@@ -172,7 +179,7 @@ switch($action){
         if ($id<=0) bad('Ungültige ID');
         ensure_extra_columns($conn);
 
-        $stmt = $conn->prepare("SELECT Text, Link, Icon, ParentID, SortOrder, IstTrennlinie FROM navigation WHERE ID=?");
+        $stmt = $conn->prepare("SELECT Text, Link, Icon, ParentID, SortOrder, IstTrennlinie, NurAdmin FROM navigation WHERE ID=?");
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -188,9 +195,10 @@ switch($action){
         $newParent = (int)$orig['ParentID'];
         $newTrenn  = (int)$orig['IstTrennlinie'];
         $newIcon   = $orig['Icon'];
+        $newNurAdm = (int)($orig['NurAdmin'] ?? 0);
 
-        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, Icon, ParentID, SortOrder, IstTrennlinie) VALUES (?,?,?,?,?,?)");
-        $stmt->bind_param('sssiii', $newText, $newLink, $newIcon, $newParent, $newSort, $newTrenn);
+        $stmt = $conn->prepare("INSERT INTO navigation (Text, Link, Icon, ParentID, SortOrder, IstTrennlinie, NurAdmin) VALUES (?,?,?,?,?,?,?)");
+        $stmt->bind_param('sssiiii', $newText, $newLink, $newIcon, $newParent, $newSort, $newTrenn, $newNurAdm);
         if (!$stmt->execute()) {
             bad('Duplizieren fehlgeschlagen: '.$conn->error, 500);
         }

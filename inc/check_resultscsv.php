@@ -85,7 +85,7 @@ include 'header.inc.php';
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'Imetron CSV prüfen'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Imetron CSV prüfen'; $page_actions = '<button type="button" class="btn-help" data-help="check_resultscsv.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
             
@@ -116,7 +116,7 @@ include 'header.inc.php';
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0">
                                 <i class="bi bi-bug me-2"></i>
-                                Debug Information
+                                Debug Information <button type="button" class="btn-help" data-help="check_resultscsv.debug" aria-label="Hilfe"></button>
                             </h5>
                             <button class="btn btn-outline-info btn-sm" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#rawDataCollapse">

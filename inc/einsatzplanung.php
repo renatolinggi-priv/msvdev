@@ -277,6 +277,11 @@ if ($plan) { ?>
   </div>
   <?php endif; ?>
   <span class="badge ep-status <?= $h($plan['status']) ?>" id="epStatusBadge"><?= $h(EP_STATUS[$plan['status']] ?? $plan['status']) ?></span>
+  <?php if ($ansichtAbr): ?>
+  <button type="button" class="btn-help" data-help="einsatzplanung.abrechnung" aria-label="Hilfe"></button>
+  <?php else: ?>
+  <button type="button" class="btn-help" data-help="einsatzplanung.editor" aria-label="Hilfe"></button>
+  <?php endif; ?>
 <?php } else { ?>
   <form method="get" class="d-flex align-items-center gap-2">
     <label class="text-muted small mb-0" for="epYear">Jahr</label>
@@ -286,6 +291,7 @@ if ($plan) { ?>
   </form>
   <button type="button" class="btn btn-outline-info btn-sm js-auswertung" data-jahr="<?= $selected_year ?>" <?= $dbFehler ? 'disabled' : '' ?> data-tooltip="Anwesenheit <?= $selected_year ?>: je Verein und Mitglied über alle freigegebenen Pläne"><i class="bi bi-clipboard-data me-1"></i>Auswertung</button>
   <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#epNeuModal" <?= $dbFehler ? 'disabled' : '' ?>><i class="bi bi-plus-lg me-1"></i>Neuer Plan</button>
+  <button type="button" class="btn-help" data-help="einsatzplanung.liste" aria-label="Hilfe"></button>
 <?php }
 $page_actions     = ob_get_clean();
 $page_show_mobile = true;

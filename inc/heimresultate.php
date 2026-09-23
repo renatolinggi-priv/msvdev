@@ -567,7 +567,7 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header -->
-                <?php $page_title = 'Heimmeisterschaft Resultaterfassung'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Heimmeisterschaft Resultaterfassung'; $page_actions = '<button type="button" class="btn-help" data-help="heimresultate.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="heimresultateForm">
@@ -586,7 +586,7 @@ if (empty($_SESSION['csrf_token'])) {
 
                         <!-- Aktionsbereich (Bootstrap Collapse) -->
 <?php
-                        $ac_id = 'heimresultateActions';
+                        $ac_id = 'heimresultateActions'; $ac_title = 'Aktionen <button type="button" class="btn-help" data-help="heimresultate.aktionen" aria-label="Hilfe"></button>';
                         ob_start();
                         ?>
                                     <div class="row g-2">
@@ -632,7 +632,7 @@ if (empty($_SESSION['csrf_token'])) {
                                             <thead>
                                                 <tr>
                                                     <th scope="col" style="min-width: 180px; width: 200px;">
-                                                        <i class="bi bi-person me-1"></i>Mitglied
+                                                        <i class="bi bi-person me-1"></i>Mitglied <button type="button" class="btn-help" data-help="heimresultate.tabelle" aria-label="Hilfe"></button>
                                                     </th>
                                                     <th scope="col" class="text-center" style="width: 75px;">Passe 1</th>
                                                     <th scope="col" class="text-center" style="width: 75px;">Passe 2</th>
@@ -698,7 +698,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <i class="bi bi-chevron-left"></i>
             </button>
             <div>
-                <h6 class="mb-0"><i class="bi bi-person me-2"></i><span id="entryName">Erfassen</span></h6>
+                <h6 class="mb-0"><i class="bi bi-person me-2"></i><span id="entryName">Erfassen</span> <button type="button" class="btn-help" data-help="heimresultate.schnellerfassung" aria-label="Hilfe"></button></h6>
                 <small class="text-muted" id="entrySubtitle"></small>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary" id="entryNext" data-tooltip="Nächster">

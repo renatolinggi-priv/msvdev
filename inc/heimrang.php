@@ -16,7 +16,7 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = "Heimmeisterschaft Ranglisten"; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = "Heimmeisterschaft Ranglisten"; $page_actions = '<button type="button" class="btn-help" data-help="heimrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
@@ -32,7 +32,7 @@ include 'header.inc.php';
                             <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
                             <span class="export-toolbar-divider" aria-hidden="true"></span>
                             <i class="bi bi-file-earmark-arrow-down"></i>
-                            <span>Dokumente erstellen</span>
+                            <span>Dokumente erstellen <button type="button" class="btn-help" data-help="heimrang.dokumente" aria-label="Hilfe"></button></span>
                             <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
                                 <i class="bi bi-pencil me-1"></i>Resultate bearbeiten
                             </button>
@@ -50,7 +50,7 @@ include 'header.inc.php';
                     <div class="table-wrapper">
                         <h5 class="table-title">
                             <i class="bi bi-star me-2"></i>
-                            Heimmeisterschaft Kat. A
+                            Heimmeisterschaft Kat. A <button type="button" class="btn-help" data-help="heimrang.kategorien" aria-label="Hilfe"></button>
                         </h5>
                         <div class="desktop-table-container">
                             <div class="table-responsive">

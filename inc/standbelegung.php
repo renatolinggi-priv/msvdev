@@ -8,7 +8,7 @@ require_once 'standbelegung/load_page_data.inc.php';
 $page_specific_css = @file_get_contents(__DIR__ . '/../css/standbelegung.css') ?: '';
 
 // Kopfzeile: Veröffentlichen-Button rechts (Partial-Slot)
-$page_actions = '<button type="button" class="btn btn-outline-success btn-sm" data-action="publish"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>';
+$page_actions = '<button type="button" class="btn btn-outline-success btn-sm" data-action="publish"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button> <button type="button" class="btn-help" data-help="standbelegung.uebersicht" aria-label="Hilfe"></button>';
 
 include 'header.inc.php';
 

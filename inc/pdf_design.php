@@ -101,7 +101,7 @@ include 'header.inc.php';
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
 
-        <?php $page_title = 'PDF-Vorlage'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'PDF-Vorlage'; $page_actions = '<button type="button" class="btn-help" data-help="pdf_design.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <form id="pdfDesignForm">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
@@ -110,7 +110,7 @@ include 'header.inc.php';
             <!-- LINKS: Einstellungen -->
             <div>
               <div class="pd-card">
-                <h3>Logo</h3>
+                <h3>Logo <button type="button" class="btn-help" data-help="pdf_design.logo" aria-label="Hilfe"></button></h3>
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                   <img id="logoPreview" class="pd-logo-box" src="<?= htmlspecialchars($logoUrl) ?>" alt="Aktuelles Logo">
                   <div class="pd-logo-text">
@@ -122,7 +122,7 @@ include 'header.inc.php';
               </div>
 
               <div class="pd-card">
-                <h3>Vorlagen</h3>
+                <h3>Vorlagen <button type="button" class="btn-help" data-help="pdf_design.vorlagen" aria-label="Hilfe"></button></h3>
                 <div class="pd-presets">
                   <?php foreach ($presets as $pk => $preset): ?>
                     <button type="button" class="btn btn-sm btn-outline-secondary pd-preset" data-preset="<?= htmlspecialchars($pk) ?>">
@@ -164,7 +164,7 @@ include 'header.inc.php';
             <!-- RECHTS: Live-Vorschau -->
             <div class="pd-preview-sticky">
               <div class="pd-card">
-                <h3>Live-Vorschau</h3>
+                <h3>Live-Vorschau <button type="button" class="btn-help" data-help="pdf_design.vorschau" aria-label="Hilfe"></button></h3>
                 <div id="pdfPreview" style="<?= htmlspecialchars($previewVars, ENT_QUOTES, 'UTF-8') ?>">
                   <img id="pvLogo" class="pv-logo" src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo">
                   <h4>Jahresmeisterschaft <?= date('Y') ?></h4>

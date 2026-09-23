@@ -5,7 +5,7 @@ foreach ($artKeywords as $kw) $groupedKeywords[$kw['Art']][] = $kw;
 ?>
 <div class="tab-pane fade" id="settings" role="tabpanel">
     <div class="table-wrapper">
-        <h5 class="table-title"><span><i class="bi bi-tags me-2"></i>Art-Keywords</span></h5>
+        <h5 class="table-title"><span><i class="bi bi-tags me-2"></i>Art-Keywords <button type="button" class="btn-help" data-help="standbelegung.art" aria-label="Hilfe"></button></span></h5>
         <div class="p-3">
             <p class="text-muted small">
                 Begriffe, die beim Export automatisch einer Art zugeordnet werden. Enthält eine Bezeichnung einen
