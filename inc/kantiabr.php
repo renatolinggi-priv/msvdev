@@ -113,14 +113,53 @@ $page_specific_css = "
           </div>
 
           <div class="col-12">
-            <div class="d-flex gap-2 mt-3">
+            <?php
+            // Kopfangaben für das SKSG-Abrechnungsformular (werden beim Export gemerkt)
+            $kantiKopf = ['kanti_verantwortlicher_id' => '', 'kanti_adresse1' => '', 'kanti_adresse2' => '', 'kanti_email' => ''];
+            $kantiMitglieder = [];
+            try {
+                $stKopf = getDB()->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('kanti_verantwortlicher_id','kanti_adresse1','kanti_adresse2','kanti_email')");
+                foreach ($stKopf->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) { $kantiKopf[$k] = (string) $v; }
+                // Aktive, lebende Mitglieder als Auswahl für den Verantwortlichen (gewähltes Mitglied immer dabei)
+                $stMit = getDB()->prepare("SELECT ID, Vorname, Name, Strasse, PLZ, Ort, Email FROM mitglieder
+                                           WHERE (Status = 1 AND Verstorben = 0) OR ID = :sel ORDER BY Name, Vorname");
+                $stMit->execute([':sel' => (int) $kantiKopf['kanti_verantwortlicher_id']]);
+                $kantiMitglieder = $stMit->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Throwable $e) { /* Felder bleiben leer */ }
+            require_once __DIR__ . '/csrf.inc.php';
+            ?>
+            <div class="row g-2 mt-3" id="kanti-kopf">
+              <input type="hidden" id="kanti-csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
+              <div class="col-12 col-md-3">
+                <select class="form-select form-select-sm" id="kanti-verantwortlicher" data-tooltip="Verantwortlicher auf dem SKSG-Abrechnungsformular; die Wahl bleibt gespeichert">
+                  <option value="">– Verantwortlicher wählen –</option>
+                  <?php foreach ($kantiMitglieder as $m): ?>
+                  <option value="<?= (int) $m['ID'] ?>"<?= (int) $m['ID'] === (int) $kantiKopf['kanti_verantwortlicher_id'] ? ' selected' : '' ?>
+                          data-strasse="<?= htmlspecialchars((string) $m['Strasse'], ENT_QUOTES) ?>"
+                          data-plzort="<?= htmlspecialchars(trim($m['PLZ'] . ' ' . $m['Ort']), ENT_QUOTES) ?>"
+                          data-email="<?= htmlspecialchars((string) $m['Email'], ENT_QUOTES) ?>"><?= htmlspecialchars($m['Name'] . ' ' . $m['Vorname'], ENT_QUOTES) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-12 col-md-3">
+                <input type="text" class="form-control form-control-sm" id="kanti-adresse1" placeholder="Strasse Nr." maxlength="120" value="<?= htmlspecialchars($kantiKopf['kanti_adresse1'], ENT_QUOTES) ?>">
+              </div>
+              <div class="col-12 col-md-3">
+                <input type="text" class="form-control form-control-sm" id="kanti-adresse2" placeholder="PLZ Ort" maxlength="120" value="<?= htmlspecialchars($kantiKopf['kanti_adresse2'], ENT_QUOTES) ?>">
+              </div>
+              <div class="col-12 col-md-3">
+                <input type="email" class="form-control form-control-sm" id="kanti-email" placeholder="E-Mail-Adresse" maxlength="120" value="<?= htmlspecialchars($kantiKopf['kanti_email'], ENT_QUOTES) ?>">
+              </div>
+            </div>
+            <div class="d-flex gap-2 mt-2">
               <button class="btn btn-sm btn-outline-info pdf-btn">
                 <i class="bi bi-file-pdf me-2"></i>PDF generieren
               </button>
               <button type="button" class="btn btn-sm btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
-              <button class="btn btn-sm btn-outline-info word-btn">
-                <i class="bi bi-file-earmark-excel me-2"></i>Excel generieren
+              <button class="btn btn-sm btn-outline-info word-btn" data-tooltip="SKSG-Abrechnungsformular (xlsm) mit Titelblatt und Kontrollblatt befüllen">
+                <i class="bi bi-file-earmark-excel me-2"></i>SKSG-Abrechnung (Excel)
               </button>
+              <button type="button" class="btn-help" data-help="kantiabr.sksg" aria-label="Hilfe"></button>
             </div>
             <div id="pdf-link" class="mt-3"></div>
           </div>
@@ -159,7 +198,6 @@ $(document).ready(function() {
     }
 
     function setStatus(message, type) {
-              <button type="button" class="btn-help" data-help="kantiabr.sksg" aria-label="Hilfe"></button>
         $('#pdf-link').html(
             '<div class="alert alert-' + (type === 'loading' ? 'info' : type) + ' d-flex align-items-center">' +
             (type === 'success' ? '<i class="bi bi-check-circle-fill me-2"></i>' :
@@ -271,6 +309,15 @@ $(document).ready(function() {
         });
     });
 
+    // Verantwortlicher gewählt → Adresse und E-Mail aus den Stammdaten übernehmen
+    $('#kanti-verantwortlicher').on('change', function() {
+        var o = this.options[this.selectedIndex];
+        if (!o || !o.value) return;
+        $('#kanti-adresse1').val(o.getAttribute('data-strasse') || '');
+        $('#kanti-adresse2').val(o.getAttribute('data-plzort') || '');
+        $('#kanti-email').val(o.getAttribute('data-email') || '');
+    });
+
     // Word/Excel-Button Handler mit automatischem Download
     $('.word-btn').on('click', function() {
         var btn = $(this);
@@ -278,49 +325,40 @@ $(document).ready(function() {
         btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
         
         var selectedYear = $('#yearSelect').val();
-        $.ajax({
-            url: 'kantiabr/generate_kantiabr_xls.php',
-            type: 'GET',
-            dataType: 'json',
-            data: { year: selectedYear },
-            success: function(response) {
-                var wordLink = (function(p){
-                    if(!p) return null;
-                    var idx = p.indexOf('/inc/');
-                    if(idx !== -1) return p.substring(idx);
-                    var fn = p.split('/').pop();
-                    return '/inc/kantiabr/dat/' + fn;
-                })(response && (response.xls_link || response.pdf_link));
+        var daten = {
+            year: selectedYear,
+            verantwortlicher_id: $('#kanti-verantwortlicher').val(),
+            adresse1: $('#kanti-adresse1').val(),
+            adresse2: $('#kanti-adresse2').val(),
+            email: $('#kanti-email').val()
+        };
+        msvPost('kantiabr/generate_kantiabr_xls.php', daten, function(response) {
+            var fn = String(response.xls_link || '').split('/').pop();
+            var wordLink = '/inc/kantiabr/dat/' + fn;
 
-                if (wordLink) {
-                    // Automatischer Download
-                    downloadFile(wordLink, 'Kantonalstich_' + selectedYear + '.xlsx');
-                    
-                    $('#pdf-link').html(
-                        '<div class="alert alert-success d-flex align-items-center">' +
-                        '<i class="bi bi-check-circle-fill me-2"></i>' +
-                        '<div>Excel wurde heruntergeladen. <a href="' + wordLink + '" target="_blank" class="alert-link">' +
-                        '<i class="bi bi-arrow-clockwise me-1"></i>Erneut herunterladen</a></div></div>'
-                    );
-                    msvToast('Excel erfolgreich generiert und heruntergeladen', 'success');
-                } else {
-                    $('#pdf-link').html(
-                        '<div class="alert alert-danger">' +
-                        '<i class="bi bi-x-circle-fill me-2"></i>Fehler: Kein Download-Link erhalten</div>'
-                    );
-                    msvToast('Excel-Generierung fehlgeschlagen', 'error');
-                }
-            },
-            error: function(xhr, status, error) {
+            // Automatischer Download
+            downloadFile(wordLink, 'Kantonalstich_Abrechnung_' + selectedYear + '.xlsm');
+
+            // Keine Erfolgsbox – die Datei wird direkt heruntergeladen, der Toast genügt.
+            // Nur Warnungen des Servers (z.B. fehlende Lizenznummern) bleiben sichtbar.
+            var warnungen = response.warnungen || [];
+            if (warnungen.length) {
                 $('#pdf-link').html(
-                    '<div class="alert alert-danger">' +
-                    '<i class="bi bi-x-circle-fill me-2"></i>Fehler: ' + error + '</div>'
+                    '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                    'Hinweise zur SKSG-Abrechnung:<ul class="mb-0 mt-2 small">' + warnungen.map(function(w) {
+                        return '<li>' + msvEsc(w) + '</li>';
+                    }).join('') + '</ul></div>'
                 );
-                msvToast('Fehler beim Generieren der Excel-Datei: ' + error, 'error');
-            },
-            complete: function() {
-                btn.prop('disabled', false).html(originalHtml);
+            } else {
+                $('#pdf-link').empty();
             }
+            msvToast('SKSG-Abrechnung mit ' + msvEsc(response.anzahl) + ' Schützen heruntergeladen', warnungen.length ? 'warning' : 'success');
+        }, {
+            csrf: $('#kanti-csrf').val(),
+            failMsg: 'Abrechnung konnte nicht erstellt werden',
+            fail: function() { $('#pdf-link').empty(); }
+        }).always(function() {
+            btn.prop('disabled', false).html(originalHtml);
         });
     });
 
@@ -335,7 +373,6 @@ $(document).ready(function() {
     $('#reload-btn').on('click', function() {
         loadKantonala();
         loadKantonalb();
-        msvToast('Daten aktualisiert', 'info');
     });
 
     // Redirect-Button

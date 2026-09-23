@@ -105,7 +105,7 @@ gebraucht werden:
 - `MSVWilen_Logo.jpg` / `SKSG_Logo.jpg` — `inc/pdf_design.php` verteilt das Logo in jedes
   Modul-`dat/`, `inc/home.php` bindet `jmrang/dat/MSVWilen_Logo.jpg` als `<img>` ein
 - Vorlagen: `Resultatbuch_Template*.docx`, `Resultatbuch_V1..V3.docx`,
-  `VorlageFragebogen.docx`, `Kantonalstich_Abrechnungsformular_ab-2023.xlsm`
+  `VorlageFragebogen.docx`, `Kantonalstich_Abrechnungsformular-ab-2026.xlsm`
 
 Der Helfer löscht darum nur, was die Signatur einer generierten Datei trägt: ein
 Zeitstempel `_YYYY-MM-DD_HH-MM-SS` unmittelbar vor der Endung. Gruppiert wird pro

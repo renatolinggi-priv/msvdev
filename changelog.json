@@ -23,6 +23,12 @@
     "datum": "2026-09-21",
     "aenderungen": [
       {
+        "titel": "Kantonalstich: SKSG-Abrechnungsformular wird direkt befüllt",
+        "beschreibung": "Der Excel-Knopf auf der Kantonalstich-Seite füllt neu das offizielle Abrechnungsformular der SKSG (Kantonalstich_Abrechnungsformular-ab-2026.xlsm) statt einer losen Liste: Titelblatt mit Distanz, Verein, Verantwortlichem, Adresse und E-Mail sowie das Kontrollblatt mit Name, Vorname, Jahrgang, Sportgerät und den Passen aller Schützen des gewählten Jahres. Kategorie, Kranzresultate, KK-Kreuze und der Totalbetrag rechnet das Formular beim Öffnen selbst (Makro, Blattschutz und Logo bleiben erhalten). Der Verantwortliche wird als Mitglied gewählt (bleibt gespeichert, bis er geändert wird) und bringt Adresse und E-Mail aus den Stammdaten mit; beide lassen sich vor dem Export noch anpassen. Waffenbezeichnungen werden auf die SKSG-Liste abgebildet («Stgw57 /03» → «Stgw57/03»); passt eine nicht, erscheint eine Warnung. Das Kontrollblatt fasst höchstens 40 Schützen.",
+        "typ": "neu",
+        "admin_only": true
+      },
+      {
         "titel": "JSK-Verwaltung: Tab «Anfragen», Leitungs-Einsicht, Leiter-Stand",
         "beschreibung": "Neuer Tab «Anfragen» in der JSK-Verwaltung: alle Schiessanfragen der Jungschützen (kommende und vergangene 120 Tage) mit Status und Betreuer. Der Vorstand kann Betreuer manuell zuteilen oder umteilen, Betreuungen freigeben und Anfragen stornieren – alle Beteiligten werden benachrichtigt. Dazu eine Statistik «Betreuungen pro Mitglied» fürs laufende Jahr inklusive Anfragen, die ohne Betreuer blieben. Oben auf der Seite steht neu, welche Jungschützenleiter im Portal erreichbar sind (Warnung, wenn ein Leiter kein freigegebenes Login hat oder gar keiner) und wie viele Betreuer aktiviert sind. Neuer Admin-Schalter «Leitung liest Betreuer-Chats mit» (Standard aus): ist er an, sehen Jungschützenleiter die Chats zwischen Jungschützen und Betreuern nur lesend, und beide Seiten sehen im Chat den Hinweis «Die Jungschützenleitung kann mitlesen». Das Zuteilen aus der Verwaltung, die Schnellauswahl in der Schiessanfrage (Termin-Bezug) und das Zurücknehmen von Chat-Nachrichten brauchen die Datenbank-Aktualisierung 064.",
         "typ": "neu",

@@ -12,7 +12,7 @@
  *   - MSVWilen_Logo.jpg / SKSG_Logo.jpg  -> inc/pdf_design.php verteilt das Logo in jedes
  *     Modul-dat/, inc/home.php bindet jmrang/dat/MSVWilen_Logo.jpg direkt als <img> ein
  *   - Vorlagen: Resultatbuch_Template20251015.docx, Resultatbuch_V1..V3.docx,
- *     VorlageFragebogen.docx, Kantonalstich_Abrechnungsformular_ab-2023.xlsm,
+ *     VorlageFragebogen.docx, Kantonalstich_Abrechnungsformular-ab-2026.xlsm,
  *     Adressliste_MiFu_20260227.xlsx
  *
  * DESHALB wird nicht per Wildcard geloescht, sondern ausschliesslich was die Signatur einer
