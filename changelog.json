@@ -4,6 +4,12 @@
     "datum": "2026-09-23",
     "aenderungen": [
       {
+        "titel": "Partner Scheiben Ausdruck: Parser überarbeitet und abgesichert",
+        "beschreibung": "Die Seite «Partner Scheiben Ausdruck» (Zielscheiben aus der Imetron-CSV) wurde aufgeräumt. Die PDF-Erzeugung verlangt neu eine Anmeldung als Vorstand oder Administrator und prüft das CSRF-Token wie alle anderen Endpunkte; die übertragenen Schussdaten werden serverseitig bereinigt. Welche Stiche ohne Umrechnung der Hunderterwertung bleiben (Kunst, Glück) und welcher Stich auf der Keiler-Scheibe gezeichnet wird (Schwini), liest die Seite jetzt aus den Imetron-Stichnummern statt aus fest eingetragenen Programmnummern. Probeschüsse vor dem Wettkampf erscheinen nicht mehr als Schuss 1, wenn die Datei Wettkampfschüsse enthält; Windows-Zeilenenden und Kopfzeilen werden strikter erkannt, nicht definierte Programmnummern sind in der Vorschau markiert. Entfernt wurden eine ungenutzte Kopie der Generatoren samt Beispielskripten, ein nicht verwendetes Hilfsskript, ein doppelt geladenes jQuery und das Debug-Logging bei jeder PDF-Erzeugung.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
         "titel": "Kantiresultate: Passe mit 100 Punkten erfassbar",
         "beschreibung": "Die Eingabefelder der Seite «Kantiresultate» (Tabelle, Erfassen-Panel und Mobile-Ansicht) liessen nur zwei Ziffern zu, eine Passe mit 100 Punkten war darum nicht erfassbar. Sie nehmen jetzt Werte bis 100 an, grössere Eingaben werden auf 100 begrenzt. «Speichern» im Erfassen-Panel schliesst das Panel, und nach gespeicherten Erfassungen lädt die Liste beim Schliessen neu.",
         "typ": "fix",
