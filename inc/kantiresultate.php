@@ -705,7 +705,8 @@ $(document).ready(function() {
 
         $inputs.off('input.kanti').on('input.kanti', function() {
             var value = $(this).val().replace(/[^0-9]/g, '');
-            if (value.length > 2) value = value.substring(0, 2);
+            if (value.length > 3) value = value.substring(0, 3);
+            if (value !== '' && parseInt(value, 10) > 100) value = '100';
             $(this).val(value);
         });
     }
@@ -910,7 +911,7 @@ $(document).ready(function() {
                                value="${inputValue}"
                                inputmode="numeric"
                                pattern="[0-9]*"
-                               maxlength="2"
+                               max="100"
                                style="${isBest ? 'background:#fffbeb; border-color:#f59e0b;' : ''}">
                     </div>`;
             });
@@ -1040,8 +1041,9 @@ $(document).ready(function() {
         rows: [],
         idx: -1,
         _silent: false,
-        maxLen: 2,      // Kanti: 2-stellig
-        clampMax: null, // kein 100er-Clamp
+        _saved: false,  // im Panel gespeichert → Liste beim Schliessen neu laden
+        maxLen: 3,      // Kanti: 3-stellig (Passe bis 100)
+        clampMax: 100,  // max 100
         saveUrl: 'kantiresultate/save_kantiresultate.php',
 
         buildIndex() {
@@ -1156,6 +1158,11 @@ $(document).ready(function() {
             $('#entryOverlay').removeClass('show');
             this.rows.forEach(r => r.$tr.removeClass('panel-selected'));
             this.idx = -1;
+            // Nach gespeicherten Erfassungen Liste frisch vom Server laden
+            if (this._saved) {
+                this._saved = false;
+                loadResultate($('#yearSelect').val());
+            }
         },
 
         navigate(dir) {
@@ -1228,6 +1235,7 @@ $(document).ready(function() {
                     passe: this.collectPayload(row)
                 },
                 success: function() {
+                    EntryPanel._saved = true;
                     EntryPanel.updateProgress();
                     if (typeof onDone === 'function') onDone();
                     else msvToast('Gespeichert', 'success');
@@ -1303,7 +1311,12 @@ $(document).ready(function() {
     $('#entryPrev').on('click', function() { EntryPanel.navigate(-1); });
     $('#entryNext').on('click', function() { EntryPanel.navigate(1); });
     $('#entryClose, #entryOverlay').on('click', function() { EntryPanel.close(); });
-    $('#entrySaveBtn').on('click', function() { EntryPanel.save(); });
+    $('#entrySaveBtn').on('click', function() {
+        EntryPanel.save(function() {
+            msvToast('Gespeichert', 'success');
+            EntryPanel.close();
+        });
+    });
     $('#entrySaveNextBtn').on('click', function() { EntryPanel.saveAndNext(); });
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape' && $('#entryPanel').hasClass('open') && !$('.select2-container--open').length) EntryPanel.close();

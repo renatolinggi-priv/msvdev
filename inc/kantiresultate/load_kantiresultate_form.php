@@ -77,7 +77,7 @@ function generateMemberRow($mitglied, $resultate, $year) {
         $html .= 'name="passe[' . (int)$mitglied['ID'] . '][' . $i . ']" ';
         $html .= 'value="' . $passe . '" ';
         $html .= 'autocomplete="off" ';
-        $html .= 'maxlength="2" ';
+        $html .= 'maxlength="3" ';
         $html .= 'pattern="[0-9]*" ';
         $html .= 'data-tooltip="Nur Zahlen erlaubt">';
         $html .= '</td>';

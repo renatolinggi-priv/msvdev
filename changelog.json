@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.33.0",
+    "datum": "2026-09-23",
+    "aenderungen": [
+      {
+        "titel": "Kantiresultate: Passe mit 100 Punkten erfassbar",
+        "beschreibung": "Die Eingabefelder der Seite «Kantiresultate» (Tabelle, Erfassen-Panel und Mobile-Ansicht) liessen nur zwei Ziffern zu, eine Passe mit 100 Punkten war darum nicht erfassbar. Sie nehmen jetzt Werte bis 100 an, grössere Eingaben werden auf 100 begrenzt. «Speichern» im Erfassen-Panel schliesst das Panel, und nach gespeicherten Erfassungen lädt die Liste beim Schliessen neu.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.32.0",
     "datum": "2026-09-22",
     "aenderungen": [
