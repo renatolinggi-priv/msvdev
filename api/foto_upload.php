@@ -83,20 +83,44 @@ try {
     json_error('Bild konnte nicht verarbeitet werden. Ist es ein gültiges Foto?');
 }
 
-$status = !empty($g['moderation_aktiv']) ? 'pending' : 'approved';
+// Duplikat? Hash der verarbeiteten Full-Version (deterministisch fuer dasselbe Original).
+// Vor Migration 062 fehlt die Spalte -> Pruefung wird uebersprungen.
+$hash = null;
+if (fotoHashSpalteVorhanden($db)) {
+    fotoHashesNachtragen($db, $galerieId); // aeltere Fotos einmalig nachziehen
+    $hash = @sha1_file($bild['dateipfad']) ?: null;
+    if ($hash && ($dup = fotoDuplikatSuchen($db, $galerieId, $hash))) {
+        fotoUnlinkDateien($bild);
+        http_response_code(409);
+        echo json_encode([
+            'success'   => false,
+            'duplicate' => true,
+            'foto_id'   => (int) $dup['id'],
+            'message'   => 'Dieses Foto ist bereits in der Galerie'
+                         . (!empty($dup['uploader']) ? ' (hochgeladen von ' . $dup['uploader'] . ')' : '') . '.',
+        ]);
+        exit;
+    }
+}
 
+// Vorstand/Admin muessen ihre eigenen Fotos nicht selber freigeben
+$status = (!empty($g['moderation_aktiv']) && !$istVorst) ? 'pending' : 'approved';
+
+$hashCol = $hash !== null ? ', datei_hash' : '';
+$hashVal = $hash !== null ? ', :hash' : '';
 $stmt = $db->prepare(
     "INSERT INTO anlass_fotos
         (galerie_id, dateiname, dateipfad, thumb_pfad, original_name, dateigroesse,
          breite, hoehe, aufnahme_zeit, zeit_quelle, tag_datum, tag_index,
-         status, hochgeladen_von, moderiert_von, moderiert_am, sortierung)
+         status, hochgeladen_von, moderiert_von, moderiert_am, sortierung{$hashCol})
      VALUES
         (:gid, :dn, :dp, :tp, :on, :sz,
          :br, :ho, :az, :zq, :td, :ti,
-         :st, :uid, :mv, :ma, :so)"
+         :st, :uid, :mv, :ma, :so{$hashVal})"
 );
 $nowApproved = ($status === 'approved');
-$stmt->execute([
+$params = $hash !== null ? [':hash' => $hash] : [];
+$stmt->execute($params + [
     ':gid' => $galerieId,
     ':dn'  => $bild['dateiname'],
     ':dp'  => $bild['dateipfad'],
@@ -118,6 +142,19 @@ $stmt->execute([
 ]);
 
 $neuId = (int) $db->lastInsertId();
+
+// Vorstand informieren, wenn Fotos auf Freigabe warten (gebuendelt, max. 1x pro Stunde und Galerie).
+// Best effort NACH dem Insert; ein Fehler hier darf den Upload nicht als fehlgeschlagen melden.
+if ($status === 'pending') {
+    try {
+        $un = $db->prepare("SELECT full_name FROM users WHERE id = ?");
+        $un->execute([$userId]);
+        fotoVorstandUeberWartendeInformieren($db, $g, trim((string) $un->fetchColumn()));
+    } catch (Throwable $e) {
+        error_log('[foto_upload] Vorstand-Hinweis: ' . $e->getMessage());
+    }
+}
+
 echo json_encode([
     'success'     => true,
     'id'          => $neuId,

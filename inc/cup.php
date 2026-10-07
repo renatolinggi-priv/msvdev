@@ -583,14 +583,12 @@ $(document).ready(function() {
         });
         radioHtml += '</div>';
 
-        Swal.fire({
+        msvSwal.fire({
             title: 'NR w\u00e4hlen',
             html: radioHtml,
-            width: 340,
             showCancelButton: true,
             confirmButtonText: 'Nominieren',
             cancelButtonText: 'Abbrechen',
-            customClass: { popup: 'cup4-swal-compact' },
             preConfirm: function() {
                 const checked = document.querySelector('input[name="nachn"]:checked');
                 if (!checked) { Swal.showValidationMessage('Bitte einen Verlierer w\u00e4hlen'); return false; }
@@ -1118,7 +1116,8 @@ $(document).ready(function() {
                 url: 'cup2/set_manual_winner.php',
                 method: 'POST',
                 data: { pair_id: pairId, winner_id: '', reason: 'Anzahl Weiterkommende geändert', csrf_token: CUP4_CSRF },
-                dataType: 'json'
+                dataType: 'json',
+                error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Manueller Gewinner konnte serverseitig nicht gelöscht werden'), 'error'); }
             });
         }
 
@@ -1216,6 +1215,7 @@ $(document).ready(function() {
         $.ajax({
             url: 'cup2/fetch_pairs.php',
             data: { round: round, year: $('#yearSelect').val() },
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Paarungen konnten nicht geladen werden'), 'error'); },
             success: function(data) {
                 const pairs = typeof data === 'string' ? JSON.parse(data) : data;
                 const $target = $(targetList).empty();
@@ -1370,7 +1370,7 @@ $(document).ready(function() {
                 loadFinalists();
             },
             error: function(xhr) {
-                console.error('fetch_winners FEHLER:', xhr.status, xhr.responseText);
+                msvToast(msvXhrMessage(xhr, 'Gewinner konnten nicht geladen werden'), 'error');
             }
         });
     }
@@ -1402,7 +1402,7 @@ $(document).ready(function() {
                 updateProgress();
                 checkKatBFinalist();
             },
-            error: function() { console.error('Fehler beim Laden der Finalergebnisse'); }
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Finalergebnisse konnten nicht geladen werden'), 'error'); }
         });
     }
 
@@ -1412,6 +1412,7 @@ $(document).ready(function() {
             url: 'cup2/check_katb_finalist.php',
             data: { year: $('#yearSelect').val() },
             dataType: 'json',
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Kat.-B-Prüfung fehlgeschlagen'), 'error'); },
             success: function(resp) {
                 if (resp.has_single_katb_winner && resp.katb_finalist) {
                     const f = resp.katb_finalist;
@@ -1540,6 +1541,7 @@ $(document).ready(function() {
                     url: 'cup2/set_manual_winner.php',
                     method: 'POST',
                     data: { pair_id: w.pairId, winner_id: w.winnerId, reason: w.reason, csrf_token: CUP4_CSRF },
+                    error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Manueller Gewinner konnte nicht gespeichert werden'), 'error'); },
                     complete: checkDone
                 });
             } else {
@@ -1557,13 +1559,14 @@ $(document).ready(function() {
                                 url: 'cup2/set_manual_winner.php',
                                 method: 'POST',
                                 data: { pair_id: match.ID, winner_id: w.winnerId, reason: w.reason, csrf_token: CUP4_CSRF },
+                                error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Manueller Gewinner konnte nicht gespeichert werden'), 'error'); },
                                 complete: checkDone
                             });
                         } else {
                             checkDone();
                         }
                     },
-                    error: checkDone
+                    error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Paarung konnte nicht ermittelt werden – manueller Gewinner nicht gespeichert'), 'error'); checkDone(); }
                 });
             }
         });
@@ -1688,10 +1691,8 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(resp) {
                 if (resp.success) {
-                    $('#pdf-link').html(
-                        '<a href="cuprang/' + resp.pdf_link + '" target="_blank" class="btn btn-sm btn-outline-info">' +
-                        '<i class="bi bi-download me-1"></i>PDF herunterladen</a>'
-                    );
+                    msvDownload('cuprang/' + resp.pdf_link, 'Vereinscup_' + $('#yearSelect').val() + '.pdf');
+                    msvToast('Rangliste-PDF heruntergeladen', 'success');
                 } else {
                     msvToast('Fehler: ' + resp.error, 'error');
                 }
@@ -1706,6 +1707,7 @@ $(document).ready(function() {
             url: 'cup2/fetch_standcup_final.php',
             data: { year: $('#yearSelect').val() },
             dataType: 'json',
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Standcup-Daten konnten nicht geladen werden'), 'error'); },
             success: function(data) {
                 if (data.length > 0) {
                     data.forEach(function(e) {
@@ -1760,6 +1762,7 @@ $(document).ready(function() {
     function checkForFinalParticipants() {
         $.ajax({
             url: 'cup2/check_final_participants.php',
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Final-Teilnehmer konnten nicht geprüft werden'), 'error'); },
             success: function(resp) {
                 if (String(resp).trim().toLowerCase() === 'true' || String(resp).trim() === '1') {
                     $('#standcup-section').show();

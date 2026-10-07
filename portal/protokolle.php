@@ -325,7 +325,7 @@ function deleteDoc(id, title) {
                 } else {
                     msvToast(resp.message, 'error');
                 }
-            }, 'json');
+            }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Dokument konnte nicht gelöscht werden'), 'error'); });
         }
     });
 }

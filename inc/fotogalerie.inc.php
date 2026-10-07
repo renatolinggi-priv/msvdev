@@ -409,3 +409,116 @@ function fotoGalerieLaden(PDO $db, int $galerieId): ?array {
 function fotoGalerieSegmente(array $g): array {
     return fotoSchiesstageSegmente($g['Schiesstage'] ?? null, isset($g['jahr']) ? (int) $g['jahr'] : null);
 }
+
+/** Anzeigename einer Galerie fuer Mitteilungen: «Anlass 2026». */
+function fotoGalerieLabel(array $g): string {
+    $n = (string) ($g['anlass_name'] ?? 'Galerie');
+    return !empty($g['jahr']) ? $n . ' ' . (int) $g['jahr'] : $n;
+}
+
+// ---------------------------------------------------------------------------
+// Duplikate (Migration 062: anlass_fotos.datei_hash)
+// ---------------------------------------------------------------------------
+
+/** Existiert die Spalte datei_hash schon? (Code laeuft auch vor Migration 062.) */
+function fotoHashSpalteVorhanden(PDO $db): bool {
+    static $ok = null;
+    if ($ok === null) {
+        try {
+            $ok = (bool) $db->query("SHOW COLUMNS FROM anlass_fotos LIKE 'datei_hash'")->fetch();
+        } catch (Throwable $e) {
+            $ok = false;
+        }
+    }
+    return $ok;
+}
+
+/**
+ * Traegt fehlende Hashes einer Galerie nach (Fotos von vor Migration 062). Die
+ * Verarbeitung ist deterministisch: dasselbe Original ergibt dieselbe Full-Datei,
+ * darum ist der Hash der Full-Version als Duplikat-Merkmal brauchbar.
+ */
+function fotoHashesNachtragen(PDO $db, int $galerieId, int $max = 300): int {
+    if (!fotoHashSpalteVorhanden($db)) return 0;
+    $sel = $db->prepare("SELECT id, dateipfad FROM anlass_fotos WHERE galerie_id = ? AND datei_hash IS NULL LIMIT " . (int) $max);
+    $sel->execute([$galerieId]);
+    $rows = $sel->fetchAll();
+    if (!$rows) return 0;
+    $upd = $db->prepare("UPDATE anlass_fotos SET datei_hash = ? WHERE id = ?");
+    $n = 0;
+    foreach ($rows as $r) {
+        if (!empty($r['dateipfad']) && is_file($r['dateipfad'])) {
+            $h = @sha1_file($r['dateipfad']);
+            if ($h) { $upd->execute([$h, (int) $r['id']]); $n++; }
+        }
+    }
+    return $n;
+}
+
+/** Sucht ein Foto mit gleichem Hash in derselben Galerie. */
+function fotoDuplikatSuchen(PDO $db, int $galerieId, string $hash): ?array {
+    if (!fotoHashSpalteVorhanden($db) || $hash === '') return null;
+    $st = $db->prepare(
+        "SELECT f.id, f.status, f.hochgeladen_von, u.full_name AS uploader
+           FROM anlass_fotos f LEFT JOIN users u ON u.id = f.hochgeladen_von
+          WHERE f.galerie_id = ? AND f.datei_hash = ? LIMIT 1"
+    );
+    $st->execute([$galerieId, $hash]);
+    $r = $st->fetch();
+    return $r ?: null;
+}
+
+// ---------------------------------------------------------------------------
+// Mitteilungen (Inbox + Push ueber benachrichtigungZustellen, Thema 'fotos')
+// ---------------------------------------------------------------------------
+
+/** Benutzer-IDs aller aktiven Vorstands- und Admin-Konten. */
+function fotoVorstandIds(PDO $db): array {
+    try {
+        return array_map('intval', $db->query(
+            "SELECT id FROM users WHERE status = 'approved' AND role IN ('admin','vorstand')"
+        )->fetchAll(PDO::FETCH_COLUMN));
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/**
+ * Best-effort-Zustellung einer Foto-Mitteilung (Inbox immer, Push je nach Einstellung).
+ * Darf den aufrufenden Endpunkt nie brechen.
+ */
+function fotoMitteilung(int $userId, string $titel, string $text, string $url): void {
+    if ($userId < 1) return;
+    try {
+        @include_once __DIR__ . '/push_helper.php';
+        if (function_exists('benachrichtigungZustellen')) {
+            benachrichtigungZustellen($userId, $titel, mb_substr($text, 0, 490), $url, 'fotos');
+        }
+    } catch (Throwable $e) {
+        error_log('[fotogalerie] Mitteilung an ' . $userId . ' fehlgeschlagen: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Hinweis an den Vorstand, dass Fotos auf Freigabe warten — gebuendelt: pro Galerie
+ * hoechstens eine Mitteilung pro Stunde (ein Mitglied laedt 40 Fotos einzeln hoch).
+ */
+function fotoVorstandUeberWartendeInformieren(PDO $db, array $g, string $uploaderName): void {
+    $gid = (int) ($g['id'] ?? 0);
+    if ($gid < 1) return;
+    $url = 'inc/anlass_galerie_verwaltung.php?galerie=' . $gid;
+    try {
+        $chk = $db->prepare(
+            "SELECT 1 FROM benachrichtigungen_inbox
+              WHERE kategorie = 'fotos' AND url = ? AND erstellt_am > (NOW() - INTERVAL 1 HOUR) LIMIT 1"
+        );
+        $chk->execute([$url]);
+        if ($chk->fetchColumn()) return;
+    } catch (Throwable $e) {
+        return; // Tabelle fehlt o.ae. -> lieber keine Mitteilung als ein kaputter Upload
+    }
+    $text = ($uploaderName !== '' ? $uploaderName : 'Ein Mitglied') . ' hat Fotos zu «' . fotoGalerieLabel($g) . '» hochgeladen – bitte prüfen und freigeben.';
+    foreach (fotoVorstandIds($db) as $uid) {
+        fotoMitteilung($uid, 'Fotos warten auf Freigabe', $text, $url);
+    }
+}

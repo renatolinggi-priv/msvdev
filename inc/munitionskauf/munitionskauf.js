@@ -115,10 +115,12 @@
             opt.textContent = label;
             sel.appendChild(opt);
           });
+        } else {
+          msvToast(data.message || 'Mitglieder konnten nicht geladen werden', 'danger');
         }
         applyMitgliedSelect2();
       })
-      .catch(function(err) { console.error('Mitglieder laden:', err); });
+      .catch(function(err) { console.error('Mitglieder laden:', err); msvToast('Mitglieder konnten nicht geladen werden', 'danger'); });
   }
 
   // Select2 auf dem Mitglied-Dropdown aufsetzen (nach dem Befüllen)
@@ -381,6 +383,7 @@
       })
       .catch(function(err) {
         console.error('Load error:', err);
+        msvToast('Bestellungen konnten nicht geladen werden', 'danger');
         renderDesktopTable([], {});
         renderMobileCards([], {});
       });
@@ -511,6 +514,7 @@
       })
       .catch(function(err) {
         console.error('Stats error:', err);
+        msvToast('Statistik konnte nicht geladen werden', 'danger');
         updateStatistics({ today: 0, week: 0, month: 0, year: 0, top_buyers: [] });
       });
   }
@@ -558,7 +562,7 @@
           document.getElementById('ammoGP90Detail').textContent = 'Schuss · ' + fmtCHF(gp90 * 50);
         }
       })
-      .catch(function() {});
+      .catch(function() { msvToast('Munitions-Übersicht konnte nicht geladen werden', 'danger'); });
   }
 
   // === PDF ===

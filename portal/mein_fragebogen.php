@@ -608,9 +608,10 @@ $(function() {
     function loadUmfragen() {
         $.getJSON('../api/portal_umfragen_list.php')
             .done(function(resp) {
-                if (!resp.success) return;
+                if (!resp.success) { msvToast(resp.message || 'Umfragen konnten nicht geladen werden', 'error'); return; }
                 renderUmfragenAccordion(resp.umfragen);
-            });
+            })
+            .fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Umfragen konnten nicht geladen werden'), 'error'); });
     }
 
     const KATEGORIE_CONFIG = {
@@ -985,7 +986,8 @@ $(function() {
                     }
 
                     new bootstrap.Modal('#builderModal').show();
-                });
+                })
+                .fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Umfrage konnte nicht geladen werden'), 'error'); });
         } else {
             addBuilderFrage();
             new bootstrap.Modal('#builderModal').show();

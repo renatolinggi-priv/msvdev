@@ -180,8 +180,9 @@ $('#pdfExportBtn').on('click', function () {
     dataType: 'json',
     success: function(response) {
       if (response.success && response.pdf_link) {
-        const linkHtml = `<a href="${response.pdf_link}" download><i class="bi bi-file-pdf me-1"></i><strong>PDF herunterladen</strong></a>`;
-        $('#pdfDownloadLink').html(linkHtml).show();
+        $('#pdfDownloadLink').hide().html('');
+        msvDownload(response.pdf_link, 'Jungschuetzen_Helfer_' + year + '.pdf');
+        msvToast('PDF heruntergeladen', 'success');
       } else {
         $('#pdfDownloadLink').hide().html('');
         showModalMessage('PDF konnte nicht erstellt werden.');

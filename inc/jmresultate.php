@@ -825,7 +825,6 @@ try {
             $.get(basePath + 'jmresultate/load_jmresultate_form.php', { year })
                 .done(function (html) {
                     $('#jmresultateTabelle').html(html);
-                    msvToast('Daten erfolgreich geladen', 'success');
 
                     // Tooltips
                     $('#jmresultateTabelle input.small-input').each(function () {
@@ -876,7 +875,8 @@ try {
             const formData = $(this).serialize() + '&year=' + $yearDD.val();
 
             $.post(basePath + 'jmresultate/save_jmresultate.php', formData)
-                .done(() => { 
+                .done((resp) => {
+                    if (!resp || !resp.success) { showMessage((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'danger'); return; } 
                     // WICHTIG: isDirty auf false setzen nach erfolgreichem Speichern
                     window.isDirtyFlag = false;
                     // Trigger custom event um anderen Code zu informieren
@@ -1268,9 +1268,10 @@ try {
     function loadAnlaesse(year) {
         $.get('jmresultate/load_anlaesse.php', { year: year })
             .done(function(resp) {
-                if (!resp.success) return;
+                if (!resp.success) { msvToast(resp.message || 'Anlässe konnten nicht geladen werden', 'error'); return; }
                 buildAnlassCards(resp.anlaesse);
-            });
+            })
+            .fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Anlässe konnten nicht geladen werden'), 'error'); });
     }
 
     // Initiales Laden: serverseitig vorberechnete Daten sofort rendern (kein AJAX-Flackern),

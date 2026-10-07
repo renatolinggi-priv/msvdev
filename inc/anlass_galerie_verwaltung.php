@@ -62,6 +62,8 @@ $page_specific_css = <<<'CSS'
 .mod-cap { font-size:0.64rem; color:#475569; padding:0.3rem 0.45rem 0.45rem; line-height:1.3; border-top:1px dashed #e5e7eb; }
 .mod-cap .warn { color:#b45309; font-weight:600; }
 .mod-cap i { color:#94a3b8; }
+.mod-cap .mod-titel { cursor:pointer; display:inline-block; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; vertical-align:bottom; }
+.mod-cap .mod-titel:hover { color:#2563eb; }
 .mod-ghost { opacity:0.35; }
 .mod-chosen { outline:2px solid #2563eb; outline-offset:-2px; }
 .mod-cover-btn { position:absolute; top:4px; right:4px; z-index:3; width:26px; height:26px; border:none; border-radius:50%; background:rgba(0,0,0,0.5); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.8rem; cursor:pointer; }
@@ -73,6 +75,16 @@ include 'header.inc.php';
 
 $csrf = htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8');
 $db   = getDB();
+
+// Direktlink aus einer Mitteilung («Fotos warten auf Freigabe»): ?galerie=<id> -> Jahr der
+// Galerie waehlen und die Details-Ansicht automatisch oeffnen.
+$openGalerie = (int) ($_GET['galerie'] ?? 0);
+if ($openGalerie > 0 && !isset($_GET['year'])) {
+    $yq = $db->prepare("SELECT d.year FROM anlass_galerie g JOIN JMDefinition d ON d.ID = g.jmdefinition_id WHERE g.id = ?");
+    $yq->execute([$openGalerie]);
+    $gy = $yq->fetchColumn();
+    if ($gy) $_GET['year'] = (int) $gy;
+}
 
 $selected_year = (int) ($_GET['year'] ?? date('Y'));
 
@@ -242,6 +254,7 @@ $page_show_mobile = true;
         <div class="d-flex flex-wrap gap-2 mb-3">
           <button type="button" class="btn btn-sm btn-outline-success" id="agModApproveAll"><i class="bi bi-check-all me-1"></i>Alle freigeben</button>
           <button type="button" class="btn btn-sm btn-outline-secondary" id="agModRematch" data-tooltip="Fotos anhand der Schiesstage neu zuordnen"><i class="bi bi-arrow-repeat me-1"></i>Tage neu zuordnen</button>
+          <a class="btn btn-sm btn-outline-info" id="agModZip" href="#" data-tooltip="Alle freigegebenen Fotos in voller Grösse als ZIP herunterladen (Archiv)"><i class="bi bi-file-zip me-1"></i>ZIP</a>
           <button type="button" class="btn btn-sm btn-outline-danger ms-auto" id="agModDeleteAll" data-tooltip="Alle Fotos dieser Galerie löschen"><i class="bi bi-trash me-1"></i>Alle Fotos löschen</button>
         </div>
 
@@ -291,9 +304,17 @@ $page_show_mobile = true;
     $('#agSetProgName').text(prog || '—');
     $('#agSetProgRemove').toggleClass('d-none', !prog);
     $('#agSetProgFile').val('');
+    $('#agModZip').attr('href', '../api/foto_zip.php?galerie_id=' + encodeURIComponent($b.data('gid')));
     modModal.show();
     loadModeration($b.data('gid'));
   });
+
+  // Direktlink ?galerie=<id> (aus der Mitteilung «Fotos warten auf Freigabe») -> Details oeffnen
+  var openGid = <?= (int) $openGalerie ?>;
+  if (openGid > 0) {
+    var $auto = $('.btn-details[data-gid="' + openGid + '"]');
+    if ($auto.length) $auto.trigger('click');
+  }
 
   // --- Einstellungen speichern: Karte per DOM aktualisieren (kein Reload, Modal bleibt offen) ---
   $('#agSetSave').on('click', function () {
@@ -357,6 +378,8 @@ $page_show_mobile = true;
     var dayLabel = (f.tag_index != null) ? (segMap[f.tag_index] || ('Tag ' + f.tag_index))
                    : (f.tag_datum ? ('eigener Tag, ' + agFmtD(f.tag_datum)) : 'Weitere Fotos');
     var cap = '<div class="mod-cap">' +
+      '<span class="mod-titel" data-id="' + agEsc(f.id) + '" data-titel="' + agEsc(f.titel || '') + '" data-tooltip="Bildunterschrift bearbeiten (erscheint in der Slideshow)">' +
+        '<i class="bi bi-pencil"></i> ' + (f.titel ? '<b>' + agEsc(f.titel) + '</b>' : '<span class="text-muted">ohne Titel</span>') + '</span><br>' +
       (f.uploader ? '<i class="bi bi-person"></i> ' + agEsc(f.uploader) : '<span class="warn">unbekannter Uploader</span>') + '<br>' +
       '<i class="bi bi-camera"></i> ' + (ad ? agEsc(ad) + (f.zeit_quelle === 'mtime' ? ' <span class="warn" data-tooltip="Kein EXIF im Bild – Datum stammt vom Dateidatum des Uploads">(Dateidatum)</span>' : '') : '<span class="warn">kein Datum</span>') +
       ' → ' + agEsc(dayLabel) + (f.tag_manuell ? ' <span class="mod-manual">· manuell</span>' : '') + '</div>';
@@ -389,7 +412,7 @@ $page_show_mobile = true;
     $('#agModGrid .mod-grid').each(function () {
       Sortable.create(this, {
         group: 'agfotos', animation: 150, draggable: '.mod-item',
-        filter: '.mod-bar, .mod-bar *, .mod-cover-btn, .mod-cover-btn *', preventOnFilter: false,
+        filter: '.mod-bar, .mod-bar *, .mod-cover-btn, .mod-cover-btn *, .mod-titel, .mod-titel *', preventOnFilter: false,
         forceFallback: true, fallbackTolerance: 4, ghostClass: 'mod-ghost', chosenClass: 'mod-chosen',
         onEnd: function (evt) {
           if (evt.from === evt.to) { saveOrder(); return; }
@@ -494,6 +517,23 @@ $page_show_mobile = true;
 
   // Klick aufs Thumbnail -> Vollbild in neuem Tab
   $(document).on('click', '#agModGrid img', function () { window.open($(this).data('full'), '_blank', 'noopener'); });
+
+  // Bildunterschrift bearbeiten (Klick auf die Titelzeile der Kachel)
+  $(document).on('click', '.mod-titel', function (e) {
+    e.stopPropagation();
+    var $t = $(this), id = $t.data('id'), alt = $t.attr('data-titel') || '';
+    msvSwal.fire({
+      title: 'Bildunterschrift', input: 'text', inputValue: alt, inputAttributes: { maxlength: 120 },
+      inputPlaceholder: 'z.B. Siegerehrung am Sonntag (leer = keine)', showCancelButton: true,
+      confirmButtonText: 'Speichern', cancelButtonText: 'Abbrechen'
+    }).then(function (res) {
+      if (!res.isConfirmed) return;
+      agPost(API_MOD, { action: 'set_titel', id: id, titel: res.value || '' }, function (r) {
+        msvToast(r.message, 'success');
+        $t.attr('data-titel', r.titel || '').html('<i class="bi bi-pencil"></i> ' + (r.titel ? '<b>' + agEsc(r.titel) + '</b>' : '<span class="text-muted">ohne Titel</span>'));
+      }, 'Bildunterschrift konnte nicht gespeichert werden');
+    });
+  });
 
   // Vorschaubild (Cover) festlegen / entfernen
   $(document).on('click', '.mod-cover-btn', function (e) {

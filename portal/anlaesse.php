@@ -103,14 +103,11 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 
 <script>window.MSV_FOTO = { csrf: <?php echo json_encode($csrf); ?> };</script>
 <script src="js/foto-slideshow.js?v=<?php echo @filemtime(__DIR__ . '/js/foto-slideshow.js'); ?>"></script>
+<script src="js/foto-upload.js?v=<?php echo @filemtime(__DIR__ . '/js/foto-upload.js'); ?>"></script>
 <script>
 (function () {
   var CSRF = window.MSV_FOTO.csrf;
-  var uploadGid = null, uploading = false, wakeLock = null;
-
-  function acquireWake() { try { if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(function (w) { wakeLock = w; }).catch(function () {}); } catch (e) {} }
-  function releaseWake() { if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; } }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && uploading) acquireWake(); });
+  var uploadGid = null;
 
   // Cover/Karte antippen -> Slideshow (ausser auf dem „Hinzufügen"-Knopf)
   $('.ga-card').on('click', function (e) {
@@ -137,41 +134,15 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   $('#gaFileInput').on('change', function () {
     var files = Array.prototype.slice.call(this.files || []);
     this.value = '';
-    if (files.length) uploadQueue(files);
-  });
-
-  function uploadQueue(files) {
-    var total = files.length, done = 0, ok = 0, fail = 0, pending = 0, gid = uploadGid;
-    uploading = true;
-    acquireWake();
-    $('#gaUploadBar').css('display', 'flex');
-    function next() {
-      if (!files.length) {
-        uploading = false;
-        releaseWake();
-        $('#gaUploadBar').hide();
-        if (ok)   msvToast(ok + ' Foto(s) hochgeladen.' + (pending ? ' Wartet auf Freigabe durch den Vorstand.' : ''), 'success');
-        if (fail) msvToast(fail + ' Foto(s) fehlgeschlagen.', 'error');
+    if (!files.length) return;
+    MSVFotoUpload.start(uploadGid, files, {
+      csrf: CSRF, bar: '#gaUploadBar', status: '#gaUploadStatus',
+      onDone: function (res) {
         // Übersicht aktualisieren – aber nur, wenn keine Slideshow offen ist (sonst nicht stören)
-        if (!document.querySelector('.ss-overlay.show')) { setTimeout(function () { location.reload(); }, 800); }
-        return;
+        if (res.ok && !document.querySelector('.ss-overlay.show')) { setTimeout(function () { location.reload(); }, 800); }
       }
-      var file = files.shift();
-      $('#gaUploadStatus').text('Lade hoch … ' + (done + 1) + ' / ' + total);
-      var fd = new FormData();
-      fd.append('galerie_id', gid);
-      fd.append('datei', file);
-      fd.append('csrf_token', CSRF);
-      // Dateidatum als Fallback fuer die Tageszuordnung, wenn das Bild kein EXIF hat (WhatsApp, Screenshots)
-      if (file.lastModified) fd.append('datei_mtime', String(file.lastModified));
-      $.ajax({ url: '../api/foto_upload.php', type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json',
-        success: function (r) { if (r.success) { ok++; if (r.status === 'pending') pending++; } else { fail++; if (r.message) msvToast(r.message, 'error'); } },
-        error: function () { fail++; },
-        complete: function () { done++; next(); }
-      });
-    }
-    next();
-  }
+    });
+  });
 })();
 </script>
 

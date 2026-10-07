@@ -285,7 +285,7 @@ $csrf_token = ensureCsrfToken();
 
     function loadPrefs() {
         fetch(PREFS_API).then(function (r) { return r.json(); }).then(function (data) {
-            if (!data.success) return;
+            if (!data.success) { msvToast(data.message || 'Einstellungen konnten nicht geladen werden', 'error'); return; }
             var p = data.prefs;
             function setChk(id, v) { var e = document.getElementById(id); if (e) e.checked = !!v; }
             elMaster.checked = !!p.push_aktiv;
@@ -307,7 +307,7 @@ $csrf_token = ensureCsrfToken();
             }
 
             applyMasterState();
-        }).catch(function () {});
+        }).catch(function () { msvToast('Einstellungen konnten nicht geladen werden', 'error'); });
     }
 
     function savePrefs() {
@@ -367,7 +367,8 @@ $csrf_token = ensureCsrfToken();
     function loadDevices() {
         fetch(PUSH_API + '?action=list').then(function (r) { return r.json(); }).then(function (data) {
             elDevices.innerHTML = '';
-            if (!data.success || !data.geraete || !data.geraete.length) return;
+            if (!data.success) { msvToast(data.message || 'Geräteliste konnte nicht geladen werden', 'error'); return; }
+            if (!data.geraete || !data.geraete.length) return;
             data.geraete.forEach(function (g) {
                 var li = document.createElement('li');
                 var name = (g.geraet || 'Unbekanntes Gerät');
@@ -375,7 +376,7 @@ $csrf_token = ensureCsrfToken();
                 li.querySelector('span').textContent = name + (g.erstellt_am ? '  ·  seit ' + (g.erstellt_am.substring(0, 10)) : '');
                 elDevices.appendChild(li);
             });
-        }).catch(function () {});
+        }).catch(function () { msvToast('Geräteliste konnte nicht geladen werden', 'error'); });
     }
 
     function renderDevice(status) {

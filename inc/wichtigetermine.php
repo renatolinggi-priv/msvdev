@@ -801,7 +801,7 @@ $(function() {
     const year = $('#eventYear').val();
     const count = parseInt($('#eventCount').text(), 10) || 0;
     if (!count) { msvToast('Keine Termine zum Löschen vorhanden', 'warning'); return; }
-    const r = await msvConfirm('Alle Termine löschen?', `Alle ${count} Termine des Jahres ${year} werden unwiderruflich gelöscht.`, 'Alle löschen');
+    const r = await msvConfirm(`Alle ${count} Termine des Jahres ${year} werden unwiderruflich gelöscht.`, 'Alle Termine löschen?', 'Alle löschen');
     if (!r.isConfirmed) return;
 
     const $btn = $(this), orig = $btn.html();
@@ -861,7 +861,7 @@ $(function() {
 
   // ========== Veröffentlichen ==========
   $('#publishChangelogBtn').on('click', async function() {
-    const r = await msvConfirm('Änderung veröffentlichen?', 'Ein Eintrag wird auf der Website angezeigt.', 'Veröffentlichen');
+    const r = await msvConfirm('Ein Eintrag wird auf der Website angezeigt.', 'Änderung veröffentlichen?', 'Veröffentlichen');
     if (!r.isConfirmed) return;
     $.post('changelog_publish.php', {
         kategorie: 'termine',

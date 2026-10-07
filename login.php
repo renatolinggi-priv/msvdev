@@ -721,7 +721,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="inc/js/msv-toast.js"></script>
+    <script src="inc/js/msv-toast.js?v=<?php echo @filemtime(__DIR__ . '/inc/js/msv-toast.js') ?: '1'; ?>"></script>
 
     <script>
         // Hier angekommen bedeutet: kein gültiger Cookie/Session vorhanden (PHP hat bereits geprüft).

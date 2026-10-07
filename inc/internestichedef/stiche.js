@@ -58,7 +58,6 @@ window.InterneStiche = (function(){
       fillRows(data.rows || {});
       originalData = gatherRows();
       setDirtyState(false);
-      toast('Daten geladen.', 'success');
     }catch(err){
       console.error(err);
       toast('Laden fehlgeschlagen: ' + err.message, 'error');

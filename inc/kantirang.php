@@ -189,7 +189,7 @@ include 'header.inc.php';
                     buildMobileCardsKatA();
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error loading Kantonal A:', error);
+                    msvToast(msvXhrMessage(xhr, 'Kantonalresultate Kat. A konnten nicht geladen werden'), 'error');
                 }
             });
         }
@@ -212,7 +212,7 @@ include 'header.inc.php';
                     buildMobileCardsKatB();
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error loading Kantonal B:', error);
+                    msvToast(msvXhrMessage(xhr, 'Kantonalresultate Kat. B konnten nicht geladen werden'), 'error');
                 }
             });
         }
@@ -274,27 +274,6 @@ include 'header.inc.php';
         }
     });
 });
-
-        // Word-Button Handler (falls du ihn brauchst)
-        $(document).on('click', '.word-btn', function(e) {
-            e.preventDefault();
-            var selectedYear = $('#yearSelect').val();
-            $.ajax({
-                url: 'kantirang/generate_word.php',
-                type: 'GET',
-                data: {
-                    year: selectedYear,
-                },
-                success: function(response) {
-                    var data = JSON.parse(response);
-                    var wordLink = data.pdf_link;
-                    $('#pdf-link').html('<a href="' + wordLink + '" target="_blank">Word herunterladen</a>');
-                },
-                error: function(xhr, status, error) {
-                    msvError('Fehler beim Generieren des Word-Dokuments: ' + error);
-                }
-            });
-        });
 
         // Event Handler für Jahr-Dropdown
         $('#yearSelect').on('change', function() {

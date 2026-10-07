@@ -281,12 +281,7 @@ $(document).ready(function() {
                     // Automatischer Download
                     downloadFile(response.pdf_link, 'Kantonalstich_' + selectedYear + '.pdf');
                     
-                    $('#pdf-link').html(
-                        '<div class="alert alert-success d-flex align-items-center">' +
-                        '<i class="bi bi-check-circle-fill me-2"></i>' +
-                        '<div>PDF wurde heruntergeladen. <a href="' + response.pdf_link + '" target="_blank" class="alert-link">' +
-                        '<i class="bi bi-arrow-clockwise me-1"></i>Erneut herunterladen</a></div></div>'
-                    );
+                    $('#pdf-link').empty(); // keine Erfolgsbox – Datei wird direkt heruntergeladen
                     msvToast('PDF erfolgreich generiert und heruntergeladen', 'success');
                 } else {
                     $('#pdf-link').html(

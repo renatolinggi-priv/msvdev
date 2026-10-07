@@ -923,7 +923,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     markRow(state.aktuelleEntity);
     try {
       applySelection(await api('get_selection', { query: { mitglied_id: mid, jahr: $id('yearSelect').value } }));
-    } catch (e) { applySelection(null); }
+    } catch (e) { applySelection(null); msvToast('Auswahl konnte nicht geladen werden', 'error'); }
   }
 
   async function loadGastSelection({ byId = null } = {}) {
@@ -1022,7 +1022,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     try {
       const j = await api('get_year_details', { query: { jahr } });
       state.uebersicht = j.success ? (j.data || []) : [];
-    } catch (e) { state.uebersicht = []; }
+    } catch (e) { state.uebersicht = []; msvToast('Übersicht konnte nicht geladen werden', 'error'); }
     state.erfassteMitglieder = new Set(state.uebersicht.filter(e => e.typ === 'mitglied').map(e => Number(e.entity_id)));
     updateMitgliedHint();
     renderUebersicht();
@@ -1293,7 +1293,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $id('adminPanel').classList.contains('open')) closeAdmin(); });
 
     async function loadAllStiche() {
-      try { const j = await api('get_stich_definitions'); if (j.success) { state.alleStiche = j.data || []; renderAdminTable(); } } catch (e) { /* still */ }
+      try { const j = await api('get_stich_definitions'); if (j.success) { state.alleStiche = j.data || []; renderAdminTable(); } else msvToast(j.message || 'Stiche konnten nicht geladen werden', 'error'); } catch (e) { msvToast('Stiche konnten nicht geladen werden', 'error'); }
     }
 
     function renderAdminTable() {
@@ -1469,21 +1469,21 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       state.waffen = j.data || [];
       const sel = $id('waffeSelect');
       state.waffen.forEach(w => sel.add(new Option(`${w.Bezeichnung} (${w.Kategorie})`, w.ID)));
-    } catch (e) { /* ohne Waffenliste weiterarbeiten */ }
+    } catch (e) { msvToast('Waffenliste konnte nicht geladen werden', 'error'); }
   }
 
   async function loadSpezialpreise() {
     try {
       const j = await api('get_spezialpreise');
       if (j.success && j.data) Object.keys(j.data).forEach(t => { state.spezial[t] = Number(j.data[t].price_cents) || 0; });
-    } catch (e) { /* Defaults bleiben */ }
+    } catch (e) { msvToast('Spezialpreise konnten nicht geladen werden – es werden Standardpreise angezeigt', 'warning'); }
   }
 
   async function loadStiche() {
     try {
       const j = await api('list_stiche');
       state.stiche = j.success ? (j.data || []) : [];
-    } catch (e) { state.stiche = []; }
+    } catch (e) { state.stiche = []; msvToast('Stiche konnten nicht geladen werden', 'error'); }
   }
 
   (async function init() {

@@ -179,7 +179,11 @@ $istVorstand = isVorstand();
         fetch(API + '?action=list&limit=' + PAGE + '&offset=' + offset)
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                if (!d || !d.success) return;
+                if (!d || !d.success) {
+                    if (offset === 0) elList.innerHTML = '<li class="mt-empty">' + esc((d && d.message) || 'Benachrichtigungen konnten nicht geladen werden.') + '</li>';
+                    else toast((d && d.message) || 'Konnte nicht weiterladen.', 'error');
+                    return;
+                }
                 if (offset === 0 && (!d.items || !d.items.length)) {
                     elList.innerHTML = '<li class="mt-empty">Keine Benachrichtigungen.</li>';
                     elMore.hidden = true;
@@ -188,7 +192,10 @@ $istVorstand = isVorstand();
                 d.items.forEach(function (it) { elList.appendChild(renderItem(it)); });
                 offset += d.items.length;
                 elMore.hidden = (d.items.length < PAGE);
-            }).catch(function () {});
+            }).catch(function () {
+                if (offset === 0) elList.innerHTML = '<li class="mt-empty">Benachrichtigungen konnten nicht geladen werden.</li>';
+                else toast('Keine Verbindung zum Server', 'error');
+            });
     }
 
     function markRead(id) {
@@ -209,8 +216,10 @@ $istVorstand = isVorstand();
                     el.classList.remove('unread');
                 });
                 toast('Alle als gelesen markiert.', 'success');
+            } else {
+                toast((d && d.message) || 'Konnte nicht als gelesen markieren.', 'error');
             }
-        }).catch(function () {});
+        }).catch(function () { toast('Konnte nicht als gelesen markieren.', 'error'); });
     });
 
     elMore.addEventListener('click', function () { load(false); });

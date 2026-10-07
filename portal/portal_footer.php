@@ -553,8 +553,10 @@ if (!empty($_SESSION['user_id'])) {
                     if (d && d.success) {
                         renderBadge(0);
                         Array.prototype.forEach.call(list.querySelectorAll('.bn-item.unread'), function (el) { el.classList.remove('unread'); });
+                    } else if (typeof msvToast === 'function') {
+                        msvToast((d && d.message) || 'Konnte nicht als gelesen markieren.', 'error');
                     }
-                }).catch(function () {});
+                }).catch(function () { if (typeof msvToast === 'function') msvToast('Konnte nicht als gelesen markieren.', 'error'); });
             });
         }
 

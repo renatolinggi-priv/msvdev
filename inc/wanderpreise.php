@@ -973,7 +973,8 @@ $('#startExport').on('click', function () {
                 method: 'GET',
                 success: function (response) {
                     $('#modal_wanderpreis').html('<option value="">Wanderpreis auswählen...</option>' + response);
-                }
+                },
+                error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Wanderpreise konnten nicht geladen werden'), 'error'); }
             });
         }
 
@@ -982,6 +983,7 @@ $('#startExport').on('click', function () {
             $.ajax({
                 url: 'wanderpreise/get_mitglieder_list.php',
                 method: 'GET',
+                error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Mitglieder konnten nicht geladen werden'), 'error'); },
                 success: function (response) {
                     // Basis-Option hinzufügen
                     let cleanedOptions = '<option value="">Mitglied suchen/auswählen...</option>';
@@ -1067,6 +1069,9 @@ $('#startExport').on('click', function () {
                     data: { wanderpreis_id: wanderpreisId },
                     success: function (response) {
                         $('#bisherige_gewinner_container').html(response);
+                    },
+                    error: function (xhr) {
+                        $('#bisherige_gewinner_container').html('<p class="text-danger">' + msvEsc(msvXhrMessage(xhr, 'Bisherige Gewinner konnten nicht geladen werden')) + '</p>');
                     }
                 });
             } else {
@@ -1536,7 +1541,8 @@ $('#startExport').on('click', function () {
                 method: 'GET',
                 success: function (response) {
                     $('#vg_wanderpreis').html('<option value="">Wanderpreis auswählen...</option>' + response);
-                }
+                },
+                error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Wanderpreise konnten nicht geladen werden'), 'error'); }
             });
         }
 
@@ -1690,6 +1696,7 @@ $('#startExport').on('click', function () {
                 dataType: 'json',
                 data: { id: id, csrf_token: csrfToken, wanderpreis_id: wpid }, // wpid mitgeben (falls Backend das braucht)
                 headers: { 'Accept': 'application/json' }, // optional
+                error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Eintrag konnte nicht gelöscht werden'), 'error'); },
                 success: function (json) {
                     if (json && json.success) {
                         (window.showToast ? showToast : alert)('Eintrag gelöscht', 'success');

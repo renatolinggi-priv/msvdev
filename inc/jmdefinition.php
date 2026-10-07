@@ -1368,7 +1368,7 @@ $(function () {
 
   // ========== Veröffentlichen ==========
   $('#publishChangelogBtn').on('click', async function() {
-    const r = await msvConfirm('Änderung veröffentlichen?', 'Ein Eintrag wird auf der Website angezeigt.', 'Veröffentlichen');
+    const r = await msvConfirm('Ein Eintrag wird auf der Website angezeigt.', 'Änderung veröffentlichen?', 'Veröffentlichen');
     if (!r.isConfirmed) return;
     $.post(basePath + 'changelog_publish.php', {
         kategorie: 'definition',

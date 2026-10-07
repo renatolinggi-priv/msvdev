@@ -50,6 +50,7 @@ const FileHandler = {
     } catch (err) {
       console.error('loadProgramMap failed:', err);
       this.programMap = {};
+      if (typeof msvToast === 'function') msvToast('Stich-Definitionen konnten nicht geladen werden – Programme lassen sich nicht zuordnen', 'error');
     }
   },
 

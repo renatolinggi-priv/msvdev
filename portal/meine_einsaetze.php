@@ -515,7 +515,7 @@ function toggleVergangene(btn) {
     function loadPartners() {
         if (partnersLoaded) return;
         tauschGet({ action: 'partner_kandidaten' }).then(function (d) {
-            if (!d.success) return;
+            if (!d.success) { msvToast(d.message || 'Mitglieder konnten nicht geladen werden', 'error'); return; }
             var sel = el('tauschPartner');
             d.data.forEach(function (m) {
                 var o = document.createElement('option');
@@ -524,7 +524,7 @@ function toggleVergangene(btn) {
                 sel.appendChild(o);
             });
             partnersLoaded = true;
-        }).catch(function () {});
+        }).catch(function () { msvToast('Mitglieder konnten nicht geladen werden', 'error'); });
     }
 
     function loadPartnerEinsaetze() {
@@ -538,7 +538,12 @@ function toggleVergangene(btn) {
         sel.innerHTML = '<option value="">– lädt … –</option>';
         tauschGet({ action: 'partner_einsaetze', mitglied_id: b }).then(function (d) {
             sel.innerHTML = '';
-            if (!d.success || !d.data.length) {
+            if (!d.success) {
+                sel.innerHTML = '<option value="">– Fehler beim Laden –</option>';
+                el('tauschGegenHint').textContent = d.message || 'Einsätze konnten nicht geladen werden.';
+                return;
+            }
+            if (!d.data.length) {
                 sel.innerHTML = '<option value="">– keine kommenden Einsätze –</option>';
                 el('tauschGegenHint').textContent = 'Dieses Mitglied hat keine kommenden Einsätze zum Tauschen.';
                 return;

@@ -158,7 +158,7 @@ function deleteDoc(id, title) {
             $.post('../api/dokument_delete.php', { id: id, csrf_token: '<?php echo $_SESSION['csrf_token']; ?>' }, function(resp) {
                 if (resp.success) { msvToast(resp.message, 'success'); $('#doc-' + id).fadeOut(); }
                 else { msvToast(resp.message, 'error'); }
-            }, 'json');
+            }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Dokument konnte nicht gelöscht werden'), 'error'); });
         }
     });
 }

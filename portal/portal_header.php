@@ -102,7 +102,7 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- SweetAlert2 + Toast -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../inc/js/msv-toast.js"></script>
+    <script src="../inc/js/msv-toast.js?v=<?php echo @filemtime(__DIR__ . '/../inc/js/msv-toast.js') ?: '1'; ?>"></script>
     <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 

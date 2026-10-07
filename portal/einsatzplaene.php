@@ -899,7 +899,7 @@ function deleteDoc(id, title) {
                 } else {
                     msvToast(resp.message, 'error');
                 }
-            }, 'json');
+            }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Dokument konnte nicht gelöscht werden'), 'error'); });
         }
     });
 }
@@ -930,8 +930,10 @@ $(document).on('click', '.btn-edit-ez', function() {
                 });
                 ezMembersLoaded = true;
                 $('#ezEditMitglied').val($b.data('mid') || '');
+            } else {
+                msvToast(resp.message || 'Mitglieder konnten nicht geladen werden', 'error');
             }
-        }, 'json');
+        }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Mitglieder konnten nicht geladen werden'), 'error'); });
     } else {
         $('#ezEditMitglied').val($b.data('mid') || '');
     }
@@ -985,7 +987,7 @@ $(document).on('click', '.btn-delete-ez', function() {
                 } else {
                     msvToast(resp.message, 'error');
                 }
-            }, 'json');
+            }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Einsatz konnte nicht gelöscht werden'), 'error'); });
         }
     });
 });
@@ -1007,7 +1009,7 @@ $(document).on('click', '.btn-delete-all-ez', function() {
                 } else {
                     msvToast(resp.message, 'error');
                 }
-            }, 'json');
+            }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Einträge konnten nicht gelöscht werden'), 'error'); });
         }
     });
 });

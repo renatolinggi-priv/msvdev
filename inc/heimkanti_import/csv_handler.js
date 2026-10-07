@@ -40,6 +40,7 @@ const FileHandler = {
             
         } catch (error) {
             console.error('Fehler beim Laden der Stichdefinitionen:', error);
+            if (typeof msvToast === 'function') msvToast('Stichdefinitionen konnten nicht geladen werden – Standard-Programmnummern werden verwendet', 'warning');
             this.heimPrograms = ['133', '134', '521'];
             this.kantiPrograms = ['520'];
             this.allAllowedPrograms = ['133', '134', '521', '520'];
@@ -465,6 +466,7 @@ const FileHandler = {
             
         } catch (error) {
             console.error('Error checking existing data:', error);
+            if (typeof msvToast === 'function') msvToast('Prüfung auf bestehende Daten fehlgeschlagen – vorhandene Resultate könnten überschrieben werden', 'warning');
         }
         
         // Modal im endsch_import Stil erstellen

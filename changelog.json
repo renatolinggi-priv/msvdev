@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.34.0",
+    "datum": "2026-09-26",
+    "aenderungen": [
+      {
+        "titel": "Drucksteuerung: QZ-Tray-Zertifikat liegt ausserhalb des Web-Roots",
+        "beschreibung": "Für den Direktdruck ohne «Allow»-Dialog liest die Drucksteuerung Zertifikat und privaten Schlüssel jetzt aus dem gemeinsamen Ordner qz_certs neben der Konfigurationsdatei, ausserhalb des öffentlich erreichbaren Web-Roots. Das Zertifikat liefert neu die Signier-Schnittstelle an angemeldete Benutzer aus. Der bisherige Ordner certs im Web-Root ist entfernt; der private Schlüssel darin war per Browser abrufbar. Weggefallen sind auch die fest eingetragenen Suchpfade und das Protokollieren bei jedem Signiervorgang.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.33.0",
     "datum": "2026-09-23",
     "aenderungen": [
@@ -13,6 +25,12 @@
         "titel": "Kantiresultate: Passe mit 100 Punkten erfassbar",
         "beschreibung": "Die Eingabefelder der Seite «Kantiresultate» (Tabelle, Erfassen-Panel und Mobile-Ansicht) liessen nur zwei Ziffern zu, eine Passe mit 100 Punkten war darum nicht erfassbar. Sie nehmen jetzt Werte bis 100 an, grössere Eingaben werden auf 100 begrenzt. «Speichern» im Erfassen-Panel schliesst das Panel, und nach gespeicherten Erfassungen lädt die Liste beim Schliessen neu.",
         "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim- und Kantiresultate: Erfassen-Panel springt automatisch ins nächste Feld",
+        "beschreibung": "In der Schnellerfassung von Heim- und Kantiresultaten springt der Cursor nach einer vollständigen Passe selbst ins nächste Feld: Beginnt die Eingabe mit 2 bis 9, nach der zweiten Ziffer (z.B. 98), beginnt sie mit 1, nach der dritten (100). Eine 0 bleibt stehen und wird mit Enter bestätigt. Im letzten Feld speichert Enter wie bisher und öffnet den nächsten Schützen.",
+        "typ": "verbesserung",
         "admin_only": true
       }
     ]
@@ -32,8 +50,13 @@
         "beschreibung": "Neben Seitentiteln, Abschnitten und einzelnen Feldern erscheinen neu kleine Fragezeichen. Wer mit der Maus darauf zeigt, sieht eine Kurzansicht; ein Klick öffnet die volle Erklärung. Beim ersten Besuch weist ein einmaliger Hinweis darauf hin. Die Texte pflegt der Administrator auf der neuen Seite «Hilfetexte» (Definitionen / Ausdrucke) mit Format-Knöpfen, Vorschau und Link-Dialog; ein Code-Scan zeigt, welche Fragezeichen noch keinen Text haben. Ausgerüstet sind alle Admin-Seiten: Jahresmeisterschaft (Definition, Erfassung, Ranglisten, Sektionsabrechnungen, Standblatt, Gruppen, Einzel- und Sektionsrangierungen), Endschiessen (Lösen, Erfassen, Partnerinnen, CSV-Import, Zielscheiben, Ranglisten, Stichnummern, Schützenabrechnung), Heim- und Kantonalstich mit Import und Ranglisten, Sektionsmeisterschaft, Cup, Einsatzplanung mit Helferabrechnung, Mitglieder-, Benutzer-, Dokumente- und Galerie-Verwaltung, JSK-Verwaltung und Helferstunden, Wichtige Termine, Wanderpreise und Regeln, Sieger, Fragebogen, Monatsblatt, Standbelegung, PDF-Vorlage, CSV-Schnittstelle, Drucksteuerung, Backup, Munitionskauf, Startseite, Datenbank-Aktualisierung und Navigation. Insgesamt 157 Texte. Braucht die Datenbank-Aktualisierungen 066 bis 068.",
         "typ": "neu",
         "admin_only": true
+      },
+      {
+        "titel": "Rückmeldungen: kompakte Dialoge, fehlende Fehlermeldungen ergänzt",
+        "beschreibung": "Alle Bestätigungs- und Fehlerdialoge (Löschen, Veröffentlichen, Freigeben, Migrationen, Bildunterschrift, Cup-Nachnominierung) nutzen neu ein kompaktes Design aus msv-toast.js: schmaleres Fenster, kleines Symbol, Schaltflächen in App-Grösse, «Abbrechen» links und die Aktion rechts. Die lokalen Sonder-Styles in Foto-Galerie und Cup entfallen; für Sonderdialoge steht msvSwal.fire() bereit, für Daten-Ladeaufrufe der neue Helfer msvGet() mit Fehler-Toast. Eine Prüfung aller rund 250 Ajax-Aufrufe ergab 87 Stellen ohne Rückmeldung, 76 davon sind behoben. Wichtigster Fund: Beim Speichern von Heim-, Kantonal-, JM- und Endschiessen-Resultaten erschien «erfolgreich gespeichert», auch wenn der Server einen Fehler meldete (z.B. abgelaufene Sitzung). Beim Laden von Daten (Cup-Paarungen und -Gewinner, Ranglisten Heim/Kanti, Wanderpreise, Drucker und Druckprofile, Munitionsbestellungen, Endschiessen-Stiche und -Preise, Import-Prüfungen; im Portal Benachrichtigungs-Einstellungen, Geräte, Umfragen, Mitteilungen, Tausch-Partner, Einsatzplan-Mitglieder) bleibt bei Netz- oder Serverfehlern nicht mehr stumm eine leere Liste stehen. Löschaktionen in Benutzerverwaltung, Wanderpreisen, Portal-Dokumenten und Einsatzplänen melden neu auch Transportfehler. Vier msvConfirm-Aufrufe (Veröffentlichen, Alle Termine löschen) hatten Titel und Text vertauscht. msv-toast.js wird im Portal und auf den Login-Seiten neu mit Cache-Busting geladen. Umgekehrt entfallen acht Erfolgs- und Info-Toasts bei reinen Ladevorgängen («Daten erfolgreich geladen», «Kategorie A geladen», «Lade Daten für …», «Durchschnitt erfolgreich berechnet» in JM-Resultate, Endschiessen-Rangliste, JM-Rangliste, Kanti-Abrechnung, Interne Stiche, JM-Durchschnitt): geladene Daten sind selbst die Rückmeldung, ein Toast erscheint nur noch bei Fehlern. Erzeugte Dateien werden überall direkt heruntergeladen (neuer Helfer msvDownload in msv-toast.js): In Kanti-Abrechnung (PDF und SKSG-Excel), Vereinscup-Turnierbaum, Mitgliederfragebogen und Jungschützen-Helfer bleibt kein Download-Link oder Erfolgskasten mehr stehen; Warnungen der SKSG-Abrechnung bleiben sichtbar. Ein toter Word-Handler ohne Button in der Kantonalstich-Rangliste wurde entfernt.",
+        "typ": "verbesserung",
+        "admin_only": true
       }
-
     ]
   },
   {

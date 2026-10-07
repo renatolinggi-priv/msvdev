@@ -98,6 +98,7 @@ const ImportManagerSingle = {
         return; // Stoppe hier, Modal übernimmt
       } catch (e) {
         console.error('[ENDSCH-DEBUG] Error checking existing data:', e);
+        if (typeof msvToast === 'function') msvToast('Prüfung auf bestehende Daten fehlgeschlagen – vorhandene Resultate könnten überschrieben werden', 'warning');
         // Wenn Prüfung fehlschlägt, zeige trotzdem Modal
         this.showImportModal([], allPrograms.length, {});
         return;

@@ -101,11 +101,15 @@ $csrf_token = ensureCsrfToken();
     document.getElementById('jskRefresh').textContent = ts ? 'Stand ' + ts : '';
   }
 
-  function load() {
+  // melden=true nur beim ersten Laden – der 30-s-Poller bleibt bei Aussetzern still
+  function load(melden) {
     if (busy) return Promise.resolve();
     return fetch(API + '?action=list').then(function (r) { return r.json(); })
-      .then(function (d) { if (d && d.success) render(d.anfragen || [], d.ts); })
-      .catch(function () {});
+      .then(function (d) {
+        if (d && d.success) render(d.anfragen || [], d.ts);
+        else if (melden) msvToast((d && d.message) || 'Anfragen konnten nicht geladen werden', 'error');
+      })
+      .catch(function () { if (melden) msvToast('Anfragen konnten nicht geladen werden', 'error'); });
   }
   function schedule() { clearTimeout(timer); timer = setTimeout(function () { if (document.visibilityState === 'visible') load().finally(schedule); else schedule(); }, 30000); }
 
@@ -130,7 +134,7 @@ $csrf_token = ensureCsrfToken();
   $(document).on('click', '.js-release', function () { action('release', this.getAttribute('data-id'), 'Betreuung wirklich freigeben? Der Jungschütze und die anderen Betreuer werden informiert.', this); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') load(); });
 
-  load().finally(schedule);
+  load(true).finally(schedule);
 })();
 </script>
 <?php endif; ?>

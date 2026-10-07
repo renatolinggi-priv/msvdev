@@ -1143,7 +1143,7 @@ $(document).ready(function() {
             } else {
                 msvToast('Fehler: ' + data.message, 'error');
             }
-        }, 'json');
+        }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Daten konnten nicht gelöscht werden'), 'error'); });
     });
 
     // Klick auf Tabellenzeile → Panel öffnen

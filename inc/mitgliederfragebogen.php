@@ -223,8 +223,8 @@ $(function () {
         $.getJSON('fragebogen/generate_pdf.php', { year })
             .done(function (r) {
                 if (r && r.success && r.pdf_link) {
-                    $('#pdf-link').html('<a href="' + r.pdf_link + '" target="_blank" class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1"></i>PDF herunterladen (' + year + ')</a>');
-                    msvToast('PDF erstellt', 'success');
+                    msvDownload(r.pdf_link, 'Fragebogen_' + year + '.pdf');
+                    msvToast('PDF heruntergeladen', 'success');
                 } else msvToast((r && r.message) || 'PDF konnte nicht generiert werden', 'error');
             })
             .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Generieren des PDFs'), 'error'))

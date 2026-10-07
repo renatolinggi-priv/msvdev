@@ -255,7 +255,7 @@ document.querySelectorAll('.navbar a[href], .offcanvas-nav a[href], #logoutModal
   if (!btn) return;
   btn.addEventListener('click', async function () {
     const count = parseInt(btn.getAttribute('data-pending'), 10) || 0;
-    const result = await Swal.fire({
+    const result = await msvSwal.fire({
       icon: 'warning',
       title: 'Migrationen ausführen?',
       html: 'Es ' + (count === 1 ? 'wird <strong>1</strong> ausstehende Migration' : 'werden <strong>' + count + '</strong> ausstehende Migrationen')
@@ -263,9 +263,7 @@ document.querySelectorAll('.navbar a[href], .offcanvas-nav a[href], #logoutModal
       showCancelButton: true,
       confirmButtonText: '<i class="bi bi-play-fill me-1"></i>Jetzt ausführen',
       cancelButtonText: 'Abbrechen',
-      confirmButtonColor: '#198754',
-      cancelButtonColor: '#6c757d',
-      reverseButtons: true
+      customClass: msvSwalButtons('btn-success')
     });
     if (result.isConfirmed) {
       document.getElementById('aktRunForm').submit();

@@ -134,7 +134,7 @@ const CsvSettings = {
     },
 
     loadSettings() {
-        $.getJSON(this.apiBase + '?action=get_settings', (res) => {
+        msvGet(this.apiBase + '?action=get_settings', (res) => {
             if (!res.success) return;
             const d = res.data;
             $('#csvExportAktiv').prop('checked', (d.csv_export_aktiv || '0') === '1');
@@ -143,7 +143,7 @@ const CsvSettings = {
     },
 
     loadStatus() {
-        $.getJSON(this.apiBase + '?action=get_status', (res) => {
+        msvGet(this.apiBase + '?action=get_status', (res) => {
             if (!res.success) return;
             const d = res.data;
             $('#statMitglieder').text(d.mitglieder);

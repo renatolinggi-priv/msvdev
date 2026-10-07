@@ -307,7 +307,6 @@ $(document).ready(function () {
             success: function (response) {
                 $('#EndA tbody').html(response);
                 buildMobileCardsEndA();
-                msvToast('Kategorie A geladen', 'success');
             },
             error: function(xhr, status, error) {
                 msvToast('Fehler beim Laden Kategorie A: ' + error, 'error');
@@ -328,7 +327,6 @@ $(document).ready(function () {
             success: function (response) {
                 $('#EndB tbody').html(response);
                 buildMobileCardsEndB();
-                msvToast('Kategorie B geladen', 'success');
             },
             error: function(xhr, status, error) {
                 msvToast('Fehler beim Laden Kategorie B: ' + error, 'error');
@@ -450,7 +448,6 @@ $(document).ready(function () {
 
     // Beim Ändern des Jahres im Dropdown beide Tabellen neu laden
     $('#yearSelect').on('change', function () {
-        msvToast('Lade Daten für ' + $(this).val() + '...', 'info');
         loadenda();
         loadendb();
     });

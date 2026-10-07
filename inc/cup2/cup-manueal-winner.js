@@ -158,9 +158,14 @@ function showManualWinnerDialog(pairId) {
                 const pair = response.data.find(p => p.ID === pairId);
                 if (pair) {
                     openManualWinnerModal(pair);
+                } else {
+                    msvToast('Paarung nicht gefunden', 'error');
                 }
+            } else {
+                msvToast(response.message || 'Paarungen konnten nicht geladen werden', 'error');
             }
-        }
+        },
+        error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Paarungen konnten nicht geladen werden'), 'error'); }
     });
 }
 
@@ -292,15 +297,9 @@ function saveManualWinner() {
  * Löscht eine Paarung
  */
 async function deletePair(pairId) {
-    const result = await Swal.fire({
+    const result = await msvConfirmDelete('', {
         title: 'Paarung löschen',
-        html: 'Möchtest du diese Paarung wirklich löschen?<br><br><strong>Achtung:</strong> Alle abhängigen Einträge (Runde 2, Finale) werden ebenfalls gelöscht!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ja, löschen',
-        cancelButtonText: 'Abbrechen'
+        html: 'Möchtest du diese Paarung wirklich löschen?<br><br><strong>Achtung:</strong> Alle abhängigen Einträge (Runde 2, Finale) werden ebenfalls gelöscht!'
     });
     if (!result.isConfirmed) return;
 

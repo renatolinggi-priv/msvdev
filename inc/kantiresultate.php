@@ -740,7 +740,9 @@ $(document).ready(function() {
             url: 'kantiresultate/save_kantiresultate.php',
             type: 'POST',
             data: formData,
-            success: function() {
+            dataType: 'json',
+            success: function(resp) {
+                if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); return; }
                 msvToast('Ergebnisse erfolgreich gespeichert!', 'success');
                 setTimeout(function() { loadResultate(selectedYear); }, 1000);
             },
@@ -1017,7 +1019,7 @@ $(document).ready(function() {
 
     // Veröffentlichen
     $('#publishChangelogBtn').on('click', async function() {
-        const r = await msvConfirm('Änderung veröffentlichen?', 'Ein Eintrag wird auf der Website angezeigt.', 'Veröffentlichen');
+        const r = await msvConfirm('Ein Eintrag wird auf der Website angezeigt.', 'Änderung veröffentlichen?', 'Veröffentlichen');
         if (!r.isConfirmed) return;
         var selectedYear = $('#yearSelect').val();
         $.post('changelog_publish.php', {
@@ -1234,7 +1236,9 @@ $(document).ready(function() {
                     year: $('#yearSelect').val(),
                     passe: this.collectPayload(row)
                 },
-                success: function() {
+                dataType: 'json',
+                success: function(resp) {
+                    if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern', 'error'); return; }
                     EntryPanel._saved = true;
                     EntryPanel.updateProgress();
                     if (typeof onDone === 'function') onDone();
@@ -1260,7 +1264,7 @@ $(document).ready(function() {
     };
 
     // Panel-Feld-Eingabe (delegiert): validieren + syncen
-    $(document).on('input', '#entryPassenGrid input', function() {
+    $(document).on('input', '#entryPassenGrid input', function(e) {
         let value = $(this).val().replace(/[^0-9]/g, '');
         if (value.length > EntryPanel.maxLen) value = value.substring(0, EntryPanel.maxLen);
         if (EntryPanel.clampMax !== null && value !== '' && parseInt(value, 10) > EntryPanel.clampMax) {
@@ -1270,6 +1274,15 @@ $(document).ready(function() {
         const pi = parseInt($(this).closest('.entry-passe-field').data('pi'), 10);
         EntryPanel.syncField(pi, value);
         EntryPanel.refreshFields();
+
+        // Auto-Weiter beim Tippen: 2-9 → zweistellig, 1 → dreistellig (100); 0 bleibt stehen
+        const typed = e.originalEvent && /^insert/.test(e.originalEvent.inputType || '');
+        const need = (value === '' || value[0] === '0') ? 0 : (value[0] === '1' ? 3 : 2);
+        if (typed && need && value.length >= need) {
+            const $inputs = $('#entryPassenGrid input');
+            const i = $inputs.index(this);
+            if (i < $inputs.length - 1) $inputs.eq(i + 1).focus().select();
+        }
     });
 
     $(document).on('focus', '#entryPassenGrid input', function() {

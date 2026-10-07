@@ -573,7 +573,6 @@ $(document).ready(function() {
     // Event-Handler für Jahresauswahl
     $('#yearSelect').on('change', function() {
         const selectedYear = $(this).val();
-        msvToast('Lade Daten für Jahr ' + selectedYear, 'info');
         loadJMA(selectedYear);
         loadJMB(selectedYear);
     });

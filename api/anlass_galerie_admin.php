@@ -51,7 +51,8 @@ switch ($action) {
                           WHERE u.status = 'approved' AND u.role <> 'jungschuetze'
                             AND COALESCE(p.fotos, 1) = 1"
                     )->fetchAll(PDO::FETCH_COLUMN);
-                    $url = 'portal/anlass.php?id=' . $gid;
+                    // Einstieg fuer Mitglieder ist die Uebersicht (Cover antippen = Slideshow, Knopf = Upload)
+                    $url = 'portal/anlaesse.php';
                     foreach ($empf as $uid) {
                         try {
                             benachrichtigungZustellen((int) $uid, 'Neue Foto-Galerie', $anlassName . ' – lade jetzt deine Fotos hoch!', $url, 'fotos');

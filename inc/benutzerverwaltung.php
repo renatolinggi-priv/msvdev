@@ -454,7 +454,10 @@ function changeRole(userId, newRole) {
             msvToast(resp.message, 'error');
             setTimeout(() => location.reload(), 800);
         }
-    }, 'json');
+    }, 'json').fail(function(xhr) {
+        msvToast(msvXhrMessage(xhr, 'Rolle konnte nicht geändert werden'), 'error');
+        setTimeout(() => location.reload(), 800);
+    });
 }
 
 function deleteUser(userId, username) {
@@ -469,7 +472,7 @@ function deleteUser(userId, username) {
                 } else {
                     msvToast(resp.message, 'error');
                 }
-            }, 'json');
+            }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Benutzer konnte nicht gelöscht werden'), 'error'); });
         }
     });
 }
@@ -493,7 +496,7 @@ function assignMitglied() {
         } else {
             msvToast(resp.message, 'error');
         }
-    }, 'json');
+    }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Zuordnung konnte nicht gespeichert werden'), 'error'); });
 }
 
 function resetUserForm() {

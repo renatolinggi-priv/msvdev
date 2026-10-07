@@ -1,6 +1,7 @@
 <?php
 // api/foto_moderate.php - Moderation der Galerie-Fotos (Vorstand/Admin).
-// actions: list | approve | reject | approve_all | rematch | delete
+// actions: list | approve | reject | approve_all | rematch | reorder | move_day | set_titel | delete | delete_all
+// Freigabe/Ablehnung informiert den Uploader per Inbox/Push (Thema fotos), gebuendelt pro Aktion.
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/fotogalerie.inc.php';
@@ -29,6 +30,33 @@ function moderate_ids(): array {
         if ($v > 0) $ids[] = $v;
     }
     return array_values(array_unique($ids));
+}
+
+/**
+ * Uploader ueber Freigabe/Ablehnung informieren. $gruppen = Zeilen (hochgeladen_von, galerie_id, n).
+ * Der Moderator selbst wird nicht benachrichtigt.
+ */
+function moderate_uploader_informieren(PDO $db, array $gruppen, bool $freigegeben, int $moderatorId): void {
+    $labels = [];
+    foreach ($gruppen as $r) {
+        $uid = (int) ($r['hochgeladen_von'] ?? 0);
+        $gid = (int) ($r['galerie_id'] ?? 0);
+        $n   = (int) ($r['n'] ?? 0);
+        if ($uid < 1 || $uid === $moderatorId || $n < 1) continue;
+        if (!isset($labels[$gid])) {
+            $g = fotoGalerieLaden($db, $gid);
+            $labels[$gid] = $g ? fotoGalerieLabel($g) : 'Galerie';
+        }
+        $was = $n === 1 ? 'Dein Foto' : $n . ' deiner Fotos';
+        if ($freigegeben) {
+            $titel = $n === 1 ? 'Foto freigegeben' : 'Fotos freigegeben';
+            $text  = $was . ' zu «' . $labels[$gid] . '» ' . ($n === 1 ? 'ist' : 'sind') . ' jetzt in der Galerie sichtbar.';
+        } else {
+            $titel = $n === 1 ? 'Foto nicht freigegeben' : 'Fotos nicht freigegeben';
+            $text  = $was . ' zu «' . $labels[$gid] . '» ' . ($n === 1 ? 'wurde' : 'wurden') . ' vom Vorstand nicht freigegeben und ' . ($n === 1 ? 'ist' : 'sind') . ' nur für dich sichtbar.';
+        }
+        fotoMitteilung($uid, $titel, $text, 'portal/anlass.php?id=' . $gid);
+    }
 }
 
 switch ($action) {
@@ -84,18 +112,32 @@ switch ($action) {
         if (!$ids) json_error('Keine Fotos ausgewählt.');
         $new = $action === 'approve' ? 'approved' : 'rejected';
         $in  = implode(',', array_fill(0, count($ids), '?'));
+        // Nur Fotos, deren Status sich wirklich aendert -> keine Mitteilung bei erneutem Klick
+        $sel = $db->prepare(
+            "SELECT hochgeladen_von, galerie_id, COUNT(*) AS n FROM anlass_fotos
+              WHERE id IN ($in) AND status <> ? GROUP BY hochgeladen_von, galerie_id"
+        );
+        $sel->execute(array_merge($ids, [$new]));
+        $betroffen = $sel->fetchAll();
         $stmt = $db->prepare(
             "UPDATE anlass_fotos SET status = ?, moderiert_von = ?, moderiert_am = ? WHERE id IN ($in)"
         );
         $stmt->execute(array_merge([$new, $userId, $now], $ids));
         echo json_encode(['success' => true, 'count' => count($ids),
             'message' => count($ids) . ($action === 'approve' ? ' Foto(s) freigegeben.' : ' Foto(s) abgelehnt.')]);
+        moderate_uploader_informieren($db, $betroffen, $action === 'approve', $userId);
         break;
     }
 
     case 'approve_all': {
         $gid = (int) ($_POST['galerie_id'] ?? 0);
         if ($gid < 1) json_error('Ungültige Galerie.');
+        $sel = $db->prepare(
+            "SELECT hochgeladen_von, galerie_id, COUNT(*) AS n FROM anlass_fotos
+              WHERE galerie_id = ? AND status = 'pending' GROUP BY hochgeladen_von, galerie_id"
+        );
+        $sel->execute([$gid]);
+        $betroffen = $sel->fetchAll();
         $stmt = $db->prepare(
             "UPDATE anlass_fotos SET status = 'approved', moderiert_von = ?, moderiert_am = ?
               WHERE galerie_id = ? AND status = 'pending'"
@@ -103,6 +145,18 @@ switch ($action) {
         $stmt->execute([$userId, $now, $gid]);
         echo json_encode(['success' => true, 'count' => $stmt->rowCount(),
             'message' => $stmt->rowCount() . ' Foto(s) freigegeben.']);
+        moderate_uploader_informieren($db, $betroffen, true, $userId);
+        break;
+    }
+
+    case 'set_titel': {
+        $fid = (int) ($_POST['id'] ?? 0);
+        if ($fid < 1) json_error('Ungültige ID.');
+        $titel = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($_POST['titel'] ?? ''))), 0, 120);
+        $upd = $db->prepare("UPDATE anlass_fotos SET titel = ? WHERE id = ?");
+        $upd->execute([$titel !== '' ? $titel : null, $fid]);
+        echo json_encode(['success' => true, 'titel' => $titel !== '' ? $titel : null,
+            'message' => $titel !== '' ? 'Bildunterschrift gespeichert.' : 'Bildunterschrift entfernt.']);
         break;
     }
 

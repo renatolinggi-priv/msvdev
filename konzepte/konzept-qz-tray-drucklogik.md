@@ -24,7 +24,7 @@
 │  │ Server-APIs                                          │   │
 │  │  profiles_api.php  — Profil laden (Drucker + Config) │   │
 │  │  print_job_api.php — Druckauftrag loggen             │   │
-│  │  sign_api.php      — Request signieren (SHA-512)     │   │
+│  │  sign_api.php      — Zertifikat + Signatur (SHA-512) │   │
 │  │  printers_api.php  — Drucker CRUD                    │   │
 │  │  print_log_api.php — Druckprotokoll lesen            │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -52,9 +52,24 @@ $extraScripts = [
 
 ### 2.2 Zertifikate
 
-- **Oeffentlich:** `certs/digital-certificate.txt` (wird vom Browser geladen)
-- **Privat:** `certs/private-key.pem` (wird nur serverseitig von `sign_api.php` gelesen)
-- Pfad konfigurierbar via `settings`-Tabelle (`cert_path`) oder automatische Suche
+Schluesselpaar «SKSG EWS Signing» (gueltig bis 2036), dasselbe wie in EWS, JSK und SFARL. Beide Dateien
+liegen im Ordner `qz_certs/` **neben `msvjm_config.php`**, eine Stufe ueber dem Docroot — nichts davon im Web-Root:
+
+| | Pfad |
+|---|---|
+| Prod | `/home/bdebbd4/www/qz_certs/` (Rechte 700 / 600) |
+| Lokal (XAMPP) | `C:\TEMP\msvjm\qz_certs\` |
+| Quelle | `C:\TEMP\webapps\qz_certs\` (LF-Zeilenenden) |
+
+- **Oeffentlich:** `qz_certs/digital-certificate.txt` — ausgeliefert per `GET drucksteuerung/sign_api.php`
+  (text/plain; 204, wenn die Datei fehlt → QZ Tray laeuft unsigniert mit «Allow»-Dialog)
+- **Privat:** `qz_certs/private-key.pem` — nur serverseitig von `sign_api.php` (POST) gelesen
+
+Der Ordner liegt ausserhalb des Projekts, der SFTP-Watcher laedt ihn nicht: Austausch per scp mit Host, Benutzer
+und Schluessel aus `.vscode/sftp.json`. EWS/JSK/SFARL nutzen dieselbe Regel auf dem linggire-Server
+(`/home/linggire/www/qz_certs/`); msvdev laeuft auf einem anderen Server und Konto und hat darum eine eigene Kopie.
+Ein `ca-key.pem` (Schluessel der Zertifizierungsstelle) gehoert nie auf den Webserver. Einen Eintrag `cert_path` in
+der `settings`-Tabelle liest kein Code (mehr).
 
 ### 2.3 DB-Tabellen
 
@@ -325,11 +340,11 @@ _updateQzBadge(connected) {
 | `js/lib/qz-tray.js` | QZ Tray Client-Library |
 | `js/lib/rsvp.min.js` | Promise-Polyfill |
 | `js/lib/sha-256.min.js` | SHA-256 fuer QZ Tray |
-| `certs/digital-certificate.txt` | Oeffentliches Zertifikat |
-| `certs/private-key.pem` | Privater Schluessel (nur Server) |
+| `../qz_certs/digital-certificate.txt` | Oeffentliches Zertifikat (neben `msvjm_config.php`, ausserhalb Docroot) |
+| `../qz_certs/private-key.pem` | Privater Schluessel (nur Server, ausserhalb Docroot) |
 | `pages/drucksteuerung.php` | UI: Profil-Matrix, Drucker-Verwaltung |
 | `js/app-drucksteuerung.js` | JS: Drucksteuerung-Logik, DOC_TYPE_SECTIONS |
-| `pages/drucksteuerung/sign_api.php` | Signierung (SHA-512 + RSA) |
+| `inc/drucksteuerung/sign_api.php` | GET: Zertifikat ausliefern · POST: Signierung (SHA-512 + RSA) |
 | `pages/drucksteuerung/profiles_api.php` | CRUD fuer Druckprofile |
 | `pages/drucksteuerung/printers_api.php` | CRUD fuer Drucker |
 | `pages/drucksteuerung/print_job_api.php` | Druckauftraege loggen/updaten |

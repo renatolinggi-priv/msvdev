@@ -1336,9 +1336,9 @@ $(function () {
     const texte = { freigegeben: 'Der Plan wird ins Portal übertragen: Mitglieder sehen ihre Einsätze unter «Meine Einsätze» und den ganzen Plan unter «Einsatzpläne».',
                     final: 'Der Plan gilt als definitiv (alle Namen komplett). Die Einsätze im Portal werden aktualisiert.',
                     entwurf: 'Der Plan wird aus dem Portal zurückgezogen; die Einsätze der Mitglieder verschwinden aus «Meine Einsätze».' };
-    Swal.fire({ title: status === 'entwurf' ? 'Zurückziehen?' : (status === 'final' ? 'Final setzen?' : 'Freigeben?'), html: texte[status], icon: 'question',
+    msvSwal.fire({ title: status === 'entwurf' ? 'Zurückziehen?' : (status === 'final' ? 'Final setzen?' : 'Freigeben?'), html: texte[status], icon: 'question',
       input: status === 'entwurf' ? undefined : 'checkbox', inputValue: 1, inputPlaceholder: 'Eingeteilte Mitglieder benachrichtigen (Push/Inbox)',
-      showCancelButton: true, confirmButtonText: 'Ja', cancelButtonText: 'Abbrechen', confirmButtonColor: '#3085d6', cancelButtonColor: '#6c757d' })
+      showCancelButton: true, confirmButtonText: 'Ja', cancelButtonText: 'Abbrechen' })
     .then(res => {
       if (!res.isConfirmed) return;
       post('plan_publish.php', { status, push: res.value ? 1 : 0 }, r => { msvToast(r.message, 'success'); setTimeout(() => location.reload(), 900); });

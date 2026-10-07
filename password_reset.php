@@ -479,7 +479,7 @@ function validate_password($password, $username) {
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="inc/js/msv-toast.js"></script>
+    <script src="inc/js/msv-toast.js?v=<?php echo @filemtime(__DIR__ . '/inc/js/msv-toast.js') ?: '1'; ?>"></script>
 
     <script>
         $(document).ready(function() {

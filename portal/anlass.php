@@ -37,8 +37,12 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 .an-photo .an-pending { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fff3cd; color:#8a6d3b; padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
 .an-photo .an-rejected { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fde2e2; color:#c0392b; padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
 .an-photo.is-rejected img { opacity:0.45; filter:grayscale(60%); }
-.an-photo .an-del { position:absolute; top:4px; right:4px; width:24px; height:24px; border:none; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; font-size:0.7rem; display:none; align-items:center; justify-content:center; }
-.an-photo:hover .an-del { display:flex; }
+.an-photo .an-del, .an-photo .an-titel { position:absolute; top:4px; width:24px; height:24px; border:none; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; font-size:0.7rem; display:none; align-items:center; justify-content:center; z-index:2; }
+.an-photo .an-del { right:4px; }
+.an-photo .an-titel { right:32px; }
+.an-photo:hover .an-del, .an-photo:hover .an-titel, .an-photo.mine .an-del, .an-photo.mine .an-titel { display:flex; }
+@media (hover:hover) { .an-photo.mine .an-del, .an-photo.mine .an-titel { display:none; } .an-photo.mine:hover .an-del, .an-photo.mine:hover .an-titel { display:flex; } }
+.an-photo .an-cap { position:absolute; left:0; right:0; bottom:0; padding:0.2rem 0.35rem; font-size:0.62rem; line-height:1.25; color:#fff; background:linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; }
 .an-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
 .an-uploadbar { display:none; align-items:center; gap:0.6rem; background:#eef6ff; border:1px solid #cfe2ff; border-radius:0.6rem; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.85rem; }
 /* Schwebender Upload-Button (FAB) */
@@ -56,14 +60,6 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   /* über dem Dashboard-Zurück-FAB stapeln (dieser sitzt unten rechts bei 1.25rem) */
   .an-upload-fab { right:1.25rem; bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px) + 60px); }
 }
-/* Kompaktes Lösch-Modal (nur diese Seite, customClass an SweetAlert2) */
-.an-swal.swal2-popup { padding:1rem 1rem 1.1rem; border-radius:0.9rem; }
-.an-swal .swal2-icon { width:3rem; height:3rem; margin:.4rem auto .3rem; border-width:.2rem; }
-.an-swal .swal2-icon .swal2-icon-content { font-size:1.7rem; }
-.an-swal .swal2-title { font-size:1.1rem; padding:.2rem 0 0; }
-.an-swal .swal2-html-container { font-size:.9rem; margin:.45rem .3rem 0; }
-.an-swal .swal2-actions { margin-top:.9rem; gap:.4rem; }
-.an-swal .swal2-styled { padding:.45rem 1.1rem; font-size:.9rem; margin:0; }
 </style>
 
 <div class="container py-2">
@@ -112,36 +108,16 @@ window.MSV_GALLERY = {
 };
 </script>
 <script src="js/foto-slideshow.js?v=<?php echo @filemtime(__DIR__ . '/js/foto-slideshow.js'); ?>"></script>
+<script src="js/foto-upload.js?v=<?php echo @filemtime(__DIR__ . '/js/foto-upload.js'); ?>"></script>
 <script>
 (function () {
   var GID = window.MSV_GALLERY.id, CSRF = window.MSV_GALLERY.csrf;
   var data = null;
-  var uploading = false, wakeLock = null;
+  var esc = msvEsc;
 
-  function esc(s) { return $('<span>').text(s == null ? '' : s).html(); }
-
-  // Bildschirm während des Uploads aktiv halten (sonst pausieren Mobile-Browser den Upload).
-  function acquireWake() {
-    try {
-      if ('wakeLock' in navigator) {
-        navigator.wakeLock.request('screen').then(function (w) { wakeLock = w; }).catch(function () {});
-      }
-    } catch (e) { /* nicht unterstützt -> ignorieren */ }
-  }
-  function releaseWake() { if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; } }
-  // Nach Tab-/Bildschirmwechsel erneut anfordern (Wake Lock geht beim Verbergen verloren)
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible' && uploading) acquireWake();
-  });
-
-  // Kompakte Lösch-Bestätigung (statt der grösseren globalen msvConfirmDelete)
+  // Lösch-Bestätigung mit eigenem Text (zentrales kompaktes Design aus msv-toast.js)
   function anConfirm(html, confirmText) {
-    return Swal.fire({
-      title: 'Löschen bestätigen', html: html, icon: 'warning', width: 340,
-      showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
-      confirmButtonText: confirmText || 'Ja, löschen', cancelButtonText: 'Abbrechen',
-      customClass: { popup: 'an-swal' }
-    });
+    return msvConfirmDelete('', { html: html, confirmText: confirmText });
   }
 
   function load() {
@@ -174,11 +150,13 @@ window.MSV_GALLERY = {
     data.gruppen.forEach(function (grp, gi) {
       html += '<div class="an-daygroup"><div class="an-daytitle">' + esc(grp.label) + '</div><div class="an-photos">';
       grp.fotos.forEach(function (f, fi) {
-        html += '<div class="an-photo' + (f.status === 'rejected' ? ' is-rejected' : '') + '" data-gi="' + gi + '" data-fi="' + fi + '">' +
+        html += '<div class="an-photo' + (f.status === 'rejected' ? ' is-rejected' : '') + (f.mine ? ' mine' : '') + '" data-gi="' + gi + '" data-fi="' + fi + '">' +
           (f.status === 'pending' ? '<span class="an-pending">wartet auf Freigabe</span>' : '') +
           (f.status === 'rejected' ? '<span class="an-rejected">abgelehnt</span>' : '') +
           '<img src="' + f.thumb_url + '" loading="lazy" alt="">' +
-          (f.mine ? '<button class="an-del" data-id="' + f.id + '" title="Löschen"><i class="bi bi-trash"></i></button>' : '') +
+          (f.titel ? '<span class="an-cap">' + esc(f.titel) + '</span>' : '') +
+          (f.mine ? '<button class="an-titel" data-id="' + f.id + '" data-titel="' + esc(f.titel || '') + '" title="Bildunterschrift" aria-label="Bildunterschrift"><i class="bi bi-pencil"></i></button>' +
+                    '<button class="an-del" data-id="' + f.id + '" title="Löschen" aria-label="Löschen"><i class="bi bi-trash"></i></button>' : '') +
           '</div>';
       });
       html += '</div></div>';
@@ -188,7 +166,7 @@ window.MSV_GALLERY = {
 
   // Foto anklicken -> Slideshow ab diesem Bild (nur freigegebene Bilder in der Show)
   $('#anContent').on('click', '.an-photo', function (e) {
-    if ($(e.target).closest('.an-del').length) return;
+    if ($(e.target).closest('.an-del, .an-titel').length) return;
     var gi = +$(this).data('gi'), fi = +$(this).data('fi');
     MSVSlideshow.start(data.gruppen, gi, fi);
   });
@@ -210,49 +188,35 @@ window.MSV_GALLERY = {
     });
   });
 
-  // ---- Upload (sequenziell, ein Foto pro Request) ----
+  // Bildunterschrift des eigenen Fotos setzen/ändern
+  $('#anContent').on('click', '.an-titel', function (e) {
+    e.stopPropagation();
+    var id = $(this).data('id'), alt = $(this).attr('data-titel') || '';
+    msvSwal.fire({
+      title: 'Bildunterschrift', input: 'text', inputValue: alt, inputAttributes: { maxlength: 120 },
+      inputPlaceholder: 'z.B. Siegerehrung am Sonntag', showCancelButton: true,
+      confirmButtonText: 'Speichern', cancelButtonText: 'Abbrechen'
+    }).then(function (res) {
+      if (!res.isConfirmed) return;
+      msvPost('../api/foto_titel.php', { id: id, titel: res.value || '' }, function (r) {
+        msvToast(r.message, 'success'); load();
+      }, { csrf: CSRF, failMsg: 'Bildunterschrift konnte nicht gespeichert werden' });
+    });
+  });
+
+  // ---- Upload (gemeinsamer Baustein js/foto-upload.js) ----
   $('#anUploadFab').on('click', function () { $('#anFileInput').trigger('click'); });
 
   $('#anFileInput').on('change', function () {
     var files = Array.prototype.slice.call(this.files || []);
     this.value = '';
     if (!files.length) return;
-    uploadQueue(files);
+    MSVFotoUpload.start(GID, files, {
+      csrf: CSRF, bar: '#anUploadBar', status: '#anUploadStatus',
+      onStart: function () { $('#anUploadFab').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>'); },
+      onDone:  function () { $('#anUploadFab').prop('disabled', false).html('<i class="bi bi-camera-fill"></i>'); load(); }
+    });
   });
-
-  function uploadQueue(files) {
-    var total = files.length, done = 0, ok = 0, fail = 0, pending = 0;
-    uploading = true;
-    acquireWake();
-    $('#anUploadBar').css('display', 'flex');
-    $('#anUploadFab').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-    function next() {
-      if (!files.length) {
-        uploading = false;
-        releaseWake();
-        $('#anUploadBar').hide();
-        $('#anUploadFab').prop('disabled', false).html('<i class="bi bi-camera-fill"></i>');
-        if (ok)   msvToast(ok + ' Foto(s) hochgeladen.' + (pending ? ' Wartet auf Freigabe durch den Vorstand.' : ''), 'success');
-        if (fail) msvToast(fail + ' Foto(s) fehlgeschlagen.', 'error');
-        load();
-        return;
-      }
-      var file = files.shift();
-      $('#anUploadStatus').text('Lade hoch … ' + (done + 1) + ' / ' + total);
-      var fd = new FormData();
-      fd.append('galerie_id', GID);
-      fd.append('datei', file);
-      fd.append('csrf_token', CSRF);
-      // Dateidatum als Fallback fuer die Tageszuordnung, wenn das Bild kein EXIF hat (WhatsApp, Screenshots)
-      if (file.lastModified) fd.append('datei_mtime', String(file.lastModified));
-      $.ajax({ url: '../api/foto_upload.php', type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json',
-        success: function (r) { if (r.success) ok++; else { fail++; if (r.message) msvToast(r.message, 'error'); } },
-        error: function () { fail++; },
-        complete: function () { done++; next(); }
-      });
-    }
-    next();
-  }
 
   load();
 })();

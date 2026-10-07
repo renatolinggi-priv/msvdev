@@ -79,6 +79,21 @@ sonst findet `pdfjam` sein `pdflatex` nicht (Muster: `absendenShellEnv()` in
 `inc/absenden/generate_absendenbuch_pdf.php`). Office→PDF läuft über
 `inc/lib/convertapi_helper.php` (iLoveAPI, Fallback ConvertAPI, Konfig in `msvjm_config.php`).
 
+### QZ-Tray-Zertifikat (Direktdruck)
+
+Schlüsselpaar «SKSG EWS Signing» (gültig bis 2036), dasselbe wie EWS, JSK und SFARL. Es liegt
+**ausserhalb des Docroots** im Ordner `qz_certs/` neben `msvjm_config.php`: Prod
+`/home/bdebbd4/www/qz_certs/` (Rechte 700/600), lokal `C:\TEMP\msvjm\qz_certs\`, Quelle
+`C:\TEMP\webapps\qz_certs\`. Eigene Kopie, weil die anderen Apps auf dem linggire-Server liegen
+(`/home/linggire/www/qz_certs/`) und von hier aus nicht lesbar sind.
+
+[inc/drucksteuerung/sign_api.php](inc/drucksteuerung/sign_api.php) liefert per GET das Zertifikat
+(204, wenn es fehlt) und signiert per POST; [inc/js/print-manager.js](inc/js/print-manager.js)
+holt beides dort. Der Watcher lädt den Ordner nicht — Austausch per scp. **Nie** Schlüssel oder
+Zertifikat in den Web-Root legen und nie ein `ca-key.pem` auf den Webserver. Bis 26.09.2026 lag
+`certs/private-key.pem` im Docroot und war per HTTP öffentlich abrufbar; der Ordner `certs/` ist
+entfernt.
+
 ## Generierte Exportdateien in `inc/<modul>/dat/`
 
 Jeder Export-Generator schreibt eine zeitgestempelte Datei pro Aufruf. Früher räumte

@@ -455,6 +455,9 @@ $(function() {
                 resp.members.forEach(function(m) {
                     $sel.append($('<option>').val(m.id).text(m.name));
                 });
+            } else {
+                $('#memberSelect').html('<option value="">Fehler beim Laden</option>');
+                showError(resp.message || 'Mitglieder konnten nicht geladen werden.');
             }
         })
         .fail(function() {

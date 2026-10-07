@@ -79,6 +79,7 @@
         });
       } catch (err) {
         console.error('[MsvDruck] Druckprofile konnten nicht geladen werden:', err);
+        if (typeof msvToast === 'function') msvToast('Druckprofile konnten nicht geladen werden – Direktdruck nicht verfügbar', 'error');
       }
     },
 

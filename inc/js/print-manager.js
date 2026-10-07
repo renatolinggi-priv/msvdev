@@ -2,7 +2,7 @@
  * PrintManager — Zentrale QZ Tray Wrapper-Klasse
  *
  * Kapselt die Verbindung zu QZ Tray, Druckerverwaltung und Druckaufträge.
- * Die Signierung laeuft serverseitig ueber pages/drucksteuerung/sign_api.php.
+ * Zertifikat (GET) und Signierung (POST) laufen serverseitig ueber drucksteuerung/sign_api.php.
  */
 
 // Machine-ID fuer Mehrplatz-Druckertrennung (localStorage-basiert)
@@ -61,7 +61,7 @@ class PrintManager {
         try {
             // Zertifikat setzen (öffentliches Zertifikat für Vertrauensstellung)
             qz.security.setCertificatePromise((resolve) => {
-                fetch('../certs/digital-certificate.txt')
+                fetch('drucksteuerung/sign_api.php', { credentials: 'same-origin' })
                     .then(r => {
                         if (!r.ok) throw new Error('HTTP ' + r.status);
                         return r.text();

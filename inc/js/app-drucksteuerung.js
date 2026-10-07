@@ -118,7 +118,7 @@ const Druck = {
             if (msg.includes('Unable to connect') || msg.includes('WebSocket')) {
                 hint = '\n\nPruefe: Laeuft QZ Tray im System-Tray?';
             } else if (msg.includes('sign') || msg.includes('Signierung') || msg.includes('certificate')) {
-                hint = '\n\nPruefe: Ist der Private Key (private-key.pem) vorhanden und das QZ-Zertifikat installiert?';
+                hint = '\n\nPruefe: Liegt der Private Key in qz_certs/private-key.pem (Ordner neben msvjm_config.php) und ist das QZ-Zertifikat installiert?';
             }
             msvError('QZ Tray Verbindung fehlgeschlagen: ' + msg + hint);
         } finally {
@@ -525,20 +525,21 @@ const Druck = {
     // ============================================================
     loadPrinters() {
         $('#printerTableBody').html('<tr><td colspan="4" class="text-center text-muted">Lade...</td></tr>');
-        $.getJSON('drucksteuerung/printers_api.php', (res) => {
-            if (!res.success) return;
+        msvGet('drucksteuerung/printers_api.php', (res) => {
             this.printers = res.data;
             this.renderPrinterTable();
             this._reloadProfiles();
+        }, {
+            failMsg: 'Drucker konnten nicht geladen werden',
+            fail: () => $('#printerTableBody').html('<tr><td colspan="4" class="text-center text-danger">Drucker konnten nicht geladen werden</td></tr>')
         });
     },
 
     _reloadProfiles() {
-        $.getJSON('drucksteuerung/profiles_api.php', (res) => {
-            if (!res.success) return;
+        msvGet('drucksteuerung/profiles_api.php', (res) => {
             this.profiles = res.data;
             this._renderProfileMatrix();
-        });
+        }, { failMsg: 'Druckprofile konnten nicht geladen werden' });
     },
 
     renderPrinterTable() {
@@ -628,6 +629,7 @@ const Druck = {
             headers: { 'X-CSRF-Token': window._csrfToken || '' },
             data: JSON.stringify({ action: 'delete', id: id }),
             dataType: 'json',
+            error: (xhr) => msvError(msvXhrMessage(xhr, 'Fehler beim Loeschen')),
             success: (res) => {
                 if (res.success) {
                     msvToast('Drucker geloescht', 'success');
@@ -643,9 +645,9 @@ const Druck = {
     //  DRUCKPROTOKOLL
     // ============================================================
     loadPrintLog() {
-        $.getJSON('drucksteuerung/print_log_api.php?limit=20', (res) => {
+        msvGet('drucksteuerung/print_log_api.php?limit=20', (res) => {
             const $body = $('#printLogBody');
-            if (!res.success || !res.data.length) {
+            if (!res.data.length) {
                 $body.html('<div class="print-log-empty">Keine Eintraege</div>');
                 return;
             }

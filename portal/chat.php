@@ -452,9 +452,10 @@ $csrf_token = ensureCsrfToken();
     const m = new bootstrap.Modal('#newChatModal'); m.show();
     fetch(API + '?action=jsk_list').then(r=>r.json()).then(d=>{
       const el = document.getElementById('newChatList');
-      if (!d.success || !d.jsk.length) { el.innerHTML = '<div class="text-muted">Keine Jungschützen mit Login.</div>'; return; }
+      if (!d.success) { el.innerHTML = '<div class="text-danger">' + esc(d.message || 'Liste konnte nicht geladen werden.') + '</div>'; return; }
+      if (!d.jsk.length) { el.innerHTML = '<div class="text-muted">Keine Jungschützen mit Login.</div>'; return; }
       el.innerHTML = d.jsk.map(j => '<button type="button" class="list-group-item list-group-item-action nc-item" data-jsid="'+j.jungschuetze_id+'">'+esc(j.name)+'</button>').join('');
-    });
+    }).catch(() => { document.getElementById('newChatList').innerHTML = '<div class="text-danger">Liste konnte nicht geladen werden.</div>'; });
   });
   $(document).on('click', '.nc-item', function(){
     const jsid = this.dataset.jsid;
@@ -462,7 +463,7 @@ $csrf_token = ensureCsrfToken();
       bootstrap.Modal.getInstance(document.getElementById('newChatModal')).hide();
       if (d.success && d.conversation_id) { loadList().then(() => openConv(d.conversation_id)); }
       else msvToast(d.message||'Fehler','error');
-    });
+    }).catch(() => msvToast('Keine Verbindung zum Server', 'error'));
   });
   <?php endif; ?>
 

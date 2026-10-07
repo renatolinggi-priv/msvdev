@@ -374,7 +374,9 @@
                 url: this.basePath + this.config.saveUrl,
                 type: 'POST',
                 data: formData,
-                success: function() {
+                dataType: 'json',
+                success: function(resp) {
+                    if (!resp || !resp.success) { self.toastManager.show((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); return; }
                     self.toastManager.show('Ergebnisse erfolgreich gespeichert!', 'success');
                     setTimeout(() => self.loadData(selectedYear), 1000);
                 },
@@ -536,6 +538,7 @@
             const formData = $('#schussForm').serialize() + '&year=' + selectedYear;
             $.post(this.basePath + 'endschresultate/save_schuss.php', formData)
                 .done(function(response) {
+                    if (!response || !response.success) { self.toastManager.show((response && response.message) || 'Fehler beim Speichern', 'error'); return; }
                     self.toastManager.show('Resultate erfolgreich gespeichert!', 'success');
                     $('#schussModal').modal('hide');
                     setTimeout(() => self.loadData(selectedYear), 800);

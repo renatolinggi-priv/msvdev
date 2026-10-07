@@ -48,6 +48,7 @@ const ImportManager = {
             },
             error: (xhr, status, error) => {
                 console.error('Error finding member:', error);
+                UIHelper.showToast(msvXhrMessage(xhr, 'Mitgliedersuche fehlgeschlagen'), 'error');
                 console.error('Response:', xhr.responseText);
                 // Zeige den Response Text für Debugging
                 if (xhr.responseText) {
@@ -252,6 +253,7 @@ const ImportManager = {
                 jahr: jahr
             },
             dataType: 'json',
+            error: (xhr) => UIHelper.showToast(msvXhrMessage(xhr, 'Prüfung auf bestehende Daten fehlgeschlagen – vorhandene Resultate könnten überschrieben werden'), 'error'),
             success: (response) => {
                 if (response.success && response.exists) {
                     const existingPasses = response.existing_passes;

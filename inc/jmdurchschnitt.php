@@ -324,6 +324,7 @@ $(document).ready(function () {
             type: 'GET',
             data: { year: year },
             dataType: 'json',
+            error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Einstellung konnte nicht geladen werden'), 'error'); },
             success: function (response) {
                 if (response.success) {
                     $('#zaehlendeInput').val(response.anzahl_zaehlende);
@@ -336,6 +337,8 @@ $(document).ready(function () {
                     } else {
                         $('#configHint').text('');
                     }
+                } else {
+                    msvToast(response.message || 'Einstellung konnte nicht geladen werden', 'error');
                 }
             }
         });
@@ -439,7 +442,6 @@ $(document).ready(function () {
                     if (response.result && response.result.alle_resultate && response.result.alle_resultate.length > 0) {
                         displayResults(response.result);
                         $('#exportPdfBtn').prop('disabled', false);
-                        msvToast('Durchschnitt erfolgreich berechnet', 'success');
                     } else {
                         // Keine Resultate vorhanden
                         $('#noResultsMessage').show();

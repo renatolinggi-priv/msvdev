@@ -177,7 +177,8 @@ include 'header.inc.php';
                     success: function (response) {
                         $('#heimresultateTabelleA tbody').html(response);
                         buildMobileCardsHeimA();
-                    }
+                    },
+                    error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Heimresultate Kat. A konnten nicht geladen werden'), 'error'); }
                 });
             }
 
@@ -194,7 +195,8 @@ include 'header.inc.php';
                     success: function (response) {
                         $('#heimresultateTabelleB tbody').html(response);
                         buildMobileCardsHeimB();
-                    }
+                    },
+                    error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Heimresultate Kat. B konnten nicht geladen werden'), 'error'); }
                 });
             }
 
