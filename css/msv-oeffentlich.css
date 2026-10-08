@@ -43,6 +43,7 @@
     --ui-text-3: #667080;
     --ui-akzent: #3b6cce;
     --ui-akzent-dunkel: #2b52a0;
+    --ui-akzent-tief: #1e3f80;
     --ui-akzent-hell: #e8f0fe;
     --ui-ok-bg: #ecfdf3;   --ui-ok-fg: #166534;   --ui-ok-rand: #a7e9c0;
     --ui-warn-bg: #fef3c7; --ui-warn-fg: #92400e; --ui-warn-rand: #f7d98a; --ui-warn-punkt: #d97706;
@@ -60,7 +61,7 @@
     --bs-border-color: var(--ui-rand);
     --bs-link-color: #2b52a0;
     --bs-link-color-rgb: 43, 82, 160;
-    --bs-link-hover-color: #1e3f80;
+    --bs-link-hover-color: var(--ui-akzent-tief);
     --bs-link-hover-color-rgb: 30, 63, 128;
     --bs-focus-ring-color: rgba(59, 108, 206, .25);
 
@@ -76,7 +77,7 @@
     /* fragebogen.php */
     --primary: var(--ui-text);
     --accent: var(--ui-akzent-dunkel);
-    --accent-hover: #1e3f80;
+    --accent-hover: var(--ui-akzent-tief);
     --success: var(--ui-k-gruen);
     --danger: var(--ui-fehler);
     --warning: var(--ui-warn-punkt);
@@ -95,7 +96,7 @@ body {
 }
 ::selection { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
 a { color: var(--ui-akzent-dunkel); }
-a:hover { color: #1e3f80; }
+a:hover { color: var(--ui-akzent-tief); }
 :focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 2px; }
 
 /* ---------- Karte ---------- */
@@ -199,7 +200,7 @@ a:hover { color: #1e3f80; }
 .btn-register:active,
 .btn-reset:active,
 .btn-primary-custom:active,
-.btn-primary:active { background: #1e3f80; border-color: #1e3f80; color: #fff; }
+.btn-primary:active { background: var(--ui-akzent-tief); border-color: var(--ui-akzent-tief); color: #fff; }
 .btn-login:disabled,
 .btn-register:disabled,
 .btn-reset:disabled,
@@ -231,7 +232,7 @@ a:hover { color: #1e3f80; }
 .forgot-password a,
 .back-to-login a { color: var(--ui-akzent-dunkel); }
 .forgot-password a:hover,
-.back-to-login a:hover { color: #1e3f80; }
+.back-to-login a:hover { color: var(--ui-akzent-tief); }
 .recaptcha-info { color: var(--ui-text-3); }
 
 /* ---------- Hinweise (wie msv-ui.css) ---------- */

@@ -16,6 +16,7 @@ colors:
   text-3: "#667080"
   akzent: "#3b6cce"
   akzent-dunkel: "#2b52a0"
+  akzent-tief: "#1e3f80"
   akzent-hell: "#e8f0fe"
   ok-bg: "#ecfdf3"
   ok-fg: "#166534"
@@ -23,11 +24,21 @@ colors:
   warn-bg: "#fef3c7"
   warn-fg: "#92400e"
   warn-zeile: "#fffbeb"
+  warn-zeile-hover: "#fef6d8"
   warn-rand: "#f7d98a"
   warn-punkt: "#d97706"
   fehler-bg: "#fef3f2"
   fehler: "#b42318"
   fehler-rand: "#f5c2bd"
+  leer: "#b8c0cc"
+  feldrand-leer: "#dde3ea"
+  rand-stark: "#c5ccd6"
+  gold-bg: "#f6e3a1"
+  gold-fg: "#6b4f00"
+  silber-bg: "#e2e7ee"
+  silber-fg: "#3d4757"
+  bronze-bg: "#f0d2b6"
+  bronze-fg: "#7a3f12"
   k-gruen: "#1f7a4d"
   k-blau: "#2b52a0"
   k-tuerkis: "#0e6e78"
@@ -183,6 +194,44 @@ components:
     textColor: "{colors.flaeche}"
     rounded: "{rounded.sm}"
     padding: "6px 12px"
+  rang-badge-1:
+    backgroundColor: "{colors.gold-bg}"
+    textColor: "{colors.gold-fg}"
+    rounded: "{rounded.pill}"
+    height: "30px"
+  rang-badge-2:
+    backgroundColor: "{colors.silber-bg}"
+    textColor: "{colors.silber-fg}"
+    rounded: "{rounded.pill}"
+    height: "30px"
+  rang-badge-3:
+    backgroundColor: "{colors.bronze-bg}"
+    textColor: "{colors.bronze-fg}"
+    rounded: "{rounded.pill}"
+    height: "30px"
+  upload-flaeche:
+    backgroundColor: "{colors.flaeche-2}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.lg}"
+    padding: "40px 24px"
+  upload-flaeche-ziehen:
+    backgroundColor: "{colors.gewaehlt}"
+    textColor: "{colors.text}"
+  leerzustand:
+    textColor: "{colors.text-2}"
+    padding: "2.5rem 1rem"
+  flag-dot-an:
+    backgroundColor: "{colors.akzent-dunkel}"
+    textColor: "{colors.flaeche}"
+    rounded: "{rounded.pill}"
+    width: "28px"
+    height: "28px"
+  flag-dot-aktiv:
+    backgroundColor: "{colors.ok-fg}"
+    textColor: "{colors.flaeche}"
+  flag-dot-aus:
+    backgroundColor: "{colors.linie-zart}"
+    textColor: "{colors.leer}"
 ---
 
 # Design System: MSV Wilen – Admin
@@ -213,7 +262,8 @@ Kühle, fast farblose Neutrale tragen die Fläche; ein einziges gedämpftes Blau
 
 ### Primary
 - **Ruhiges Signalblau** (`akzent`): Fokus- und Auswahlzustände, Checkboxen, die Randlinie der gewählten Zeile, der Rand blauer Outline-Knöpfe, der Hinweis «ungespeichert» (Punkt neben dem Namen).
-- **Tiefes Amtsblau** (`akzent-dunkel`, gleich `k-blau`): Links, Fokusrahmen (`:focus-visible` 2px), Fokusrand der Felder, Text blauer Outline-Knöpfe und Füllung des einen Hauptknopfs.
+- **Tiefes Amtsblau** (`akzent-dunkel`, gleich `k-blau`): Links, Fokusrahmen (`:focus-visible` 2px), Fokusrand der Felder, Text blauer Outline-Knöpfe und Füllung des einen Hauptknopfs. Auch der eingeschaltete Flag-Dot.
+- **Nachtblau** (`akzent-tief`): Link-Hover, gedrückter Hauptknopf, Text im Info-Hinweis.
 - **Helles Auswahlblau** (`akzent-hell`): Textauswahl, aktive Dropdown-Einträge, Hover der «?»-Hilfe, Jahr-Hinweis «Planung».
 
 ### Secondary (Knopf-Semantik)
@@ -224,8 +274,12 @@ Kühle, fast farblose Neutrale tragen die Fläche; ein einziges gedämpftes Blau
 
 ### Tertiary (Zustände)
 - **Erledigt-Grün** (`ok-fg` auf `ok-bg`, Rand `ok-rand`): Status «erfasst», Fortschrittsbalken, eindeutige Eingaben, Erfolgshinweise.
-- **Bernstein** (`warn-punkt`, Text `warn-fg` auf `warn-bg`, Zeile `warn-zeile`, Rand `warn-rand`): offene Zeilen, Status «offen», Jahr-Hinweis «Archiv», «gelöst»-Pillen.
+- **Bernstein** (`warn-punkt`, Text `warn-fg` auf `warn-bg`, Zeile `warn-zeile`, Hover der Zeile `warn-zeile-hover`, Rand `warn-rand`): offene Zeilen, Status «offen», Jahr-Hinweis «Archiv», «gelöst»-Pillen.
 - **Fehlerrosa** (`fehler-bg`, Rand `fehler-rand`): Fehlerhinweise und ungültige Eingaben.
+
+### Podest (Rang 1–3)
+Gedämpfte Metalltöne, flach, nie als Verlauf. Die Marke (`.rang-badge.r1–r3`, Rang-Kreis auf Mobile-Karten, Top-Käufer) nimmt Fläche und Schrift voll; Ranglistenzeilen und Kartenköpfe mischen die Fläche zu 40 % mit Weiss (`color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche))`).
+- **Gold** (`gold-fg` auf `gold-bg`), **Silber** (`silber-fg` auf `silber-bg`), **Bronze** (`bronze-fg` auf `bronze-bg`). Kontrast der Schrift jeweils über 5:1.
 
 ### Neutral
 - **Bürogrund** (`grund`): Seitenhintergrund und Hintergrund im Erfassungs-Panel, damit Karten darin stehen.
@@ -234,7 +288,9 @@ Kühle, fast farblose Neutrale tragen die Fläche; ein einziges gedämpftes Blau
 - **Hover-Grau** (`hover`): Hover neutraler Knöpfe.
 - **Auswahl-Hauch** (`gewaehlt`): gewählte Zeile, fokussiertes Eingabefeld im Raster.
 - **Kartenrand** (`rand`), **Trennlinie** (`linie`), **zarte Linie** (`linie-zart`): Rand aller Karten; Linien unter Köpfen; Zeilentrenner in Tabellen.
-- **Feldrand** (`feldrand`): Rand von Eingabefeldern, Suchfeld, neutralen Knöpfen, `kbd`.
+- **Feldrand** (`feldrand`): Rand von Eingabefeldern, Suchfeld, neutralen Knöpfen, `kbd`, Upload-Fläche.
+- **Zahlenfelder im Raster:** leer `feldrand-leer` (heller als `feldrand`, das Feld tritt zurück), gefüllt `rand-stark`; `rand-stark` ist auch der Hover-Rand anklickbarer Kacheln (Anlässe, Stiche).
+- **Leerwert** (`leer`): leere Zellen, Striche und fehlende Werte in Tabellen, ausgeschaltete Flag-Dots. Nur für «nichts da», nie für Text, den man lesen muss (Kontrast unter 3:1).
 - **Tinte** (`text`), **Zweittext** (`text-2`), **Dritttext** (`text-3`): Inhalt; Untertitel, Tabellenköpfe, Zähler; Hinweise und Icons.
 
 ### Named Rules
@@ -272,7 +328,7 @@ Kühle, fast farblose Neutrale tragen die Fläche; ein einziges gedämpftes Blau
 - **Breite:** genau eine Klasse am `.main-content-wrapper`: `content-width-wide` (1500px), `content-width-default` (1200px), `content-width-narrow` (850px), linksbündig. Kein eigenes `max-width` auf Seiten; der äussere Wrapper ist `col-12 ps-0`.
 - **Stapel:** Kopf-Card, dann eine oder mehrere Inhalts-Cards (`.content-background` oder `.ui-karte`), je 14px Abstand. Kinder einer Inhalts-Card haben 1.25rem Abstand. Keine Karte in der Karte: Tabellenblöcke in einer Inhalts-Card verlieren Rand und Hintergrund.
 - **Innenabstand:** horizontal überall `pad` (20px); Kopf-Card 14px vertikal, Inhalts-Card 16px, Tabellen-Card-Kopf 10px. Unter 768px 12px und Radius 10px.
-- **Scrollende Tabellen:** Erfassungsseiten füllen das Fenster (`height: calc(100vh − Nav − 28px)`), die Tabelle scrollt innen. Das Verhalten (Flex-Kette `flex: 1 1 auto; min-height: 0` bis zum Scrollbereich, fixierte Kopfzeile und Randspalten, Z-Index-Stufen) liegt in `css/fixes/resultate-unified.css`; dort steht kein Aussehen.
+- **Scrollende Tabellen:** Erfassungsseiten füllen das Fenster, die Tabelle scrollt innen. Den Rahmen liefern drei Klassen aus `msv-ui.css`: `.ui-vollhoehe` am `.main-content-wrapper` (`height: calc(100vh − Nav − 28px)`, mindestens 520px, Kopf-Card fest), `.ui-vollhoehe-karte` an der Tabellen-Card (Flex-Kette `flex: 1 1 auto; min-height: 0` über `.desktop-table-container`) und `.ui-scroll` am Scrollbereich. Unter 768px fliesst die Seite wieder normal. Fixierte Kopfzeile und Randspalten sowie die Z-Index-Stufen liegen in `css/fixes/resultate-unified.css`; dort steht kein Aussehen. Genutzt von Endschiessen, Partnerinnen, Heimmeisterschaft und Kantonalstich.
 - **Mobile:** Tabellen werden unter 768px zu Karten (`mobile-cards.css` + `MSVMobileCards`); die Kopf-Card ist auf Mobile ausgeblendet, ausser die Seite setzt `$page_show_mobile` (nötig, sobald sie die Jahresauswahl enthält). Das Panel ist mobil 100vw breit.
 - **Ladereihenfolge (bestimmt, wer gewinnt):** Bootstrap 5.3 → `msv-styles.css` (Altbestand) → `fixes/resultate-unified.css` → `mobile-cards.css` → Inline-`<style>` im Header → `msv-ui.css` → `$page_specific_css`.
 
@@ -319,7 +375,7 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 - **Shape:** Radius `md` (8px), `btn-sm` 7px; 600; Grösse ~33px, `btn-sm` ~28px (Padding 0.2rem 0.6rem, 0.8rem). Grösse steht im Inline-`<style>` des Headers; kleiner ist erlaubt, grösser nie.
 - **Outline nach Zweck (immer `btn-sm`):** `btn-outline-success` Anlegen/Hochladen/Import · `btn-outline-primary` Speichern/Bearbeiten · `btn-outline-info` Export/PDF/Drucken · `btn-outline-danger` nur Löschen · `btn-outline-secondary` Abbrechen/Schliessen/neutral. `btn-outline-warning` ist in Bernstein gestaltet, hat aber keinen festgelegten Zweck und gehört nicht zur Semantik.
 - **Ruhe und Hover:** Outline-Knöpfe stehen auf `flaeche`, Text und Rand in der Zweckfarbe; beim Hover füllen sie sich mit der Zweckfarbe, Text weiss (neutral: `hover`-Grau, Text `text`). Übergang nur Farbe, 0.15s.
-- **Gefüllt (`btn-primary`):** die eine Hauptaktion einer Fläche (Seite, Panel, Dialog), meist «Speichern»; `k-blau`, Hover `#22448a`, aktiv `#1e3f80`. Gefülltes Grün (`btn-success`) und Rot (`btn-danger`) nur als Bestätigung in Dialogen.
+- **Gefüllt (`btn-primary`):** die eine Hauptaktion einer Fläche (Seite, Panel, Dialog), meist «Speichern»; `k-blau`, Hover `#22448a`, aktiv `akzent-tief`. Gefülltes Grün (`btn-success`) und Rot (`btn-danger`) nur als Bestätigung in Dialogen.
 - **Icon-Knöpfe:** nur Bootstrap Icons (`bi-*`), immer mit `aria-label` und `data-tooltip`.
 - **Fokus:** 2px `akzent-dunkel`, 2px Abstand.
 
@@ -333,7 +389,7 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 ### Inputs / Fields
 - **Style:** Rand `feldrand`, Radius `md`, Text `text`, Grund `flaeche`.
 - **Focus:** Rand `akzent-dunkel` plus 1px-Ring derselben Farbe (kein weicher Glow). Im Raster wird das fokussierte Feld zusätzlich `gewaehlt`.
-- **Gefüllt / leer im Raster:** leere Felder getönt (`flaeche-2`, 400, `text-2`), gefüllte weiss mit Rand `#c5ccd6`, 600.
+- **Gefüllt / leer im Raster:** leere Felder getönt (`flaeche-2`, Rand `feldrand-leer`, 400, `text-2`), gefüllte weiss mit Rand `rand-stark`, 600.
 - **Fehler:** `aria-invalid="true"` → Rand, Text und Ring `fehler`, Grund `fehler-bg`. Eindeutige Treffer (Stich-Codes) `ok-bg`/`ok-rand`.
 - **Suche** (`.ui-suche`): 30px hoch, 17rem breit, `flaeche-2`, Lupe in `text-3`, rechtsbündig im Tabellenkopf; Fokus wie Felder.
 
@@ -345,19 +401,25 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 - **Chip** (`.ui-chip`): `#f4f6f9` mit Text `#3d4757`, Radius 6px, 0.8rem; Zahl fett; optional Punkt 7px in `warn-punkt` (offen) oder `akzent` (ungespeichert).
 - **Status** (`.ui-status`): Punkt 8px plus Wort, 0.8rem/600; `ok` grün, `offen` bernstein.
 - **Fortschritt** (`.ui-fortschritt` + `.ui-balken`): Zahl 0.95rem/700 mit «von N» in `text-2`; Balken 160×6px, Träger `linie`, Füllung `ok-fg`, Breite animiert 0.4s.
-- **Leere Zellen** in `#b8c0cc`; «gelöst»-Pille in Bernstein.
+- **Leere Zellen** in `leer` (`.cell-empty`); «gelöst»-Pille in Bernstein.
 
 ### Tabellen und Zeilenzustände
 - **Kopf:** `flaeche-2`, Label-Typografie (Versalien, 0.72rem, `text-2`), Linie `linie`. Zeilen getrennt durch `linie-zart`.
 - **Hover:** `flaeche-2`.
-- **Offen** (`tr.ui-offen`): ganze Zeile `warn-zeile`, Hover `#fef6d8`. Kennzeichnet, was noch fehlt.
+- **Offen** (`tr.ui-offen`): ganze Zeile `warn-zeile`, Hover `warn-zeile-hover`. Kennzeichnet, was noch fehlt.
 - **Gewählt** (`tr.selected`, `tr.ui-markiert`, Hybrid `.hybrid-row.selected`): `gewaehlt` plus 2px-Innenlinie in `akzent` rund um die Zeile; folgt in fixierten Randspalten mit.
-- **Leer:** `msv_empty_row($colspan, 'Keine … gefunden')` aus `partials/empty_state.inc.php` (Icon `bi-inbox`, zentriert, gedämpft).
+- **Leer:** ganze Tabellenzeile mit `msv_empty_row($colspan, 'Keine … gefunden')` aus `partials/empty_state.inc.php` (Icon `bi-inbox`, zentriert, gedämpft). Für einen Block oder eine selbst gebaute Zelle (JS-Listen, Karten) `.ui-leerzustand`: `<div class="ui-leerzustand"><i class="bi bi-…" aria-hidden="true"></i>Keine … für 2026</div>`; Icon 2rem mit halber Deckkraft über dem Text in `text-2`, Padding 2.5rem 1rem. Fehler beim Laden zusätzlich `text-danger`.
+
+### Podest in Ranglisten
+- **Marke** `.rang-badge` (Pille 30px, 0.82rem/700, sonst `linie-zart`/`text-2`) mit `.r1`/`.r2`/`.r3` in Gold, Silber, Bronze.
+- **Zeilen** der Top 3 (`tr.rank-1..3`) und **Kartenköpfe** auf Mobile (`.mobile-card.rank-1..3 .mobile-card-header`, fett) in der 40-%-Mischung; der Rang selbst fett.
+- Nie Verlauf, Schatten oder Glanz; die Farbe allein trägt den Rang.
 
 ### Slide-Panel
 Bearbeiten, ohne die Liste zu verlassen.
 - **Aufbau:** Partial `partials/side_panel.inc.php` (`$panel_title`, `$panel_body`, `$panel_footer`, `$panel_width` → `--panel-width`, Standard 500px). Fährt von rechts ein (0.3s, `cubic-bezier(0.4, 0, 0.2, 1)`), Overlay dunkelt ab; Escape, Overlay oder «×» (neutraler Outline-Knopf mit `data-tooltip="Schliessen (Esc)"`) schliessen. `role="dialog"`, Fokusführung über `msv-panel-a11y.js`.
 - **Form:** Kopf weiss mit Titel 1rem/700, Fusszeile weiss mit Linie `rand` und dem einen gefüllten Hauptknopf rechts. Mobil 100vw.
+- **Erfassungs-Panel** (`.ui-erfassen` zusätzlich an `.hybrid-edit-panel` bzw. `.anlass-panel`): Titel 1.15rem/1.2 für die Schnellerfassung, darunter die Position («3 von 40», `.panel-pos`, 0.8rem `text-2`), Tasten im Fuss als `kbd.ui-kbd`. Unter 768px ohne Abdunklung (das Panel ist vollbreit) und mit festem Fuss, Fussknöpfe 48px hoch. Genutzt von Endschiessen, Partnerinnen, Heim, Kanti und JM.
 - **Erfassungskarten im Panel** (`.shot-*`): enthält das Panel Erfassungskarten, wird der Panel-Grund `grund`; jede Karte weiss, Rand `rand`, Radius 10px, Padding 12px 14px, Titel 0.9rem/600 mit Icon in `text-3`, Total rechts in der Zahl-Rolle. Rasterfelder 38×36px (Dezimal 46px, breit 56px), Radius 6px. Deaktivierte Karten `flaeche-2`. Unter 768px stapeln sich nebeneinanderliegende Karten.
 
 ### Tastenhinweise
@@ -366,8 +428,15 @@ Wo eine Seite Tastenkürzel unterstützt (Ctrl+S, Enter, Pfeile, Esc), steht unt
 ### Export-Toolbar
 Gruppierte Dokument-Knöpfe auf Ranglisten- und Ausdruck-Seiten. Freistehend eine Karte (`lg`, Rand `rand`, Padding 12px 20px); innerhalb einer Inhalts-Card randlos mit Linie unten. Kopf 0.875rem/600, Gruppenlabels in Label-Typografie, Trenner in `rand`. Knöpfe türkis (Ausgabe) oder grün (Import).
 
+### Upload-Fläche und Lade-Overlay
+- **Upload-Fläche** (`.upload-area`, gleichwertig `.import-area`): Datei ablegen oder klicken. `flaeche-2`, 2px gestrichelt in `feldrand`, Radius `lg`, Padding 40px 24px, zentriert; Icon (`.bi` als direktes Kind) 2.5rem in `text-3`, Titel `h4` 1.05rem/600. Hover `flaeche` mit dunklerem Rand, beim Ziehen (`.dragover`, `.dragging`) `gewaehlt` mit Rand `akzent`, Fokus 2px `akzent`. Mit `role="button"`, `tabindex="0"` und `aria-label` bedienbar machen; keine Inline-Grössen oder -Farben am Icon. Abstand nach aussen setzt die Seite.
+- **Lade-Overlay** (`.loading-overlay > .loading-spinner`): über der ganzen Seite, Grund `rgba(26, 35, 50, .55)`, darin eine weisse Karte (Radius `lg`, Padding 2rem). Kein Weichzeichner.
+
+### Flag-Dots
+Merkmal an/aus in Listen (`.flag-dots > .flag-dot.on|.off`), Kreis 28px, Icon 0.75rem, Erklärung immer per `data-tooltip`. An: `akzent-dunkel`, Icon weiss; aus: `linie-zart` mit Icon in `leer`. «Aktiv» trägt zusätzlich `.ok` und ist an grün (`ok-fg`). Weitere Bedeutungen färbt die Seite über `data-flag` und Tokens (Mitglieder: Ehrenmitglied `warn-punkt`, Verstorben `k-grau`, JSK-Leiter `k-tuerkis`), nie per Inline-Style, damit die Farbe dem Umschalten folgt. Kein Vergrössern beim Überfahren.
+
 ### Hinweise (Alerts)
-Radius 10px, 1px-Rand im Ton: Info `#eef4ff`/`#c9d9f7`/`#1e3f80`, Erfolg `ok-*`, Warnung `warn-*`, Gefahr `fehler-bg`/`fehler-rand`/`fehler`. Kein farbiger Seitenstreifen.
+Radius 10px, 1px-Rand im Ton: Info `#eef4ff`/`#c9d9f7`/`akzent-tief`, Erfolg `ok-*`, Warnung `warn-*`, Gefahr `fehler-bg`/`fehler-rand`/`fehler`. Kein farbiger Seitenstreifen.
 
 ### Dialoge
 - **Bootstrap-Modal:** Rand `rand`, Radius `lg`, Dialog-Schatten; Kopf weiss mit Linie `linie`, Fuss `flaeche-2`.
@@ -393,7 +462,9 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 - **Do** auf Seiten mit Tastenkürzeln (Ctrl+S, Enter, Esc) die Leiste `.ui-tasten` mit `kbd` zeigen.
 - **Do** Zustände über Zeilenfarbe und Statuspunkt zeigen (`tr.ui-offen`, `.ui-status`), Auswahl über `tr.selected`/`.ui-markiert`.
 - **Do** Bearbeiten im Slide-Panel über `partials/side_panel.inc.php`; Löschen bestätigen mit `msvConfirmDelete`.
-- **Do** Token-Änderungen in `msv-ui.css` von Hand in `msv-oeffentlich.css` nachziehen.
+- **Do** Erfassungsseiten in Fensterhöhe mit `.ui-vollhoehe`, `.ui-vollhoehe-karte` und `.ui-scroll` bauen und das Panel mit `.ui-erfassen` auszeichnen, statt den Rahmen pro Seite nachzubauen.
+- **Do** Leerzustände, Upload-Flächen, Podest und Flag-Dots über die zentralen Klassen (`.ui-leerzustand`, `.upload-area`, `.rang-badge`/`rank-1..3`, `.flag-dot`) zeigen; die Seite setzt höchstens Abstände.
+- **Do** Token-Änderungen in `msv-ui.css` von Hand in `msv-oeffentlich.css` nachziehen, soweit die öffentlichen Seiten den Wert verwenden.
 
 ### Don't:
 - **Don't** Verläufe einsetzen (`linear-gradient`, `radial-gradient`) – auch nicht für Ränge oder Fortschritt.
@@ -412,6 +483,8 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 ## Noch nicht migriert (bewusst)
 
 - **Mitgliederportal** (`portal/`, `css/portal.css`): behält sein eigenes Erscheinungsbild und folgt später. Dieses Dokument gilt dort nicht.
-- **`css/msv-styles.css`** (rund 1450 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip) und alte Optik, die `msv-ui.css` überschreibt, wo sie sichtbar wird. Wo nicht überschrieben, ist der alte Stil noch sichtbar; das ist kein Muster für neue Arbeit.
+- **`css/msv-styles.css`** (rund 1410 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip) und alte Optik, die `msv-ui.css` überschreibt, wo sie sichtbar wird. Wo nicht überschrieben, ist der alte Stil noch sichtbar; das ist kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso.
+- **Seiten mit eigenem Slide-Panel** statt `partials/side_panel.inc.php`: Einzel- und Sektionsrangierungen (`.edit-panel`, fast identische Kopien), Navigation (`.nav-edit-panel`). Umbau gehört zusammen mit einem gemeinsamen Panel-Verhalten (Esc, Ungespeichertes) gemacht.
+- **Restliche Seiten-Hex-Werte** (Stand 08.10.2026): u.a. Einsatzplanung, Foto-Galerie und Dokumente (`#1e7e44`, `#c0392b`, `#2d4373`), Cup-Ranglisten, Ausdruck Zielscheiben (`endsch_targetprint.php`, dort auch Hover mit Anheben und Einblend-Animation).
 - **Navigation** (`inc/navigation.inc.php`, eigener Inline-`<style>`): eigene Blautöne und Aktiv-Markierung, nicht auf Tokens.
-- **Doppelte Tokens:** `msv-oeffentlich.css` trägt einen Auszug der `--ui-*` Tokens aus `msv-ui.css`. Die Werte sind am 08.10.2026 identisch und müssen von Hand synchron gehalten werden.
+- **Doppelte Tokens:** `msv-oeffentlich.css` trägt einen Auszug der `--ui-*` Tokens aus `msv-ui.css` (inkl. `akzent-tief`, `fehler-rand`). Die Werte sind am 08.10.2026 identisch und müssen von Hand synchron gehalten werden. Nur im Admin: `leer`, `feldrand-leer`, `rand-stark`, `warn-zeile-hover` und das Podest.

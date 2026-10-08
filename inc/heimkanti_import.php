@@ -8,15 +8,7 @@ $sql = "SELECT * FROM mitglieder ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
 
 $page_specific_css = "
-/* Upload-Bereich: Klick, Enter oder Datei ablegen */
-.upload-area { margin-bottom: 0; padding: 40px 24px; text-align: center; background: var(--ui-flaeche-2); border: 2px dashed var(--ui-feldrand); border-radius: var(--ui-rad-l); cursor: pointer; transition: border-color .2s, background-color .2s; }
-.upload-area:hover { background: var(--ui-flaeche); border-color: #9aa6b6; }
-.upload-area:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
-.upload-area.dragover { background: var(--ui-gewaehlt); border-color: var(--ui-akzent); }
-.upload-area > .bi { font-size: 2.5rem; color: var(--ui-text-3); }
-.upload-area h4 { margin: 10px 0 4px; font-size: 1.05rem; font-weight: 600; color: var(--ui-text); }
-.loading-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; background: rgba(26, 35, 50, .55); }
-.loading-spinner { padding: 2rem; text-align: center; color: var(--ui-text); background: var(--ui-flaeche); border-radius: var(--ui-rad-l); }
+/* Upload-Fläche (.upload-area) und Lade-Overlay kommen aus css/msv-ui.css */
 .import-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 ";
 include 'header.inc.php';

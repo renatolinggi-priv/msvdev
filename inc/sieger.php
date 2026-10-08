@@ -69,9 +69,7 @@ $page_specific_css = <<<'CSS'
 }
 .winner-row:hover .winner-action .btn, .winner-row:focus-within .winner-action .btn { opacity: 1; }
 
-/* === EMPTY STATE === */
-.empty-state { text-align: center; padding: 3rem 1rem; color: var(--ui-text-2); }
-.empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem; }
+/* Leerzustand (.ui-leerzustand) kommt aus css/msv-ui.css */
 
 /* === MOBILE === */
 @media (max-width: 767.98px) {

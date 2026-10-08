@@ -71,7 +71,7 @@ $page_specific_css = '
 .jm-line-val  { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .jm-line-max  { font-size: .72rem; color: var(--ui-text-3); }
 .jm-line-empty .jm-line-name,
-.jm-line-empty .jm-line-val { font-weight: 400; color: #b8c0cc; }
+.jm-line-empty .jm-line-val { font-weight: 400; color: var(--ui-leer); }
 .jm-detail-line.gestrichen { opacity: .75; }
 .jm-detail-line.gestrichen .jm-line-val { color: var(--ui-k-rot); text-decoration: line-through; }
 .jm-line-tag { padding: 1px 6px; border-radius: 6px; background: #fdecea; color: var(--ui-k-rot); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
@@ -86,9 +86,9 @@ $page_specific_css = '
     .jm-detail-groups { grid-template-columns: 1fr !important; }
     .jm-mobile-card .mobile-card-header { padding: .75rem 1rem; }
     .jm-mobile-rang { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); font-size: .85rem; font-weight: 700; color: var(--ui-text-2); }
-    .rank-1 .jm-mobile-rang { background: #ffd700; border-color: #ffd700; color: #5a4800; }
-    .rank-2 .jm-mobile-rang { background: #c0c0c0; border-color: #c0c0c0; color: #3a3a3a; }
-    .rank-3 .jm-mobile-rang { background: #cd7f32; border-color: #cd7f32; color: #fff; }
+    .rank-1 .jm-mobile-rang { background: var(--ui-gold-bg); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); }
+    .rank-2 .jm-mobile-rang { background: var(--ui-silber-bg); border-color: var(--ui-silber-bg); color: var(--ui-silber-fg); }
+    .rank-3 .jm-mobile-rang { background: var(--ui-bronze-bg); border-color: var(--ui-bronze-bg); color: var(--ui-bronze-fg); }
     .jm-mobile-total { white-space: nowrap; font-size: .95rem; font-weight: 700; color: var(--ui-text); }
     .jm-mobile-card .mobile-card-body { padding: 0 !important; }
     .jm-mobile-card .mobile-card-body .jm-detail-panel { padding: .75rem !important; border-top: none !important; border-bottom: none !important; }

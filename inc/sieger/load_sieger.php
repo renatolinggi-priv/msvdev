@@ -22,7 +22,7 @@ try {
     $result = $stmt->get_result();
 
     if ($result->num_rows === 0) {
-        echo "<div class='empty-state'><i class='bi bi-trophy'></i><p>Keine Sieger für " . $selected_year . " gefunden</p></div>";
+        echo "<div class='ui-leerzustand'><i class='bi bi-trophy' aria-hidden='true'></i><p>Keine Sieger für " . $selected_year . " gefunden</p></div>";
     } else {
         // Nach Kategorie gruppieren
         $grouped = [];

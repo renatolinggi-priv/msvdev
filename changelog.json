@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.49.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Gemeinsame Bausteine: Podest, Upload-Fläche, Leerzustand, Merkmal-Punkte",
+        "beschreibung": "Mehrfach kopierte Gestaltung liegt jetzt an einer Stelle und sieht überall gleich aus. Ränge 1 bis 3 erscheinen in Ranglisten, auf Handy-Karten und beim Munitionskauf in ruhigen, flachen Gold-, Silber- und Bronzetönen statt in grellen Farbverläufen. Die Ablagefläche für Dateien ist bei allen Importen gleich (Endschiessen, Heim/Kanti, Zielscheiben, CSV prüfen, JM-PDF-Import, Mitglieder, JSK), ebenso der Hinweis, wenn eine Liste leer ist (Sieger, Termine, Rangierungen). Merkmal-Punkte vergrössern sich beim Überfahren nicht mehr; «Aktiv» ist überall grün, auch in der Mitgliederverwaltung. Behoben: Ehrenmitglied, Verstorben und JSK-Leiter zeigten nach dem Umschalten im Panel die falsche Farbe. Die Erfassungsseiten (Endschiessen, Partnerinnen, Heim, Kanti, JM) nutzen einen gemeinsamen Rahmen; sie sehen gleich aus wie vorher.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.48.0",
     "datum": "2026-10-08",
     "aenderungen": [

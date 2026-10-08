@@ -7,14 +7,13 @@ require_once __DIR__ . '/wanderpreise/regel_builder.inc.php'; // Registry + Sche
 $wp_wettbewerbe = wp_wettbewerb_registry();
 $wp_schema_ref  = wp_regel_schema_reference();
 
-// Nur seitenspezifische Klassen; Tabelle, Titel, Panel, Flag-Dots, Code-Badge, Aktions-Card kommen aus msv-styles.css
+// Nur seitenspezifische Klassen; Tabelle, Titel, Panel, Code-Badge, Aktions-Card kommen aus msv-styles.css, Flag-Dots aus msv-ui.css
 $page_specific_css = <<<'CSS'
 .title-search { width: 200px; }
 .title-search input { font-size: 0.85rem; border-radius: 20px; padding-left: 2rem; }
 .title-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ui-text-2); font-size: 0.8rem; }
 .regel-name { font-weight: 500; color: var(--ui-text); }
 .regel-desc { display: block; color: var(--ui-text-2); font-size: 0.85rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
-.flag-dot.on { background: var(--ui-ok-fg); color: #fff; } /* Status "aktiv" grün statt zentral blau */
 .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .row-actions .btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 .fs-xs { font-size: 0.75rem; }
@@ -267,7 +266,7 @@ $(function() {
         if (!regelnData.length) { $('#regelnTableBody').html(EMPTY_ROW); return; }
         $('#regelnTableBody').html(regelnData.map(function(r) {
             const statusDot = Number(r.aktiv) === 1
-                ? '<span class="flag-dot on" data-tooltip="Aktiv"><i class="bi bi-check2"></i></span>'
+                ? '<span class="flag-dot ok on" data-tooltip="Aktiv"><i class="bi bi-check2"></i></span>'
                 : '<span class="flag-dot off" data-tooltip="Inaktiv"><i class="bi bi-pause"></i></span>';
             return '<tr class="hybrid-row" data-id="' + escHtml(r.id) + '">' +
                 '<td><span class="code-badge">' + escHtml(r.regel_code) + '</span></td>' +

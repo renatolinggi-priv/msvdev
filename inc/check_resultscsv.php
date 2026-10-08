@@ -10,28 +10,9 @@ include 'header.inc.php';
     /* Inhaltsbreite begrenzen, damit die Seite auf grossen Bildschirmen nicht zu breit wird */
     .main-content-wrapper { max-width: 980px; }
 
-    .upload-area {
-        border: 2px dashed var(--ui-rand);
-        border-radius: 0.75rem;
-        padding: 3rem;
-        text-align: center;
-        background-color: var(--ui-flaeche-2);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        margin-bottom: 2rem;
-        position: relative;
-    }
-    
-    .upload-area:hover {
-        border-color: var(--ui-text-2);
-        background-color: var(--ui-rand);
-    }
-    
-    .upload-area.dragover {
-        border-color: var(--ui-akzent);
-        background-color: var(--ui-akzent-hell);
-    }
-    
+    /* Upload-Fläche (.upload-area) kommt aus css/msv-ui.css */
+    .upload-area { margin-bottom: 2rem; position: relative; }
+
     /* Fix für Scroll-Layout */
     #resultsContainer {
         display: flex;
@@ -89,7 +70,7 @@ include 'header.inc.php';
                     <!-- Upload Area -->
                     <div id="uploadPhase">
                         <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-cloud-upload" style="font-size: 3rem; color: var(--ui-text-2);"></i>
+                            <i class="bi bi-cloud-upload" aria-hidden="true"></i>
                             <h4 class="mt-3">CSV-Datei hier ablegen oder klicken zum Auswählen</h4>
                             <p class="text-muted mb-0">Unterstützte Formate: .csv</p>
                             <input type="file" id="fileInput" accept=".csv" style="display: none;">

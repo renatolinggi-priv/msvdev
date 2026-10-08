@@ -53,7 +53,7 @@ $page_specific_css = "
 .stich-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
 @media (max-width: 575.98px) { .stich-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stich-tile { position: relative; container-type: inline-size; display: flex; flex-direction: column; background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad); user-select: none; transition: border-color .15s, background-color .15s; }
-.stich-tile:hover { border-color: #c5ccd6; }
+.stich-tile:hover { border-color: var(--ui-rand-stark); }
 .stich-tile:focus-within { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
 .stich-tile-main { position: relative; display: flex; flex: 1; flex-direction: column; gap: 6px; margin: 0; padding: 10px 10px 8px; cursor: pointer; }
 .stich-tile .form-check-input { position: absolute; left: 10px; top: 12px; margin: 0; cursor: pointer; }

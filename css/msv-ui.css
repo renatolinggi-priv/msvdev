@@ -45,10 +45,19 @@
     --ui-text-3: #667080;
     --ui-akzent: #3b6cce;
     --ui-akzent-dunkel: #2b52a0;
+    --ui-akzent-tief: #1e3f80;   /* Link-Hover, gedrückter Hauptknopf, Text im Info-Hinweis */
     --ui-akzent-hell: #e8f0fe;
     --ui-ok-bg: #ecfdf3;   --ui-ok-fg: #166534;   --ui-ok-rand: #a7e9c0;
-    --ui-warn-bg: #fef3c7; --ui-warn-fg: #92400e; --ui-warn-zeile: #fffbeb; --ui-warn-rand: #f7d98a; --ui-warn-punkt: #d97706;
-    --ui-fehler-bg: #fef3f2; --ui-fehler: #b42318;
+    --ui-warn-bg: #fef3c7; --ui-warn-fg: #92400e; --ui-warn-zeile: #fffbeb; --ui-warn-zeile-hover: #fef6d8; --ui-warn-rand: #f7d98a; --ui-warn-punkt: #d97706;
+    --ui-fehler-bg: #fef3f2; --ui-fehler: #b42318; --ui-fehler-rand: #f5c2bd;
+    /* Leere Werte und Zahlenfelder im Raster */
+    --ui-leer: #b8c0cc;           /* leere Zellen, Striche, fehlende Werte */
+    --ui-feldrand-leer: #dde3ea;  /* Rand eines leeren Zahlenfelds (heller als --ui-feldrand) */
+    --ui-rand-stark: #c5ccd6;     /* Rand eines gefüllten Zahlenfelds, Hover-Rand von Kacheln */
+    /* Podest Rang 1–3: Marke voll, Zeilen und Kartenköpfe mischen die Fläche mit Weiss */
+    --ui-gold-bg: #f6e3a1;   --ui-gold-fg: #6b4f00;
+    --ui-silber-bg: #e2e7ee; --ui-silber-fg: #3d4757;
+    --ui-bronze-bg: #f0d2b6; --ui-bronze-fg: #7a3f12;
     /* Knopf-Semantik (bleibt): grün Anlegen/Import, blau Speichern/Bearbeiten, türkis Export/PDF, rot Löschen, grau Abbrechen */
     --ui-k-gruen: #1f7a4d;
     --ui-k-blau: #2b52a0;
@@ -66,11 +75,11 @@
     --bs-body-bg: var(--ui-grund);
     --bs-border-color: var(--ui-rand);
     --bs-border-radius: var(--ui-rad);
-    --bs-primary: #3b6cce;
+    --bs-primary: var(--ui-akzent);
     --bs-primary-rgb: 59, 108, 206;
-    --bs-link-color: #2b52a0;
+    --bs-link-color: var(--ui-akzent-dunkel);
     --bs-link-color-rgb: 43, 82, 160;
-    --bs-link-hover-color: #1e3f80;
+    --bs-link-hover-color: var(--ui-akzent-tief);
     --bs-link-hover-color-rgb: 30, 63, 128;
     --bs-focus-ring-color: rgba(59, 108, 206, .25);
     --bs-secondary-color: var(--ui-text-2);
@@ -86,7 +95,7 @@ body {
 }
 ::selection { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
 a { color: var(--ui-akzent-dunkel); }
-a:hover { color: #1e3f80; }
+a:hover { color: var(--ui-akzent-tief); }
 :focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 2px; }
 .text-muted { color: var(--ui-text-2) !important; }
 
@@ -202,7 +211,7 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
 .btn-outline-warning:hover,   .btn-outline-warning:active   { color: #fff; background-color: #b45309; border-color: #b45309; }
 
 /* Gefüllt = die eine Hauptaktion einer Seite (sparsam einsetzen) */
-.btn-primary { --bs-btn-bg: var(--ui-k-blau); --bs-btn-border-color: var(--ui-k-blau); --bs-btn-hover-bg: #22448a; --bs-btn-hover-border-color: #22448a; --bs-btn-active-bg: #1e3f80; --bs-btn-active-border-color: #1e3f80; --bs-btn-disabled-bg: var(--ui-k-blau); --bs-btn-disabled-border-color: var(--ui-k-blau); }
+.btn-primary { --bs-btn-bg: var(--ui-k-blau); --bs-btn-border-color: var(--ui-k-blau); --bs-btn-hover-bg: #22448a; --bs-btn-hover-border-color: #22448a; --bs-btn-active-bg: var(--ui-akzent-tief); --bs-btn-active-border-color: var(--ui-akzent-tief); --bs-btn-disabled-bg: var(--ui-k-blau); --bs-btn-disabled-border-color: var(--ui-k-blau); }
 .btn-success { --bs-btn-bg: var(--ui-k-gruen); --bs-btn-border-color: var(--ui-k-gruen); --bs-btn-hover-bg: #17613d; --bs-btn-hover-border-color: #17613d; }
 .btn-danger  { --bs-btn-bg: var(--ui-k-rot); --bs-btn-border-color: var(--ui-k-rot); --bs-btn-hover-bg: #912018; --bs-btn-hover-border-color: #912018; }
 
@@ -221,10 +230,10 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
 .badge { border-radius: 6px; font-weight: 600; }
 .badge.bg-light { background-color: #f4f6f9 !important; color: #3d4757 !important; }
 .alert { border-radius: 10px; }
-.alert-info    { background: #eef4ff; border-color: #c9d9f7; color: #1e3f80; }
+.alert-info    { background: #eef4ff; border-color: #c9d9f7; color: var(--ui-akzent-tief); }
 .alert-success { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); color: var(--ui-ok-fg); }
 .alert-warning { background: var(--ui-warn-bg); border-color: var(--ui-warn-rand); color: var(--ui-warn-fg); }
-.alert-danger  { background: var(--ui-fehler-bg); border-color: #f5c2bd; color: var(--ui-fehler); }
+.alert-danger  { background: var(--ui-fehler-bg); border-color: var(--ui-fehler-rand); color: var(--ui-fehler); }
 .progress { background-color: var(--ui-linie); border-radius: 3px; }
 .progress-bar.bg-success { background-color: var(--ui-ok-fg) !important; }
 .nav-tabs .nav-link.active { color: var(--ui-text); border-color: var(--ui-rand) var(--ui-rand) var(--ui-flaeche); }
@@ -261,7 +270,7 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
 
 /* ---------- Tastenhinweise (wie SFARL) ---------- */
 .ui-tasten { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; padding: 8px var(--ui-pad); border-top: 1px solid var(--ui-rand); background: var(--ui-flaeche-2); font-size: 0.78rem; color: var(--ui-text-2); }
-.ui-tasten kbd, kbd.ui-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; padding: 1px 5px; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1.35; border: 1px solid var(--ui-feldrand); border-bottom-width: 2px; border-radius: 5px; background: #fff; color: var(--ui-text); box-shadow: none; }
+.ui-tasten kbd, kbd.ui-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; padding: 1px 5px; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1.35; border: 1px solid var(--ui-feldrand); border-bottom-width: 2px; border-radius: 5px; background: var(--ui-flaeche); color: var(--ui-text); box-shadow: none; }
 
 /* ---------- Schmale Bildschirme ---------- */
 @media (max-width: 768px) {
@@ -297,10 +306,10 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
 .ui-karte { background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad-l); }
 .ui-tab-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 10px var(--ui-pad); border-bottom: 1px solid var(--ui-linie); }
 .ui-tab-titel { font-weight: 600; font-size: 0.95rem; }
-.ui-filter { display: flex; gap: 2px; padding: 2px; background: #f1f4f8; border-radius: 8px; }
+.ui-filter { display: flex; gap: 2px; padding: 2px; background: var(--ui-linie-zart); border-radius: 8px; }
 .ui-filter button { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-size: 0.8rem; font-weight: 600; color: var(--ui-text); cursor: pointer; white-space: nowrap; }
 .ui-filter button:hover { background: rgba(255, 255, 255, .65); }
-.ui-filter button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+.ui-filter button[aria-pressed="true"] { background: var(--ui-flaeche); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
 .ui-filter button span { font-weight: 500; color: var(--ui-text-2); }
 .ui-suche { margin-left: auto; width: 17rem; max-width: 100%; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--ui-feldrand); border-radius: var(--ui-rad); background: var(--ui-flaeche-2); }
 .ui-suche:focus-within { border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
@@ -313,9 +322,9 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
 .ui-status.ok { color: var(--ui-ok-fg); } .ui-status.ok .ui-punkt { background: var(--ui-ok-fg); }
 .ui-status.offen { color: var(--ui-warn-fg); } .ui-status.offen .ui-punkt { background: var(--ui-warn-punkt); }
 .geloest-pill { display: inline-block; padding: 1px 7px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; background: var(--ui-warn-bg); color: var(--ui-warn-fg); text-transform: none; letter-spacing: 0; }
-.cell-empty { color: #b8c0cc; }
+.cell-empty { color: var(--ui-leer); }
 tr.ui-offen > td { background: var(--ui-warn-zeile) !important; border-bottom-color: #fdecb5 !important; }
-tr.ui-offen:hover > td { background: #fef6d8 !important; }
+tr.ui-offen:hover > td { background: var(--ui-warn-zeile-hover) !important; }
 tr.selected > td,
 tr.ui-markiert > td { background: var(--ui-gewaehlt) !important; box-shadow: inset 0 2px 0 var(--ui-akzent), inset 0 -2px 0 var(--ui-akzent) !important; }
 tr.selected > td:first-child,
@@ -327,7 +336,7 @@ tr.ui-markiert > td:last-child { box-shadow: inset -2px 2px 0 var(--ui-akzent), 
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr > td:is(:first-child, :last-child) { background-color: var(--ui-flaeche) !important; }
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:hover > td:is(:first-child, :last-child) { background-color: var(--ui-flaeche-2) !important; }
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr.ui-offen > td:is(:first-child, :last-child) { background-color: var(--ui-warn-zeile) !important; }
-:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr.ui-offen:hover > td:is(:first-child, :last-child) { background-color: #fef6d8 !important; }
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr.ui-offen:hover > td:is(:first-child, :last-child) { background-color: var(--ui-warn-zeile-hover) !important; }
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:is(.selected, .ui-markiert) > td:is(:first-child, :last-child),
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:is(.selected, .ui-markiert):hover > td:is(:first-child, :last-child) { background-color: var(--ui-gewaehlt) !important; }
 .min-w-0 { min-width: 0; }
@@ -368,13 +377,13 @@ input.form-control[aria-invalid="true"] { border-color: var(--ui-fehler); backgr
 .shot-hint { font-size: 0.78rem; color: var(--ui-text-3); font-weight: 400; }
 .shot-total { font-size: 1.35rem; font-weight: 700; color: var(--ui-text); background: none; border-radius: 0; padding: 0; min-width: 3rem; text-align: right; line-height: 1.1; }
 .shot-row .shot-total { font-size: 0.95rem; min-width: 2rem; }
-.shot-status { text-transform: none; letter-spacing: 0; font-size: 0.75rem; color: var(--ui-text-2); background: #f1f4f8; border: 1px solid #dde3ea; }
+.shot-status { text-transform: none; letter-spacing: 0; font-size: 0.75rem; color: var(--ui-text-2); background: var(--ui-linie-zart); border: 1px solid var(--ui-feldrand-leer); }
 .shot-section.disabled { background: var(--ui-flaeche-2); padding: 10px 14px; }
 .shot-section.disabled .shot-section-title { color: var(--ui-text-2); }
 .shot-row-label { text-transform: none; letter-spacing: 0; font-size: 0.8rem; font-weight: 500; color: var(--ui-text-2); }
 .shot-input { border: 1px solid var(--ui-feldrand); border-radius: 6px; color: var(--ui-text); }
 .shot-input:focus { border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); background: var(--ui-gewaehlt); }
-.shot-input.filled { background: #fbfcfd; border-color: #c5ccd6; }
+.shot-input.filled { background: #fbfcfd; border-color: var(--ui-rand-stark); }
 .shot-input.is-unique { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); }
 .shot-input[aria-invalid="true"] { border-color: var(--ui-fehler); background: var(--ui-fehler-bg); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
 @media (min-width: 768px) {
@@ -386,3 +395,73 @@ input.form-control[aria-invalid="true"] { border-color: var(--ui-fehler); backgr
     .shot-cols { flex-direction: column; gap: 0; }
     .shot-cols > .shot-section { margin-bottom: 12px; }
 }
+
+/* ==========================================================================
+   Erfassungsseite in Fensterhöhe (Endschiessen, Partnerinnen, Heim, Kanti)
+   Kopf-Card und Tabellen-Card füllen das Fenster, die Tabelle scrollt innen.
+   Markup: .main-content-wrapper.ui-vollhoehe > .msv-kopf
+             + form.ui-karte.ui-vollhoehe-karte > .desktop-table-container > .ui-scroll > table
+   ========================================================================== */
+.ui-vollhoehe { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
+.ui-vollhoehe > .msv-kopf { flex-shrink: 0; }
+.ui-vollhoehe-karte { flex: 1 1 auto; min-height: 0 !important; display: flex; flex-direction: column; overflow: hidden; }
+.ui-vollhoehe-karte > .desktop-table-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.ui-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+/* Erfassungs-Panel (.ui-erfassen am Slide-Panel): grösserer Titel, Position «3 von 40» darunter,
+   Tasten im Fuss. Mobil ist das Panel vollbreit (msv-styles.css): keine Abdunklung, Fuss bleibt sichtbar. */
+.ui-erfassen .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
+.ui-erfassen .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
+.ui-erfassen .panel-footer .ui-kbd { margin: 0 2px; }
+
+@media (max-width: 767.98px) {
+    .ui-vollhoehe { height: auto; min-height: 0; }
+    .ui-vollhoehe-karte { overflow: visible; }
+    .panel-overlay:has(+ .ui-erfassen) { display: none !important; }
+    .ui-erfassen .panel-footer { position: sticky; bottom: 0; }
+    .ui-erfassen .panel-footer .btn { min-height: 48px; }
+}
+
+/* ---------- Leerzustand (Block oder Tabellenzelle; ganze Tabellenzeile: msv_empty_row()) ---------- */
+.ui-leerzustand { padding: 2.5rem 1rem; text-align: center; color: var(--ui-text-2); }
+.ui-leerzustand > .bi { display: block; margin-bottom: .5rem; font-size: 2rem; opacity: .5; }
+.ui-leerzustand p { margin: 0; }
+
+/* ---------- Upload-Fläche: Datei ablegen oder klicken ----------
+   .upload-area (Importe, Prüfungen) und .import-area (Mitglieder, JSK, Standbelegung) sehen gleich aus;
+   beim Ziehen setzt das JS .dragover bzw. .dragging. */
+.upload-area,
+.import-area { padding: 40px 24px; text-align: center; background: var(--ui-flaeche-2); border: 2px dashed var(--ui-feldrand); border-radius: var(--ui-rad-l); cursor: pointer; transition: border-color .2s, background-color .2s; }
+.upload-area:hover,
+.import-area:hover { background: var(--ui-flaeche); border-color: #9aa6b6; }
+.upload-area:focus-visible,
+.import-area:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
+.upload-area.dragover,
+.import-area:is(.dragover, .dragging) { background: var(--ui-gewaehlt); border-color: var(--ui-akzent); }
+.upload-area > .bi,
+.import-area > .bi { font-size: 2.5rem; color: var(--ui-text-3); }
+.upload-area h4 { margin: 10px 0 4px; font-size: 1.05rem; font-weight: 600; color: var(--ui-text); }
+
+/* Lade-Overlay über der ganzen Seite (Importe; das JS blendet es ein und entfernt es) */
+.loading-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; background: rgba(26, 35, 50, .55); }
+.loading-overlay > .loading-spinner { padding: 2rem; text-align: center; color: var(--ui-text); background: var(--ui-flaeche); border-radius: var(--ui-rad-l); }
+
+/* ---------- Podest: Rang 1–3 in Ranglisten (flach, keine Verläufe) ---------- */
+.rang-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 30px; padding: 0 .55rem; border-radius: 999px; font-weight: 700; font-size: .82rem; background: var(--ui-linie-zart); color: var(--ui-text-2); }
+.rang-badge.r1 { background: var(--ui-gold-bg);   color: var(--ui-gold-fg); }
+.rang-badge.r2 { background: var(--ui-silber-bg); color: var(--ui-silber-fg); }
+.rang-badge.r3 { background: var(--ui-bronze-bg); color: var(--ui-bronze-fg); }
+@media (max-width: 767.98px) {
+    .mobile-card:is(.rank-1, .rank-2, .rank-3) .mobile-card-header { font-weight: 700; }
+    .mobile-card.rank-1 .mobile-card-header { background: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
+    .mobile-card.rank-2 .mobile-card-header { background: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
+    .mobile-card.rank-3 .mobile-card-header { background: color-mix(in srgb, var(--ui-bronze-bg) 40%, var(--ui-flaeche)); }
+}
+
+/* ---------- Flag-Dots: Merkmal an/aus in Listen (ohne Hüpfen; Erklärung per data-tooltip) ----------
+   .on = Akzent; .on.ok = «Aktiv» (grün); weitere Bedeutungen setzt die Seite über data-flag. */
+.flag-dots { display: flex; gap: 6px; justify-content: center; }
+.flag-dot { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: .75rem; cursor: default; transition: background-color .15s; }
+.flag-dot.on { background: var(--ui-akzent-dunkel); color: var(--ui-flaeche); }
+.flag-dot.on.ok { background: var(--ui-ok-fg); }
+.flag-dot.off { background: var(--ui-linie-zart); color: var(--ui-leer); }

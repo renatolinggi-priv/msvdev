@@ -9,11 +9,8 @@ try {
 
 // Seitenspezifische Styles: nur Aufbau und die Sie-und-Er-Punkte; Optik aus css/msv-ui.css
 $page_specific_css = "
-.ep-seite { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
-.ep-seite > .msv-kopf { flex-shrink: 0; }
-.ep-tabelle { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.ep-tabelle .desktop-table-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.ep-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; outline: none; }
+/* Fensterhöhe (.ui-vollhoehe, .ui-scroll) und Erfassungs-Panel (.ui-erfassen) kommen aus css/msv-ui.css */
+.ep-scroll { outline: none; }
 #partnerTabelle { margin: 0; border-collapse: separate; border-spacing: 0; }
 #partnerTabelle thead th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; white-space: nowrap; text-align: right; }
 #partnerTabelle tbody td { height: 40px; padding: 0 10px; white-space: nowrap; text-align: right; vertical-align: middle; border-bottom: 1px solid var(--ui-linie-zart); }
@@ -25,8 +22,6 @@ $page_specific_css = "
 #partnerTabelle tbody tr.hybrid-row { cursor: pointer; }
 #partnerTabelle tbody tr.hybrid-row:hover > td { background: var(--ui-flaeche-2); }
 #partnerTabelle tbody tr.ui-leer td { height: auto; padding: 32px 16px; text-align: center; color: var(--ui-text-2); white-space: normal; cursor: default; }
-#editPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
-#editPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
 
 /* Sie und Er: kompakte Punkte (Partnerin rot, Mitglied blau) */
 .dot-row { display: flex; align-items: center; gap: 2px; justify-content: center; }
@@ -36,20 +31,14 @@ $page_specific_css = "
 .dot-mitglied { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
 .dot-mitglied.unique { background: var(--ui-akzent-dunkel); color: #fff; }
 .dot-struck { text-decoration: line-through; opacity: 0.45; }
-.dot-empty { background: var(--ui-flaeche-2); color: #b8c0cc; border: 1px dashed var(--ui-rand); }
-.dot-sep { color: #b8c0cc; font-size: 0.7rem; margin: 0 1px; }
+.dot-empty { background: var(--ui-flaeche-2); color: var(--ui-leer); border: 1px dashed var(--ui-rand); }
+.dot-sep { color: var(--ui-leer); font-size: 0.7rem; margin: 0 1px; }
 .sie-er-total { font-weight: 700; font-size: 0.8rem; color: var(--ui-text); min-width: 28px; text-align: right; margin-left: 6px; }
 .sie-er-header-legend { font-size: 0.65rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ui-text-2); margin-top: 2px; }
 
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
-    .ep-seite { height: auto; min-height: 0; }
-    .ep-tabelle { overflow: visible; }
-    .hybrid-edit-panel { width: 100vw; right: -100vw; }
-    .panel-overlay { display: none !important; }
-    .panel-footer { position: sticky; bottom: 0; }
-    .panel-footer .btn { min-height: 48px; font-size: 0.9rem; }
     .mobile-card-detail-row { padding: 0.75rem 0 !important; border-bottom: 1px solid var(--ui-linie-zart) !important; }
     .mobile-card-detail-label { font-size: 0.875rem !important; color: var(--ui-text-2) !important; font-weight: 500 !important; }
     .mobile-card-detail-value { font-size: 1rem !important; color: var(--ui-text) !important; }
@@ -68,7 +57,7 @@ $csrf = csrf_token();
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-wide ep-seite">
+            <div class="main-content-wrapper content-width-wide ui-vollhoehe">
                 <?php
                 $page_title = 'Endschiessen Partner';
                 $page_title_after = '<button type="button" class="btn-help" data-help="endresultate_partner.uebersicht" aria-label="Hilfe"></button>'
@@ -83,7 +72,7 @@ $csrf = csrf_token();
                 include 'partials/page_header.inc.php';
                 ?>
 
-                <form id="partnerResultateForm" class="ui-karte ep-tabelle" onsubmit="return false">
+                <form id="partnerResultateForm" class="ui-karte ui-vollhoehe-karte" onsubmit="return false">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="ui-tab-kopf">
@@ -102,7 +91,7 @@ $csrf = csrf_token();
 
                     <!-- Desktop: Tabelle -->
                     <div class="desktop-table-container">
-                        <div class="ep-scroll" id="epScroll" tabindex="0" aria-label="Partnerinnen. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                        <div class="ui-scroll ep-scroll" id="epScroll" tabindex="0" aria-label="Partnerinnen. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
                             <table class="table mb-0" id="partnerTabelle">
                                 <thead>
                                     <tr>
@@ -154,7 +143,7 @@ $csrf = csrf_token();
 <div class="panel-overlay" id="panelOverlay"></div>
 
 <!-- Slide-Panel -->
-<div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 600px;">
+<div class="hybrid-edit-panel ui-erfassen" id="editPanel" style="--panel-width: 600px;">
     <div class="panel-header">
         <div class="min-w-0">
             <h6 class="mb-0" id="panelTitle">Partnerin erfassen</h6>

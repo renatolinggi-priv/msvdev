@@ -7,11 +7,14 @@
 include 'dbconnect.inc.php';
 require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
-// Seiten-CSS: Panel, Aktions-Card, Flag-Dots, Skeleton, Import-Area sind zentral (msv-styles.css)
+// Seiten-CSS: Panel, Aktions-Card, Skeleton zentral in msv-styles.css; Flag-Dots und Import-Fläche in msv-ui.css
 $page_specific_css = <<<'CSS'
 #panelId[readonly] { background: var(--ui-linie-zart); }
 .mv-search { max-width: 350px; }
-.import-area-icon { font-size: 2rem; color: var(--ui-text-2); }
+/* Flag-Dots: Aktiv = .ok (zentral grün); die übrigen Merkmale je eigene Farbe, solange sie an sind */
+.flag-dot.on[data-flag="ehrenmitglied"]  { background: var(--ui-warn-punkt); }
+.flag-dot.on[data-flag="verstorben"]     { background: var(--ui-k-grau); }
+.flag-dot.on[data-flag="ist_jsk_leiter"] { background: var(--ui-k-tuerkis); }
 .import-preview-scroll { max-height: 200px; overflow-y: auto; }
 /* kurzes Feedback nach dem Auto-Save einer Zeile */
 .hybrid-table tbody tr.row-saved td { background: var(--ui-ok-bg) !important; transition: background .6s; }
@@ -334,7 +337,7 @@ include 'partials/side_panel.inc.php';
           Entspricht dem CSV-Export. Anrede, Vereinsaufnahme und Kommunikation sind optional.</small>
         </div>
         <div class="import-area" id="dropZone" role="button" tabindex="0" aria-label="CSV-Datei wählen">
-          <i class="bi bi-cloud-upload d-block import-area-icon"></i>
+          <i class="bi bi-cloud-upload d-block" aria-hidden="true"></i>
           <p class="mb-0 mt-2 text-muted">Datei hier ablegen oder klicken</p>
           <input type="file" id="csvFile" accept=".csv" hidden>
         </div>

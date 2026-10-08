@@ -81,7 +81,7 @@ foreach ($rows as $r) {
     echo '<td class="h-sub text-center">' . $esc($kurs) . '</td>';
     echo '<td class="text-center">' . $kontoBadge($r['konto_status']) . '</td>';
     echo '<td class="text-center">';
-    echo '<span class="flag-dot ' . ($aktiv ? 'on' : 'off') . '" data-tooltip="Aktiv"><i class="bi bi-check-lg"></i></span>';
+    echo '<span class="flag-dot ok ' . ($aktiv ? 'on' : 'off') . '" data-tooltip="Aktiv"><i class="bi bi-check-lg"></i></span>';
     echo '</td>';
 
     echo '</tr>';

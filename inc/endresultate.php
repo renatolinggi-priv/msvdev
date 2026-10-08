@@ -9,12 +9,8 @@ try {
 
 // Seitenspezifische Styles: nur noch Aufbau dieser Seite; Optik kommt aus css/msv-ui.css
 $page_specific_css = "
-/* Kopf-Card + Tabellen-Card füllen das Fenster, die Tabelle scrollt innen */
-.end-seite { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
-.end-seite > .msv-kopf { flex-shrink: 0; }
-.end-tabelle { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.end-tabelle .desktop-table-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.end-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; outline: none; }
+/* Fensterhöhe (.ui-vollhoehe, .ui-scroll) und Erfassungs-Panel (.ui-erfassen) kommen aus css/msv-ui.css */
+.end-scroll { outline: none; }
 #mitgliederTabelle { margin: 0; border-collapse: separate; border-spacing: 0; }
 #mitgliederTabelle thead th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; white-space: nowrap; text-align: right; }
 #mitgliederTabelle tbody td { height: 40px; padding: 0 10px; white-space: nowrap; text-align: right; vertical-align: middle; border-bottom: 1px solid var(--ui-linie-zart); }
@@ -24,19 +20,10 @@ $page_specific_css = "
 #mitgliederTabelle tbody tr.hybrid-row { cursor: pointer; }
 #mitgliederTabelle tbody tr.hybrid-row:hover > td { background: var(--ui-flaeche-2); }
 #mitgliederTabelle tbody tr.ui-leer td { height: auto; padding: 32px 16px; text-align: center; color: var(--ui-text-2); white-space: normal; cursor: default; }
-#editPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
-#editPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
-#editPanel .panel-footer .ui-kbd { margin: 0 2px; }
 
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
-    .end-seite { height: auto; min-height: 0; }
-    .end-tabelle { overflow: visible; }
-    .hybrid-edit-panel { width: 100vw; right: -100vw; }
-    .panel-overlay { display: none !important; }
-    .panel-footer { position: sticky; bottom: 0; }
-    .panel-footer .btn { min-height: 48px; font-size: 0.9rem; }
     .mobile-card-detail-row { padding: 0.75rem 0 !important; border-bottom: 1px solid var(--ui-linie-zart) !important; }
     .mobile-card-detail-label { font-size: 0.875rem !important; color: var(--ui-text-2) !important; font-weight: 500 !important; }
     .mobile-card-detail-value { font-size: 1rem !important; color: var(--ui-text) !important; }
@@ -55,7 +42,7 @@ $csrf = csrf_token();
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-wide end-seite">
+            <div class="main-content-wrapper content-width-wide ui-vollhoehe">
                 <?php
                 $page_title = 'Endschiessen Resultaterfassung';
                 $page_title_after = '<button type="button" class="btn-help" data-help="endresultate.uebersicht" aria-label="Hilfe"></button>'
@@ -70,7 +57,7 @@ $csrf = csrf_token();
                 include 'partials/page_header.inc.php';
                 ?>
 
-                <form id="endresultateForm" class="ui-karte end-tabelle" onsubmit="return false">
+                <form id="endresultateForm" class="ui-karte ui-vollhoehe-karte" onsubmit="return false">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="ui-tab-kopf">
@@ -89,7 +76,7 @@ $csrf = csrf_token();
 
                     <!-- Desktop: Tabelle -->
                     <div class="desktop-table-container">
-                        <div class="end-scroll" id="endScroll" tabindex="0" aria-label="Mitglieder. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                        <div class="ui-scroll end-scroll" id="endScroll" tabindex="0" aria-label="Mitglieder. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
                             <table class="table mb-0" id="mitgliederTabelle">
                                 <thead>
                                     <tr>
@@ -144,7 +131,7 @@ $csrf = csrf_token();
 <div class="panel-overlay" id="panelOverlay"></div>
 
 <!-- Slide-Panel -->
-<div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 600px;">
+<div class="hybrid-edit-panel ui-erfassen" id="editPanel" style="--panel-width: 600px;">
     <div class="panel-header">
         <div class="min-w-0">
             <h6 class="mb-0" id="panelTitle">Erfassen</h6>

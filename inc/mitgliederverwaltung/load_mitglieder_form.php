@@ -74,10 +74,11 @@ if ($result && $result->num_rows > 0) {
         // Flag-Dots
         echo '<td>';
         echo '<div class="flag-dots">';
-        echo '<div class="flag-dot ' . ($statusVal ? 'on' : 'off') . '" data-flag="status" data-tooltip="Aktiv"><i class="bi bi-check-lg"></i></div>';
-        echo '<div class="flag-dot ' . ($ehreVal ? 'on' : 'off') . '" data-flag="ehrenmitglied" data-tooltip="Ehrenmitglied" style="' . ($ehreVal ? 'background:#f59e0b;' : '') . '"><i class="bi bi-award"></i></div>';
-        echo '<div class="flag-dot ' . ($verstVal ? 'on' : 'off') . '" data-flag="verstorben" data-tooltip="Verstorben" style="' . ($verstVal ? 'background:#64748b;' : '') . '"><i class="bi bi-dash-circle"></i></div>';
-        echo '<div class="flag-dot ' . ($leiterVal ? 'on' : 'off') . '" data-flag="ist_jsk_leiter" data-tooltip="Jungschützenleiter" style="' . ($leiterVal ? 'background:#14b8a6;' : '') . '"><i class="bi bi-person-badge"></i></div>';
+        // Farben der Merkmale im Seiten-CSS (inc/mitgliederverwaltung.php), damit sie dem Umschalten folgen
+        echo '<div class="flag-dot ok ' . ($statusVal ? 'on' : 'off') . '" data-flag="status" data-tooltip="Aktiv"><i class="bi bi-check-lg"></i></div>';
+        echo '<div class="flag-dot ' . ($ehreVal ? 'on' : 'off') . '" data-flag="ehrenmitglied" data-tooltip="Ehrenmitglied"><i class="bi bi-award"></i></div>';
+        echo '<div class="flag-dot ' . ($verstVal ? 'on' : 'off') . '" data-flag="verstorben" data-tooltip="Verstorben"><i class="bi bi-dash-circle"></i></div>';
+        echo '<div class="flag-dot ' . ($leiterVal ? 'on' : 'off') . '" data-flag="ist_jsk_leiter" data-tooltip="Jungschützenleiter"><i class="bi bi-person-badge"></i></div>';
         echo '</div>';
         echo '</td>';
 

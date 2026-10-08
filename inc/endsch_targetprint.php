@@ -9,19 +9,8 @@ $page_specific_css = '
         from { opacity: 0; transform: translateY(10px); }
         to   { opacity: 1; transform: translateY(0); }
     }
-    .upload-area {
-        border: 2px dashed #dee2e6; border-radius: 0.75rem; padding: 3rem; text-align: center;
-        background-color: #f8f9fa; transition: all 0.3s ease; cursor: pointer; margin-bottom: 2rem;
-    }
-    .upload-area i { transition: transform 0.3s ease; }
-    .upload-area:hover { border-color: #6c757d; background-color: #e9ecef; }
-    .upload-area:hover i { transform: scale(1.1); }
-    .upload-area.dragover { border-color: #0d6efd; background-color: #e7f1ff; }
-    .loading-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
-        display: flex; justify-content: center; align-items: center; z-index: 9999;
-    }
-    .loading-spinner { background: white; padding: 2rem; border-radius: 0.5rem; text-align: center; color: #333; }
+    /* Upload-Fläche (.upload-area) und Lade-Overlay kommen aus css/msv-ui.css */
+    .upload-area { margin-bottom: 2rem; }
     .loading-spinner .spinner-border { width: 3rem; height: 3rem; }
     .stich-preview-card {
         border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;
@@ -86,7 +75,7 @@ try {
                         </div>
 
                         <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                            <i class="bi bi-cloud-upload" aria-hidden="true"></i>
                             <h4 class="mt-3">CSV-Datei hier ablegen oder klicken zum Auswählen</h4>
                             <p class="text-muted mb-0">Unterstützte Formate: .csv</p>
                         </div>

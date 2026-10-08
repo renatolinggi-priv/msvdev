@@ -58,7 +58,7 @@ $page_specific_css = "
 .ranking-table .preis-col    { width: 16%; }
 .ranking-table .aktionen-col { width: 70px; }
 
-/* Rang-Badge mit Medaillen-Farben (.rang-badge/.r1/.r2/.r3) jetzt zentral in css/msv-styles.css. */
+/* Rang-Badge (.rang-badge/.r1/.r2/.r3) und Leerzustand (.ui-leerzustand) kommen aus css/msv-ui.css. */
 
 /* Preis-Zelle */
 .preis-cell { font-weight: 700; color: var(--ui-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -70,9 +70,6 @@ $page_specific_css = "
 }
 .ranking-table .ranking-row:hover .row-actions .btn { opacity: 1; }
 
-/* Leer-/Lade-Zustand */
-.ranking-empty { padding: 3rem 1rem; text-align: center; color: var(--ui-text-2); }
-.ranking-empty i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .6; }
 
 /* Karte für neue Rangierung */
 .add-ranking-card {
@@ -327,7 +324,7 @@ $(document).ready(function () {
     // Vorhandene Rangierungen laden
     function loadExistingRankings(year) {
         $('#rankingsList').html(`
-            <tr><td colspan="6" class="ranking-empty">
+            <tr><td colspan="6" class="ui-leerzustand">
                 <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
                 Lade Rangierungen...
             </td></tr>
@@ -345,7 +342,7 @@ $(document).ready(function () {
                     $('#exportPdfBtn, #printPdfBtn').show();
                 } else {
                     $('#rankingsList').html(`
-                        <tr><td colspan="6" class="ranking-empty">
+                        <tr><td colspan="6" class="ui-leerzustand">
                             <i class="bi bi-trophy"></i>
                             Noch keine Einzelrangierungen für das Jahr ${year} erfasst.
                         </td></tr>
@@ -357,7 +354,7 @@ $(document).ready(function () {
             },
             error: function () {
                 $('#rankingsList').html(`
-                    <tr><td colspan="6" class="ranking-empty text-danger">
+                    <tr><td colspan="6" class="ui-leerzustand text-danger">
                         <i class="bi bi-exclamation-triangle"></i>
                         Fehler beim Laden der Rangierungen.
                     </td></tr>

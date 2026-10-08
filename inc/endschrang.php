@@ -15,9 +15,9 @@ $page_specific_css = '
 #EndA tbody td:nth-child(2), #EndB tbody td:nth-child(2) { text-align: left; font-weight: 500; }
 #EndA tbody td:last-child, #EndB tbody td:last-child { font-weight: 700; color: var(--ui-text); background-color: var(--ui-flaeche-2); font-variant-numeric: tabular-nums; }
 /* Podium: Top 3 leicht in Gold, Silber und Bronze getönt, Rang fett */
-#EndA tbody tr.rank-1 td, #EndB tbody tr.rank-1 td { background-color: rgba(245, 158, 11, .09); }
-#EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: rgba(148, 163, 184, .12); }
-#EndA tbody tr.rank-3 td, #EndB tbody tr.rank-3 td { background-color: rgba(205, 127, 50, .09); }
+#EndA tbody tr.rank-1 td, #EndB tbody tr.rank-1 td { background-color: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
+#EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
+#EndA tbody tr.rank-3 td, #EndB tbody tr.rank-3 td { background-color: color-mix(in srgb, var(--ui-bronze-bg) 40%, var(--ui-flaeche)); }
 #EndA tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child,
 #EndB tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child { font-weight: 800; }
 ';

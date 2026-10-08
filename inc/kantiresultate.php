@@ -4,12 +4,8 @@ include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
 $page_specific_css = "
-/* Kopf-Card + Tabellen-Card füllen das Fenster, das Raster scrollt innen */
-.hk-seite { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
-.hk-seite > .msv-kopf { flex-shrink: 0; }
-.hk-tabelle { flex: 1 1 auto; min-height: 0 !important; display: flex; flex-direction: column; overflow: hidden; }
-.hk-desktop { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.hk-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scroll-padding-top: 40px; }
+/* Fensterhöhe (.ui-vollhoehe, .ui-scroll) und Erfassungs-Panel (.ui-erfassen) kommen aus css/msv-ui.css */
+.hk-scroll { scroll-padding-top: 40px; }
 
 /* Raster; die #hkScroll-Präfixe schlagen die !important-Regeln aus css/fixes/resultate-unified.css */
 #hkScroll #kantiresultateTabelle { margin: 0; width: 100%; min-width: 680px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
@@ -29,21 +25,18 @@ $page_specific_css = "
 .hk-anzahl.voll { color: var(--ui-ok-fg); font-weight: 600; }
 tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; background: var(--ui-akzent); vertical-align: middle; }
 .hk-chip-ungespeichert .ui-punkt { background: var(--ui-akzent) !important; }
-#hkScroll #kantiresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid #c5ccd6 !important; border-radius: 6px !important; box-shadow: none; }
-#hkScroll #kantiresultateTabelle input.small-input:not(.filled) { background: var(--ui-flaeche-2); border-color: #dde3ea !important; font-weight: 400; color: var(--ui-text-2); }
+#hkScroll #kantiresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid var(--ui-rand-stark) !important; border-radius: 6px !important; box-shadow: none; }
+#hkScroll #kantiresultateTabelle input.small-input:not(.filled) { background: var(--ui-flaeche-2); border-color: var(--ui-feldrand-leer) !important; font-weight: 400; color: var(--ui-text-2); }
 #hkScroll #kantiresultateTabelle input.small-input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel) !important; box-shadow: 0 0 0 1px var(--ui-akzent-dunkel) !important; outline: 0; }
 #hkScroll #kantiresultateTabelle input.small-input[aria-invalid=true] { background: var(--ui-fehler-bg) !important; border-color: var(--ui-fehler) !important; color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler) !important; }
 #hkFehler { margin: 10px var(--ui-pad) 0; }
 #kantiresultateTabelle .sum-cell { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
-#kantiresultateTabelle .sum-cell.empty { font-weight: 400; color: #b8c0cc; }
+#kantiresultateTabelle .sum-cell.empty { font-weight: 400; color: var(--ui-leer); }
 #hkScroll #kantiresultateTabelle tbody tr.group-header td.group-header-cell { position: static !important; height: auto; padding: 6px 20px !important; text-align: left !important; background: var(--ui-grund) !important; color: var(--ui-text-2); font-size: .72rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .05em; border-left: 0 !important; border-right: 0 !important; border-bottom: 1px solid var(--ui-linie) !important; cursor: default; }
 #hkScroll #kantiresultateTabelle tbody tr.ui-leer td { position: static !important; height: auto; padding: 32px 16px !important; text-align: center !important; color: var(--ui-text-2); font-weight: 400 !important; white-space: normal; cursor: default; }
 
-/* Schnellerfassung (Slide-Panel) */
-#entryPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
-#entryPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
+/* Schnellerfassung (Slide-Panel .ui-erfassen): Grund hinter der Erfassungskarte */
 #entryPanel .panel-body { background: var(--ui-grund); }
-#entryPanel .panel-footer .ui-kbd { margin: 0 2px; }
 .hk-feldtitel { display: block; margin-bottom: 4px; font-size: .75rem; font-weight: 500; color: var(--ui-text-2); }
 .hk-erfassung { padding: 12px 14px 14px; background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: 10px; }
 .hk-erfassung-kopf { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
@@ -55,17 +48,9 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 .entry-passe-field { display: flex; flex-direction: column; }
 .entry-passe-field label { margin-bottom: 4px; font-size: .75rem; font-weight: 500; color: var(--ui-text-2); }
 .entry-passe-field input { width: 100%; height: 52px; padding: 0 4px; text-align: center; font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-radius: 8px; -moz-appearance: textfield; }
-.entry-passe-field input.filled { background: var(--ui-flaeche); border-color: #c5ccd6; }
+.entry-passe-field input.filled { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
 .entry-passe-field input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
 
-@media (max-width: 767.98px) {
-    .hk-seite { height: auto; min-height: 0; }
-    .hk-tabelle { overflow: visible; }
-    .hybrid-edit-panel { width: 100vw; right: -100vw; }
-    .panel-overlay { display: none !important; }
-    .panel-footer { position: sticky; bottom: 0; }
-    .panel-footer .btn { min-height: 48px; }
-}
 /* Beste Passe in der Akzentfarbe (Raster, Panel, Handy) */
 #hkScroll #kantiresultateTabelle input.small-input.best-passe { background: var(--ui-akzent-hell); border-color: #9db8ea !important; color: var(--ui-akzent-dunkel); font-weight: 700; }
 .entry-passe-field.is-best input { background: var(--ui-akzent-hell); border-color: #9db8ea; color: var(--ui-akzent-dunkel); }
@@ -100,7 +85,7 @@ $csrf = csrf_token();
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-default hk-seite">
+            <div class="main-content-wrapper content-width-default ui-vollhoehe">
                 <?php
                 $page_title = 'Kantonalstich Resultaterfassung';
                 $page_title_after = '<button type="button" class="btn-help" data-help="kantiresultate.uebersicht" aria-label="Hilfe"></button>'
@@ -116,7 +101,7 @@ $csrf = csrf_token();
                 include 'partials/page_header.inc.php';
                 ?>
 
-                <form id="kantiresultateForm" class="ui-karte hk-tabelle" novalidate>
+                <form id="kantiresultateForm" class="ui-karte ui-vollhoehe-karte" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="ui-tab-kopf">
@@ -134,8 +119,8 @@ $csrf = csrf_token();
                     </div>
                     <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler" id="hkFehler" role="alert" hidden></div>
                     <!-- Desktop: Raster -->
-                    <div class="desktop-table-container hk-desktop">
-                        <div class="hk-scroll" id="hkScroll">
+                    <div class="desktop-table-container">
+                        <div class="ui-scroll hk-scroll" id="hkScroll">
                             <table class="table mb-0" id="kantiresultateTabelle">
                                 <thead>
                                     <tr>
@@ -180,7 +165,7 @@ $csrf = csrf_token();
 </div>
 <!-- Schnellerfassung: Slide-Panel -->
 <div class="panel-overlay" id="entryOverlay"></div>
-<div class="hybrid-edit-panel" id="entryPanel" style="--panel-width: 540px;">
+<div class="hybrid-edit-panel ui-erfassen" id="entryPanel" style="--panel-width: 540px;">
     <div class="panel-header">
         <div class="min-w-0">
             <h6 class="mb-0"><span id="entryName">Erfassen</span> <button type="button" class="btn-help" data-help="kantiresultate.schnellerfassung" aria-label="Hilfe"></button></h6>

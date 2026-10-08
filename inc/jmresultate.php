@@ -11,7 +11,7 @@ $page_specific_css = "
 /* Anlass-Karten */
 .jm-anlaesse { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 14px var(--ui-pad) var(--ui-pad); }
 .jm-anlass { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; padding: 10px 12px; text-align: left; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad); cursor: pointer; transition: border-color .15s, background-color .15s; }
-.jm-anlass:hover { background: var(--ui-flaeche-2); border-color: #c5ccd6; }
+.jm-anlass:hover { background: var(--ui-flaeche-2); border-color: var(--ui-rand-stark); }
 .jm-anlass:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
 .jm-anlass.selected { background: var(--ui-gewaehlt); border-color: var(--ui-akzent); box-shadow: 0 0 0 1px var(--ui-akzent); }
 .jm-anlass-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .875rem; font-weight: 600; }
@@ -20,12 +20,9 @@ $page_specific_css = "
 .jm-anlass-zahl b { font-weight: 700; color: var(--ui-text); }
 .jm-leer { grid-column: 1 / -1; padding: 24px 8px; text-align: center; color: var(--ui-text-2); }
 
-/* Erfassungs-Panel eines Anlasses (Container .anlass-panel zentral in css/msv-styles.css) */
+/* Erfassungs-Panel eines Anlasses (Container .anlass-panel in css/msv-styles.css, Titel/Position/Fuss über .ui-erfassen in css/msv-ui.css) */
 .anlass-panel-overlay { position: fixed; inset: 0; z-index: 1055; background: rgba(26, 35, 50, .28); opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s; }
 .anlass-panel-overlay.show { opacity: 1; visibility: visible; }
-#anlassPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
-#anlassPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
-#anlassPanel .panel-footer .ui-kbd { margin: 0 2px; }
 .jm-panel-suche { display: flex; align-items: center; gap: 12px; flex-shrink: 0; padding: 10px 20px; background: var(--ui-flaeche); border-bottom: 1px solid var(--ui-linie); }
 .jm-panel-suche .ui-suche { flex: 1 1 auto; width: auto; margin: 0; }
 .jm-panel-zaehler { flex: none; white-space: nowrap; font-size: .8rem; color: var(--ui-text-2); }
@@ -39,9 +36,9 @@ $page_specific_css = "
 .jm-name .geloest-pill { margin-left: 6px; vertical-align: 1px; }
 .jm-runden { display: flex; flex: none; gap: 10px; }
 .jm-runde { display: inline-flex; align-items: center; gap: 5px; margin: 0; font-size: .72rem; font-weight: 600; color: var(--ui-text-2); }
-.jm-feld.form-control { width: 76px; height: 34px; padding: 0 6px; text-align: center; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; background-color: var(--ui-flaeche-2); border-color: #dde3ea; border-radius: 6px; }
+.jm-feld.form-control { width: 76px; height: 34px; padding: 0 6px; text-align: center; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; background-color: var(--ui-flaeche-2); border-color: var(--ui-feldrand-leer); border-radius: 6px; }
 .jm-runde .jm-feld.form-control { width: 64px; }
-.jm-feld.form-control.filled { background-color: var(--ui-flaeche); border-color: #c5ccd6; }
+.jm-feld.form-control.filled { background-color: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
 .jm-feld.form-control.jm-gemeldet { background-color: var(--ui-warn-zeile); border-color: var(--ui-warn-rand); }
 .jm-feld.form-control:focus { background-color: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
 .jm-feld.form-control.is-invalid { background-color: var(--ui-fehler-bg); border-color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
@@ -49,7 +46,6 @@ $page_specific_css = "
 .jm-panel-leer { padding: 32px 16px; text-align: center; color: var(--ui-text-2); }
 @media (max-width: 767.98px) {
     .anlass-panel-overlay { display: none !important; }
-    #anlassPanel .panel-footer .btn { min-height: 48px; }
     .jm-feld.form-control { height: 44px; font-size: 16px; }
     .jm-panel-suche .ui-suche { height: 40px; }
 }
@@ -104,7 +100,7 @@ $page_specific_css = "
 .jm-line-val  { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .jm-line-max  { font-size: .72rem; color: var(--ui-text-3); }
 .jm-line-empty .jm-line-name,
-.jm-line-empty .jm-line-val { font-weight: 400; color: #b8c0cc; }
+.jm-line-empty .jm-line-val { font-weight: 400; color: var(--ui-leer); }
 .jm-detail-line.gestrichen { opacity: .75; }
 .jm-detail-line.gestrichen .jm-line-val { color: var(--ui-k-rot); text-decoration: line-through; }
 .jm-line-tag { padding: 1px 6px; border-radius: 6px; background: #fdecea; color: var(--ui-k-rot); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
@@ -119,9 +115,9 @@ $page_specific_css = "
     .jm-detail-groups { grid-template-columns: 1fr !important; }
     .jm-mobile-card .mobile-card-header { padding: .75rem 1rem; }
     .jm-mobile-rang { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); font-size: .85rem; font-weight: 700; color: var(--ui-text-2); }
-    .rank-1 .jm-mobile-rang { background: #ffd700; border-color: #ffd700; color: #5a4800; }
-    .rank-2 .jm-mobile-rang { background: #c0c0c0; border-color: #c0c0c0; color: #3a3a3a; }
-    .rank-3 .jm-mobile-rang { background: #cd7f32; border-color: #cd7f32; color: #fff; }
+    .rank-1 .jm-mobile-rang { background: var(--ui-gold-bg); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); }
+    .rank-2 .jm-mobile-rang { background: var(--ui-silber-bg); border-color: var(--ui-silber-bg); color: var(--ui-silber-fg); }
+    .rank-3 .jm-mobile-rang { background: var(--ui-bronze-bg); border-color: var(--ui-bronze-bg); color: var(--ui-bronze-fg); }
     .jm-mobile-total { white-space: nowrap; font-size: .95rem; font-weight: 700; color: var(--ui-text); }
     .jm-mobile-card .mobile-card-body { padding: 0 !important; }
     .jm-mobile-card .mobile-card-body .jm-detail-panel { padding: .75rem !important; border-top: none !important; border-bottom: none !important; }
@@ -221,7 +217,7 @@ try {
 
 <!-- Erfassungs-Panel eines Anlasses -->
 <div class="anlass-panel-overlay" id="anlassPanelOverlay"></div>
-<div class="anlass-panel" id="anlassPanel" style="--panel-width: 560px;">
+<div class="anlass-panel ui-erfassen" id="anlassPanel" style="--panel-width: 560px;">
     <div class="panel-header" id="anlassPanelHeader">
         <div class="min-w-0">
             <h6 class="mb-0"><span id="anlassPanelTitle">Anlass</span> <button type="button" class="btn-help" data-help="jmresultate.erfassung" aria-label="Hilfe"></button></h6>
@@ -258,8 +254,7 @@ try {
 
 <!-- ===== PDF-Import Modal ===== -->
 <style>
-#pdfImportModal .upload-area { border:2px dashed #cbd5e1; border-radius:0.75rem; padding:2.25rem 1rem; text-align:center; cursor:pointer; transition:all .2s; background:#f8fafc; }
-#pdfImportModal .upload-area:hover, #pdfImportModal .upload-area.dragover { border-color:#22c55e; background:#f0fdf4; }
+/* Ablagefläche (.upload-area) kommt aus css/msv-ui.css */
 #pdfImportModal tr.row-dup { background:#fffbeb; }
 #pdfImportModal tr.row-none { opacity:.55; }
 #pdfImportModal .res-input { width:72px; text-align:center; font-weight:600; }
@@ -287,7 +282,7 @@ try {
             </div>
           </div>
           <div class="upload-area" id="pdfImportDropzone">
-            <i class="bi bi-cloud-arrow-up" style="font-size:2.5rem; color:#6c757d;"></i>
+            <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
             <h6 class="mt-2 mb-1">PDF hier ablegen oder klicken</h6>
             <p class="text-muted small mb-0">Einzelrangliste eines Anlasses (z.B. Vereinsstich) oder FSA-Teilnehmerliste (Obligatorisch + Feldschiessen). Vereinsmitglieder werden automatisch erkannt.</p>
           </div>
@@ -920,7 +915,7 @@ try {
     const theadDefaultHtml = $('#pdfImportPreviewTable thead tr').html();
     const hintDefaultHtml = $('#pdfImportHint').html();
 
-    const dropzoneHtml = '<i class="bi bi-cloud-arrow-up" style="font-size:2.5rem; color:#6c757d;"></i>' +
+    const dropzoneHtml = '<i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>' +
         '<h6 class="mt-2 mb-1">PDF hier ablegen oder klicken</h6>' +
         '<p class="text-muted small mb-0">Einzelrangliste eines Anlasses (z.B. Vereinsstich) oder FSA-Teilnehmerliste (Obligatorisch + Feldschiessen). Vereinsmitglieder werden automatisch erkannt.</p>';
 

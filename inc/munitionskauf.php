@@ -217,9 +217,9 @@ $page_specific_css = '
     margin-right: 0.5rem;
 }
 
-.top-buyer-item:first-child .top-buyer-rank { background: #ffd700; color: #664d00; }
-.top-buyer-item:nth-child(2) .top-buyer-rank { background: #c0c0c0; color: #555; }
-.top-buyer-item:nth-child(3) .top-buyer-rank { background: #cd7f32; color: #fff; }
+.top-buyer-item:first-child .top-buyer-rank { background: var(--ui-gold-bg); color: var(--ui-gold-fg); }
+.top-buyer-item:nth-child(2) .top-buyer-rank { background: var(--ui-silber-bg); color: var(--ui-silber-fg); }
+.top-buyer-item:nth-child(3) .top-buyer-rank { background: var(--ui-bronze-bg); color: var(--ui-bronze-fg); }
 
 .ammo-summary {
     display: grid;

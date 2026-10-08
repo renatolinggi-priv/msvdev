@@ -100,11 +100,7 @@ $page_specific_css = <<<'CSS'
 
 /* Skeleton Loader (.skeleton/@keyframes) jetzt zentral in css/msv-styles.css. */
 
-/* --- Empty State --- */
-.empty-state {
-  padding: 3rem 1rem; text-align: center; color: var(--ui-text-2);
-}
-.empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+/* Leerzustand (.ui-leerzustand) kommt aus css/msv-ui.css */
 
 /* --- Mobile --- */
 @media (max-width: 767.98px) {
@@ -626,7 +622,7 @@ $(function() {
       if (data.success && data.events && data.events.length) {
         renderEvents(data.events, year);
       } else {
-        $('#eventsTable tbody').html('<tr><td colspan="4"><div class="empty-state"><i class="bi bi-calendar-x"></i>Keine Termine für ' + year + '</div></td></tr>');
+        $('#eventsTable tbody').html('<tr><td colspan="4"><div class="ui-leerzustand"><i class="bi bi-calendar-x" aria-hidden="true"></i>Keine Termine für ' + year + '</div></td></tr>');
         $('#eventCount').text(0);
         buildMobileCards();
       }
@@ -677,7 +673,7 @@ $(function() {
     if (!sc) return;
 
     const rows = document.querySelectorAll('#eventsTable tbody tr.hybrid-row, #eventsTable tbody tr.month-separator');
-    if (!rows.length) { sc.innerHTML = '<div class="empty-state"><i class="bi bi-calendar-x"></i>Keine Termine</div>'; return; }
+    if (!rows.length) { sc.innerHTML = '<div class="ui-leerzustand"><i class="bi bi-calendar-x" aria-hidden="true"></i>Keine Termine</div>'; return; }
 
     const esc = s => $('<span>').text(s == null ? '' : s).html();
     let html = '';

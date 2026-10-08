@@ -18,12 +18,9 @@ if (!isset($_SESSION['user_id']) || !(isAdmin() || isVorstand())) {
 
 $page_specific_css = <<<'CSS'
 /* ===== JSK-Verwaltung ===== */
-/* Flag-Dot base/off/hover jetzt zentral in css/msv-styles.css.
-   Nur grüne .on-Variante als Seiten-Override (zentral ist blau). */
-.flag-dot.on { background:var(--ui-ok-fg); color:#fff; }
-/* Slide-Panel (.hybrid-edit-panel/.panel-overlay/.panel-header/.panel-body/.panel-label/.panel-section)
-   jetzt zentral in css/msv-styles.css. Breite 520px via --panel-width am Panel.
-   Import-Area (.import-area*) ebenfalls zentral in css/msv-styles.css. */
+/* Flag-Dots (Aktiv = .flag-dot.ok, grün) und Import-Fläche (.import-area) kommen aus css/msv-ui.css.
+   Slide-Panel (.hybrid-edit-panel/.panel-overlay/.panel-header/.panel-body/.panel-label/.panel-section)
+   zentral in css/msv-styles.css. Breite 520px via --panel-width am Panel. */
 .feature-switch-card { border:1px solid var(--ui-rand); border-radius:0.75rem; background:#fff; }
 /* Teilnehmerlisten – kompakte Tabelle (Spalten richten sich aus) */
 .tl-table { width:100%; border-collapse:collapse; }
