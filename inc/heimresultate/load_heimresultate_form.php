@@ -12,10 +12,11 @@ require_once __DIR__ . '/../debug_log.inc.php';
  */
 
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
-// Error Reporting für Development (in Production auskommentieren)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+// Fehler ins Log, nie in die Ausgabe (das Fragment landet direkt in der Tabelle)
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
 /**
@@ -46,18 +47,11 @@ function generateMemberRow($mitglied, $resultate, $year) {
         $sum += $v;
     }
 
-    // Status-Dot Klasse
-    if ($filled === 8 && $filled > 0) $dotClass = 'complete';
-    elseif ($filled > 0) $dotClass = 'partial';
-    else $dotClass = 'empty';
-
-    // Name mit Security-Scaping + Status-Dot
+    // Name + Anzahl erfasster Passen (die Seite führt beides beim Tippen nach)
     $vorname = sanitizeOutput($mitglied['Vorname']);
     $name = sanitizeOutput($mitglied['Name']);
-    $html .= '<td class="text-start fw-semibold">';
-    $html .= '<span class="status-dot ' . $dotClass . '"></span>';
-    $html .= $name . ' ' . $vorname;
-    $html .= '</td>';
+    $html .= '<td><div class="hk-zelle"><span class="hk-name">' . $name . ' ' . $vorname . '</span>'
+           . '<span class="hk-anzahl' . ($filled === 8 ? ' voll' : '') . '">' . ($filled > 0 ? $filled . '/8' : '') . '</span></div></td>';
 
     // Resultate für jede Passe (1-8)
     for ($i = 1; $i <= 8; $i++) {
@@ -79,7 +73,7 @@ function generateMemberRow($mitglied, $resultate, $year) {
     // Summe-Spalte (serverseitig vorberechnet)
     $sumText = $sum > 0 ? $sum : '&ndash;';
     $sumClass = $sum > 0 ? 'sum-cell' : 'sum-cell empty';
-    $html .= '<td style="border-left:2px solid #e2e8f0;"><span class="' . $sumClass . '">' . $sumText . '</span></td>';
+    $html .= '<td><span class="' . $sumClass . '">' . $sumText . '</span></td>';
 
     $html .= '</tr>';
     return $html;
@@ -169,8 +163,7 @@ try {
 
     // Gruppen-Trennzeile (colspan = Name + 8 Passen + Total = 10)
     $groupHeader = function ($label, $icon) {
-        return '<tr class="group-header"><td colspan="10" class="group-header-cell">'
-            . '<i class="bi ' . $icon . ' me-1"></i>' . $label . '</td></tr>';
+        return '<tr class="group-header"><td colspan="10" class="group-header-cell">' . $label . '</td></tr>';
     };
 
     // Tabellenzeilen generieren
@@ -192,10 +185,7 @@ try {
 
     // Falls keine Mitglieder gefunden
     if ($memberCount === 0) {
-        $output = '<tr><td colspan="10" class="text-center text-muted py-4">';
-        $output .= '<i class="bi bi-info-circle me-2"></i>';
-        $output .= 'Keine Mitglieder gefunden';
-        $output .= '</td></tr>';
+        $output = '<tr class="ui-leer"><td colspan="10">Keine aktiven Mitglieder gefunden</td></tr>';
         logError("No members found");
     }
     
@@ -220,10 +210,7 @@ try {
     ]);
     
     // Benutzerfreundliche Fehlermeldung ausgeben
-    echo '<tr><td colspan="10" class="text-center text-danger py-4">';
-    echo '<i class="bi bi-exclamation-triangle me-2"></i>';
-    echo 'Fehler beim Laden der Daten. Bitte versuchen Sie es erneut.';
-    echo '</td></tr>';
+    echo '<tr class="ui-leer"><td colspan="10" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Fehler beim Laden der Daten. Bitte die Seite neu laden.</td></tr>';
     
 } finally {
     // Datenbankverbindung schliessen

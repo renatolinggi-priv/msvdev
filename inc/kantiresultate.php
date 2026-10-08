@@ -1,440 +1,92 @@
 <?php
-// kantiresultate.php – Neuaufbau nach wichtigetermine-Pattern
+// kantiresultate.php – Raster pro Mitglied (5 Passen) und Schnellerfassung im Slide-Panel
 include 'dbconnect.inc.php';
 
-// Seitenspezifische Styles
+// Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
 $page_specific_css = "
-/* Kantiresultate-spezifische Styles */
+/* Kopf-Card + Tabellen-Card füllen das Fenster, das Raster scrollt innen */
+.hk-seite { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
+.hk-seite > .msv-kopf { flex-shrink: 0; }
+.hk-tabelle { flex: 1 1 auto; min-height: 0 !important; display: flex; flex-direction: column; overflow: hidden; }
+.hk-desktop { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.hk-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scroll-padding-top: 40px; }
 
-:root {
-    --app-header: 76px;
-    --app-footer: 0px;
+/* Raster; die #hkScroll-Präfixe schlagen die !important-Regeln aus css/fixes/resultate-unified.css */
+#hkScroll #kantiresultateTabelle { margin: 0; width: 100%; min-width: 680px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+#hkScroll #kantiresultateTabelle thead th { position: sticky; top: 0 !important; z-index: 3; padding: 8px 6px; text-align: center; white-space: nowrap; background: var(--ui-flaeche-2) !important; border-bottom: 1px solid var(--ui-linie); }
+#hkScroll #kantiresultateTabelle th:not(:first-child),
+#hkScroll #kantiresultateTabelle td:not(:first-child) { width: 72px !important; min-width: 72px !important; max-width: 72px !important; }
+#hkScroll #kantiresultateTabelle th:first-child,
+#hkScroll #kantiresultateTabelle td:first-child { width: auto !important; min-width: 220px !important; max-width: none !important; padding-left: 20px; text-align: left !important; }
+#hkScroll #kantiresultateTabelle th:last-child,
+#hkScroll #kantiresultateTabelle td:last-child { width: 84px !important; min-width: 84px !important; max-width: 84px !important; }
+#hkScroll #kantiresultateTabelle tbody td { height: 44px; padding-top: 0; padding-bottom: 0; vertical-align: middle; text-align: center; border-bottom: 1px solid var(--ui-linie-zart); }
+#hkScroll #kantiresultateTabelle tbody td:first-child { cursor: pointer; }
+#hkScroll #kantiresultateTabelle tbody tr:not(.group-header):not(.ui-leer):hover > td { background: var(--ui-flaeche-2); }
+.hk-zelle { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hk-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ui-text); }
+.hk-anzahl { flex: none; font-size: .75rem; color: var(--ui-text-3); font-variant-numeric: tabular-nums; }
+.hk-anzahl.voll { color: var(--ui-ok-fg); font-weight: 600; }
+tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; background: var(--ui-akzent); vertical-align: middle; }
+.hk-chip-ungespeichert .ui-punkt { background: var(--ui-akzent) !important; }
+#hkScroll #kantiresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid #c5ccd6 !important; border-radius: 6px !important; box-shadow: none; }
+#hkScroll #kantiresultateTabelle input.small-input:not(.filled) { background: var(--ui-flaeche-2); border-color: #dde3ea !important; font-weight: 400; color: var(--ui-text-2); }
+#hkScroll #kantiresultateTabelle input.small-input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel) !important; box-shadow: 0 0 0 1px var(--ui-akzent-dunkel) !important; outline: 0; }
+#kantiresultateTabelle .sum-cell { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+#kantiresultateTabelle .sum-cell.empty { font-weight: 400; color: #b8c0cc; }
+#hkScroll #kantiresultateTabelle tbody tr.group-header td.group-header-cell { position: static !important; height: auto; padding: 6px 20px !important; text-align: left !important; background: var(--ui-grund) !important; color: var(--ui-text-2); font-size: .72rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .05em; border-left: 0 !important; border-right: 0 !important; border-bottom: 1px solid var(--ui-linie) !important; cursor: default; }
+#hkScroll #kantiresultateTabelle tbody tr.ui-leer td { position: static !important; height: auto; padding: 32px 16px !important; text-align: center !important; color: var(--ui-text-2); font-weight: 400 !important; white-space: normal; cursor: default; }
+
+/* Schnellerfassung (Slide-Panel) */
+#entryPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
+#entryPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
+#entryPanel .panel-body { background: var(--ui-grund); }
+#entryPanel .panel-footer .ui-kbd { margin: 0 2px; }
+.hk-feldtitel { display: block; margin-bottom: 4px; font-size: .75rem; font-weight: 500; color: var(--ui-text-2); }
+.hk-erfassung { padding: 12px 14px 14px; background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: 10px; }
+.hk-erfassung-kopf { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.hk-erfassung-titel { font-size: .9rem; font-weight: 600; color: var(--ui-text); }
+.hk-total { font-size: 1.35rem; font-weight: 700; line-height: 1.1; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+.hk-total span { margin-right: 6px; font-size: .8rem; font-weight: 500; color: var(--ui-text-2); }
+.hk-hinweis { margin: 10px 2px 0; font-size: .78rem; color: var(--ui-text-3); }
+.entry-passen-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.entry-passe-field { display: flex; flex-direction: column; }
+.entry-passe-field label { margin-bottom: 4px; font-size: .75rem; font-weight: 500; color: var(--ui-text-2); }
+.entry-passe-field input { width: 100%; height: 52px; padding: 0 4px; text-align: center; font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-radius: 8px; -moz-appearance: textfield; }
+.entry-passe-field input.filled { background: var(--ui-flaeche); border-color: #c5ccd6; }
+.entry-passe-field input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
+
+@media (max-width: 767.98px) {
+    .hk-seite { height: auto; min-height: 0; }
+    .hk-tabelle { overflow: visible; }
+    .hybrid-edit-panel { width: 100vw; right: -100vw; }
+    .panel-overlay { display: none !important; }
+    .panel-footer { position: sticky; bottom: 0; }
+    .panel-footer .btn { min-height: 48px; }
 }
+/* Beste Passe in der Akzentfarbe (Raster, Panel, Handy) */
+#hkScroll #kantiresultateTabelle input.small-input.best-passe { background: var(--ui-akzent-hell); border-color: #9db8ea !important; color: var(--ui-akzent-dunkel); font-weight: 700; }
+.entry-passe-field.is-best input { background: var(--ui-akzent-hell); border-color: #9db8ea; color: var(--ui-akzent-dunkel); }
+.entry-passe-field.is-best label::after { content: ' · beste'; font-weight: 600; color: var(--ui-akzent-dunkel); }
 
-.main-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 0 !important;
-    height: calc(100vh - var(--app-header) - var(--app-footer) - 20px) !important;
-    margin-bottom: 0 !important;
-}
-
-.content-background {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: hidden;
-}
-
-#kantiresultateForm {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-}
-
-.table-wrapper {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    margin-bottom: 0 !important;
-    overflow: hidden !important;
-}
-
-.table-responsive {
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: auto !important;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    -webkit-overflow-scrolling: touch;
-}
-
-.table {
-    border: none;
-    margin-bottom: 0;
-    table-layout: fixed;
-}
-
-.table thead th {
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0.75rem;
-    background-color: #f8f9fa;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.table tbody tr {
-    transition: background-color 0.2s ease;
-    border-bottom: 1px solid #f1f3f4;
-}
-
-.table tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.04);
-}
-
-.table tbody td {
-    padding: 0.5rem 0.75rem;
-    vertical-align: middle;
-    border: none;
-    text-align: center;
-}
-
-.table tbody td:first-child {
-    text-align: left;
-}
-
-.passe-input {
-    width: 55px !important;
-    text-align: center !important;
-    padding: 0.25rem 0.1rem !important;
-    font-size: 0.9rem !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 0.25rem !important;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-.passe-input:focus {
-    border-color: var(--secondary-color) !important;
-    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
-    outline: none !important;
-}
-
-.button-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    align-items: center;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
-    flex-shrink: 0;
-}
-
-
-.results-list-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    overflow: hidden;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-}
-
-.results-header {
-    background: var(--light-color);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #dee2e6;
-    color: var(--dark-color);
-    font-weight: 600;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.btn-compact { padding: .45rem .75rem; font-size: .875rem; }
-
-.custom-close {
-    background: none;
-    border: none;
-    color: var(--secondary-color);
-    font-size: 1.5rem;
-    opacity: 0.7;
-    transition: all var(--transition-speed) ease;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.custom-close:hover {
-    opacity: 1;
-    background-color: rgba(220, 53, 69, 0.1);
-    color: var(--danger-color);
-    transform: scale(1.1);
-}
-
-@media (max-width: 576px) {
-    .button-toolbar { flex-direction: column; }
-    .button-toolbar .btn { width: 100%; }
-}
-
-.spinner-border { color: var(--secondary-color) !important; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.results-list-card {
-    animation: fadeIn 0.5s ease-out;
-}
-
-/* =========================================
-   Mobile Cards Optimierung
-   ========================================= */
+/* Handy: Karten aus msv-styles, Suche oben */
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
-
-    /* Mobile Scroll Fix: fixe Höhe aufheben */
-    .main-content-wrapper {
-        height: auto !important;
-        min-height: calc(100vh - var(--app-header) - 10px) !important;
-    }
-
-    .content-background {
-        overflow: visible !important;
-    }
-
-    .table-wrapper {
-        overflow: visible !important;
-    }
-
-    /* Touch-Target-Grössen (form-controls/.btn) zentral in css/msv-styles.css */
-
-    .mobile-card-body .passe-input-mobile {
-        min-height: 48px !important;
-        font-size: 16px !important;
-        padding: 0.5rem !important;
-        text-align: center !important;
-        font-weight: 500 !important;
-    }
-
-    .mobile-card-body .mb-3 {
-        margin-bottom: 1rem !important;
-    }
-
-    .mobile-card-body .form-label {
-        margin-bottom: 0.35rem !important;
-        color: #475569 !important;
-        font-size: 0.875rem !important;
-    }
-
-    .button-toolbar .btn {
-        min-height: 48px !important;
-        font-size: 0.95rem !important;
-    }
-
-
+    .mobile-card-body .passe-input-mobile { min-height: 48px; text-align: center; font-size: 16px; font-weight: 600; }
+    .mobile-card-body .passe-input-mobile.best { background: var(--ui-akzent-hell); border-color: #9db8ea; color: var(--ui-akzent-dunkel); }
+    .mobile-card-body .form-label { margin-bottom: .35rem; font-size: .85rem; color: var(--ui-text-2); }
 }
-
-/* === Gruppen-Trennzeile (mit / ohne Resultate) === */
-.table tbody tr.group-header td.group-header-cell {
-    background: #eef2f7;
-    font-weight: 700;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #475569;
-    text-align: left;
-    padding: 0.45rem 1rem;
-    border-top: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
-}
-#kantiresultateTabelle tbody tr.group-header:hover td.group-header-cell,
-#kantiresultateTabelle tbody tr.group-header td.group-header-cell {
-    background: #eef2f7;
-    cursor: default;
-}
-
-/* === Bestpasse-Highlighting === */
-.best-passe {
-    background: #fffbeb !important;
-    border-color: #f59e0b !important;
-    font-weight: 700 !important;
-    color: #92400e !important;
-}
-
-/* Summenspalte */
-.sum-cell {
-    font-weight: 700;
-    color: #6366f1;
-    text-align: center;
-}
-.sum-cell.empty { color: #cbd5e1; }
-
-/* Status-Dots */
-.status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    display: inline-block; margin-right: 6px;
-}
-.status-dot.complete { background: #22c55e; }
-.status-dot.partial { background: #f59e0b; }
-.status-dot.empty { background: #e2e8f0; }
-
-/* Filled Input */
-input.small-input.filled {
-    background: #f0fdf4;
-    border-color: #86efac;
-}
-
-/* =========================================
-   Erfassen Slide-Panel (Schütze um Schütze)
-   Container/Overlay/Header/Body zentral in css/msv-styles.css
-   (Breite via panel-width Custom-Property am Panel-Element)
-   ========================================= */
-.panel-footer {
-    padding: .75rem 1.25rem; border-top: 1px solid #e2e8f0;
-    background: #f8fafc; flex-shrink: 0;
-}
-
-.panel-progress { height: 6px; background: #eef2f7; }
-.panel-progress-bar {
-    height: 100%; width: 0;
-    background: linear-gradient(90deg,#22c55e,#16a34a);
-    transition: width .3s ease;
-}
-
-.entry-passen-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
-    gap: .75rem;
-}
-.entry-passe-field { display: flex; flex-direction: column; }
-.entry-passe-field label {
-    font-size: .72rem; font-weight: 600; text-transform: uppercase;
-    letter-spacing: .5px; color: #64748b; margin-bottom: .25rem;
-}
-.entry-passe-field input {
-    text-align: center; font-size: 1.35rem; font-weight: 600;
-    padding: .6rem .4rem; border: 1.5px solid #dee2e6; border-radius: .5rem;
-    -moz-appearance: textfield; transition: border-color .2s, box-shadow .2s;
-}
-.entry-passe-field input:focus {
-    border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,.15); outline: none;
-}
-.entry-passe-field input.filled { background: #f0fdf4; border-color: #86efac; }
-.entry-passe-field.is-best input {
-    background: #fffbeb; border-color: #f59e0b; color: #92400e;
-}
-
-/* Klickbare Namen-Zelle + ausgewählte Zeile */
-#kantiresultateTabelle tbody td:first-child { cursor: pointer; }
-#kantiresultateTabelle tbody tr.panel-selected {
-    background: rgba(74,144,217,.08) !important;
-    box-shadow: inset 3px 0 0 #4a90d9;
-}
-
-@media (max-width: 767.98px) {
-    .hybrid-edit-panel { width: 100vw; right: -100vw; }
-    .panel-overlay { display: none !important; }
-    .entry-passe-field input { font-size: 1.25rem; min-height: 52px; }
-}
-
-/* =========================================
-   Kompaktere Desktop-Tabelle (nicht zu breit)
-   ========================================= */
 @media (min-width: 768px) {
-    /* Karte auf Inhaltsbreite begrenzen statt voll auszudehnen.
-       Prefix #resultateContainer erhöht Spezifität, damit diese Breiten
-       die !important-Regeln aus css/fixes/resultate-unified.css schlagen. */
-    #resultateContainer .results-list-card {
-        max-width: 760px;
-        /* Dezenter Tabellen-Rahmen INNERHALB der content-background-Karte
-           (nur Border, kein Schatten) – analog rank-table-wrapper auf jmresultate. */
-        background: #fff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 0.5rem !important;
-        box-shadow: none !important;
-    }
-
-    /* Passe-Spalten schmaler */
-    #resultateContainer #kantiresultateTabelle th:not(:first-child),
-    #resultateContainer #kantiresultateTabelle td:not(:first-child) {
-        width: 80px !important;
-        min-width: 80px !important;
-        max-width: 80px !important;
-    }
-    /* Namens-Spalte */
-    #resultateContainer #kantiresultateTabelle th:first-child,
-    #resultateContainer #kantiresultateTabelle td:first-child {
-        width: 200px !important;
-        min-width: 200px !important;
-        max-width: 200px !important;
-    }
-    /* Total-Spalte */
-    #resultateContainer #kantiresultateTabelle th:last-child,
-    #resultateContainer #kantiresultateTabelle td:last-child {
-        width: 84px !important;
-        min-width: 84px !important;
-        max-width: 84px !important;
-    }
-    /* Eingabefelder zentriert, etwas grösser als 45px */
-    #resultateContainer #kantiresultateTabelle input.small-input {
-        width: 56px !important;
-        height: 34px !important;
-        margin: 0 auto;
-    }
-    /* Kopfzeile darf nicht umbrechen */
-    #resultateContainer #kantiresultateTabelle thead th {
-        font-size: 0.72rem;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-    }
-    /* Kompaktere Kopf- und Zeilenhöhe */
-    #resultateContainer #kantiresultateTabelle thead th { padding: 0.6rem 0.4rem; }
-    #resultateContainer #kantiresultateTabelle tbody td { padding: 0.35rem 0.4rem; }
-
-    /* ---- Natürlicher Seiten-Scroll statt internem Tabellen-Scroll ----
-       Wrapper und Karte wachsen mit dem Inhalt; die ganze Seite scrollt.
-       resultate-unified.css erzwingt auf .table-responsive min-height:300px,
-       max-height:calc(100vh-350px) und overflow (alle !important) -> das
-       verursachte Leerraum bzw. eine Karte, die nicht so hoch wie die Tabelle
-       ist. Hier alles aufgehoben: die Karte ist exakt so gross wie die Tabelle. */
-    /* Karte wie auf jmresultate: die aeussere weisse Karte (main-content-wrapper +
-       content-background) BEHALTEN. Nur Hoehe/Scroll loesen, damit die Karte mit
-       dem Inhalt waechst (kein viewport-fixes Scrollen, kein Leerraum darunter). */
-    .main-content-wrapper {
-        height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        margin-bottom: 1.5rem !important;
-    }
-    .content-background {
-        overflow: visible !important;
-    }
-    /* overflow:visible über die ganze Kette, sonst bricht position:sticky
-       (ein overflow:hidden-Vorfahre würde die Kopfzeile mitscrollen) */
-    #resultateContainer .results-list-card { overflow: visible !important; }
-    /* Innerer Wrapper soll KEINE zweite Karte sein (Rahmen/Schatten aus
-       resultate-unified.css aufheben) -> sonst doppelte Linie. */
-    #resultateContainer .table-wrapper {
-        overflow: visible !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    #resultateContainer .desktop-table-container { overflow: visible !important; }
-    #resultateContainer .table-responsive {
-        min-height: 0 !important;
-        max-height: none !important;
-        overflow: visible !important;
-    }
-    /* Sticky-Kopfzeile beim Seiten-Scroll unter der fixierten Navbar halten */
-    #resultateContainer #kantiresultateTabelle thead th {
-        top: var(--app-header) !important;
-    }
+    .mobile-cards-container { display: none !important; }
 }
 ";
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
+$csrf = csrf_token();
 ?>
-<style><?= $page_specific_css ?></style>
-<!-- Select2 (für Schnellerfassung-Schützensuche) -->
+<!-- Select2 (Schützenwahl in der Schnellerfassung) -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -443,205 +95,160 @@ include 'header.inc.php';
 #entryMemberSelect + .select2-container { width: 100% !important; }
 .select2-container--bootstrap-5 .select2-selection { min-height: calc(1.5em + 0.75rem + 2px); }
 </style>
-<?php
-// CSRF Token
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-?>
-
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-wide">
-                <!-- Header -->
-                <?php $page_title = 'Kantonalstich Resultaterfassung'; $page_actions = '<button type="button" class="btn-help" data-help="kantiresultate.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+            <div class="main-content-wrapper content-width-default hk-seite">
+                <?php
+                $page_title = 'Kantonalstich Resultaterfassung';
+                $page_title_after = '<button type="button" class="btn-help" data-help="kantiresultate.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1"></i>Schnellerfassung</button>'
+                    . '<button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm"><i class="bi bi-list-ol me-1"></i>Rangliste</button>'
+                    . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>'
+                    . '<button type="submit" form="kantiresultateForm" class="btn btn-primary btn-sm" id="rasterSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>';
+                $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
+                    . '<div class="ui-chips" id="progressChips"></div>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php';
+                ?>
 
-                <div class="content-background">
-                    <form id="kantiresultateForm">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                <form id="kantiresultateForm" class="ui-karte hk-tabelle" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
-                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel">Mitglieder <button type="button" class="btn-help" data-help="kantiresultate.tabelle" aria-label="Hilfe"></button></span>
+                        <div class="ui-filter d-none d-md-flex" role="group" aria-label="Nach Resultaten filtern">
+                            <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="nAlle">0</span></button>
+                            <button type="button" data-filter="mit" aria-pressed="false">Mit Resultaten <span id="nMit">0</span></button>
+                            <button type="button" data-filter="ohne" aria-pressed="false">Ohne <span id="nOhne">0</span></button>
                         </div>
+                        <label class="ui-suche d-none d-md-flex">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span class="visually-hidden">Mitglied suchen</span>
+                            <input type="search" id="hkSuche" placeholder="Mitglied suchen" autocomplete="off">
+                        </label>
+                    </div>
+                    <!-- Desktop: Raster -->
+                    <div class="desktop-table-container hk-desktop">
+                        <div class="hk-scroll" id="hkScroll">
+                            <table class="table mb-0" id="kantiresultateTabelle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Mitglied</th>
+                                        <?php for ($p = 1; $p <= 5; $p++): ?><th scope="col">Passe <?= $p ?></th><?php endfor; ?>
 
-                        <!-- Aktionsbereich (Bootstrap Collapse) -->
-<?php
-                        $ac_id = 'kantiresultateActions'; $ac_title = 'Aktionen <button type="button" class="btn-help" data-help="kantiresultate.aktionen" aria-label="Hilfe"></button>';
-                        ob_start();
-                        ?>
-                                    <div class="row g-2">
-                                        <div class="col-6 d-none d-md-block">
-                                            <button type="button" class="btn btn-outline-primary btn-sm w-100" id="startEntryBtn">
-                                                <i class="bi bi-pencil-square me-1"></i>Schnellerfassung
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                                                <i class="bi bi-save me-1"></i>Speichern
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm w-100">
-                                                <i class="bi bi-trophy me-1"></i>Rangliste
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="publishChangelogBtn">
-                                                <i class="bi bi-megaphone me-1"></i>Veröffentlichen
-                                            </button>
-                                        </div>
-                                    </div>
-                        <?php
-                        $ac_body = ob_get_clean();
-                        include 'partials/action_card.inc.php';
-                        ?>
-                        </div><!-- Ende flex-row Jahr+Aktionen -->
+                                        <th scope="col">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="ui-leer">
+                                        <td colspan="7"><div class="spinner-border spinner-border-sm me-2"></div>Lade Resultate …</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                        <!-- Tabelle Container -->
-                        <div id="resultateContainer">
-                            <div class="results-list-card">
-                                <div class="table-wrapper">
-                                    <!-- Desktop: Tabelle -->
-                                    <div class="desktop-table-container">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover mb-0" id="kantiresultateTabelle">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col" style="min-width: 180px; width: 200px;">
-                                                            <i class="bi bi-person me-1"></i>Mitglied <button type="button" class="btn-help" data-help="kantiresultate.tabelle" aria-label="Hilfe"></button>
-                                                        </th>
-                                                        <th scope="col" class="text-center" style="width: 80px;">Passe 1</th>
-                                                        <th scope="col" class="text-center" style="width: 80px;">Passe 2</th>
-                                                        <th scope="col" class="text-center" style="width: 80px;">Passe 3</th>
-                                                        <th scope="col" class="text-center" style="width: 80px;">Passe 4</th>
-                                                        <th scope="col" class="text-center" style="width: 80px;">Passe 5</th>
-                                                        <th scope="col" class="text-center" style="width: 65px; border-left: 2px solid #e2e8f0;">Total</th>
-                
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                    <td colspan="7" class="text-center py-4">
-                                                    <div class="spinner-border spinner-border-sm me-2"></div>
-                                                    Lade Resultate...
-                                                    </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <!-- Mobile: Cards -->
-                                    <div class="mobile-cards-container" id="mobileCardsKanti">
-                                        <div class="mobile-search">
-                                            <div class="position-relative">
-                                                <i class="bi bi-search search-icon"></i>
-                                                <input type="text" class="form-control" placeholder="Mitglied suchen..."
-                                                       oninput="filterMobileKanti(this)">
-                                            </div>
-                                        </div>
-                                        <div class="mobile-cards-scroll">
-                                            <!-- Cards werden per JavaScript generiert -->
-                                        </div>
-                                    </div>
-                                </div>
+                    <!-- Handy: Karte pro Mitglied -->
+                    <div class="mobile-cards-container" id="mobileCardsKanti">
+                        <div class="mobile-search">
+                            <div class="position-relative">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" class="form-control" placeholder="Mitglied suchen..."
+                                       oninput="filterMobileKanti(this)">
                             </div>
                         </div>
-                    </form>
-                </div>
+                        <div class="mobile-cards-scroll">
+                            <!-- Karten werden per JavaScript erzeugt -->
+                        </div>
+                    </div>
+                    <div class="ui-tasten d-none d-md-flex">
+                        <span><kbd>Enter</kbd> / <kbd>Tab</kbd> nächstes Feld</span>
+                        <span><kbd>↑</kbd> <kbd>↓</kbd> gleiche Passe, andere Zeile</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>S</kbd> speichern</span>
+                        <span>Name anklicken: Schnellerfassung</span>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Erfassen Slide-Panel -->
+<!-- Schnellerfassung: Slide-Panel -->
 <div class="panel-overlay" id="entryOverlay"></div>
 <div class="hybrid-edit-panel" id="entryPanel" style="--panel-width: 540px;">
     <div class="panel-header">
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryPrev" data-tooltip="Vorheriger">
-                <i class="bi bi-chevron-left"></i>
+        <div class="min-w-0">
+            <h6 class="mb-0"><span id="entryName">Erfassen</span> <button type="button" class="btn-help" data-help="kantiresultate.schnellerfassung" aria-label="Hilfe"></button></h6>
+            <small class="panel-pos" id="entrySubtitle"></small>
+        </div>
+        <div class="d-flex align-items-center gap-1 ms-auto">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryPrev" data-tooltip="Vorheriger Schütze" aria-label="Vorheriger Schütze">
+                <i class="bi bi-chevron-up" aria-hidden="true"></i>
             </button>
-            <div>
-                <h6 class="mb-0"><i class="bi bi-person me-2"></i><span id="entryName">Erfassen</span> <button type="button" class="btn-help" data-help="kantiresultate.schnellerfassung" aria-label="Hilfe"></button></h6>
-                <small class="text-muted" id="entrySubtitle"></small>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryNext" data-tooltip="Nächster">
-                <i class="bi bi-chevron-right"></i>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryNext" data-tooltip="Nächster Schütze" aria-label="Nächster Schütze">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="entryClose" data-tooltip="Schliessen (Esc)" aria-label="Schliessen (Esc)">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="entryClose">
-            <i class="bi bi-x-lg"></i>
-        </button>
     </div>
-    <div class="panel-progress"><div class="panel-progress-bar" id="entryProgressBar"></div></div>
     <div class="panel-body">
+        <label class="hk-feldtitel" for="entryMemberSelect">Schütze wechseln</label>
         <div class="mb-3">
             <select id="entryMemberSelect" style="width:100%"></select>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-muted small" id="entryProgressText"></span>
-            <span class="badge bg-light text-dark border" id="entryTotalBadge"><i class="bi bi-calculator me-1"></i>Total: 0</span>
+        <div class="hk-erfassung">
+            <div class="hk-erfassung-kopf">
+                <span class="hk-erfassung-titel">Passen</span>
+                <span class="hk-total" id="entryTotalBadge"><span>Total</span>0</span>
+            </div>
+            <div class="entry-passen-grid" id="entryPassenGrid"></div>
         </div>
-        <div class="entry-passen-grid" id="entryPassenGrid"></div>
+        <p class="hk-hinweis">Enter springt ins nächste Feld, im letzten Feld wird gespeichert. Leere Felder vor einer späteren Passe werden als 0 gespeichert.</p>
     </div>
     <div class="panel-footer">
-        <div class="d-flex gap-2 w-100">
-            <button type="button" class="btn btn-outline-primary flex-fill" id="entrySaveBtn">
+        <div class="d-flex gap-2 w-100 align-items-center">
+            <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> weiter</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="entrySaveBtn">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
-            <button type="button" class="btn btn-outline-primary flex-fill" id="entrySaveNextBtn">
+            <button type="button" class="btn btn-primary btn-sm" id="entrySaveNextBtn">
                 Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
     </div>
 </div>
-
 <script>
 $(document).ready(function() {
 
-    function calculateTableHeight() {
-        const tableResp = $('.table-responsive');
-        if (!tableResp.length) return;
-        const tableTop = tableResp.offset().top;
-        const availableHeight = window.innerHeight - tableTop - 30;
-        tableResp.css({ 'max-height': Math.max(300, availableHeight) + 'px', 'overflow-y': 'auto' });
+    // ===== Ungespeicherte Änderungen im Raster (pro Mitglied-ID) =====
+    var geaendert = new Set();
+    function rowId($tr) {
+        var m = ($tr.find('input.small-input').first().attr('name') || '').match(/passe\[(\d+)\]/);
+        return m ? m[1] : null;
     }
+    function markGeaendert($tr) {
+        var id = rowId($tr);
+        if (!id) return;
+        geaendert.add(id);
+        $tr.addClass('hk-geaendert');
+        zaehlen();
+    }
+    window.addEventListener('beforeunload', function(e) {
+        if (geaendert.size) { e.preventDefault(); e.returnValue = ''; }
+    });
 
     function initializeYearDropdown() {
         msvJahrAuswahl('#yearSelect');
     }
 
-    // Falls die PHP-Datei noch keine Total/Beste-Zellen liefert, fügt JS sie hinzu
-    function ensureSumBestCells() {
-        $('#kantiresultateTabelle tbody tr').each(function() {
-            var $row = $(this);
-            if ($row.find('.sum-cell').length === 0 && $row.find('input.small-input').length > 0) {
-                $row.append(
-                    '<td style="border-left:2px solid #e2e8f0;"><span class="sum-cell empty">&ndash;</span></td>'
-                );
-            }
-            // Status-Dot ergänzen falls fehlend
-            var $nameCell = $row.find('td:first');
-            if ($nameCell.length && $nameCell.find('.status-dot').length === 0 && $row.find('input.small-input').length > 0) {
-                $nameCell.prepend('<span class="status-dot empty"></span>');
-            }
-        });
-    }
 
     function loadResultate(year) {
         var $tbody = $('#kantiresultateTabelle tbody');
-        $tbody.html(
-            '<tr><td colspan="7" class="text-center py-4">' +
-            '<div class="spinner-border spinner-border-sm me-2"></div>' +
-            'Lade Resultate...</td></tr>'
-        );
+        $tbody.html('<tr class="ui-leer"><td colspan="7"><div class="spinner-border spinner-border-sm me-2"></div>Lade Resultate …</td></tr>');
 
         $.ajax({
             url: 'kantiresultate/load_kantiresultate_form.php',
@@ -650,19 +257,16 @@ $(document).ready(function() {
             data: { year: year },
             success: function(response) {
                 $tbody.html(response);
-                ensureSumBestCells();
+                geaendert.clear();
                 bindInputs();
                 updateKantiRowStats();
+                filterAnwenden();
                 EntryPanel.buildIndex();
-                setTimeout(calculateTableHeight, 100);
                 buildMobileKantiCards();
             },
-            error: function() {
-                $tbody.html(
-                    '<tr><td colspan="7" class="text-center text-danger py-4">' +
-                    '<i class="bi bi-exclamation-triangle me-2"></i>' +
-                    'Fehler beim Laden der Daten</td></tr>'
-                );
+            error: function(xhr) {
+                $tbody.html('<tr class="ui-leer"><td colspan="7" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>' +
+                    'Die Resultate konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
                 msvToast('Fehler beim Laden der Resultate', 'error');
             }
         });
@@ -674,29 +278,34 @@ $(document).ready(function() {
         $inputs.off('keydown.kanti').on('keydown.kanti', function(e) {
             if (e.key === 'Enter' || e.key === 'Tab') {
                 e.preventDefault();
-                var inputs = $('#kantiresultateTabelle input');
+                var inputs = $('#kantiresultateTabelle tbody tr:visible input.small-input');
                 var currentIndex = inputs.index(this);
                 var nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
-                var nextInput = inputs.eq(nextIndex);
-                if (nextInput.length) nextInput.focus().select();
+                if (nextIndex >= 0 && nextIndex < inputs.length) inputs.eq(nextIndex).focus().select();
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                // gleiche Passe in der nächsten bzw. vorherigen sichtbaren Zeile
+                e.preventDefault();
+                var spalte = $(this).closest('td').index();
+                var $zeilen = $('#kantiresultateTabelle tbody tr:visible').filter(function() { return $(this).find('input.small-input').length > 0; });
+                var z = $zeilen.index($(this).closest('tr')) + (e.key === 'ArrowDown' ? 1 : -1);
+                if (z >= 0 && z < $zeilen.length) $zeilen.eq(z).children('td').eq(spalte).find('input').focus().select();
             }
         });
 
+        // Eine 0 verschwindet beim Betreten; leer bleibt leer (keine Passe, kein Datensatz)
         $inputs.off('focus.kanti').on('focus.kanti', function() {
             var $this = $(this);
             if ($this.val() === '0') $this.val('').select();
             else if ($this.val() !== '') $this.select();
         });
 
-        $inputs.off('blur.kanti').on('blur.kanti', function() {
-            if ($(this).val().trim() === '') $(this).val('0');
-        });
-
-        $inputs.off('input.kanti').on('input.kanti', function() {
+        $inputs.off('input.kanti').on('input.kanti', function(e) {
             var value = $(this).val().replace(/[^0-9]/g, '');
             if (value.length > 3) value = value.substring(0, 3);
             if (value !== '' && parseInt(value, 10) > 100) value = '100';
             $(this).val(value);
+            // nur echte Eingaben im Raster; Übernahmen aus dem Panel markiert syncField
+            if (e.originalEvent) markGeaendert($(this).closest('tr'));
         });
     }
 
@@ -716,7 +325,7 @@ $(document).ready(function() {
     // Speichern
     $('#kantiresultateForm').on('submit', function(e) {
         e.preventDefault();
-        var $submitBtn = $(this).find('button[type="submit"]');
+        var $submitBtn = $('#rasterSpeichernBtn');
         var originalText = $submitBtn.html();
         $submitBtn.prop('disabled', true)
             .html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
@@ -732,11 +341,12 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(resp) {
                 if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); return; }
-                msvToast('Ergebnisse erfolgreich gespeichert!', 'success');
-                setTimeout(function() { loadResultate(selectedYear); }, 1000);
+                geaendert.clear();
+                msvToast('Resultate gespeichert', 'success');
+                loadResultate(selectedYear);
             },
-            error: function() {
-                msvToast('Fehler beim Speichern der Ergebnisse', 'error');
+            error: function(xhr) {
+                msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern der Ergebnisse'), 'error');
             },
             complete: function() {
                 $submitBtn.prop('disabled', false).html(originalText);
@@ -748,25 +358,24 @@ $(document).ready(function() {
     // Rangliste
     $('#redirect-btn').on('click', function() { window.location.href = 'kantirang.php'; });
 
-    // Jahreswechsel
-    $('#yearSelect').on('change', function() { loadResultate($(this).val()); });
-
-    // Global Scroll
-    document.addEventListener('wheel', function(e) {
-        if ($('#entryPanel').hasClass('open')) return;
-        var tableContainer = $('.table-responsive')[0];
-        if (tableContainer && tableContainer.scrollHeight > tableContainer.clientHeight) {
-            tableContainer.scrollTop += e.deltaY;
-            e.preventDefault();
+    // ===== Jahreswechsel (fragt nach, wenn im Raster noch nicht gespeichert wurde) =====
+    var aktuellesJahr = null;
+    $('#yearSelect').on('change', async function() {
+        var neu = this.value;
+        if (neu === aktuellesJahr) return;
+        if (geaendert.size) {
+            const r = await msvConfirm('Die Änderungen in ' + geaendert.size + (geaendert.size === 1 ? ' Zeile sind' : ' Zeilen sind') +
+                ' noch nicht gespeichert und gehen beim Jahreswechsel verloren.', 'Ungespeicherte Änderungen verwerfen?', 'Verwerfen');
+            if (!r.isConfirmed) {
+                this.value = aktuellesJahr;
+                this.dispatchEvent(new Event('change', { bubbles: true }));
+                return;
+            }
         }
-    }, { passive: false });
-
-    // Resize
-    var resizeTimeout;
-    $(window).on('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(calculateTableHeight, 150);
+        aktuellesJahr = neu;
+        loadResultate(neu);
     });
+
 
     /**
      * Berechnet pro Zeile: Summe, Bestpasse, Status-Dot, Filled-Klassen
@@ -774,6 +383,7 @@ $(document).ready(function() {
     function updateKantiRowStats() {
         $('#kantiresultateTabelle tbody tr').each(function() {
             const $inputs = $(this).find('input.small-input');
+            if (!$inputs.length) return;
             let sum = 0, best = -1, bestIdx = -1, filled = 0, total = $inputs.length;
 
             $inputs.each(function(i) {
@@ -798,17 +408,64 @@ $(document).ready(function() {
                 $sumCell.text(sum > 0 ? sum : '\u2013').toggleClass('empty', sum === 0);
             }
 
-            // Status-Dot
-            const $dot = $(this).find('.status-dot');
-            if ($dot.length) {
-                $dot.removeClass('complete partial empty');
-                if (filled === total && filled > 0) $dot.addClass('complete');
-                else if (filled > 0) $dot.addClass('partial');
-                else $dot.addClass('empty');
-            }
+            // Stand: Anzahl erfasster Passen neben dem Namen, data-stand für den Filter
+            $(this).find('.hk-anzahl').text(filled ? filled + '/' + total : '').toggleClass('voll', filled === total);
+            this.setAttribute('data-stand', filled ? 'mit' : 'ohne');
+            this.setAttribute('data-voll', filled === total ? '1' : '0');
         });
-
+        zaehlen();
     }
+
+    // Kopf-Card: Mitglieder mit Resultaten, vollständige, ungespeicherte Zeilen; Zähler im Filter
+    function zaehlen() {
+        var $rows = $('#kantiresultateTabelle tbody tr[data-stand]');
+        var total = $rows.length;
+        var mit = $rows.filter('[data-stand="mit"]').length;
+        var voll = $rows.filter('[data-voll="1"]').length;
+        $('#progressText').html(mit + ' von ' + total + ' <span>Mitgliedern mit Resultaten</span>');
+        $('#progressChips').html(
+            (voll ? '<span class="ui-chip"><b>' + voll + '</b> mit allen 5 Passen</span>' : '') +
+            (geaendert.size ? '<span class="ui-chip hk-chip-ungespeichert"><span class="ui-punkt"></span><b>' + geaendert.size + '</b> ' +
+                (geaendert.size === 1 ? 'Zeile' : 'Zeilen') + ' nicht gespeichert</span>' : '')
+        );
+        $('#nAlle').text(total);
+        $('#nMit').text(mit);
+        $('#nOhne').text(total - mit);
+    }
+
+    // ===== Filter (Alle / Mit Resultaten / Ohne) und Suche =====
+    var hkFilter = 'alle', hkSuchtext = '';
+    function filterAnwenden() {
+        var $tbody = $('#kantiresultateTabelle tbody');
+        var $zeilen = $tbody.children('tr[data-stand]');
+        var sichtbar = 0;
+        $zeilen.each(function() {
+            var zeigen = (hkFilter === 'alle' || this.getAttribute('data-stand') === hkFilter)
+                && $(this).find('.hk-name').text().toLowerCase().indexOf(hkSuchtext) !== -1;
+            this.style.display = zeigen ? '' : 'none';
+            if (zeigen) sichtbar++;
+        });
+        // Gruppen-Überschriften nur in der ungefilterten Liste
+        $tbody.children('tr.group-header').toggle(hkFilter === 'alle' && hkSuchtext === '');
+        $('#hkKeineTreffer').remove();
+        if (!sichtbar && $zeilen.length) {
+            $tbody.append('<tr class="ui-leer" id="hkKeineTreffer"><td colspan="7">Keine Mitglieder für diese Auswahl. ' +
+                '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="hkFilterZurueck">Filter zurücksetzen</button></td></tr>');
+        }
+    }
+    $(document).on('click', '.ui-filter button', function() {
+        hkFilter = $(this).data('filter');
+        $('.ui-filter button').attr('aria-pressed', 'false');
+        $(this).attr('aria-pressed', 'true');
+        filterAnwenden();
+    });
+    $('#hkSuche').on('input', function() { hkSuchtext = this.value.trim().toLowerCase(); filterAnwenden(); });
+    $(document).on('click', '#hkFilterZurueck', function() {
+        hkFilter = 'alle'; hkSuchtext = ''; $('#hkSuche').val('');
+        $('.ui-filter button').attr('aria-pressed', 'false');
+        $('.ui-filter button[data-filter="alle"]').attr('aria-pressed', 'true');
+        filterAnwenden();
+    });
 
     // Input-Listener für Echtzeit-Updates
     $(document).on('input', '#kantiresultateTabelle input.small-input', function() {
@@ -842,7 +499,7 @@ $(document).ready(function() {
             if (cells.length === 0) return;
 
             // Erste Zelle: Mitgliedername
-            const memberName = cells[0]?.textContent?.trim() || 'Unbekannt';
+            const memberName = row.querySelector('.hk-name')?.textContent?.trim() || cells[0]?.textContent?.trim() || 'Unbekannt';
 
             // Passe-Inputs extrahieren (Spalten 1-5)
             const inputs = Array.from(row.querySelectorAll('input'));
@@ -867,8 +524,6 @@ $(document).ready(function() {
                 ? `<small class="text-muted">Total: ${sum}</small>`
                 : '';
 
-            const borderStyle = hasAny ? 'border-left: 3px solid #22c55e;' : '';
-
             inputs.forEach((input, i) => {
                 if (i >= 5) return;
                 const label = passeLabels[i];
@@ -885,16 +540,15 @@ $(document).ready(function() {
                                value="${inputValue}"
                                inputmode="numeric"
                                pattern="[0-9]*"
-                               max="100"
-                               style="${isBest ? 'background:#fffbeb; border-color:#f59e0b;' : ''}">
+                               max="100">
                     </div>`;
             });
 
             html += `
-            <div class="mobile-card" data-index="${idx}" style="${borderStyle}">
+            <div class="mobile-card" data-index="${idx}">
                 <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
-                        <div class="fw-bold">${memberName}</div>
+                        <div class="fw-bold">${msvEsc(memberName)}</div>
                         ${summaryHtml}
                     </div>
                     <i class="bi bi-chevron-down"></i>
@@ -916,6 +570,7 @@ $(document).ready(function() {
                     desktopInput.value = this.value;
                     // Trigger input event für Validierung
                     $(desktopInput).trigger('input');
+                    markGeaendert($(desktopInput).closest('tr'));
                 }
             });
 
@@ -941,15 +596,6 @@ $(document).ready(function() {
                 this.select();
             });
 
-            // Blur: Set to 0 if empty
-            input.addEventListener('blur', function() {
-                if (this.value.trim() === '') {
-                    this.value = '0';
-                    const inputName = this.getAttribute('data-name');
-                    const desktopInput = table.querySelector(`input[name="${inputName}"]`);
-                    if (desktopInput) desktopInput.value = '0';
-                }
-            });
         });
     }
 
@@ -1032,7 +678,7 @@ $(document).ready(function() {
                 if (!m) return;
                 self.rows.push({
                     id: m[1],
-                    name: $tr.find('td:first').text().trim(),
+                    name: $tr.find('.hk-name').text().trim(),
                     $tr: $tr,
                     $inputs: $inputs
                 });
@@ -1081,9 +727,10 @@ $(document).ready(function() {
             });
 
             $('#entryName').text(row.name);
-            $('#entrySubtitle').text('Schütze ' + (idx + 1) + ' / ' + this.rows.length);
-            this.rows.forEach(r => r.$tr.removeClass('panel-selected'));
-            row.$tr.addClass('panel-selected');
+            $('#entrySubtitle').text((idx + 1) + ' von ' + this.rows.length);
+            this.rows.forEach(r => r.$tr.removeClass('selected'));
+            row.$tr.addClass('selected');
+            if (row.$tr.is(':visible')) row.$tr[0].scrollIntoView({ block: 'nearest' });
 
             this.refreshFields();
             this.updateProgress();
@@ -1130,10 +777,10 @@ $(document).ready(function() {
         close() {
             $('#entryPanel').removeClass('open');
             $('#entryOverlay').removeClass('show');
-            this.rows.forEach(r => r.$tr.removeClass('panel-selected'));
+            this.rows.forEach(r => r.$tr.removeClass('selected'));
             this.idx = -1;
-            // Nach gespeicherten Erfassungen Liste frisch vom Server laden
-            if (this._saved) {
+            // Nach Speichern im Panel frisch laden, aber nie ungespeicherte Raster-Eingaben verwerfen
+            if (this._saved && !geaendert.size) {
                 this._saved = false;
                 loadResultate($('#yearSelect').val());
             }
@@ -1149,6 +796,7 @@ $(document).ready(function() {
             if (this.idx < 0) return;
             const row = this.rows[this.idx];
             row.$inputs.eq(pi).val(value).trigger('input');
+            markGeaendert(row.$tr);   // ungespeichert, bis das Panel speichert
         },
 
         // Filled/Best-Hervorhebung + Total im Panel
@@ -1164,16 +812,11 @@ $(document).ready(function() {
                 if (v > best) { best = v; bestIdx = i; }
             });
             if (bestIdx >= 0 && best > 0) $fields.eq(bestIdx).addClass('is-best');
-            $('#entryTotalBadge').html('<i class="bi bi-calculator me-1"></i>Total: ' + sum);
+            $('#entryTotalBadge').html('<span>Total</span>' + sum);
         },
 
         updateProgress() {
-            const total = this.rows.length;
-            let done = 0;
-            this.rows.forEach(r => { if (this.isComplete(r)) done++; });
-            const pct = total ? Math.round(done / total * 100) : 0;
-            $('#entryProgressBar').css('width', pct + '%');
-            $('#entryProgressText').text(done + ' / ' + total + ' vollständig erfasst');
+            zaehlen();
         },
 
         // Leere Felder nach einem späteren Wert mit 0 füllen (wie Raster-Save)
@@ -1196,7 +839,7 @@ $(document).ready(function() {
         },
 
         save(onDone) {
-            if (this.idx < 0) return;
+            if (this.idx < 0 || $('#entrySaveBtn').prop('disabled')) return;   // läuft bereits
             const row = this.rows[this.idx];
             const $btns = $('#entrySaveBtn, #entrySaveNextBtn').prop('disabled', true);
             $.ajax({
@@ -1212,11 +855,13 @@ $(document).ready(function() {
                 success: function(resp) {
                     if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern', 'error'); return; }
                     EntryPanel._saved = true;
+                    geaendert.delete(row.id);
+                    row.$tr.removeClass('hk-geaendert');
                     EntryPanel.updateProgress();
                     if (typeof onDone === 'function') onDone();
                     else msvToast('Gespeichert', 'success');
                 },
-                error: function() { msvToast('Fehler beim Speichern', 'error'); },
+                error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern'), 'error'); },
                 complete: function() { $btns.prop('disabled', false); }
             });
         },
@@ -1307,10 +952,24 @@ $(document).ready(function() {
         if (e.key === 'Escape' && $('#entryPanel').hasClass('open') && !$('.select2-container--open').length) EntryPanel.close();
     });
 
+    // Ctrl+S speichert (Panel offen: diesen Schützen, sonst das ganze Raster), Ctrl+Enter im Panel: speichern & weiter
+    $(document).on('keydown', function(e) {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        const panelOffen = $('#entryPanel').hasClass('open');
+        if (e.key === 's' || e.key === 'S') {
+            e.preventDefault();
+            if (panelOffen) $('#entrySaveBtn').trigger('click');
+            else if (!$('#rasterSpeichernBtn').prop('disabled')) $('#kantiresultateForm').trigger('submit');
+        } else if (e.key === 'Enter' && panelOffen) {
+            e.preventDefault();
+            EntryPanel.saveAndNext();
+        }
+    });
+
     // Init
     initializeYearDropdown();
-    loadResultate($('#yearSelect').val());
-    setTimeout(calculateTableHeight, 200);
+    aktuellesJahr = $('#yearSelect').val();
+    loadResultate(aktuellesJahr);
 });
 </script>
 

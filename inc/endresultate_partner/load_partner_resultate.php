@@ -125,12 +125,19 @@ function generatePartnerResultRow($row) {
     $id = htmlspecialchars($row['PartnerID'], ENT_QUOTES, 'UTF-8');
     $name = htmlspecialchars($row['PartnerName'] ?? '', ENT_QUOTES, 'UTF-8');
 
-    $html = "<tr class='hybrid-row' data-partner-id='{$id}'>";
+    // Stand: erfasst, sobald irgendein Wert vorliegt; sonst offen
+    $hatDaten = $endstichSumme > 0 || (isset($sieErUniqueSum) && $sieErUniqueSum > 0) || $schwiniSumme > 0;
+    $leer = "<span class='cell-empty'>–</span>";
+
+    $html = "<tr class='hybrid-row" . ($hatDaten ? '' : ' ui-offen') . "' data-partner-id='{$id}' data-stand='" . ($hatDaten ? 'ok' : 'offen') . "'>";
     $html .= "<td>{$name}</td>";
     $html .= "<td>" . htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8') . "</td>";
-    $html .= "<td class='text-center'>" . number_format($endstichSumme, 1) . "</td>";
-    $html .= "<td class='text-center'>" . $sieErDisplay . "</td>";
-    $html .= "<td class='text-center'>" . number_format($schwiniSumme, 1) . "</td>";
+    $html .= "<td>" . ($endstichSumme > 0 ? number_format($endstichSumme, 1) : $leer) . "</td>";
+    $html .= "<td>" . $sieErDisplay . "</td>";
+    $html .= "<td>" . ($schwiniSumme > 0 ? number_format($schwiniSumme, 1) : $leer) . "</td>";
+    $html .= $hatDaten
+        ? "<td><span class='ui-status ok'><span class='ui-punkt'></span>erfasst</span></td>"
+        : "<td><span class='ui-status offen'><span class='ui-punkt'></span>offen</span></td>";
     $html .= "</tr>";
     return $html;
 }
@@ -144,12 +151,11 @@ function generatePartnerResultRow($row) {
 
 function generateGuestWithoutResultRow($guest) {
     $guestName = htmlspecialchars($guest['GuestName'] ?? '', ENT_QUOTES, 'UTF-8');
-    $html = "<tr class='hybrid-row table-warning' data-guest-name='{$guestName}'>";
-    $html .= "<td>" . $guestName . " <span class='badge bg-warning text-dark ms-2'>Gast</span></td>";
-    $html .= "<td class='text-muted'><i class='bi bi-dash'></i></td>";
-    $html .= "<td class='text-center text-muted'>-</td>";
-    $html .= "<td class='text-center text-muted'>-</td>";
-    $html .= "<td class='text-center text-muted'>-</td>";
+    $leer = "<span class='cell-empty'>–</span>";
+    $html = "<tr class='hybrid-row ui-offen' data-guest-name='{$guestName}' data-stand='offen'>";
+    $html .= "<td>" . $guestName . " <span class='geloest-pill ms-1'>Gast</span></td>";
+    $html .= "<td>{$leer}</td><td>{$leer}</td><td>{$leer}</td><td>{$leer}</td>";
+    $html .= "<td><span class='ui-status offen'><span class='ui-punkt'></span>offen</span></td>";
     $html .= "</tr>";
     return $html;
 }
@@ -165,7 +171,7 @@ require_once __DIR__ . '/../partials/empty_state.inc.php';
 // Check database connection with proper error handling
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
-    echo "<tr><td colspan='5' class='text-center text-danger'>Datenbankverbindung fehlgeschlagen</td></tr>";
+    echo "<tr class='ui-leer'><td colspan='6' class='text-danger'>Datenbankverbindung fehlgeschlagen</td></tr>";
     exit;
 }
 
@@ -173,7 +179,7 @@ if ($conn->connect_error) {
 $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
-    echo "<tr><td colspan='5' class='text-center text-warning'>
+    echo "<tr><td colspan='6' class='text-center text-warning'>
             <i class='bi bi-exclamation-triangle me-2'></i>
             Die Tabelle 'endresultate_partner' existiert noch nicht.<br>
             <small>Bitte führe zuerst das SQL-Setup-Skript aus: <code>inc/endresultate_partner/database_setup.sql</code></small>
@@ -289,13 +295,13 @@ try {
 
     // Wenn weder Partner noch Gäste vorhanden sind
     if (!$hasResults) {
-        echo msv_empty_row(5, 'Keine Partnerinnen oder Gäste gefunden');
+        echo msv_empty_row(6, 'Keine Partnerinnen oder Gäste gefunden');
     }
 } catch (Exception $e) {
 
     // Log error for debugging while showing user-friendly message
     error_log("Database error in load_partner_resultate.php: " . $e->getMessage());
-    echo "<tr><td colspan='5' class='text-center text-danger'>Fehler beim Laden der Daten. Bitte versuche es später erneut.</td></tr>";
+    echo "<tr class='ui-leer'><td colspan='6' class='text-danger'>Fehler beim Laden der Daten. Bitte die Seite neu laden.</td></tr>";
 } finally {
 
     // Ensure connection is always closed

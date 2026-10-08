@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.38.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Heim- und Kantiresultate erfassen: neuer Aufbau, Filter und Tastatur",
+        "beschreibung": "Beide Erfassungsseiten folgen dem neuen Aufbau: oben eine Kopf-Karte mit Jahr, Kennzahlen (Mitglieder mit Resultaten, mit allen Passen) und den Knöpfen, darunter das Raster mit Filter (Alle, Mit Resultaten, Ohne) und Suche. Neben jedem Namen steht, wie viele Passen erfasst sind; beim Kantonalstich ist die beste Passe blau. Mit den Pfeiltasten auf und ab springt man in dieselbe Passe der nächsten Zeile, Ctrl+S speichert. Noch nicht gespeicherte Zeilen sind markiert und werden oben gezählt; vor einem Jahreswechsel fragt die Seite nach, beim Verlassen warnt der Browser. Die Schnellerfassung hat das Panel der Endschiessen-Erfassung (Speichern schliesst, Speichern & Weiter auch mit Ctrl+Enter). Behoben: Wer mit Tab durch leere Felder ging, legte beim Speichern Datensätze mit lauter Nullen für Mitglieder ohne Resultate an; Shift+Tab im ersten Feld sprang ans Tabellenende; in der Endschiessen-Erfassung blieben die Spalten Mitglied und Stand bei offenen oder gewählten Zeilen weiss. Braucht die Datenbank-Aktualisierung 073 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim- und Kantiresultate: Laden und Speichern abgesichert",
+        "beschreibung": "Laden und Speichern der Heim- und Kantiresultate prüfen jetzt wie die übrigen Admin-Endpunkte Anmeldung und Rolle; vorher waren die Resultatlisten auch ohne Anmeldung abrufbar. Beim Kantonalstich gingen die übermittelten Werte ungeprüft in die Datenbankabfrage. Jetzt werden alle Werte geprüft (ganze Zahlen von 0 bis 100) und in einem Zug gespeichert: ein ungültiger Wert ändert nichts, und die Meldung nennt ihn.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen Partnerinnen: Stand, Filter und Tastatur",
+        "beschreibung": "Die Seite «Endschiessen Partner» hat den Aufbau der Endschiessen-Erfassung: Kopf-Karte mit Fortschritt, Spalte «Stand» (offene Zeilen gelb, Gäste aus dem Lösen mit der Marke «Gast»), Filter (Alle, Offen, Erfasst), Suche, Pfeiltasten und «Speichern & nächste offene» (auch Ctrl+Enter). Der Knopf zum Löschen aller Partnerinnen eines Jahres ist entfernt. Braucht die Datenbank-Aktualisierung 073 (Hilfetext).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.37.0",
     "datum": "2026-10-08",
     "aenderungen": [

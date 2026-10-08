@@ -320,6 +320,15 @@ tr.selected > td:first-child,
 tr.ui-markiert > td:first-child { box-shadow: inset 2px 2px 0 var(--ui-akzent), inset 0 -2px 0 var(--ui-akzent) !important; }
 tr.selected > td:last-child,
 tr.ui-markiert > td:last-child { box-shadow: inset -2px 2px 0 var(--ui-akzent), inset 0 -2px 0 var(--ui-akzent) !important; }
+/* resultate-unified.css hält die fixierten Rand-Spalten dieser Tabellen weiss (!important, per ID);
+   hier folgen sie dem Zeilenzustand (Hover, offen, gewählt) wie die übrigen Zellen */
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr > td:is(:first-child, :last-child) { background-color: var(--ui-flaeche) !important; }
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:hover > td:is(:first-child, :last-child) { background-color: var(--ui-flaeche-2) !important; }
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr.ui-offen > td:is(:first-child, :last-child) { background-color: var(--ui-warn-zeile) !important; }
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr.ui-offen:hover > td:is(:first-child, :last-child) { background-color: #fef6d8 !important; }
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:is(.selected, .ui-markiert) > td:is(:first-child, :last-child),
+:is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:is(.selected, .ui-markiert):hover > td:is(:first-child, :last-child) { background-color: var(--ui-gewaehlt) !important; }
+.min-w-0 { min-width: 0; }
 
 /* Stich-Karten im Erfassungs-Panel (Endschiessen, Partnerinnen; Klassen .shot-*) */
 .hybrid-edit-panel .panel-body:has(.shot-section) { background: var(--ui-grund); }

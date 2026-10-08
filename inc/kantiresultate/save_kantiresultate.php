@@ -1,85 +1,112 @@
 <?php
+/**
+ * Speichert Kantonalstich-Resultate aus dem Raster oder der Schnellerfassung.
+ * POST: jahr, csrf_token, passe[MitgliedID][1..5]
+ * - Bestehender Datensatz: nur ausgefüllte Felder werden übernommen (leer = unverändert).
+ * - Neuer Datensatz nur, wenn mindestens ein Feld ausgefüllt ist (auch 0).
+ * - Erst werden alle Werte geprüft (ganze Zahlen 0–100), dann in einer Transaktion geschrieben:
+ *   ein ungültiger Wert speichert gar nichts.
+ */
 include '../config.php';
-
-// CSRF-Schutz
-if (session_status() === PHP_SESSION_NONE) session_start();
-$csrf = $_POST['csrf_token'] ?? '';
-
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'Ungültige Anfrage']));
-}
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 header('Content-Type: application/json; charset=utf-8');
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
-$jahr = isset($_POST['jahr']) ? $_POST['jahr'] : date('Y'); // Jahr wird aus der POST-Anfrage übernommen, falls nicht gesetzt, Standardwert ist das aktuelle Jahr
 
-if ($conn->connect_error) {
-    http_response_code(500);
-    die(json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $conn->connect_error]));
+const PASSEN = 5;
+
+function antwort(int $code, bool $ok, string $msg): void {
+    http_response_code($code);
+    echo json_encode(['success' => $ok, 'message' => $msg]);
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    try {
-        $passe = $_POST['passe'];
-
-        foreach ($passe as $mitgliedID => $passen) {
-            $resultateSql = "SELECT * FROM kantiresultate WHERE MitgliedID = $mitgliedID AND Jahr = $jahr";
-            $resultateResult = $conn->query($resultateSql);
-
-            if ($resultateResult === FALSE) {
-                throw new Exception("Fehler bei SELECT: " . $conn->error);
-            }
-
-            if ($resultateResult->num_rows > 0) {
-                $updateSql = "UPDATE kantiresultate SET ";
-                for ($i = 1; $i <= 5; $i++) {
-                    // Speichere auch 0-Werte, aber nur wenn sie gesetzt sind
-                    if (isset($passen[$i]) && $passen[$i] !== ''){
-                        $updateSql .= "Passe$i = '" . $passen[$i] . "', ";
-                    }
-                }
-                $updateSql = rtrim($updateSql, ', ');
-                $updateSql .= " WHERE MitgliedID = $mitgliedID AND Jahr = $jahr";
-                if ($conn->query($updateSql) === FALSE) {
-                    throw new Exception("Fehler bei UPDATE: " . $conn->error);
-                }
-            } else {
-                // Prüfe ob irgendeine Passe einen Wert hat (auch 0)
-                $hasAnyValue = false;
-                for ($i = 1; $i <= 5; $i++) {
-                    if (isset($passen[$i]) && $passen[$i] !== '') {
-                        $hasAnyValue = true;
-                        break;
-                    }
-                }
-
-                if($hasAnyValue){
-                    $insertSql = "INSERT INTO kantiresultate (MitgliedID, Jahr, Passe1, Passe2, Passe3, Passe4, Passe5) VALUES ($mitgliedID, $jahr, ";
-                    for ($i = 1; $i <= 5; $i++) {
-                        $value = isset($passen[$i]) && $passen[$i] !== '' ? $passen[$i] : '0';
-                        $insertSql .= "'" . $value . "', ";
-                    }
-                    $insertSql = rtrim($insertSql, ', ');
-                    $insertSql .= ")";
-                    if ($conn->query($insertSql) === FALSE) {
-                        throw new Exception("Fehler bei INSERT: " . $conn->error);
-                    }
-                }
-            }
-        }
-
-        $conn->close();
-        echo json_encode(['success' => true, 'message' => 'Alle Ergebnisse wurden erfolgreich gespeichert']);
-    } catch (Exception $e) {
-        $conn->close();
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+/** Passenwert prüfen: '' (nicht ändern) oder ganze Zahl 0–100. */
+function passenWert($v): string {
+    $v = trim((string)$v);
+    if ($v === '') return '';
+    if (!ctype_digit($v) || (int)$v > 100) {
+        throw new InvalidArgumentException('Ungültiger Wert «' . mb_substr($v, 0, 10) . '»: erlaubt sind ganze Zahlen von 0 bis 100.');
     }
-} else {
-    $conn->close();
+    return (string)(int)$v;
 }
-?>
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { antwort(405, false, 'Nur POST erlaubt'); exit; }
+
+$jahr  = isset($_POST['jahr']) ? (int)$_POST['jahr'] : (int)date('Y');
+$passe = $_POST['passe'] ?? null;
+if ($jahr < 2000 || $jahr > (int)date('Y') + 5) { antwort(400, false, 'Ungültiges Jahr'); exit; }
+if (!is_array($passe))                          { antwort(400, false, 'Keine Resultate übermittelt'); exit; }
+if ($conn->connect_error)                       { antwort(500, false, 'Datenbankfehler'); exit; }
+
+$transaktion = false;
+try {
+    $daten = [];
+    foreach ($passe as $mitgliedID => $passen) {
+        $mitgliedID = (int)$mitgliedID;
+        if ($mitgliedID <= 0 || !is_array($passen)) continue;
+        $werte = [];
+        for ($i = 1; $i <= PASSEN; $i++) {
+            $werte[$i] = passenWert($passen[$i] ?? '');
+        }
+        $daten[$mitgliedID] = $werte;
+    }
+
+    $conn->begin_transaction();
+    $transaktion = true;
+
+    $check = $conn->prepare('SELECT 1 FROM kantiresultate WHERE MitgliedID = ? AND Jahr = ? LIMIT 1');
+    if (!$check) throw new RuntimeException('SELECT vorbereiten: ' . $conn->error);
+    $spalten = implode(', ', array_map(fn($i) => "Passe$i", range(1, PASSEN)));
+    $insert = $conn->prepare("INSERT INTO kantiresultate (MitgliedID, Jahr, $spalten) VALUES (" . implode(', ', array_fill(0, PASSEN + 2, '?')) . ')');
+    if (!$insert) throw new RuntimeException('INSERT vorbereiten: ' . $conn->error);
+
+    foreach ($daten as $mitgliedID => $werte) {
+        $check->bind_param('ii', $mitgliedID, $jahr);
+        if (!$check->execute()) throw new RuntimeException('SELECT: ' . $check->error);
+        $res = $check->get_result();
+        $vorhanden = $res->num_rows > 0;
+        $res->free();
+
+        if ($vorhanden) {
+            // nur ausgefüllte Felder übernehmen
+            $set = []; $vals = []; $types = '';
+            foreach ($werte as $i => $w) {
+                if ($w === '') continue;
+                $set[] = "Passe$i = ?";
+                $vals[] = (int)$w;
+                $types .= 'i';
+            }
+            if (!$set) continue;
+            $stmt = $conn->prepare('UPDATE kantiresultate SET ' . implode(', ', $set) . ' WHERE MitgliedID = ? AND Jahr = ?');
+            if (!$stmt) throw new RuntimeException('UPDATE vorbereiten: ' . $conn->error);
+            $types .= 'ii';
+            $vals[] = $mitgliedID;
+            $vals[] = $jahr;
+            $stmt->bind_param($types, ...$vals);
+            if (!$stmt->execute()) throw new RuntimeException('UPDATE: ' . $stmt->error);
+            $stmt->close();
+        } else {
+            // neuer Datensatz nur mit mindestens einem ausgefüllten Feld (auch 0)
+            if (!array_filter($werte, fn($w) => $w !== '')) continue;
+            $ins = [$mitgliedID, $jahr];
+            foreach ($werte as $w) $ins[] = $w === '' ? 0 : (int)$w;
+            $insert->bind_param(str_repeat('i', PASSEN + 2), ...$ins);
+            if (!$insert->execute()) throw new RuntimeException('INSERT: ' . $insert->error);
+        }
+    }
+    $check->close();
+    $insert->close();
+    $conn->commit();
+    antwort(200, true, 'Alle Ergebnisse wurden erfolgreich gespeichert');
+} catch (InvalidArgumentException $e) {
+    antwort(400, false, $e->getMessage());
+} catch (Throwable $e) {
+    if ($transaktion) { try { $conn->rollback(); } catch (Throwable $_) {} }
+    error_log('[KANTIRESULTATE_SAVE] ' . $e->getMessage());
+    antwort(500, false, 'Speichern fehlgeschlagen, es wurde nichts geändert.');
+}
+$conn->close();

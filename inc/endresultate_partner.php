@@ -7,449 +7,144 @@ try {
     die("System error. Please try again later.");
 }
 
-// Seitenspezifische Styles
+// Seitenspezifische Styles: nur Aufbau und die Sie-und-Er-Punkte; Optik aus css/msv-ui.css
 $page_specific_css = "
-/* =========================================
-   Partner Endresultate – Slide-Panel Layout
-   ========================================= */
+.ep-seite { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
+.ep-seite > .msv-kopf { flex-shrink: 0; }
+.ep-tabelle { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.ep-tabelle .desktop-table-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.ep-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; outline: none; }
+#partnerTabelle { margin: 0; border-collapse: separate; border-spacing: 0; }
+#partnerTabelle thead th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; white-space: nowrap; text-align: right; }
+#partnerTabelle tbody td { height: 40px; padding: 0 10px; white-space: nowrap; text-align: right; vertical-align: middle; border-bottom: 1px solid var(--ui-linie-zart); }
+#partnerTabelle thead th:nth-child(-n+2), #partnerTabelle tbody td:nth-child(-n+2) { text-align: left; }
+#partnerTabelle thead th:first-child, #partnerTabelle tbody td:first-child { padding-left: 20px; }
+#partnerTabelle tbody td:first-child { font-weight: 600; }
+#partnerTabelle thead th:last-child, #partnerTabelle tbody td:last-child { text-align: left; padding-right: 20px; }
+#partnerTabelle thead th:nth-child(4), #partnerTabelle tbody td:nth-child(4) { text-align: center; }
+#partnerTabelle tbody tr.hybrid-row { cursor: pointer; }
+#partnerTabelle tbody tr.hybrid-row:hover > td { background: var(--ui-flaeche-2); }
+#partnerTabelle tbody tr.ui-leer td { height: auto; padding: 32px 16px; text-align: center; color: var(--ui-text-2); white-space: normal; cursor: default; }
+#editPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
+#editPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
 
-:root {
-    --app-header: 76px;
-    --app-footer: 0px;
-}
+/* Sie und Er: kompakte Punkte (Partnerin rot, Mitglied blau) */
+.dot-row { display: flex; align-items: center; gap: 2px; justify-content: center; }
+.shot-dot { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; line-height: 1; }
+.dot-partner { background: #fee2e2; color: #b42318; }
+.dot-partner.unique { background: #b42318; color: #fff; }
+.dot-mitglied { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
+.dot-mitglied.unique { background: var(--ui-akzent-dunkel); color: #fff; }
+.dot-struck { text-decoration: line-through; opacity: 0.45; }
+.dot-empty { background: var(--ui-flaeche-2); color: #b8c0cc; border: 1px dashed var(--ui-rand); }
+.dot-sep { color: #b8c0cc; font-size: 0.7rem; margin: 0 1px; }
+.sie-er-total { font-weight: 700; font-size: 0.8rem; color: var(--ui-text); min-width: 28px; text-align: right; margin-left: 6px; }
+.sie-er-header-legend { font-size: 0.65rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ui-text-2); margin-top: 2px; }
 
-.main-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 0 !important;
-    height: calc(100vh - var(--app-header) - var(--app-footer) - 20px) !important;
-    margin-bottom: 0 !important;
-}
-
-.content-background {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: hidden;
-}
-
-#partnerResultateForm {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-}
-
-#resultateContainer {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.desktop-table-container {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.table-wrapper {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    margin-bottom: 0 !important;
-    overflow: hidden !important;
-}
-
-.table-responsive {
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: auto !important;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    -webkit-overflow-scrolling: touch;
-}
-
-.table {
-    border: none;
-    margin-bottom: 0;
-}
-
-.table thead th {
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0.75rem;
-    background-color: #f8f9fa;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.table tbody td {
-    padding: 0.5rem 0.75rem;
-    vertical-align: middle;
-    border: none;
-    text-align: center;
-}
-
-.table tbody td:first-child {
-    text-align: left;
-}
-
-.results-list-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    overflow: hidden;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    flex: 0 1 auto;
-    min-height: 0;
-}
-
-.results-header {
-    background: var(--light-color);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #dee2e6;
-    color: var(--dark-color);
-    font-weight: 600;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.spinner-border { color: var(--secondary-color) !important; }
-
-/* =========================================
-   Sie und Er: Kompakte Dot-Darstellung
-   ========================================= */
-.dot-row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    justify-content: center;
-}
-.shot-dot {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    line-height: 1;
-}
-.dot-partner {
-    background: #fee2e2;
-    color: #dc2626;
-}
-.dot-partner.unique {
-    background: #dc2626;
-    color: #fff;
-}
-.dot-mitglied {
-    background: #dbeafe;
-    color: #2563eb;
-}
-.dot-mitglied.unique {
-    background: #2563eb;
-    color: #fff;
-}
-.dot-struck {
-    text-decoration: line-through;
-    opacity: 0.45;
-}
-.dot-empty {
-    background: #f9fafb;
-    color: #cbd5e1;
-    border: 1px dashed #e2e8f0;
-}
-.dot-sep {
-    color: #cbd5e1;
-    font-size: 0.7rem;
-    margin: 0 1px;
-}
-.sie-er-total {
-    font-weight: 700;
-    font-size: 0.8rem;
-    color: #1e293b;
-    min-width: 28px;
-    text-align: right;
-    margin-left: 6px;
-}
-.sie-er-header-legend {
-    font-size: 0.55rem;
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: 0;
-    color: #64748b;
-    margin-top: 2px;
-}
-
-/* =========================================
-   Hybrid Rows (klickbare Tabelle)
-   ========================================= */
-#partnerTabelle tbody tr.hybrid-row {
-    cursor: pointer;
-    transition: background 0.15s, box-shadow 0.15s;
-    border-bottom: 1px solid #f1f3f4;
-}
-#partnerTabelle tbody tr.hybrid-row:hover {
-    background: rgba(99,102,241,0.05);
-}
-#partnerTabelle tbody tr.hybrid-row.selected {
-    background: rgba(0,123,255,0.08);
-    box-shadow: inset 4px 0 0 #007bff;
-}
-#partnerTabelle tbody tr.hybrid-row[data-has-data='1'] td:first-child {
-    box-shadow: inset 4px 0 0 #28a745;
-}
-#partnerTabelle tbody tr.hybrid-row[data-has-data='0'] td:first-child {
-    box-shadow: inset 4px 0 0 #dee2e6;
-}
-#partnerTabelle tbody tr.hybrid-row.selected td:first-child {
-    box-shadow: inset 4px 0 0 #007bff;
-}
-
-/* =========================================
-   Fortschrittsbalken
-   ========================================= */
-.progress-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius);
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 0.75rem;
-    box-shadow: var(--box-shadow);
-    flex-shrink: 0;
-}
-#partnerTabelle tbody tr.hybrid-row.table-warning {
-    cursor: pointer;
-}
-#partnerTabelle tbody tr.hybrid-row.table-warning:hover {
-    background: rgba(255, 193, 7, 0.15);
-}
-
-/* =========================================
-   Slide-Panel: Container/Overlay/Header/Body zentral in css/msv-styles.css
-   (Breite via panel-width Custom-Property am Panel-Element)
-   ========================================= */
-.panel-footer {
-    padding: 0.75rem 1.25rem;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
-    flex-shrink: 0;
-}
-
-/* =========================================
-   Stich-Sektionen im Panel: zentral .shot-* in css/msv-styles.css
-   ========================================= */
-@media (max-width: 576px) {
-    .button-toolbar { flex-direction: column; }
-    .button-toolbar .btn { width: 100%; }
-}
-
-/* =========================================
-   Mobile
-   ========================================= */
 @media (max-width: 767.98px) {
-    /* Touch-Target-Grössen (form-controls/.btn) zentral in css/msv-styles.css */
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
-
-    .main-content-wrapper {
-        height: auto !important;
-        min-height: calc(100vh - var(--app-header) - 10px) !important;
-    }
-
-    .content-background {
-        overflow: visible !important;
-    }
-
-    .table-wrapper {
-        overflow: visible !important;
-    }
-
-    /* Panel wird Fullscreen auf Mobile */
-    .hybrid-edit-panel {
-        width: 100vw;
-        right: -100vw;
-    }
+    .ep-seite { height: auto; min-height: 0; }
+    .ep-tabelle { overflow: visible; }
+    .hybrid-edit-panel { width: 100vw; right: -100vw; }
     .panel-overlay { display: none !important; }
-
-    .panel-footer {
-        position: sticky;
-        bottom: 0;
-    }
-    .panel-footer .btn {
-        min-height: 48px;
-        font-size: 0.9rem;
-    }
-
-    .mobile-card-detail-row {
-        padding: 0.75rem 0 !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-    }
-
-    .mobile-card-detail-label {
-        font-size: 0.875rem !important;
-        color: #64748b !important;
-        font-weight: 500 !important;
-    }
-
-    .mobile-card-detail-value {
-        font-size: 1rem !important;
-        color: #1e293b !important;
-    }
-
-    .mobile-card-body .btn {
-        min-height: 48px !important;
-        font-size: 1rem !important;
-    }
+    .panel-footer { position: sticky; bottom: 0; }
+    .panel-footer .btn { min-height: 48px; font-size: 0.9rem; }
+    .mobile-card-detail-row { padding: 0.75rem 0 !important; border-bottom: 1px solid var(--ui-linie-zart) !important; }
+    .mobile-card-detail-label { font-size: 0.875rem !important; color: var(--ui-text-2) !important; font-weight: 500 !important; }
+    .mobile-card-detail-value { font-size: 1rem !important; color: var(--ui-text) !important; }
+    .mobile-card-body .btn { min-height: 48px !important; font-size: 1rem !important; }
 }
-
 @media (min-width: 768px) {
     .mobile-cards-container { display: none !important; }
-    /* Kompakte Tabellen-Kopfzeile wie auf endresultate/kanti/heim */
-    #resultateContainer #partnerTabelle thead th {
-        font-size: 0.72rem !important;
-        padding: 0.6rem 0.4rem !important;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-    }
-    #resultateContainer #partnerTabelle tbody td { padding: 0.35rem 0.4rem !important; }
-    /* Namensspalten: Inhaltsbreite, kein Umbruch -> eine Zeile pro Eintrag */
-    #resultateContainer #partnerTabelle thead th:nth-child(-n+2),
-    #resultateContainer #partnerTabelle tbody td:nth-child(-n+2) {
-        width: 1%;
-        white-space: nowrap;
-        padding-right: 1.25rem !important;
-    }
 }
 ";
 
 include 'header.inc.php';
-?>
-<style><?= $page_specific_css ?></style>
-<?php
-if (!isset($_SESSION)) { session_start(); }
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+require_once __DIR__ . '/csrf.inc.php';
+$csrf = csrf_token();
 ?>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-wide">
-                <!-- Header -->
-                <?php $page_title = 'Endschiessen Partner'; $page_actions = '<button type="button" class="btn-help" data-help="endresultate_partner.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+            <div class="main-content-wrapper content-width-wide ep-seite">
+                <?php
+                $page_title = 'Endschiessen Partner';
+                $page_title_after = '<button type="button" class="btn-help" data-help="endresultate_partner.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_actions = '<button id="add-partner-btn" type="button" class="btn btn-outline-success btn-sm"><i class="bi bi-plus-circle me-1"></i>Partnerin hinzufügen</button>'
+                    . '<button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm"><i class="bi bi-list-ol me-1"></i>Rangliste</button>';
+                $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span>'
+                    . '<span class="ui-balken" aria-hidden="true"><span id="progressBar"></span></span></div>'
+                    . '<div class="ui-chips" id="progressChips"></div>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php';
+                ?>
 
-                <div class="content-background">
-                    <form id="partnerResultateForm">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                <form id="partnerResultateForm" class="ui-karte ep-tabelle" onsubmit="return false">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr-Auswahl + Hinzufügen + Aktionen -->
-                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                                    <i class="bi bi-calendar3 me-1"></i>Jahr:
-                                </label>
-                                <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
-                            </div>
-
-                            <button id="add-partner-btn" type="button" class="btn btn-outline-success btn-sm">
-                                <i class="bi bi-plus me-1"></i>Partnerin hinzufügen
-                            </button>
-
-                            <!-- Aktionsbereich (Bootstrap Collapse) -->
-<?php
-                            $ac_id = 'partnerActions';
-                            ob_start();
-                            ?>
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm w-100">
-                                                    <i class="bi bi-trophy me-1"></i>Rangliste
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="border-top mt-2 pt-2 text-end">
-                                            <button id="delete-year-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
-                                                <i class="bi bi-trash me-1"></i>Alle Resultate löschen
-                                            </button>
-                                        </div>
-                            <?php
-                            $ac_body = ob_get_clean();
-                            include 'partials/action_card.inc.php';
-                            ?>
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel">Partnerinnen</span>
+                        <div class="ui-filter" role="group" aria-label="Nach Stand filtern">
+                            <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="nAlle">0</span></button>
+                            <button type="button" data-filter="offen" aria-pressed="false">Offen <span id="nOffen">0</span></button>
+                            <button type="button" data-filter="ok" aria-pressed="false">Erfasst <span id="nOk">0</span></button>
                         </div>
+                        <label class="ui-suche d-none d-md-flex">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span class="visually-hidden">Partnerin oder Mitglied suchen</span>
+                            <input type="search" id="epSuche" placeholder="Partnerin oder Mitglied suchen" autocomplete="off">
+                        </label>
+                    </div>
 
-                        <!-- Fortschrittsbalken -->
-                        <div class="progress-card">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="fw-semibold small">
-                                    <i class="bi bi-people me-1"></i>Erfassungsfortschritt
-                                </span>
-                                <span class="badge bg-success" id="progressBadge">0 / 0</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
-                            </div>
+                    <!-- Desktop: Tabelle -->
+                    <div class="desktop-table-container">
+                        <div class="ep-scroll" id="epScroll" tabindex="0" aria-label="Partnerinnen. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                            <table class="table mb-0" id="partnerTabelle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Partnerin</th>
+                                        <th scope="col">Mitglied</th>
+                                        <th scope="col">Endstich</th>
+                                        <th scope="col">Sie und Er<div class="sie-er-header-legend"><span style="color:#b42318">●</span> Partnerin &nbsp; <span style="color:#2b52a0">●</span> Mitglied</div></th>
+                                        <th scope="col">Partner Schwini</th>
+                                        <th scope="col">Stand</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="ui-leer">
+                                        <td colspan="6"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
 
-                        <!-- Tabelle Container -->
-                        <div id="resultateContainer">
-                            <div class="results-list-card">
-                                <div class="table-wrapper">
-                                    <!-- Desktop: Tabelle -->
-                                    <div class="desktop-table-container">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover mb-0" id="partnerTabelle">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col"><i class="bi bi-heart me-1"></i>Partnerin</th>
-                                                        <th scope="col"><i class="bi bi-person me-1"></i>Mitglied</th>
-                                                        <th scope="col" class="text-center">Endstich</th>
-                                                        <th scope="col" class="text-center">Sie und Er<div class="sie-er-header-legend"><span style="color:#dc2626">●</span> Partner &nbsp; <span style="color:#2563eb">●</span> Mitglied</div></th>
-                                                        <th scope="col" class="text-center">Partner Schwini</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td colspan="5" class="text-center py-4">
-                                                            <div class="spinner-border spinner-border-sm me-2"></div>
-                                                            Lade Daten...
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <!-- Mobile: Cards -->
-                                    <div class="mobile-cards-container" id="mobileCardsPartner">
-                                        <div class="mobile-search">
-                                            <div class="position-relative">
-                                                <i class="bi bi-search search-icon"></i>
-                                                <input type="text" class="form-control" placeholder="Suchen..."
-                                                       oninput="filterMobilePartner(this)">
-                                            </div>
-                                        </div>
-                                        <div class="mobile-cards-scroll">
-                                            <!-- Cards werden per JavaScript generiert -->
-                                        </div>
-                                    </div>
-                                </div>
+                    <!-- Mobile: Cards -->
+                    <div class="mobile-cards-container" id="mobileCardsPartner">
+                        <div class="mobile-search">
+                            <div class="position-relative">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" class="form-control" placeholder="Suchen..."
+                                       oninput="filterMobilePartner(this)">
                             </div>
                         </div>
-                    </form>
-                </div>
+                        <div class="mobile-cards-scroll">
+                            <!-- Cards werden per JavaScript generiert -->
+                        </div>
+                    </div>
+
+                    <div class="ui-tasten d-none d-md-flex">
+                        <span><kbd>↑</kbd> <kbd>↓</kbd> wählen</span>
+                        <span><kbd>Enter</kbd> erfassen</span>
+                        <span>im Panel: <kbd>Enter</kbd> nächstes Feld</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>S</kbd> speichern</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> speichern &amp; nächste offene</span>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -461,21 +156,21 @@ if (empty($_SESSION['csrf_token'])) {
 <!-- Slide-Panel -->
 <div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 600px;">
     <div class="panel-header">
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorherige">
-                <i class="bi bi-chevron-left"></i>
+        <div class="min-w-0">
+            <h6 class="mb-0" id="panelTitle">Partnerin erfassen</h6>
+            <small class="panel-pos" id="panelSubtitle"></small>
+        </div>
+        <div class="d-flex align-items-center gap-1 ms-auto">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorherige" aria-label="Vorherige">
+                <i class="bi bi-chevron-up" aria-hidden="true"></i>
             </button>
-            <div>
-                <h6 class="mb-0" id="panelTitle"><i class="bi bi-people me-2"></i>Partnerin erfassen</h6>
-                <small class="text-muted" id="panelSubtitle"></small>
-            </div>
-            <button class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächste">
-                <i class="bi bi-chevron-right"></i>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächste" aria-label="Nächste">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelClose" data-tooltip="Schliessen (Esc)" aria-label="Schliessen (Esc)">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" id="panelClose">
-            <i class="bi bi-x-lg"></i>
-        </button>
     </div>
 
     <div class="panel-body" id="panelBody">
@@ -573,15 +268,16 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
     </div>
     <div class="panel-footer">
-        <div class="d-flex gap-2 w-100">
-            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn">
-                <i class="bi bi-trash"></i>
+        <div class="d-flex gap-2 w-100 align-items-center">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn" data-tooltip="Partnerin löschen" aria-label="Partnerin löschen">
+                <i class="bi bi-trash" aria-hidden="true"></i>
             </button>
-            <button type="button" class="btn btn-outline-primary flex-fill" id="panelSaveBtn">
+            <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> nächste offene</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="panelSaveBtn">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
-            <button type="button" class="btn btn-outline-primary flex-fill" id="panelSaveNextBtn">
-                Speichern & Nächste <i class="bi bi-arrow-right ms-1"></i>
+            <button type="button" class="btn btn-primary btn-sm" id="panelSaveNextBtn">
+                Speichern &amp; nächste offene <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
     </div>
@@ -617,8 +313,8 @@ $(document).ready(function() {
             const name = this.currentIndex >= 0
                 ? $(this.allRows[this.currentIndex].tr).find('td:first').text().trim()
                 : 'Erfassen';
-            $('#panelTitle').html('<i class="bi bi-people me-2"></i>' + name);
-            $('#panelSubtitle').text((this.currentIndex + 1) + ' / ' + this.allRows.length);
+            $('#panelTitle').text(name || 'Erfassen');
+            $('#panelSubtitle').text((this.currentIndex + 1) + ' von ' + this.allRows.length);
 
             // Navigation
             $('#panelPrev').prop('disabled', this.currentIndex <= 0);
@@ -647,7 +343,7 @@ $(document).ready(function() {
             $('.hybrid-row').removeClass('selected');
 
             // Titel
-            $('#panelTitle').html('<i class="bi bi-plus me-2"></i>Neue Partnerin');
+            $('#panelTitle').text('Neue Partnerin');
             $('#panelSubtitle').text('Neuer Eintrag');
             $('#panelPrev').prop('disabled', true);
             $('#panelNext').prop('disabled', true);
@@ -673,7 +369,7 @@ $(document).ready(function() {
             $('#partnerName').val(guestName);
 
             // Titel anpassen
-            $('#panelTitle').html('<i class="bi bi-people me-2"></i>Gast: ' + guestName);
+            $('#panelTitle').text('Gast: ' + guestName);
 
             // Fokus auf Mitglied-Dropdown
             setTimeout(function() { $('#mitgliedSelect').focus(); }, 300);
@@ -765,7 +461,7 @@ $(document).ready(function() {
                 this.openGuest(nextRow.guestName);
                 this.currentIndex = newIndex;
                 // Fix: Subtitle nach openGuest setzen
-                $('#panelSubtitle').text((newIndex + 1) + ' / ' + this.allRows.length);
+                $('#panelSubtitle').text((newIndex + 1) + ' von ' + this.allRows.length);
                 $('#panelPrev').prop('disabled', newIndex <= 0);
                 $('#panelNext').prop('disabled', newIndex >= this.allRows.length - 1);
                 $(nextRow.tr).addClass('selected');
@@ -813,11 +509,11 @@ $(document).ready(function() {
                             loadData($('#yearSelect').val());
                         }
                     } else {
-                        msvToast('Fehler: ' + (data.message || 'Unbekannt'), 'error');
+                        msvToast('Nicht gespeichert: ' + (data.message || 'unbekannter Fehler') + '. Die Eingaben sind noch da.', 'error');
                     }
                 },
-                error: function() {
-                    msvToast('Fehler beim Speichern', 'error');
+                error: function(xhr) {
+                    msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler') + '. Die Eingaben sind noch da.', 'error');
                 },
                 complete: function() {
                     $saveBtn.prop('disabled', false).html(originalSave);
@@ -827,30 +523,28 @@ $(document).ready(function() {
         },
 
         saveAndNext() {
+            const vorher = Math.max(this.currentIndex, 0);
             this.save(function() {
-                // Nächste Partnerin in der Liste
-                if (PartnerEditPanel.currentIndex >= 0) {
-                    const nextIndex = PartnerEditPanel.currentIndex + 1;
-                    if (nextIndex < PartnerEditPanel.allRows.length) {
-                        const nextRow = PartnerEditPanel.allRows[nextIndex];
-                        // Tabelle neu laden, dann nächsten öffnen
-                        loadData($('#yearSelect').val(), function() {
-                            if (nextIndex < PartnerEditPanel.allRows.length) {
-                                const newNext = PartnerEditPanel.allRows[nextIndex];
-                                if (newNext.isGuest) {
-                                    PartnerEditPanel.openGuest(newNext.guestName);
-                                } else {
-                                    PartnerEditPanel.open(newNext.id);
-                                }
-                            }
-                        });
+                // Tabelle neu laden, dann die nächste offene Zeile ab der bisherigen Position öffnen
+                loadData($('#yearSelect').val(), function() {
+                    const rows = PartnerEditPanel.allRows;
+                    const reihe = rows.slice(vorher).concat(rows.slice(0, vorher));
+                    const naechste = reihe.find(r => r.stand === 'offen');
+                    if (!naechste) {
+                        msvToast('Alle Partnerinnen erfasst', 'success');
+                        PartnerEditPanel.close();
                         return;
                     }
-                }
-                // Kein Nächster → schliessen + Tabelle neu laden
-                msvToast('Alle Partnerinnen erfasst!', 'success');
-                PartnerEditPanel.close();
-                loadData($('#yearSelect').val());
+                    const idx = rows.indexOf(naechste);
+                    if (naechste.isGuest) {
+                        PartnerEditPanel.openGuest(naechste.guestName);
+                        PartnerEditPanel.currentIndex = idx;
+                        $('#panelSubtitle').text((idx + 1) + ' von ' + rows.length);
+                        $(naechste.tr).addClass('selected');
+                    } else {
+                        PartnerEditPanel.open(naechste.id);
+                    }
+                });
             });
         },
 
@@ -900,7 +594,8 @@ $(document).ready(function() {
                     isGuest: !partnerId && !!guestName,
                     guestName: guestName || null,
                     tr: tr,
-                    hasData: hasData
+                    hasData: hasData,
+                    stand: $tr.attr('data-stand') || (hasData ? 'ok' : 'offen')
                 });
             });
             this.updateProgress();
@@ -908,10 +603,19 @@ $(document).ready(function() {
 
         updateProgress() {
             const total = this.allRows.length;
-            const withData = this.allRows.filter(r => r.hasData).length;
-            const pct = total > 0 ? Math.round((withData / total) * 100) : 0;
-            $('#progressBadge').text(withData + ' / ' + total);
+            const ok = this.allRows.filter(r => r.stand === 'ok').length;
+            const offen = total - ok;
+            const gaeste = this.allRows.filter(r => r.isGuest).length;
+            const pct = total > 0 ? Math.round((ok / total) * 100) : 0;
+            $('#progressText').html(ok + ' von ' + total + ' <span>erfasst</span>');
             $('#progressBar').css('width', pct + '%');
+            $('#progressChips').html(
+                (offen ? '<span class="ui-chip"><span class="ui-punkt"></span><b>' + offen + '</b> offen</span>' : '') +
+                (gaeste ? '<span class="ui-chip"><b>' + gaeste + '</b> Gäste ohne Erfassung</span>' : '')
+            );
+            $('#nAlle').text(total);
+            $('#nOffen').text(offen);
+            $('#nOk').text(ok);
         },
 
         async deletePartner() {
@@ -919,11 +623,7 @@ $(document).ready(function() {
             if (!partnerId) return;
 
             const name = $('#partnerName').val() || 'diese Partnerin';
-            const r = await msvConfirm(
-                'Möchtest du "' + name + '" wirklich löschen?',
-                'Partnerin löschen',
-                'Ja, löschen'
-            );
+            const r = await msvConfirmDelete(msvEsc(name), { title: 'Partnerin löschen?' });
             if (!r.isConfirmed) return;
 
             $.post('endresultate_partner/delete_partner.php', {
@@ -937,8 +637,8 @@ $(document).ready(function() {
                 } else {
                     msvToast('Fehler: ' + (data.message || 'Unbekannt'), 'error');
                 }
-            }, 'json').fail(function() {
-                msvToast('Fehler beim Löschen', 'error');
+            }, 'json').fail(function(xhr) {
+                msvToast('Nicht gelöscht: ' + msvXhrMessage(xhr, 'Serverfehler'), 'error');
             });
         }
     };
@@ -954,14 +654,11 @@ $(document).ready(function() {
     //  Daten laden
     // =========================================
     function loadData(year, callback) {
-        PartnerEditPanel.close();
-
         var $tbody = $('#partnerTabelle tbody');
-        $tbody.html(
-            '<tr><td colspan="5" class="text-center py-4">' +
-            '<div class="spinner-border spinner-border-sm me-2"></div>' +
-            'Lade Daten...</td></tr>'
-        );
+        if (!callback) {
+            PartnerEditPanel.close();
+            $tbody.html('<tr class="ui-leer"><td colspan="6"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td></tr>');
+        }
 
         $.ajax({
             url: 'endresultate_partner/load_partner_resultate.php',
@@ -970,19 +667,69 @@ $(document).ready(function() {
             success: function(response) {
                 $tbody.html(response);
                 PartnerEditPanel.buildRowIndex();
+                filterAnwenden();
                 buildMobilePartnerCards();
                 if (callback) callback();
             },
-            error: function() {
-                $tbody.html(
-                    '<tr><td colspan="5" class="text-center text-danger py-4">' +
-                    '<i class="bi bi-exclamation-triangle me-2"></i>' +
-                    'Fehler beim Laden der Daten</td></tr>'
-                );
-                msvToast('Fehler beim Laden der Partner-Daten', 'error');
+            error: function(xhr) {
+                $tbody.html('<tr class="ui-leer"><td colspan="6" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Die Daten konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
             }
         });
     }
+
+    // =========================================
+    //  Filter (Alle / Offen / Erfasst), Suche, Tastatur
+    // =========================================
+    var epFilter = 'alle', epSuchtext = '';
+    function filterAnwenden() {
+        var sichtbar = 0;
+        PartnerEditPanel.allRows.forEach(function(r) {
+            var text = $(r.tr).children('td').slice(0, 2).text().toLowerCase();
+            var zeigen = (epFilter === 'alle' || r.stand === epFilter) && text.indexOf(epSuchtext) !== -1;
+            r.tr.style.display = zeigen ? '' : 'none';
+            if (zeigen) sichtbar++;
+        });
+        $('#epKeineTreffer').remove();
+        if (!sichtbar && PartnerEditPanel.allRows.length) {
+            $('#partnerTabelle tbody').append(
+                '<tr class="ui-leer" id="epKeineTreffer"><td colspan="6">Keine Einträge für diese Auswahl. ' +
+                '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="epFilterZurueck">Filter zurücksetzen</button></td></tr>');
+        }
+    }
+    $(document).on('click', '.ui-filter button', function() {
+        epFilter = $(this).data('filter');
+        $('.ui-filter button').attr('aria-pressed', 'false');
+        $(this).attr('aria-pressed', 'true');
+        filterAnwenden();
+    });
+    $('#epSuche').on('input', function() { epSuchtext = this.value.trim().toLowerCase(); filterAnwenden(); });
+    $(document).on('click', '#epFilterZurueck', function() {
+        epFilter = 'alle'; epSuchtext = ''; $('#epSuche').val('');
+        $('.ui-filter button').attr('aria-pressed', 'false');
+        $('.ui-filter button[data-filter="alle"]').attr('aria-pressed', 'true');
+        filterAnwenden();
+    });
+    $('#epScroll').on('keydown', function(e) {
+        var zeilen = PartnerEditPanel.allRows.filter(function(r) { return r.tr.style.display !== 'none'; });
+        if (!zeilen.length) return;
+        var akt = zeilen.findIndex(function(r) { return r.tr.classList.contains('ui-markiert'); });
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var neu = akt < 0 ? 0 : Math.max(0, Math.min(zeilen.length - 1, akt + (e.key === 'ArrowDown' ? 1 : -1)));
+            zeilen.forEach(function(r) { r.tr.classList.remove('ui-markiert'); });
+            zeilen[neu].tr.classList.add('ui-markiert');
+            zeilen[neu].tr.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && akt >= 0) {
+            e.preventDefault();
+            $(zeilen[akt].tr).trigger('click');
+        }
+    });
+    $('#epScroll').on('blur', function() { $('#partnerTabelle tr.ui-markiert').removeClass('ui-markiert'); });
+    $(document).on('keydown', function(e) {
+        if (!$('#editPanel').hasClass('open') || !(e.ctrlKey || e.metaKey)) return;
+        if (e.key === 's' || e.key === 'S') { e.preventDefault(); PartnerEditPanel.save(); }
+        else if (e.key === 'Enter') { e.preventDefault(); if ($('#panelSaveNextBtn').is(':visible')) PartnerEditPanel.saveAndNext(); else PartnerEditPanel.save(); }
+    });
 
     // =========================================
     //  Summen berechnen
@@ -1020,14 +767,16 @@ $(document).ready(function() {
     function setupEnterNavigation() {
         var $inputs = $('#editPanel .focusable-input');
         $inputs.off('keydown.nav').on('keydown.nav', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                 e.preventDefault();
                 var currentIndex = $inputs.index(this);
                 var nextIndex = currentIndex + 1;
                 if (nextIndex < $inputs.length) {
                     $inputs.eq(nextIndex).focus().select();
+                } else if ($('#panelSaveNextBtn').is(':visible')) {
+                    PartnerEditPanel.saveAndNext();
                 } else {
-                    $('#panelSaveBtn').focus();
+                    PartnerEditPanel.save();
                 }
             }
         });
@@ -1099,45 +848,6 @@ $(document).ready(function() {
     // Partnerin hinzufügen
     $('#add-partner-btn').on('click', function() {
         PartnerEditPanel.openNew();
-    });
-
-    // Jahr löschen
-    $('#delete-year-btn').on('click', async function() {
-        const year = $('#yearSelect').val();
-
-        // Zuerst Count abfragen
-        let countData;
-        try {
-            countData = await $.get('endresultate_partner/count_year_entries.php', { year: year });
-        } catch(e) {
-            msvToast('Fehler beim Abrufen der Daten', 'error');
-            return;
-        }
-
-        if (!countData.success || countData.count === 0) {
-            msvToast('Keine Einträge für dieses Jahr vorhanden', 'info');
-            return;
-        }
-
-        const r = await msvConfirm(
-            'Möchtest du wirklich ALLE ' + countData.count + ' Partner-Resultate des Jahres ' + year + ' löschen?',
-            'Alle Partner-Daten löschen',
-            'Ja, alles löschen'
-        );
-        if (!r.isConfirmed) return;
-
-        $.post('endresultate_partner/delete_year_data.php', {
-            year: year,
-            csrf_token: $('input[name="csrf_token"]').val()
-        }, function(data) {
-            if (data.success) {
-                msvToast(data.message, 'success');
-                PartnerEditPanel.close();
-                loadData(year);
-            } else {
-                msvToast('Fehler: ' + data.message, 'error');
-            }
-        }, 'json').fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Daten konnten nicht gelöscht werden'), 'error'); });
     });
 
     // Klick auf Tabellenzeile → Panel öffnen
@@ -1228,7 +938,7 @@ $(document).ready(function() {
             const sieUndEr = cells[3]?.textContent?.trim() || '-';
             const schwini = cells[4]?.textContent?.trim() || '-';
 
-            const borderStyle = isGuest ? 'border-left: 3px solid #ffc107;' : '';
+            const borderStyle = '';
             const btnAction = partnerId
                 ? `PartnerEditPanel.open(${partnerId})`
                 : `PartnerEditPanel.openGuest('${guestName.replace(/'/g, "\\'")}')`;
