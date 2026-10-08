@@ -147,6 +147,31 @@ function hasNonZeroValues($schussData, $fields) {
     return false;
 }
 
+/**
+ * Leert einen Stich, wenn alle seine Felder mitgeschickt wurden und alle leer oder 0 sind.
+ * $optional: Felder, die mitgeleert werden, falls sie mitgeschickt wurden (z.B. Absenden-Anmeldung).
+ * $leer: SQL-Wert für «leer» (0 in den Resultat-Tabellen, NULL bei Sie und Er).
+ * Rückgabe true, wenn dabei tatsächlich Werte verschwunden sind.
+ */
+function leereWennGeleert($conn, string $table, int $mitgliedID, int $jahr, array $daten, array $felder, array $optional = [], string $leer = '0'): bool {
+    foreach ($felder as $f) {
+        if (!array_key_exists($f, $daten)) return false;
+    }
+    $alle = array_merge($felder, array_values(array_filter($optional, fn($f) => array_key_exists($f, $daten))));
+    foreach ($alle as $f) {
+        $v = trim((string)$daten[$f]);
+        if ($v !== '' && (float)str_replace(',', '.', $v) != 0) return false;
+    }
+    $set = implode(', ', array_map(fn($f) => "`$f` = $leer", $alle));
+    $st = $conn->prepare("UPDATE `$table` SET $set WHERE MitgliedID = ? AND Jahr = ?");
+    if (!$st) throw new Exception('Leeren vorbereiten: ' . $conn->error);
+    $st->bind_param('ii', $mitgliedID, $jahr);
+    $st->execute();
+    $n = $st->affected_rows;
+    $st->close();
+    return $n > 0;
+}
+
 // Felder für die Tabellen
 $endstichFields = ['Schuss1', 'Schuss2', 'Schuss3', 'Schuss4', 'Schuss5', 'Schuss6', 'Schuss7', 'Schuss8', 'Schuss9', 'Schuss10', 'Tiefschuss', 'AbsendenAnmeldung'];
 $schwiniFields = ['P1Schuss1', 'P1Schuss2', 'P1Schuss3', 'P1Schuss4', 'P1Schuss5', 'P1Schuss6', 'P2Schuss1', 'P2Schuss2', 'P2Schuss3', 'P2Schuss4', 'P2Schuss5', 'P2Schuss6'];
@@ -156,37 +181,53 @@ $zabigFields = ['ZSchuss1', 'ZSchuss2', 'ZSchuss3', 'ZSchuss4', 'ZSchuss5', 'ZSc
 $sieunderFields = ['SieErSchuss6', 'SieErSchuss7', 'SieErSchuss8', 'SieErSchuss9', 'SieErSchuss10'];
 
 // Daten speichern – nur wenn mindestens ein Wert > 0 vorhanden ist (verhindert Phantom-Datensätze)
+$geleert = [];   // Stiche, die mit diesem Speichern geleert wurden (für die Meldung)
 try {
     $endstichData = array_intersect_key($schussData, array_flip($endstichFields));
     if (hasNonZeroValues($schussData, $endstichFields) || !empty($schussData['AbsendenAnmeldung'] ?? '')) {
         saveSchuss($conn, $mitgliedID, $jahr, $endstichData, 'endstich', $endstichFields);
+    } elseif (leereWennGeleert($conn, 'endstich', $mitgliedID, $jahr, $schussData, array_slice($endstichFields, 0, 11), ['AbsendenAnmeldung'])) {
+        $geleert[] = 'Endstich';
     }
 
     $schwiniData = array_intersect_key($schussData, array_flip($schwiniFields));
     if (hasNonZeroValues($schussData, $schwiniFields)) {
         saveSchuss($conn, $mitgliedID, $jahr, $schwiniData, 'schwini', $schwiniFields);
+    } else {
+        // Passen werden einzeln gelöst und darum einzeln geleert
+        if (leereWennGeleert($conn, 'schwini', $mitgliedID, $jahr, $schussData, array_slice($schwiniFields, 0, 6))) $geleert[] = 'Schwini Passe 1';
+        if (leereWennGeleert($conn, 'schwini', $mitgliedID, $jahr, $schussData, array_slice($schwiniFields, 6, 6))) $geleert[] = 'Schwini Passe 2';
     }
 
     $kunstData = array_intersect_key($schussData, array_flip($kunstFields));
     if (hasNonZeroValues($schussData, $kunstFields)) {
         saveSchuss($conn, $mitgliedID, $jahr, $kunstData, 'kunst', $kunstFields);
+    } elseif (leereWennGeleert($conn, 'kunst', $mitgliedID, $jahr, $schussData, $kunstFields)) {
+        $geleert[] = 'Kunst';
     }
 
     $glueckData = array_intersect_key($schussData, array_flip($glueckFields));
     if (hasNonZeroValues($schussData, $glueckFields)) {
         saveSchuss($conn, $mitgliedID, $jahr, $glueckData, 'glueck', $glueckFields);
+    } elseif (leereWennGeleert($conn, 'glueck', $mitgliedID, $jahr, $schussData, $glueckFields)) {
+        $geleert[] = 'Glück';
     }
 
     $zabigData = array_intersect_key($schussData, array_flip($zabigFields));
     if (hasNonZeroValues($schussData, $zabigFields) || !empty($schussData['Ansage'] ?? '')) {
         saveSchuss($conn, $mitgliedID, $jahr, $zabigData, 'zabig', $zabigFields);
+    } elseif (leereWennGeleert($conn, 'zabig', $mitgliedID, $jahr, $schussData, array_slice($zabigFields, 0, 6))) {
+        $geleert[] = 'Zabig';
     }
 
     // Sie und Er speichern – hat eigene Prüfung in saveSieUnder()
     saveSieUnder($conn, $mitgliedID, $jahr, array_intersect_key($schussData, array_flip($sieunderFields)), $sieunderFields);
+    if (!hasNonZeroValues($schussData, $sieunderFields) && leereWennGeleert($conn, 'endresultate_partner', $mitgliedID, $jahr, $schussData, $sieunderFields, [], 'NULL')) {
+        $geleert[] = 'Sie und Er';
+    }
 
     $conn->close();
-    echo json_encode(['success' => true, 'message' => 'Schüsse erfolgreich gespeichert']);
+    echo json_encode(['success' => true, 'message' => 'Schüsse erfolgreich gespeichert', 'geleert' => $geleert], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     $conn->close();
     http_response_code(500);

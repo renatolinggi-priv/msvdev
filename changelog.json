@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.60.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: geleerte Stiche werden geleert, Löschen mit Übersicht und Sicherung",
+        "beschreibung": "Endschiessen erfassen: Leerst du alle Felder eines gelösten Stichs (bei Schwini einer Passe) und speicherst, wird er jetzt auch in der Datenbank geleert; vorher blieben die alten Werte stehen, obwohl «gespeichert» gemeldet wurde. Die Meldung nennt die geleerten Stiche, nicht gelöste Stiche bleiben unberührt. Der Papierkorb im Panel zeigt vor dem Löschen, was betroffen ist (Stiche, Eintrag der Partnerin samt Sie und Er, Endstich-Resultat der Jahresmeisterschaft), sichert vorher die Datenbank und löscht alles in einem Schritt; gibt es nichts zu löschen, sagt er das. Braucht die Datenbank-Aktualisierung 087 (Hilfetext).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.59.0",
     "datum": "2026-10-08",
     "aenderungen": [

@@ -493,7 +493,7 @@ $(document).ready(function() {
                         return;
                     }
                     EndEditPanel.setGeaendert(false);
-                    msvToast('Resultate gespeichert', 'success');
+                    msvToast('Resultate gespeichert' + (resp.geleert && resp.geleert.length ? ' – geleert: ' + resp.geleert.join(', ') : ''), 'success');
                     if (callback) {
                         // Tabelle neu laden, Panel bleibt offen, danach weiter
                         loadData($('#yearSelect').val(), callback);
@@ -868,9 +868,18 @@ $(document).ready(function() {
         if (!mitgliedId) return;
 
         const name = $('#panelTitle').text().trim();
+        const jahr = $('#yearSelect').val();
+        const csrf = $('#editPanel input[name="csrf_token"]').val();
+        // Erst fragen, was gelöscht würde (auch Partnerin und JM-Endstich), dann bestätigen; der Server sichert vorher
+        let p;
+        try { p = await $.post('endschresultate/delete_endschresultat.php', { mitgliedID: mitgliedId, jahr, aktion: 'pruefen', csrf_token: csrf }, null, 'json'); }
+        catch (xhr) { msvToast(msvXhrMessage(xhr, 'Prüfen hat nicht geklappt'), 'error'); return; }
+        const b = (p && p.bezuege) || {};
+        const liste = Object.keys(b).map(k => '<li>' + msvEsc(k) + ': ' + msvEsc(b[k]) + '</li>').join('');
+        if (!liste) { msvToast('Für ' + jahr + ' sind von ' + msvEsc(name) + ' keine Resultate gespeichert.', 'info'); return; }
         const r = await msvConfirmDelete('', {
             title: 'Resultate löschen?',
-            html: 'Alle Endschiessen-Resultate ' + $('#yearSelect').val() + ' von <strong>' + msvEsc(name) + '</strong> werden gelöscht.',
+            html: 'Von <strong>' + msvEsc(name) + '</strong> wird für ' + jahr + ' gelöscht:<ul class="text-start mt-2 mb-2 ps-3">' + liste + '</ul>Vorher wird die Datenbank gesichert.',
             confirmText: 'Ja, löschen'
         });
         if (!r.isConfirmed) return;
@@ -880,17 +889,18 @@ $(document).ready(function() {
             method: 'POST',
             data: {
                 mitgliedID: mitgliedId,
-                jahr: $('#yearSelect').val(),
-                csrf_token: $('#editPanel input[name="csrf_token"]').val()
+                jahr: jahr,
+                aktion: 'loeschen',
+                csrf_token: csrf
             },
             dataType: 'json',
             success: function(resp) {
-                if (resp && resp.success === false) { msvToast('Nicht gelöscht: ' + (resp.message || 'unbekannter Fehler'), 'error'); return; }
-                msvToast('Resultate gelöscht', 'success');
+                if (resp && resp.success === false) { msvToast(resp.message || 'Nicht gelöscht', 'error'); return; }
+                msvToast('Resultate gelöscht' + (resp && resp.sicherung ? ' – Sicherung ' + msvEsc(resp.sicherung) : ''), 'success');
                 EndEditPanel.close();
                 loadData($('#yearSelect').val());
             },
-            error: function(xhr) { msvToast('Nicht gelöscht: ' + msvXhrMessage(xhr, 'Serverfehler'), 'error'); }
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Nicht gelöscht'), 'error'); }
         });
     });
 
