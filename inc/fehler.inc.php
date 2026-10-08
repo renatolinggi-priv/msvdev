@@ -38,3 +38,19 @@ if (!function_exists('msvFehler')) {
         return $technisch ? $klartext : $text;
     }
 }
+
+/**
+ * Generator ohne Daten (z.B. Rangliste eines Jahres ohne Resultate): statt eines leeren PDFs eine klare
+ * Meldung. Der Ausgabe-Baustein (msvAusgabe) zeigt sie als Hinweis, der Direktdruck (MsvDruck) druckt nichts.
+ *
+ *   if (!$daten) msvAusgabeLeer('Für ' . $jahr . ' sind noch keine Heimresultate erfasst.');
+ */
+if (!function_exists('msvAusgabeLeer')) {
+    function msvAusgabeLeer(string $meldung): void
+    {
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        if (!headers_sent()) { header('Content-Type: application/json; charset=utf-8'); }
+        echo json_encode(['success' => false, 'leer' => true, 'message' => $meldung], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}

@@ -41,7 +41,9 @@
         '.msv-swal .swal2-actions .btn-outline-secondary:focus{box-shadow:0 0 0 .2rem rgba(108,117,125,.25)}',
         '.msv-swal .swal2-loader{width:1.5rem;height:1.5rem;border-width:.2rem}',
         /* Handy: volle Breite minus Rand, Buttons nebeneinander gleich breit */
-        '@media (max-width:575.98px){.msv-swal.swal2-popup{width:calc(100vw - 1.5rem);padding:.9rem .85rem}.msv-swal .swal2-actions .btn{flex:1 1 0;min-width:0}}'
+        '@media (max-width:575.98px){.msv-swal.swal2-popup{width:calc(100vw - 1.5rem);padding:.9rem .85rem}.msv-swal .swal2-actions .btn{flex:1 1 0;min-width:0}}',
+        /* Ausgabe-Knöpfe (msvAusgabe): Spinner in Icon-Grösse, damit der Knopf beim Laden nicht wächst */
+        '.msv-ausgabe-spinner{width:.9em;height:.9em;border-width:.14em;vertical-align:-.125em}'
     ].join('\n');
     var s = document.createElement('style');
     s.id = 'msv-swal-css';
@@ -337,6 +339,188 @@ function msvDownload(url, filename) {
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { document.body.removeChild(a); }, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Ausgabe-Knöpfe (PDF, Word, Excel, CSV, Kalender): einheitliches Verhalten auf allen Seiten
+// ---------------------------------------------------------------------------
+
+// Datei über einen Generator erzeugen und herunterladen. Der Knopf ist währenddessen gesperrt
+// (kein Doppelklick), sein Icon wird zum Spinner, das Label bleibt stehen; danach meldet ein Toast
+// Erfolg oder Fehler. Immer Download, nie ein neues Fenster (Popup-Blocker nach await).
+//
+//   msvAusgabe(this, {
+//     url:    'heimrang/generate_pdf.php',
+//     data:   { year: 2026, kat: 'B' },            // GET: Query-String, POST: Formular-Body
+//     method: 'POST', csrf: true,                  // optional; csrf hängt das Token an (Body + X-CSRF-TOKEN),
+//                                                  // csrf: 'token' nimmt genau dieses Token
+//     body:   formData,                            // optional statt data (POST mit eigenem Body)
+//     json:   { entries: [...] },                  // optional statt data: POST als JSON (Token nur im Header)
+//     titel:  'Heimmeisterschaft Rangliste 2026',  // für den Toast; sonst das Label des Knopfs
+//     name:   'Heimmeisterschaft_Rangliste_2026',  // Dateiname ohne Endung; sonst der des Servers
+//     linkPrefix: 'heimrang/',                     // für Links, die relativ zum Modul kommen («dat/…»)
+//     fehler: 'Die Rangliste konnte nicht erstellt werden.',
+//     erfolg: (j, res) => 'Broschüre: ' + j.pages + ' Seiten', // optional: eigener Erfolgstext (j = JSON-Antwort
+//                                                  // oder null, res = fetch-Response); auch { text, typ: 'warning' }
+//     still:  true,                                // optional: kein Erfolgs-Toast (Sammel-Downloads), Fehler schon
+//     ladeKnopf: el                                // optional: Spinner an einem anderen Element (Dropdown-Toggle)
+//   });
+//
+// Der Generator darf die Datei direkt liefern oder JSON mit einem Link (pdf_link | pdf_url | excel_link |
+// word_link | ics_link | download_url | link | file | url). success:false oder error → Fehler-Toast mit der Meldung
+// des Servers; leer:true → Hinweis statt Fehler («Keine Resultate für 2026»).
+// Rückgabe: Promise<boolean> – true, wenn der Download gestartet wurde.
+async function msvAusgabe(btn, opts) {
+    opts = opts || {};
+    var el = btn && (btn.jquery ? btn[0] : btn);
+    var anzeige = opts.ladeKnopf ? (opts.ladeKnopf.jquery ? opts.ladeKnopf[0] : opts.ladeKnopf) : el;
+    if (msvAusgabe._laufend.has(el || opts.url)) return false;
+    var titel = opts.titel || msvAusgabeLabel(el) || 'Dokument';
+    var fehlerText = opts.fehler || ('«' + titel + '» konnte nicht erstellt werden.');
+
+    msvAusgabe._laufend.add(el || opts.url);
+    msvAusgabeLaden(anzeige, true);
+    try {
+        var method = String(opts.method || (opts.json !== undefined ? 'POST' : 'GET')).toUpperCase();
+        var data = Object.assign({}, opts.data || {});
+        var headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (opts.csrf) {
+            var token = typeof opts.csrf === 'string' ? opts.csrf : msvCsrfToken();
+            if (opts.json === undefined) data.csrf_token = token;
+            headers['X-CSRF-TOKEN'] = token;
+        }
+        var url = opts.url;
+        var init = { method: method, credentials: 'same-origin', headers: headers };
+        if (method === 'GET') {
+            var q = new URLSearchParams(data).toString();
+            if (q) url += (url.indexOf('?') >= 0 ? '&' : '?') + q;
+        } else if (opts.json !== undefined) {
+            init.body = JSON.stringify(opts.json);
+            headers['Content-Type'] = 'application/json';
+        } else {
+            init.body = opts.body !== undefined ? opts.body : new URLSearchParams(data);
+            if (typeof init.body === 'string') headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+        }
+
+        var res = await fetch(url, init);
+        if (!res.ok) {
+            // Streamende Generatoren melden Fehler als kurzen Klartext (text/plain), die übrigen als JSON
+            if (/^text\/plain/i.test(res.headers.get('Content-Type') || '')) {
+                var klartext = (await res.text()).trim();
+                throw new Error(klartext && klartext.length < 300 ? klartext : fehlerText);
+            }
+            throw new Error(await msvFetchMessage(res, fehlerText));
+        }
+
+        var j = null;
+        var ct = (res.headers.get('Content-Type') || '').toLowerCase();
+        var cd = res.headers.get('Content-Disposition') || '';
+        var istDatei = /attachment/i.test(cd)
+            || /application\/(pdf|octet-stream|zip|vnd\.|msword|ms-excel)|text\/(csv|calendar)/.test(ct);
+
+        if (istDatei) {
+            var blob = await res.blob();
+            var serverName = msvAusgabeDispositionName(cd);
+            var objUrl = URL.createObjectURL(blob);
+            msvDownload(objUrl, msvAusgabeDateiname(opts.name, serverName, ct));
+            setTimeout(function () { URL.revokeObjectURL(objUrl); }, 60000);
+        } else {
+            var text = await res.text();
+            try { j = JSON.parse(text); } catch (e) { j = null; }
+            if (!j) throw new Error(/<html|<!doctype/i.test(text)
+                ? 'Der Server hat keine Datei geliefert – bitte Seite neu laden und nochmals versuchen.'
+                : fehlerText);
+            if (j.leer) {
+                msvToast(j.message || 'Für diese Auswahl gibt es noch keine Daten.', 'warning');
+                return false;
+            }
+            var link = j.pdf_link || j.pdf_url || j.excel_link || j.word_link || j.ics_link || j.download_url || j.link || j.file || j.url;
+            if (j.success === false || !link) throw new Error(j.message || j.error || fehlerText);
+            link = msvAusgabeLink(link, opts.linkPrefix);
+            var linkName = String(link).split('?')[0].split('/').pop();
+            msvDownload(link, msvAusgabeDateiname(opts.name, j.filename || linkName, ''));
+        }
+        var erfolg = typeof opts.erfolg === 'function' ? opts.erfolg(j, res) : '';
+        if (erfolg && typeof erfolg === 'object') msvToast(erfolg.text, erfolg.typ || 'success');
+        else if (!opts.still) msvToast(erfolg || ('«' + titel + '» heruntergeladen'), 'success');
+        return true;
+    } catch (err) {
+        console.error('[msvAusgabe]', opts.url, err);
+        // TypeError = fetch ohne Antwort (offline, Zeitüberschreitung) – nie «Failed to fetch» zeigen
+        msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.'
+            : (err && err.message ? err.message : fehlerText), 'error');
+        return false;
+    } finally {
+        msvAusgabe._laufend.delete(el || opts.url);
+        msvAusgabeLaden(anzeige, false);
+    }
+}
+msvAusgabe._laufend = new Set();
+
+// CSRF-Token der Seite (<meta name="csrf-token"> oder das erste [name=csrf_token]), sonst ''.
+function msvCsrfToken() {
+    return (document.querySelector('meta[name="csrf-token"]') || {}).content
+        || (document.querySelector('[name="csrf_token"]') || {}).value
+        || '';
+}
+
+// Sichtbares Label eines Knopfs (ohne Icon), für den Toast.
+function msvAusgabeLabel(el) {
+    if (!el) return '';
+    var t = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    return t || el.getAttribute('aria-label') || '';
+}
+
+// Ladezustand: gesperrt + aria-busy, erstes Icon wird zum Spinner, Label bleibt. Links (<a>) über .disabled.
+function msvAusgabeLaden(el, an) {
+    if (!el) return;
+    if (an) {
+        if (el.__msvAusgabe) return;
+        var icon = el.querySelector('i.bi, i[class*="bi-"]');
+        var sp = document.createElement('span');
+        sp.className = 'spinner-border spinner-border-sm msv-ausgabe-spinner'
+            + (icon ? (' ' + (icon.className.match(/\b(me|ms)-\d\b/g) || []).join(' ')) : ' me-1');
+        sp.setAttribute('aria-hidden', 'true');
+        if (icon) icon.replaceWith(sp); else el.insertBefore(sp, el.firstChild);
+        el.__msvAusgabe = { icon: icon, sp: sp, warGesperrt: el.disabled };
+        el.setAttribute('aria-busy', 'true');
+        if (el.tagName === 'A') el.classList.add('disabled'); else el.disabled = true;
+    } else {
+        var st = el.__msvAusgabe;
+        if (!st) return;
+        if (st.icon) st.sp.replaceWith(st.icon); else st.sp.remove();
+        el.removeAttribute('aria-busy');
+        if (el.tagName === 'A') el.classList.remove('disabled'); else el.disabled = !!st.warGesperrt;
+        delete el.__msvAusgabe;
+    }
+}
+
+// Link aus einer Generator-Antwort für die aktuelle Seite auflösen: absolut bleibt, «inc/…» wird
+// unter /inc/ gekürzt, modul-relative Links («dat/…») bekommen linkPrefix (z.B. «heimrang/»).
+function msvAusgabeLink(link, linkPrefix) {
+    var l = String(link);
+    if (/^(https?:)?\/\//i.test(l) || l.charAt(0) === '/' || /^(blob|data):/i.test(l)) return l;
+    var unterInc = /\/inc(\/|$)/.test(window.location.pathname);
+    if (l.indexOf('inc/') === 0 && unterInc) return l.slice(4);
+    if (linkPrefix && l.indexOf(linkPrefix) !== 0) return linkPrefix + l;
+    return l;
+}
+
+// Dateiname aus Content-Disposition (filename*=UTF-8''… oder filename="…").
+function msvAusgabeDispositionName(cd) {
+    var m = /filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i.exec(cd || '');
+    if (m) { try { return decodeURIComponent(m[1].trim().replace(/^"|"$/g, '')); } catch (e) { /* weiter */ } }
+    m = /filename\s*=\s*"?([^";]+)"?/i.exec(cd || '');
+    return m ? m[1].trim() : '';
+}
+
+// Download-Name: gewünschter Name + Endung des Servers (bzw. aus dem Content-Type), sonst der des Servers.
+function msvAusgabeDateiname(wunsch, serverName, ct) {
+    var endung = (/\.([a-z0-9]{2,5})$/i.exec(serverName || '') || [])[1]
+        || { 'application/pdf': 'pdf', 'text/csv': 'csv', 'text/calendar': 'ics' }[String(ct || '').split(';')[0]]
+        || (/spreadsheet|ms-excel/.test(ct) ? 'xlsx' : (/wordprocessing|msword/.test(ct) ? 'docx' : ''));
+    if (wunsch) return String(wunsch).replace(/[^\wäöüÄÖÜ.\-]+/g, '_') + (endung ? '.' + endung : '');
+    return serverName || ('Download' + (endung ? '.' + endung : ''));
 }
 
 // ---------------------------------------------------------------------------

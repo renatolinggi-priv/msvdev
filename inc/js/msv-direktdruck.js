@@ -22,8 +22,11 @@
  * (Meldung dann selbst per msvToast). Der Resolver darf ein Promise liefern.
  *
  * Verhalten: Beim Laden verbindet das Modul QZ Tray im Hintergrund und lädt alle Druckprofile des
- * Benutzers/Arbeitsplatzes (eine Anfrage). Buttons bleiben deaktiviert, solange QZ nicht läuft oder für den
- * doc_type kein Profil existiert; der Tooltip nennt den Grund. Nach dynamischem Rendern: MsvDruck.refresh().
+ * Benutzers/Arbeitsplatzes (eine Anfrage). Ohne QZ-Verbindung sind die Drucker AUSGEBLENDET (CSS: .msv-druck
+ * ohne .msv-druck-an) und die Kopf-Card zeigt einen Hinweis «Direktdruck nicht verbunden». Mit Verbindung,
+ * aber ohne Profil für den doc_type bleibt der Drucker sichtbar und gesperrt; der Tooltip nennt den Grund.
+ * War QZ beim letzten Seitenaufruf verbunden, stehen die Drucker während des Verbindens schon da (gesperrt),
+ * damit nichts springt. Nach dynamischem Rendern: MsvDruck.refresh().
  * Seiten mit eigener Druck-UI können MsvDruck.onChange = fn setzen (wird nach jedem refresh() aufgerufen).
  *
  * Druckoptionen aus dem Profil: Drucker, Kopien, Farbe, Duplex ('' | 'long-edge' | 'short-edge'),
@@ -44,20 +47,25 @@
     onChange: null,         // optionaler Callback nach jedem refresh()
     _init: false,
     _laufend: new Set(),
+    _verbinde: false,       // Verbindungsversuch läuft noch
+    _zuletzt: false,        // war QZ beim letzten Seitenaufruf verbunden? (localStorage)
 
     // -------------------------------------------------------------- Init / Status
     async init() {
       if (this._init) return;
       this._init = true;
+      try { this._zuletzt = localStorage.getItem('msvDruckQz') === '1'; } catch (e) { this._zuletzt = false; }
       document.addEventListener('click', ev => this._onClick(ev));
-      this.refresh();
 
       if (typeof PrintManager === 'undefined' || typeof qz === 'undefined') {
         console.warn('[MsvDruck] QZ-Skripte fehlen – Direktdruck deaktiviert');
+        this.refresh();
         return;
       }
+      this._verbinde = true;
+      this.refresh();
       this.pm = new PrintManager();
-      this.pm.onStatusChange = c => { this.verbunden = !!c; this.refresh(); };
+      this.pm.onStatusChange = c => { this.verbunden = !!c; this._merke(); this.refresh(); };
 
       try {
         await this.pm.connect();
@@ -66,8 +74,14 @@
         this.verbunden = false;
         console.warn('[MsvDruck] QZ Tray nicht verfügbar:', err && err.message ? err.message : err);
       }
+      this._merke();
       await this._ladeProfile();
+      this._verbinde = false;
       this.refresh();
+    },
+
+    _merke() {
+      try { localStorage.setItem('msvDruckQz', this.verbunden ? '1' : '0'); } catch (e) { /* privat/gesperrt: egal */ }
     },
 
     async _ladeProfile() {
@@ -88,6 +102,12 @@
 
     /** Druckbereit für diesen doc_type? */
     bereit(docType) { return !!(this.pm && this.verbunden && this.profil(docType)); },
+
+    /**
+     * Sollen Drucker-Knöpfe überhaupt sichtbar sein? Ja mit QZ-Verbindung – und während des Verbindens,
+     * wenn QZ beim letzten Aufruf lief. Seiten mit eigener Druck-UI (onChange) blenden ihre Knöpfe danach aus.
+     */
+    sichtbar() { return !!(this.pm && this.verbunden) || (this._verbinde && this._zuletzt); },
 
     /** Resolver für dynamische URLs registrieren. */
     resolve(docType, fn) { this.resolvers[docType] = fn; this.refresh(); },
@@ -119,19 +139,45 @@
         + (p.duplex ? ', beidseitig' : '') + farbe + (Number(p.copies) > 1 ? ', ' + p.copies + '×' : '');
     },
 
-    /** Alle .msv-druck-Buttons anhand Verbindung/Profil aktivieren bzw. deaktivieren (Tooltip mit Grund). */
+    /**
+     * Alle .msv-druck-Buttons anhand Verbindung/Profil zeigen, sperren oder freigeben (Tooltip mit Grund).
+     * Ohne QZ-Verbindung: Drucker ausblenden und einen Hinweis in der Kopf-Card zeigen.
+     */
     refresh() {
-      document.querySelectorAll('.msv-druck[data-druck-doctype]').forEach(btn => {
+      const mitQz = !!(this.pm && this.verbunden);
+      const zeigen = this.sichtbar();
+      const knoepfe = document.querySelectorAll('.msv-druck[data-druck-doctype]');
+      knoepfe.forEach(btn => {
         const dt = btn.dataset.druckDoctype;
-        const grund = this.grund(dt, btn.dataset.druckLabel);
+        const grund = this._verbinde && !mitQz ? 'Verbinde mit QZ Tray …' : this.grund(dt, btn.dataset.druckLabel);
+        btn.classList.toggle('msv-druck-an', zeigen);
         btn.disabled = !!grund || btn.dataset.druckBlocked === '1' || this._laufend.has(btn);
         if (!btn.dataset.druckKeepTooltip) {
           btn.dataset.tooltip = grund || ('Direktdruck: ' + this.profilText(dt));
         }
       });
+      this._hinweis((knoepfe.length > 0 || document.querySelector('[data-druck-eigen]')) && !zeigen && !this._verbinde);
       if (typeof this.onChange === 'function') {
         try { this.onChange(); } catch (e) { console.error('[MsvDruck] onChange:', e); }
       }
+    },
+
+    /** Hinweis «Direktdruck nicht verbunden» in der Kopf-Card (einmal pro Seite) ein-/ausblenden. */
+    _hinweis(an) {
+      let chip = document.querySelector('.msv-druck-chip');
+      if (!an) { if (chip) chip.hidden = true; return; }
+      if (!chip) {
+        const ziel = document.querySelector('.msv-kopf .page-actions') || document.querySelector('.msv-kopf .msv-kopf-titel');
+        if (!ziel) return;
+        chip = document.createElement('span');
+        chip.className = 'ui-chip msv-druck-chip';
+        chip.tabIndex = 0;
+        chip.dataset.tooltip = 'Für den Direktdruck muss QZ Tray auf diesem Computer laufen. '
+          + 'Ohne QZ Tray: Dokument herunterladen und wie gewohnt drucken.';
+        chip.innerHTML = '<i class="bi bi-printer" aria-hidden="true"></i>Direktdruck nicht verbunden';
+        ziel.appendChild(chip);
+      }
+      chip.hidden = false;
     },
 
     // -------------------------------------------------------------- Klick
@@ -220,6 +266,8 @@
         this._toast('«' + name + '» an ' + p.printer_name + ' gesendet', 'success');
         return true;
       } catch (err) {
+        // Generator ohne Daten (msvAusgabeLeer): nichts drucken, nur Hinweis – kein Eintrag «fehler» im Protokoll
+        if (err && err.leer) { this._toast(err.message, 'warning'); return false; }
         console.error('[MsvDruck] Druckfehler:', err);
         const msg = err && err.message ? err.message : String(err);
         if (this.pm) await this.pm.logJob(docType, p.printer_name, name, 'fehler', copies, msg);
@@ -260,6 +308,7 @@
       if (ct.includes('json')) {
         if (tiefe > 0) throw new Error('Endpunkt liefert kein PDF');
         const j = await r.json();
+        if (j && j.leer) { const e = new Error(j.message || 'Keine Daten für diese Auswahl'); e.leer = true; throw e; }
         if (j && j.success === false) throw new Error(j.message || j.error || 'PDF-Erzeugung fehlgeschlagen');
         const link = j && (j.pdf_link || j.pdf_url || j.pdf || j.url || j.file || j.download_url || j.link);
         if (!link) throw new Error(j && j.error ? String(j.error) : 'Antwort enthält keinen PDF-Link');

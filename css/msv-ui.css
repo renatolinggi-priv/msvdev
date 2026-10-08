@@ -220,7 +220,7 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
 .btn-compact-standard.btn-outline-info:hover { color: #fff !important; background-color: var(--ui-k-tuerkis) !important; border-color: var(--ui-k-tuerkis) !important; }
 .btn-compact-standard.btn-outline-success { color: var(--ui-k-gruen) !important; border-color: var(--ui-k-gruen) !important; }
 .btn-compact-standard.btn-outline-success:hover { color: #fff !important; background-color: var(--ui-k-gruen) !important; border-color: var(--ui-k-gruen) !important; }
-.btn-compact, .btn-compact-standard { border-radius: var(--ui-rad) !important; box-shadow: none !important; }
+.btn-compact-standard { border-radius: var(--ui-rad) !important; box-shadow: none !important; }
 
 /* «?»-Hilfe */
 .btn-help { border-color: var(--ui-feldrand); color: var(--ui-text-2); width: 22px; height: 22px; font-size: 0.8rem; }
@@ -472,3 +472,20 @@ input.form-control[aria-invalid="true"] { border-color: var(--ui-fehler); backgr
 .msv-sprunglink:focus { left: 8px; }
 #hauptinhalt:focus { outline: none; }
 [data-zeilen-tastatur]:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: -2px; }
+
+/* ---------- Ausgabe-Knöpfe und Direktdruck (msvAusgabe in msv-toast.js, MsvDruck in msv-direktdruck.js) ---------- */
+/* Drucker sind ausgeblendet, bis MsvDruck eine QZ-Verbindung meldet (.msv-druck-an) – so blitzen sie beim
+   Laden nicht auf. !important, weil .btn-compact-standard display:inline-flex !important setzt. */
+.msv-druck:not(.msv-druck-an) { display: none !important; }
+/* Dokument + Drucker als btn-group: ist der Drucker weg, bekommt das Dokument seine rechten Ecken zurück */
+.btn-group > .btn:has(+ .msv-druck:not(.msv-druck-an)),
+.btn-group > .btn:has(+ .btn[hidden]) { border-top-right-radius: var(--ui-rad); border-bottom-right-radius: var(--ui-rad); }
+.btn-group-sm > .btn:has(+ .msv-druck:not(.msv-druck-an)), .btn-group-sm > .btn:has(+ .btn[hidden]),
+.btn-group > .btn-sm:has(+ .msv-druck:not(.msv-druck-an)), .btn-group > .btn-sm:has(+ .btn[hidden]),
+.btn-group > .btn-group:has(+ .msv-druck:not(.msv-druck-an)) > .btn { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }
+/* Dokumente-Leiste (.export-toolbar): Dokument + Drucker als Gruppe; Dokument-Knöpfe gleich breit, damit die Reihe ruhig wirkt */
+.export-group-btns > .btn-group > .btn:first-child { min-width: 9rem; text-align: left; }
+/* Ein Hinweis pro Seite statt grauer Drucker-Symbole */
+.msv-druck-chip { color: var(--ui-text-2); cursor: help; }
+.msv-druck-chip .bi { font-size: .85em; color: var(--ui-text-3); }
+.msv-druck-chip:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 2px; }
