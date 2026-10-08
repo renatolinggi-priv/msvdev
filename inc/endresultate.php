@@ -970,8 +970,8 @@ $(document).ready(function() {
             const ansage = cells[7]?.textContent?.trim() || '-';
 
             const statusDot = hasData
-                ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px;"></span>'
-                : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#cbd5e1;margin-right:6px;"></span>';
+                ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-ok-fg);margin-right:6px;"></span>'
+                : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-leer);margin-right:6px;"></span>';
 
             html += `
             <div class="mobile-card" data-index="${idx}">

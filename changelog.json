@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.64.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Ruhigeres Bild auf allen Admin-Seiten",
+        "beschreibung": "Tabellen und Karten erscheinen sofort, ohne Einblenden, und heben sich beim Überfahren mit der Maus nicht mehr an. Rot steht nur noch für Fehler und Löschen: Partnerinnen-Punkte, gestrichene Resultate, Fixes im Changelog und das PDF-Symbol sind jetzt grau. Lila Akzente sind weg, Auswahl und Aktiv-Zustände sind blau. Kleinste Schrift überall mindestens 0.72rem, Badges wie «OK» im Einsatzplan und die Aufgaben-Zahl auf der Startseite sind besser lesbar.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Kleinigkeiten",
+        "beschreibung": "Mitgliederverwaltung, Standbelegung und Jungschützen-Helfer zeigen auf dem Handy wieder die Kopf-Karte. Will man einen Wanderpreis mit Gewinnern löschen, erklärt ein Dialog, warum das nicht geht, statt zwei Meldungen. Code-Felder (Hilfe-Schlüssel, SQL-Regeln, HTML-Quelltext) nutzen überall dieselbe Schrift.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.63.0",
     "datum": "2026-10-08",
     "aenderungen": [

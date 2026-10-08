@@ -15,7 +15,6 @@
     --cup4-bg: var(--ui-grund);
     --cup4-card-bg: var(--ui-flaeche);
     --cup4-shadow-sm: none;
-    --cup4-shadow-md: 0 4px 12px rgba(26, 35, 50, .08);
     --cup4-shadow-hover: 0 8px 20px rgba(26, 35, 50, .12);
     --cup4-radius: var(--ui-rad);
     --cup4-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -46,7 +45,7 @@
     gap: 0.35rem;
     color: var(--cup4-muted);
     padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .cup4-step.active {
@@ -85,7 +84,7 @@
 .cup4-progress-fill {
     height: 100%;
     background: var(--ui-ok-fg);
-    border-radius: 2px;
+    border-radius: 3px;
     transition: width 0.4s ease;
 }
 
@@ -232,7 +231,7 @@
     color: var(--cup4-muted);
     background: var(--cup4-light);
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .cup4-pool-item {
@@ -250,9 +249,7 @@
 }
 
 .cup4-pool-item:hover {
-    background: #fff;
-    box-shadow: var(--cup4-shadow-sm);
-    transform: translateX(3px);
+    background: var(--ui-hover);
 }
 
 .cup4-pool-item:active { cursor: grabbing; }
@@ -298,10 +295,10 @@
 }
 
 .cup4-round-badge {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 600;
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
     background: var(--cup4-light);
     color: var(--cup4-muted);
 }
@@ -318,10 +315,6 @@
     transition: var(--cup4-transition);
 }
 
-.cup4-pair-card:hover {
-    box-shadow: var(--cup4-shadow-md);
-}
-
 .cup4-pair-card.cup4-pair-complete {
     border-color: var(--ui-ok-rand);
 }
@@ -331,7 +324,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.3rem 0.4rem;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: background 0.2s ease, opacity 0.2s ease;
 }
 
@@ -371,7 +364,7 @@
     min-height: 32px;
     max-width: 220px;
     border: 2px dashed var(--cup4-border);
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -427,7 +420,6 @@ button.cup4-zone-remove:hover {
     background: var(--ui-gewaehlt) !important;
     border-color: var(--ui-akzent) !important;
     border-style: solid !important;
-    transform: scale(1.02);
 }
 
 .cup4-drop-zone.drop-success {
@@ -445,8 +437,8 @@ button.cup4-zone-remove:hover {
     text-align: center;
     font-size: 0.875rem;
     padding: 0.25rem 0.35rem;
-    border: 1px solid var(--cup4-border);
-    border-radius: 4px;
+    border: 1px solid var(--ui-feldrand);
+    border-radius: 6px;
     transition: border-color 0.2s;
     flex-shrink: 0;
 }
@@ -458,7 +450,7 @@ button.cup4-zone-remove:hover {
 }
 
 .cup4-result-label {
-    font-size: 0.6rem;
+    font-size: 0.72rem;
     color: var(--ui-text-3);
     text-transform: uppercase;
     line-height: 1;
@@ -474,7 +466,7 @@ button.cup4-zone-remove:hover {
 /* VS divider */
 .cup4-vs {
     text-align: center;
-    font-size: 0.6875rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--ui-text-3);
     text-transform: uppercase;
@@ -492,7 +484,7 @@ button.cup4-zone-remove:hover {
     color: var(--ui-text-3);
     font-size: 0.85rem;
     padding: 0.2rem 0.4rem;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     opacity: 0;
     transition: var(--cup4-transition);
@@ -550,7 +542,7 @@ button.cup4-zone-remove:hover {
     margin-top: 0.4rem;
     padding-top: 0.4rem;
     border-top: 1px dashed var(--cup4-border);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
 }
 .cup4-adv-toggle > .bi {
     color: var(--cup4-muted);
@@ -559,12 +551,12 @@ button.cup4-zone-remove:hover {
 }
 .cup4-adv-btn {
     border: 1px solid var(--cup4-border);
-    background: var(--cup4-card-bg, #fff);
+    background: var(--cup4-card-bg);
     color: var(--cup4-muted);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     line-height: 1;
     padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: var(--cup4-transition);
 }
@@ -572,7 +564,7 @@ button.cup4-zone-remove:hover {
 .cup4-adv-btn.active {
     background: var(--ui-akzent-dunkel);
     border-color: var(--ui-akzent-dunkel);
-    color: #fff;
+    color: var(--ui-flaeche);
     font-weight: 600;
 }
 
@@ -583,7 +575,7 @@ button.cup4-zone-remove:hover {
     color: var(--cup4-muted);
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: var(--cup4-transition);
 }
@@ -607,7 +599,7 @@ button.cup4-zone-remove:hover {
     color: var(--ui-warn-fg);
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: var(--cup4-transition);
     flex-shrink: 0;
@@ -616,8 +608,7 @@ button.cup4-zone-remove:hover {
 
 .cup4-tie-pick:hover {
     background: var(--cup4-warning);
-    color: #fff;
-    transform: scale(1.1);
+    color: var(--ui-flaeche);
 }
 
 .cup4-tie-eliminate {
@@ -626,7 +617,7 @@ button.cup4-zone-remove:hover {
     color: var(--cup4-danger);
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     line-height: 1;
     transition: var(--cup4-transition);
@@ -636,8 +627,7 @@ button.cup4-zone-remove:hover {
 
 .cup4-tie-eliminate:hover {
     background: var(--cup4-danger);
-    color: #fff;
-    transform: scale(1.1);
+    color: var(--ui-flaeche);
 }
 
 /* Manual winner badge */
@@ -645,18 +635,18 @@ button.cup4-zone-remove:hover {
     display: inline-block;
     background: var(--ui-warn-bg);
     color: var(--ui-warn-fg);
-    font-size: 0.625rem;
+    font-size: 0.72rem;
     font-weight: 700;
     padding: 0.1rem 0.35rem;
-    border-radius: 3px;
+    border-radius: 6px;
     margin-left: 0.25rem;
     vertical-align: middle;
 }
 
 /* Kat. B Auto-Qualifier */
 .cup4-katb-qualifier {
-    background: #f5f0ff !important;
-    border-color: #d9c8fb !important;
+    background: var(--ui-akzent-hell) !important;
+    border-color: var(--ui-akzent-rand) !important;
     cursor: default !important;
     opacity: 0.85;
     pointer-events: none;
@@ -664,12 +654,12 @@ button.cup4-zone-remove:hover {
 
 .cup4-katb-badge {
     display: inline-block;
-    background: #ede5ff;
-    color: #5b34a8;
-    font-size: 0.6rem;
+    background: var(--ui-akzent-hell);
+    color: var(--ui-akzent-dunkel);
+    font-size: 0.72rem;
     font-weight: 700;
     padding: 0.1rem 0.4rem;
-    border-radius: 3px;
+    border-radius: 6px;
     margin-left: 0.4rem;
     vertical-align: middle;
     letter-spacing: 0.02em;
@@ -678,18 +668,18 @@ button.cup4-zone-remove:hover {
 /* Nachnominierung - Pool-Items */
 .cup4-nominated {
     background: var(--ui-akzent-hell) !important;
-    border-color: #bcd2f7 !important;
+    border-color: var(--ui-akzent-rand) !important;
 }
 
 .cup4-nominated-badge {
     display: inline-block;
     background: var(--ui-flaeche);
     color: var(--ui-akzent-dunkel);
-    border: 1px solid #bcd2f7;
-    font-size: 0.6rem;
+    border: 1px solid var(--ui-akzent-rand);
+    font-size: 0.72rem;
     font-weight: 700;
     padding: 0.1rem 0.4rem;
-    border-radius: 3px;
+    border-radius: 6px;
     margin-left: 0.4rem;
     vertical-align: middle;
 }
@@ -699,7 +689,7 @@ button.cup4-zone-remove:hover {
     background: var(--ui-akzent-hell);
 }
 .cup4-nachnominiert .cup4-nominated-badge {
-    font-size: 0.55rem;
+    font-size: 0.72rem;
     padding: 0.05rem 0.3rem;
 }
 
@@ -714,7 +704,7 @@ button.cup4-zone-remove:hover {
     gap: 0.5rem;
     padding: 0.5rem;
     margin-bottom: 0.5rem;
-    background: #fff;
+    background: var(--ui-flaeche);
     border-radius: 6px;
     border: 1px solid var(--cup4-border);
 }
@@ -776,7 +766,7 @@ button.cup4-zone-remove:hover {
 .cup4-standcup-label {
     width: 100%;
     font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     color: var(--cup4-muted);
@@ -863,7 +853,7 @@ button.cup4-zone-remove:hover {
     .cup4-tab.active {
         background: var(--ui-akzent-hell);
         color: var(--ui-akzent-dunkel);
-        border-color: #bcd2f7;
+        border-color: var(--ui-akzent-rand);
     }
 }
 
@@ -917,7 +907,7 @@ button.cup4-zone-remove:hover {
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 600;
         flex: 1;
     }
@@ -928,7 +918,7 @@ button.cup4-zone-remove:hover {
         gap: 0.2rem;
         color: var(--cup4-muted);
         padding: 0.15rem 0.3rem;
-        border-radius: 3px;
+        border-radius: 6px;
         white-space: nowrap;
     }
 
@@ -954,7 +944,7 @@ button.cup4-zone-remove:hover {
 
     .cup4-mini-arrow {
         color: var(--cup4-border);
-        font-size: 0.5rem;
+        font-size: 0.72rem;
     }
 
     #toolbar-chevron {
@@ -1035,7 +1025,7 @@ button.cup4-zone-remove:hover {
     /* Drop-Zone: kompakterer Platzhalter */
     .cup4-drop-zone {
         min-height: 30px;
-        font-size: 0.7rem;
+        font-size: 0.72rem;
     }
 
     /* Standcup */

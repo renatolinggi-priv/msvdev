@@ -53,8 +53,8 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 .entry-passe-field input[aria-invalid=true] { background: var(--ui-fehler-bg); border-color: var(--ui-fehler); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
 
 /* Beste Passe in der Akzentfarbe (Raster, Panel, Handy) */
-#hkScroll #kantiresultateTabelle input.small-input.best-passe { background: var(--ui-akzent-hell); border-color: #9db8ea !important; color: var(--ui-akzent-dunkel); font-weight: 700; }
-.entry-passe-field.is-best input { background: var(--ui-akzent-hell); border-color: #9db8ea; color: var(--ui-akzent-dunkel); }
+#hkScroll #kantiresultateTabelle input.small-input.best-passe { background: var(--ui-akzent-hell); border-color: var(--ui-akzent-rand) !important; color: var(--ui-akzent-dunkel); font-weight: 700; }
+.entry-passe-field.is-best input { background: var(--ui-akzent-hell); border-color: var(--ui-akzent-rand); color: var(--ui-akzent-dunkel); }
 .entry-passe-field.is-best label::after { content: ' · beste'; font-weight: 600; color: var(--ui-akzent-dunkel); }
 
 /* Handy: Karten aus msv-styles, Suche oben */
@@ -62,7 +62,7 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
     .mobile-card-body .passe-input-mobile { min-height: 48px; text-align: center; font-size: 16px; font-weight: 600; }
-    .mobile-card-body .passe-input-mobile.best { background: var(--ui-akzent-hell); border-color: #9db8ea; color: var(--ui-akzent-dunkel); }
+    .mobile-card-body .passe-input-mobile.best { background: var(--ui-akzent-hell); border-color: var(--ui-akzent-rand); color: var(--ui-akzent-dunkel); }
     .mobile-card-body .form-label { margin-bottom: .35rem; font-size: .85rem; color: var(--ui-text-2); }
 }
 @media (min-width: 768px) {

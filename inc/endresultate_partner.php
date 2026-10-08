@@ -22,18 +22,18 @@ $page_specific_css = "
 #partnerTabelle tbody tr.hybrid-row:hover > td { background: var(--ui-flaeche-2); }
 #partnerTabelle tbody tr.ui-leer td { height: auto; padding: 32px 16px; text-align: center; color: var(--ui-text-2); white-space: normal; cursor: default; }
 
-/* Sie und Er: kompakte Punkte (Partnerin rot, Mitglied blau) */
+/* Sie und Er: kompakte Punkte (Partnerin grau, Mitglied blau) */
 .dot-row { display: flex; align-items: center; gap: 2px; justify-content: center; }
-.shot-dot { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; line-height: 1; }
-.dot-partner { background: #fee2e2; color: #b42318; }
-.dot-partner.unique { background: #b42318; color: #fff; }
+.shot-dot { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; line-height: 1; }
+.dot-partner { background: var(--ui-linie-zart); color: var(--ui-text); border: 1px solid var(--ui-feldrand); }
+.dot-partner.unique { background: var(--ui-k-grau); color: var(--ui-flaeche); }
 .dot-mitglied { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
-.dot-mitglied.unique { background: var(--ui-akzent-dunkel); color: #fff; }
+.dot-mitglied.unique { background: var(--ui-akzent-dunkel); color: var(--ui-flaeche); }
 .dot-struck { text-decoration: line-through; opacity: 0.45; }
 .dot-empty { background: var(--ui-flaeche-2); color: var(--ui-leer); border: 1px dashed var(--ui-rand); }
-.dot-sep { color: var(--ui-leer); font-size: 0.7rem; margin: 0 1px; }
+.dot-sep { color: var(--ui-leer); font-size: 0.72rem; margin: 0 1px; }
 .sie-er-total { font-weight: 700; font-size: 0.8rem; color: var(--ui-text); min-width: 28px; text-align: right; margin-left: 6px; }
-.sie-er-header-legend { font-size: 0.65rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ui-text-2); margin-top: 2px; }
+.sie-er-header-legend { font-size: 0.72rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ui-text-2); margin-top: 2px; }
 
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
@@ -97,7 +97,7 @@ $csrf = csrf_token();
                                         <th scope="col">Partnerin</th>
                                         <th scope="col">Mitglied</th>
                                         <th scope="col">Endstich</th>
-                                        <th scope="col">Sie und Er<div class="sie-er-header-legend"><span style="color:#b42318">●</span> Partnerin &nbsp; <span style="color:#2b52a0">●</span> Mitglied</div></th>
+                                        <th scope="col">Sie und Er<div class="sie-er-header-legend"><span style="color:var(--ui-k-grau)">●</span> Partnerin &nbsp; <span style="color:var(--ui-akzent-dunkel)">●</span> Mitglied</div></th>
                                         <th scope="col">Partner Schwini</th>
                                         <th scope="col">Stand</th>
                                     </tr>

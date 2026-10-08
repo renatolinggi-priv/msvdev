@@ -20,16 +20,16 @@ $page_specific_css = "
     text-transform: uppercase;
     font-size: .75rem;
     letter-spacing: .5px;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     padding: .75rem;
-    border-bottom: 1px solid #e9eef5;
+    border-bottom: 1px solid var(--ui-linie);
     white-space: nowrap;
 }
 
 .ranking-table tbody td {
     padding: .5rem .75rem;
     vertical-align: middle;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--ui-linie-zart);
     white-space: nowrap;
 }
 .ranking-table tbody tr:last-child td { border-bottom: none; }
@@ -88,14 +88,14 @@ $page_specific_css = "
 }
 
 /* === EDIT SLIDE PANEL === */
-.edit-panel { position: fixed; top: 0; right: -460px; width: 440px; height: 100vh; background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
+.edit-panel { position: fixed; top: 0; right: -460px; width: 440px; height: 100vh; background: var(--ui-flaeche); box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
 .edit-panel.open { right: 0; }
 .edit-panel-overlay { position: fixed; inset: 0; background: rgba(26, 35, 50, .28); z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s; }
 .edit-panel-overlay.show { opacity: 1; visibility: visible; }
 .edit-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--ui-rand); background: var(--ui-flaeche); flex-shrink: 0; }
 .edit-panel-header h6 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--ui-text); }
 .edit-panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
-.edit-panel-label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.35rem; }
+.edit-panel-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); margin-bottom: 0.35rem; }
 @media (max-width: 767.98px) { .edit-panel { width: 100%; right: -100%; } }
 ";
 
@@ -327,7 +327,7 @@ $(document).ready(function () {
     function loadExistingRankings(year) {
         $('#rankingsList').html(`
             <tr><td colspan="6" class="ui-leerzustand">
-                <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
+                <div class="spinner-border spinner-border-sm me-2" style="color: var(--ui-text-2);"></div>
                 Lade Rangierungen...
             </td></tr>
         `);

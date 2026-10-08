@@ -1034,12 +1034,17 @@ if (WANDERPREISE_DEBUG) {
                         }
                     })
                     .fail(function (xhr) {
-                        let msg = msvXhrMessage(xhr, 'Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.');
-                        if (xhr.status === 409) {
-                            // typischer FK-Fehler (z. B. verknüpfte Gewinner/Historie)
-                            msg = 'Löschen nicht möglich: Es existieren verknüpfte Datensätze (z. B. Gewinner/Historie).';
+                        const r = xhr.responseJSON || {};
+                        if (xhr.status === 409 && r.gewinner_count) {
+                            // Preis mit Gewinnern bleibt (Geschichte geht nicht verloren) – gleicher Dialog wie bei Mitgliedern/JM-Anlässen
+                            msvLoeschenGesperrt({
+                                text: '<strong>' + msvEsc(name) + '</strong> hat schon Gewinner und bleibt deshalb erhalten.',
+                                bezuege: { 'Gewinner': r.gewinner_count },
+                                hinweis: 'Ist der Preis definitiv gewonnen, erscheint er im Filter «Nicht im Umlauf».'
+                            });
+                            return;
                         }
-                        msvToast('Fehler beim Löschen: ' + msg, 'error');
+                        msvToast(msvXhrMessage(xhr, 'Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.'), 'error');
                     });
             });
         });

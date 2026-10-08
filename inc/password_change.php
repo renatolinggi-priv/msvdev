@@ -31,7 +31,7 @@ $page_specific_css = '
     .password-strength-indicator {
         height: 4px;
         background: var(--ui-rand);
-        border-radius: 2px;
+        border-radius: 3px;
         margin-top: 0.5rem;
         overflow: hidden;
     }
@@ -40,10 +40,10 @@ $page_specific_css = '
         height: 100%;
         width: 0%;
         transition: all 0.3s ease;
-        border-radius: 2px;
+        border-radius: 3px;
     }
 
-    .strength-weak   { background: var(--ui-k-rot); }
+    .strength-weak   { background: var(--ui-fehler); }
     .strength-medium { background: var(--ui-warn-punkt); }
     .strength-strong { background: var(--ui-ok-fg); }
 
@@ -52,12 +52,6 @@ $page_specific_css = '
         transition: all 0.3s ease;
     }
 
-    @keyframes pulse {
-        0%   { transform: scale(1);   opacity: 1; }
-        50%  { transform: scale(1.1); opacity: 0.8; }
-        100% { transform: scale(1);   opacity: 1; }
-    }
-    .pulse-animation { animation: pulse 2s ease-in-out infinite; }
 
     .spinner-border-sm { width: 1rem; height: 1rem; }
 ';
@@ -147,7 +141,7 @@ function validate_password($password, $username) {
                         <i class="bi bi-check-circle me-2"></i><?php echo $success; ?>
                     </div>
                     <div class="text-center py-3">
-                        <i class="bi bi-check-circle-fill text-success pulse-animation" style="font-size: 3.5rem;"></i>
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;" aria-hidden="true"></i>
                         <p class="text-muted mt-3">Weiterleitung in <span id="countdown">3</span> Sekunden...</p>
                     </div>
                     <script>

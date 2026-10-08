@@ -30,7 +30,7 @@ $page_specific_css = "
 #stichForm .panel-label { font-size: .8rem; font-weight: 500; color: var(--ui-text-2); }
 #stichForm .form-control, #stichForm .form-select { min-height: 2.25rem; }
 #stichForm .munition-toggle { width: 100%; padding: 0; border: 0; background: transparent; text-align: left; }
-#stichForm .munition-toggle:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 4px; border-radius: 4px; }
+#stichForm .munition-toggle:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 4px; border-radius: 6px; }
 #stichForm .munition-toggle[aria-expanded='false'] { margin-bottom: 0; }
 #munitionBadge { min-width: 0; font-size: .85rem; font-weight: 600; color: var(--ui-text); }
 
@@ -42,10 +42,10 @@ $page_specific_css = "
 #waffeHint:empty { display: none; }
 
 /* Umschalter (Teilnehmer, Zahlung) als Segment-Schalter wie .ui-filter */
-#stichForm .typ-switch { display: inline-flex; gap: 2px; padding: 2px; background: #f1f4f8; border-radius: 8px; }
+#stichForm .typ-switch { display: inline-flex; gap: 2px; padding: 2px; background: var(--ui-linie-zart); border-radius: 8px; }
 #stichForm .typ-switch > .btn { margin: 0 !important; padding: 5px 12px; border: 0 !important; border-radius: 6px !important; background: transparent; color: var(--ui-text); font-size: .82rem; font-weight: 600; box-shadow: none; }
 #stichForm .typ-switch > .btn:hover { background: rgba(255, 255, 255, .65); color: var(--ui-text); }
-#stichForm .typ-switch > .btn-check:checked + .btn { background: #fff; color: var(--ui-text); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+#stichForm .typ-switch > .btn-check:checked + .btn { background: var(--ui-flaeche); color: var(--ui-text); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
 #stichForm .typ-switch > .btn-check:focus-visible + .btn { outline: 2px solid var(--ui-akzent); outline-offset: 1px; }
 #stichForm .typ-switch .btn i { font-size: .85em; color: var(--ui-text-2); }
 
@@ -103,7 +103,7 @@ $page_specific_css = "
 
 /* Übersicht (Tabellen-Card) */
 .es-tabelle { overflow: hidden; }
-.es-anzahl { margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: #f4f6f9; font-size: .78rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-anzahl { margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: var(--ui-linie-zart); font-size: .78rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
 .es-tabelle .table-responsive { max-height: calc(100vh - 240px) !important; min-height: 0 !important; overflow: auto !important; }
 #erfassteTabelle { margin: 0; }
 #erfassteTabelle th { padding: 6px 5px; vertical-align: bottom; white-space: nowrap; font-size: .72rem; }
@@ -113,14 +113,14 @@ $page_specific_css = "
 #erfassteTabelle thead th:first-child, #erfassteTabelle tbody td:first-child { padding-left: 20px; text-align: left; }
 #erfassteTabelle thead th:last-child, #erfassteTabelle tbody td:last-child { padding-right: 16px; }
 #erfassteTabelle td.check-cell { padding-left: 2px; padding-right: 2px; text-align: center; font-size: .95rem; color: var(--ui-ok-fg); }
-#erfassteTabelle td.check-cell .partner-mark { font-size: .6rem; vertical-align: super; color: var(--ui-akzent-dunkel); }
-#erfassteTabelle td.check-cell .empty { color: #d5dbe3; }
+#erfassteTabelle td.check-cell .partner-mark { font-size: .72rem; vertical-align: super; color: var(--ui-akzent-dunkel); }
+#erfassteTabelle td.check-cell .empty { color: var(--ui-leer); }
 #erfassteTabelle td.waffe-cell { white-space: nowrap; font-size: .75rem; color: var(--ui-text-2); }
 #erfassteTabelle td.name-cell { white-space: nowrap; font-weight: 600; }
-#erfassteTabelle td.name-cell .typ-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: #f1f4f8; color: var(--ui-text-2); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: middle; }
+#erfassteTabelle td.name-cell .typ-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); color: var(--ui-text-2); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: middle; }
 #erfassteTabelle td.name-cell .typ-badge.js { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
 #erfassteTabelle td.muni-cell { white-space: nowrap; font-size: .75rem; color: var(--ui-text-2); }
-#erfassteTabelle td.muni-cell .muni-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 4px; background: #f1f4f8; }
+#erfassteTabelle td.muni-cell .muni-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); }
 #erfassteTabelle td.total-cell { text-align: right; white-space: nowrap; font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 #erfassteTabelle .dropdown-toggle::after { display: none; }
 #erfassteTabelle .dropdown-menu { font-size: .85rem; }
@@ -131,7 +131,7 @@ $page_specific_css = "
 #adminPanel .preis-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
 #adminPanel .preis-row + .preis-row { border-top: 1px solid var(--ui-linie-zart); }
 #adminPanel .preis-row .preis-label { flex: 1 1 auto; font-size: .82rem; }
-#adminPanel .preis-row .preis-label small { display: block; font-size: .7rem; color: var(--ui-text-2); }
+#adminPanel .preis-row .preis-label small { display: block; font-size: .72rem; color: var(--ui-text-2); }
 #adminPanel .preis-row .input-group { flex: 0 0 auto; width: 9.5rem; }
 #adminPanel .def-edit { padding: 12px 14px; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad); }
 

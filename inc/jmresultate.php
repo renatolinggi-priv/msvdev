@@ -75,7 +75,7 @@ $page_specific_css = "
 #rankJMA .jm-group-cell, #rankJMB .jm-group-cell { padding: 6px 12px !important; background: var(--ui-grund) !important; color: var(--ui-text-2); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 #rankJMA .jm-group-cell i, #rankJMB .jm-group-cell i { display: none; }
 .jm-result-cell   { font-variant-numeric: tabular-nums; }
-.jm-cell-strichen { color: var(--ui-k-rot); text-decoration: line-through; }
+.jm-cell-strichen { color: var(--ui-text-3); text-decoration: line-through; }
 .jm-total-cell    { color: var(--ui-text); font-variant-numeric: tabular-nums; font-size: 1rem; }
 .jm-rang-cell     { color: var(--ui-text-2); }
 .jm-toggle-btn { color: var(--ui-text-3) !important; text-decoration: none !important; font-size: 1rem !important; }
@@ -101,9 +101,8 @@ $page_specific_css = "
 .jm-line-max  { font-size: .72rem; color: var(--ui-text-3); }
 .jm-line-empty .jm-line-name,
 .jm-line-empty .jm-line-val { font-weight: 400; color: var(--ui-leer); }
-.jm-detail-line.gestrichen { opacity: .75; }
-.jm-detail-line.gestrichen .jm-line-val { color: var(--ui-k-rot); text-decoration: line-through; }
-.jm-line-tag { padding: 1px 6px; border-radius: 6px; background: #fdecea; color: var(--ui-k-rot); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.jm-detail-line.gestrichen .jm-line-val { color: var(--ui-text-3); text-decoration: line-through; }
+.jm-line-tag { padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); color: var(--ui-text-2); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .jm-detail-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--ui-flaeche-2); border-top: 1px solid var(--ui-linie); font-size: .8rem; font-weight: 600; color: var(--ui-text-2); }
 .jm-detail-subtotal span:last-child { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .jm-detail-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; background: var(--ui-ok-bg); border: 1px solid var(--ui-ok-rand); border-radius: var(--ui-rad); font-size: .95rem; font-weight: 700; color: var(--ui-ok-fg); }
@@ -255,11 +254,11 @@ try {
 <!-- ===== PDF-Import Modal ===== -->
 <style>
 /* Ablagefläche (.upload-area) kommt aus css/msv-ui.css */
-#pdfImportModal tr.row-dup { background:#fffbeb; }
+#pdfImportModal tr.row-dup { background:var(--ui-warn-zeile); }
 #pdfImportModal tr.row-none { opacity:.55; }
 #pdfImportModal .res-input { width:72px; text-align:center; font-weight:600; }
 #pdfImportModal .preis-input { width:92px; text-align:center; }
-#pdfImportModal #pdfImportPreviewTable thead th { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.3px; }
+#pdfImportModal #pdfImportPreviewTable thead th { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.3px; }
 </style>
 <div class="modal fade" id="pdfImportModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">

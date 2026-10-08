@@ -28,9 +28,8 @@ $page_specific_css = <<<'CSS'
 .nav-admin-wrapper {
   border: 1px solid var(--ui-rand);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   overflow: visible;
-  background: #fff;
+  background: var(--ui-flaeche);
   max-width: 960px;
 }
 .nav-admin-title {
@@ -45,14 +44,14 @@ $page_specific_css = <<<'CSS'
 /* --- Hybrid-Tabelle --- */
 .hybrid-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .hybrid-table thead th {
-  padding: 0.45rem 0.7rem; font-size: 0.68rem; font-weight: 600;
+  padding: 0.45rem 0.7rem; font-size: 0.72rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.5px; color: var(--ui-text-2);
   background: var(--ui-flaeche-2);
   border-bottom: 2px solid var(--ui-rand);
   position: sticky; top: 0; z-index: 6;
 }
 .hybrid-table tbody tr.hybrid-row { cursor: pointer; transition: background 0.15s; }
-.hybrid-table tbody tr.hybrid-row:hover { background: var(--ui-linie) !important; }
+.hybrid-table tbody tr.hybrid-row:hover { background: var(--ui-hover) !important; }
 .hybrid-table tbody tr.hybrid-row.selected {
   background: var(--ui-akzent-hell) !important; box-shadow: none;
 }
@@ -65,7 +64,7 @@ $page_specific_css = <<<'CSS'
 .hybrid-table tbody tr.row-l0 { background: var(--ui-flaeche-2); border-top: 1px solid var(--ui-rand); }
 .hybrid-table tbody tr.row-l0 .h-title { font-weight: 700; font-size: 0.9rem; color: var(--ui-text); }
 .hybrid-table tbody tr.row-l0 .item-icon { font-size: 0.95rem; }
-.hybrid-table tbody tr.row-l1 { background: #fff; }
+.hybrid-table tbody tr.row-l1 { background: var(--ui-flaeche); }
 .hybrid-table tbody tr.row-l1 .h-title { color: var(--ui-text-2); font-weight: 500; }
 .hybrid-table tbody tr.row-l2,
 .hybrid-table tbody tr.row-l3 { background: var(--ui-flaeche-2); }
@@ -75,8 +74,8 @@ $page_specific_css = <<<'CSS'
 .h-title { font-weight: 500; }
 .h-link {
   color: var(--ui-text-2); font-size: 0.8rem;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  background: var(--ui-flaeche-2); padding: 1px 7px; border-radius: 4px;
+  font-family: var(--ui-mono);
+  background: var(--ui-flaeche-2); padding: 1px 7px; border-radius: 6px;
   display: inline-block; max-width: 280px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   vertical-align: middle;
@@ -86,32 +85,32 @@ $page_specific_css = <<<'CSS'
 /* Drag Handle */
 .drag-grip {
   color: var(--ui-feldrand); cursor: grab; font-size: 1.1rem;
-  padding: 2px 4px; border-radius: 4px; transition: color 0.15s;
+  padding: 2px 4px; border-radius: 6px; transition: color 0.15s;
 }
 .drag-grip:hover { color: var(--ui-text-2); }
 .drag-grip:active { cursor: grabbing; }
-.nav-row-dragging { background: #fff !important; box-shadow: 0 10px 24px rgba(0,0,0,.12); z-index: 100; }
+.nav-row-dragging { background: var(--ui-flaeche) !important; box-shadow: 0 10px 24px rgba(0,0,0,.12); z-index: 100; }
 .nav-row-placeholder {
-  background: repeating-linear-gradient(45deg, var(--ui-linie-zart), var(--ui-linie-zart) 10px, var(--ui-rand) 10px, var(--ui-rand) 20px) !important;
-  border: 2px dashed #93c5fd !important;
+  background: var(--ui-gewaehlt) !important;
+  border: 2px dashed var(--ui-akzent) !important;
 }
 .drag-child-hidden { display: none !important; }
 .drag-children-badge {
   display: inline-block; margin-left: 8px;
-  padding: 2px 8px; font-size: 0.7rem; font-weight: 600;
-  background: var(--ui-rand); color: var(--ui-text-2); border-radius: 10px; vertical-align: middle;
+  padding: 2px 8px; font-size: 0.72rem; font-weight: 600;
+  background: var(--ui-rand); color: var(--ui-text-2); border-radius: 999px; vertical-align: middle;
 }
 
 /* Baum-Linien-Einrueckung */
 .level-indent { display: inline-flex; align-items: center; }
-.level-tree { display: inline-block; width: 18px; height: 16px; position: relative; color: var(--ui-feldrand); }
+.level-tree { display: inline-block; width: 18px; height: 16px; position: relative; color: var(--ui-leer); }
 .level-tree::before {
   content: ''; position: absolute; left: 5px; top: 0; bottom: 50%;
-  border-left: 2px solid var(--ui-feldrand);
+  border-left: 2px solid var(--ui-leer);
 }
 .level-tree::after {
   content: ''; position: absolute; left: 5px; top: 50%; width: 9px;
-  border-top: 2px solid var(--ui-feldrand);
+  border-top: 2px solid var(--ui-leer);
 }
 .level-tree-trunk { display: inline-block; width: 18px; height: 16px; position: relative; }
 .level-tree-trunk::before {
@@ -120,12 +119,12 @@ $page_specific_css = <<<'CSS'
 }
 .item-icon { font-size: 0.88rem; margin-right: 5px; margin-left: 2px; }
 .item-icon.folder { color: var(--ui-warn-punkt); }
-.item-icon.file { color: var(--ui-feldrand); }
+.item-icon.file { color: var(--ui-leer); }
 
 /* Collapse-Chevron */
 .btn-toggle-collapse {
   background: transparent; border: none; padding: 0;
-  width: 22px; height: 22px; border-radius: 4px;
+  width: 22px; height: 22px; border-radius: 6px;
   color: var(--ui-text-2); cursor: pointer; transition: all 0.15s;
   display: inline-flex; align-items: center; justify-content: center;
   margin-right: 4px; flex-shrink: 0;
@@ -136,8 +135,8 @@ $page_specific_css = <<<'CSS'
 .row-collapsed { display: none !important; }
 .collapsed-children-count {
   display: inline-block; margin-left: 8px;
-  padding: 1px 7px; font-size: 0.7rem; font-weight: 600;
-  background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); border-radius: 10px; vertical-align: middle;
+  padding: 1px 7px; font-size: 0.72rem; font-weight: 600;
+  background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); border-radius: 999px; vertical-align: middle;
 }
 
 /* Trennlinien-Row */
@@ -149,12 +148,12 @@ $page_specific_css = <<<'CSS'
 
 /* Inline Level-Buttons */
 .level-btns { display: flex; gap: 3px; justify-content: center; }
-.level-btns .btn { padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; line-height: 1; }
+.level-btns .btn { padding: 2px 6px; font-size: 0.75rem; border-radius: 6px; line-height: 1; }
 
 /* --- Slide-Panel --- */
 .nav-edit-panel {
   position: fixed; top: 0; right: -540px; width: 520px; height: 100vh;
-  background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12);
+  background: var(--ui-flaeche); box-shadow: -8px 0 30px rgba(0,0,0,0.12);
   z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
   display: flex; flex-direction: column;
 }
@@ -181,17 +180,17 @@ $page_specific_css = <<<'CSS'
 /* Icon-Picker */
 .icon-picker-preview {
   display: flex; align-items: center; justify-content: center;
-  width: 38px; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand);
+  width: 38px; background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand);
   border-right: none; border-radius: 0.375rem 0 0 0.375rem;
   font-size: 1.1rem; color: var(--ui-text-2);
 }
-.icon-picker-preview:empty::after { content: '—'; color: var(--ui-feldrand); font-size: 0.85rem; }
+.icon-picker-preview:empty::after { content: '—'; color: var(--ui-leer); font-size: 0.85rem; }
 .icon-picker-wrap .form-control { border-radius: 0; }
 .icon-picker-wrap .btn { border-radius: 0 0.375rem 0.375rem 0; }
 .icon-picker-dropdown {
   position: absolute; z-index: 1080;
   width: 320px; max-height: 300px;
-  background: #fff; border: 1px solid var(--ui-rand);
+  background: var(--ui-flaeche); border: 1px solid var(--ui-rand);
   border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   display: none; flex-direction: column;
 }
@@ -207,16 +206,17 @@ $page_specific_css = <<<'CSS'
 .icon-picker-item {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 6px 2px; border-radius: 6px; cursor: pointer;
-  transition: background 0.15s; font-size: 0.6rem; color: var(--ui-text-2);
+  transition: background 0.15s; font-size: 0.72rem; color: var(--ui-text-2);
   text-align: center; min-height: 52px;
+  line-height: 1.2; overflow-wrap: anywhere; hyphens: auto;
 }
-.icon-picker-item:hover { background: var(--ui-rand); color: var(--ui-text-2); }
+.icon-picker-item:hover { background: var(--ui-hover); color: var(--ui-text-2); }
 .icon-picker-item i { font-size: 1.2rem; margin-bottom: 2px; color: var(--ui-text); }
 .icon-picker-item.selected { background: var(--ui-akzent-hell); }
 
 /* Skeleton */
 .skeleton {
-  height: 20px; border-radius: 4px;
+  height: 20px; border-radius: 6px;
   background: linear-gradient(90deg,var(--ui-linie-zart) 25%,var(--ui-rand) 50%,var(--ui-linie-zart) 75%);
   background-size: 200% 100%; animation: navSkeletonLoad 1.5s infinite;
 }

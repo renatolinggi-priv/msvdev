@@ -135,7 +135,6 @@ require_once __DIR__ . '/csrf.inc.php';
             var redirectButton = document.getElementById('redirect-btn');
             if (redirectButton) {
                 redirectButton.addEventListener('click', function () {
-                    console.log('Button clicked, redirecting...');
                     window.location.href = 'heimresultate.php';
                 });
             }

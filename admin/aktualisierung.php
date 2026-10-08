@@ -75,8 +75,8 @@ foreach ($files as $file) {
 $page_specific_css = <<<'CSS'
 .akt-wrapper { max-width: 860px; }
 .akt-card {
-  border: 1px solid var(--ui-rand); border-radius: 12px; background: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 1rem; overflow: hidden;
+  border: 1px solid var(--ui-rand); border-radius: 12px; background: var(--ui-flaeche);
+  margin-bottom: 1rem; overflow: hidden;
 }
 .akt-card-header {
   padding: 0.85rem 1.1rem; font-weight: 600; color: var(--ui-text);
@@ -85,11 +85,11 @@ $page_specific_css = <<<'CSS'
 }
 .akt-card-header .count {
   font-size: 0.75rem; font-weight: 600; background: var(--ui-rand); color: var(--ui-text-2);
-  padding: 1px 9px; border-radius: 10px;
+  padding: 1px 9px; border-radius: 999px;
 }
 .akt-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
 .akt-table th {
-  text-align: left; padding: 0.45rem 1.1rem; font-size: 0.68rem; text-transform: uppercase;
+  text-align: left; padding: 0.45rem 1.1rem; font-size: 0.72rem; text-transform: uppercase;
   letter-spacing: 0.5px; color: var(--ui-text-2); border-bottom: 1px solid var(--ui-linie); background: var(--ui-flaeche-2);
 }
 .akt-table td { padding: 0.45rem 1.1rem; border-bottom: 1px solid var(--ui-linie-zart); }

@@ -13,8 +13,8 @@ $page_specific_css = '
     /* QZ Status Bar */
     .qz-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--ui-flaeche-2); border-bottom: 1px solid var(--ui-rand); border-radius: 8px 8px 0 0; }
     .qz-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .qz-dot.connected { background: var(--ui-ok-fg); box-shadow: 0 0 6px rgba(34,197,94,.4); }
-    .qz-dot.disconnected { background: var(--ui-k-rot); }
+    .qz-dot.connected { background: var(--ui-ok-fg); }
+    .qz-dot.disconnected { background: var(--ui-fehler); }
     .qz-bar .qz-text { font-size: 0.85rem; font-weight: 500; }
     .qz-bar .qz-actions { margin-left: auto; display: flex; gap: 6px; }
 
@@ -29,7 +29,7 @@ $page_specific_css = '
         border-bottom: 1px solid var(--ui-linie);
     }
     .profile-matrix-header {
-        font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
         letter-spacing: 0.04em; color: var(--ui-text-2); background: var(--ui-flaeche-2);
         border-bottom: 1px solid var(--ui-rand); padding: 8px 20px;
     }
@@ -42,43 +42,43 @@ $page_specific_css = '
 
     /* Section Labels */
     .profile-section-label {
-        font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+        font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
         color: var(--ui-text-2); padding: 10px 20px 5px; background: var(--ui-flaeche-2);
         border-bottom: 1px solid var(--ui-rand); cursor: pointer; user-select: none;
         display: flex; align-items: center; gap: 6px;
     }
     .profile-section-label:hover { background: var(--ui-rand); }
-    .profile-section-label .section-chevron { font-size: 0.65rem; transition: transform 0.2s ease; display: inline-block; }
+    .profile-section-label .section-chevron { font-size: 0.72rem; transition: transform 0.2s ease; display: inline-block; }
     .profile-section-label.collapsed .section-chevron { transform: rotate(-90deg); }
-    .profile-section-label .section-count { font-size: 0.65rem; color: var(--ui-text-2); font-weight: 400; margin-left: auto; }
+    .profile-section-label .section-count { font-size: 0.72rem; color: var(--ui-text-2); font-weight: 400; margin-left: auto; }
 
     /* Selects innerhalb der Matrix */
     .profile-select {
-        width: 100%; height: 32px; border: 1px solid var(--ui-rand); border-radius: 6px;
-        padding: 0 8px; font-size: 0.8rem; background: #fff;
+        width: 100%; height: 32px; border: 1px solid var(--ui-feldrand); border-radius: 6px;
+        padding: 0 8px; font-size: 0.8rem; background: var(--ui-flaeche);
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath d=\'M3 5l3 3 3-3\' stroke=\'%235a6577\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E");
         background-repeat: no-repeat; background-position: right 8px center;
     }
-    .profile-select:focus { outline: none; border-color: var(--ui-akzent); box-shadow: 0 0 0 2px rgba(13,110,253,.15); }
+    .profile-select:focus { outline: none; border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
 
     /* Kopien-Input */
     .profile-copies-input {
-        width: 50px; height: 32px; border: 1px solid var(--ui-rand); border-radius: 6px;
+        width: 50px; height: 32px; border: 1px solid var(--ui-feldrand); border-radius: 6px;
         padding: 0 6px; font-size: 0.85rem; text-align: center;
     }
-    .profile-copies-input:focus { outline: none; border-color: var(--ui-akzent); }
+    .profile-copies-input:focus { outline: none; border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
 
     /* Format-Badge */
     .profile-format-badge {
-        font-size: 0.75rem; padding: 3px 10px; border-radius: 4px;
-        background: var(--ui-ok-bg); color: var(--ui-ok-fg); font-weight: 600; white-space: nowrap;
+        font-size: 0.75rem; padding: 3px 10px; border-radius: 6px;
+        background: var(--ui-linie-zart); color: var(--ui-text-2); font-weight: 600; white-space: nowrap;
     }
 
     /* Testdruck-Button */
     .profile-test-btn {
         width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-        border-radius: 6px; background: transparent; border: 1px solid var(--ui-rand);
+        border-radius: 6px; background: transparent; border: 1px solid var(--ui-feldrand);
         color: var(--ui-text-2); cursor: pointer; font-size: 14px; transition: all 0.15s;
     }
     .profile-test-btn:hover { background: var(--ui-flaeche-2); color: var(--ui-text); }
@@ -95,14 +95,14 @@ $page_specific_css = '
     .print-log-row:last-child { border-bottom: none; }
     .print-log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
     .print-log-dot.ok { background: var(--ui-ok-fg); }
-    .print-log-dot.err { background: var(--ui-k-rot); }
+    .print-log-dot.err { background: var(--ui-fehler); }
     .print-log-dot.warn { background: var(--ui-warn-punkt); }
     .print-log-dot.sent { background: var(--ui-akzent); }
     .print-log-type { font-weight: 600; white-space: nowrap; }
     .print-log-file { color: var(--ui-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
-    .print-log-status { font-size: 0.7rem; white-space: nowrap; padding: 1px 6px; border-radius: 10px; background: var(--ui-linie-zart); color: var(--ui-text-2); }
+    .print-log-status { font-size: 0.72rem; white-space: nowrap; padding: 1px 6px; border-radius: 999px; background: var(--ui-linie-zart); color: var(--ui-text-2); }
     .print-log-status.ok { background: var(--ui-ok-bg); color: var(--ui-ok-fg); }
-    .print-log-status.err { background: var(--ui-fehler-bg); color: var(--ui-k-rot); }
+    .print-log-status.err { background: var(--ui-fehler-bg); color: var(--ui-fehler); }
     .print-log-status.sent { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
     .print-log-row.is-error { cursor: help; }
     .print-log-printer { color: var(--ui-text-2); white-space: nowrap; }
@@ -114,7 +114,7 @@ $page_specific_css = '
         .profile-matrix-header { display: none; }
         .profile-row { grid-template-columns: 1fr; gap: 6px; padding: 12px 16px; }
         .profile-row > div { display: flex; align-items: center; gap: 8px; }
-        .profile-row > div::before { content: attr(data-label); font-size: 0.7rem; color: var(--ui-text-2); min-width: 80px; }
+        .profile-row > div::before { content: attr(data-label); font-size: 0.72rem; color: var(--ui-text-2); min-width: 80px; }
         .profile-copies-input { width: 100%; }
         .profile-test-btn { margin-left: auto; }
     }
@@ -144,7 +144,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
         <div class="qz-bar">
             <div id="qzDot" class="qz-dot disconnected"></div>
             <span id="qzStatusText" class="qz-text">Nicht verbunden mit QZ Tray</span>
-            <span id="machineIdBadge" class="badge bg-secondary ms-2" style="font-size:.7rem; font-weight:normal; cursor:help" title=""></span> <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe"></button>
+            <span id="machineIdBadge" class="badge bg-secondary ms-2" style="font-size:.72rem; font-weight:normal; cursor:help" title=""></span> <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe"></button>
             <div class="qz-actions">
                 <button id="btnConnect" class="btn btn-outline-primary btn-sm" onclick="Druck.connect()">
                     <i class="bi bi-plug me-1"></i>Verbinden

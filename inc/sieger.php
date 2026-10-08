@@ -24,13 +24,11 @@ $page_specific_css = <<<'CSS'
 
 /* === CATEGORY CARD (kompakt) === */
 .cat-card {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: 10px;
     overflow: hidden;
-    transition: box-shadow 0.2s;
 }
-.cat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .cat-card-head {
     display: flex; align-items: center; gap: 0.45rem;
     padding: 0.3rem 0.6rem;
@@ -46,9 +44,9 @@ $page_specific_css = <<<'CSS'
     font-size: 0.85rem; flex-shrink: 0;
 }
 .cat-icon.gold   { background: var(--ui-warn-zeile); color: var(--ui-warn-punkt); border: 1px solid var(--ui-warn-rand); }
-.cat-icon.blue   { background: #dbeafe; color: var(--ui-akzent); border: 1px solid #bfdbfe; }
-.cat-icon.green  { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
-.cat-icon.purple { background: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+.cat-icon.blue   { background: var(--ui-akzent-hell); color: var(--ui-akzent); border: 1px solid var(--ui-akzent-rand); }
+.cat-icon.green  { background: var(--ui-ok-bg); color: var(--ui-ok-fg); border: 1px solid var(--ui-ok-rand); }
+.cat-icon.purple { background: var(--ui-flaeche-2); color: var(--ui-k-grau); border: 1px solid var(--ui-rand); }
 
 /* === WINNER ROW (Klick/Enter = Bearbeiten, Aktionen immer sichtbar) === */
 .winner-row {
@@ -57,8 +55,8 @@ $page_specific_css = <<<'CSS'
     border-bottom: 1px solid var(--ui-flaeche-2);
     cursor: pointer; transition: background 0.15s;
 }
-.winner-row:hover, .winner-row:focus-visible { background: rgba(99,102,241,0.07); outline: none; }
-.winner-row:focus-visible { box-shadow: inset 0 0 0 2px rgba(99,102,241,0.35); }
+.winner-row:hover, .winner-row:focus-visible { background: var(--ui-hover); outline: none; }
+.winner-row:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: -2px; }
 .winner-row:last-child { border-bottom: none; }
 .winner-name  { flex: 1; font-weight: 500; color: var(--ui-text); font-size: 0.8rem; }
 .winner-score { font-weight: 700; color: var(--ui-text); font-size: 0.8rem; min-width: 38px; text-align: right; }

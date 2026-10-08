@@ -9,11 +9,11 @@ $page_specific_css = <<<'CSS'
 .draggable-member {
     display: inline-block; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
     margin: 2px; padding: 4px 10px;
-    border: 1.5px solid var(--ui-rand); border-radius: var(--border-radius); background: #fff;
-    font-size: 0.78rem; font-weight: 500; color: var(--dark-color);
+    border: 1.5px solid var(--ui-rand); border-radius: 6px; background: var(--ui-flaeche);
+    font-size: 0.78rem; font-weight: 500; color: var(--ui-text);
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.draggable-member:hover { border-color: var(--ui-akzent-dunkel); background: var(--ui-linie); box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+.draggable-member:hover { border-color: var(--ui-akzent-dunkel); background: var(--ui-hover); }
 .draggable-member.sortable-ghost { opacity: .35; background: var(--ui-linie); border-color: var(--ui-akzent-dunkel); }
 .draggable-member.sortable-chosen { box-shadow: 0 6px 18px rgba(0,0,0,.18); border-color: var(--ui-akzent-dunkel); }
 .draggable-member.sortable-drag { opacity: .9; }
@@ -21,10 +21,10 @@ $page_specific_css = <<<'CSS'
 /* Spalten "Verfügbar" und "Gruppe" */
 .available-members-container, .droppable-group {
     display: flex; flex-wrap: wrap; align-content: flex-start;
-    min-height: 150px; padding: 12px; border-radius: var(--border-radius);
+    min-height: 150px; padding: 12px; border-radius: 10px;
 }
-.available-members-container { background: var(--light-color); border: 1px solid var(--ui-rand); }
-.droppable-group { border: 2px dashed #cbd5e0; background: #fff; }
+.available-members-container { background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); }
+.droppable-group { border: 2px dashed var(--ui-rand); background: var(--ui-flaeche); }
 .droppable-group p.text-muted { width: 100%; text-align: center; font-style: italic; padding: 1.25rem 0; margin: 0; }
 .gr-col-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
 .gr-col-head .lbl { font-weight: 600; font-size: .75rem; color: var(--ui-text-2); text-transform: uppercase; letter-spacing: .3px; }
@@ -45,17 +45,17 @@ $page_specific_css = <<<'CSS'
         display: flex; align-items: center; justify-content: space-between;
         padding: 10px 12px; margin-bottom: 8px; background: var(--ui-flaeche-2); border: 2px solid var(--ui-rand); border-radius: 8px;
     }
-    .mobile-member-item.selected { background: #d4edda; border-color: var(--ui-ok-fg); }
+    .mobile-member-item.selected { background: var(--ui-ok-bg); border-color: var(--ui-ok-fg); }
     .mobile-member-name { font-size: 16px; font-weight: 500; }
     .mobile-add-btn, .mobile-remove-btn {
-        min-width: 44px; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 2px solid; background: #fff;
+        min-width: 44px; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 2px solid; background: var(--ui-flaeche);
         font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer;
     }
     .mobile-add-btn { border-color: var(--ui-ok-fg); color: var(--ui-ok-fg); }
-    .mobile-add-btn:active { background: var(--ui-ok-fg); color: #fff; }
+    .mobile-add-btn:active { background: var(--ui-ok-fg); color: var(--ui-flaeche); }
     .mobile-remove-btn { border-color: var(--ui-k-rot); color: var(--ui-k-rot); }
-    .mobile-remove-btn:active { background: var(--ui-k-rot); color: #fff; }
-    .mobile-group-section { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 1rem; margin-bottom: 1rem; }
+    .mobile-remove-btn:active { background: var(--ui-k-rot); color: var(--ui-flaeche); }
+    .mobile-group-section { background: var(--ui-flaeche); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
     .mobile-section-header {
         font-size: 14px; font-weight: 600; color: var(--ui-text-2); text-transform: uppercase; letter-spacing: 0.5px;
         margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--ui-rand);

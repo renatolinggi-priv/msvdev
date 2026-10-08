@@ -10,15 +10,14 @@ $page_specific_css = <<<'CSS'
 .table-wrapper {
   border: 1px solid var(--ui-rand);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   overflow: visible;
 }
 .table-title {
   position: sticky; top: 0; z-index: 8;
   margin: 0; padding: 1rem 1.25rem; font-weight: 600;
-  color: var(--th-text);
-  border-bottom: 2px solid var(--cell-border);
-  background: var(--light-color);
+  color: var(--ui-text);
+  border-bottom: 1px solid var(--ui-linie);
+  background: var(--ui-flaeche-2);
 }
 
 /* --- Hybrid-Tabelle (Read-only) --- */
@@ -27,7 +26,7 @@ $page_specific_css = <<<'CSS'
 }
 .hybrid-table thead th {
   padding: 0.85rem 1rem; font-size: 0.75rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--ui-text-2);
   background-color: var(--ui-flaeche-2);
   /* box-shadow statt border-bottom: verhindert Durchscheinen beim Scrollen
      unter dem sticky-Header (border-collapse:collapse-Pitfall, vgl. jmrang) */
@@ -38,11 +37,11 @@ $page_specific_css = <<<'CSS'
   cursor: pointer; transition: background 0.15s;
 }
 .hybrid-table tbody tr.hybrid-row:hover {
-  background: rgba(99,102,241,0.05);
+  background: var(--ui-hover);
   position: relative; z-index: 10;
 }
 .hybrid-table tbody tr.hybrid-row.selected {
-  background: rgba(59,130,246,0.08);
+  background: var(--ui-gewaehlt);
   box-shadow: none;
 }
 .hybrid-table tbody td {
@@ -70,15 +69,14 @@ $page_specific_css = <<<'CSS'
 
 /* --- Drag & Drop --- */
 .jm-row-dragging {
-  background: #fff !important;
+  background: var(--ui-flaeche) !important;
   box-shadow: 0 10px 24px rgba(0,0,0,.12);
-  transform: scale(1.005);
   transition: none !important;
   cursor: grabbing !important;
 }
 .jm-row-placeholder {
-  background: repeating-linear-gradient(45deg, var(--ui-linie-zart), var(--ui-linie-zart) 10px, var(--ui-rand) 10px, var(--ui-rand) 20px) !important;
-  border: 2px dashed #93c5fd !important;
+  background: var(--ui-gewaehlt) !important;
+  border: 2px dashed var(--ui-akzent) !important;
 }
 
 /* Aktions-Card (.action-card/.action-card-header/.action-chevron) jetzt zentral in css/msv-styles.css. */
@@ -131,19 +129,19 @@ $page_specific_css = <<<'CSS'
 .ssb-window input[type="time"] { max-width: 110px; }
 .ssb-window input.ssb-invalid { border-color: var(--ui-k-rot); background: var(--ui-fehler-bg); }
 .ssb-iconbtn {
-  border: none; background: transparent; color: var(--ui-feldrand);
+  border: none; background: transparent; color: var(--ui-text-3);
   font-size: 1.1rem; line-height: 1; padding: 0 0.25rem; cursor: pointer;
   transition: color 0.15s;
 }
 .ssb-iconbtn:hover { color: var(--ui-k-rot); }
 .ssb-add-win {
-  margin-top: 0.45rem; border: 1px dashed var(--ui-feldrand); background: #fff;
+  margin-top: 0.45rem; border: 1px dashed var(--ui-feldrand); background: var(--ui-flaeche);
   color: var(--ui-text-2); border-radius: 6px; font-size: 0.78rem;
   padding: 0.2rem 0.6rem; cursor: pointer;
 }
 .ssb-add-win:hover { border-color: var(--ui-akzent); color: var(--ui-akzent); }
 .ssb-add-day {
-  width: 100%; border: 1px dashed #93c5fd; background: var(--ui-akzent-hell);
+  width: 100%; border: 1px dashed var(--ui-akzent-rand); background: var(--ui-akzent-hell);
   color: var(--ui-akzent); border-radius: 8px; font-weight: 600; font-size: 0.85rem;
   padding: 0.5rem; cursor: pointer; margin-top: 0.2rem;
 }

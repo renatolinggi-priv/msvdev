@@ -14,7 +14,7 @@ if (file_exists($json_path)) {
 // Typ-Badge Mapping
 $typ_badges = [
     'feature'      => ['class' => 'bg-primary',   'label' => 'Feature'],
-    'fix'          => ['class' => 'bg-danger',     'label' => 'Fix'],
+    'fix'          => ['class' => 'bg-secondary',  'label' => 'Fix'],
     'verbesserung' => ['class' => 'bg-success',    'label' => 'Verbesserung'],
     'verbessert'   => ['class' => 'bg-success',    'label' => 'Verbesserung'],
     'neu'          => ['class' => 'bg-primary',    'label' => 'Neu'],
@@ -28,7 +28,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 <style>
 .changelog-header {
     background: var(--ui-flaeche-2);
-    border-radius: 1rem;
+    border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
 }
@@ -56,7 +56,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 }
 .version-header .version-tag {
     background: var(--ui-text);
-    color: white;
+    color: var(--ui-flaeche);
     padding: 0.2rem 0.6rem;
     border-radius: 0.375rem;
     font-size: 0.85rem;
@@ -77,7 +77,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
     border-top: 1px solid var(--ui-linie);
 }
 .changelog-entry .badge {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     padding: 0.2rem 0.5rem;
     flex-shrink: 0;
     margin-top: 0.15rem;
@@ -85,7 +85,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 .changelog-entry .badge-intern {
     background: var(--ui-warn-bg);
     color: var(--ui-warn-fg);
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     padding: 0.1rem 0.4rem;
 }
 .changelog-entry .entry-content {

@@ -7,9 +7,9 @@ require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_c
 $page_specific_css = "
 /* Backup/Restore spezifische Styles – an Deine Variablen angelehnt */
 .main-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: 10px;
     padding: 2rem;
     margin-bottom: 2rem;
 }
@@ -17,16 +17,16 @@ $page_specific_css = "
 .sidebar-card,
 .group-creation-card,
 .existing-groups-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: 10px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
 }
 
 
 .card-title {
-    color: var(--secondary-color);
+    color: var(--ui-text);
     font-weight: 600;
     margin-bottom: 1rem;
     display: flex;
@@ -37,14 +37,6 @@ $page_specific_css = "
 /* Tabelle schlank */
 #tblBackups .btn { padding: .25rem .5rem; }
 
-/* Animation leicht */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.main-card, .sidebar-card, .group-creation-card, .existing-groups-card {
-    animation: fadeIn .3s ease-out;
-}
 
 /* Modal Styles */
 .modal-backdrop.show {
@@ -68,11 +60,11 @@ $page_specific_css = "
     height: 4px;
     overflow: hidden;
     background-color: var(--ui-rand);
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 .progress-bar-animated {
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--info-color) 50%, var(--primary-color) 100%);
+    background: var(--ui-akzent);
     background-size: 200% 100%;
     animation: progress-animation 1.5s ease-in-out infinite;
 }

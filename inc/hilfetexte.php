@@ -14,8 +14,8 @@ require_once __DIR__ . '/partials/empty_state.inc.php';   // msv_empty_row()
 
 $page_specific_css = <<<'CSS'
 /* ===== Hilfetexte – Editor ===== */
-.hilfe-key   { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 0.8rem; color: var(--ui-akzent-dunkel); }
-.hilfe-cat   { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.72rem;
+.hilfe-key   { font-family: var(--ui-mono); font-size: 0.8rem; color: var(--ui-akzent-dunkel); }
+.hilfe-cat   { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem;
                background: var(--ui-linie-zart); color: var(--ui-text-2); border: 1px solid var(--ui-rand); }
 .hilfe-empty { color: var(--ui-text-2); }
 .hilfe-date  { color: var(--ui-text-2); font-size: 0.78rem; white-space: nowrap; }
@@ -28,28 +28,28 @@ $page_specific_css = <<<'CSS'
                border-radius: 8px; border: 1px solid; margin: 0.75rem 0 0; font-size: 0.85rem; }
 .scan-banner.scan-ok   { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); color: var(--ui-ok-fg); }
 .scan-banner.scan-warn { background: var(--ui-warn-zeile); border-color: var(--ui-warn-rand); color: var(--ui-warn-fg); }
-.scan-banner.scan-bad  { background: var(--ui-fehler-bg); border-color: #fecaca; color: var(--ui-k-rot); }
+.scan-banner.scan-bad  { background: var(--ui-fehler-bg); border-color: var(--ui-fehler-rand); color: var(--ui-fehler); }
 .scan-banner-title { font-weight: 600; }
 .scan-stats { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.scan-stat-pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.75rem;
-                  background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08); }
+.scan-stat-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.75rem;
+                  background: var(--ui-flaeche); border: 1px solid var(--ui-rand); }
 .scan-keylist { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
-.scan-key { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 12px;
-            background: #fff; border: 1px solid var(--ui-feldrand); color: var(--ui-text); cursor: pointer;
-            font-family: Consolas, monospace; font-size: 0.75rem; }
-.scan-key:hover { background: var(--ui-text); color: #fff; border-color: var(--ui-text); }
+.scan-key { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
+            background: var(--ui-flaeche); border: 1px solid var(--ui-feldrand); color: var(--ui-text); cursor: pointer;
+            font-family: var(--ui-mono); font-size: 0.75rem; }
+.scan-key:hover { background: var(--ui-text); color: var(--ui-flaeche); border-color: var(--ui-text); }
 
 /* Format-Toolbar über der Textarea */
 .editor-toolbar { display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; margin-bottom: -1px;
                   background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .editor-toolbar .ed-btn { border: 1px solid transparent; background: transparent; width: 28px; height: 26px;
-                          border-radius: 4px; font-size: 0.85rem; color: var(--ui-text); display: inline-flex;
+                          border-radius: 6px; font-size: 0.85rem; color: var(--ui-text); display: inline-flex;
                           align-items: center; justify-content: center; font-weight: 600; }
 .editor-toolbar .ed-btn:hover { background: var(--ui-rand); border-color: var(--ui-feldrand); }
 .editor-toolbar .ed-sep { width: 1px; align-self: stretch; background: var(--ui-feldrand); margin: 3px 4px; }
-#sgInhalt { border-radius: 0 0 6px 6px; font-family: Consolas, 'SF Mono', monospace; font-size: 0.82rem; }
+#sgInhalt { border-radius: 0 0 6px 6px; font-family: var(--ui-mono); font-size: 0.82rem; }
 .tag-hint { font-size: 0.72rem; color: var(--ui-text-2); margin-top: 0.3rem; }
-.tag-hint code { font-size: 0.7rem; }
+.tag-hint code { font-size: 0.72rem; }
 #sgPreview { font-size: 0.88rem; line-height: 1.5; }
 #sgPreview :first-child { margin-top: 0; }
 #sgPreview :last-child  { margin-bottom: 0; }
@@ -59,7 +59,7 @@ $page_specific_css = <<<'CSS'
                        opacity: 0; visibility: hidden; transition: opacity 0.18s; }
 .link-dialog-overlay.active { opacity: 1; visibility: visible; }
 .link-dialog { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-48%) scale(0.97);
-               width: min(480px, 92vw); max-height: 85vh; background: #fff; border-radius: 12px;
+               width: min(480px, 92vw); max-height: 85vh; background: var(--ui-flaeche); border-radius: 12px;
                box-shadow: 0 25px 60px rgba(0,0,0,0.3); z-index: 1100; opacity: 0; visibility: hidden;
                transition: opacity 0.18s, transform 0.18s, visibility 0.18s; display: flex; flex-direction: column; overflow: hidden; }
 .link-dialog.open { opacity: 1; visibility: visible; transform: translate(-50%,-50%) scale(1); }
@@ -72,9 +72,9 @@ $page_specific_css = <<<'CSS'
 .link-suggestions { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0.5rem; max-height: 180px; overflow-y: auto;
                     background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: 6px; }
 .link-suggestions .link-sug { display: inline-flex; align-items: center; gap: 0.3rem; padding: 3px 9px; font-size: 0.78rem;
-                              background: #fff; color: var(--ui-text); border: 1px solid var(--ui-feldrand); border-radius: 14px; cursor: pointer; }
-.link-suggestions .link-sug:hover { background: var(--ui-text); color: #fff; border-color: var(--ui-text); }
-.link-suggestions .link-sug-link { font-family: Consolas, monospace; font-size: 0.7rem; opacity: 0.7; }
+                              background: var(--ui-flaeche); color: var(--ui-text); border: 1px solid var(--ui-feldrand); border-radius: 999px; cursor: pointer; }
+.link-suggestions .link-sug:hover { background: var(--ui-text); color: var(--ui-flaeche); border-color: var(--ui-text); }
+.link-suggestions .link-sug-link { font-family: var(--ui-mono); font-size: 0.72rem; color: var(--ui-text-3); }
 .link-suggestions .hilfe-empty { font-size: 0.8rem; padding: 0.3rem; }
 CSS;
 

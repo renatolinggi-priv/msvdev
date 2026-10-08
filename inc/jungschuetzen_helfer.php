@@ -11,7 +11,7 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
-        <?php $page_title = 'Helferstunden erfassen'; $page_actions = '<button type="button" class="btn-help" data-help="jungschuetzen_helfer.uebersicht" aria-label="Hilfe"></button>' . '<button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm" data-tooltip="Gespeicherte Helferstunden des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Helferstunden</span></button>'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Helferstunden erfassen'; $page_actions = '<button type="button" class="btn-help" data-help="jungschuetzen_helfer.uebersicht" aria-label="Hilfe"></button>' . '<button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm" data-tooltip="Gespeicherte Helferstunden des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Helferstunden</span></button>'; $page_show_mobile = true; include 'partials/page_header.inc.php'; ?>
         <div class="content-background">
           <form id="helferstundenForm" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">

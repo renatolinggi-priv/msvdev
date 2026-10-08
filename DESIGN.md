@@ -18,6 +18,7 @@ colors:
   akzent-dunkel: "#2b52a0"
   akzent-tief: "#1e3f80"
   akzent-hell: "#e8f0fe"
+  akzent-rand: "#c9d9f7"
   ok-bg: "#ecfdf3"
   ok-fg: "#166534"
   ok-rand: "#a7e9c0"
@@ -64,6 +65,10 @@ typography:
     fontSize: "0.9rem"
     fontWeight: 400
     fontFeature: "tnum"
+  meta:
+    fontFamily: "IBM Plex Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+    fontSize: "0.85rem"
+    fontWeight: 400
   body-sm:
     fontFamily: "IBM Plex Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
     fontSize: "0.8rem"
@@ -265,6 +270,7 @@ Kühle, fast farblose Neutrale tragen die Fläche; ein einziges gedämpftes Blau
 - **Tiefes Amtsblau** (`akzent-dunkel`, gleich `k-blau`): Links, Fokusrahmen (`:focus-visible` 2px), Fokusrand der Felder, Text blauer Outline-Knöpfe und Füllung des einen Hauptknopfs. Auch der eingeschaltete Flag-Dot.
 - **Nachtblau** (`akzent-tief`): Link-Hover, gedrückter Hauptknopf, Text im Info-Hinweis.
 - **Helles Auswahlblau** (`akzent-hell`): Textauswahl, aktive Dropdown-Einträge, Hover der «?»-Hilfe, Jahr-Hinweis «Planung».
+- **Auswahlrand** (`akzent-rand`): Rand auf hellblauen Flächen: Info-Hinweis, Seitenhinweis `.info-card`, Jahr-Hinweis «Planung», hervorgehobene Kacheln.
 
 ### Secondary (Knopf-Semantik)
 - **Tannengrün** (`k-gruen`): Anlegen, Hochladen, Import; im Fragebogen der Absenden-Knopf.
@@ -304,17 +310,18 @@ Gedämpfte Metalltöne, flach, nie als Verlauf. Die Marke (`.rang-badge.r1–r3`
 
 **Display Font:** keine (die App hat keine Schaufläche)
 **Body Font:** IBM Plex Sans (mit -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif), lokal aus `css/fonts/ibm-plex-sans/`, variabel 400–700, latin und latin-ext
-**Label/Mono Font:** keine eigene; `kbd` erbt die Grundschrift
+**Label/Mono Font:** keine eigene; `kbd` erbt die Grundschrift. Für Code (Hilfe-Schlüssel, SQL-Regeln, HTML-Quelltext, Link-Pfade, `.code-badge`) gilt der Systemstapel `--ui-mono` (ui-monospace, Cascadia Mono, Consolas, SF Mono), seit 08.10.2026 überall derselbe.
 
 **Character:** Eine einzige sachliche Grotesk mit technischer Herkunft, die in kleinen Grössen klar bleibt. Hierarchie entsteht über Gewicht (400/500/600/700) und Grösse, nicht über eine zweite Familie.
 
 ### Hierarchy
-- **Headline** (700, 1.25rem, 1.25, −0.01em): Seitentitel in der Kopf-Card (`h2.h4.page-title`), einmal pro Seite.
+- **Headline** (700, 1.25rem, 1.25, −0.01em): Seitentitel in der Kopf-Card (`h1.page-title`, seit 08.10.2026 ein `h1`), einmal pro Seite.
 - **Title** (700, 1rem): Titel im Slide-Panel-Kopf. Einzelseiten dürfen ihn für die Schnellerfassung vergrössern (Heimmeisterschaft 1.15rem).
 - **Title-sm** (600, 0.95rem): Titel von Tabellen-Cards (`.ui-tab-titel`), Zähler im Fortschritt; 0.9rem für Abschnittstitel in Erfassungskarten (`.shot-section-title`).
-- **Body** (400, 0.9rem, Tabellenziffern): Grundschrift der ganzen App; Untertitel 0.85rem in `text-2`.
+- **Body** (400, 0.9rem, Tabellenziffern): Grundschrift der ganzen App.
+- **Meta** (400, 0.85rem, `text-2` oder `text-3`): Untertitel, Nebenzeilen unter einem Namen («seit 2019 · Hersteller …»), Suchfeld, Zusatzangaben in Tabellenzellen.
 - **Body-sm** (600, 0.8rem): Knöpfe `btn-sm`, Filter, Status, Chips.
-- **Label** (600, 0.71875rem, 0.05em, VERSALIEN): Tabellenköpfe, Gruppenzeilen im Raster, Gruppenlabels der Export-Toolbar. Nur für Spalten- und Gruppenbeschriftungen über Daten.
+- **Label** (600, 0.71875rem, 0.05em, VERSALIEN): Tabellenköpfe, Gruppenzeilen im Raster, Gruppenlabels der Export-Toolbar. Nur für Spalten- und Gruppenbeschriftungen über Daten. Zugleich die Untergrenze: kleiner als 0.72rem wird auf dem Bildschirm nichts gesetzt.
 - **Zahl** (700, 1.35rem, 1.1, Tabellenziffern): Totale in Erfassungskarten und Schnellerfassung; Eingabefelder für Passen im Panel 1.35rem/600.
 
 ### Named Rules
@@ -352,6 +359,8 @@ Das System ist flach. Karten, Kopf-Card, Tabellen und Export-Toolbars haben kein
 **The Flach-bis-es-schwebt Rule.** Ein Schatten zeigt an, dass etwas über der Seite liegt (Panel, Dialog, Menü). Karten in der Seite bekommen nie einen.
 
 **The Kein-Hüpfen Rule.** Hover verändert Farbe, nie Lage: kein `translateY`, kein Anheben, kein Schatten beim Überfahren.
+
+**The Ruhig-laden Rule.** Inhalte erscheinen ohne Einblend-Animation: keine hereingleitenden Tabellen, Karten oder Ablaufschritte, keine Dauer-Animationen wie Pulsieren. Bewegung gibt es nur, wenn sie einen Zustandswechsel mitteilt (Panel fährt ein, Fortschrittsbalken füllt sich, Ladeanzeige läuft).
 
 ## Shapes
 
@@ -470,6 +479,8 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 - **Don't** Verläufe einsetzen (`linear-gradient`, `radial-gradient`) – auch nicht für Ränge oder Fortschritt.
 - **Don't** farbige Seitenstreifen (`border-left` über 1px als Akzent) an Karten, Hinweisen oder Menüeinträgen.
 - **Don't** Hover mit Bewegung: kein `transform: translateY`, kein Anheben, kein Hover-Schatten.
+- **Don't** Inhalte einblenden lassen oder dauerhaft animieren (Hereingleiten, Pulsieren).
+- **Don't** Schriften unter 0.72rem auf dem Bildschirm.
 - **Don't** Vereinsrot ausserhalb des Logos zeigen; Rot nur für Gefahr.
 - **Don't** `title=` für Tooltips verwenden.
 - **Don't** die «?»-Hilfe pro Knopf setzen.
@@ -483,8 +494,8 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 ## Noch nicht migriert (bewusst)
 
 - **Mitgliederportal** (`portal/`, `css/portal.css`): behält sein eigenes Erscheinungsbild und folgt später. Dieses Dokument gilt dort nicht.
-- **`css/msv-styles.css`** (rund 1410 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip) und alte Optik, die `msv-ui.css` überschreibt, wo sie sichtbar wird. Wo nicht überschrieben, ist der alte Stil noch sichtbar; das ist kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso.
+- **`css/msv-styles.css`** (rund 1410 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip) und alte Optik, die `msv-ui.css` überschreibt, wo sie sichtbar wird. Wo nicht überschrieben, ist der alte Stil noch sichtbar; das ist kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso; ebenso `.info-card` (ohne Seitenstreifen). Die Einblend-Animation aller `.table-wrapper` und das Anheben von `#pdf-link` sind entfernt.
 - **Seiten mit eigenem Slide-Panel** statt `partials/side_panel.inc.php`: Einzel- und Sektionsrangierungen (`.edit-panel`, fast identische Kopien), Navigation (`.nav-edit-panel`). Umbau gehört zusammen mit einem gemeinsamen Panel-Verhalten (Esc, Ungespeichertes) gemacht.
-- **Restliche Seiten-Hex-Werte** (Stand 08.10.2026): u.a. Einsatzplanung, Foto-Galerie und Dokumente (`#1e7e44`, `#c0392b`, `#2d4373`), Cup-Ranglisten, Ausdruck Zielscheiben (`endsch_targetprint.php`, dort auch Hover mit Anheben und Einblend-Animation).
+- **Restliche Seiten-Hex-Werte** (Stand 08.10.2026, nach der Polish-Runde): Die Seiten selbst sind auf Tokens; übrig sind Einzelwerte in Navigation-Editor (4), Hilfetexte (2), Foto-Galerie, Einzel- und Sektionsrangierungen, JM-Definition und Gruppen (je 1). Der Rest steckt in `msv-styles.css` (siehe oben). Ebenfalls offen: 2px-Ränder an einzelnen Karten, Karte in Karte im Navigation-Editor, Skeleton mit Verlauf, Fortschrittsbalken animieren `width` statt `transform`.
 - **Navigation** (`inc/navigation.inc.php`, eigener Inline-`<style>`): eigene Blautöne und Aktiv-Markierung, nicht auf Tokens.
 - **Doppelte Tokens:** `msv-oeffentlich.css` trägt einen Auszug der `--ui-*` Tokens aus `msv-ui.css` (inkl. `akzent-tief`, `fehler-rand`). Die Werte sind am 08.10.2026 identisch und müssen von Hand synchron gehalten werden. Nur im Admin: `leer`, `feldrand-leer`, `rand-stark`, `warn-zeile-hover` und das Podest.

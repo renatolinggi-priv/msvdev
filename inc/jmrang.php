@@ -46,7 +46,7 @@ $page_specific_css = '
 .jm-group-row:hover td.jm-group-cell { padding: 6px 12px !important; background: var(--ui-grund) !important; color: var(--ui-text-2) !important; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; border-top: 1px solid var(--ui-linie) !important; border-bottom: 1px solid var(--ui-linie) !important; }
 .jm-group-row td.jm-group-cell i { display: none; }
 .jm-result-cell   { font-variant-numeric: tabular-nums; }
-.jm-cell-strichen { color: var(--ui-k-rot); text-decoration: line-through; }
+.jm-cell-strichen { color: var(--ui-text-3); text-decoration: line-through; }
 .jm-total-cell    { color: var(--ui-text); font-variant-numeric: tabular-nums; font-size: 1rem; }
 .jm-rang-cell     { color: var(--ui-text-2); }
 .jm-toggle-btn { color: var(--ui-text-3) !important; text-decoration: none !important; font-size: 1rem !important; }
@@ -72,9 +72,8 @@ $page_specific_css = '
 .jm-line-max  { font-size: .72rem; color: var(--ui-text-3); }
 .jm-line-empty .jm-line-name,
 .jm-line-empty .jm-line-val { font-weight: 400; color: var(--ui-leer); }
-.jm-detail-line.gestrichen { opacity: .75; }
-.jm-detail-line.gestrichen .jm-line-val { color: var(--ui-k-rot); text-decoration: line-through; }
-.jm-line-tag { padding: 1px 6px; border-radius: 6px; background: #fdecea; color: var(--ui-k-rot); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.jm-detail-line.gestrichen .jm-line-val { color: var(--ui-text-3); text-decoration: line-through; }
+.jm-line-tag { padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); color: var(--ui-text-2); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .jm-detail-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--ui-flaeche-2); border-top: 1px solid var(--ui-linie); font-size: .8rem; font-weight: 600; color: var(--ui-text-2); }
 .jm-detail-subtotal span:last-child { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .jm-detail-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; background: var(--ui-ok-bg); border: 1px solid var(--ui-ok-rand); border-radius: var(--ui-rad); font-size: .95rem; font-weight: 700; color: var(--ui-ok-fg); }

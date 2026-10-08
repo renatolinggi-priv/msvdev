@@ -64,31 +64,30 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     justify-content: center;
     width: 32px; height: 32px;
     border-radius: 50%;
-    color: white;
+    color: var(--ui-flaeche);
     font-size: 0.875rem;
     font-weight: 600;
 }
-.initial-admin { background: var(--ui-k-rot); }
-.initial-vorstand { background: var(--ui-warn-punkt); color: var(--ui-text); }
+.initial-admin { background: var(--ui-text); }
+.initial-vorstand { background: var(--ui-k-grau); }
 .initial-mitglied { background: var(--ui-akzent); }
 .initial-jungschuetze { background: var(--ui-k-tuerkis); }
 .info-card {
     background-color: var(--ui-flaeche-2);
-    border: 1px solid var(--secondary-color);
+    border: 1px solid var(--ui-rand);
     padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
-    border-radius: 0.25rem;
+    border-radius: 10px;
 }
 .info-card .count {
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
 }
 .pending-alert {
     background: var(--ui-warn-zeile);
-    border: 1px solid var(--ui-warn-punkt);
-    border: 1px solid var(--ui-warn-punkt);
-    border-radius: 0.375rem;
+    border: 1px solid var(--ui-warn-rand);
+    border-radius: 10px;
     padding: 1rem 1.5rem;
     margin-bottom: 1rem;
 }
@@ -246,7 +245,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                             <?php foreach ($users as $user):
                                 $is_pending = ($user['status'] == 'pending');
                             ?>
-                            <div class="mobile-card" style="<?php echo $is_pending ? 'border: 1px solid var(--ui-warn-rand); background: var(--ui-warn-zeile);' : ''; ?> border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="mobile-card" style="<?php echo $is_pending ? 'border: 1px solid var(--ui-warn-rand); background: var(--ui-warn-zeile);' : ''; ?> border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <strong><?php echo htmlspecialchars($user['username']); ?></strong>

@@ -203,7 +203,7 @@ body {
 
 /* Standard PDF Link (Grün) */
 #pdf-link a { background-color: var(--success-color); color: white; }
-#pdf-link a:hover { background-color: #218838; transform: translateY(-2px); box-shadow: var(--box-shadow-hover); }
+#pdf-link a:hover { background-color: #218838; }
 
 /* Outline Varianten für endschrang.php */
 #pdf-link .btn-outline-success,
@@ -659,9 +659,7 @@ h2.h4 {
     60%,100%{ content: '...'; }
 }
 
-/* Info Cards */
-.info-card { background-color: #e7f3ff !important; border-left: 4px solid var(--info-color) !important; padding: 1rem !important; margin-bottom: 1.5rem !important; border-radius: var(--border-radius) !important; }
-.info-card i { color: var(--info-color) !important; }
+/* Info Cards (.info-card): Aussehen seit Oktober 2026 in css/msv-ui.css (wie .alert-info, ohne Seitenstreifen) */
 
 /* Margin-Helpers */
 .button-toolbar + .table-wrapper { margin-top: 2rem !important; }
@@ -673,12 +671,7 @@ h2.h4 {
 /* ==========================================
    ANIMATIONEN
    ========================================== */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.table-wrapper { animation: fadeIn 0.5s ease-out; }
+/* Keine Einblend-Animation für Tabellen: Bewegung nur, wenn sie etwas mitteilt (DESIGN.md) */
 
 /* ==========================================
    SCROLLBAR STYLING
@@ -1053,7 +1046,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
    CODE-BADGE (zentral) – monospace Kürzel/Codes
    ========================================== */
 .code-badge {
-    font-family: 'Courier New', monospace;
+    font-family: var(--ui-mono, monospace);
     background: #eff6ff; color: #1e40af;
     padding: 3px 10px; border-radius: 6px;
     font-size: 0.82rem; font-weight: 500;

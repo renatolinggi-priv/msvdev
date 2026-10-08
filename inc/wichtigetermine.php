@@ -13,15 +13,14 @@ $page_specific_css = <<<'CSS'
 .table-wrapper {
   border: 1px solid var(--ui-rand);
   border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
   overflow: visible;
 }
 .table-title {
   position: sticky; top: 0; z-index: 8;
   margin: 0; padding: 0.75rem 1rem; font-weight: 600; font-size: 0.95rem;
-  color: var(--dark-color);
+  color: var(--ui-text);
   border-bottom: 2px solid var(--ui-rand);
-  background: var(--light-color);
+  background: var(--ui-flaeche-2);
 }
 
 /* --- Hybrid-Tabelle (kompakt) --- */
@@ -30,7 +29,7 @@ $page_specific_css = <<<'CSS'
 }
 .hybrid-table thead th {
   padding: 0.5rem 0.75rem; font-size: 0.75rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--ui-text-2);
   background-color: var(--ui-flaeche-2);
   border-bottom: 2px solid var(--ui-rand);
   position: sticky; top: 0; z-index: 6;
@@ -39,10 +38,10 @@ $page_specific_css = <<<'CSS'
   cursor: pointer; transition: background 0.15s;
 }
 .hybrid-table tbody tr.hybrid-row:hover {
-  background: rgba(99,102,241,0.05);
+  background: var(--ui-hover);
 }
 .hybrid-table tbody tr.hybrid-row.selected {
-  background: rgba(59,130,246,0.08);
+  background: var(--ui-gewaehlt);
   box-shadow: none;
 }
 .hybrid-table tbody td {
@@ -61,18 +60,18 @@ $page_specific_css = <<<'CSS'
 .btn-delete-sm {
   width: 26px; height: 26px; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; border-radius: 4px;
+  font-size: 0.75rem; border-radius: 6px;
   color: var(--ui-text-2); border: 1px solid transparent; background: transparent;
   transition: all 0.15s;
 }
 .btn-delete-sm:hover {
-  color: var(--ui-k-rot); border-color: var(--ui-k-rot); background: rgba(220,53,69,0.05);
+  color: var(--ui-k-rot); border-color: var(--ui-k-rot); background: var(--ui-fehler-bg);
 }
 
 /* Monats-Separator */
 .hybrid-table tbody tr.month-separator td {
   padding: 0.35rem 0.75rem;
-  font-size: 0.7rem; font-weight: 700;
+  font-size: 0.72rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.5px;
   color: var(--ui-text-2); background: var(--ui-flaeche-2);
   border-bottom: 1px solid var(--ui-rand);
@@ -82,15 +81,15 @@ $page_specific_css = <<<'CSS'
 
 /* Wochentag-Badge kompakt */
 .wd-badge {
-  display: inline-block; font-size: 0.7rem; font-weight: 600;
-  color: var(--ui-text-2); background: var(--ui-linie-zart); border-radius: 3px;
+  display: inline-block; font-size: 0.72rem; font-weight: 600;
+  color: var(--ui-text-2); background: var(--ui-linie-zart); border-radius: 6px;
   padding: 1px 5px; margin-right: 4px;
 }
 
 /* Zeit-Badge kompakt */
 .time-badge {
   display: inline-block; font-size: 0.75rem; font-weight: 500;
-  color: var(--ui-akzent); background: rgba(13,110,253,0.08); border-radius: 4px;
+  color: var(--ui-akzent); background: var(--ui-akzent-hell); border-radius: 6px;
   padding: 2px 8px;
 }
 
@@ -137,8 +136,8 @@ $page_specific_css = <<<'CSS'
     padding: 0;
   }
   .mobile-event-card {
-    border-radius: 0.5rem; padding: 0.5rem 0.65rem; margin-bottom: 0.35rem;
-    border-color: #edf0f3;
+    border-radius: 10px; padding: 0.5rem 0.65rem; margin-bottom: 0.35rem;
+    border-color: var(--ui-rand);
   }
   .mobile-month-header {
     padding: 0.6rem 0 0.2rem; margin-left: 0.125rem;
@@ -161,15 +160,15 @@ $page_specific_css = <<<'CSS'
 
 /* --- Mobile Event Cards --- */
 .mobile-event-card {
-  background: white; border: 1px solid var(--ui-rand);
-  border-radius: 0.75rem; padding: 0.6rem 0.875rem; margin-bottom: 0.5rem;
+  background: var(--ui-flaeche); border: 1px solid var(--ui-rand);
+  border-radius: 10px; padding: 0.6rem 0.875rem; margin-bottom: 0.5rem;
   cursor: pointer; transition: background 0.15s, border-color 0.15s;
 }
 .mobile-event-card:active {
   background: var(--ui-flaeche-2);
 }
 .mobile-event-card.selected {
-  border-color: var(--ui-akzent); background: rgba(59,130,246,0.04);
+  border-color: var(--ui-akzent); background: var(--ui-gewaehlt);
 }
 .mobile-month-header {
   font-weight: 700; font-size: 0.8rem; text-transform: uppercase;
@@ -697,11 +696,11 @@ $(function() {
             <div style="font-weight:600; font-size:0.85rem;">${nameEsc} <span class="jsk-toggle badge ${d.jsk === '1' ? 'bg-info text-dark' : 'bg-light text-muted border'}" role="button" data-id="${d.id}" data-jsk="${d.jsk || '0'}" data-tooltip="Für Jungschützen ein-/ausschalten">JSK</span></div>
             <div class="d-flex align-items-center gap-1" style="font-size:0.8rem; color:var(--ui-text-2); margin-top:0.15rem;">
               <span class="wd-badge">${wd}</span><span>${ds}</span>
-              <span style="color:var(--ui-feldrand);">·</span>
+              <span style="color:var(--ui-leer);">·</span>
               <span class="time-badge">${timeEsc}</span>
             </div>
           </div>
-          <i class="bi bi-chevron-right" style="color:var(--ui-feldrand); font-size:0.9rem; flex-shrink:0;"></i>
+          <i class="bi bi-chevron-right" style="color:var(--ui-leer); font-size:0.9rem; flex-shrink:0;"></i>
         </div>
       </div>`;
     });

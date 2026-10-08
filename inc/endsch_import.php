@@ -192,7 +192,6 @@ const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 <script>
 // 3-Phasen Workflow Initialisierung
 $(document).ready(function() {
-    console.log('[ENDSCH-MAIN] Initializing 3-Phase CSV Import Workflow for Endschiessen');
     
     // Prüfe ob alle erforderlichen Module geladen sind
     const requiredModules = ['FileHandler', 'ImportManagerSingle', 'UIHelper'];
@@ -203,7 +202,6 @@ $(document).ready(function() {
             missingModules.push(moduleName);
             console.error(`[ENDSCH-MAIN] Module ${moduleName} not loaded!`);
         } else {
-            console.log(`[ENDSCH-MAIN] Module ${moduleName} found`);
         }
     });
     
@@ -218,32 +216,26 @@ $(document).ready(function() {
         return;
     }
     
-    console.log('[ENDSCH-MAIN] All modules loaded successfully');
     
     // Init modules sequenziell mit Fehlerbehandlung
     Promise.resolve()
         .then(async () => {
-            console.log('[ENDSCH-MAIN] Initializing FileHandler...');
             if (typeof FileHandler !== 'undefined' && FileHandler.init) {
                 const result = await FileHandler.init();
                 if (result === false) {
                     throw new Error('FileHandler initialization failed');
                 }
-                console.log('[ENDSCH-MAIN] FileHandler initialized successfully');
             }
         })
         .then(() => {
-            console.log('[ENDSCH-MAIN] Initializing ImportManagerSingle...');
             if (typeof ImportManagerSingle !== 'undefined' && ImportManagerSingle.init) {
                 const result = ImportManagerSingle.init();
                 if (result === false) {
                     throw new Error('ImportManagerSingle initialization failed');
                 }
-                console.log('[ENDSCH-MAIN] ImportManagerSingle initialized successfully');
             }
         })
         .then(() => {
-            console.log('[ENDSCH-MAIN] All modules initialized successfully');
         })
         .catch(error => {
             console.error('[ENDSCH-MAIN] Module initialization failed:', error);
@@ -275,7 +267,6 @@ $(document).ready(function() {
         }
         
         if (uploadArea && fileInput) {
-            console.log('[ENDSCH-MAIN] All DOM elements verified');
         }
     }, 500);
 });
@@ -298,7 +289,6 @@ const WorkflowHelper = {
     },
     
     showPhase(phaseNumber) {
-        console.log(`[WorkflowHelper] Switching to Phase ${phaseNumber}`);
         
         // Hide all phases
         $('.workflow-phase').hide();
@@ -332,7 +322,6 @@ const WorkflowHelper = {
     proceedToImport() {
         // Keine Prüfung mehr nötig - immer alle Programme importieren
         // Direkt das Import-Modal zeigen
-        console.log('[WorkflowHelper] Zeige Import-Modal direkt für alle Programme');
         if (typeof ImportManagerSingle !== 'undefined' && ImportManagerSingle.showPreview) {
             ImportManagerSingle.showPreview();
         } else {
@@ -348,7 +337,6 @@ const WorkflowHelper = {
     
     initProgramSelection() {
         // Wird von csv_handler.js aufgerufen nach erfolgreichem Upload
-        console.log('[WorkflowHelper] Initializing program selection');
     }
 };
 

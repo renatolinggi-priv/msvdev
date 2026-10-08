@@ -174,7 +174,6 @@ function setupGlobalScroll() {
 }
 
 $(document).ready(function() {
-    console.log('[CSV-VIEWER] Initializing CSV Viewer');
     CSVViewer.init();
     
     // Global Scroll Setup

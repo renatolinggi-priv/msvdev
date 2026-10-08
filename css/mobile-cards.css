@@ -34,7 +34,7 @@
     }
 
     .mobile-card:active {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        background: var(--ui-flaeche-2, #f8fafb);
     }
 
     .mobile-card-header {
@@ -80,7 +80,7 @@
     }
 
     .mobile-search input {
-        border-radius: 2rem;
+        border-radius: var(--ui-rad, 8px);
         padding-left: 2.5rem;
         min-height: 44px; /* WCAG Touch Target */
         font-size: 16px; /* Verhindert iOS-Zoom */

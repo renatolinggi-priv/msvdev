@@ -215,27 +215,10 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
             --nav-height: 56px;
         }
         
-        /* Kompakte Modals */
-        .modal-content {
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .modal-header {
-            background: #f8f9fa;
-            border-radius: 15px 15px 0 0;
-            padding: 1rem 1.5rem;
-        }
-        
-        .modal-body {
-            padding: 1.5rem;
-        }
-        
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            background: #f8f9fa;
-            border-radius: 0 0 15px 15px;
-        }
+        /* Kompakte Modals: nur Innenabstände; Rand, Radius, Schatten und Flächen kommen aus css/msv-ui.css */
+        .modal-header { padding: 1rem 1.5rem; }
+        .modal-body { padding: 1.5rem; }
+        .modal-footer { padding: 1rem 1.5rem; }
         
         /* Einheitliche, kompakte Button-Höhe (~33px). ACHTUNG: Dieser Inline-<style>
            lädt NACH css/msv-styles.css und gewinnt daher die Kaskade – Button-Grösse
@@ -341,7 +324,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
             <a class="navbar-brand" href="<?php echo file_exists('home.php') ? 'home.php' : '../home.php'; ?>">
                 <img src="../icons/icon-32x32.png" alt="MSV" width="24" height="24" style="border-radius:4px;"><span class="navbar-brand-text"> MSV Wilen</span>
                 <?php if ($pending_registrations > 0): ?>
-                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem; vertical-align: top; margin-left: 4px;"
+                    <span class="badge bg-warning text-dark" style="font-size: 0.72rem; vertical-align: top; margin-left: 4px;"
                           data-tooltip="<?php echo $pending_registrations; ?> neue Registrierung<?php echo $pending_registrations > 1 ? 'en' : ''; ?>">
                         <?php echo $pending_registrations; ?>
                     </span>

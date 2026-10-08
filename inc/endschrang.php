@@ -12,7 +12,7 @@ $page_specific_css = '
 .es-abs-liste li { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; }
 .es-abs-liste .ui-status { min-width: 6.5rem; }
 .es-abs-liste .ui-status:not(.ok):not(.offen) { color: var(--ui-text-2); }
-.es-abs-liste .ui-status:not(.ok):not(.offen) .ui-punkt { background: var(--ui-feldrand); }
+.es-abs-liste .ui-status:not(.ok):not(.offen) .ui-punkt { background: var(--ui-text-3); }
 .es-abs-liste a { font-weight: 600; white-space: nowrap; }
 .es-abs-doks { display: flex; flex-direction: column; gap: 8px; min-width: 16rem; }
 .es-abs-doks-titel { font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-text-2); }
@@ -32,7 +32,7 @@ $page_specific_css = '
 #EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
 #EndA tbody tr.rank-3 td, #EndB tbody tr.rank-3 td { background-color: color-mix(in srgb, var(--ui-bronze-bg) 40%, var(--ui-flaeche)); }
 #EndA tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child,
-#EndB tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child { font-weight: 800; }
+#EndB tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child { font-weight: 700; }
 ';
 include 'header.inc.php';
 ?>

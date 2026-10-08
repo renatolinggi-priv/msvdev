@@ -29,6 +29,7 @@ include 'header.inc.php';
       <div class="main-content-wrapper content-width-wide">
         <?php
         $page_title = 'Mitgliederverwaltung';
+        $page_show_mobile = true; // Hinzufügen/Import/Exporte stehen nur hier
         $page_title_after = '<button type="button" class="btn-help" data-help="mitgliederverwaltung.uebersicht" aria-label="Hilfe"></button>';
         $page_actions = '<button type="button" class="btn btn-outline-success btn-sm" id="btnNewMember"><i class="bi bi-person-plus me-1"></i>Hinzufügen</button>'
             . '<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-upload me-1"></i>Import</button>'

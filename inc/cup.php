@@ -130,7 +130,7 @@ $csrf = csrf_token();
                 <div class="cup4-pool-header" style="border:none; padding:0; margin-bottom:0.5rem;">
                     <span class="cup4-pool-title" style="font-size:0.75rem;"><i class="bi bi-award me-1"></i>Gewinner R1</span>
                     <span style="display:flex; align-items:center; gap:0.35rem;">
-                        <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
+                        <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" style="font-size:0.72rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
                             <i class="bi bi-plus-lg me-1"></i>Nachnominieren
                         </button>
                         <span class="cup4-counter" id="r2-pool-counter">0</span>
@@ -521,13 +521,13 @@ $(document).ready(function() {
         if (isNominated) {
             $item = $(
                 '<div class="cup4-pool-item cup4-winner-item cup4-nominated" data-id="' + id + '" data-nominated="1">' +
-                '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.7rem;"></i>' +
+                '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.72rem;"></i>' +
                 name + ' <span class="cup4-nominated-badge">NR</span></div>'
             );
         } else {
             $item = $(
                 '<div class="cup4-pool-item cup4-winner-item" data-id="' + id + '">' +
-                '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>' +
+                '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
                 name + '</div>'
             );
         }
@@ -564,7 +564,7 @@ $(document).ready(function() {
         if ($('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
         const $item = $(
             '<div class="cup4-pool-item cup4-winner-item cup4-nominated" data-id="' + id + '" data-nominated="1">' +
-            '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.7rem;"></i>' +
+            '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.72rem;"></i>' +
             name +
             ' <span class="cup4-nominated-badge">NR</span>' +
             '</div>'
@@ -619,8 +619,8 @@ $(document).ready(function() {
         // Kompaktes Radio-Button HTML
         let radioHtml = '<div style="text-align:left;max-height:220px;overflow-y:auto;">';
         losers.forEach(function(l, i) {
-            radioHtml += '<label style="display:block;padding:0.4rem 0.5rem;margin:0;cursor:pointer;border-radius:4px;font-size:0.85rem;" ' +
-                'onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'transparent\'">' +
+            radioHtml += '<label style="display:block;padding:0.4rem 0.5rem;margin:0;cursor:pointer;border-radius:6px;font-size:0.85rem;" ' +
+                'onmouseover="this.style.background=\'var(--ui-hover)\'" onmouseout="this.style.background=\'transparent\'">' +
                 '<input type="radio" name="nachn" value="' + l.id + '" data-name="' + l.name.replace(/"/g, '&quot;') + '" style="margin-right:0.5rem;"' +
                 (i === 0 ? ' checked' : '') + '>' + l.name + '</label>';
         });
@@ -900,7 +900,7 @@ $(document).ready(function() {
             if ($pool.find('.cup4-pool-item[data-id="' + w.id + '"]').length === 0) {
                 const $item = $(
                     '<div class="cup4-pool-item cup4-winner-item" data-id="' + w.id + '" data-live-preview="1">' +
-                    '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>' +
+                    '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
                     w.name + '</div>'
                 );
                 $pool.append($item);
@@ -923,7 +923,7 @@ $(document).ready(function() {
                     const id = ui.helper.data('id');
                     const text = ui.helper.text().trim();
                     const $item = $('<div class="cup4-pool-item cup4-winner-item" data-id="' + id + '" data-live-preview="1">' +
-                                   '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>' +
+                                   '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
                                    text + '</div>');
                     $(this).append($item);
                     initDraggable($item);
@@ -1351,7 +1351,7 @@ $(document).ready(function() {
                     winners.forEach(function(w) {
                         $pool.append(
                             '<div class="cup4-pool-item cup4-winner-item" data-id="' + w.ID + '">' +
-                            '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>' +
+                            '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
                             w.Name + ' ' + w.Vorname + '</div>'
                         );
                     });
@@ -1392,12 +1392,12 @@ $(document).ready(function() {
                                 if (isNominated) {
                                     $item = $(
                                         '<div class="cup4-pool-item cup4-winner-item cup4-nominated" data-id="' + id + '" data-nominated="1">' +
-                                        '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.7rem;"></i>' +
+                                        '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.72rem;"></i>' +
                                         text + ' <span class="cup4-nominated-badge">NR</span></div>'
                                     );
                                 } else {
                                     $item = $('<div class="cup4-pool-item cup4-winner-item" data-id="' + id + '">' +
-                                        '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.7rem;"></i>' +
+                                        '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
                                         text + '</div>');
                                 }
                                 $(this).append($item);

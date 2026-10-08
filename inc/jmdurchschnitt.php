@@ -8,7 +8,6 @@ $page_specific_css = "
 .definition-selection-card {
     background: var(--ui-flaeche-2);
     border-radius: 0.75rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     padding: 1.5rem;
     margin-bottom: 2rem;
     border: 1px solid var(--ui-rand);
@@ -17,7 +16,7 @@ $page_specific_css = "
 .definition-checkbox {
     margin-bottom: 0.75rem;
     padding: 0.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--ui-rand);
     border-radius: 0.5rem;
     transition: all 0.2s ease;
 }
@@ -34,10 +33,10 @@ $page_specific_css = "
 
 .calculation-info {
     background: var(--ui-akzent-hell);
-    border: 1px solid #bcd2f7;
+    border: 1px solid var(--ui-akzent-rand);
     padding: 1rem;
     margin-bottom: 1.5rem;
-    border-radius: 0.375rem;
+    border-radius: 10px;
 }
 
 .result-preview-table {
@@ -45,13 +44,13 @@ $page_specific_css = "
 }
 
 .result-preview-table th {
-    background-color: var(--light-color);
+    background-color: var(--ui-flaeche-2);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
     padding: 0.75rem;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     border-bottom: 1px solid var(--ui-linie);
 }
 

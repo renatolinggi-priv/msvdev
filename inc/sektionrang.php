@@ -4,7 +4,7 @@ include 'dbconnect.inc.php';
 
 
 $page_specific_css = '
-    .sektionrang-count { font-size: 0.75rem; font-weight: 500; color: #6c757d; margin-left: auto; }
+    .sektionrang-count { font-size: 0.75rem; font-weight: 500; color: var(--ui-text-2); margin-left: auto; }
     @media (min-width: 768px) {
         .sektionrang-runden .table-wrapper + .table-wrapper { margin-top: 0 !important; }
     }
@@ -16,12 +16,12 @@ $page_specific_css = '
     .sektionrang-table tbody tr.pad-row th { background: transparent; font-weight: normal; text-transform: none; }
     /* Schnitt-Block (Regel der Sektionsabrechnungen) */
     .schnitt-box { display: flex; flex-wrap: wrap; gap: 0.35rem 1.25rem; align-items: baseline;
-        padding: 0.5rem 0.75rem; border-top: 1px solid #e9ecef; background: #f8f9fa; font-size: 0.8rem; }
+        padding: 0.5rem 0.75rem; border-top: 1px solid var(--ui-linie); background: var(--ui-flaeche-2); font-size: 0.8rem; }
     .schnitt-item { display: flex; align-items: baseline; gap: 0.35rem; }
-    .schnitt-label { color: #6c757d; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.02em; }
+    .schnitt-label { color: var(--ui-text-2); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.02em; }
     .schnitt-value { font-weight: 600; font-variant-numeric: tabular-nums; }
     .schnitt-final { margin-left: auto; }
-    .schnitt-final .schnitt-value { color: #198754; font-size: 0.95rem; }
+    .schnitt-final .schnitt-value { color: var(--ui-ok-fg); font-size: 0.95rem; }
 ';
 
 include 'header.inc.php';

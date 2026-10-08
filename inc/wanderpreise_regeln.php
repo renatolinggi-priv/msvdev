@@ -10,7 +10,7 @@ $wp_schema_ref  = wp_regel_schema_reference();
 // Nur seitenspezifische Klassen; Tabelle, Titel, Panel, Code-Badge, Aktions-Card kommen aus msv-styles.css, Flag-Dots aus msv-ui.css
 $page_specific_css = <<<'CSS'
 .title-search { width: 200px; }
-.title-search input { font-size: 0.85rem; border-radius: 20px; padding-left: 2rem; }
+.title-search input { font-size: 0.85rem; border-radius: 8px; padding-left: 2rem; }
 .title-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ui-text-2); font-size: 0.8rem; }
 .regel-name { font-weight: 500; color: var(--ui-text); }
 .regel-desc { display: block; color: var(--ui-text-2); font-size: 0.85rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
@@ -20,11 +20,11 @@ $page_specific_css = <<<'CSS'
 .fs-xxs { font-size: 0.72rem; }
 .w-140 { width: 140px; } .w-200 { width: 200px; }
 .w-op { max-width: 11rem; } .w-val { max-width: 6.5rem; } .w-dir { max-width: 13rem; }
-.sql-editor { font-family: 'Courier New', monospace; font-size: 0.85rem; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: 6px; tab-size: 4; line-height: 1.5; }
-.sql-editor:focus { background: #fff; border-color: var(--ui-akzent); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.sql-editor { font-family: var(--ui-mono); font-size: 0.85rem; background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-radius: 8px; tab-size: 4; line-height: 1.5; }
+.sql-editor:focus { background: var(--ui-flaeche); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
 .panel-label .hint { font-weight: 400; text-transform: none; }
 .mobile-card.regel-inaktiv { opacity: .75; }
-.mobile-card .card-code { font-family: 'Courier New', monospace; background: var(--ui-akzent-hell); color: #1e40af; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+.mobile-card .card-code { font-family: var(--ui-mono); background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; }
 @media (max-width: 767.98px) { .title-search { display: none; } }
 CSS;
 

@@ -42,7 +42,7 @@ include 'header.inc.php';
 }
 
 .home-card {
-    background: #fff;
+    background: var(--ui-flaeche);
     border: 1px solid var(--ui-rand);
     border-radius: var(--ui-rad-l);
     transition: background-color .15s ease, border-color .15s ease;
@@ -114,7 +114,7 @@ include 'header.inc.php';
 
 /* Saison-Hinweis auf der Kachel */
 .home-card-note {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     color: var(--ui-akzent-dunkel);
     margin: 0.15rem 0 0;
     overflow-wrap: anywhere;
@@ -169,7 +169,7 @@ include 'header.inc.php';
     padding: 0.5rem 0.7rem;
     border: 1px solid var(--ui-rand);
     border-radius: 0.5rem;
-    background: #fff;
+    background: var(--ui-flaeche);
     text-decoration: none;
     color: var(--ui-text-2);
     font-size: 0.82rem;
@@ -195,7 +195,7 @@ include 'header.inc.php';
 }
 
 .home-more-item .home-more-status {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     color: var(--ui-text-3);
     white-space: nowrap;
 }
@@ -231,14 +231,13 @@ include 'header.inc.php';
 
 .home-card:hover .home-card-arrow {
     color: var(--ui-akzent-dunkel);
-    transform: translateX(3px);
 }
 
 /* Aufgaben – «Das wartet auf dich», offen, sobald es etwas zu tun gibt */
 .home-tasks {
     background: var(--ui-warn-zeile);
     border: 1px solid var(--ui-warn-rand);
-    border-radius: 0.5rem;
+    border-radius: 10px;
     padding: 0.6rem 0.75rem;
     margin-bottom: 1rem;
 }
@@ -277,10 +276,10 @@ include 'header.inc.php';
 }
 
 .home-tasks-count {
-    background: var(--ui-warn-punkt);
-    color: #fff;
+    background: var(--ui-warn-bg);
+    color: var(--ui-warn-fg);
     border-radius: 999px;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 600;
     padding: 0.05rem 0.4rem;
 }
@@ -297,7 +296,7 @@ include 'header.inc.php';
     text-decoration: none;
     color: var(--ui-text-2);
     font-size: 0.82rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid var(--ui-linie);
 }
 
 .home-task:last-child a {
@@ -313,7 +312,7 @@ include 'header.inc.php';
 }
 
 .home-task-icon {
-    color: #d97706;
+    color: var(--ui-warn-punkt);
     font-size: 0.9rem;
 }
 
@@ -326,10 +325,10 @@ include 'header.inc.php';
 }
 
 .home-task-badge {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     color: var(--ui-warn-fg);
     background: var(--ui-warn-bg);
-    border-radius: 0.25rem;
+    border-radius: 6px;
     padding: 0.1rem 0.35rem;
     white-space: nowrap;
 }
@@ -355,7 +354,7 @@ include 'header.inc.php';
 }
 
 .home-panel {
-    background: #fff;
+    background: var(--ui-flaeche);
     border: 1px solid var(--ui-rand);
     border-radius: var(--ui-rad-l);
     padding: 0.75rem 0.9rem;
@@ -380,7 +379,7 @@ include 'header.inc.php';
     padding: 0.32rem 0;
     font-size: 0.82rem;
     color: var(--ui-text-2);
-    border-bottom: 1px solid rgba(0,0,0,0.04);
+    border-bottom: 1px solid var(--ui-linie-zart);
 }
 
 .home-panel-row:last-child {
@@ -404,7 +403,7 @@ include 'header.inc.php';
 }
 
 .home-panel-tag {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     color: var(--ui-text-3);
     white-space: nowrap;
 }

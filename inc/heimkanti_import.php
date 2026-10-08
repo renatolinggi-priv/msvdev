@@ -188,7 +188,6 @@ const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 <script>
 // 3-Phasen Workflow Initialisierung
 $(document).ready(function() {
-    console.log('Initializing 3-Phase CSV Import Workflow');
     FileHandler.init();
     ImportManager.init();
     

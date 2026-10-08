@@ -139,7 +139,6 @@ require_once __DIR__ . '/csrf.inc.php';
     document.addEventListener('DOMContentLoaded', function() {
         var redirectButton = document.getElementById('redirect-btn');
         redirectButton.addEventListener('click', function() {
-            console.log('Button clicked, redirecting...');
             window.location.href = 'kantiresultate.php';
         });
     });
@@ -150,7 +149,6 @@ require_once __DIR__ . '/csrf.inc.php';
         // Kantiresultate A laden
         function loadKantonala() {
             var selectedYear = $('#yearSelect').val();
-            console.log('Loading Kantonal A for year:', selectedYear); // Debug-Ausgabe
             $.ajax({
                 url: basePath + 'kantirang/load_kantonal.php',
                 type: 'GET',
@@ -159,7 +157,6 @@ require_once __DIR__ . '/csrf.inc.php';
                     kat: 'A'
                 },
                 success: function(response) {
-                    console.log('Kantonal A response:', response); // Debug-Ausgabe
                     $('#KantonalA tbody').html(response);
                     // Mobile Cards generieren
                     buildMobileCardsKatA();
@@ -173,7 +170,6 @@ require_once __DIR__ . '/csrf.inc.php';
         // Kantiresultate B laden
         function loadKantonalb() {
             var selectedYear = $('#yearSelect').val();
-            console.log('Loading Kantonal B for year:', selectedYear); // Debug-Ausgabe
             $.ajax({
                 url: basePath + 'kantirang/load_kantonal.php',
                 type: 'GET',
@@ -182,7 +178,6 @@ require_once __DIR__ . '/csrf.inc.php';
                     kat: 'B'
                 },
                 success: function(response) {
-                    console.log('Kantonal B response:', response); // Debug-Ausgabe
                     $('#KantonalB tbody').html(response);
                     // Mobile Cards generieren
                     buildMobileCardsKatB();
@@ -233,7 +228,6 @@ require_once __DIR__ . '/csrf.inc.php';
 
         // Event Handler für Jahr-Dropdown
         $('#yearSelect').on('change', function() {
-            console.log('Year changed to:', $(this).val()); // Debug-Ausgabe
             loadKantonala();
             loadKantonalb();
         });

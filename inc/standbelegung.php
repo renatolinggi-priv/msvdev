@@ -28,7 +28,7 @@ $sbInit = json_encode([
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-narrow">
-                <?php $page_title = 'Standbelegung'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Standbelegung'; $page_show_mobile = true; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">

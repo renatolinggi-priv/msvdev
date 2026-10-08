@@ -4,20 +4,12 @@ require_once 'config.php';
 require_once 'csrf.inc.php';
 
 $page_specific_css = '
-    .workflow-phase { animation: tpFadeIn 0.3s ease-in-out; }
-    @keyframes tpFadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
     /* Upload-Fläche (.upload-area) und Lade-Overlay kommen aus css/msv-ui.css */
     .upload-area { margin-bottom: 2rem; }
     .loading-spinner .spinner-border { width: 3rem; height: 3rem; }
-    .stich-preview-card {
-        border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;
-        background: #fff; transition: all 0.3s ease;
-    }
-    .stich-preview-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .stich-preview-card h5 { color: #007bff; margin-bottom: 0.5rem; }
+    /* Vorschau je Stich: flache Karte wie die Erfassungskarten (kein Anheben, kein Schatten) */
+    .stich-preview-card { margin-bottom: 12px; padding: 12px 14px; background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: 10px; }
+    .stich-preview-card h5 { margin-bottom: 0.5rem; font-size: 0.95rem; font-weight: 600; color: var(--ui-text); }
     .stich-preview-card .badge { margin-right: 0.5rem; }
     @media (max-width: 768px) {
         .stich-preview-card { font-size: 0.9rem; }

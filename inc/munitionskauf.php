@@ -6,10 +6,10 @@ require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_c
 
 $page_specific_css = '
 /* === MUNITIONSKAUF TABS (Segment-Schalter wie .ui-filter) === */
-.msv-tabs { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 14px; background: #f1f4f8; border-radius: 8px; }
+.msv-tabs { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 14px; background: var(--ui-linie-zart); border-radius: 8px; }
 .msv-tab { height: 30px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--ui-text); font-size: .82rem; font-weight: 600; cursor: pointer; }
 .msv-tab:hover { background: rgba(255, 255, 255, .65); }
-.msv-tab.active { background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+.msv-tab.active { background: var(--ui-flaeche); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
 
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
@@ -35,7 +35,7 @@ $page_specific_css = '
 .compact-form-row .form-group label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     margin-bottom: 0.2rem;
     display: block;
     white-space: nowrap;
@@ -57,7 +57,7 @@ $page_specific_css = '
 .kaeufer-row .form-group label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     margin-bottom: 0.2rem;
     display: block;
     white-space: nowrap;
@@ -66,7 +66,7 @@ $page_specific_css = '
 .kaeufer-row .separator {
     padding-bottom: 0.35rem;
     font-size: 0.8rem;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     font-weight: 500;
     flex-shrink: 0;
 }
@@ -83,7 +83,7 @@ $page_specific_css = '
 .munitions-section > h6 {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     margin-bottom: 0.75rem;
 }
 
@@ -94,7 +94,7 @@ $page_specific_css = '
 }
 
 .munitions-col {
-    background: #fff;
+    background: var(--ui-flaeche);
     border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.75rem;
@@ -103,12 +103,12 @@ $page_specific_css = '
 .munitions-col h6 {
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     margin-bottom: 0.5rem;
 }
 
 .paket-check:checked + label {
-    color: var(--success-color);
+    color: var(--ui-akzent-dunkel);
     font-weight: 600;
 }
 
@@ -128,7 +128,7 @@ $page_specific_css = '
 }
 
 .total-actions-row .total-bar {
-    background: #fff;
+    background: var(--ui-flaeche);
     border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.45rem 0.75rem;
@@ -142,7 +142,7 @@ $page_specific_css = '
 .total-actions-row .total-bar .total-amount {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--dark-color);
+    color: var(--ui-text);
 }
 
 .total-actions-row .action-buttons {
@@ -167,7 +167,7 @@ $page_specific_css = '
 
 .stats-card-inner h6 {
     font-weight: 600;
-    color: var(--dark-color);
+    color: var(--ui-text);
     margin-bottom: 0.75rem;
     font-size: 0.85rem;
 }
@@ -179,8 +179,8 @@ $page_specific_css = '
     font-size: 0.83rem;
 }
 
-.stat-row + .stat-row { border-top: 1px solid #eee; }
-.stat-row strong { color: var(--secondary-color); }
+.stat-row + .stat-row { border-top: 1px solid var(--ui-linie-zart); }
+.stat-row strong { color: var(--ui-text-2); }
 
 .stat-row.stat-total {
     border-top: 2px solid var(--ui-rand);
@@ -189,7 +189,7 @@ $page_specific_css = '
 }
 
 .stat-row.stat-total strong {
-    color: var(--dark-color);
+    color: var(--ui-text);
     font-size: 1rem;
 }
 
@@ -201,7 +201,7 @@ $page_specific_css = '
     font-size: 0.82rem;
 }
 
-.top-buyer-item + .top-buyer-item { border-top: 1px solid #eee; }
+.top-buyer-item + .top-buyer-item { border-top: 1px solid var(--ui-linie-zart); }
 
 .top-buyer-rank {
     display: inline-flex;
@@ -211,9 +211,9 @@ $page_specific_css = '
     height: 20px;
     border-radius: 50%;
     background: var(--ui-rand);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     margin-right: 0.5rem;
 }
 
@@ -229,7 +229,7 @@ $page_specific_css = '
 }
 
 .ammo-summary-card {
-    background: #fff;
+    background: var(--ui-flaeche);
     border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.75rem;
@@ -238,7 +238,7 @@ $page_specific_css = '
 
 .ammo-summary-card .ammo-type {
     font-size: 0.75rem;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -246,12 +246,12 @@ $page_specific_css = '
 .ammo-summary-card .ammo-count {
     font-size: 1.4rem;
     font-weight: 700;
-    color: var(--dark-color);
+    color: var(--ui-text);
 }
 
 .ammo-summary-card .ammo-detail {
     font-size: 0.75rem;
-    color: var(--secondary-color);
+    color: var(--ui-text-2);
 }
 
 /* === ERFASSUNG: Formular + Käufe-Tabelle nebeneinander (breite Monitore) === */
@@ -297,7 +297,7 @@ $page_specific_css = '
 #mitgliedSelect + .select2-container { width: 100% !important; }
 #mitgliedSelect + .select2-container .select2-selection--single {
     height: calc(1.5em + 0.5rem + 2px) !important;
-    border-color: #ced4da;
+    border-color: var(--ui-feldrand);
     display: flex;
     align-items: center;
 }
@@ -333,7 +333,7 @@ $page_specific_css = '
     position: sticky;
     top: 0;
     z-index: 6;
-    background: var(--light-color);
+    background: var(--ui-flaeche-2);
     border-bottom: none;
     box-shadow: inset 0 -2px 0 var(--ui-rand);
 }
@@ -451,12 +451,12 @@ $page_specific_css = '
     .filter-pill {
         flex-shrink: 0;
         padding: 0.5rem 1rem;
-        border-radius: 2rem;
+        border-radius: 999px;
         font-size: 0.82rem;
         font-weight: 500;
         border: 1px solid var(--ui-rand);
-        background: #fff;
-        color: var(--secondary-color);
+        background: var(--ui-flaeche);
+        color: var(--ui-text-2);
         white-space: nowrap;
         min-height: 44px;
         display: flex;
@@ -465,9 +465,9 @@ $page_specific_css = '
     }
 
     .filter-pill.active {
-        background: var(--secondary-color);
-        color: #fff;
-        border-color: var(--secondary-color);
+        background: var(--ui-text-2);
+        color: var(--ui-flaeche);
+        border-color: var(--ui-text-2);
     }
 
     /* Mobile Stats Summary */
@@ -484,20 +484,20 @@ $page_specific_css = '
 
     .mobile-stats-bar .stat-item {
         font-size: 0.75rem;
-        color: var(--secondary-color);
+        color: var(--ui-text-2);
     }
 
     .mobile-stats-bar .stat-item strong {
         display: block;
         font-size: 0.95rem;
-        color: var(--dark-color);
+        color: var(--ui-text);
     }
 
     /* Mobile Card */
     .mobile-kauf-card {
-        background: #fff;
+        background: var(--ui-flaeche);
         border: 1px solid var(--ui-rand);
-        border-radius: 0.5rem;
+        border-radius: 10px;
         margin-bottom: 0.5rem;
         overflow: hidden;
     }
@@ -514,18 +514,18 @@ $page_specific_css = '
     .mobile-kauf-card-title {
         font-weight: 600;
         font-size: 0.9rem;
-        color: var(--dark-color);
+        color: var(--ui-text);
     }
 
     .mobile-kauf-card-subtitle {
         font-size: 0.75rem;
-        color: var(--secondary-color);
+        color: var(--ui-text-2);
     }
 
     .mobile-kauf-card-badge {
         font-size: 0.85rem;
         font-weight: 700;
-        color: var(--secondary-color);
+        color: var(--ui-text-2);
     }
 
     .mobile-kauf-card-body {
@@ -540,7 +540,7 @@ $page_specific_css = '
     }
 
     .mobile-kauf-card-row + .mobile-kauf-card-row {
-        border-top: 1px solid #f5f5f5;
+        border-top: 1px solid var(--ui-linie-zart);
     }
 
     .mobile-kauf-card-actions {
@@ -568,12 +568,12 @@ $page_specific_css = '
         left: 0.85rem;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--secondary-color);
+        color: var(--ui-text-2);
     }
 
     .mobile-total-footer {
-        background: #fff;
-        border: 2px solid var(--secondary-color);
+        background: var(--ui-flaeche);
+        border: 2px solid var(--ui-text-2);
         border-radius: 0.5rem;
         padding: 0.6rem 1rem;
         margin-top: 0.5rem;
@@ -801,7 +801,7 @@ include 'header.inc.php';
               <div class="small">
                 GP11: <strong id="mobileFooterGP11">0</strong> ·
                 GP90: <strong id="mobileFooterGP90">0</strong> ·
-                <strong style="color: var(--secondary-color);" id="mobileFooterPreis">CHF 0</strong>
+                <strong style="color: var(--ui-text-2);" id="mobileFooterPreis">CHF 0</strong>
               </div>
             </div>
           </div>
@@ -844,7 +844,7 @@ include 'header.inc.php';
 
           <!-- Munitionsverbrauch -->
           <div style="margin-top: 1rem;">
-            <h6 style="font-size: 0.85rem; font-weight: 600; color: var(--dark-color); margin-bottom: 0.5rem;">
+            <h6 style="font-size: 0.85rem; font-weight: 600; color: var(--ui-text); margin-bottom: 0.5rem;">
               <i class="bi bi-box-seam me-2"></i>Munitionsverbrauch (Jahr)
             </h6>
             <div class="ammo-summary">
