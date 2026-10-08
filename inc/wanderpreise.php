@@ -5,70 +5,34 @@ require_once 'dbconnect.inc.php';
 require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 
-// Alle Styles sind jetzt zentral in msv-styles.css verwaltet
+// Seiten-CSS: nur Aufbau dieser Seite; Kopf-Card, Tabellen-Card, Filter, Status und Leerzustand aus css/msv-ui.css
 $page_specific_css = "
-/* === MOBILE OPTIMIZATION === */
+/* Kurze Liste: die Seite scrollt, nicht die Tabelle (globale Mindest-/Maximalhöhe aus resultate-unified.css aufheben) */
+#wanderpreisTableContainer .table-responsive { max-height: none !important; min-height: 0 !important; overflow-y: visible !important; }
+/* Tabelle läuft randlos in der Tabellen-Card; Aussenspalten bündig mit dem Kartenkopf */
+#wanderpreiseTable { margin: 0; }
+#wanderpreiseTable th, #wanderpreiseTable td { padding: 10px 12px; vertical-align: middle; }
+#wanderpreiseTable th:first-child, #wanderpreiseTable td:first-child { padding-left: var(--ui-pad); width: 38%; text-align: left; font-weight: 400; background-color: transparent; }
+#wanderpreiseTable th:last-child, #wanderpreiseTable td:last-child { padding-right: var(--ui-pad); }
+#wanderpreiseTable tbody tr.wanderpreis-row { cursor: pointer; }
+
+/* Name öffnet die Historie (Knopf, damit per Tastatur erreichbar), darunter die Nebenzeile */
+.wp-name { padding: 0; border: 0; background: none; font-weight: 600; color: var(--ui-text); text-align: left; }
+.wp-name:hover, .wp-name:focus-visible { color: var(--ui-akzent-dunkel); text-decoration: underline; text-underline-offset: 3px; }
+.wp-meta, .wp-sub { display: block; margin-top: 2px; font-size: .8rem; color: var(--ui-text-2); }
+.wp-meta { color: var(--ui-text-3); }
+.wp-gewinner { font-weight: 600; color: var(--ui-text); }
+.wp-sub.wp-definitiv { color: var(--ui-ok-fg); font-weight: 600; }
+tr.wp-ausser > td, .wp-karte.wp-ausser { color: var(--ui-text-2); }
+tr.wp-ausser .wp-name { font-weight: 500; color: var(--ui-text-2); }
+.wp-aktionen { width: 1%; white-space: nowrap; text-align: right; }
+
+/* Handy: Karten statt Tabelle (mobile-cards.css), Suche über die ganze Breite */
+.wp-karte .mobile-card-header { align-items: flex-start; gap: 10px; }
+.wp-karte .mobile-card-value { text-align: right; }
 @media (max-width: 767.98px) {
-    /* Desktop-Tabelle ausblenden */
-    .desktop-table-container {
-        display: none !important;
-    }
-
-    /* Mobile Cards anzeigen */
-    .mobile-cards-container {
-        display: block !important;
-    }
-
-    /* Button-Anpassungen für Mobile */
-    .row.g-2.mb-3 .col-6,
-    .row.g-2.mb-3 .col-md-4,
-    .row.g-2.mb-3 .col-lg-3,
-    .row.g-2.mb-4 .col-6,
-    .row.g-2.mb-4 .col-md-4,
-    .row.g-2.mb-4 .col-lg-3 {
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
-
-    .btn-compact {
-        min-height: 48px !important;
-        font-size: 14px !important;
-        padding: 0.5rem 0.625rem !important;
-    }
-
-    /* Container-Anpassungen */
-    .main-content-wrapper {
-        padding: 0.5rem;
-    }
-
-    .content-background {
-        padding: 0.5rem;
-    }
-}
-
-/* Desktop: Mobile Cards ausblenden */
-@media (min-width: 768px) {
-    .mobile-cards-container {
-        display: none !important;
-    }
-}
-
-/* === TABELLEN-DARSTELLUNG an andere Seiten angleichen === */
-#wanderpreiseTable { font-size: 0.85rem; }
-#wanderpreiseTable thead th {
-    font-size: 0.75rem;
-    padding: 0.75rem;
-}
-#wanderpreiseTable th,
-#wanderpreiseTable td { padding: 0.5rem 0.75rem; }
-#wanderpreiseTable td small { font-size: 0.75rem; }
-/* Erste Spalte ist der Name (kein Rang) -> globale Rang-Optik aufheben */
-#wanderpreiseTable th:first-child,
-#wanderpreiseTable td:first-child {
-    width: auto;
-    text-align: left;
-    font-weight: 400;
-    background-color: transparent;
+    .ui-tab-kopf .ui-suche { width: 100%; margin-left: 0; height: 40px; }
+    .mobile-cards-scroll { padding: 10px; }
 }
 ";
 
@@ -94,13 +58,18 @@ if (WANDERPREISE_DEBUG) {
                 <!-- Header ausserhalb des inneren Containers -->
                 <?php
                 $page_title = 'Wanderpreise';
-                $page_title_after = '<button type="button" class="btn-help" data-help="wanderpreise.uebersicht" aria-label="Hilfe"></button>';
+                $page_title_after = '<button type="button" class="btn-help" data-help="wanderpreise.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                // Zweite Zeile: Stand für das gewählte Jahr (füllt das Skript nach dem Laden)
+                $page_extra = '<div class="ui-fortschritt" id="wpFortschritt"><span class="ui-zahl" id="wpStandText">…</span>'
+                    . '<span class="ui-balken" aria-hidden="true"><span id="wpBalken"></span></span></div>'
+                    . '<div class="ui-chips" id="wpChips"></div>';
+                $page_show_mobile = true;
                 ob_start(); ?>
 <button type="button" class="btn-help" data-help="wanderpreise.aktionen" aria-label="Hilfe zu den Aktionen"></button>
-<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#addWanderpreisModal"><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
-<button type="button" id="zuordnungButton" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#zuordnungModal"><i class="bi bi-link-45deg me-1"></i>Zuordnen</button>
-<button type="button" id="autoZuordnungButton" class="btn btn-outline-primary btn-sm"><i class="bi bi-magic me-1"></i>Auto-Zuordnung</button>
-<button type="button" id="vergangeneGewinnerButton" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal"><i class="bi bi-clock-history me-1"></i>Historie</button>
+<button type="button" id="autoZuordnungButton" class="btn btn-outline-primary btn-sm" data-tooltip="Gewinner aller Preise mit Regel für das gewählte Jahr ermitteln"><i class="bi bi-magic me-1" aria-hidden="true"></i>Auto-Zuordnung</button>
+<button type="button" id="zuordnungButton" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#zuordnungModal"><i class="bi bi-person-check me-1" aria-hidden="true"></i>Zuordnen</button>
 <div class="dropdown">
   <button type="button" class="btn btn-outline-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1"></i>Dokumente</button>
   <ul class="dropdown-menu dropdown-menu-end">
@@ -115,26 +84,38 @@ if (WANDERPREISE_DEBUG) {
     <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-akura"><i class="bi bi-file-earmark-pdf me-2"></i>Akura</button></li>
   </ul>
 </div>
+<div class="dropdown">
+  <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Weitere</button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addWanderpreisModal"><i class="bi bi-plus-circle me-2"></i>Wanderpreis anlegen</button></li>
+    <li><button type="button" id="vergangeneGewinnerButton" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal"><i class="bi bi-clock-history me-2"></i>Frühere Gewinner nachtragen</button></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="wanderpreise_regeln.php"><i class="bi bi-sliders me-2"></i>Wanderpreis-Regeln</a></li>
+  </ul>
+</div>
 <?php $page_actions = ob_get_clean();
                 include 'partials/page_header.inc.php'; ?>
 
-                <!-- Weisser Container für den Rest -->
-                <div class="content-background">
-
-
-                    <!-- Wanderpreise Liste -->
-                    <div class="table-wrapper mb-4">
-                        <div class="table-responsive">
-                            <div id="wanderpreisTableContainer">
-                                <div class="p-4 text-center">
-                                    <div class="spinner-border spinner-border-sm me-2"
-                                        style="color: var(--secondary-color);"></div>
-                                    Lade Wanderpreise...
-                                </div>
-                            </div>
+                <!-- Tabellen-Card: Stand je Preis für das gewählte Jahr -->
+                <section class="ui-karte" aria-labelledby="wpTabTitel">
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel" id="wpTabTitel">Wanderpreise <span id="wpTabJahr"></span></span>
+                        <div class="ui-filter" role="group" aria-label="Nach Stand filtern">
+                            <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="wpNAlle">0</span></button>
+                            <button type="button" data-filter="offen" aria-pressed="false">Offen <span id="wpNOffen">0</span></button>
+                            <button type="button" data-filter="vergeben" aria-pressed="false">Vergeben <span id="wpNVergeben">0</span></button>
+                            <button type="button" data-filter="ausser" aria-pressed="false" data-tooltip="Später angeschafft oder in einem früheren Jahr definitiv gewonnen">Nicht im Umlauf <span id="wpNAusser">0</span></button>
                         </div>
+                        <label class="ui-suche">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span class="visually-hidden">Wanderpreis oder Gewinner suchen</span>
+                            <input type="search" id="wpSuche" placeholder="Wanderpreis oder Gewinner" autocomplete="off">
+                        </label>
                     </div>
-                </div>
+                    <div id="wanderpreisTableContainer" aria-live="polite">
+                        <div class="ui-leerzustand"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Wanderpreise werden geladen …</div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -715,6 +696,7 @@ if (WANDERPREISE_DEBUG) {
             }
 
             $('#exportModalLabel').html('<i class="bi bi-download"></i> ' + exportTitle);
+            $('#modalExportJahr').val(wpJahr());
             $('#exportModal').modal('show');
         });
 
@@ -816,46 +798,88 @@ $('#startExport').on('click', function () {
         });
 
         // Wanderpreise laden
+        // Gewähltes Jahr (zentrale Jahresauswahl in der Kopf-Card)
+        function wpJahr() {
+            return parseInt($('#yearSelect').val(), 10) || new Date().getFullYear();
+        }
+
+        // Filter (Segment) und Suche wirken auf Tabelle und Handy-Karten gemeinsam
+        var wpFilter = 'alle';
+        function wpFilterAnwenden() {
+            var q = ($('#wpSuche').val() || '').trim().toLowerCase();
+            var $eintraege = $('#wanderpreiseTable tbody tr.wanderpreis-row, #mobileWanderpreiseCards .wp-karte');
+            var sichtbar = 0;
+            $eintraege.each(function () {
+                var ok = (wpFilter === 'alle' || this.getAttribute('data-status') === wpFilter)
+                      && (q === '' || this.textContent.toLowerCase().indexOf(q) !== -1);
+                this.hidden = !ok;
+                if (ok && this.tagName === 'TR') sichtbar++;
+            });
+            if (!$('#wanderpreiseTable').length) {   // Handy: Karten zählen
+                sichtbar = $('#mobileWanderpreiseCards .wp-karte').filter(function () { return !this.hidden; }).length;
+            }
+            var leer = {
+                offen: 'Für ' + wpJahr() + ' ist kein Wanderpreis mehr offen.',
+                vergeben: 'Für ' + wpJahr() + ' ist noch kein Wanderpreis vergeben.',
+                ausser: 'Alle Wanderpreise sind ' + wpJahr() + ' im Umlauf.'
+            };
+            var text = q !== '' ? 'Kein Wanderpreis passt zu «' + q + '».' : (leer[wpFilter] || 'Keine Wanderpreise in dieser Auswahl.');
+            $('.wp-keine').each(function () { this.hidden = sichtbar > 0; });
+            $('.wp-keine-text').text(text);
+        }
+
+        // Stand-Zeile in der Kopf-Card und Zähler im Filter
+        function wpStandZeigen() {
+            var d = document.getElementById('wpStandDaten');
+            var j = wpJahr();
+            $('#wpTabJahr').text(j);
+            if (!d) { $('#wpStandText').text(''); $('#wpChips').empty(); return; }
+            var n = { alle: +d.dataset.alle, offen: +d.dataset.offen, vergeben: +d.dataset.vergeben, ausser: +d.dataset.ausser };
+            $('#wpNAlle').text(n.alle); $('#wpNOffen').text(n.offen); $('#wpNVergeben').text(n.vergeben); $('#wpNAusser').text(n.ausser);
+            var imUmlauf = n.offen + n.vergeben;
+            if (imUmlauf === 0) {
+                $('#wpStandText').text('Für ' + j + ' ist kein Wanderpreis im Umlauf.');
+                $('#wpBalken').css('width', '0');
+            } else {
+                $('#wpStandText').html(n.vergeben + ' <span>von ' + imUmlauf + ' für ' + j + ' vergeben</span>');
+                $('#wpBalken').css('width', Math.round(100 * n.vergeben / imUmlauf) + '%');
+            }
+            $('#wpChips').html(n.offen > 0
+                ? '<span class="ui-chip"><span class="ui-punkt"></span><b>' + n.offen + '</b> offen</span>'
+                : (imUmlauf > 0 ? '<span class="ui-status ok"><span class="ui-punkt"></span>alle vergeben</span>' : ''));
+        }
+
         function loadWanderpreise() {
-            $('#wanderpreisTableContainer').html(`
-            <div class="p-4 text-center">
-                <div class="spinner-border spinner-border-sm me-2" style="color: var(--secondary-color);"></div>
-                Lade Wanderpreise...
-            </div>
-        `);
+            var j = wpJahr();
+            $('#wpTabJahr').text(j);
+            $('#wanderpreisTableContainer').html('<div class="ui-leerzustand"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Wanderpreise ' + j + ' werden geladen …</div>');
 
             $.ajax({
                 url: 'wanderpreise/load_wanderpreise.php',
                 method: 'GET',
+                data: { jahr: j },
                 success: function (response) {
-                    <?php if (WANDERPREISE_DEBUG): ?>
-                    console.log('Wanderpreis-Daten geladen:', response);
-                    <?php endif; ?>
                     $('#wanderpreisTableContainer').html(response);
-                    // Mobile Cards generieren
-                    if (typeof buildMobileWanderpreiseCards === 'function') {
-                        buildMobileWanderpreiseCards();
-                    }
-                    // Debug-Info nur in Development
-        <?php if (WANDERPREISE_DEBUG): ?>
-        console.log('Wanderpreise geladen');
-        <?php endif; ?>
+                    wpStandZeigen();
+                    wpFilterAnwenden();
                 },
-                error: function (xhr, status, error) {
-                    $('#wanderpreisTableContainer').html(`
-                    <div class="p-4 text-center text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Fehler beim Laden der Wanderpreise
-                    </div>
-                `);
-                    <?php if (WANDERPREISE_DEBUG): ?>
-                    console.error('Fehler beim Laden:', error);
-                    <?php else: ?>
-                    msvToast('Fehler beim Laden der Wanderpreise', 'error');
-                    <?php endif; ?>
+                error: function (xhr) {
+                    $('#wanderpreisTableContainer').html('<div class="ui-leerzustand text-danger"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>'
+                        + msvEsc(msvXhrMessage(xhr, 'Die Wanderpreise konnten nicht geladen werden.'))
+                        + '<div class="mt-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="wpNeuLaden">Nochmals laden</button></div></div>');
+                    $('#wpStandText').text(''); $('#wpChips').empty();
                 }
             });
         }
+        $(document).on('click', '#wpNeuLaden', function () { loadWanderpreise(); });
+
+        $('.ui-filter [data-filter]').on('click', function () {
+            wpFilter = this.getAttribute('data-filter');
+            $('.ui-filter [data-filter]').attr('aria-pressed', 'false');
+            this.setAttribute('aria-pressed', 'true');
+            wpFilterAnwenden();
+        });
+        $('#wpSuche').on('input', wpFilterAnwenden);
 
         // Neuen Wanderpreis hinzufügen
         // >>> PATCH: zuverlässiger Submit ohne doppeltes JSON.parse + disabled-Felder
@@ -979,6 +1003,11 @@ $('#startExport').on('click', function () {
             });
         }
 
+        // Zuordnen schlägt das gewählte Jahr vor
+        $('#zuordnungModal').on('show.bs.modal', function () {
+            $('#modal_jahr').val(wpJahr());
+        });
+
         // Modal-Events für Select2
         $('#zuordnungModal, #vergangeneGewinnerModal').on('shown.bs.modal', function () {
             // Select2 re-initialisieren wenn Modal geöffnet wird
@@ -1094,7 +1123,7 @@ $('#startExport').on('click', function () {
 
         // 1) Klick auf Haupt-Button: Modal öffnen, Jahr anzeigen
         $('#autoZuordnungButton').off('click').on('click', function () {
-            var jahr = $('#jahrSelect').val() || new Date().getFullYear();
+            var jahr = wpJahr();   // gewähltes Jahr der Seite (vorher: Kalenderjahr)
             $('#autoZuordnungModal .auto-year').text(jahr);
 
             // Jahr & Trigger-Button am Confirm-Button hinterlegen
@@ -1135,8 +1164,8 @@ $('#startExport').on('click', function () {
                 msvToast('Fehler: Keine Wanderpreis-ID vorhanden.', 'error');
                 return;
             }
-            const name = $(this).closest('tr').data('bezeichnung') || 'diesen Wanderpreis';
-            msvConfirmDelete(name).then(function (res) {
+            const name = $(this).closest('[data-bezeichnung]').data('bezeichnung') || 'diesen Wanderpreis';
+            msvConfirmDelete(msvEsc(name)).then(function (res) {
                 if (!res.isConfirmed) return;
 
                 const csrf = $('input[name="csrf_token"]').val() || window.CSRF_TOKEN || '';
@@ -1171,8 +1200,8 @@ $('#startExport').on('click', function () {
             e.preventDefault();
             e.stopPropagation(); // Damit der Zeilenklick nicht doppelt feuert
             const id = $(this).data('id');
-            // Versuche Bezeichnung aus der Zeile zu nehmen (schön für Modal-Titel)
-            const bezeichnung = $(this).closest('tr').data('bezeichnung') || '';
+            // Bezeichnung aus Zeile bzw. Handy-Karte (für den Modal-Titel)
+            const bezeichnung = $(this).closest('[data-bezeichnung]').data('bezeichnung') || '';
             if (id) {
                 loadWanderpreisHistorie(id, bezeichnung);
                 $('#wanderpreisHistorieModal').modal('show');
@@ -1461,7 +1490,9 @@ $('#startExport').on('click', function () {
             }
         });
 
-        // Initial laden
+        // Initial laden: zentrale Jahresauswahl (merkt sich das Jahr seitenübergreifend)
+        msvJahrAuswahl('#yearSelect');
+        $('#yearSelect').on('change', loadWanderpreise);
         loadWanderpreise();
         loadWanderpreiseForModal();
         loadMitgliederForModal();
@@ -1660,95 +1691,6 @@ $('#startExport').on('click', function () {
             });
         });
     });
-
-    // Mobile Cards für Wanderpreise generieren
-    function buildMobileWanderpreiseCards() {
-        const isMobile = window.matchMedia('(max-width: 767.98px)');
-        if (!isMobile.matches) return;
-
-        const table = document.querySelector('#wanderpreiseTable');
-        if (!table) return;
-
-        const container = document.querySelector('#mobileWanderpreiseCards .mobile-cards-scroll');
-        if (!container) return;
-
-        container.innerHTML = '';
-        const rows = table.querySelectorAll('tbody tr');
-
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 6) return;
-
-            // Wanderpreis Info (enthält Bezeichnung + Beschreibung + Anschaffung)
-            const wanderpreisCell = cells[0];
-            const bezeichnung = wanderpreisCell.querySelector('strong')
-                ? wanderpreisCell.querySelector('strong').textContent.trim()
-                : wanderpreisCell.textContent.split('\n')[0].trim();
-
-            const hersteller = cells[1].textContent.trim();
-            const aktuellerGewinner = cells[2].textContent.trim();
-            const gewinnerHistorie = cells[3].textContent.trim();
-            const minGewinne = cells[4].querySelector('.badge')
-                ? cells[4].querySelector('.badge').textContent.trim()
-                : cells[4].textContent.trim();
-
-            // Buttons extrahieren
-            const editBtn = cells[5].querySelector('.edit-wanderpreis');
-            const viewBtn = cells[5].querySelector('.view-gewinner');
-            const deleteBtn = cells[5].querySelector('.delete-wanderpreis');
-
-            const wanderpreisId = editBtn ? editBtn.getAttribute('data-id') : '';
-
-            const card = document.createElement('div');
-            card.className = 'mobile-card';
-            card.innerHTML = `
-                <div class="mobile-card-header">
-                    <div class="mobile-card-title">${bezeichnung}</div>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-primary btn-sm edit-wanderpreis" data-id="${wanderpreisId}">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-outline-info btn-sm view-gewinner" data-id="${wanderpreisId}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm delete-wanderpreis" data-id="${wanderpreisId}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="mobile-card-body">
-                    <div class="mobile-card-row">
-                        <span class="mobile-card-label"><i class="bi bi-building me-1"></i>Hersteller:</span>
-                        <span class="mobile-card-value">${hersteller}</span>
-                    </div>
-                    <div class="mobile-card-row">
-                        <span class="mobile-card-label"><i class="bi bi-person-check me-1"></i>Aktuell:</span>
-                        <span class="mobile-card-value">${aktuellerGewinner}</span>
-                    </div>
-                    <div class="mobile-card-row">
-                        <span class="mobile-card-label"><i class="bi bi-trophy me-1"></i>Historie:</span>
-                        <span class="mobile-card-value">${gewinnerHistorie}</span>
-                    </div>
-                    <div class="mobile-card-row">
-                        <span class="mobile-card-label"><i class="bi bi-hash me-1"></i>Min. Gewinne:</span>
-                        <span class="mobile-card-value">${minGewinne}</span>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    // Global filterMobileWanderpreise function
-    window.filterMobileWanderpreise = function(searchInput) {
-        const searchTerm = searchInput.value.toLowerCase();
-        const cards = document.querySelectorAll('#mobileWanderpreiseCards .mobile-card');
-
-        cards.forEach(card => {
-            const text = card.textContent.toLowerCase();
-            card.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
-    };
 
     // Debug-Info am Seitenende
     <?php if (WANDERPREISE_DEBUG): ?>

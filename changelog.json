@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.57.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Wanderpreise: Stand fürs gewählte Jahr auf einen Blick",
+        "beschreibung": "Die Seite Wanderpreise hat eine Jahresauswahl und zeigt oben, wie viele der Preise im Umlauf für dieses Jahr schon einen Gewinner haben (Balken und Anzahl offen). Die Liste ordnet sich danach: offene Preise zuerst und hell hinterlegt, dann vergebene mit Gewinner, Rang und Stand «Sieg 2 von 10» (ab wie vielen Siegen der Preis definitiv in den Besitz übergeht), zuletzt Preise, die nicht im Umlauf sind (später angeschafft oder früher definitiv gewonnen). Eine Spalte zeigt den Gewinner des Vorjahres. Filter (Alle, Offen, Vergeben, Nicht im Umlauf) und Suche grenzen die Liste ein, auch auf dem Handy. Hersteller und Anschaffungsjahr stehen als Nebenzeile beim Namen; ein Klick auf den Namen öffnet die Historie. Oben stehen Auto-Zuordnung, Zuordnen und Dokumente; Anlegen, Frühere Gewinner nachtragen und die Regeln sind unter «Weitere». Behoben: Die Auto-Zuordnung nahm immer das Kalenderjahr, jetzt das gewählte Jahr; auch Zuordnen und Dokumente schlagen das gewählte Jahr vor. Braucht die Datenbank-Aktualisierung 090 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.56.0",
     "datum": "2026-10-08",
     "aenderungen": [

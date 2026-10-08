@@ -1,159 +1,159 @@
 <?php
-// load_wanderpreise.php
+// load_wanderpreise.php – Wanderpreise mit ihrem Stand für ein Jahr (HTML-Fragment für wanderpreise.php).
+// Stand je Preis, gleiche Regel wie «Absenden vorbereiten» (endschrang/absenden_bereit.php):
+//   im Umlauf = bis zum Jahr angeschafft und nicht in einem früheren Jahr definitiv gewonnen
+//   vergeben  = für das Jahr ist ein Gewinner eingetragen
+//   offen     = im Umlauf, aber noch ohne Gewinner für das Jahr
+//   ausser    = nicht im Umlauf (später angeschafft oder früher definitiv gewonnen)
+// Reihenfolge: offen, vergeben, ausser – zuerst steht, was jetzt ansteht.
 require_once 'wanderpreise_config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('html');
 require_once '../dbconnect.inc.php';
 
+$aktuell = (int)date('Y');
+$jahr = (int)($_GET['jahr'] ?? $aktuell);
+if ($jahr < 1990 || $jahr > $aktuell + 1) $jahr = $aktuell;
+
+$h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+
 try {
-    // SQL Query aufbauen
-    $sql = "SELECT
-                w.id,
-                w.bezeichnung,
-                w.beschreibung,
-                w.beschaffung_datum,
-                w.min_anzahl_gewinne,
-                w.hersteller,
-                w.created_at,
-                COUNT(wg.id) as anzahl_gewinner,
-                MAX(wg.jahr) as letztes_jahr,
-                COALESCE(aktueller_gewinner.gewinner_name, 'Nicht vergeben') as aktueller_gewinner,
-                COALESCE(aktueller_gewinner.jahr, 0) as aktueller_gewinner_jahr
-            FROM wanderpreise w
-            LEFT JOIN wanderpreise_gewinner wg ON w.id = wg.wanderpreis_id
-            LEFT JOIN (
-                SELECT
-                    wg2.wanderpreis_id,
-                    CONCAT(m.Name, ' ', m.Vorname) as gewinner_name,
-                    wg2.jahr
-                FROM wanderpreise_gewinner wg2
-                INNER JOIN mitglieder m ON wg2.gewinner_id = m.ID
-                INNER JOIN (
-                    SELECT wanderpreis_id, MAX(jahr) as max_jahr
-                    FROM wanderpreise_gewinner
-                    GROUP BY wanderpreis_id
-                ) latest ON wg2.wanderpreis_id = latest.wanderpreis_id
-                         AND wg2.jahr = latest.max_jahr
-            ) aktueller_gewinner ON w.id = aktueller_gewinner.wanderpreis_id
-            GROUP BY w.id
-            ORDER BY w.bezeichnung";
-    
-    $result = $conn->query($sql);
-    
-    if ($result && $result->num_rows > 0) {
-        // Desktop: Tabelle
-        echo '<div class="desktop-table-container">';
-        echo '<table class="table table-hover" id="wanderpreiseTable">
-                <thead>
-                    <tr>
-                        <th>Wanderpreis</th>
-                        <th>Hersteller</th>
-                        <th>Aktueller Gewinner</th>
-                        <th>Gewinner-Historie</th>
-                        <th>Min. Gewinne</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>';
-        
-        while ($row = $result->fetch_assoc()) {
-            $anschaffung_jahr = $row['beschaffung_datum']; // Jetzt nur Jahr gespeichert
-            $gewinner_info = $row['aktueller_gewinner'];
-            if ($row['aktueller_gewinner_jahr'] > 0) {
-                $gewinner_info .= ' (' . $row['aktueller_gewinner_jahr'] . ')';
-            }
-            
-            echo '<tr class="wanderpreis-row" ' .
-     'data-wanderpreis-id="' . (int)$row['id'] . '" ' .
-     'data-bezeichnung="' . htmlspecialchars($row['bezeichnung'], ENT_QUOTES, 'UTF-8') . '" ' .
-     'style="cursor:pointer;">';
+    $preise = $conn->query(
+        "SELECT id, bezeichnung, beschreibung, beschaffung_datum, min_anzahl_gewinne, hersteller
+           FROM wanderpreise ORDER BY bezeichnung"
+    )->fetch_all(MYSQLI_ASSOC);
 
-            echo '<td><strong>' . htmlspecialchars($row['bezeichnung']) . '</strong>';
-            if (!empty($row['beschreibung'])) {
-                echo '<br><small class="text-muted">' . htmlspecialchars(substr($row['beschreibung'], 0, 60)) .
-                     (strlen($row['beschreibung']) > 60 ? '...' : '') . '</small>';
-            }
-            echo '<br><small class="text-info">Anschaffung: ' . $anschaffung_jahr . '</small>';
-            echo '</td>';
-            
-            // Hersteller-Spalte
-            echo '<td>';
-            if (!empty($row['hersteller'])) {
-                echo '<strong>' . htmlspecialchars($row['hersteller']) . '</strong>';
-            } else {
-                echo '<span class="text-muted">Nicht angegeben</span>';
-            }
-            echo '</td>';
-            echo '<td>' . htmlspecialchars($gewinner_info) . '</td>';
-            echo '<td>';
-            if ($row['anzahl_gewinner'] > 0) {
-                echo '<i class="bi bi-trophy me-1"></i>' . $row['anzahl_gewinner'] . ' Gewinner';
-                if ($row['letztes_jahr']) {
-                    echo '<br><small class="text-muted">Zuletzt: ' . $row['letztes_jahr'] . '</small>';
-                }
-            } else {
-                echo '<span class="text-muted">Noch keine Gewinner</span>';
-            }
-            echo '</td>';
-            echo '<td><span class="badge bg-info">' . $row['min_anzahl_gewinne'] . 'x</span></td>';
-            echo '<td>';
-            echo '<div class="btn-group" role="group">';
-            echo '<button type="button" class="btn btn-outline-primary btn-icon edit-wanderpreis" 
-                         data-id="' . $row['id'] . '" data-tooltip="Bearbeiten">
-                     <i class="bi bi-pencil"></i>
-                  </button>';
-            echo '<button type="button" class="btn btn-outline-info btn-icon view-gewinner" 
-                         data-id="' . $row['id'] . '" data-tooltip="Gewinner anzeigen">
-                     <i class="bi bi-eye"></i>
-                  </button>';
-            echo '<button type="button" class="btn btn-outline-danger btn-icon delete-wanderpreis" 
-                         data-id="' . $row['id'] . '" data-tooltip="Löschen">
-                     <i class="bi bi-trash"></i>
-                  </button>';
-            echo '</div>';
-            echo '</td>';
-            echo '</tr>';
-        }
-        
-        echo '</tbody></table>';
-        echo '</div>'; // Ende desktop-table-container
+    // Alle Gewinne mit Namen auf einmal; pro Preis nach Jahr aufsteigend
+    $gewinne = [];
+    $r = $conn->query(
+        "SELECT g.wanderpreis_id, g.jahr, g.rang, g.ist_definitiv, g.anzahl_gewinne,
+                TRIM(CONCAT(COALESCE(m.Name, ''), ' ', COALESCE(m.Vorname, ''))) AS name
+           FROM wanderpreise_gewinner g
+           LEFT JOIN mitglieder m ON m.ID = g.gewinner_id
+          ORDER BY g.wanderpreis_id, g.jahr"
+    );
+    while ($g = $r->fetch_assoc()) $gewinne[(int)$g['wanderpreis_id']][] = $g;
 
-        // Mobile: Cards
-        echo '<div class="mobile-cards-container" id="mobileWanderpreiseCards">';
-        echo '<div class="mobile-search">';
-        echo '<div class="position-relative">';
-        echo '<i class="bi bi-search search-icon"></i>';
-        echo '<input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileWanderpreise(this)">';
-        echo '</div>';
-        echo '</div>';
-        echo '<div class="mobile-cards-scroll">';
-        echo '<!-- Cards werden per JavaScript generiert -->';
-        echo '</div>';
-        echo '</div>';
-
-        // Zusammenfassung
-        $result->data_seek(0); // Reset result pointer
-        $total_count = $result->num_rows;
-        
-        echo '<div class="mt-3 p-3 bg-light rounded">';
-        echo '<div class="row text-center">';
-        echo '<div class="col-md-12">';
-        echo '<strong>' . $total_count . '</strong> Wanderpreise erfasst';
-        echo '</div>';
-        echo '</div>';
-        echo '</div>';
-        
-    } else {
-        echo '<div class="p-4 text-center text-muted">';
-        echo '<i class="bi bi-inbox me-2"></i>';
-        echo 'Keine Wanderpreise gefunden.';
-        echo '</div>';
+    if (!$preise) {
+        echo '<div class="ui-leerzustand"><i class="bi bi-trophy" aria-hidden="true"></i>'
+           . 'Noch keine Wanderpreise erfasst. Unter «Weitere» › «Wanderpreis anlegen» den ersten anlegen.</div>';
+        exit;
     }
-    
-} catch (Exception $e) {
-    echo '<div class="p-4 text-center text-danger">';
-    echo '<i class="bi bi-exclamation-triangle me-2"></i>';
-    echo htmlspecialchars(msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e));
-    echo '</div>';
+
+    $zeilen = [];
+    foreach ($preise as $p) {
+        $id   = (int)$p['id'];
+        $min  = max(1, (int)$p['min_anzahl_gewinne']);
+        $alle = $gewinne[$id] ?? [];
+        $imJahr = null; $zuletzt = null; $definitivVorher = null;
+        foreach ($alle as $g) {
+            $gj = (int)$g['jahr'];
+            if ($gj === $jahr) $imJahr = $g;
+            if ($gj < $jahr) {
+                $zuletzt = $g;                                   // aufsteigend sortiert: der letzte gewinnt
+                if ((int)$g['ist_definitiv'] === 1) $definitivVorher = $g;
+            }
+        }
+        $angeschafft = (int)$p['beschaffung_datum'];
+        if ($imJahr)                          $status = 'vergeben';
+        elseif ($definitivVorher)             $status = 'ausser';
+        elseif ($angeschafft > $jahr)         $status = 'ausser';
+        else                                  $status = 'offen';
+        $zeilen[] = compact('p', 'id', 'min', 'imJahr', 'zuletzt', 'definitivVorher', 'angeschafft', 'status');
+    }
+    $rang = ['offen' => 0, 'vergeben' => 1, 'ausser' => 2];
+    usort($zeilen, fn($a, $b) => $rang[$a['status']] <=> $rang[$b['status']]
+        ?: strcasecmp($a['p']['bezeichnung'], $b['p']['bezeichnung']));
+
+    $n = ['alle' => count($zeilen), 'offen' => 0, 'vergeben' => 0, 'ausser' => 0];
+    foreach ($zeilen as $z) $n[$z['status']]++;
+
+    // Bausteine je Zeile (Tabelle und Handy-Karte nutzen dieselben Texte)
+    $teile = function (array $z) use ($h, $jahr) {
+        $p = $z['p'];
+        $meta = [];
+        if ($z['angeschafft'] > 0) $meta[] = 'seit ' . $z['angeschafft'];
+        if (!empty($p['hersteller'])) $meta[] = 'Hersteller ' . $h($p['hersteller']);
+        $siege = fn($g) => ((int)$g['ist_definitiv'] === 1)
+            ? '<span class="wp-sub wp-definitiv">definitiv gewonnen</span>'
+            : '<span class="wp-sub">Sieg ' . max(1, (int)$g['anzahl_gewinne']) . ' von ' . $z['min'] . '</span>';
+
+        if ($z['status'] === 'vergeben') {
+            $g = $z['imJahr'];
+            $stand = '<span class="wp-gewinner">' . $h($g['name'] ?: 'Mitglied unbekannt') . '</span>'
+                   . (trim((string)$g['rang']) !== '' ? '<span class="wp-sub">' . $h($g['rang']) . '</span>' : '')
+                   . $siege($g);
+        } elseif ($z['status'] === 'offen') {
+            $stand = '<span class="ui-status offen"><span class="ui-punkt"></span>offen</span>';
+        } elseif ($z['definitivVorher']) {
+            $d = $z['definitivVorher'];
+            $stand = '<span class="wp-sub">definitiv bei ' . $h($d['name']) . ' (' . (int)$d['jahr'] . ')</span>';
+        } else {
+            $stand = '<span class="wp-sub">angeschafft ' . $z['angeschafft'] . '</span>';
+        }
+
+        if ($z['zuletzt']) {
+            $g = $z['zuletzt'];
+            $zuletzt = '<span class="wp-gewinner-alt">' . $h($g['name'] ?: 'Mitglied unbekannt') . '</span>'
+                     . '<span class="wp-sub">' . (int)$g['jahr'] . ' · ' . strip_tags($siege($g)) . '</span>';
+        } else {
+            $zuletzt = '<span class="cell-empty">–</span>';
+        }
+        return [$meta ? implode(' · ', $meta) : '', $stand, $zuletzt];
+    };
+
+    // Zähler für Kopf, Filter und Fortschritt (liest wanderpreise.php)
+    echo '<div id="wpStandDaten" hidden data-jahr="' . $jahr . '" data-alle="' . $n['alle'] . '" data-offen="' . $n['offen']
+       . '" data-vergeben="' . $n['vergeben'] . '" data-ausser="' . $n['ausser'] . '"></div>';
+
+    // ---------- Desktop: Tabelle ----------
+    echo '<div class="desktop-table-container"><div class="table-responsive">';
+    echo '<table class="table table-hover mb-0" id="wanderpreiseTable">';
+    echo '<thead><tr><th scope="col">Wanderpreis</th><th scope="col">Gewinner ' . $jahr . '</th>'
+       . '<th scope="col">Zuletzt</th><th scope="col"><span class="visually-hidden">Aktionen</span></th></tr></thead><tbody>';
+    foreach ($zeilen as $z) {
+        [$meta, $stand, $zuletzt] = $teile($z);
+        $p = $z['p'];
+        $klasse = $z['status'] === 'offen' ? ' ui-offen' : ($z['status'] === 'ausser' ? ' wp-ausser' : '');
+        $tip = trim((string)$p['beschreibung']) !== '' ? ' data-tooltip="' . $h($p['beschreibung']) . '"' : '';
+        echo '<tr class="wanderpreis-row' . $klasse . '" data-wanderpreis-id="' . $z['id'] . '" data-status="' . $z['status']
+           . '" data-bezeichnung="' . $h($p['bezeichnung']) . '">';
+        echo '<td><button type="button" class="wp-name view-gewinner" data-id="' . $z['id'] . '"' . $tip . '>' . $h($p['bezeichnung']) . '</button>'
+           . ($meta !== '' ? '<span class="wp-meta">' . $meta . '</span>' : '') . '</td>';
+        echo '<td>' . $stand . '</td>';
+        echo '<td>' . $zuletzt . '</td>';
+        echo '<td class="wp-aktionen">'
+           . '<button type="button" class="btn btn-outline-primary btn-sm btn-icon edit-wanderpreis" data-id="' . $z['id'] . '" data-tooltip="Bearbeiten" aria-label="' . $h($p['bezeichnung']) . ' bearbeiten"><i class="bi bi-pencil" aria-hidden="true"></i></button> '
+           . '<button type="button" class="btn btn-outline-danger btn-sm btn-icon delete-wanderpreis" data-id="' . $z['id'] . '" data-tooltip="Löschen" aria-label="' . $h($p['bezeichnung']) . ' löschen"><i class="bi bi-trash" aria-hidden="true"></i></button>'
+           . '</td>';
+        echo '</tr>';
+    }
+    echo '<tr class="wp-keine" hidden><td colspan="4"><div class="ui-leerzustand"><i class="bi bi-funnel" aria-hidden="true"></i><span class="wp-keine-text">Keine Wanderpreise in dieser Auswahl.</span></div></td></tr>';
+    echo '</tbody></table></div></div>';
+
+    // ---------- Handy: Karten (gleiche Daten, gleiche Reihenfolge) ----------
+    echo '<div class="mobile-cards-container" id="mobileWanderpreiseCards"><div class="mobile-cards-scroll">';
+    foreach ($zeilen as $z) {
+        [$meta, $stand, $zuletzt] = $teile($z);
+        $p = $z['p'];
+        echo '<div class="mobile-card wp-karte' . ($z['status'] === 'ausser' ? ' wp-ausser' : '') . '" data-status="' . $z['status'] . '" data-bezeichnung="' . $h($p['bezeichnung']) . '">'
+           . '<div class="mobile-card-header">'
+           . '<div class="min-w-0"><button type="button" class="wp-name view-gewinner" data-id="' . $z['id'] . '">' . $h($p['bezeichnung']) . '</button>'
+           . ($meta !== '' ? '<span class="wp-meta">' . $meta . '</span>' : '') . '</div>'
+           . '<div class="d-flex gap-1 flex-shrink-0">'
+           . '<button type="button" class="btn btn-outline-primary btn-sm edit-wanderpreis" data-id="' . $z['id'] . '" aria-label="' . $h($p['bezeichnung']) . ' bearbeiten"><i class="bi bi-pencil" aria-hidden="true"></i></button>'
+           . '<button type="button" class="btn btn-outline-danger btn-sm delete-wanderpreis" data-id="' . $z['id'] . '" aria-label="' . $h($p['bezeichnung']) . ' löschen"><i class="bi bi-trash" aria-hidden="true"></i></button>'
+           . '</div></div>'
+           . '<div class="mobile-card-body">'
+           . '<div class="mobile-card-row"><span class="mobile-card-label">Gewinner ' . $jahr . '</span><span class="mobile-card-value">' . $stand . '</span></div>'
+           . '<div class="mobile-card-row"><span class="mobile-card-label">Zuletzt</span><span class="mobile-card-value">' . $zuletzt . '</span></div>'
+           . '</div></div>';
+    }
+    echo '<div class="wp-keine ui-leerzustand" hidden><i class="bi bi-funnel" aria-hidden="true"></i><span class="wp-keine-text">Keine Wanderpreise in dieser Auswahl.</span></div>';
+    echo '</div></div>';
+
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo '<div class="ui-leerzustand text-danger"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>'
+       . $h(msvFehler('Die Wanderpreise konnten nicht geladen werden. Bitte die Seite neu laden.', $e)) . '</div>';
 }
-?>
