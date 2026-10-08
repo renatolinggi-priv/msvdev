@@ -1109,3 +1109,7 @@ button.cup4-zone-remove:hover {
 
     .cup4-pair-card { break-inside: avoid; }
 }
+
+/* Zuordnen per Tastatur oder Klick (cup.php): gewählter Teilnehmer, fokussierter Platz */
+.cup4-pool-item.cup4-gewaehlt { background: var(--ui-gewaehlt); box-shadow: inset 0 0 0 2px var(--ui-akzent); }
+.cup4-pool-item:focus-visible, .cup4-drop-zone:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }

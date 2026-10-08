@@ -126,7 +126,7 @@ class NavigationManager {
             $icon = $userMenuIcons[$link] ?? 'bi-circle';
             $colorClass = $link === 'backup_restore.php' ? ' text-warning' : '';
             echo '<li class="mobile-nav-item">';
-            echo '<a class="mobile-user-menu-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
+            echo '<a class="mobile-user-menu-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.($isActive?' aria-current="page"':'').$this->externalAttrs($link).'>';
             echo '<i class="bi '.$icon.$colorClass.' me-2"></i>';
             echo $this->escape($item['Text']);
             echo '</a></li>';
@@ -227,7 +227,7 @@ class NavigationManager {
             echo '</ul>';
         } else {
             // No submenu - direct link
-            echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
+            echo '<a class="mobile-nav-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.($isActive?' aria-current="page"':'').$this->externalAttrs($link).'>';
             echo $icon.$text;
             echo '</a>';
         }
@@ -275,7 +275,7 @@ class NavigationManager {
             }
             echo '</ul>';
         } else {
-            echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>';
+            echo '<a class="mobile-submenu-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.($isActive?' aria-current="page"':'').$this->externalAttrs($link).'>';
             echo $icon.$text;
             echo '</a>';
         }
@@ -354,7 +354,7 @@ class NavigationManager {
                 echo '</li>';
             } else {
                 echo '<li class="nav-item">';
-                echo '<a class="nav-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
+                echo '<a class="nav-link '.($isActive?'active':'').'" href="'.$this->href($link).'"'.($isActive?' aria-current="page"':'').$this->externalAttrs($link).'>'.$icon.$text.'</a>';
                 echo '</li>';
             }
         } else {
@@ -364,7 +364,7 @@ class NavigationManager {
                 echo '<div class="dropdown-item-wrapper">';
 
                 if (!empty($link) && $link !== '#') {
-                    echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a>';
+                    echo '<a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->href($link).'"'.($isActive?' aria-current="page"':'').$this->externalAttrs($link).'>'.$icon.$text.'</a>';
                 } else {
                     echo '<span class="dropdown-item dropdown-text '.($isActive?'active':'').'">'.$icon.$text.'</span>';
                 }
@@ -381,7 +381,7 @@ class NavigationManager {
                 echo '</ul>';
                 echo '</li>';
             } else {
-                echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->href($link).'"'.$this->externalAttrs($link).'>'.$icon.$text.'</a></li>';
+                echo '<li><a class="dropdown-item '.($isActive?'active':'').'" href="'.$this->href($link).'"'.($isActive?' aria-current="page"':'').$this->externalAttrs($link).'>'.$icon.$text.'</a></li>';
             }
         }
     }
@@ -1495,8 +1495,9 @@ document.addEventListener("DOMContentLoaded", function() {
             const toggle = dropdown.querySelector(".dropdown-toggle");
             const menu = dropdown.querySelector(".dropdown-menu");
 
-            // Bootstrap Click-Toggle auf Desktop deaktivieren — Hover steuert alles
-            toggle.removeAttribute("data-bs-toggle");
+            // data-bs-toggle bleibt: so öffnen Enter und Pfeil runter das Menü, die Pfeiltasten wandern darin und
+            // Escape schliesst (Bootstrap). Den Mausklick übernimmt der Handler unten, damit Hover + Klick bleibt.
+            // (Bis 10.2026 wurde das Attribut entfernt: Menüs samt «Abmelden» waren nur mit der Maus erreichbar.)
 
             // Mouseenter auf dem gesamten Dropdown-Bereich
             dropdown.addEventListener("mouseenter", function() {
@@ -1518,11 +1519,24 @@ document.addEventListener("DOMContentLoaded", function() {
             // Click: nur navigieren wenn echte Seite vorhanden
             toggle.addEventListener("click", function(e) {
                 e.preventDefault();
+                e.stopPropagation(); // Bootstraps Umschalten aus: ein Klick würde das per Hover offene Menü schliessen
                 const attr = this.getAttribute("href") || "#";
                 if (attr !== "#" && attr !== "") {
                     window.location.href = this.href;
+                    return;
                 }
-                // Kein Link → nichts tun, Dropdown bleibt offen via Hover
+                // Kein Link: Menü öffnen (Enter auf der Tastatur, Touch auf grossen Bildschirmen)
+                bootstrap.Dropdown.getOrCreateInstance(toggle).show();
+                const erster = menu && menu.querySelector(".dropdown-item:not(.disabled)");
+                if (erster && e.detail === 0) erster.focus(); // detail 0 = per Tastatur ausgelöst
+            });
+
+            // Verlässt der Tastatur-Fokus das Menü, schliesst es
+            dropdown.addEventListener("focusout", function(e) {
+                if (e.relatedTarget && !dropdown.contains(e.relatedTarget)) {
+                    const d = bootstrap.Dropdown.getInstance(toggle);
+                    if (d) d.hide();
+                }
             });
         });
         

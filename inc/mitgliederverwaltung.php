@@ -54,7 +54,7 @@ include 'header.inc.php';
               <span class="badge bg-secondary" id="memberCount"></span>
             </h5>
             <div class="desktop-table-container">
-              <table class="hybrid-table" id="mitgliederTable">
+              <table class="hybrid-table" id="mitgliederTable" data-zeilen-tastatur tabindex="0" aria-label="Mitglieder – Pfeiltasten wählen eine Zeile, Enter öffnet sie">
                 <thead>
                   <tr>
                     <th style="width:70px; text-align:center">Lizenz</th>

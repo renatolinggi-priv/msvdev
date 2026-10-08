@@ -163,6 +163,21 @@
                 clearTimeout(self._hoverShowTimer);
                 self._scheduleHide();
             });
+            // Tastatur: Fokus auf einem «?» zeigt dieselbe Kurzansicht (Enter öffnet weiterhin das Fenster)
+            document.addEventListener('focusin', function (e) {
+                var btn = e.target.closest && e.target.closest('[data-help]');
+                if (!btn || !btn.matches(':focus-visible')) return;
+                var key = btn.getAttribute('data-help');
+                if (!key) return;
+                self._cancelHide();
+                clearTimeout(self._hoverShowTimer);
+                self._hoverShowTimer = setTimeout(function () { self._showHover(btn, key); }, 180);
+            });
+            document.addEventListener('focusout', function (e) {
+                if (!(e.target.closest && e.target.closest('[data-help]'))) return;
+                clearTimeout(self._hoverShowTimer);
+                self._scheduleHide();
+            });
             document.addEventListener('click', function (e) {
                 if (e.target.closest && e.target.closest('[data-help]')) self._hideHover();
             });

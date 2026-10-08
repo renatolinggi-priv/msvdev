@@ -320,6 +320,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
 </head>
 
 <body<?php echo isset($body_class) ? ' class="' . escape_output($body_class) . '"' : ''; ?>>
+    <a class="msv-sprunglink" href="#hauptinhalt">Zum Inhalt springen</a>
     <script>
         // Navigation-Layout-Preference (Sidebar links / Topbar oben) VOR dem Rendern
         // anwenden -> verhindert sichtbares Umspringen ("Flicker") beim Seitenaufbau.
@@ -329,7 +330,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
             }
         } catch (e) {}
     </script>
-    <nav class="navbar navbar-expand-lg fixed-top">
+    <nav class="navbar navbar-expand-lg fixed-top" aria-label="Hauptmenü">
         <div class="container-fluid">
             <a class="navbar-brand" href="<?php echo file_exists('home.php') ? 'home.php' : '../home.php'; ?>">
                 <img src="../icons/icon-32x32.png" alt="MSV" width="24" height="24" style="border-radius:4px;"><span class="navbar-brand-text"> MSV Wilen</span>
@@ -371,6 +372,6 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
         });
     </script>
 
-    <div class="container-fluid">
+    <div class="container-fluid" id="hauptinhalt" role="main" tabindex="-1">
         <div class="row">
             <div class="col-12">

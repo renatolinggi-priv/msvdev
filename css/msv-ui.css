@@ -465,3 +465,10 @@ input.form-control[aria-invalid="true"] { border-color: var(--ui-fehler); backgr
 .flag-dot.on { background: var(--ui-akzent-dunkel); color: var(--ui-flaeche); }
 .flag-dot.on.ok { background: var(--ui-ok-fg); }
 .flag-dot.off { background: var(--ui-linie-zart); color: var(--ui-leer); }
+
+/* ---------- Tastatur (header.inc.php, msv-panel-a11y.js) ---------- */
+/* Sprunglink «Zum Inhalt springen»: unsichtbar, bis er per Tab den Fokus bekommt */
+.msv-sprunglink { position: absolute; left: -9999px; top: 8px; z-index: 2000; padding: 8px 14px; background: var(--ui-flaeche); color: var(--ui-akzent-dunkel); border: 1px solid var(--ui-akzent-dunkel); border-radius: var(--ui-rad); font-weight: 600; text-decoration: none; }
+.msv-sprunglink:focus { left: 8px; }
+#hauptinhalt:focus { outline: none; }
+[data-zeilen-tastatur]:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: -2px; }

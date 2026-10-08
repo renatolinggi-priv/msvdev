@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.51.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Bedienung per Tastatur und Screenreader",
+        "beschreibung": "Menü: Die Hauptmenüs öffneten sich auf grossen Bildschirmen nur beim Darüberfahren mit der Maus, auch das Benutzermenü mit «Abmelden». Jetzt öffnen Enter oder Pfeil nach unten sie ebenfalls, die Pfeiltasten wandern darin, Escape schliesst; mit der Maus bleibt alles wie gewohnt. Der aktive Menüpunkt ist für Screenreader als aktuelle Seite markiert. Jede Seite hat einen Sprunglink «Zum Inhalt springen» (erster Tab) und einen benannten Hauptbereich. Slide-Panels gelten für Screenreader als Dialog mit ihrem Titel. Die Kurzansicht der «?»-Hilfe erscheint auch, wenn der Knopf per Tastatur den Fokus bekommt. Mitglieder: Die Tabelle lässt sich mit Tab erreichen, die Pfeiltasten wählen eine Zeile (sie wird angesagt), Enter öffnet sie. Vereinscup: Die Runden-Tabs sind Knöpfe, die Standcup-Felder haben Namen, die Knöpfe «… als Gewinner wählen» und «1/2 weiter» sind per Tab erreichbar. Teilnehmer lassen sich ohne Ziehen zuordnen: anklicken oder per Tastatur wählen, dann den Platz; Entf nimmt einen Teilnehmer heraus. Paarung löschen fragt im roten Lösch-Dialog. Braucht die Datenbank-Aktualisierung 082 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.50.0",
     "datum": "2026-10-08",
     "aenderungen": [

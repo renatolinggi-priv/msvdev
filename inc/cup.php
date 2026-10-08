@@ -82,9 +82,9 @@ $csrf = csrf_token();
         </div>
         <!-- Tabs (sichtbar < 1200px, im Toolbar f&uuml;r sticky) -->
         <div class="cup4-tabs" id="cup4-tabs">
-            <div class="cup4-tab active" data-target="round1-col">Runde 1</div>
-            <div class="cup4-tab" data-target="round2-col">Runde 2</div>
-            <div class="cup4-tab" data-target="final-col">Finale</div>
+            <button type="button" class="cup4-tab active" data-target="round1-col" aria-pressed="true">Runde 1</button>
+            <button type="button" class="cup4-tab" data-target="round2-col" aria-pressed="false">Runde 2</button>
+            <button type="button" class="cup4-tab" data-target="final-col" aria-pressed="false">Finale</button>
         </div>
     </div>
 
@@ -169,18 +169,18 @@ $csrf = csrf_token();
                 <h6 class="cup4-standcup-title"><i class="bi bi-award me-2"></i>Standcup Final</h6>
                 <div class="cup4-standcup-row">
                     <span class="cup4-standcup-label">MSV Wilen</span>
-                    <input type="text" id="sc-name-1" class="form-control cup4-standcup-name" placeholder="Teilnehmer">
-                    <input type="number" id="sc-result-1" class="form-control cup4-standcup-res" placeholder="Res">
+                    <input type="text" id="sc-name-1" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="MSV Wilen: Teilnehmer">
+                    <input type="number" id="sc-result-1" class="form-control cup4-standcup-res" placeholder="Res" aria-label="MSV Wilen: Resultat">
                 </div>
                 <div class="cup4-standcup-row">
                     <span class="cup4-standcup-label">SV Wollerau</span>
-                    <input type="text" id="sc-name-2" class="form-control cup4-standcup-name" placeholder="Teilnehmer">
-                    <input type="number" id="sc-result-2" class="form-control cup4-standcup-res" placeholder="Res">
+                    <input type="text" id="sc-name-2" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="SV Wollerau: Teilnehmer">
+                    <input type="number" id="sc-result-2" class="form-control cup4-standcup-res" placeholder="Res" aria-label="SV Wollerau: Resultat">
                 </div>
                 <div class="cup4-standcup-row">
                     <span class="cup4-standcup-label">SV Freienbach</span>
-                    <input type="text" id="sc-name-3" class="form-control cup4-standcup-name" placeholder="Teilnehmer">
-                    <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Res">
+                    <input type="text" id="sc-name-3" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="SV Freienbach: Teilnehmer">
+                    <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Res" aria-label="SV Freienbach: Resultat">
                 </div>
                 <div class="text-end mt-2">
                     <button id="save-standcup" class="btn btn-outline-primary btn-sm">
@@ -233,8 +233,8 @@ $(document).ready(function() {
     /* ── Responsive Tabs ──────────────────── */
     $(document).on('click', '.cup4-tab', function() {
         const target = $(this).data('target');
-        $('.cup4-tab').removeClass('active');
-        $(this).addClass('active');
+        $('.cup4-tab').removeClass('active').attr('aria-pressed', 'false');
+        $(this).addClass('active').attr('aria-pressed', 'true');
         $('.cup4-round').removeClass('active');
         $('#' + target).addClass('active');
     });
@@ -381,9 +381,17 @@ $(document).ready(function() {
                     hoverClass: 'ui-droppable-hover',
                     tolerance: 'pointer',
                     drop: function(event, ui) {
-                        const $zone = $(this);
-                        const newId = ui.helper.data('id');
-                        const newText = ui.helper.text().trim().replace(/\s*NR$/, '');
+                        zuordnen($(this), ui.helper.data('id'), ui.helper.text());
+                        ui.helper.remove();
+                    }
+                });
+            }
+        });
+    }
+
+    /* ── Teilnehmer auf einen Platz setzen (Ziehen, Tastatur, Klick) ── */
+    function zuordnen($zone, newId, rohText) {
+                        const newText = String(rohText).trim().replace(/\s*NR$/, '');
 
                         // Swap: if zone already occupied, return old participant to correct pool
                         const oldId = $zone.attr('data-id');
@@ -402,17 +410,58 @@ $(document).ready(function() {
                         // Remove from all pools
                         $('#pool-list .cup4-pool-item[data-id="' + newId + '"]').remove();
                         $('#r2-pool-list .cup4-pool-item[data-id="' + newId + '"]').remove();
-                        ui.helper.remove();
 
                         updatePoolCounter();
                         updateR2PoolCounter();
                         // Trigger winner check on card
                         updateWinnerHighlight($zone.closest('.cup4-pair-card'));
-                    }
-                });
-            }
+    }
+
+    /* ── Zuordnen ohne Ziehen: Teilnehmer wählen (Enter, Leertaste oder Klick), dann den Platz ──
+       Entf auf einem belegten Platz nimmt den Teilnehmer heraus, Escape hebt die Wahl auf. */
+    let cupGewaehlt = null;
+    const cupAnsage = $('<div class="visually-hidden" aria-live="polite"></div>').appendTo('body');
+    function cupWahl($item) {
+        $('.cup4-pool-item.cup4-gewaehlt').removeClass('cup4-gewaehlt').attr('aria-pressed', 'false');
+        cupGewaehlt = $item && $item.length ? $item : null;
+        if (cupGewaehlt) {
+            cupGewaehlt.addClass('cup4-gewaehlt').attr('aria-pressed', 'true');
+            cupAnsage.text(cupGewaehlt.text().trim() + ' gewählt. Jetzt einen Platz in einer Paarung wählen.');
+        }
+    }
+    function cupTastaturBereit() {
+        $('.cup4-pool-item:not([tabindex])').attr({ tabindex: 0, role: 'button', 'aria-pressed': 'false' });
+        $('.cup4-drop-zone:not([tabindex])').attr({ tabindex: 0, role: 'button' });
+        // Name je nach Belegung (der Inhalt wechselt beim Zuordnen und Entfernen)
+        document.querySelectorAll('.cup4-drop-zone').forEach(function(z) {
+            const n = (z.querySelector('.cup4-zone-name') || {}).textContent || '';
+            const label = n.trim() ? n.trim() + ', Platz in der Paarung (Entf nimmt heraus)' : 'Freier Platz in der Paarung';
+            if (z.getAttribute('aria-label') !== label) z.setAttribute('aria-label', label);
         });
     }
+    new MutationObserver(cupTastaturBereit).observe(document.body, { childList: true, subtree: true });
+    cupTastaturBereit();
+    $(document).on('click', '.cup4-pool-item', function() {
+        if ($(this).hasClass('ui-draggable-dragging')) return;
+        cupWahl($(this).hasClass('cup4-gewaehlt') ? null : $(this));
+    });
+    $(document).on('click', '.cup4-drop-zone', function(e) {
+        if (!cupGewaehlt || $(e.target).closest('button').length) return;
+        const $zone = $(this);
+        zuordnen($zone, cupGewaehlt.data('id'), cupGewaehlt.text());
+        cupAnsage.text($zone.find('.cup4-zone-name').text().trim() + ' zugeordnet.');
+        cupWahl(null);
+        $zone.trigger('focus');
+    });
+    $(document).on('keydown', '.cup4-pool-item, .cup4-drop-zone', function(e) {
+        if (e.target !== this) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).trigger('click'); }
+        else if (e.key === 'Escape' && cupGewaehlt) { e.preventDefault(); cupWahl(null); cupAnsage.text('Wahl aufgehoben.'); }
+        else if ((e.key === 'Delete' || e.key === 'Backspace') && $(this).is('.cup4-drop-zone[data-id]')) {
+            e.preventDefault();
+            $(this).find('.cup4-zone-remove').trigger('click');
+        }
+    });
 
     /* ── Remove single participant from drop zone ── */
     $(document).on('click', '.cup4-zone-remove', function(e) {
@@ -633,7 +682,7 @@ $(document).ready(function() {
                     const name = zoneName($zone);
                     if (pid) {
                         $(this).append(
-                            '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + pid + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
+                            '<button type="button" class="cup4-tie-pick" data-winner-id="' + pid + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
                             '<i class="bi bi-trophy"></i></button>'
                         );
                     }
@@ -688,7 +737,7 @@ $(document).ready(function() {
                                 $row.addClass('cup4-tied');
                                 const nm = zoneName($row.find('.cup4-drop-zone'));
                                 $row.append(
-                                    '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + nm + ' als Gewinner w&auml;hlen">' +
+                                    '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + nm + ' als Gewinner w&auml;hlen">' +
                                     '<i class="bi bi-trophy"></i></button>'
                                 );
                             } else {
@@ -741,7 +790,7 @@ $(document).ready(function() {
                                 $row.addClass('cup4-tied');
                                 const name = zoneName($row.find('.cup4-drop-zone'));
                                 $row.append(
-                                    '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 2. Gewinner w&auml;hlen">' +
+                                    '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 2. Gewinner w&auml;hlen">' +
                                     '<i class="bi bi-trophy"></i></button>'
                                 );
                             }
@@ -753,7 +802,7 @@ $(document).ready(function() {
                             $row.addClass('cup4-tied');
                             const name = zoneName($row.find('.cup4-drop-zone'));
                             $row.append(
-                                '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 1. Gewinner w&auml;hlen">' +
+                                '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 1. Gewinner w&auml;hlen">' +
                                 '<i class="bi bi-trophy"></i></button>'
                             );
                         });
@@ -773,7 +822,7 @@ $(document).ready(function() {
                         $row.addClass('cup4-tied');
                         const name = zoneName($row.find('.cup4-drop-zone'));
                         $row.append(
-                            '<button class="cup4-tie-pick" tabindex="-1" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
+                            '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
                             '<i class="bi bi-trophy"></i></button>'
                         );
                     });
@@ -1181,8 +1230,8 @@ $(document).ready(function() {
         const v = (parseInt(val, 10) === 1) ? 1 : 2;
         return '<div class="cup4-adv-toggle" data-tooltip="Wie viele kommen weiter?">' +
                '<i class="bi bi-arrow-up-right-circle"></i>' +
-               '<button type="button" class="cup4-adv-btn' + (v === 1 ? ' active' : '') + '" data-adv="1" tabindex="-1">1 weiter</button>' +
-               '<button type="button" class="cup4-adv-btn' + (v === 2 ? ' active' : '') + '" data-adv="2" tabindex="-1">2 weiter</button>' +
+               '<button type="button" class="cup4-adv-btn' + (v === 1 ? ' active' : '') + '" data-adv="1">1 weiter</button>' +
+               '<button type="button" class="cup4-adv-btn' + (v === 2 ? ' active' : '') + '" data-adv="2">2 weiter</button>' +
                '</div>';
     }
 
@@ -1628,7 +1677,7 @@ $(document).ready(function() {
             return;
         }
 
-        const result = await msvConfirm('Paarung l&ouml;schen?', '', 'L&ouml;schen', 'Abbrechen');
+        const result = await msvConfirmDelete('', { title: 'Paarung löschen?', html: 'Die Paarung und ihre Resultate werden gelöscht.' });
         if (!result.isConfirmed) return;
 
         $.ajax({
