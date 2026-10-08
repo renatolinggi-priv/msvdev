@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.46.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Alte Stilregeln aufgeräumt",
+        "beschreibung": "Die globale Datei css/fixes/resultate-unified.css enthält nur noch Verhalten (Flex-Kette für scrollende Tabellen, fixierte Kopfzeile und Spalten bei Heim, Kanti und Endschiessen, Z-Index der Dialoge); ihre Farben laufen über die Tokens des neuen Erscheinungsbilds. Sichtbar: Dialoge haben überall einen flachen weissen Kopf statt eines grauen Verlaufs, der per !important jede Seite überstimmte; Löschen- und Bearbeiten-Knöpfe hüpfen nicht mehr und haben dieselben Ecken wie alle Knöpfe; Tabellenlinien sind etwas zarter; auf dem Handy füllen die Dialoge von JM-Definition, Terminen und Navigation den Bildschirm wieder ohne runde Ecken. Die nirgends eingebundene Datei table-title-and-firstcol-override.css ist entfernt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.45.0",
     "datum": "2026-10-08",
     "aenderungen": [

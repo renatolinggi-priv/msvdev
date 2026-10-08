@@ -1,6 +1,12 @@
 /* ==========================================
-   MSV RESULTATE - EINHEITLICHE STYLES
-   Zusätzliche Styles für Heim-, Kanti- und Endresultate
+   MSV RESULTATE – Layout-Regeln für alle Admin-Seiten
+   Geladen in header.inc.php nach msv-styles.css und VOR msv-ui.css.
+
+   Seit dem neuen Erscheinungsbild (Oktober 2026) steht hier nur noch Verhalten:
+   Flex-Kette für scrollende Tabellen, Tabellenhöhe, fixierte Kopfzeile und
+   Rand-Spalten (Heim/Kanti/Endschiessen), Z-Index-Reihenfolge. Aussehen
+   (Karten, Dialoge, Knöpfe, Farben) kommt aus css/msv-ui.css; Farben hier nur
+   über dessen --ui-* Tokens. Neue Optik gehört nach msv-ui.css, nicht hierher.
    ========================================== */
 
 /* --- Flex-Layout-Kette (ersetzt no-page-scroll-override.css) ---
@@ -25,14 +31,7 @@
   min-height: 0 !important;
 }
 
-/* --- Ende Flex-Layout-Kette --- */
-
-/* Überschreibt inkonsistente inline-styles */
 .main-content-wrapper {
-    background-color: #ffffff !important;
-    border-radius: 1rem !important;
-    box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.08) !important;
-    padding: 1.5rem !important;
     margin-bottom: 2rem !important;
     display: flex;
     flex-direction: column;
@@ -40,27 +39,13 @@
 }
 
 .content-background {
-    background: #ffffff !important;
-    padding: 2rem !important;
-    border-radius: 0.5rem !important;
-    margin-bottom: 0 !important;
-    box-shadow: none !important;
-    border: 1px solid #e2e8f0 !important;
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0 !important;
 }
 
-/* Einheitliche Button Toolbar */
-.button-toolbar {
-    background: #ffffff !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid #e2e8f0 !important;
-    margin-bottom: 1.5rem !important;
-    padding: 1.25rem !important;
-    border-radius: 0.5rem !important;
-}
+/* --- Ende Flex-Layout-Kette --- */
 
 .button-group {
     display: flex !important;
@@ -69,12 +54,12 @@
     align-items: center !important;
 }
 
-/* Einheitliche Tabellen-Wrapper */
+/* Tabellen-Wrapper (in einer Inhalts-Card setzt msv-ui.css ihn flach) */
 .table-wrapper {
-    background: #ffffff !important;
-    border-radius: 0.5rem !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    background: var(--ui-flaeche) !important;
+    border-radius: var(--ui-rad-l) !important;
+    border: 1px solid var(--ui-rand) !important;
+    box-shadow: none !important;
     overflow: hidden !important;
     margin-bottom: 0 !important;
     display: flex;
@@ -101,18 +86,19 @@
     position: sticky !important;
     top: 0 !important;
     z-index: 10 !important;
-    background: var(--light-color) !important;
+    background: var(--ui-flaeche-2) !important;
 }
 
-/* Sticky erste Spalte für alle drei Tabellen - nur tbody */
+/* Sticky erste Spalte für alle drei Tabellen - nur tbody
+   (Hintergrund je Zeilenzustand: msv-ui.css «Zeilenzustände») */
 #heimresultateTabelle tbody td:first-child,
 #kantiresultateTabelle tbody td:first-child,
 #mitgliederTabelle tbody td:first-child {
     position: sticky !important;
     left: 0 !important;
     z-index: 5 !important;
-    background-color: #ffffff !important;
-    border-right: 2px solid #dee2e6 !important;
+    background-color: var(--ui-flaeche) !important;
+    border-right: 1px solid var(--ui-rand) !important;
 }
 
 /* Header erste Spalte - höherer z-index damit sie über tbody liegt */
@@ -123,8 +109,8 @@
     left: 0 !important;
     top: 0 !important;
     z-index: 11 !important; /* Höher als andere Header */
-    background: var(--light-color) !important;
-    border-right: 2px solid #dee2e6 !important;
+    background: var(--ui-flaeche-2) !important;
+    border-right: 1px solid var(--ui-rand) !important;
 }
 
 /* Letzte Spalte sticky mit gleichem Hintergrund wie erste */
@@ -134,8 +120,8 @@
     position: sticky !important;
     right: 0 !important;
     z-index: 5 !important;
-    background-color: #ffffff !important; /* Gleich wie erste Spalte */
-    border-left: 2px solid #dee2e6 !important;
+    background-color: var(--ui-flaeche) !important;
+    border-left: 1px solid var(--ui-rand) !important;
     font-weight: 600 !important;
     min-width: 100px !important;
     text-align: center !important;
@@ -149,8 +135,18 @@
     right: 0 !important;
     top: 0 !important;
     z-index: 11 !important; /* Gleich hoch wie erste Header-Spalte */
-    background: var(--light-color) !important;
-    border-left: 2px solid #dee2e6 !important;
+    background: var(--ui-flaeche-2) !important;
+    border-left: 1px solid var(--ui-rand) !important;
+}
+
+/* Innen-Trenner für alle Spalten (ausser der ersten) */
+#heimresultateTabelle thead th + th,
+#heimresultateTabelle tbody td + td,
+#kantiresultateTabelle thead th + th,
+#kantiresultateTabelle tbody td + td,
+#mitgliederTabelle thead th + th,
+#mitgliederTabelle tbody td + td {
+  border-left: 1px solid var(--ui-rand) !important;
 }
 
 /* Einheitliche Input-Styles in Tabellen */
@@ -162,16 +158,16 @@
     text-align: center !important;
     padding: 0.25rem 0.1rem !important;
     font-size: 0.9rem !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 0.25rem !important;
-    transition: all 0.2s ease !important;
+    border: 1px solid var(--ui-feldrand) !important;
+    border-radius: 6px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 #heimresultateTabelle input[type="number"]:focus,
 #kantiresultateTabelle input[type="number"]:focus,
 #mitgliederTabelle input[type="number"]:focus {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+    border-color: var(--ui-akzent-dunkel) !important;
+    box-shadow: 0 0 0 1px var(--ui-akzent-dunkel) !important;
     outline: none !important;
 }
 
@@ -186,59 +182,42 @@
     text-align: center !important;
 }
 
-/* End-Resultate spezielle Styles für Modal */
-.shooting-category {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid #e2e8f0;
-}
-
 .small-input {
     width: 45px !important;
     height: 32px !important;
     text-align: center !important;
     padding: 0.25rem !important;
     font-size: 0.875rem !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 0.25rem !important;
+    border: 1px solid var(--ui-feldrand) !important;
+    border-radius: 6px !important;
 }
 
 .total-display {
     font-weight: bold;
     font-size: 1.1rem;
-    color: var(--success-color);
+    color: var(--ui-ok-fg);
     min-width: 40px;
     text-align: center;
     padding: 0.25rem 0.5rem;
-    background: rgba(40, 167, 69, 0.1);
-    border-radius: 0.25rem;
+    background: var(--ui-ok-bg);
+    border-radius: 6px;
 }
 
 /* Mobile Responsive Anpassungen */
 @media (max-width: 768px) {
-    .content-background {
-        padding: 1rem !important;
-    }
-    
-    .button-toolbar {
-        padding: 1rem !important;
-        margin-bottom: 1rem !important;
-    }
-    
     .button-group {
         flex-direction: column !important;
     }
-    
+
     .button-group .btn {
         width: 100% !important;
     }
-    
+
     .table-responsive {
         max-height: calc(100vh - 250px) !important;
         min-height: 200px !important;
     }
-    
+
     /* Mobile: keine sticky Spalten */
     #heimresultateTabelle tbody td:first-child,
     #heimresultateTabelle tbody td:last-child,
@@ -248,12 +227,12 @@
     #mitgliederTabelle tbody td:last-child {
         position: static !important;
     }
-    
+
     /* Kanti Mobile Enhancement */
     .kanti-row-more {
-        background: #f8f9fa;
+        background: var(--ui-flaeche-2);
     }
-    
+
     .kanti-more-btn {
         margin-top: 0.5rem;
     }
@@ -266,49 +245,31 @@
     border-width: 0.2em !important;
 }
 
-/* Hover-Effekte für alle Tabellen */
+/* Hover für die drei Erfassungstabellen (Rand-Spalten: msv-ui.css) */
 #heimresultateTabelle tbody tr:hover,
 #kantiresultateTabelle tbody tr:hover,
 #mitgliederTabelle tbody tr:hover {
-    background-color: rgba(108, 117, 125, 0.05) !important;
-    transition: background-color 0.2s ease !important;
+    background-color: var(--ui-flaeche-2) !important;
 }
 
-/* Delete/Edit Buttons einheitlich */
+/* Delete/Edit Buttons: nur Grösse; Form und Farbe aus msv-ui.css, kein Hüpfen */
 .delete-btn,
 .edit-btn {
     padding: 0.25rem 0.5rem !important;
     font-size: 0.875rem !important;
-    border-radius: 0.25rem !important;
-    transition: all 0.2s ease !important;
 }
 
-.delete-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.25);
-}
-
-.edit-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.25);
-}
-
-/* Modal einheitlich */
-.modal-content {
-    border: none !important;
-    border-radius: 0.75rem !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
-}
-
+/* Dialoge: Grundform in msv-ui.css; hier nur Innenabstände und der flache Kopf
+   (früher ein Verlauf, der per !important jede Seite überstimmte) */
 .modal-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%) !important;
-    border-radius: 0.75rem 0.75rem 0 0 !important;
+    background: var(--ui-flaeche) !important;
+    border-radius: var(--ui-rad-l) var(--ui-rad-l) 0 0 !important;
     padding: 1.25rem !important;
 }
 
 .modal-footer {
-    background: #f8f9fa !important;
-    border-radius: 0 0 0.75rem 0.75rem !important;
+    background: var(--ui-flaeche-2) !important;
+    border-radius: 0 0 var(--ui-rad-l) var(--ui-rad-l) !important;
     padding: 1rem 1.25rem !important;
 }
 
@@ -319,17 +280,17 @@
 }
 
 .table-responsive::-webkit-scrollbar-track {
-    background: #f1f5f9 !important;
+    background: var(--ui-linie-zart) !important;
     border-radius: 4px !important;
 }
 
 .table-responsive::-webkit-scrollbar-thumb {
-    background: #cbd5e0 !important;
+    background: var(--ui-feldrand) !important;
     border-radius: 4px !important;
 }
 
 .table-responsive::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0 !important;
+    background: var(--ui-text-3) !important;
 }
 
 /* Z-Index Hierarchie sicherstellen */
@@ -349,42 +310,13 @@
     z-index: 1060 !important;
 }
 
+/* Trenner vor der letzten Spalte (meist Total) in allen Tabellen */
 .table thead th:last-child,
 .table tbody td:last-child {
-  border-left: 1px solid #dee2e6 !important;
+  border-left: 1px solid var(--ui-linie) !important;
 }
 
 .table thead th:nth-last-child(2),
 .table tbody td:nth-last-child(2) {
   border-right: 0 !important;
-}
-
-/* 1) Innen-Trenner für ALLE Spalten (außer der ersten) */
-#heimresultateTabelle thead th + th,
-#heimresultateTabelle tbody td + td,
-#kantiresultateTabelle thead th + th,
-#kantiresultateTabelle tbody td + td,
-#mitgliederTabelle thead th + th,
-#mitgliederTabelle tbody td + td {
-  border-left: 1px solid #dee2e6 !important;
-}
-
-/* 2) Letzte Spalte nicht fetter machen – nur 1px */
-#heimresultateTabelle thead th:last-child,
-#heimresultateTabelle tbody td:last-child,
-#kantiresultateTabelle thead th:last-child,
-#kantiresultateTabelle tbody td:last-child,
-#mitgliederTabelle thead th:last-child,
-#mitgliederTabelle tbody td:last-child {
-  border-left: 1px solid #dee2e6 !important;
-}
-
-/* 3) Erste Spalte (links, sticky) angleichen: 1px statt 2px */
-#heimresultateTabelle thead th:first-child,
-#heimresultateTabelle tbody td:first-child,
-#kantiresultateTabelle thead th:first-child,
-#kantiresultateTabelle tbody td:first-child,
-#mitgliederTabelle thead th:first-child,
-#mitgliederTabelle tbody td:first-child {
-  border-right: 1px solid #dee2e6 !important;
 }

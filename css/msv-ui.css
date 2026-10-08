@@ -4,9 +4,11 @@
    heller Grund, weisse Flächen mit feinem Rand, Navigation links, Kopf-Card,
    kompakte Tabellen, Slide-Panel. Vereinsrot nur im Logo und bei Gefahr.
 
-   Ladereihenfolge (header.inc.php): Bootstrap → msv-styles.css → fixes → mobile-cards
-   → Inline-<style> im Header → DIESE DATEI → $page_specific_css der Seite.
-   Seiteneigenes CSS gewinnt also noch; es wird Seitentyp um Seitentyp abgebaut.
+   Ladereihenfolge (header.inc.php): Bootstrap → msv-styles.css → fixes/resultate-unified.css
+   (nur Verhalten: Flex-Kette, fixierte Spalten, Z-Index) → mobile-cards → Inline-<style>
+   im Header → DIESE DATEI → $page_specific_css der Seite (gewinnt, nur rohes CSS, Farben
+   über die --ui-* Tokens). Öffentliche Seiten (Login, Registrierung, Fragebogen) laden
+   stattdessen css/msv-oeffentlich.css mit einem Auszug dieser Tokens.
    ========================================================================== */
 
 /* ---------- Schrift (lokal, keine externen Server) ---------- */
