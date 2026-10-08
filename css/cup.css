@@ -151,22 +151,19 @@
     white-space: nowrap;
 }
 
+/* Felder so hoch wie .btn-sm (~28 px), damit Felder und Knöpfe der Leiste eine Linie bilden */
 .cup4-toolbar .form-select,
 .cup4-toolbar .form-control {
-    font-size: 0.875rem;
-    padding: 0.35rem 0.6rem;
-    border-radius: 6px;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
 }
+.cup4-toolbar .form-select { padding-right: 1.75rem; background-position: right 0.5rem center; }
 
 .cup4-toolbar .form-control[type="number"] {
     width: 70px;
 }
 
-.cup4-toolbar .btn {
-    font-size: 0.8125rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-}
+/* Knöpfe: keine eigene Grösse mehr – .btn-sm wie auf allen Admin-Seiten (vorher ~34 px) */
 
 .cup4-toolbar-spacer {
     flex: 1;

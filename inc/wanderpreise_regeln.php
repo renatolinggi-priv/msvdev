@@ -36,21 +36,16 @@ include 'header.inc.php';
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
 
-        <?php $page_title = 'Wanderpreis-Regeln'; $page_actions = '<button type="button" class="btn-help" data-help="wanderpreise_regeln.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+        <?php
+        // «Neue Regel» in der Kopf-Card wie die Anlege-Aktionen der übrigen Seiten (auch auf dem Handy sichtbar)
+        $page_title = 'Wanderpreis-Regeln';
+        $page_actions = '<button type="button" class="btn-help" data-help="wanderpreise_regeln.uebersicht" aria-label="Hilfe"></button>'
+            . '<button type="button" class="btn btn-outline-success btn-sm" id="btnNeueRegel"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Neue Regel</button>';
+        $page_show_mobile = true;
+        include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-
-          <!-- Toolbar: Neue Regel (auch mobil sichtbar) -->
-          <div class="export-toolbar mb-3">
-            <div class="export-toolbar-head">
-              <i class="bi bi-diagram-3"></i>
-              <span>Regeln bestimmen, wer einen Wanderpreis gewinnt</span>
-              <button type="button" class="btn btn-outline-success btn-sm ms-auto" id="btnNeueRegel">
-                <i class="bi bi-plus-lg me-1"></i>Neue Regel
-              </button>
-            </div>
-          </div>
 
           <!-- Desktop: Tabelle -->
           <div class="desktop-table-container">

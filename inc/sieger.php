@@ -105,24 +105,23 @@ rsort($years);
             <div class="main-content-wrapper content-width-default">
                 <input type="hidden" id="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-                <?php $page_title = 'Sieger der letzten Jahre'; $page_actions = '<button type="button" class="btn-help" data-help="sieger.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                // Jahr neben dem Titel, «Hinzufügen» rechts – wie auf allen Seiten mit Jahresauswahl (Kopf-Card)
+                $page_title = 'Sieger der letzten Jahre';
+                ob_start(); ?>
+<button type="button" class="btn-help" data-help="sieger.uebersicht" aria-label="Hilfe"></button>
+<label for="filterYear" class="visually-hidden">Jahr</label>
+<select id="filterYear" class="form-select form-select-sm">
+<?php foreach ($years as $y): ?>
+    <option value="<?= $y ?>" <?= $y === $lastYear ? 'selected' : '' ?>><?= $y ?></option>
+<?php endforeach; ?>
+</select>
+<?php           $page_title_after = ob_get_clean();
+                $page_actions = '<button type="button" class="btn btn-sm btn-outline-success" id="btnAddSieger"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Hinzufügen</button>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
-                    <!-- Jahr + Erfassen (Toolbar wie auf den Ranglisten-Seiten) -->
-                    <div class="export-toolbar mb-3">
-                        <div class="export-toolbar-head">
-                            <label for="filterYear" class="export-year-label mb-0"><i class="bi bi-calendar3 me-1"></i>Jahr:</label>
-                            <select id="filterYear" class="form-select form-select-sm export-year-select">
-                                <?php foreach ($years as $y): ?>
-                                    <option value="<?= $y ?>" <?= $y === $lastYear ? 'selected' : '' ?>><?= $y ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="button" class="btn btn-sm btn-outline-success ms-auto" id="btnAddSieger">
-                                <i class="bi bi-plus-lg me-1"></i>Hinzufügen
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- Kategorie-Karten -->
                     <div id="siegerContainer">
                         <div class="text-center py-5">

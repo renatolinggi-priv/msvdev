@@ -72,26 +72,20 @@ include 'header.inc.php';
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <?php $page_title = 'Gruppenschiessen'; $page_actions = '<button type="button" class="btn-help" data-help="jmdefinition_gruppen.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                // Jahr und Anlass neben dem Titel, «Anlässe verwalten» rechts – Kopf-Card wie auf den übrigen Seiten
+                $page_title = 'Gruppenschiessen';
+                $page_title_after = '<button type="button" class="btn-help" data-help="jmdefinition_gruppen.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>'
+                    . '<label for="eventSelect" class="visually-hidden">Anlass</label>'
+                    . '<select id="eventSelect" class="form-select form-select-sm" style="min-width:220px;"><option value="">Anlass wählen …</option></select>';
+                $page_actions = '<a href="jmdefinition.php" class="btn btn-outline-secondary btn-sm" data-tooltip="Anlässe mit Gruppenwettkampf werden in der JM-Definition angelegt"><i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>Anlässe verwalten</a>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-
-                    <!-- Jahr + Anlass -->
-                    <div class="export-toolbar mb-3">
-                        <div class="export-toolbar-head flex-wrap">
-                            <label for="yearSelect" class="export-year-label mb-0"><i class="bi bi-calendar3 me-1"></i>Jahr:</label>
-                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
-                            <span class="export-toolbar-divider" aria-hidden="true"></span>
-                            <label for="eventSelect" class="export-year-label mb-0"><i class="bi bi-calendar-event me-1"></i>Anlass:</label>
-                            <select id="eventSelect" class="form-select form-select-sm" style="min-width:220px;">
-                                <option value="">Bitte wählen...</option>
-                            </select>
-                            <a href="jmdefinition.php" class="btn btn-outline-secondary btn-sm ms-auto" data-tooltip="Anlässe mit Gruppenwettkampf werden in der JM-Definition angelegt">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Anlässe verwalten
-                            </a>
-                        </div>
-                    </div>
 
                     <div class="row g-3">
                         <!-- Bestehende Gruppen -->
@@ -256,7 +250,7 @@ $(function() {
             .done(function(data) {
                 const $s = $('#eventSelect').empty();
                 if (Array.isArray(data) && data.length) {
-                    $s.append($('<option></option>').val('').text('Bitte wählen...'));
+                    $s.append($('<option></option>').val('').text('Anlass wählen …'));
                     data.forEach(ev => $s.append($('<option></option>').val(ev.ID).text(ev.Bezeichnung)));
                 } else {
                     $s.append($('<option></option>').val('').text('Keine Anlässe mit Gruppenwettkampf in ' + year));

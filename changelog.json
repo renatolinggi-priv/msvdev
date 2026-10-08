@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.63.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Jahr und Aktionen in der Kopf-Karte: Sieger, Wanderpreis-Regeln, Gruppenschiessen",
+        "beschreibung": "Auf «Sieger der letzten Jahre» und «Gruppenschiessen» stehen Jahr (und Anlass) jetzt neben dem Titel, «Hinzufügen» bzw. «Anlässe verwalten» rechts – wie auf allen anderen Seiten. «Neue Regel» bei den Wanderpreis-Regeln steht ebenfalls oben. Die eigenen Leisten darunter sind weg.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Kleinigkeiten bei Ausgaben und Knöpfen",
+        "beschreibung": "Auf der JM-Rangliste öffnen Ctrl+P und Ctrl+E wieder den Druck bzw. die Suche des Browsers; vorher erzeugten sie still ein PDF oder wechselten zur Erfassung. Bei den Wichtigen Terminen ist das «?» zu den Exporten auf dem Computer wieder sichtbar. In der Vereinscup-Erfassung haben Knöpfe und Felder der Leiste dieselbe Grösse wie auf allen anderen Seiten.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.62.0",
     "datum": "2026-10-08",
     "aenderungen": [
