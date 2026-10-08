@@ -49,3 +49,11 @@ Options -Indexes
 <FilesMatch "\.(md|markdown)$">
     Require all denied
 </FilesMatch>
+
+# Include-Dateien (*.inc.php) nicht direkt aufrufbar (eingefuehrt 08.10.2026): Sie werden nur
+# per include/require geladen und liefen beim Direktaufruf ohne Datenbank oder Login in einen
+# Fatal Error (gesehen im php_error.log). PHP bindet sie weiterhin ein; gesperrt ist nur HTTP.
+# Neue Endpunkte, die per Browser oder AJAX erreichbar sein sollen, heissen darum nie *.inc.php.
+<FilesMatch "\.inc\.php$">
+    Require all denied
+</FilesMatch>
