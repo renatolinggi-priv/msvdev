@@ -965,11 +965,32 @@ if (isAdmin()) {
     });
     </script>
 
-    <!-- Portal Content -->
-    <div class="portal-content">
-    <?php if ($current_page !== 'dashboard.php'): ?>
-    <a href="dashboard.php" class="portal-back-link"><i class="bi bi-arrow-left me-1"></i><span class="back-label">Dashboard</span></a>
-    <a href="dashboard.php" class="portal-back-fab"><i class="bi bi-house"></i></a>
+    <?php if ($portal_fahne):
+        // Untere Navigation (nur Vorschau «Vereinsfahne», am Handy): vier Hauptbereiche in der Daumenzone
+        $__unten = isJungschuetze()
+            ? [['jsk_dashboard.php', 'bi-house', 'Start', ['jsk_dashboard.php']],
+               ['chat.php', 'bi-chat-dots', 'Chat', ['chat.php']],
+               ['jsk_termine.php', 'bi-calendar3', 'Termine', ['jsk_termine.php', 'jsk_termin.php']],
+               ['jsk_resultate.php', 'bi-trophy', 'Resultate', ['jsk_resultate.php']]]
+            : [['dashboard.php', 'bi-house', 'Start', ['dashboard.php']],
+               ['meine_jm.php', 'bi-trophy', 'Resultate', ['meine_jm.php', 'meine_heim.php', 'meine_kanti.php', 'meine_wanderpreise.php']],
+               ['termine.php', 'bi-calendar3', 'Termine', ['termine.php']],
+               ['anlaesse.php', 'bi-images', 'Fotos', ['anlaesse.php', 'anlass.php']]];
+    ?>
+    <nav class="fahne-unten" aria-label="Hauptbereiche">
+        <?php foreach ($__unten as [$__href, $__icon, $__text, $__seiten]):
+            $__cur = ($current_page === $__href) ? ' aria-current="page"' : (in_array($current_page, $__seiten, true) ? ' aria-current="true"' : ''); ?>
+        <a href="<?php echo $__href; ?>"<?php echo $__cur; ?>><i class="bi <?php echo $__icon; ?>" aria-hidden="true"></i><span><?php echo $__text; ?></span></a>
+        <?php endforeach; ?>
+    </nav>
     <?php endif; ?>
 
-    <?php if ($current_page === 'dashboard.php' && empty($portal_hide_pwa_install)) include __DIR__ . '/inc_pwa_install.php'; /* "Als App installieren"-Hinweis nur auf dem Dashboard (iOS-Anleitung / Android-Button); zeigt sich nur, wenn noch nicht installiert. Opt-out via $portal_hide_pwa_install */ ?>
+    <!-- Portal Content -->
+    <div class="portal-content">
+    <?php $__start = isJungschuetze() ? 'jsk_dashboard.php' : 'dashboard.php';
+    if ($current_page !== $__start): ?>
+    <a href="<?php echo $__start; ?>" class="portal-back-link"><i class="bi bi-arrow-left me-1"></i><span class="back-label"><?php echo $portal_fahne ? 'Start' : 'Dashboard'; ?></span></a>
+    <a href="<?php echo $__start; ?>" class="portal-back-fab" aria-label="Zur Startseite"><i class="bi bi-house" aria-hidden="true"></i></a>
+    <?php endif; ?>
+
+    <?php if ($current_page === 'dashboard.php' && empty($portal_hide_pwa_install) && !$portal_fahne) include __DIR__ . '/inc_pwa_install.php'; /* "Als App installieren"-Hinweis nur auf dem Dashboard (iOS-Anleitung / Android-Button); zeigt sich nur, wenn noch nicht installiert. Opt-out via $portal_hide_pwa_install */ ?>

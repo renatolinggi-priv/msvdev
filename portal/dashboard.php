@@ -455,6 +455,7 @@ include 'portal_header.php';
 }
 </style>
 
+<?php if (!empty($portal_fahne)): /* Vorschau «Vereinsfahne»: neue Startseite */ include __DIR__ . '/dashboard_fahne.inc.php'; else: ?>
 <!-- Begruessung -->
 <div class="dashboard-greeting">
     <div>
@@ -470,6 +471,7 @@ include 'portal_header.php';
     <button class="barcode-icon-btn" id="barcodeBtn" title="SSV Lizenz-Barcode"><i class="bi bi-upc-scan"></i></button>
     <?php endif; ?>
 </div>
+<?php endif; ?>
 
 <?php if ($mitglied_id): ?>
 <!-- Barcode Modal -->
@@ -570,6 +572,7 @@ include 'portal_header.php';
 </script>
 <?php endif; ?>
 
+<?php if (empty($portal_fahne)): /* bisherige Startseite */ ?>
 <!-- Naechste Schiessanlaesse + Vereinstermine (kombinierte Karte) -->
 <?php if ($next_event || $next_termine): ?>
 <div class="dash-events-card">
@@ -750,5 +753,6 @@ include 'portal_header.php';
     </a>
     <?php endif; ?>
 </div>
+<?php endif; ?>
 
 <?php include 'portal_footer.php'; ?>
