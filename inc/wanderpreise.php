@@ -74,14 +74,14 @@ if (WANDERPREISE_DEBUG) {
   <button type="button" class="btn btn-outline-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1"></i>Dokumente</button>
   <ul class="dropdown-menu dropdown-menu-end">
     <li><h6 class="dropdown-header">Listen &amp; Berichte</h6></li>
-    <li><button type="button" class="dropdown-item export-btn" data-export-type="csv"><i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV</button></li>
-    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-all"><i class="bi bi-file-earmark-pdf me-2"></i>PDF Alle</button></li>
-    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-jm"><i class="bi bi-file-earmark-pdf me-2"></i>JM Preise</button></li>
-    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-mitglieder-info"><i class="bi bi-people-fill me-2"></i>Mitglieder</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="csv"><i class="bi bi-filetype-csv me-2" aria-hidden="true"></i>Liste (CSV)</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-all"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Jahresbericht</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-jm"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>JM-Preise</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-mitglieder-info"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Mitglieder-Info</button></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header">Gravur-Aufträge</h6></li>
-    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-schnitzerei"><i class="bi bi-file-earmark-pdf me-2"></i>Schnitzerei</button></li>
-    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-akura"><i class="bi bi-file-earmark-pdf me-2"></i>Akura</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-schnitzerei"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Schnitzerei</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-akura"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Akura</button></li>
   </ul>
 </div>
 <div class="dropdown">
@@ -294,47 +294,6 @@ if (WANDERPREISE_DEBUG) {
     </div>
 </div>
 
-<!-- Modal für Export Jahr-Auswahl -->
-<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exportModalLabel">
-                    <i class="bi bi-download"></i> Export auswählen
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <label for="modalExportJahr" class="form-label fw-bold">
-                            <i class="bi bi-calendar3 me-1"></i> Jahr für Export auswählen:
-                        </label>
-                        <input type="number" id="modalExportJahr" class="form-control" min="1900" max="2100"
-                            value="<?= date('Y') ?>">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Wähle das Jahr aus, für das du die Daten exportieren möchtest.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
-                </button>
-                <button type="button" class="btn btn-outline-info btn-sm" id="startExport">
-                    <i class="bi bi-download me-1"></i>Export starten
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal für vergangene Gewinner - MIT SUCHBAREN DROPDOWNS -->
 <div class="modal fade" id="vergangeneGewinnerModal" tabindex="-1" aria-labelledby="vergangeneGewinnerModalLabel"
     aria-hidden="true">
@@ -477,7 +436,7 @@ if (WANDERPREISE_DEBUG) {
                     <i class="bi bi-x-circle me-1"></i>Schliessen
                 </button>
                 <button type="button" class="btn btn-outline-info btn-sm" id="exportHistoryBtn">
-                    <i class="bi bi-file-earmark-pdf me-1"></i>Historie als PDF
+                    <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Historie</span>
                 </button>
             </div>
         </div>
@@ -663,138 +622,28 @@ if (WANDERPREISE_DEBUG) {
             if (wpId) $('#vg_wanderpreis').trigger('change');
         });
 
-        var currentExportType = null;
-
-
-
-
-        // Export-Button Klick Handler
+        // Berichte aus dem Menü «Dokumente»: für das oben gewählte Jahr, direkt herunterladen
+        // (Ausgabe-Baustein msvAusgabe; Spinner am Knopf «Dokumente», weil sich das Menü schliesst)
         $('.export-btn').on('click', function () {
-            currentExportType = $(this).data('export-type');
-
-            // Modal-Titel anpassen je nach Export-Typ
-            var exportTitle = '';
-            switch (currentExportType) {
-                case 'csv':
-                    exportTitle = 'CSV Export';
-                    break;
-                case 'pdf-all':
-                    exportTitle = 'PDF Export - Alle Wanderpreise';
-                    break;
-                case 'pdf-schnitzerei':
-                    exportTitle = 'PDF Export - Schnitzerei Heinz Schild';
-                    break;
-                case 'pdf-akura':
-                    exportTitle = 'PDF Export - Akura Einsiedeln';
-                    break;
-                case 'pdf-jm':
-                    exportTitle = 'PDF Export - JM Preise';
-                    break;
-                case 'pdf-mitglieder-info':
-                    exportTitle = 'PDF Export - Mitglieder-Info';
-                    break;
-            }
-
-            $('#exportModalLabel').html('<i class="bi bi-download"></i> ' + exportTitle);
-            $('#modalExportJahr').val(wpJahr());
-            $('#exportModal').modal('show');
-        });
-
-        // Export starten
-$('#startExport').on('click', function () {
-    var jahr = $('#modalExportJahr').val();
-
-    if (!jahr || jahr < 1900 || jahr > 2100) {
-        msvToast('Bitte ein gültiges Jahr eingeben (1900-2100)', 'error');
-        return;
-    }
-
-    var $btn = $(this);
-    var originalText = $btn.html();
-    $btn.prop('disabled', true)
-        .html('<span class="spinner-border spinner-border-sm me-2"></span>Exportiere...');
-
-    // Export ausführen basierend auf currentExportType
-    if (currentExportType === 'csv') {
-        // CSV Export
-        window.open('wanderpreise/export_wanderpreise.php?jahr=' + jahr, '_blank');
-        msvToast('CSV Export gestartet!', 'success');
-        $('#exportModal').modal('hide');
-        $btn.prop('disabled', false).html(originalText);
-        
-    } else {
-        // PDF Export - Einheitlicher Ansatz für alle PDF-Typen
-        var params = {
-            type: 'jahresreport',
-            year: jahr
-        };
-
-        // Spezielle Parameter je nach Export-Typ
-        switch(currentExportType) {
-            case 'pdf-schnitzerei':
-                params.hersteller = 'Schnitzerei Heinz Schild';
-                break;
-            case 'pdf-akura':
-                params.hersteller = 'Akura Einsiedeln';
-                break;
-            case 'pdf-jm':
-                params.type = 'top3';
-                break;
-            case 'pdf-mitglieder-info':
-                params.type = 'mitglieder-info';
-                break;
-            // pdf-all: keine zusätzlichen Parameter
-        }
-
-        $.ajax({
-            url: 'wanderpreise/generate_wanderpreise_jahresreport.php',
-            type: 'GET',
-            dataType: 'json',
-            data: params,
-            success: function (response) {
-                if (response.pdf_link) {
-                    // Debugging: Log the response to see what we're getting
-                    console.log('PDF Link received:', response.pdf_link);
-                    
-                    // PDF direkt herunterladen
-                    const link = document.createElement('a');
-                    link.href = response.pdf_link;
-                    link.download = response.pdf_link.split('/').pop();
-                    
-                    // Debugging: Log the link properties
-                    console.log('Link href:', link.href);
-                    console.log('Link download:', link.download);
-                    
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Spezifische Erfolgsmeldung je nach Typ
-                    var successMsg = 'PDF erfolgreich erstellt!';
-                    if (currentExportType === 'pdf-akura') {
-                        successMsg = 'Akura Gravur-Auftrag erfolgreich erstellt!';
-                    } else if (currentExportType === 'pdf-schnitzerei') {
-                        successMsg = 'Schnitzerei PDF erfolgreich erstellt!';
-                    }
-                    msvToast(successMsg, 'success');
-                    $('#exportModal').modal('hide');
-                } else if (response.error) {
-                    msvToast('Fehler: ' + response.error, 'error');
-                }
-            },
-            error: function (xhr) {
-                msvToast(msvXhrMessage(xhr, 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
-            },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-            }
-        });
-    }
-
-            // Button nach kurzer Zeit wiederherstellen
-            setTimeout(function () {
-                $btn.prop('disabled', false).html(originalText);
-            }, 2000);
+            var jahr = wpJahr();
+            var berichte = {
+                'csv':                 { url: 'wanderpreise/export_wanderpreise.php', data: { jahr: jahr }, name: 'Wanderpreise_Liste_' + jahr, titel: 'Wanderpreise Liste ' + jahr + ' (CSV)' },
+                'pdf-all':             { data: { type: 'jahresreport' }, name: 'Wanderpreise_Jahresbericht_' + jahr, titel: 'Wanderpreise Jahresbericht ' + jahr },
+                'pdf-jm':              { data: { type: 'top3' }, name: 'Wanderpreise_JM-Preise_' + jahr, titel: 'JM-Preise ' + jahr },
+                'pdf-mitglieder-info': { data: { type: 'mitglieder-info' }, name: 'Wanderpreise_Mitglieder-Info_' + jahr, titel: 'Wanderpreise Mitglieder-Info ' + jahr },
+                'pdf-schnitzerei':     { data: { type: 'jahresreport', hersteller: 'Schnitzerei Heinz Schild' }, name: 'Gravur_Schnitzerei_' + jahr, titel: 'Gravur-Auftrag Schnitzerei ' + jahr },
+                'pdf-akura':           { data: { type: 'jahresreport', hersteller: 'Akura Einsiedeln' }, name: 'Gravur_Akura_' + jahr, titel: 'Gravur-Auftrag Akura ' + jahr }
+            };
+            var b = berichte[$(this).data('export-type')];
+            if (!b) return;
+            msvAusgabe(this, {
+                url: b.url || 'wanderpreise/generate_wanderpreise_jahresreport.php',
+                data: b.url ? b.data : Object.assign({ year: jahr }, b.data),
+                ladeKnopf: $(this).closest('.dropdown').find('.dropdown-toggle')[0],
+                name: b.name,
+                titel: b.titel,
+                fehler: 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.'
+            });
         });
 
         // Wanderpreise laden
@@ -1455,37 +1304,14 @@ $('#startExport').on('click', function () {
             const wanderpreisId = $(this).data('wanderpreis-id'); // Wird beim Laden gesetzt
 
             if (wanderpreisId) {
-                var $btn = $(this);
-                var originalText = $btn.html();
-                $btn.prop('disabled', true)
-                    .html('<span class="spinner-border spinner-border-sm me-2"></span>Erstelle PDF...');
-
-                $.ajax({
+                // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast
+                const name = modalTitle.replace(/^\s*Historie[:\s–-]*/i, '').trim();
+                msvAusgabe(this, {
                     url: 'wanderpreise/export_wanderpreis_historie.php',
-                    method: 'GET',
                     data: { wanderpreis_id: wanderpreisId },
-                    dataType: 'json',
-                   success: function (response) {
-  if (response && response.pdf_link) {
-    const link = document.createElement('a');
-    link.href = response.pdf_link;
-    link.download = response.pdf_link.split('/').pop();
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    msvToast('Historie-PDF erfolgreich erstellt!', 'success');
-  } else {
-    msvToast(response.message || 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', 'error');
-  }
-},
-
-                    error: function () {
-                        msvToast('Fehler beim Erstellen des Historie-PDFs', 'error');
-                    },
-                    complete: function () {
-                        $btn.prop('disabled', false).html(originalText);
-                    }
+                    titel: 'Historie ' + (name || 'Wanderpreis'),
+                    name: 'Wanderpreis_Historie_' + (name || wanderpreisId),
+                    fehler: 'Die Historie konnte nicht als PDF erstellt werden. Bitte nochmals versuchen.'
                 });
             }
         });

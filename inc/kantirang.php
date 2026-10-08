@@ -21,8 +21,10 @@ require_once __DIR__ . '/csrf.inc.php';
                 $page_show_mobile = true;
                 ob_start(); ?>
 <button type="button" class="btn-help" data-help="kantirang.dokumente" aria-label="Hilfe"></button>
-<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste</span></button>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
+<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">
+<button type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>
+<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
 <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten </button>
                 <?php $page_actions = ob_get_clean();
                 include 'partials/page_header.inc.php'; ?>
@@ -31,8 +33,6 @@ require_once __DIR__ . '/csrf.inc.php';
                 <div class="content-background">
                 <form id="kantiresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-
-                    <div id="pdf-link"></div>
 
                     <!-- Kategorie A Tabelle -->
                     <div class="table-wrapper">
@@ -215,41 +215,21 @@ require_once __DIR__ . '/csrf.inc.php';
             });
         }
 
-        // PDF-Button Handler
-   $(document).on('click', '.pdf-btn', function(e) {
-    e.preventDefault();
-    var selectedYear = $('#yearSelect').val();
-    $.ajax({
-        url: 'kantirang/generate_pdf.php',
-        type: 'GET',
-        dataType: 'json',  // Das sagt jQuery, dass es JSON erwartet
-        data: {
-            year: selectedYear,
-            orientation: window.MsvDruck ? MsvDruck.orientierung('kantirang', 'portrait') : 'portrait' // Format aus dem Druckprofil
-        },
-        success: function(response) {
-            // response ist bereits ein JavaScript-Objekt, NICHT JSON.parse verwenden!
-            if (response && response.pdf_link) {
-                // PDF direkt herunterladen
-                const link = document.createElement('a');
-                link.href = response.pdf_link;
-                link.download = response.pdf_link.split('/').pop(); // Dateiname extrahieren
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // PDF-Link Container leeren nach Download
-                $('#pdf-link').empty();
-            } else {
-                $('#pdf-link').html('<span class="text-danger">Fehler beim Generieren der PDF-Datei</span>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('PDF Generation Error:', error);
-            $('#pdf-link').html('<span class="text-danger">Fehler beim Generieren des PDFs: ' + error + '</span>');
-        }
-    });
-});
+        // Rangliste als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast)
+        $(document).on('click', '.pdf-btn', function (e) {
+            e.preventDefault();
+            var jahr = $('#yearSelect').val();
+            msvAusgabe(this, {
+                url: 'kantirang/generate_pdf.php',
+                data: {
+                    year: jahr,
+                    orientation: window.MsvDruck ? MsvDruck.orientierung('kantirang', 'portrait') : 'portrait' // Format aus dem Druckprofil
+                },
+                titel: 'Kantonalstich Rangliste ' + jahr,
+                name: 'Kantonalstich_Rangliste_' + jahr,
+                fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
+            });
+        });
 
         // Event Handler für Jahr-Dropdown
         $('#yearSelect').on('change', function() {

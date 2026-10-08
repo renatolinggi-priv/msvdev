@@ -65,15 +65,20 @@ $csrf = csrf_token();
                     <option value="3">Dreier</option>
                 </select>
             </div>
-            <button id="generate-pairs" class="btn btn-outline-success btn-sm">
+            <button type="button" id="generate-pairs" class="btn btn-outline-success btn-sm">
                 <i class="bi bi-plus-circle me-1"></i>Generieren
             </button>
             <div class="cup4-toolbar-spacer"></div>
             <div class="cup4-toolbar-actions">
-                <button class="btn btn-outline-info btn-sm pdf-btn" data-tooltip="Cup-Rangliste als PDF">
-                    <i class="bi bi-file-pdf me-1"></i>PDF
-                </button>
-                <button id="save-all" class="btn btn-primary btn-sm" data-tooltip="Alle Runden speichern (Ctrl+S)">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">
+                    <button type="button" class="btn btn-outline-info pdf-btn" data-tooltip="Cup-Rangliste als PDF (nur gespeicherte Resultate)">
+                        <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken">
+                        <i class="bi bi-printer" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <button type="button" id="save-all" class="btn btn-primary btn-sm" data-tooltip="Alle Runden speichern (Ctrl+S)">
                     <i class="bi bi-save me-1"></i>Speichern
                 </button>
             </div>
@@ -125,7 +130,7 @@ $csrf = csrf_token();
                 <div class="cup4-pool-header" style="border:none; padding:0; margin-bottom:0.5rem;">
                     <span class="cup4-pool-title" style="font-size:0.75rem;"><i class="bi bi-award me-1"></i>Gewinner R1</span>
                     <span style="display:flex; align-items:center; gap:0.35rem;">
-                        <button class="btn btn-outline-success btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
+                        <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" style="font-size:0.7rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
                             <i class="bi bi-plus-lg me-1"></i>Nachnominieren
                         </button>
                         <span class="cup4-counter" id="r2-pool-counter">0</span>
@@ -181,7 +186,7 @@ $csrf = csrf_token();
                     <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="SV Freienbach: Resultat">
                 </div>
                 <div class="text-end mt-2">
-                    <button id="save-standcup" class="btn btn-outline-primary btn-sm">
+                    <button type="button" id="save-standcup" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-save me-1"></i>Standcup speichern
                     </button>
                 </div>
@@ -409,7 +414,7 @@ $(document).ready(function() {
 
                         $zone.attr('data-id', newId)
                              .html('<span class="cup4-zone-name">' + newText + '</span>' +
-                                   '<button class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button>');
+                                   '<button type="button" class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button>');
                         $zone.addClass('drop-success');
                         setTimeout(function() { $zone.removeClass('drop-success'); }, 400);
 
@@ -956,7 +961,7 @@ $(document).ready(function() {
                     '<span class="cup4-final-name" data-id="' + f.id + '">' + f.name + '</span>' +
                     '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
                     '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte"></div>' +
-                    '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
+                    '<button type="button" class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                     '</div>'
                 );
             }
@@ -1216,7 +1221,7 @@ $(document).ready(function() {
                         buildParticipantRow();
             }
 
-            html += '<button class="cup4-card-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
+            html += '<button type="button" class="cup4-card-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
             html += '</div>';
 
             $target.append(html);
@@ -1270,7 +1275,7 @@ $(document).ready(function() {
                     function dropZoneHtml(id, name) {
                         return '<div class="cup4-drop-zone" data-id="' + id + '">' +
                                '<span class="cup4-zone-name">' + name + '</span>' +
-                               '<button class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button></div>';
+                               '<button type="button" class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button></div>';
                     }
 
                     // Participant 1
@@ -1300,7 +1305,7 @@ $(document).ready(function() {
                         html += advancersToggle(advVal);
                     }
 
-                    html += '<button class="cup4-card-remove" tabindex="-1" data-pair-id="' + pair.ID + '" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
+                    html += '<button type="button" class="cup4-card-remove" tabindex="-1" data-pair-id="' + pair.ID + '" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
                     html += '</div>';
 
                     $target.append(html);
@@ -1430,7 +1435,7 @@ $(document).ready(function() {
                             '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
                             '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
                             '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (f.Result || '') + '"></div>' +
-                            '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
+                            '<button type="button" class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                             '</div>'
                         );
                     });
@@ -1470,7 +1475,7 @@ $(document).ready(function() {
                             '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
                             '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
                             '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (f.Result || '') + '"></div>' +
-                            '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
+                            '<button type="button" class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                             '</div>'
                         );
                         updateProgress();
@@ -1706,21 +1711,18 @@ $(document).ready(function() {
     });
 
     /* ── PDF Export ────────────────────────── */
+    // Derselbe Generator wie auf der Seite «Vereinscup Rangliste» (PDF-Vorlage, Format aus dem Druckprofil),
+    // nicht mehr der Altgenerator cuprang/cuprang.php. Das PDF enthält nur Gespeichertes.
     $(document).on('click', '.pdf-btn', function(e) {
         e.preventDefault();
-        $.ajax({
-            url: 'cuprang/cuprang.php',
-            data: { year: $('#yearSelect').val() },
-            dataType: 'json',
-            success: function(resp) {
-                if (resp.success) {
-                    msvDownload('cuprang/' + resp.pdf_link, 'Vereinscup_' + $('#yearSelect').val() + '.pdf');
-                    msvToast('Rangliste-PDF heruntergeladen', 'success');
-                } else {
-                    msvToast('Fehler: ' + resp.error, 'error');
-                }
-            },
-            error: function() { msvToast('PDF-Fehler', 'error'); }
+        const jahr = $('#yearSelect').val();
+        if (cupGeaendert) msvToast('Nicht gespeicherte Eingaben fehlen in der Rangliste – zuerst speichern.', 'warning');
+        msvAusgabe(this, {
+            url: 'cuprang/generate_cup_pdf.php',
+            data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('cuprang', 'portrait') : 'portrait' },
+            titel: 'Vereinscup Rangliste ' + jahr,
+            name: 'Vereinscup_Rangliste_' + jahr,
+            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
         });
     });
 
@@ -1859,4 +1861,12 @@ $(document).ready(function() {
 });
 </script>
 
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Vereinscup Rangliste» – wie auf cuprang.php; druckt nur Gespeichertes
+MsvDruck.resolve('cuprang', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    return { url: 'cuprang/generate_cup_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('cuprang', 'portrait'), jobName: 'Vereinscup Rangliste ' + jahr };
+});
+</script>
 <?php include 'footer.inc.php'; ?>

@@ -100,7 +100,7 @@
                     <i class="bi bi-database-add me-1"></i> <span id="saveImportCount">0</span> Einträge importieren
                 </button>
                 <button type="button" class="btn btn-outline-info btn-sm" data-action="export-from-import">
-                    <i class="bi bi-file-earmark-excel me-1"></i> Direkt exportieren
+                    <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Schiesstage-Meldung (Excel)</span>
                 </button>
             </div>
         </div>

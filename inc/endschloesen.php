@@ -183,8 +183,10 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     $page_title_after = '<button type="button" class="btn-help" data-help="endschloesen.uebersicht" aria-label="Hilfe"></button>'
         . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
         . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-    $page_actions = '<button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm" data-tooltip="Abrechnung des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1"></i>Abrechnung</button>'
-        . '<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="endschiessen_abrechnung" data-druck-label="Endschiessen Abrechnung" aria-label="Abrechnung direkt drucken"><i class="bi bi-printer"></i></button>'
+    $page_actions = '<div class="btn-group btn-group-sm" role="group" aria-label="Abrechnung">'
+        . '<button type="button" id="btnGeneratePDF" class="btn btn-outline-info" data-tooltip="Abrechnung des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Abrechnung</span></button>'
+        . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschiessen_abrechnung" data-druck-label="Endschiessen Abrechnung" aria-label="Abrechnung direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+        . '</div>'
         . ($kannDefinieren ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="btnAdminSettings" data-tooltip="Stiche und Preise definieren"><i class="bi bi-gear me-1"></i>Definition</button>' : '');
     $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
         . '<div class="ui-chips" id="progressChips"></div>';
@@ -324,12 +326,14 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <div class="total-kpi total-price-block"><small>Gesamtbetrag</small><span class="total-amount" id="totalPrice" aria-live="polite" aria-atomic="true">CHF 0.00</span></div>
             </div>
             <div class="action-buttons">
-              <button type="button" id="btnStandblatt" class="btn btn-outline-info btn-sm" disabled data-tooltip="Standblatt (Excel) für diesen Teilnehmer">
-                <i class="bi bi-file-earmark-spreadsheet"></i><span class="ms-1">Standblatt</span>
-              </button>
-              <button type="button" id="btnStandblattDruck" class="btn btn-outline-info btn-sm" disabled data-tooltip="QZ Tray nicht verbunden" aria-label="Standblatt direkt drucken">
-                <i class="bi bi-printer"></i>
-              </button>
+              <div class="btn-group btn-group-sm" role="group" aria-label="Standblatt">
+                <button type="button" id="btnStandblatt" class="btn btn-outline-info" disabled data-tooltip="Standblatt (Excel) für diesen Teilnehmer">
+                  <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i><span class="ms-1">Standblatt (Excel)</span>
+                </button>
+                <button type="button" id="btnStandblattDruck" class="btn btn-outline-info" disabled hidden data-druck-eigen data-tooltip="QZ Tray nicht verbunden" aria-label="Standblatt direkt drucken">
+                  <i class="bi bi-printer" aria-hidden="true"></i>
+                </button>
+              </div>
               <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm" data-tooltip="Formular zurücksetzen" aria-label="Formular zurücksetzen">
                 <i class="bi bi-arrow-counterclockwise"></i>
               </button>
@@ -1046,8 +1050,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="Aktionen" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'><i class="bi bi-three-dots"></i></button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item act-edit" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-pencil me-2"></i>Bearbeiten</a></li>
-                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Standblatt</a></li>
-                <li><a class="dropdown-item act-print${printReady() ? '' : ' disabled'}" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}" data-tooltip="${printReady() ? 'Direktdruck über QZ Tray' : 'QZ Tray nicht verbunden oder kein Druckprofil'}"><i class="bi bi-printer me-2"></i>Standblatt drucken</a></li>
+                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-spreadsheet me-2" aria-hidden="true"></i>Standblatt (Excel)</a></li>
+                ${druckSichtbar() ? `<li><a class="dropdown-item act-print${printReady() ? '' : ' disabled'}" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}" data-tooltip="${printReady() ? 'Direktdruck über QZ Tray' : 'Kein Druckprofil «Endschiessen Standblatt» (Drucksteuerung)'}"><i class="bi bi-printer me-2"></i>Standblatt drucken</a></li>` : ''}
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item act-delete text-danger" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-trash me-2"></i>Löschen</a></li>
               </ul>
@@ -1109,7 +1113,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (stand) { await downloadStandblatt({ typ, entityId, name, stiche: a.dataset.stiche || '', waffenId: a.dataset.waffeId || '' }); return; }
+    if (stand) { await downloadStandblatt(stand, { typ, entityId, name, stiche: a.dataset.stiche || '', waffenId: a.dataset.waffeId || '' }); return; }
     if (del) {
       const r = await msvConfirmDelete(name);
       if (!r.isConfirmed) return;
@@ -1135,33 +1139,24 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     return url;
   }
 
-  async function downloadStandblatt({ typ, entityId, name, stiche, waffenId = '' }) {
-    const jahr = $id('yearSelect').value;
-    const url = standblattUrl({ typ, entityId, name, stiche, waffenId });
-    try {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error();
-      const blob = await r.blob();
-      const m = (r.headers.get('Content-Disposition') || '').match(/filename="?([^"]+)"?/);
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = m ? m[1] : `Endschiessen_${jahr}_${name.replace(/[^a-zA-ZäöüÄÖÜ0-9]/g, '_')}.xlsx`;
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-      msvToast('Standblatt heruntergeladen', 'success');
-    } catch (err) { msvToast('Fehler beim Erstellen des Standblatts', 'error'); }
+  // Standblatt (Excel) über den Ausgabe-Baustein; der Server liefert den Dateinamen mit (Content-Disposition)
+  function downloadStandblatt(knopf, { typ, entityId, name, stiche, waffenId = '' }) {
+    return msvAusgabe(knopf, {
+      url: standblattUrl({ typ, entityId, name, stiche, waffenId }),
+      titel: 'Standblatt ' + name,
+      fehler: 'Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'
+    });
   }
 
   $id('btnStandblatt').addEventListener('click', async function () {
-    const btn = this, orig = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     const stiche = gewaehlteCodes().join(',');
     const waffenId = $id('waffeSelect').value;
     if (!waffenId) {
       msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus();
-    } else {
-      await downloadStandblatt(aktuellerTeilnehmer({ stiche, waffenId }));
+      return;
     }
-    btn.disabled = false; btn.innerHTML = orig; recalcTotals();
+    await downloadStandblatt(this, aktuellerTeilnehmer({ stiche, waffenId }));
+    recalcTotals();
   });
 
   /** Teilnehmer-Parameter (typ, entityId, name) aus dem Formular, ergänzt um weitere Felder. */
@@ -1185,8 +1180,14 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     return hatMsvDruck() && MsvDruck.bereit(DRUCK_STANDBLATT);
   }
 
+  // Ohne QZ-Verbindung keine Drucker (Hinweis in der Kopf-Card kommt von MsvDruck)
+  function druckSichtbar() {
+    return hatMsvDruck() && MsvDruck.sichtbar();
+  }
+
   function updatePrintUI() {
     const btn = $id('btnStandblattDruck');
+    btn.hidden = !druckSichtbar();
     if (hatMsvDruck()) {
       const grund = MsvDruck.grund(DRUCK_STANDBLATT, 'Endschiessen Standblatt');
       btn.dataset.tooltip = grund || ('Standblatt direkt drucken (' + MsvDruck.profilText(DRUCK_STANDBLATT) + ')');
@@ -1231,16 +1232,16 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     btn.innerHTML = orig; recalcTotals();
   });
 
-  $id('btnGeneratePDF').addEventListener('click', async function () {
-    const btn = this, orig = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF…';
-    try {
-      const r = await fetch(`endschloesen/generate_pdf_endschloesen.php?action=generate_pdf&jahr=${encodeURIComponent($id('yearSelect').value)}`);
-      const j = await r.json();
-      if (j.pdf_link) { window.open(j.pdf_link, '_blank'); msvToast('Abrechnung erstellt', 'success'); }
-      else msvToast('Fehler: ' + (j.message || j.error || 'unbekannt'), 'error');
-    } catch (err) { msvToast('Fehler beim Erstellen der Abrechnung', 'error'); }
-    finally { btn.disabled = false; btn.innerHTML = orig; }
+  // Abrechnung als PDF: herunterladen statt neuem Tab (der Popup-Blocker sperrt window.open nach await)
+  $id('btnGeneratePDF').addEventListener('click', function () {
+    const jahr = $id('yearSelect').value;
+    msvAusgabe(this, {
+      url: 'endschloesen/generate_pdf_endschloesen.php',
+      data: { action: 'generate_pdf', jahr: jahr },
+      titel: 'Endschiessen Abrechnung ' + jahr,
+      name: 'Endschiessen_Abrechnung_' + jahr,
+      fehler: 'Die Abrechnung konnte nicht erstellt werden. Bitte nochmals versuchen.'
+    });
   });
 
   // =========================================================================

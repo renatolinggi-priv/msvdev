@@ -55,12 +55,6 @@
       });
     });
 
-    // Mobile PDF Button
-    var pdfBtn = document.getElementById('mobilePdfBtn');
-    if (pdfBtn) {
-      pdfBtn.addEventListener('click', generatePDF);
-    }
-
     // Mobile Search
     var searchInput = document.getElementById('mobileSearchInput');
     if (searchInput) {
@@ -567,35 +561,17 @@
   }
 
   // === PDF ===
-  function generatePDF() {
+  // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download (kein neuer Tab nach fetch), Toast
+  function generatePDF(e) {
     var jahr = document.getElementById('yearSelect').value;
-    var btn = document.getElementById('btnGeneratePDF');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF...';
-    }
-
-    var params = new URLSearchParams({ action: 'generate_pdf', jahr: jahr, filter: currentFilter });
-
-    fetch('munitionskauf/generate_pdf_munition.php?' + params)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.pdf_link) {
-          window.open(data.pdf_link, '_blank');
-          msvToast('PDF generiert', 'success');
-        } else if (data.error) {
-          msvToast('Fehler: ' + data.error, 'danger');
-        }
-      })
-      .catch(function(err) {
-        msvToast('Fehler beim PDF-Export', 'danger');
-      })
-      .finally(function() {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="bi bi-file-earmark-pdf me-1"></i>PDF';
-        }
-      });
+    var knopf = (e && e.currentTarget) || document.getElementById('btnGeneratePDF');
+    msvAusgabe(knopf, {
+      url: 'munitionskauf/generate_pdf_munition.php',
+      data: { action: 'generate_pdf', jahr: jahr, filter: currentFilter },
+      titel: 'Munitionsverkauf Bezüge ' + jahr,
+      name: 'Munitionsverkauf_Bezuege_' + jahr,
+      fehler: 'Die Liste konnte nicht als PDF erstellt werden. Bitte nochmals versuchen.'
+    });
   }
 
 })();

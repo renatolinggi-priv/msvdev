@@ -39,9 +39,11 @@ require_once __DIR__ . '/csrf.inc.php';
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
                 $page_show_mobile = true;
                 ob_start(); ?>
-<button id="btnCupPdf" type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste</span></button>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
-<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten </button>
+<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">
+<button id="btnCupPdf" type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>
+<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
+<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten</button>
                 <?php $page_actions = ob_get_clean();
                 include 'partials/page_header.inc.php'; ?>
 
@@ -139,64 +141,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     });
 
-    // PDF Export Handler
-    document.getElementById('btnCupPdf').addEventListener('click', async function(){
-        const year = document.getElementById('yearSelect').value;
-        const btn = this;
-        const orig = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Erzeuge PDF...';
-        
-        try {
-            // 1) JSON vom Generator holen
-            const orientation = window.MsvDruck ? MsvDruck.orientierung('cuprang', 'portrait') : 'portrait'; // Format aus dem Druckprofil
-            const res = await fetch('cuprang/generate_cup_pdf.php?year=' + encodeURIComponent(year) + '&orientation=' + orientation, {
-                headers: { 'Accept': 'application/json' }
-            });
-            const raw = await res.text();
-            let data;
-            try { 
-                data = JSON.parse(raw); 
-            } catch (e) { 
-                console.error('Server response (not JSON):', raw); 
-                throw new Error('Ungültige Antwort vom Server (kein JSON).'); 
-            }
-
-            if (!(data && data.success && data.pdf_link)) {
-                throw new Error(data && data.error ? data.error : 'PDF konnte nicht erstellt werden.');
-            }
-
-            // 2) PDF als Blob laden
-            const pdfRes = await fetch(data.pdf_link, { credentials: 'same-origin' });
-            if (!pdfRes.ok) throw new Error('PDF konnte nicht geladen werden.');
-            const blob = await pdfRes.blob();
-
-            // 3) Dateiname mit Jahr + Zeitstempel bauen
-            function pad(n){ return n.toString().padStart(2,'0'); }
-            const now = new Date();
-            const ts = now.getFullYear() + '-' +
-                       pad(now.getMonth()+1) + '-' +
-                       pad(now.getDate()) + '_' +
-                       pad(now.getHours()) + '-' +
-                       pad(now.getMinutes()) + '-' +
-                       pad(now.getSeconds());
-            const filename = `cup_${year}_${ts}.pdf`;
-
-            // 4) Download erzwingen
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        } catch (e) {
-            msvError('Fehler beim PDF-Export: ' + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = orig;
-        }
+    // Rangliste als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast)
+    document.getElementById('btnCupPdf').addEventListener('click', function () {
+        const jahr = document.getElementById('yearSelect').value;
+        msvAusgabe(this, {
+            url: 'cuprang/generate_cup_pdf.php',
+            data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('cuprang', 'portrait') : 'portrait' }, // Format aus dem Druckprofil
+            titel: 'Vereinscup Rangliste ' + jahr,
+            name: 'Vereinscup_Rangliste_' + jahr,
+            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
+        });
     });
 
     // Year-Dropdown füllen und Event-Handler

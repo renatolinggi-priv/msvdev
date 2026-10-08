@@ -151,7 +151,7 @@ $page_specific_css = <<<'CSS'
   .modal .form-control, .modal input, .modal select {
     min-height: 48px !important; font-size: 16px !important;
   }
-  .modal .btn, .modal .btn-compact {
+  .modal .btn {
     min-height: 48px !important; font-size: 16px !important; padding: 0.5rem 1rem !important;
   }
 }
@@ -226,7 +226,7 @@ include 'header.inc.php';
                       </button>
                     </div>
                     <div class="col-6">
-                      <button type="button" class="btn btn-outline-info btn-sm w-100" data-bs-toggle="modal" data-bs-target="#copyYearModal"
+                      <button type="button" class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#copyYearModal"
                               data-tooltip="Termine vom Vorjahr übernehmen">
                         <i class="bi bi-calendar2-week me-1"></i>Vom Vorjahr
                       </button>
@@ -243,15 +243,17 @@ include 'header.inc.php';
                     <div class="row g-2">
                       <div class="col-6">
                         <button type="button" id="generatePDFButton" class="btn btn-outline-info btn-sm w-100" data-tooltip="PDF enthält zusätzlich die Standbelegungs-Termine mit Kalender-Markierung">
-                          <i class="bi bi-file-pdf me-1"></i>PDF
+                          <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Termine</span>
                         </button>
                       </div>
                       <div class="col-6">
                         <button type="button" id="generateIcsButton" class="btn btn-outline-info btn-sm w-100">
-                          <i class="bi bi-calendar-plus me-1"></i>ICS
+                          <i class="bi bi-calendar-plus me-1" aria-hidden="true"></i><span>Termine (Kalender)</span>
                         </button>
                       </div>
                     </div>
+                    <!-- Desktop: die Aktions-Card wird zur Knopfleiste und blendet das Label oben samt «?» aus → «?» hier hinter den Exporten -->
+                    <button type="button" class="btn-help d-none d-md-inline-flex" data-help="wichtigetermine.exporte" aria-label="Hilfe zu den Exporten"></button>
                   </div>
                   <div class="border-top mt-2 pt-2 text-end">
                     <button type="button" id="deleteAllBtn" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
@@ -809,26 +811,20 @@ $(function() {
   });
 
   // ========== Exporte ==========
-  function triggerDownload(url) {
-    const a = document.createElement('a'); a.href = url; a.download = '';
-    document.body.appendChild(a); a.click(); a.remove();
+  // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast
+  function exportAction(btn, url, dokument, dateiname) {
+    const jahr = $('#eventYear').val();
+    msvAusgabe(btn, {
+      url: url,
+      data: { year: jahr },
+      titel: dokument + ' ' + jahr,
+      name: dateiname + '_' + jahr,
+      fehler: dokument + ' konnte nicht erstellt werden. Bitte nochmals versuchen.'
+    });
   }
 
-  function exportAction(btn, url, paramName) {
-    const $btn = $(btn), orig = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>...');
-    $.getJSON(url, { year: $('#eventYear').val() })
-    .done(data => {
-      const link = data[paramName];
-      if (data.success && link) { triggerDownload(link); msvToast('Download gestartet', 'success'); }
-      else { msvToast(data.message || 'Fehler', 'error'); }
-    })
-    .fail(() => msvToast('Export-Fehler', 'error'))
-    .always(() => $btn.prop('disabled', false).html(orig));
-  }
-
-  $('#generateIcsButton').on('click', function() { exportAction(this, 'wichtigetermine/export_all_ics.php', 'ics_link'); });
-  $('#generatePDFButton').on('click', function() { exportAction(this, 'wichtigetermine/create_pdf.php', 'pdf_link'); });
+  $('#generateIcsButton').on('click', function() { exportAction(this, 'wichtigetermine/export_all_ics.php', 'Termine (Kalender)', 'Termine'); });
+  $('#generatePDFButton').on('click', function() { exportAction(this, 'wichtigetermine/create_pdf.php', 'Termine', 'Termine'); });
 
   // ========== Shortcuts ==========
   $(document).on('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); $('#newEventModal').modal('show'); } });

@@ -48,12 +48,14 @@ $aktMonat = (int)date('n');
                                 </select>
                             </div>
                             <div class="export-group-btns">
-                                <button type="submit" class="btn btn-outline-info btn-sm" id="btnExportPdf">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i><span>Monatsblatt PDF</span>
-                                </button>
-                                <button type="button" class="btn btn-outline-info btn-sm msv-druck"
-                                        data-druck-doctype="monatsblatt" data-druck-label="Monatsblatt"
-                                        aria-label="Monatsblatt direkt drucken"><i class="bi bi-printer"></i></button>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Monatsblatt">
+                                    <button type="submit" class="btn btn-outline-info" id="btnExportPdf">
+                                        <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Monatsblatt</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info msv-druck"
+                                            data-druck-doctype="monatsblatt" data-druck-label="Monatsblatt"
+                                            aria-label="Monatsblatt direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
                             </div>
                         </div>
 
@@ -108,29 +110,15 @@ $(function() {
         e.preventDefault();
         const p = exportParams();
         if (!p) return;
-        const $btn = $('#btnExportPdf'), orig = $btn.html();
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
-        try {
-            const response = await fetch('monatsblatt/export_monatsblatt.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: p.body
-            });
-            if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das Monatsblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'));
-            const blob = await response.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `Monatsblatt_${p.year}_${p.start}-${p.end}.pdf`;
-            document.body.appendChild(a); a.click(); a.remove();
-            URL.revokeObjectURL(a.href);
-            msvToast('PDF heruntergeladen', 'success');
-        } catch (err) {
-            console.error('PDF Export Error:', err);
-            // TypeError = fetch ohne Antwort (offline, Zeitüberschreitung)
-            msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
-        } finally {
-            $btn.prop('disabled', false).html(orig);
-        }
+        // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download (Generator streamt das PDF), Toast
+        msvAusgabe(document.getElementById('btnExportPdf'), {
+            url: 'monatsblatt/export_monatsblatt.php',
+            method: 'POST',
+            body: p.body,
+            titel: `Monatsblatt ${p.year} (${p.start}–${p.end})`,
+            name: `Monatsblatt_${p.year}_${p.start}-${p.end}`,
+            fehler: 'Das Monatsblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'
+        });
     });
 
     // Direktdruck: gleicher POST, Ergebnis geht an QZ Tray (Profil «monatsblatt» in der Drucksteuerung)

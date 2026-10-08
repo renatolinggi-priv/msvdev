@@ -11,7 +11,7 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
-        <?php $page_title = 'Helferstunden erfassen'; $page_actions = '<button type="button" class="btn-help" data-help="jungschuetzen_helfer.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+        <?php $page_title = 'Helferstunden erfassen'; $page_actions = '<button type="button" class="btn-help" data-help="jungschuetzen_helfer.uebersicht" aria-label="Hilfe"></button>' . '<button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm" data-tooltip="Gespeicherte Helferstunden des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Helferstunden</span></button>'; include 'partials/page_header.inc.php'; ?>
         <div class="content-background">
           <form id="helferstundenForm" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
@@ -22,7 +22,6 @@ include 'header.inc.php';
             <div class="d-flex flex-wrap gap-2 mt-3">
               <button type="submit" class="btn btn-outline-primary btn-sm" id="helferSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>
               <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#freierEintragModal"><i class="bi bi-plus-lg me-1"></i>Zusätzlicher Helfereinsatz</button>
-              <button type="button" id="pdfExportBtn" class="btn btn-outline-info btn-sm"><i class="bi bi-file-pdf me-1"></i>Helferstunden als PDF exportieren</button>
             </div>
           </form>
         </div>
@@ -163,34 +162,16 @@ function ladeHelferstunden() {
 }
 $(document).on('click', '#helferNeuLaden', ladeHelferstunden);
 
+// Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast (Fehler als Toast wie überall)
 $('#pdfExportBtn').on('click', function () {
   const year = new Date().getFullYear();
-  const $btn = $(this);
-  if ($btn.prop('disabled')) return;
-  knopfBeschaeftigt($btn, true, 'PDF wird erstellt …');
-
-  $.ajax({
+  $('#pdfDownloadLink').hide().html('');
+  msvAusgabe(this, {
     url: 'jshelfer/create_helfer_pdf.php',
-    method: 'GET',
     data: { year },
-    dataType: 'json',
-    timeout: 60000,
-    success: function(response) {
-      $('#pdfDownloadLink').hide().html('');
-      if (response.success && response.pdf_link) {
-        msvDownload(response.pdf_link, 'Jungschuetzen_Helfer_' + year + '.pdf');
-        msvToast('PDF heruntergeladen', 'success');
-      } else {
-        msvError(response.message || 'Das PDF konnte nicht erstellt werden.');
-      }
-    },
-    error: function(xhr, status) {
-      $('#pdfDownloadLink').hide().html('');
-      msvError(status === 'timeout'
-        ? 'Das PDF braucht zu lange. Bitte nochmals versuchen.'
-        : msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden.'));
-    },
-    complete: function() { knopfBeschaeftigt($btn, false); }
+    titel: 'Helferstunden Jungschützen ' + year,
+    name: 'Jungschuetzen_Helferstunden_' + year,
+    fehler: 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'
   });
 });
 

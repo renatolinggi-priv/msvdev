@@ -601,6 +601,11 @@ include 'header.inc.php';
       $page_title_after = '<button type="button" class="btn-help" data-help="munitionskauf.uebersicht" aria-label="Hilfe"></button>'
           . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
           . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+      // Ausgabe in der Kopf-Card wie auf allen Seiten; die Liste folgt dem Zeitraum-Filter der Tabelle
+      $page_actions = '<div class="btn-group btn-group-sm" role="group" aria-label="Bezüge">'
+          . '<button type="button" id="btnGeneratePDF" class="btn btn-outline-info" data-tooltip="Liste der Bezüge im gewählten Zeitraum (Heute, Woche, Monat, Jahr)"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Bezüge</span></button>'
+          . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="munitionskauf" data-druck-label="Munitionskauf Liste" aria-label="Bezüge direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+          . '</div>';
       $page_show_mobile = true;
       include 'partials/page_header.inc.php';
       ?>
@@ -731,12 +736,6 @@ include 'header.inc.php';
                 <button type="button" id="btnFilterWeek" class="btn btn-outline-secondary btn-sm">Woche</button>
                 <button type="button" id="btnFilterMonth" class="btn btn-outline-secondary btn-sm">Monat</button>
                 <button type="button" id="btnFilterYear" class="btn btn-outline-secondary btn-sm active">Jahr</button>
-                <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm ms-2">
-                  <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-                </button>
-                <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="munitionskauf" data-druck-label="Munitionskauf Liste" aria-label="Liste direkt drucken">
-                  <i class="bi bi-printer"></i>
-                </button>
               </div>
             </div>
             <div class="desktop-table-container">
@@ -782,7 +781,6 @@ include 'header.inc.php';
             <span class="filter-pill" data-filter="week">Woche</span>
             <span class="filter-pill" data-filter="month">Monat</span>
             <span class="filter-pill active" data-filter="year">Jahr</span>
-            <span class="filter-pill" id="mobilePdfBtn"><i class="bi bi-file-earmark-pdf"></i></span>
           </div>
 
           <!-- Mobile Search -->

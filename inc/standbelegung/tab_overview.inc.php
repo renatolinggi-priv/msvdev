@@ -8,8 +8,8 @@
         <i class="bi bi-file-pdf text-danger fs-4 me-2"></i>
         <div><strong>Standbelegung <?= $currentYear ?></strong><span class="text-muted ms-2">(<?= $pdfInfos[$currentYear]['size'] ?> KB)</span></div>
         <div class="ms-auto d-flex gap-2">
-            <a href="standbelegung/pdf/standbelegung_<?= $currentYear ?>.pdf" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm"><i class="bi bi-eye me-1"></i>Anzeigen</a>
-            <a href="standbelegung/pdf/standbelegung_<?= $currentYear ?>.pdf" download class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1"></i>Download</a>
+            <a href="standbelegung/pdf/standbelegung_<?= $currentYear ?>.pdf" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm"><i class="bi bi-eye me-1" aria-hidden="true"></i>Anzeigen</a>
+            <a href="standbelegung/pdf/standbelegung_<?= $currentYear ?>.pdf" download class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1" aria-hidden="true"></i>Herunterladen</a>
         </div>
     </div>
     <?php endif; ?>
@@ -46,10 +46,10 @@
                 <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
                 <div class="row g-2">
                     <div class="col-6">
-                        <button type="button" class="btn btn-outline-info btn-sm w-100" data-action="export-jsk-pdf"><i class="bi bi-file-pdf me-1"></i>JSK PDF</button>
+                        <button type="button" class="btn btn-outline-info btn-sm w-100" data-action="export-jsk-pdf"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>JSK-Termine</span></button>
                     </div>
                     <div class="col-6">
-                        <button type="button" class="btn btn-outline-info btn-sm w-100" data-action="export-preview"><i class="bi bi-file-earmark-excel me-1"></i>Schiesstage</button>
+                        <button type="button" class="btn btn-outline-info btn-sm w-100" data-action="export-preview"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Schiesstage-Meldung (Excel)</span></button>
                     </div>
                 </div>
             </div>

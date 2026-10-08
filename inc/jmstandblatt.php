@@ -39,13 +39,12 @@ ob_start(); ?>
 </select>
 <?php $page_title_after = ob_get_clean();
 ob_start(); ?>
-<button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1"></i>Alle (DOCX)</button>
-<button type="button" id="btnDownloadAllPdf" class="btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>Alle (PDF)</button>
-<button type="button" id="btnPrintAll" class="btn btn-outline-info btn-sm" disabled data-tooltip="QZ Tray nicht verbunden"><i class="bi bi-printer me-1"></i>Alle drucken</button>
+<button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm" data-tooltip="Je eine Word-Datei pro Mitglied, nacheinander"><i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Alle Standblätter (Word)</span></button>
+<div class="btn-group btn-group-sm" role="group" aria-label="Alle Standblätter">
+<button type="button" id="btnDownloadAllPdf" class="btn btn-outline-info" data-tooltip="Ein Sammel-PDF mit allen Standblättern"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Alle Standblätter</span></button>
+<button type="button" id="btnPrintAll" class="btn btn-outline-info" disabled hidden data-druck-eigen data-tooltip="QZ Tray nicht verbunden" aria-label="Alle Standblätter direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
 <?php $page_actions = ob_get_clean();
-ob_start(); ?>
-<span class="ui-chip">Direktdruck <span id="qzBadge" class="badge bg-secondary">prüfe…</span></span>
-<?php $page_extra = ob_get_clean();
 include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
@@ -92,7 +91,8 @@ include 'partials/page_header.inc.php'; ?>
                                 data-id="<?= (int)$m['ID'] ?>"
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
-                                data-tooltip="DOCX herunterladen">
+                                data-tooltip="Standblatt (Word) herunterladen"
+                                aria-label="Standblatt <?= htmlspecialchars($m['Vorname'] . ' ' . $m['Name']) ?> herunterladen (Word)">
                           <i class="bi bi-file-earmark-word"></i>
                         </button>
                         <button type="button" class="btn btn-outline-info btn-print-single"
@@ -100,7 +100,8 @@ include 'partials/page_header.inc.php'; ?>
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
                                 data-tooltip="Direktdruck"
-                                disabled>
+                                aria-label="Standblatt <?= htmlspecialchars($m['Vorname'] . ' ' . $m['Name']) ?> direkt drucken"
+                                disabled hidden>
                           <i class="bi bi-printer"></i>
                         </button>
                       </div>
@@ -138,7 +139,7 @@ include 'partials/page_header.inc.php'; ?>
                             data-id="<?= (int)$m['ID'] ?>"
                             data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                             data-name="<?= htmlspecialchars($m['Name']) ?>">
-                      <i class="bi bi-file-earmark-word me-1"></i>Standblatt herunterladen
+                      <i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Standblatt (Word)</span>
                     </button>
                   </div>
                 </div>
@@ -182,43 +183,25 @@ function standblattUrl(script, mitgliedId) {
   return 'jmstandblatt/' + script + '?' + p.toString();
 }
 
-function saveBlob(blob, filename) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
-}
-
-// Uebersprungene Mitglieder aus den Antwort-Headern des Sammel-PDFs melden
-function meldeUebersprungene(response) {
-  const skipped = parseInt(response.headers.get('X-Skipped') || '0', 10);
-  if (!skipped) return;
+// Übersprungene Mitglieder aus den Antwort-Headern des Sammel-PDFs (null = keine)
+function uebersprungen(response) {
+  const skipped = parseInt((response && response.headers.get('X-Skipped')) || '0', 10);
+  if (!skipped) return null;
   let names = '';
   try { names = decodeURIComponent(response.headers.get('X-Skipped-Names') || ''); } catch (e) { /* ignorieren */ }
-  msvToast(skipped + ' Mitglied(er) ohne Standblatt übersprungen' + (names ? ': ' + names : ''), 'warning');
+  return skipped + ' Mitglied(er) ohne Standblatt übersprungen' + (names ? ': ' + names : '');
 }
 
-async function downloadStandblatt(btn, mitgliedId, vorname, name) {
+// Standblatt (Word) eines Mitglieds über den Ausgabe-Baustein; still = ohne Erfolgs-Toast (Sammel-Download)
+function downloadStandblatt(btn, mitgliedId, vorname, name, still) {
   const jahr = document.getElementById('yearSelect').value;
-  const originalHTML = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
-
-  try {
-    const response = await fetch(standblattUrl('generate_jmstandblatt.php', mitgliedId));
-    if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'));
-    saveBlob(await response.blob(), `JM_Standblatt_${jahr}_${vorname}${name}.docx`);
-    return true;
-  } catch (err) {
-    console.error(err);
-    // TypeError = fetch ohne Antwort (offline, Zeitüberschreitung)
-    msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
-    return false;
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
-  }
+  return msvAusgabe(btn, {
+    url: standblattUrl('generate_jmstandblatt.php', mitgliedId),
+    titel: `Standblatt ${vorname} ${name}`,
+    name: `JM_Standblatt_${jahr}_${vorname}_${name}`,
+    fehler: 'Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.',
+    still: !!still
+  });
 }
 
 // Einzelner Download (Desktop-Zeile und Mobile-Card tragen dieselbe Klasse)
@@ -236,21 +219,20 @@ function printReady() {
     return typeof MsvDruck !== 'undefined' && MsvDruck.bereit(JM_DOC);
 }
 
+// Drucker wie überall: ohne QZ-Verbindung ausgeblendet (Hinweis in der Kopf-Card kommt von MsvDruck),
+// mit Verbindung, aber ohne Profil gesperrt mit Grund im Tooltip.
 function updateQzBadge() {
-    const badge = document.getElementById('qzBadge');
     const btn = document.getElementById('btnPrintAll');
+    const sichtbar = typeof MsvDruck !== 'undefined' && MsvDruck.sichtbar();
     const ready = printReady();
     const grund = typeof MsvDruck !== 'undefined' ? MsvDruck.grund(JM_DOC, 'JM Standblatt') : 'QZ Tray nicht verfügbar';
-    if (badge) {
-        badge.className = ready ? 'badge bg-success' : 'badge bg-danger';
-        badge.textContent = ready ? 'QZ verbunden' : (grund.startsWith('Kein Druckprofil') ? 'Kein Profil' : 'QZ getrennt');
-        badge.dataset.tooltip = ready ? MsvDruck.profilText(JM_DOC) : grund;
-    }
     if (btn) {
+        btn.hidden = !sichtbar;
         btn.disabled = !ready;
         btn.dataset.tooltip = ready ? 'Alle Standblätter drucken (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
     }
     document.querySelectorAll('.btn-print-single').forEach(b => {
+        b.hidden = !sichtbar;
         b.disabled = !ready;
         b.dataset.tooltip = ready ? 'Direktdruck (' + MsvDruck.profilText(JM_DOC) + ')' : grund;
     });
@@ -291,7 +273,7 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
     const btn = this;
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF wird erstellt…';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm msv-ausgabe-spinner" aria-hidden="true"></span>'; btn.setAttribute('aria-busy', 'true');
     const jahr = document.getElementById('yearSelect').value;
 
     try {
@@ -300,45 +282,39 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
         if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das PDF für den Druck konnte nicht erstellt werden. Bitte nochmals versuchen.'));
         const blob = await response.blob();
 
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Drucke…';
+        // Druckauftrag läuft (Spinner bleibt)
         const ok = await MsvDruck.print({
             docType: JM_DOC,
             blob,
             jobName: `JM Standblätter ${jahr} alle`,
             orientation: 'landscape',
         });
-        if (ok) meldeUebersprungene(response);
+        const hinweis = ok && uebersprungen(response);
+        if (hinweis) msvToast(hinweis, 'warning');
     } catch (err) {
         console.error('Druckfehler:', err);
         msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
     } finally {
         btn.innerHTML = originalHTML;
+        btn.removeAttribute('aria-busy');
         updateQzBadge();
     }
 });
 
 // Alle als PDF herunterladen
-document.getElementById('btnDownloadAllPdf').addEventListener('click', async function() {
-    const btn = this;
-    const originalHTML = btn.innerHTML;
+// (Ausgabe-Baustein; übersprungene Mitglieder ersetzen die Erfolgsmeldung durch einen Hinweis)
+document.getElementById('btnDownloadAllPdf').addEventListener('click', function() {
     const jahr = document.getElementById('yearSelect').value;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>PDF wird erstellt…';
-
-    try {
-        const response = await fetch(standblattUrl('generate_jmstandblatt_all_pdf.php'));
-        if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'));
-        const blob = await response.blob();
-        saveBlob(blob, `JM_Standblaetter_${jahr}_alle.pdf`);
-        msvToast(`PDF heruntergeladen (${(blob.size / 1024 / 1024).toFixed(1)} MB)`, 'success');
-        meldeUebersprungene(response);
-    } catch (err) {
-        console.error(err);
-        msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHTML;
-    }
+    msvAusgabe(this, {
+        url: standblattUrl('generate_jmstandblatt_all_pdf.php'),
+        titel: `JM Standblätter ${jahr} (alle)`,
+        name: `JM_Standblaetter_${jahr}_alle`,
+        fehler: 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.',
+        erfolg: (j, res) => {
+            const hinweis = uebersprungen(res);
+            return hinweis ? { text: 'PDF heruntergeladen – ' + hinweis, typ: 'warning' } : '';
+        }
+    });
 });
 
 // Alle als DOCX herunterladen (sequenziell) — ueber die Datenzeilen, nicht ueber Buttons
@@ -354,7 +330,7 @@ document.getElementById('btnDownloadAll').addEventListener('click', async functi
   let ok = 0;
   for (const row of rows) {
     const rowBtn = row.querySelector('.btn-standblatt');
-    if (await downloadStandblatt(rowBtn, row.dataset.id, row.dataset.vorname, row.dataset.name)) ok++;
+    if (await downloadStandblatt(rowBtn, row.dataset.id, row.dataset.vorname, row.dataset.name, true)) ok++;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + ok + ' / ' + rows.length;
     // Kurze Pause damit der Browser den Download verarbeiten kann
     await new Promise(r => setTimeout(r, 300));

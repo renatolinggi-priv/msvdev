@@ -113,8 +113,10 @@ ob_start(); ?>
 <?php $page_title_after = ob_get_clean();
 ob_start(); ?>
 <button type="button" id="addNewBtn" class="btn btn-outline-success btn-sm" disabled><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
-<button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm" style="display: none;"><i class="bi bi-file-pdf me-1"></i>PDF</button>
-<button type="button" id="printPdfBtn" class="btn btn-outline-info btn-sm msv-druck" style="display: none;" data-druck-doctype="sektionsrangierungen" data-druck-label="Sektionsrangierungen" aria-label="Sektionsrangierungen direkt drucken"><i class="bi bi-printer"></i></button>
+<div id="rangAusgabe" class="btn-group btn-group-sm d-none" role="group" aria-label="Sektionsrangierungen">
+<button type="button" id="exportPdfBtn" class="btn btn-outline-info"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Sektionsrangierungen</span></button>
+<button type="button" id="printPdfBtn" class="btn btn-outline-info msv-druck" data-druck-doctype="sektionsrangierungen" data-druck-label="Sektionsrangierungen" aria-label="Sektionsrangierungen direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
 <?php $page_actions = ob_get_clean();
 include 'partials/page_header.inc.php'; ?>
 
@@ -297,7 +299,7 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success && response.rankings.length > 0) {
                     displayRankings(response.rankings);
-                    $('#exportPdfBtn, #printPdfBtn').show();
+                    $('#rangAusgabe').removeClass('d-none');
                 } else {
                     $('#rankingsList').html(`
                         <tr><td colspan="4" class="ui-leerzustand">
@@ -306,7 +308,8 @@ $(document).ready(function () {
                         </td></tr>
                     `);
                     buildMobileCardsSektionsrang();
-                    $('#exportPdfBtn').hide();
+                    // Ohne Rangierungen weder PDF noch Direktdruck (sonst druckt man ein leeres Blatt)
+                    $('#rangAusgabe').addClass('d-none');
                 }
             },
             error: function () {
@@ -522,41 +525,18 @@ $(document).ready(function () {
             return;
         }
 
-        const $btn = $(this);
-        const originalText = $btn.html();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Erstelle PDF...');
-
-        $.ajax({
+        // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast
+        msvAusgabe(this, {
             url: 'sektionsrangierungen/export_rankings_pdf.php',
-            type: 'POST',
+            method: 'POST',
+            csrf: true,
             data: {
                 year: selectedYear,
-                orientation: window.MsvDruck ? MsvDruck.orientierung('sektionsrangierungen', 'portrait') : 'portrait', // Format aus dem Druckprofil
-                csrf_token: $('input[name="csrf_token"]').val()
+                orientation: window.MsvDruck ? MsvDruck.orientierung('sektionsrangierungen', 'portrait') : 'portrait' // Format aus dem Druckprofil
             },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success && response.pdf_url) {
-                    msvToast('PDF erfolgreich erstellt', 'success');
-
-                    const link = document.createElement('a');
-                    link.href = response.pdf_url;
-                    link.target = '_blank';
-                    link.download = response.filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } else {
-                    msvToast(response.message || 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', 'error');
-                }
-            },
-            error: function() {
-                msvToast('Fehler beim PDF-Export', 'error');
-            },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-            }
+            titel: 'Sektionsrangierungen ' + selectedYear,
+            name: 'Sektionsrangierungen_' + selectedYear,
+            fehler: 'Die Sektionsrangierungen konnten nicht erstellt werden. Bitte nochmals versuchen.'
         });
     });
 

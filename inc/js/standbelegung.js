@@ -314,14 +314,27 @@
             const i = $(this).find('.art-select').data('index');
             return { ...exportData[i], art: $(this).find('.art-select').val() };
         }).get();
-        const done = withSpinner($('#executeExportBtn'), 'Erstelle…');
-        postJson('standbelegung/export_schiesstagemeldung.php', { entries, source: exportSource })
-            .done(r => {
-                if (r && r.success && r.file) { msvToast('Export erstellt', 'success'); bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide(); window.location.href = r.file; }
-                else msvToast((r && (r.message || r.error)) || 'Export fehlgeschlagen', 'error');
-            })
-            .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Export'), 'error'))
-            .always(done);
+        // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast; Dateiname vom Server
+        msvAusgabe(document.getElementById('executeExportBtn'), {
+            url: 'standbelegung/export_schiesstagemeldung.php',
+            json: { entries, source: exportSource },
+            csrf: CSRF,
+            titel: 'Schiesstage-Meldung (Excel)',
+            fehler: 'Der Export ist fehlgeschlagen. Bitte nochmals versuchen.'
+        }).then(ok => { if (ok) bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide(); });
+    }
+
+    // JSK-Termine als PDF: nur für ein bestimmtes Jahr (nicht still das aktuelle bei «Alle Jahre»)
+    function exportJskPdf(knopf) {
+        const jahr = $('#overviewYear').val();
+        if (!jahr) { msvToast('Für das JSK-PDF bitte oben ein Jahr wählen.', 'warning'); $('#overviewYear').trigger('focus'); return; }
+        msvAusgabe(knopf, {
+            url: 'standbelegung/export_jsk_pdf.php',
+            data: { year: jahr },
+            titel: 'JSK-Termine ' + jahr,
+            name: 'JSK_Termine_' + jahr,
+            fehler: 'Das JSK-PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'
+        });
     }
 
     // ---------- Keywords ----------
@@ -451,7 +464,7 @@
                 case 'export-from-import': showExportPreview(true); break;
                 case 'export-preview': showExportPreview(false); break;
                 case 'export-execute': executeExport(); break;
-                case 'export-jsk-pdf': window.open('standbelegung/export_jsk_pdf.php?year=' + encodeURIComponent($('#overviewYear').val() || new Date().getFullYear()), '_blank'); break;
+                case 'export-jsk-pdf': exportJskPdf(this); break;
                 case 'overview-select-all':  $('#overviewTableBody tr:visible .row-checkbox').prop('checked', true); updateOverviewCount(); buildMobileCards(); break;
                 case 'overview-select-none': $('#overviewTableBody tr:visible .row-checkbox').prop('checked', false); updateOverviewCount(); buildMobileCards(); break;
                 case 'delete-selected': deleteEntries(selectedIds()); break;

@@ -127,7 +127,7 @@ include 'partials/side_panel.inc.php';
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-outline-info btn-sm" id="executeExportBtn" data-action="export-execute"><i class="bi bi-download me-1"></i> Excel herunterladen</button>
+                <button type="button" class="btn btn-outline-info btn-sm" id="executeExportBtn" data-action="export-execute"><i class="bi bi-download me-1" aria-hidden="true"></i><span>Excel herunterladen</span></button>
             </div>
         </div>
     </div>

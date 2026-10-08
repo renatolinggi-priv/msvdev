@@ -25,14 +25,13 @@ ob_start(); ?>
 <select id="yearSelect" class="form-select form-select-sm"></select>
 <?php $page_title_after = ob_get_clean();
 ob_start(); ?>
-<button type="button" class="xlsx-btn btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
+<button type="button" class="xlsx-btn btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Abrechnung (Excel)</span></button>
 <?php $page_actions = ob_get_clean();
 include 'partials/page_header.inc.php'; ?>
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="schuetzenabr-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-                    <div id="excel-link"></div>
                     <!-- Info-Bereich -->
                     <div class="table-wrapper">
                         <h5 class="table-title">
@@ -66,48 +65,17 @@ include 'partials/page_header.inc.php'; ?>
     $(document).ready(function() {
 
         // Excel-Button Handler
+        // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast (Label bleibt stehen)
         $(document).on('click', '.xlsx-btn', function(e) {
             e.preventDefault();
-            var selectedYear = $('#yearSelect').val();
-
-            // Button deaktivieren während der Verarbeitung
-            $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split me-2"></i>Generiere...');
-            $.ajax({
+            var jahr = $('#yearSelect').val();
+            msvAusgabe(this, {
                 url: 'schuetzenabr/generate_schuetzenabr_xlsx.php',
-                type: 'GET',
-                data: {
-                    year: selectedYear
-                },
-                success: function(response) {
-                    try {
-                        var data = JSON.parse(response);
-                        if (data.excel_link) {
-
-                            // Excel direkt herunterladen
-                            const link = document.createElement('a');
-                            link.href = 'schuetzenabr/' + data.excel_link;
-                            link.download = data.excel_link.split('/').pop();
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            msvToast('Excel-Datei wurde erfolgreich generiert und heruntergeladen.', 'success');
-                            $('#excel-link').empty();
-                        } else if (data.error) {
-                            msvToast('Fehler: ' + data.error, 'error');
-                        }
-                    } catch (e) {
-                        msvToast('Fehler beim Verarbeiten der Antwort.', 'error');
-                    }
-                },
-                error: function(xhr) {
-                    console.error('AJAX Error:', xhr.responseText);
-                    msvToast(msvXhrMessage(xhr, 'Die Excel-Datei konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
-                },
-                complete: function() {
-
-                    // Button wieder aktivieren
-                    $('.xlsx-btn').prop('disabled', false).html('<i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel generieren');
-                }
+                data: { year: jahr },
+                linkPrefix: 'schuetzenabr/',
+                titel: 'Schützenabrechnung ' + jahr + ' (Excel)',
+                name: 'Schuetzenabrechnung_' + jahr,
+                fehler: 'Die Excel-Datei konnte nicht erstellt werden. Bitte nochmals versuchen.'
             });
         });
 

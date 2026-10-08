@@ -326,9 +326,11 @@ $page_show_mobile = true;
                   <td class="text-center"><?= (int)$p['anz_besetzt'] ?> / <?= (int)$p['anz_slots'] ?><?php if ($offen > 0 && $p['layout'] === 'funktion_x_termin'): ?> <span class="badge bg-warning text-dark" data-tooltip="offene Positionen"><?= $offen ?></span><?php endif; ?></td>
                   <td class="text-end text-nowrap">
                     <a class="btn btn-outline-primary btn-sm" href="einsatzplanung.php?id=<?= (int)$p['id'] ?>" data-tooltip="Bearbeiten"><i class="bi bi-pencil"></i></a>
-                    <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= (int)$p['id'] ?>" data-fmt="docx" data-tooltip="Word"><i class="bi bi-file-earmark-word"></i></button>
-                    <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= (int)$p['id'] ?>" data-fmt="pdf" data-tooltip="PDF (Konvertierung, dauert einige Sekunden)"><i class="bi bi-file-earmark-pdf"></i></button>
-                    <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="einsatzplan" data-druck-label="Einsatzplan" data-plan="<?= (int)$p['id'] ?>" data-typ="<?= $h($p['typ']) ?>" data-titel="<?= $h($p['titel']) ?>" data-tooltip="Direkt drucken (Druckprofil «Einsatzplan»)"><i class="bi bi-printer"></i></button>
+                    <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= (int)$p['id'] ?>" data-fmt="docx" data-tooltip="Einsatzplan (Word)" aria-label="Einsatzplan <?= $h($p['titel']) ?> (Word)"><i class="bi bi-file-earmark-word" aria-hidden="true"></i></button>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Einsatzplan <?= $h($p['titel']) ?>">
+                      <button type="button" class="btn btn-outline-info js-export" data-plan="<?= (int)$p['id'] ?>" data-fmt="pdf" data-tooltip="Einsatzplan (PDF; die Umwandlung dauert einige Sekunden)" aria-label="Einsatzplan <?= $h($p['titel']) ?>"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></button>
+                      <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="einsatzplan" data-druck-label="Einsatzplan" data-plan="<?= (int)$p['id'] ?>" data-typ="<?= $h($p['typ']) ?>" data-titel="<?= $h($p['titel']) ?>" aria-label="Einsatzplan <?= $h($p['titel']) ?> direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                    </div>
                     <button type="button" class="btn btn-outline-danger btn-sm js-plan-delete" data-plan="<?= (int)$p['id'] ?>" data-titel="<?= $h($p['titel']) ?>" data-tooltip="Löschen"><i class="bi bi-trash"></i></button>
                   </td>
                 </tr>
@@ -382,21 +384,23 @@ $page_show_mobile = true;
 
               <!-- Gruppe: Ausgabe (Dropdown + Direktdruck) -->
               <div class="ep-tb-group"><span class="ep-tb-label">Ausgabe</span>
-                <div class="btn-group btn-group-sm">
-                  <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="einsatzplan" data-druck-label="Einsatzplan" data-plan="<?= $planId ?>" data-typ="<?= $h($plan['typ']) ?>" data-titel="<?= $h($plan['titel']) ?>" data-tooltip="Einsatzliste direkt drucken (PDF, Druckprofil «Einsatzplan»)"><i class="bi bi-printer me-1"></i>Drucken</button>
-                  <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-download me-1"></i>Export</button>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Dokumente">
+                  <div class="btn-group btn-group-sm dropdown" role="group">
+                  <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Dokumente</button>
                   <ul class="dropdown-menu dropdown-menu-sm">
-                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="docx"><i class="bi bi-file-earmark-word me-2"></i>Word <small class="text-muted">· <?= $istA ? 'Funktionen × Termine' : 'Personen × Schichten' ?></small></a></li>
-                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="docx" data-ansicht="<?= $istA ? 'personen' : 'funktionen' ?>"><i class="bi bi-file-earmark-word me-2"></i>Word <small class="text-muted">· <?= $istA ? 'Personen: wer arbeitet wann' : 'Funktionen: wer ist wo' ?></small></a></li>
-                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="pdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
-                    <li><a class="dropdown-item" href="#" id="epPdfAblegen"><i class="bi bi-folder-plus me-2"></i>PDF ins Portal ablegen <small class="text-muted">· Dokument für alle Mitglieder</small></a></li>
-                    <?php if (!$istA): ?><li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="xlsx"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel <small class="text-muted">· Personen × Schichten</small></a></li><?php endif; ?>
+                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="docx"><i class="bi bi-file-earmark-word me-2" aria-hidden="true"></i>Einsatzplan (Word) <small class="text-muted">· <?= $istA ? 'Funktionen × Termine' : 'Personen × Schichten' ?></small></a></li>
+                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="docx" data-ansicht="<?= $istA ? 'personen' : 'funktionen' ?>"><i class="bi bi-file-earmark-word me-2" aria-hidden="true"></i>Einsatzplan (Word) <small class="text-muted">· <?= $istA ? 'Personen: wer arbeitet wann' : 'Funktionen: wer ist wo' ?></small></a></li>
+                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="pdf"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Einsatzplan</a></li>
+                    <li><a class="dropdown-item" href="#" id="epPdfAblegen"><i class="bi bi-folder-plus me-2" aria-hidden="true"></i>Einsatzplan ins Portal ablegen <small class="text-muted">· Dokument für alle Mitglieder</small></a></li>
+                    <?php if (!$istA): ?><li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="xlsx"><i class="bi bi-file-earmark-spreadsheet me-2" aria-hidden="true"></i>Einsatzplan (Excel) <small class="text-muted">· Personen × Schichten</small></a></li><?php endif; ?>
                     <?php if ($plan['typ'] === 'schlossturm'): ?>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Personalanfrage MSV <small class="text-muted">· Excel mit unseren Verfügbarkeiten</small></a></li>
-                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv" data-leer="1"><i class="bi bi-file-earmark me-2"></i>Personalanfrage leer <small class="text-muted">· Vorlage für die Vereine</small></a></li>
+                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv"><i class="bi bi-file-earmark-spreadsheet me-2" aria-hidden="true"></i>Personalanfrage MSV (Excel) <small class="text-muted">· mit unseren Verfügbarkeiten</small></a></li>
+                    <li><a class="dropdown-item js-export" href="#" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv" data-leer="1"><i class="bi bi-file-earmark-spreadsheet me-2" aria-hidden="true"></i>Personalanfrage leer (Excel) <small class="text-muted">· Vorlage für die Vereine</small></a></li>
                     <?php endif; ?>
                   </ul>
+                  </div>
+                  <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="einsatzplan" data-druck-label="Einsatzplan" data-plan="<?= $planId ?>" data-typ="<?= $h($plan['typ']) ?>" data-titel="<?= $h($plan['titel']) ?>" aria-label="Einsatzplan direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                 </div>
               </div>
 
@@ -947,8 +951,8 @@ $page_show_mobile = true;
         <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-upload me-1"></i>Personalanfrage-Excel prüfen</button>
       </form>
       <span class="ms-auto d-flex gap-2">
-        <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv" data-tooltip="Excel mit den MSV-Verfügbarkeiten"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel MSV</button>
-        <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv" data-leer="1" data-tooltip="Leere Vorlage für die anderen Vereine"><i class="bi bi-file-earmark me-1"></i>Leere Vorlage</button>
+        <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv" data-tooltip="Excel mit den MSV-Verfügbarkeiten"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Personalanfrage MSV (Excel)</span></button>
+        <button type="button" class="btn btn-outline-info btn-sm js-export" data-plan="<?= $planId ?>" data-fmt="personalanfrage" data-verein="msv" data-leer="1" data-tooltip="Leere Vorlage für die anderen Vereine"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Personalanfrage leer (Excel)</span></button>
       </span>
     </div>
     <div id="epVerfImportBox" class="d-none mb-3">
@@ -1065,14 +1069,23 @@ $(function () {
   const post = (file, data, ok, failMsg) => msvPost(basePath + file, Object.assign({ plan_id: PLAN_ID }, data || {}), ok, { csrf: CSRF, failMsg });
 
   // ---------- Export (Liste + Editor) ----------
+  // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download statt neuem Tab (die PDF-Konvertierung dauert
+  // einige Sekunden – danach sperrt der Popup-Blocker window.open), Toast. Im Editor-Menü dreht der Spinner am Knopf «Export».
   $(document).on('click', '.js-export', function (e) {
     e.preventDefault();
-    const $b = $(this), orig = $b.html();
-    $b.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-    $.getJSON(basePath + 'export_' + $b.data('fmt') + '.php', { plan_id: $b.data('plan'), ansicht: $b.data('ansicht') || '', verein: $b.data('verein') || '', leer: $b.data('leer') || '' })
-      .done(r => { if (r && r.success && r.link) { window.open(basePath + r.link, '_blank'); msvToast('Datei erstellt', 'success'); } else msvToast((r && r.message) || 'Export fehlgeschlagen', 'error'); })
-      .fail(xhr => msvToast(msvXhrMessage(xhr, 'Export fehlgeschlagen'), 'error'))
-      .always(() => $b.prop('disabled', false).html(orig));
+    const $b = $(this), fmt = String($b.data('fmt'));
+    const plan = $b.closest('tr, .ep-tb-group, .modal').find('[data-titel]').first().data('titel')
+      || $('.msv-druck[data-plan="' + $b.data('plan') + '"]').first().data('titel') || 'Einsatzplan';
+    const art = { docx: 'Word', pdf: 'PDF', xlsx: 'Excel', personalanfrage: 'Personalanfrage' }[fmt] || fmt;
+    msvAusgabe(this, {
+      url: basePath + 'export_' + fmt + '.php',
+      data: { plan_id: $b.data('plan'), ansicht: $b.data('ansicht') || '', verein: $b.data('verein') || '', leer: $b.data('leer') || '' },
+      linkPrefix: basePath,
+      ladeKnopf: $b.hasClass('dropdown-item') ? $b.closest('.btn-group, .dropdown').find('.dropdown-toggle')[0] : null,
+      titel: plan + ' (' + art + ')',
+      name: (fmt === 'personalanfrage' ? 'Personalanfrage_' : '') + plan + ($b.data('leer') ? '_leer' : ''),
+      fehler: 'Der Export ist fehlgeschlagen. Bitte nochmals versuchen.'
+    });
   });
 
   // ---------- Auswertung Anwesenheit (Plan oder Jahr) ----------
@@ -1326,7 +1339,8 @@ $(function () {
     msvConfirm('Das PDF wird erzeugt und unter «Dokumente verwalten → Einsatzpläne» für alle Mitglieder abgelegt. Ein bestehendes Dokument wird nicht ersetzt.', 'PDF ins Portal', 'Ja, ablegen').then(res => {
       if (!res.isConfirmed) return;
       const orig = $b.html(); $b.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-      post('export_pdf.php', { ablegen: 1 }, r => { msvToast(r.message, 'success'); if (r.link) window.open(basePath + r.link, '_blank'); })
+      // Nur ablegen; kein neues Fenster mehr (Popup-Blocker nach der Konvertierung). Ansehen unter «Dokumente verwalten».
+      post('export_pdf.php', { ablegen: 1 }, r => { msvToast(r.message || 'PDF im Portal abgelegt', 'success'); })
         .always(() => $b.prop('disabled', false).html(orig));
     });
   });

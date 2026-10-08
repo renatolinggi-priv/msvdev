@@ -181,16 +181,18 @@ include 'header.inc.php';
 <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#copyYearModal" data-tooltip="Anlässe vom Vorjahr übernehmen"><i class="bi bi-calendar2-week me-1"></i>Vom Vorjahr</button>
 <button type="button" id="sortByDateButton" class="btn btn-outline-secondary btn-sm" data-tooltip="Sortiert alle Anlässe nach dem ersten Datum im Feld Schiesstage"><i class="bi bi-sort-numeric-down me-1"></i>Sortieren</button>
 <button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>
-<div class="dropdown">
-  <button type="button" class="btn btn-outline-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1"></i>Exporte</button>
-  <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" id="exportPdfButton" class="dropdown-item"><i class="bi bi-file-pdf me-2"></i>Jahresprogramm (PDF)</button></li>
-    <li><button type="button" id="exportPdfDraftButton" class="dropdown-item" data-tooltip="PDF mit Wasserzeichen «Entwurf»"><i class="bi bi-file-pdf me-2"></i>Entwurf (PDF)</button></li>
-    <li><button type="button" id="exportWordFragebogen" class="dropdown-item"><i class="bi bi-file-word me-2"></i>Fragebogen (Word)</button></li>
-    <li><button type="button" id="exportICSAll" class="dropdown-item"><i class="bi bi-calendar-plus me-2"></i>Kalender (ICS)</button></li>
-  </ul>
+<div class="btn-group btn-group-sm" role="group" aria-label="Dokumente">
+  <div class="btn-group btn-group-sm dropdown" role="group">
+    <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Dokumente</button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li><button type="button" id="exportPdfButton" class="dropdown-item"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Jahresprogramm</button></li>
+      <li><button type="button" id="exportPdfDraftButton" class="dropdown-item" data-tooltip="PDF mit Wasserzeichen «Entwurf»"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Jahresprogramm (Entwurf)</button></li>
+      <li><button type="button" id="exportWordFragebogen" class="dropdown-item"><i class="bi bi-file-earmark-word me-2" aria-hidden="true"></i>Fragebogen (Word)</button></li>
+      <li><button type="button" id="exportICSAll" class="dropdown-item"><i class="bi bi-calendar-plus me-2" aria-hidden="true"></i>Termine (Kalender)</button></li>
+    </ul>
+  </div>
+  <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmdefinition" data-druck-label="Jahresprogramm" aria-label="Jahresprogramm direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
 </div>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmdefinition" data-druck-label="Jahresprogramm" aria-label="Jahresprogramm direkt drucken"><i class="bi bi-printer"></i></button>
 <button type="submit" form="jmdefinitionForm" id="jmdefSpeichernBtn" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Speichern</button>
 <?php   $page_actions = ob_get_clean();
         $page_show_mobile = true;
@@ -1254,63 +1256,22 @@ $(function () {
   }
 
   // ========== Exporte ==========
-  function triggerDownload(url) {
-    const a = document.createElement('a');
-    a.href = url; a.download = '';
-    document.body.appendChild(a); a.click(); a.remove();
+  // Ausgabe-Baustein msvAusgabe: Menüpunkt gesperrt, Spinner am Knopf «Exporte» (das Menü schliesst sich), Download, Toast
+  function jmdefExport(item, skript, extra, dokument, dateiname) {
+    const jahr = $('#yearSelect').val();
+    msvAusgabe(item, {
+      url: basePath + 'jmdefinition/' + skript,
+      data: Object.assign({ year: jahr }, extra),
+      ladeKnopf: $(item).closest('.dropdown').children('.dropdown-toggle')[0],
+      titel: dokument + ' ' + jahr,
+      name: dateiname + '_' + jahr,
+      fehler: dokument + ' konnte nicht erstellt werden. Bitte nochmals versuchen.'
+    });
   }
-
-  $('#exportPdfButton').on('click', function(e) {
-    e.preventDefault();
-    const $btn = $(this), originalText = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-    $.getJSON(basePath + 'jmdefinition/export_jmdefinition_pdf.php', { year: $('#yearSelect').val() })
-      .done(function(resp) {
-        if (resp && resp.success && resp.pdf_link) { triggerDownload(resp.pdf_link); showSuccessToast('PDF wird heruntergeladen'); }
-        else { showErrorToast(resp.message || 'PDF konnte nicht generiert werden'); }
-      })
-      .fail(() => showErrorToast('PDF-Fehler'))
-      .always(() => $btn.prop('disabled', false).html(originalText));
-  });
-
-  $('#exportPdfDraftButton').on('click', function(e) {
-    e.preventDefault();
-    const $btn = $(this), originalText = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-    $.getJSON(basePath + 'jmdefinition/export_jmdefinition_pdf.php', { year: $('#yearSelect').val(), draft: 1 })
-      .done(function(resp) {
-        if (resp && resp.success && resp.pdf_link) { triggerDownload(resp.pdf_link); showSuccessToast('Entwurf-PDF wird heruntergeladen'); }
-        else { showErrorToast(resp.message || 'PDF konnte nicht generiert werden'); }
-      })
-      .fail(() => showErrorToast('PDF-Fehler'))
-      .always(() => $btn.prop('disabled', false).html(originalText));
-  });
-
-  $('#exportWordFragebogen').on('click', function(e) {
-    e.preventDefault();
-    const $btn = $(this), originalText = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-    $.getJSON(basePath + 'jmdefinition/export_fragebogen.php', { year: $('#yearSelect').val() })
-      .done(function(resp) {
-        if (resp && resp.success && resp.word_link) { triggerDownload(resp.word_link); showSuccessToast('Fragebogen wird heruntergeladen'); }
-        else { showErrorToast(resp.message || 'Fragebogen konnte nicht generiert werden'); }
-      })
-      .fail(() => showErrorToast('Word-Fehler'))
-      .always(() => $btn.prop('disabled', false).html(originalText));
-  });
-
-  $('#exportICSAll').on('click', function(e) {
-    e.preventDefault();
-    const $btn = $(this), originalText = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-    $.getJSON(basePath + 'jmdefinition/export_all_ics.php', { year: $('#yearSelect').val() })
-      .done(function(resp) {
-        if (resp && resp.success && resp.ics_link) { triggerDownload(resp.ics_link); showSuccessToast('ICS wird heruntergeladen'); }
-        else { showErrorToast(resp.message || 'ICS konnte nicht generiert werden'); }
-      })
-      .fail(() => showErrorToast('ICS-Fehler'))
-      .always(() => $btn.prop('disabled', false).html(originalText));
-  });
+  $('#exportPdfButton').on('click', function(e) { e.preventDefault(); jmdefExport(this, 'export_jmdefinition_pdf.php', {}, 'Jahresprogramm', 'Jahresprogramm'); });
+  $('#exportPdfDraftButton').on('click', function(e) { e.preventDefault(); jmdefExport(this, 'export_jmdefinition_pdf.php', { draft: 1 }, 'Jahresprogramm (Entwurf)', 'Jahresprogramm_Entwurf'); });
+  $('#exportWordFragebogen').on('click', function(e) { e.preventDefault(); jmdefExport(this, 'export_fragebogen.php', {}, 'Fragebogen (Word)', 'Fragebogen'); });
+  $('#exportICSAll').on('click', function(e) { e.preventDefault(); jmdefExport(this, 'export_all_ics.php', {}, 'Termine (Kalender)', 'JM_Termine'); });
 
   // ========== Sortieren ==========
   $('#sortByDateButton').on('click', function(e) {

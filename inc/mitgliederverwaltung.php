@@ -32,8 +32,8 @@ include 'header.inc.php';
         $page_title_after = '<button type="button" class="btn-help" data-help="mitgliederverwaltung.uebersicht" aria-label="Hilfe"></button>';
         $page_actions = '<button type="button" class="btn btn-outline-success btn-sm" id="btnNewMember"><i class="bi bi-person-plus me-1"></i>Hinzufügen</button>'
             . '<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-upload me-1"></i>Import</button>'
-            . '<a href="mitgliederverwaltung/export_csv.php" class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1"></i>CSV</a>'
-            . '<button type="button" class="btn btn-outline-info btn-sm xlsx-export-btn"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Adressliste</button>';
+            . '<button type="button" class="btn btn-outline-info btn-sm csv-export-btn" data-tooltip="Alle Felder, wieder importierbar"><i class="bi bi-filetype-csv me-1" aria-hidden="true"></i><span>Mitglieder (CSV)</span></button>'
+            . '<button type="button" class="btn btn-outline-info btn-sm xlsx-export-btn"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Adressliste (Excel)</span></button>';
         include 'partials/page_header.inc.php';
         ?>
 
@@ -778,22 +778,28 @@ $(function() {
   window.matchMedia('(max-width: 767.98px)').addEventListener('change', () => buildMobileCards());
 
   // ========== Excel-Export (Adressliste) ==========
+  // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast
+  const heute = new Date().toISOString().slice(0, 10);
   $(document).on('click', '.xlsx-export-btn', function(e) {
     e.preventDefault();
-    const $btn = $(this), orig = $btn.html();
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Generiere...');
-    $.getJSON(basePath + 'mitgliederverwaltung/generate_mitglieder_xlsx.php')
-      .done(function(r) {
-        if (r && r.success && r.excel_link) {
-          const link = document.createElement('a');
-          link.href = basePath + 'mitgliederverwaltung/' + r.excel_link;
-          link.download = r.excel_link.split('/').pop();
-          document.body.appendChild(link); link.click(); document.body.removeChild(link);
-          msvToast('Adressliste exportiert', 'success');
-        } else msvToast((r && r.message) || 'Fehler beim Generieren der Excel-Datei', 'error');
-      })
-      .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Generieren der Excel-Datei'), 'error'))
-      .always(() => $btn.prop('disabled', false).html(orig));
+    msvAusgabe(this, {
+      url: basePath + 'mitgliederverwaltung/generate_mitglieder_xlsx.php',
+      linkPrefix: basePath + 'mitgliederverwaltung/',
+      titel: 'Adressliste (Excel)',
+      name: 'Mitglieder_Adressliste_' + heute,
+      fehler: 'Die Adressliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
+    });
+  });
+
+  // ========== CSV-Export (alle Felder, wieder importierbar) ==========
+  $(document).on('click', '.csv-export-btn', function(e) {
+    e.preventDefault();
+    msvAusgabe(this, {
+      url: basePath + 'mitgliederverwaltung/export_csv.php',
+      titel: 'Mitglieder (CSV)',
+      name: 'Mitglieder_' + heute,
+      fehler: 'Der CSV-Export ist fehlgeschlagen. Bitte nochmals versuchen.'
+    });
   });
 
   // ========== Start ==========

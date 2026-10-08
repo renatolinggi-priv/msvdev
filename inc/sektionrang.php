@@ -38,8 +38,10 @@ require_once __DIR__ . '/csrf.inc.php';
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
                 $page_show_mobile = true;
                 ob_start(); ?>
-<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste</span></button>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="sektionrang" data-druck-label="Sektionsmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
+<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">
+<button type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>
+<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="sektionrang" data-druck-label="Sektionsmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
 <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten </button>
                 <?php $page_actions = ob_get_clean();
                 include 'partials/page_header.inc.php'; ?>
@@ -47,8 +49,6 @@ require_once __DIR__ . '/csrf.inc.php';
                 <div class="content-background">
                 <form id="sektionrangForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-
-                    <div id="pdf-link"></div>
 
                     <!-- Runde 1 + Runde 2 nebeneinander -->
                     <div class="row g-4 sektionrang-runden">
@@ -179,40 +179,16 @@ require_once __DIR__ . '/csrf.inc.php';
             });
         }
 
+        // Rangliste als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast)
         $(document).on('click', '.pdf-btn', function (e) {
             e.preventDefault();
-            const $btn = $(this);
-            const $label = $btn.find('span');
-            const originalText = $label.text();
-            $btn.prop('disabled', true);
-            $label.text('Erstellt…');
-
-            $.ajax({
+            const jahr = $('#yearSelect').val();
+            msvAusgabe(this, {
                 url: 'sektionrang/generate_pdf.php',
-                type: 'GET',
-                dataType: 'json',
-                data: { year: $('#yearSelect').val(), orientation: window.MsvDruck ? MsvDruck.orientierung('sektionrang', 'portrait') : 'portrait' },
-                success: function (response) {
-                    if (response.pdf_link) {
-                        const link = document.createElement('a');
-                        link.href = response.pdf_link;
-                        link.download = response.pdf_link.split('/').pop();
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        $('#pdf-link').empty();
-                    } else {
-                        msvError('Fehler: ' + (response.error || 'PDF konnte nicht erstellt werden'));
-                    }
-                },
-                error: function (xhr) {
-                    console.error('AJAX Error:', xhr.responseText);
-                    msvError(msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'));
-                },
-                complete: function () {
-                    $btn.prop('disabled', false);
-                    $label.text(originalText);
-                }
+                data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('sektionrang', 'portrait') : 'portrait' },
+                titel: 'Sektionsmeisterschaft Rangliste ' + jahr,
+                name: 'Sektionsmeisterschaft_Rangliste_' + jahr,
+                fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
             });
         });
 

@@ -26,8 +26,8 @@
     </form>
     <span class="text-muted small"><?= count($plan['termine']) ?> Schichten · <?= count($a['zuteilungen']) ?> besetzte Positionen · <?= count($a['manuell']) ?> manuelle Zeilen</span>
     <div class="export-group-btns">
-      <button type="button" class="btn btn-outline-info btn-sm js-ha-export" data-fmt="xlsx" data-tooltip="Arbeitsmappe «Helferstunden» mit allen Blättern und Formeln"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
-      <button type="button" class="btn btn-outline-info btn-sm js-ha-export" data-fmt="pdf" data-tooltip="Abrechnungsblatt A4 quer"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+      <button type="button" class="btn btn-outline-info btn-sm js-ha-export" data-fmt="xlsx" data-tooltip="Arbeitsmappe «Helferstunden» mit allen Blättern und Formeln"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>Abrechnung (Excel)</span></button>
+      <button type="button" class="btn btn-outline-info btn-sm js-ha-export" data-fmt="pdf" data-tooltip="Abrechnungsblatt A4 quer"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Abrechnung</span></button>
     </div>
   </div>
 
@@ -136,13 +136,18 @@ $(function () {
   }
 
   // ---------- Export ----------
+  // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download statt neuem Tab, Toast
   $(document).on('click', '.js-ha-export', function () {
-    const $b = $(this), orig = $b.html();
-    $b.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-    $.getJSON(haPath + 'export_' + $b.data('fmt') + '.php', { plan_id: PLAN_ID, ok: OK })
-      .done(r => { if (r && r.success && r.link) { window.open(haPath + r.link, '_blank'); msvToast('Datei erstellt', 'success'); } else msvToast((r && r.message) || 'Export fehlgeschlagen', 'error'); })
-      .fail(xhr => msvToast(msvXhrMessage(xhr, 'Export fehlgeschlagen'), 'error'))
-      .always(() => $b.prop('disabled', false).html(orig));
+    const fmt = String($(this).data('fmt'));
+    const plan = <?= json_encode((string)($plan['titel'] ?? 'Einsatzplan'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    msvAusgabe(this, {
+      url: haPath + 'export_' + fmt + '.php',
+      data: { plan_id: PLAN_ID, ok: OK },
+      linkPrefix: haPath,
+      titel: 'Helferabrechnung ' + plan + (fmt === 'xlsx' ? ' (Excel)' : ''),
+      name: 'Helferabrechnung_' + plan,
+      fehler: 'Der Export ist fehlgeschlagen. Bitte nochmals versuchen.'
+    });
   });
 
   // ---------- Ansätze: Pauschale je Schicht (Auto-Save beim Verlassen) ----------

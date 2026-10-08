@@ -138,6 +138,11 @@ require_once __DIR__ . '/csrf.inc.php';
                 $page_title_after = '<button type="button" class="btn-help" data-help="jmdurchschnitt.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                // Ausgabe in der Kopf-Card wie auf allen Seiten; gesperrt, bis ein Anlass mit Resultaten berechnet ist
+                $page_actions = '<div class="btn-group btn-group-sm" role="group" aria-label="Sektionsabrechnung">'
+                    . '<button type="button" id="exportPdfBtn" class="btn btn-outline-info" disabled data-tooltip="Zuerst einen Anlass mit Resultaten wählen"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Sektionsabrechnung</span></button>'
+                    . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-blocked="1" data-druck-doctype="jmdurchschnitt" data-druck-label="JM Durchschnitte" aria-label="Sektionsabrechnung direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+                    . '</div>';
                 $page_show_mobile = true;
                 include 'partials/page_header.inc.php'; ?>
                 
@@ -178,7 +183,7 @@ require_once __DIR__ . '/csrf.inc.php';
                         <!-- JM Definition Auswahl -->
                         <div class="definition-selection-card">
                             <div class="row align-items-end">
-                                <div class="col-md-8">
+                                <div class="col-md-8 col-lg-6">
                                     <label for="anlassSelect" class="form-label fw-bold">
                                         <i class="bi bi-target me-1"></i>Schiessanlass auswählen: <button type="button" class="btn-help" data-help="jmdurchschnitt.berechnung" aria-label="Hilfe"></button>
                                     </label>
@@ -186,15 +191,6 @@ require_once __DIR__ . '/csrf.inc.php';
                                         <option value="">-- Bitte Anlass auswählen --</option>
                                         <!-- Optionen werden per JavaScript eingefügt -->
                                     </select>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm" disabled>
-                                        <i class="bi bi-file-pdf me-2"></i>
-                                        PDF exportieren
-                                    </button>
-                                    <button type="button" class="btn btn-outline-info btn-sm msv-druck ms-1" data-druck-doctype="jmdurchschnitt" data-druck-label="JM Durchschnitte" aria-label="Durchschnitte direkt drucken">
-                                        <i class="bi bi-printer"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -388,7 +384,7 @@ $(document).ready(function () {
     $('#anlassSelect').on('change', function() {
         selectedDefinition = $(this).val();
         
-        $('#exportPdfBtn').prop('disabled', true);
+        jmdAusgabeBereit(false);
         $('#resultsContainer').hide();
         $('#summaryCard').hide();
         $('#noResultsMessage').hide();
@@ -427,11 +423,11 @@ $(document).ready(function () {
                 if (response.success) {
                     if (response.result && response.result.alle_resultate && response.result.alle_resultate.length > 0) {
                         displayResults(response.result);
-                        $('#exportPdfBtn').prop('disabled', false);
+                        jmdAusgabeBereit(true);
                     } else {
                         // Keine Resultate vorhanden
                         $('#noResultsMessage').show();
-                        $('#exportPdfBtn').prop('disabled', true);
+                        jmdAusgabeBereit(false);
                     }
                 } else {
                     $('#noResultsMessage').show();
@@ -483,40 +479,30 @@ $(document).ready(function () {
     }
 
     // PDF Export
-    $('#exportPdfBtn').on('click', function() {
-        const $btn = $(this);
-        const originalText = $btn.html();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
+    // PDF und Direktdruck nur, wenn ein Anlass mit Resultaten berechnet ist – beide gemeinsam sperren
+    function jmdAusgabeBereit(an) {
+        $('#exportPdfBtn').prop('disabled', !an)
+            .attr('data-tooltip', an ? 'Sektionsabrechnung des gewählten Anlasses' : 'Zuerst einen Anlass mit Resultaten wählen');
+        $('.msv-druck[data-druck-doctype="jmdurchschnitt"]').attr('data-druck-blocked', an ? '0' : '1');
+        if (window.MsvDruck) MsvDruck.refresh();
+    }
 
-        $.ajax({
+    // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast
+    $('#exportPdfBtn').on('click', function() {
+        const jahr = $('#yearSelect').val();
+        const anlass = $('#anlassSelect option:selected').text().trim();
+        msvAusgabe(this, {
             url: 'jmdurchschnitt/export_averages_pdf.php',
-            type: 'POST',
+            method: 'POST',
+            csrf: true,
             data: {
-                year: $('#yearSelect').val(),
+                year: jahr,
                 definition_id: selectedDefinition,
-                orientation: window.MsvDruck ? MsvDruck.orientierung('jmdurchschnitt', 'portrait') : 'portrait', // Format aus dem Druckprofil
-                csrf_token: $('input[name="csrf_token"]').val()
+                orientation: window.MsvDruck ? MsvDruck.orientierung('jmdurchschnitt', 'portrait') : 'portrait' // Format aus dem Druckprofil
             },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    // PDF zum Download anbieten
-                    const link = document.createElement('a');
-                    link.href = response.pdf_url;
-                    link.download = response.filename;
-                    link.click();
-                    msvToast('PDF erfolgreich generiert', 'success');
-                } else {
-                    msvToast(response.message || 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', 'error');
-                }
-            },
-            error: function() {
-                msvToast('Fehler beim PDF-Export', 'error');
-            },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-            }
+            titel: 'Sektionsabrechnung ' + anlass + ' ' + jahr,
+            name: 'Sektionsabrechnung_' + anlass + '_' + jahr,
+            fehler: 'Die Durchschnitte konnten nicht als PDF erstellt werden. Bitte nochmals versuchen.'
         });
     });
 
@@ -568,7 +554,7 @@ $(document).ready(function () {
         loadConfig(selectedYear);
         loadAvailableDefinitions(selectedYear);
         selectedDefinition = null;
-        $('#exportPdfBtn').prop('disabled', true);
+        jmdAusgabeBereit(false);
         $('#resultsContainer').hide();
         $('#summaryCard').hide();
         $('#noResultsMessage').hide();

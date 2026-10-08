@@ -23,8 +23,10 @@ ob_start(); ?>
 <?php $page_title_after = ob_get_clean();
 ob_start(); ?>
 <button type="button" class="btn-help" data-help="mitgliederfragebogen.pdf" aria-label="Hilfe"></button>
-<button type="button" class="pdf-btn btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i><span>Fragebogen PDF</span></button>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="fragebogen" data-druck-label="Fragebogen" data-druck-linkprefix="" aria-label="Fragebogen direkt drucken"><i class="bi bi-printer"></i></button>
+<div class="btn-group btn-group-sm" role="group" aria-label="Fragebogen">
+<button type="button" class="pdf-btn btn btn-outline-info"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Fragebogen</span></button>
+<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="fragebogen" data-druck-label="Fragebogen" data-druck-linkprefix="" aria-label="Fragebogen direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
 <button type="submit" form="fragebogenForm" class="btn btn-primary btn-sm" id="btnSave"><i class="bi bi-save me-1"></i>Speichern</button>
 <?php $page_actions = ob_get_clean();
 include 'partials/page_header.inc.php'; ?>
@@ -194,18 +196,16 @@ $(function () {
     });
 
     // PDF
+    // Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast
     $('.pdf-btn').on('click', function () {
-        const $btn = $(this), orig = $btn.html(), year = $('#yearSelect').val();
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
-        $.getJSON('fragebogen/generate_pdf.php', { year })
-            .done(function (r) {
-                if (r && r.success && r.pdf_link) {
-                    msvDownload(r.pdf_link, 'Fragebogen_' + year + '.pdf');
-                    msvToast('PDF heruntergeladen', 'success');
-                } else msvToast((r && r.message) || 'PDF konnte nicht generiert werden', 'error');
-            })
-            .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Generieren des PDFs'), 'error'))
-            .always(() => $btn.prop('disabled', false).html(orig));
+        const year = $('#yearSelect').val();
+        msvAusgabe(this, {
+            url: 'fragebogen/generate_pdf.php',
+            data: { year },
+            titel: 'Fragebogen ' + year,
+            name: 'Fragebogen_' + year,
+            fehler: 'Der Fragebogen konnte nicht als PDF erstellt werden. Bitte nochmals versuchen.'
+        });
     });
 
     // Direktdruck (Profil «fragebogen»): Generator liefert JSON mit pdf_link relativ zu inc/

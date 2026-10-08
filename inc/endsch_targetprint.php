@@ -19,11 +19,7 @@ $page_specific_css = '
     .stich-preview-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .stich-preview-card h5 { color: #007bff; margin-bottom: 0.5rem; }
     .stich-preview-card .badge { margin-right: 0.5rem; }
-    #successModal .modal-content { border-radius: 1rem; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
-    #successModal .modal-body { padding: 2rem; }
-    #successModal .modal-footer { padding: 1rem 2rem 2rem; gap: 1rem; }
     @media (max-width: 768px) {
-        .btn-generate-pdf { width: 100%; margin-top: 0.5rem; }
         .stich-preview-card { font-size: 0.9rem; }
     }
 ';
@@ -130,43 +126,18 @@ try {
                             <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="resetUpload()">
                                 <i class="bi bi-arrow-left me-2"></i>Zurück
                             </button>
-                            <button type="button" class="btn btn-outline-info btn-sm btn-generate-pdf" id="generatePdfBtn" onclick="generatePDF()" disabled>
-                                <i class="bi bi-file-earmark-pdf me-2"></i>PDF Generieren
-                            </button>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Zielscheiben">
+                                <button type="button" class="btn btn-outline-info" id="generatePdfBtn" onclick="generatePDF()" disabled>
+                                    <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Zielscheiben</span>
+                                </button>
+                                <button type="button" class="btn btn-outline-info msv-druck" id="printPdfBtn" data-druck-blocked="1" data-druck-doctype="endsch_targetprint" data-druck-label="Endschiessen Zielscheiben" aria-label="Zielscheiben direkt drucken">
+                                    <i class="bi bi-printer" aria-hidden="true"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="loadingOverlay" class="loading-overlay" style="display: none;">
-    <div class="loading-spinner">
-        <div class="spinner-border" role="status"></div>
-        <h4 class="mt-3">PDF wird generiert...</h4>
-        <p class="text-muted">Bitte warten, dies kann einen Moment dauern.</p>
-    </div>
-</div>
-
-<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
-            </div>
-            <div class="modal-body" id="successModalBody"></div>
-            <div class="modal-footer border-0 justify-content-center">
-                <button type="button" class="btn btn-outline-info btn-sm" id="downloadPdfBtn">
-                    <i class="bi bi-download me-2"></i>PDF Herunterladen
-                </button>
-                <button type="button" class="btn btn-outline-info btn-sm msv-druck" id="printPdfBtn" data-druck-doctype="endsch_targetprint" data-druck-label="Endschiessen Zielscheiben" data-druck-url="" data-druck-job="">
-                    <i class="bi bi-printer me-2"></i>Drucken
-                </button>
-                <button type="button" class="btn btn-outline-success btn-sm" data-bs-dismiss="modal" onclick="resetUpload();">
-                    <i class="bi bi-arrow-clockwise me-2"></i>Neue CSV laden
-                </button>
             </div>
         </div>
     </div>
@@ -354,59 +325,41 @@ function showPreview() {
     $('#stichePreviewContainer').html(previewHtml);
     $('#phase1').hide();
     $('#phase2').show();
-    $('#generatePdfBtn').prop('disabled', false);
+    zielscheibenBereit(true);
     msvToast('CSV erfolgreich geladen', 'success');
 }
 
+// Daten für Generator und Direktdruck (gleicher POST)
+function zielscheibenDaten() {
+    return {
+        alleStiche: parsedData.alleStiche,
+        schuetzenName: $('#schuetzenName').val().trim(),
+        jahr: $('#jahrSelect').val()
+    };
+}
+
+// PDF und Drucker gibt es erst, wenn eine CSV geladen ist
+function zielscheibenBereit(an) {
+    $('#generatePdfBtn').prop('disabled', !an);
+    $('#printPdfBtn').attr('data-druck-blocked', an ? '0' : '1');
+    if (window.MsvDruck) MsvDruck.refresh();
+}
+
+// Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast (kein Overlay, kein Erfolgsdialog mehr)
 function generatePDF() {
     if (!parsedData) {
         msvToast('Keine Daten zum Generieren', 'error');
         return;
     }
-
-    $('#loadingOverlay').show();
-    $('#generatePdfBtn').prop('disabled', true);
-
-    $.ajax({
+    const d = zielscheibenDaten();
+    msvAusgabe(document.getElementById('generatePdfBtn'), {
         url: 'endsch_targetprint/generate_pdf.php',
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
-        data: JSON.stringify({
-            alleStiche: parsedData.alleStiche,
-            schuetzenName: $('#schuetzenName').val().trim(),
-            jahr: $('#jahrSelect').val()
-        }),
-        contentType: 'application/json',
-        dataType: 'json'
-    }).done(function (response) {
-        if (response && response.success && response.pdf_link) {
-            msvToast('PDF erfolgreich generiert!', 'success');
-            showSuccessModal(response.pdf_link, response.filename || 'Zielscheibe.pdf');
-        } else {
-            msvToast((response && response.message) || 'PDF-Generierung fehlgeschlagen', 'error');
-        }
-    }).fail(function (xhr) {
-        msvToast(msvXhrMessage(xhr, 'Fehler bei der PDF-Generierung'), 'error');
-    }).always(function () {
-        $('#loadingOverlay').hide();
-        $('#generatePdfBtn').prop('disabled', !parsedData);
+        json: d,
+        csrf: CSRF_TOKEN,
+        titel: 'Zielscheiben' + (d.schuetzenName ? ' ' + d.schuetzenName : '') + ' ' + d.jahr,
+        name: 'Zielscheiben_' + (d.schuetzenName ? d.schuetzenName + '_' : '') + d.jahr,
+        fehler: 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'
     });
-}
-
-function showSuccessModal(pdfLink, filename) {
-    $('#successModalBody').html(
-        '<div class="text-center mb-3"><i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #28a745;"></i></div>' +
-        '<h5 class="text-center mb-3">PDF erfolgreich erstellt!</h5>' +
-        '<p class="text-center text-muted">' + msvEsc(filename) + '</p>'
-    );
-
-    $('#downloadPdfBtn').off('click').on('click', function () { window.open(pdfLink, '_blank'); });
-
-    // Direktdruck (QZ Tray): das eben erzeugte PDF ohne zweite Generierung drucken
-    $('#printPdfBtn').attr('data-druck-url', pdfLink).attr('data-druck-job', 'Zielscheiben ' + filename);
-    if (window.MsvDruck) MsvDruck.refresh();
-
-    new bootstrap.Modal(document.getElementById('successModal')).show();
 }
 
 function resetUpload() {
@@ -415,9 +368,23 @@ function resetUpload() {
     $('#phase2').hide();
     $('#phase1').show();
     $('#schuetzenName').val('');
-    $('#generatePdfBtn').prop('disabled', true);
+    zielscheibenBereit(false);
 }
 </script>
 
 <?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Endschiessen Zielscheiben»: gleicher JSON-POST wie der PDF-Knopf
+MsvDruck.resolve('endsch_targetprint', () => {
+    if (!parsedData) { msvToast('Zuerst eine CSV laden', 'warning'); return null; }
+    const d = zielscheibenDaten();
+    return {
+        url: 'endsch_targetprint/generate_pdf.php',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+        body: JSON.stringify(d),
+        jobName: 'Zielscheiben' + (d.schuetzenName ? ' ' + d.schuetzenName : '') + ' ' + d.jahr
+    };
+});
+</script>
 <?php include 'footer.inc.php'; ?>

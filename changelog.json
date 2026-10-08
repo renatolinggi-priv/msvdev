@@ -1,5 +1,53 @@
 [
   {
+    "version": "1.62.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Leeres Jahr: Hinweis statt leerer Rangliste",
+        "beschreibung": "Heim-, Kanti-, Sektions-, Cup- und JM-Rangliste sowie die Endschiessen-Ranglisten erstellen für ein Jahr ohne Resultate (bei der JM: ohne Jahresprogramm) kein leeres PDF mehr. Es erscheint ein Hinweis wie «Für 2027 sind noch keine Heimresultate erfasst.», und der Direktdruck schickt kein leeres Blatt an den Drucker.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Ausgabe-Knöpfe heissen nach dem Dokument",
+        "beschreibung": "Die Knöpfe nennen das Dokument statt nur das Format: «Rangliste» statt «PDF» oder «Rangliste PDF», «Zwischenrangliste» statt «Zwischen», «Termine (Kalender)» statt «ICS», «Alle Standblätter (Word)» statt «Alle (DOCX)». PDF ist der Normalfall; Word, Excel, CSV und Kalender stehen in Klammern. Alle PDF-Knöpfe tragen dasselbe Symbol. Im Jahresprogramm und im Einsatzplan heisst das Menü einheitlich «Dokumente». Braucht die Datenbank-Aktualisierung 092 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Dokument und Drucker als Paar, Ausgaben in der Kopf-Karte",
+        "beschreibung": "Jedes Dokument bildet mit seinem Drucker-Knopf eine Gruppe; so ist klar, welcher Drucker was druckt. Die Dokumente-Leiste der Endschiessen-Rangliste hat dieselbe Knopfgrösse wie alle anderen Seiten und gleich breite Knöpfe. Die Sektionsabrechnung (JM-Durchschnitt), die Bezüge (Munitionsverkauf) und die Helferstunden (Jungschützen) stehen neu oben in der Kopf-Karte. Die Wanderpreis-Berichte fragen das Jahr nicht mehr in einem Fenster ab, sondern nehmen das oben gewählte. «Vom Vorjahr» bei den Wichtigen Terminen ist grün wie alle Anlege-Aktionen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.61.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Ausgabe-Knöpfe überall gleich: sperren, laden, herunterladen",
+        "beschreibung": "Alle Knöpfe, die ein PDF, Word, Excel, CSV oder einen Kalender erstellen (Ranglisten, Abrechnungen, Standblätter, Exporte auf 25 Seiten), verhalten sich jetzt gleich: Während die Datei entsteht, ist der Knopf gesperrt und sein Symbol dreht sich, die Beschriftung bleibt stehen; ein zweiter Klick erzeugt keine zweite Datei mehr. Danach wird die Datei heruntergeladen und eine Meldung nennt das Dokument, Fehler erscheinen als Meldung oben rechts. Kein Ausgabe-Knopf öffnet mehr ein neues Fenster (bei langsamen PDFs hatte der Popup-Blocker das verhindert). Die Dateien heissen einheitlich nach Dokument und Jahr, z.B. «Kantonalstich_Rangliste_2026.pdf». Die Zielscheiben kommen ohne Lade-Overlay und Erfolgsdialog aus. Braucht die Datenbank-Aktualisierung 091 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Direktdruck: Drucker-Knöpfe nur mit QZ Tray",
+        "beschreibung": "Läuft auf dem Computer kein QZ Tray, sind die Drucker-Knöpfe ausgeblendet, statt grau dazustehen (auf der Endschiessen-Rangliste waren es zwölf); die Kopf-Karte zeigt dann einmal «Direktdruck nicht verbunden» mit einer Erklärung. Mit QZ Tray, aber ohne Druckprofil bleibt der Knopf sichtbar und gesperrt, der Tooltip nennt den Grund. Einzel- und Sektionsrangierungen blenden in einem leeren Jahr auch den Drucker aus, die JM-Durchschnitte sperren ihn wie das PDF, bis ein Anlass gewählt ist.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Cup-Erfassung: PDF wie auf der Cup-Rangliste",
+        "beschreibung": "Der PDF-Knopf der Cup-Erfassung nutzte noch den alten Generator (ohne PDF-Vorlage, immer Hochformat) und lieferte eine andere Rangliste als die Seite «Vereinscup Rangliste». Jetzt erstellen beide dasselbe PDF, und die Erfassung hat einen Drucker-Knopf. Sind noch Eingaben ungespeichert, weist ein Hinweis darauf hin, dass sie im PDF fehlen.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.60.0",
     "datum": "2026-10-08",
     "aenderungen": [

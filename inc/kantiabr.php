@@ -44,9 +44,11 @@ try {
         $page_title_after = '<button type="button" class="btn-help" data-help="kantiabr.uebersicht" aria-label="Hilfe"></button>'
             . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
             . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-        $page_actions = '<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i>Rangliste PDF</button>'
-            . '<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>'
-            . '<button type="button" id="redirect-btn" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Zur Erfassung</button>';
+        $page_actions = '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
+            . '<button type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
+            . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+            . '</div>'
+            . '<button type="button" id="redirect-btn" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten</button>';
         $page_show_mobile = true;
         include 'partials/page_header.inc.php';
         ?>
@@ -109,7 +111,7 @@ try {
             </div>
             <div class="ka-aktionen">
               <button type="button" class="btn btn-sm btn-outline-info word-btn" data-tooltip="SKSG-Abrechnungsformular (xlsm) mit Titelblatt und Kontrollblatt befüllen">
-                <i class="bi bi-file-earmark-excel me-1"></i>SKSG-Abrechnung (Excel)
+                <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i><span>SKSG-Abrechnung (Excel)</span>
               </button>
             </div>
           </div>
@@ -137,15 +139,6 @@ $(document).ready(function() {
         );
     }
 
-    // Automatischer Download einer Datei
-    function downloadFile(url, filename) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename || url.split('/').pop();
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
 
     // Kantiresultate A laden
     function loadKantonala() {
@@ -194,44 +187,16 @@ $(document).ready(function() {
         });
     }
 
-    // PDF Erstellung Button Handler
+    // Rangliste als PDF – derselbe Generator und Dateiname wie auf «Kantonalstich Rangliste»
+    // (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast)
     $('.pdf-btn').on('click', function() {
-        var btn = $(this);
-        var originalHtml = btn.html();
-        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-        
-        var selectedYear = $('#yearSelect').val();
-        $.ajax({
+        var jahr = $('#yearSelect').val();
+        msvAusgabe(this, {
             url: 'kantirang/generate_pdf.php',
-            type: 'GET',
-            dataType: 'json',
-            data: { year: selectedYear, orientation: window.MsvDruck ? MsvDruck.orientierung('kantirang', 'portrait') : 'portrait' },
-            success: function(response) {
-                if (response && response.pdf_link) {
-                    // Automatischer Download
-                    downloadFile(response.pdf_link, 'Kantonalstich_' + selectedYear + '.pdf');
-                    
-                    $('#pdf-link').empty(); // keine Erfolgsbox – Datei wird direkt heruntergeladen
-                    msvToast('PDF erfolgreich generiert und heruntergeladen', 'success');
-                } else {
-                    $('#pdf-link').html(
-                        '<div class="alert alert-danger">' +
-                        '<i class="bi bi-x-circle-fill me-2"></i>Fehler beim Generieren der PDF-Datei</div>'
-                    );
-                    msvToast('PDF-Generierung fehlgeschlagen', 'error');
-                }
-            },
-            error: function(xhr) {
-                const meldung = msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.');
-                $('#pdf-link').html(
-                    '<div class="alert alert-danger">' +
-                    '<i class="bi bi-x-circle-fill me-2" aria-hidden="true"></i>' + msvEsc(meldung) + '</div>'
-                );
-                msvToast(meldung, 'error');
-            },
-            complete: function() {
-                btn.prop('disabled', false).html(originalHtml);
-            }
+            data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('kantirang', 'portrait') : 'portrait' },
+            titel: 'Kantonalstich Rangliste ' + jahr,
+            name: 'Kantonalstich_Rangliste_' + jahr,
+            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
         });
     });
 
@@ -245,11 +210,13 @@ $(document).ready(function() {
     });
 
     // Word/Excel-Button Handler mit automatischem Download
+    // Eigener Ablauf statt msvAusgabe, weil der Server Hinweise (fehlende Lizenznummern) mitliefert;
+    // Ladezustand aber wie bei allen Ausgabe-Knöpfen (msvAusgabeLaden).
     $('.word-btn').on('click', function() {
-        var btn = $(this);
-        var originalHtml = btn.html();
-        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere...');
-        
+        var knopf = this;
+        if (knopf.getAttribute('aria-busy') === 'true') return;
+        msvAusgabeLaden(knopf, true);
+
         var selectedYear = $('#yearSelect').val();
         var daten = {
             year: selectedYear,
@@ -263,7 +230,7 @@ $(document).ready(function() {
             var wordLink = '/inc/kantiabr/dat/' + fn;
 
             // Automatischer Download
-            downloadFile(wordLink, 'Kantonalstich_Abrechnung_' + selectedYear + '.xlsm');
+            msvDownload(wordLink, 'Kantonalstich_SKSG-Abrechnung_' + selectedYear + '.xlsm');
 
             // Keine Erfolgsbox – die Datei wird direkt heruntergeladen, der Toast genügt.
             // Nur Warnungen des Servers (z.B. fehlende Lizenznummern) bleiben sichtbar.
@@ -284,7 +251,7 @@ $(document).ready(function() {
             failMsg: 'Abrechnung konnte nicht erstellt werden',
             fail: function() { $('#pdf-link').empty(); }
         }).always(function() {
-            btn.prop('disabled', false).html(originalHtml);
+            msvAusgabeLaden(knopf, false);
         });
     });
 

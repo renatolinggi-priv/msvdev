@@ -113,10 +113,14 @@ require_once __DIR__ . '/csrf.inc.php';
                 $page_show_mobile = true;
                 ob_start(); ?>
 <button type="button" class="btn-help" data-help="jmrang.dokumente" aria-label="Hilfe"></button>
-<button type="button" class="btn btn-outline-info btn-sm pdfrang-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Rang)</span></button>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer"></i></button>
-<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Name)</span></button>
-<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer"></i></button>
+<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste nach Rang">
+<button type="button" class="btn btn-outline-info pdfrang-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste nach Rang</span></button>
+<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
+<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste nach Name">
+<button type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste nach Name</span></button>
+<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+</div>
 <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten </button>
                 <?php $page_actions = ob_get_clean();
                 include 'partials/page_header.inc.php'; ?>
@@ -125,8 +129,6 @@ require_once __DIR__ . '/csrf.inc.php';
                 <div class="content-background">
                 <form id="jmresultateForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-
-                    <div id="pdf-link"></div>
 
                     <!-- Kategorie A Tabelle -->
                     <div class="table-wrapper">
@@ -402,105 +404,22 @@ $(document).ready(function() {
         }, 500);
     });
 
-    // PDF-Generierung nach Rang
-    $('.pdfrang-btn').on('click', function(e) {
-        e.preventDefault();
-        const $btn = $(this);
-        const originalText = $btn.html();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
-        
-        var selectedYear = $('#yearSelect').val();
-        $.ajax({
-            url: 'jmrang/generate_pdf_jm.php',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                year: selectedYear,
-                orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
-            },
-            success: function(response) {
-                if (response.pdf_link) {
-                    // PDF direkt herunterladen
-                    const link = document.createElement('a');
-                    link.href = response.pdf_link;
-                    link.download = response.pdf_link.split('/').pop(); // Dateiname extrahieren
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // PDF-Link Container leeren nach Download
-                    $('#pdf-link').empty();
-                    msvToast('PDF wurde erfolgreich generiert!', 'success');
-                } else {
-                    msvToast('PDF konnte nicht generiert werden.', 'error');
-                }
-            },
-            error: function(xhr) {
-                msvToast(msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
-            },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-            }
+    // Ranglisten als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast).
+    // generate_pdf_jm.php liefert 'jmrang/dat/…', generate_pdf_all_results.php nur 'dat/…' → linkPrefix.
+    function jmRanglistePdf(btn, skript, art) {
+        const jahr = $('#yearSelect').val();
+        msvAusgabe(btn, {
+            url: 'jmrang/' + skript,
+            data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' }, // Format aus dem Druckprofil
+            linkPrefix: 'jmrang/',
+            titel: 'JM Rangliste ' + art + ' ' + jahr,
+            name: 'JM_Rangliste_' + art.replace(/ /g, '_') + '_' + jahr,
+            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
         });
-    });
-    
-    // PDF-Generierung nach Name
-    $('.pdf-btn').on('click', function(e) {
-        e.preventDefault();
-        const $btn = $(this);
-        const originalText = $btn.html();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Generiere PDF...');
-        
-        var selectedYear = $('#yearSelect').val();
-        $.ajax({
-            url: 'jmrang/generate_pdf_all_results.php',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                year: selectedYear,
-                orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
-            },
-            success: function(response) {
-                if (response.pdf_link) {
-                    // PDF direkt herunterladen
-                    const link = document.createElement('a');
-                    link.href = 'jmrang/' + response.pdf_link;
-                    link.download = response.pdf_link.split('/').pop(); // Dateiname extrahieren
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // PDF-Link Container leeren nach Download
-                    $('#pdf-link').empty();
-                    msvToast('PDF wurde erfolgreich generiert!', 'success');
-                } else {
-                    msvToast('PDF konnte nicht generiert werden.', 'error');
-                }
-            },
-            error: function(xhr) {
-                msvToast(msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
-            },
-            complete: function() {
-                $btn.prop('disabled', false).html(originalText);
-            }
-        });
-    });
+    }
+    $('.pdfrang-btn').on('click', function(e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_jm.php', 'nach Rang'); });
+    $('.pdf-btn').on('click', function(e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_all_results.php', 'nach Name'); });
 
-    // Tastenkombinationen für Power-User
-    $(document).on('keydown', function(e) {
-        // Strg/Cmd + P = PDF nach Rang
-        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-            e.preventDefault();
-            $('.pdfrang-btn').click();
-        }
-        // Strg/Cmd + E = Bearbeiten
-        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-            e.preventDefault();
-            $('#redirect-btn').click();
-        }
-    });
 
     // Expand/Collapse Detail-Zeilen (Klick auf ganze Zeile oder Button)
     $(document).on('click', '.jm-main-row', function() {
@@ -521,48 +440,6 @@ $(document).ready(function() {
 
         msvToast(`${name} - Rang: ${rang} - Total: ${total}`, 'info');
     });
-
-    // Export als CSV Funktionalität (optional)
-    function exportTableToCSV(tableId, filename) {
-        const table = document.getElementById(tableId);
-        let csv = [];
-        
-        // Headers
-        const headers = [];
-        $(table).find('thead th').each(function() {
-            headers.push($(this).text().trim());
-        });
-        csv.push(headers.join(';'));
-        
-        // Rows
-        $(table).find('tbody tr').each(function() {
-            const row = [];
-            $(this).find('td').each(function() {
-                row.push($(this).text().trim().replace(/\s+/g, ' '));
-            });
-            csv.push(row.join(';'));
-        });
-        
-        // Download
-        const csvContent = csv.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-    }
-
-    // Optional: Export-Buttons hinzufügen
-    // $('.button-group').append(
-    //     '<button class="btn btn-outline-secondary export-csv-a" type="button">' +
-    //     '<i class="bi bi-file-earmark-spreadsheet me-2"></i>Export Kat. A (CSV)' +
-    //     '</button>'
-    // );
-    
-    // $(document).on('click', '.export-csv-a', function() {
-    //     exportTableToCSV('JMA', 'jahresmeisterschaft_kat_a.csv');
-    //     msvToast('CSV-Export erfolgreich!', 'success');
-    // });
 });
 </script>
 
