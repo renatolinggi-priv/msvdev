@@ -35,6 +35,11 @@ try {
     $n2   = count($daten['runde2']);
     $ziel = max($n1, $n2);
 
+    // Leeres Jahr: kein leeres PDF (und kein leeres Blatt im Direktdruck), sondern ein Hinweis
+    if (!$n1 && !$n2) {
+        msvAusgabeLeer('Für ' . $selectedYear . ' sind noch keine Sektionsresultate erfasst.');
+    }
+
     $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 
     // Schnitt-Block (Regel der Sektionsabrechnungen) unterhalb einer Runde

@@ -36,7 +36,12 @@ try {
     $pairs = cup_fetch_pairs($conn, $selectedYear);
     $finalRaw = cup_fetch_final_results($conn, $selectedYear);
     $standRaw = cup_fetch_standcup_final($conn, $selectedYear);
-    
+
+    // Leeres Jahr: kein leeres PDF (und kein leeres Blatt im Direktdruck), sondern ein Hinweis
+    if (empty($pairs) && empty($finalRaw) && empty($standRaw)) {
+        msvAusgabeLeer('Für ' . $selectedYear . ' sind noch keine Cup-Paarungen erfasst.');
+    }
+
     // Namen für Paarungen laden
     $allIds = [];
     foreach ($pairs as $p) {

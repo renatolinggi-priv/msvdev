@@ -871,6 +871,9 @@ class AnmeldungReport extends PDFGenerator
     /** Cache für Stich-IDs nach Code */
     private array $stichIdCache = [];
 
+    /** Fragt auch direkt über $this->conn ab – die Leer-Prüfung der Basisklasse würde hier falsch zählen. */
+    protected $leerPruefen = false;
+
     public function generate()
     {
         $html = $this->createHTMLHeader('Absendenanmeldung', '', 12);

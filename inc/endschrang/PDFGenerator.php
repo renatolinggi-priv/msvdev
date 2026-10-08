@@ -20,7 +20,13 @@ class PDFGenerator {
     protected $dompdf;  // Changed from private to protected
     protected $logoBase64;  // Changed from private to protected
     protected $useConfigPdf = false;
-    
+
+    // Leeres Jahr: Zeilen aller Abfragen über executeQuery/executePreparedQuery. Kam keine einzige Zeile,
+    // liefert generatePDF() statt eines leeren PDFs einen Hinweis (msvAusgabeLeer). Berichte, die auch
+    // direkt über $this->conn abfragen, setzen $leerPruefen = false (sonst würde fälschlich «leer» gemeldet).
+    protected $zeilenGelesen = 0;
+    protected $leerPruefen = true;
+
     // Layout-Overrides der Basisklasse (Farben/Tabellen/Footer kommen aus pdf_theme.php)
     private $defaultStyles = '
         body { font-size: 10px; }
@@ -186,6 +192,7 @@ class PDFGenerator {
             }
         }
 
+        $this->zeilenGelesen += count($data);
         return $data;
     }
 
@@ -208,6 +215,7 @@ class PDFGenerator {
         }
 
         $stmt->close();
+        $this->zeilenGelesen += count($data);
         return $data;
     }
     
@@ -215,6 +223,10 @@ class PDFGenerator {
      * Generiert das PDF und speichert es
      */
     protected function generatePDF($html, $filename, $orientation = 'portrait') {
+        // Keine einzige Zeile gelesen: kein leeres PDF (und kein leeres Blatt im Direktdruck), sondern ein Hinweis
+        if ($this->leerPruefen && $this->zeilenGelesen === 0 && function_exists('msvAusgabeLeer')) {
+            msvAusgabeLeer('Für ' . $this->selectedYear . ' gibt es für diese Rangliste noch keine Resultate.');
+        }
         // Ausrichtung aus dem Druckprofil (?orientation=portrait|landscape) übersteuert den Report-Default
         require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
         $orientation = pdfOrientationParam($orientation);

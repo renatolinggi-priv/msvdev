@@ -19,6 +19,17 @@ adminApiGuard('json');
 // 1) GET-Parameter: Jahr
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
+// Jahr ohne Jahresprogramm: kein leeres PDF (und kein leeres Blatt im Direktdruck), sondern ein Hinweis
+$leerStmt = $conn->prepare('SELECT COUNT(*) FROM JMDefinition WHERE year = ? AND Erweitert = 0 AND Info = 0');
+$leerStmt->bind_param('i', $selectedYear);
+$leerStmt->execute();
+$leerStmt->bind_result($anzahlAnlaesse);
+$leerStmt->fetch();
+$leerStmt->close();
+if (!$anzahlAnlaesse) {
+    msvAusgabeLeer('Für ' . $selectedYear . ' ist noch kein Jahresprogramm mit JM-Anlässen erfasst.');
+}
+
 // 2) HTML-Kopf zusammenbauen mit Logo
 $htmlOutput = $header; 
 $htmlOutput .= "<title>Jahresmeisterschaft $selectedYear</title>";

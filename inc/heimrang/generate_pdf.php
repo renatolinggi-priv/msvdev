@@ -111,6 +111,11 @@ try {
     $stmt->close();
     $conn->close();
 
+    // Leeres Jahr: kein leeres PDF (und kein leeres Blatt im Direktdruck), sondern ein Hinweis
+    if (!$kategorienDaten['Kat. A'] && !$kategorienDaten['Kat. B']) {
+        msvAusgabeLeer('Für ' . $selectedYear . ' sind noch keine Heimresultate erfasst.');
+    }
+
     // HTML generieren
     $html = '<!DOCTYPE html>
 <html lang="de">
