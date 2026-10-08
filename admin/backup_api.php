@@ -1,6 +1,6 @@
 <?php
 /**
- * admin/backup_api.php â€“ robuste Backup/Restore API (ohne Shell-Pipe)
+ * admin/backup_api.php – robuste Backup/Restore API (ohne Shell-Pipe)
  * Actions: backup, list, download, delete, restore, diag, whoami, echo
  * Auth:   UI via Session+CSRF  ODER  extern via API-Key (Header X-API-Key / ?key=)
  */
@@ -19,6 +19,18 @@ function dbg($msg){ global $DEBUG; if ($DEBUG) error_log('[BACKUP_API] '.$msg); 
 
 // Helfer
 function out($a,$c=200){ http_response_code($c); echo json_encode($a, JSON_UNESCAPED_UNICODE); exit; }
+
+// Vor einem Restore die aktuelle DB sichern (im Dialog standardmaessig an, POST vorher_sichern=1).
+// Schlaegt die Sicherung fehl, wird nicht wiederhergestellt. Liefert den Dateinamen oder null.
+function restoreVorherSichern(): ?string {
+  if (empty($_POST['vorher_sichern'])) return null;
+  require_once dirname(__DIR__) . '/inc/backup_dump.inc.php';
+  $r = msvBackupVorher('restore');
+  if (!$r['ok']) {
+    out(['success'=>false,'message'=>'Die Sicherung vor dem Restore ist fehlgeschlagen ('.$r['meldung'].'). Es wurde nichts wiederhergestellt.'],500);
+  }
+  return $r['datei'];
+}
 function sh($s){ return escapeshellarg($s); }
 
 // ----------- DB-Konfig laden (Pfad ggf. anpassen) -----------
@@ -67,7 +79,7 @@ function require_key(string $expected){
 
   if ($expected !== '' && $got !== '' && hash_equals($expected, $got)) return;
 
-  // 3) unauthorized â€“ mit Hinweisen (ohne Geheimnisse)
+  // 3) unauthorized – mit Hinweisen (ohne Geheimnisse)
   out([
     'success'=>false,
     'message'=>'Unauthorized',
@@ -197,6 +209,7 @@ switch ($action) {
     if (!is_file($path)) out(['success'=>false,'message'=>'Datei nicht gefunden'],404);
 
     @set_time_limit(0); @ignore_user_abort(true);
+    $vorher = restoreVorherSichern();
 
     // Falls .gz, erst entpacken
     $tmp = $path;
@@ -271,7 +284,7 @@ switch ($action) {
       ],500);
     }
     
-    out(['success'=>true,'message'=>'Restore aus Backup-Datei ausgeführt','file'=>$name],200);
+    out(['success'=>true,'message'=>'Restore aus Backup-Datei ausgeführt','file'=>$name,'sicherung'=>$vorher],200);
     break; // WICHTIG: break hinzugefügt!
   }
 
@@ -379,6 +392,7 @@ switch ($action) {
       out(['success'=>false,'message'=>'Upload fehlgeschlagen'],400);
 
     @set_time_limit(0); @ignore_user_abort(true);
+    $vorher = restoreVorherSichern();
 
     $tmp  = $_FILES['file']['tmp_name'];
     $orig = $_FILES['file']['name'];
@@ -445,7 +459,7 @@ switch ($action) {
       ],500);
     }
     
-    out(['success'=>true,'message'=>'Restore ausgeführt','exit'=>$exit,'details'=>substr($output,0,1500)],200);
+    out(['success'=>true,'message'=>'Restore ausgeführt','exit'=>$exit,'details'=>substr($output,0,1500),'sicherung'=>$vorher],200);
     break;
   }
 

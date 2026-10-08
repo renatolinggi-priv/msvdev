@@ -60,7 +60,7 @@ try {
     gzclose($gz);
     unlink($tmpSql);
   } else {
-    info("mysqldump NICHT verfügbar â€“ PHP-Fallback");
+    info("mysqldump NICHT verfügbar – PHP-Fallback");
 
     // Sehr einfacher Fallback (für kleinere DBs). Für große Tabellen -> chunked Export ergänzen.
     $pdo = new PDO("mysql:host={$cfg['db']['host']};dbname={$cfg['db']['name']};charset=utf8mb4", $cfg['db']['user'], $cfg['db']['pass'], [
@@ -133,7 +133,7 @@ try {
     ];
   }
 
-  // Sort neueste â†’ älteste
+  // Sort neueste → älteste
   uasort($byPrefix, fn($a,$b)=> $b['date'] <=> $a['date']);
 
   // Listen bilden

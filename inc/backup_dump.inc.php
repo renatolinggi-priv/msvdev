@@ -28,6 +28,32 @@ function msvBackupDbConf(): array
     return $conf['db'] ?? [];
 }
 
+/** Namensanfang der Sicherungen, die vor einer riskanten Aktion entstehen. */
+if (!defined('MSV_BACKUP_PRAEFIX_VORHER')) {
+    define('MSV_BACKUP_PRAEFIX_VORHER', 'vorher_');
+}
+
+/**
+ * Sicherung unmittelbar vor einer riskanten Aktion (Loeschen eines ganzen
+ * Jahres, Migration, Restore). Liegt im selben Ordner wie die taeglichen
+ * Staende und erscheint darum auf der Seite «Backup & Restore»; aufgeraeumt
+ * wird getrennt (die neuesten 10 bleiben).
+ *
+ * $anlass erscheint im Dateinamen, z.B. «jm-loeschen».
+ *
+ * @return array{ok:bool, datei:?string, groesse:int, meldung:string}
+ */
+function msvBackupVorher(string $anlass): array
+{
+    $anlass = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($anlass)), '-');
+    $praefix = MSV_BACKUP_PRAEFIX_VORHER . ($anlass !== '' ? $anlass . '_' : '');
+    $r = msvBackupErstellen(null, $praefix);
+    if ($r['ok']) {
+        msvBackupAufraeumen(10, null, MSV_BACKUP_PRAEFIX_VORHER);
+    }
+    return $r;
+}
+
 /**
  * Sucht ein Programm. Aus dem Web-PHP heraus ist der PATH knapp, darum werden
  * die ueblichen Orte zusaetzlich direkt geprueft (siehe CLAUDE.md).
@@ -58,9 +84,12 @@ function msvBackupIstMaria(string $bin): bool
 /**
  * Erstellt die Sicherung.
  *
+ * $praefix kennzeichnet Sicherungen, die nicht vom taeglichen Lauf stammen
+ * (siehe msvBackupVorher); der Name beginnt dann damit.
+ *
  * @return array{ok:bool, datei:?string, groesse:int, meldung:string}
  */
-function msvBackupErstellen(?string $zielDir = null): array
+function msvBackupErstellen(?string $zielDir = null, string $praefix = ''): array
 {
     $dir = $zielDir ?: msvBackupVerzeichnis();
     if (!is_dir($dir) && !@mkdir($dir, 0775, true)) {
@@ -81,7 +110,7 @@ function msvBackupErstellen(?string $zielDir = null): array
         return ['ok' => false, 'datei' => null, 'groesse' => 0, 'meldung' => 'mysqldump nicht gefunden'];
     }
 
-    $basis   = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name) . '_' . date('Y-m-d_H-i-s');
+    $basis   = $praefix . preg_replace('/[^A-Za-z0-9_\-]/', '_', $name) . '_' . date('Y-m-d_H-i-s');
     $sqlPfad = $dir . '/' . $basis . '.sql';
     $gzPfad  = $dir . '/' . $basis . '.sql.gz';
 
@@ -194,10 +223,16 @@ function msvBackupDumpPruefen(string $sqlPfad): ?string
  *
  * @return int Anzahl geloeschter Dateien
  */
-function msvBackupAufraeumen(int $behalten = 14, ?string $zielDir = null): int
+function msvBackupAufraeumen(int $behalten = 14, ?string $zielDir = null, string $praefix = ''): int
 {
     $dir = $zielDir ?: msvBackupVerzeichnis();
     $dateien = glob($dir . '/*.sql.gz') ?: [];
+    // Taegliche und «vorher»-Sicherungen werden getrennt gezaehlt, damit ein
+    // paar Loeschaktionen keine Tagesstaende verdraengen.
+    $dateien = array_values(array_filter($dateien, static function ($f) use ($praefix) {
+        $istVorher = strpos(basename($f), MSV_BACKUP_PRAEFIX_VORHER) === 0;
+        return $praefix === MSV_BACKUP_PRAEFIX_VORHER ? $istVorher : !$istVorher;
+    }));
     if (count($dateien) <= $behalten) {
         return 0;
     }

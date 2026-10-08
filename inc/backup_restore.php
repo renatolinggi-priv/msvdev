@@ -23,9 +23,6 @@ $page_specific_css = "
     margin-bottom: 1.25rem;
 }
 
-.sidebar-card { border-left: 4px solid var(--info-color); }
-.group-creation-card { border-left: 4px solid var(--success-color); }
-.existing-groups-card { border-left: 4px solid var(--warning-color); }
 
 .card-title {
     color: var(--secondary-color);
@@ -240,7 +237,7 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
         <h5 class="modal-title" id="restoreModalLabel">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>Datenbank wiederherstellen
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schliessen"></button>
       </div>
       <div class="modal-body">
         <div id="modalConfirmContent">
@@ -252,11 +249,12 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
             </div>
           </div>
           <p class="mb-3">Möchtest du wirklich das Backup <strong id="backupFileName"></strong> wiederherstellen?</p>
-          <div class="bg-light p-3 rounded">
-            <small class="text-muted">
-              <i class="bi bi-info-circle me-1"></i>
-              Stelle sicher, dass du ein aktuelles Backup der derzeitigen Datenbank hast, bevor du fortfährst.
-            </small>
+          <div class="form-check bg-light p-3 ps-5 rounded mb-0">
+            <input class="form-check-input" type="checkbox" id="restoreVorherSichern" checked>
+            <label class="form-check-label small" for="restoreVorherSichern">
+              Vorher eine Sicherung der aktuellen Datenbank erstellen
+              <span class="d-block text-muted">Damit lässt sich der Restore selbst wieder rückgängig machen.</span>
+            </label>
           </div>
         </div>
         <div id="modalProgressContent" class="d-none">
@@ -483,8 +481,10 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
     }
 
     async function performRestore() {
+      const vorherSichern = document.getElementById('restoreVorherSichern').checked ? '1' : '';
+      const sicherungHinweis = (data) => data && data.sicherung ? ' – vorher gesichert: ' + data.sicherung : '';
       showProgress();
-      
+
       try {
         if (currentRestoreType === 'file') {
           // Restore von hochgeladener Datei
@@ -492,13 +492,14 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
           fd.append('action', 'restore');
           fd.append('file', currentRestoreFile);
           fd.append('key', API_KEY);
-          
+          fd.append('vorher_sichern', vorherSichern);
+
           const res = await fetch(API, { method: 'POST', body: fd });
           const data = await res.json().catch(() => ({ success: false, message: 'Unerwartete Antwort' }));
-          
+
           if (!res.ok || data.success === false) throw data;
-          
-          toast('Restore erfolgreich ausgeführt', 'success');
+
+          toast('Restore erfolgreich ausgeführt' + sicherungHinweis(data), 'success');
           document.getElementById('restoreFile').value = '';
           
         } else if (currentRestoreType === 'existing') {
@@ -506,14 +507,15 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
           const data = await apiJSON(API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ action: 'restore_existing', name: currentRestoreName, key: API_KEY })
+            body: new URLSearchParams({ action: 'restore_existing', name: currentRestoreName, key: API_KEY, vorher_sichern: vorherSichern })
           });
-          
-          toast('Restore erfolgreich aus Backup: ' + (data.file || currentRestoreName), 'success');
+
+          toast('Restore erfolgreich aus Backup: ' + (data.file || currentRestoreName) + sicherungHinweis(data), 'success');
         }
-        
+
         restoreModal.hide();
-        
+        if (vorherSichern) loadList();
+
       } catch (e) {
         console.error('Restore-Fehler:', e);
         

@@ -133,7 +133,7 @@ $page_specific_css = "
 }
 
 .results-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+    background: var(--light-color);
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #dee2e6;
     color: var(--dark-color);
@@ -758,18 +758,11 @@ $(document).ready(function() {
     // Löschen
     $('#delete-btn').on('click', function() {
         var selectedYear = $('#yearSelect').val();
-        msvConfirmDelete('alle Resultate des Jahres ' + selectedYear).then(function(res) {
-            if (!res.isConfirmed) return;
-            $.ajax({
-                url: 'kantiresultate/delete_kanti.php',
-                method: 'POST',
-                data: { jahr: selectedYear, csrf_token: $('input[name="csrf_token"]').val() },
-                success: function() {
-                    msvToast('Alle Resultate erfolgreich gelöscht', 'success');
-                    setTimeout(function() { loadResultate(selectedYear); }, 500);
-                },
-                error: function() { msvToast('Fehler beim Löschen', 'error'); }
-            });
+        msvJahrLoeschen({
+            url: 'kantiresultate/delete_kanti.php',
+            year: selectedYear,
+            was: 'Kantonalstich-Resultate',
+            done: function() { loadResultate(selectedYear); }
         });
     });
 

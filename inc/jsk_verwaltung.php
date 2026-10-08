@@ -36,7 +36,7 @@ $page_specific_css = <<<'CSS'
 .tl-d { width:1%; white-space:nowrap; font-weight:700; color:#3b5998; font-size:0.85rem; }
 .tl-row--past .tl-d { color:#64748b; }
 .tl-t { width:1%; white-space:nowrap; font-weight:600; font-size:0.9rem; }
-.tl-t .zeit { font-weight:400; color:#94a3b8; font-size:0.8rem; }
+.tl-t .zeit { font-weight:400; color:#64748b; font-size:0.8rem; }
 .tl-c { width:1%; white-space:nowrap; }
 .tl-pill { display:inline-block; font-weight:700; font-size:0.8rem; padding:0.1rem 0.55rem; border-radius:999px; white-space:nowrap; }
 .tl-pill.ja { background:#d1f4dd; color:#155724; }
@@ -376,7 +376,7 @@ include 'partials/side_panel.inc.php';
           </div>
         </div>
         <div class="import-area" id="dropZone">
-          <i class="bi bi-cloud-upload d-block" style="font-size:2rem;color:#94a3b8;"></i>
+          <i class="bi bi-cloud-upload d-block" style="font-size:2rem;color:#64748b;"></i>
           <p class="mb-0 mt-2 text-muted">Excel-Datei hier ablegen oder klicken (.xlsx, .xls, .csv)</p>
           <input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" style="display:none;">
         </div>

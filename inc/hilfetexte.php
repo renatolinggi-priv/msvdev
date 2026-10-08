@@ -16,7 +16,7 @@ $page_specific_css = <<<'CSS'
 .hilfe-key   { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 0.8rem; color: #1e40af; }
 .hilfe-cat   { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.72rem;
                background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-.hilfe-empty { color: #94a3b8; }
+.hilfe-empty { color: #64748b; }
 .hilfe-date  { color: #64748b; font-size: 0.78rem; white-space: nowrap; }
 .usage-yes   { color: #15803d; font-size: 0.78rem; margin-right: 0.35rem; }
 .usage-no    { color: #b45309; font-size: 0.78rem; }
@@ -63,7 +63,7 @@ $page_specific_css = <<<'CSS'
                transition: opacity 0.18s, transform 0.18s, visibility 0.18s; display: flex; flex-direction: column; overflow: hidden; }
 .link-dialog.open { opacity: 1; visibility: visible; transform: translate(-50%,-50%) scale(1); }
 .link-dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem;
-                      background: linear-gradient(135deg, #f8fafc 0%, #e9ecef 100%); border-bottom: 1px solid #e2e8f0; }
+                      background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
 .link-dialog-header h6 { margin: 0; font-weight: 600; font-size: 0.9rem; }
 .link-dialog-body { padding: 0.9rem 1rem; overflow-y: auto; }
 .link-dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.65rem 1rem;

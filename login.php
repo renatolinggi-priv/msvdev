@@ -362,14 +362,14 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
             margin-bottom: 1rem;
         }
         .alert-danger {
-            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            background: #f8d7da;
             color: #721c24;
-            border-left: 4px solid var(--danger-color);
+            border: 1px solid var(--danger-color);
         }
         .alert-success {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            background: #d4edda;
             color: #155724;
-            border-left: 4px solid var(--success-color);
+            border: 1px solid var(--success-color);
         }
 
         /* Modal Verbesserungen */
@@ -452,7 +452,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
         padding: 1.25rem 1.25rem 2rem;
         z-index: 2000;
         display: none;
-        animation: slideUp 0.3s cubic-bezier(.34,1.3,.64,1);
+        animation: slideUp 0.3s cubic-bezier(.22,1,.36,1);
     }
     #pwa-banner.show { display: block; }
     @keyframes slideUp {
@@ -630,13 +630,13 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
                 <?php endif; ?>
                 <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" id="loginForm">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Benutzername" required>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Benutzername" autocomplete="username" autocapitalize="none" required>
                         <label for="username">
                             <i class="bi bi-person me-2"></i>Benutzername
                         </label>
                     </div>
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Passwort" required>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Passwort" autocomplete="current-password" required>
                         <label for="password">
                             <i class="bi bi-key me-2"></i>Passwort
                         </label>

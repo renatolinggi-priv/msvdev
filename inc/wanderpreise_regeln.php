@@ -10,7 +10,7 @@ $wp_schema_ref  = wp_regel_schema_reference();
 $page_specific_css = <<<'CSS'
 .title-search { width: 200px; }
 .title-search input { font-size: 0.85rem; border-radius: 20px; padding-left: 2rem; }
-.title-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; }
+.title-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem; }
 .regel-name { font-weight: 500; color: #1e293b; }
 .regel-desc { display: block; color: #64748b; font-size: 0.85rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 .flag-dot.on { background: #22c55e; color: #fff; } /* Status "aktiv" grün statt zentral blau */

@@ -29,10 +29,11 @@ $sp_style   = isset($panel_width) && $panel_width !== ''
     : '';
 ?>
 <div class="panel-overlay" id="<?= htmlspecialchars($sp_overlay, ENT_QUOTES, 'UTF-8') ?>"></div>
-<div class="<?= htmlspecialchars($sp_class, ENT_QUOTES, 'UTF-8') ?>" id="<?= htmlspecialchars($sp_id, ENT_QUOTES, 'UTF-8') ?>"<?= $sp_style ?>>
+<div class="<?= htmlspecialchars($sp_class, ENT_QUOTES, 'UTF-8') ?>" id="<?= htmlspecialchars($sp_id, ENT_QUOTES, 'UTF-8') ?>"<?= $sp_style ?>
+     role="dialog" aria-modal="true" aria-labelledby="<?= htmlspecialchars($sp_id, ENT_QUOTES, 'UTF-8') ?>Titel" tabindex="-1">
   <div class="panel-header">
-    <h6 class="mb-0"><?= $sp_title ?></h6>
-    <button class="btn btn-sm btn-outline-secondary" id="<?= htmlspecialchars($sp_close, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-x-lg"></i></button>
+    <h6 class="mb-0" id="<?= htmlspecialchars($sp_id, ENT_QUOTES, 'UTF-8') ?>Titel"><?= $sp_title ?></h6>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="<?= htmlspecialchars($sp_close, ENT_QUOTES, 'UTF-8') ?>" aria-label="Schliessen" data-tooltip="Schliessen (Esc)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
   </div>
   <div class="panel-body">
     <?= $sp_body ?>

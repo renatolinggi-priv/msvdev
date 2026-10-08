@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.35.0",
+    "datum": "2026-10-07",
+    "aenderungen": [
+      {
+        "titel": "Löschen, Migration und Restore: automatische Sicherung vorher",
+        "beschreibung": "«Alle Resultate löschen» in JM-, Endschiessen-, Heim- und Kantiresultate nennt in der Rückfrage neu Jahr und Anzahl (vorher war vom «aktuellen Jahr» die Rede, gelöscht wurde aber das gewählte) und erstellt vor dem Löschen automatisch eine Sicherung der ganzen Datenbank. Scheitert die Sicherung, wird nichts gelöscht. Dasselbe gilt für die Datenbank-Aktualisierung und den Restore: Ein standardmässig gesetztes Häkchen «Vorher sichern» legt unmittelbar davor einen Stand an. Diese Sicherungen beginnen mit «vorher_», stehen auf der Seite «Backup & Restore» und werden getrennt von den nächtlichen aufgeräumt (die neuesten 10). Die vier Lösch-Endpunkte prüfen jetzt auch die Rolle (Admin/Vorstand) und übergeben das Jahr nur noch als Zahl an die Datenbank. Der Bestätigungsknopf der Migration ist bernsteinfarben statt grün. Die Rückfrage beim Abmelden entfällt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Bedienung mit Tastatur, Screenreader und Handy",
+        "beschreibung": "Zoomen ist auf dem Handy wieder möglich. Tooltips erscheinen auch beim Fokussieren mit der Tastatur und beim Tippen auf deaktivierte Knöpfe, damit die Begründung lesbar ist; Knöpfe, die nur ein Symbol zeigen, tragen den Tooltip-Text als vorlesbaren Namen. Die Slide-Panels gelten als Dialog: Der Fokus springt beim Öffnen hinein, bleibt mit Tab darin und kehrt beim Schliessen zurück; geschlossene Panels sind per Tab nicht mehr erreichbar. Das mobile Menü meldet auf- und zugeklappte Untermenüs, schliesst mit Escape und hat einen sichtbaren Fokusrahmen. Hellgraue Texte sind dunkler (Kontrast 4.8:1 statt 2.6:1), die «?»-Knöpfe haben auf Touch-Geräten eine grössere Tippfläche. Fehler-Toasts bleiben 7 Sekunden stehen und pausieren unter der Maus. Login und Passwortfelder unterstützen Passwort-Manager.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "JM-Erfassung: Prüfung gegen die Maximalpunkte, Speichern per Tastatur",
+        "beschreibung": "Im Erfassungs-Panel eines Anlasses werden Werte über den Maximalpunkten oder keine gültige Zahl rot umrandet, gespeichert wird erst nach der Korrektur. Enter im letzten Feld und Ctrl+S speichern. Schlägt das Speichern fehl, nennt die Meldung den Grund und die Eingaben bleiben stehen. Die Punktefelder haben vorlesbare Namen. Braucht die Datenbank-Aktualisierung 070 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Ruhigere Optik",
+        "beschreibung": "Knöpfe heben sich beim Überfahren nicht mehr an. Seitentitel sind dunkel und halbfett statt grau. Innerhalb der Seitenkarte entfällt die zweite Karte mit eigenem Rahmen und Schatten. Farbverläufe in Tabellentiteln, Kartenköpfen und Dialogköpfen sind flache Flächen, farbige Seitenstreifen an Hinweisboxen und Karten sind einem feinen Rahmen gewichen (Statusmarker in den Mobile-Karten bleiben). Kaputt dargestellte Sonderzeichen (z.B. in Wanderpreisen und Jungschützen-Helfern) sind korrigiert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.34.0",
     "datum": "2026-09-26",
     "aenderungen": [

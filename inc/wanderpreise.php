@@ -520,7 +520,7 @@ if (WANDERPREISE_DEBUG) {
                                         <p class="card-text text-muted mb-1" id="historie_beschreibung">Beschreibung...
                                         </p>
                                         <small class="text-muted">
-                                            <i class="bi bi-calendar me-1"></i><span id="historie_jahr">Jahr</span> â€¢
+                                            <i class="bi bi-calendar me-1"></i><span id="historie_jahr">Jahr</span> •
                                             <i class="bi bi-building me-1"></i><span
                                                 id="historie_hersteller">Hersteller</span>
                                         </small>
@@ -691,7 +691,7 @@ if (WANDERPREISE_DEBUG) {
                 <p class="mb-0">
                     <strong>Jahr:</strong> <span class="auto-year fw-semibold"></span>
                 </p>
-                <small class="text-muted">Hinweis: Option C aktiv â€“ 0/leer = alle Jahre.</small>
+                <small class="text-muted">Ist das Jahr leer oder 0, werden alle Jahre berücksichtigt.</small>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
@@ -732,7 +732,7 @@ if (WANDERPREISE_DEBUG) {
                     const usedYears = (resp.gewinner || []).map(g => Number(g.jahr));
                     const suggested = getNextFreeYear(usedYears, startYear);
 
-                    // Input oder Select? â€“ beides unterstützen
+                    // Input oder Select? – beides unterstützen
                     const $year = $(yearFieldSel);
                     $year.val(suggested);
                     // falls Select2/Select: .trigger('change') nicht vergessen
@@ -926,8 +926,8 @@ $('#startExport').on('click', function () {
 
         // Neuen Wanderpreis hinzufügen
         // >>> PATCH: zuverlässiger Submit ohne doppeltes JSON.parse + disabled-Felder
-        // Neuen Wanderpreis hinzufügen â€“ korrektes Form-Target
-        // Neuen Wanderpreis hinzufügen â€“ nur Toast, kein alert()
+        // Neuen Wanderpreis hinzufügen – korrektes Form-Target
+        // Neuen Wanderpreis hinzufügen – nur Toast, kein alert()
         $('#addWanderpreisForm').on('submit', function (e) {
             e.preventDefault();
 
@@ -1259,7 +1259,7 @@ $('#startExport').on('click', function () {
                 url: 'wanderpreise/add_vergangener_gewinner.php',
                 method: 'POST',
                 data: formData,
-                dataType: 'json',            // <â€” jQuery parst JSON für dich
+                dataType: 'json',            // <— jQuery parst JSON für dich
                 success: function (json) {
                     if (json && json.success) {
                         msvToast('Vergangener Gewinner erfolgreich eingetragen!', 'success');
@@ -1432,10 +1432,10 @@ $('#startExport').on('click', function () {
                                             </div>
                                         </td>
                                         <td>
-                                            ${gewinner.rang ? `<span class="badge bg-light text-dark">${gewinner.rang}</span>` : '<span class="text-muted">â€”</span>'}
+                                            ${gewinner.rang ? `<span class="badge bg-light text-dark">${gewinner.rang}</span>` : '<span class="text-muted">—</span>'}
                                         </td>
                                         <td>
-                                            <small class="text-muted">${gewinner.bemerkung || 'â€”'}</small>
+                                            <small class="text-muted">${gewinner.bemerkung || '—'}</small>
                                         </td>
                                         <td>
                                             <button type="button" 

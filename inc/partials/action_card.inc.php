@@ -22,12 +22,12 @@ $ac_body_v  = $ac_body ?? '';
 $ac_id_esc  = htmlspecialchars($ac_id_v, ENT_QUOTES, 'UTF-8');
 ?>
 <div class="card action-card <?= htmlspecialchars($ac_cardcls, ENT_QUOTES, 'UTF-8') ?>">
-  <div class="card-header action-card-header d-flex justify-content-between align-items-center py-2"
+  <button type="button" class="card-header action-card-header d-flex justify-content-between align-items-center py-2 w-100 border-0 text-start"
        data-bs-toggle="collapse" data-bs-target="#<?= $ac_id_esc ?>"
        aria-expanded="false" aria-controls="<?= $ac_id_esc ?>">
-    <span class="fw-semibold"><i class="bi <?= htmlspecialchars($ac_icon_v, ENT_QUOTES, 'UTF-8') ?> me-2"></i><?= $ac_title_v ?></span>
-    <i class="bi bi-chevron-down action-chevron"></i>
-  </div>
+    <span class="fw-semibold"><i class="bi <?= htmlspecialchars($ac_icon_v, ENT_QUOTES, 'UTF-8') ?> me-2" aria-hidden="true"></i><?= $ac_title_v ?></span>
+    <i class="bi bi-chevron-down action-chevron" aria-hidden="true"></i>
+  </button>
   <div class="collapse" id="<?= $ac_id_esc ?>">
     <div class="card-body <?= htmlspecialchars($ac_bodycls, ENT_QUOTES, 'UTF-8') ?>">
       <?= $ac_body_v ?>

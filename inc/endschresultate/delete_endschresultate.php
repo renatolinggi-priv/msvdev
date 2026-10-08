@@ -1,65 +1,33 @@
 <?php
+/**
+ * Löscht alle Endschiessen-Resultate eines Jahres (vorher automatische DB-Sicherung):
+ * endstich, glueck, kunst, schwini, zabig sowie die jmresultate des Endstich-Anlasses.
+ * POST: jahr, csrf_token, optional nur_zaehlen=1. Ablauf: inc/jahr_loeschen.inc.php
+ */
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
+require_once __DIR__ . '/../jahr_loeschen.inc.php';
 
-// CSRF-Schutz
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die('Ungültige Anfrage');
-}
+const ENDSCH_TABELLEN = ['endstich', 'glueck', 'kunst', 'schwini', 'zabig'];
+const ENDSCH_JM_SQL   = "FROM jmresultate WHERE jmdefinitionID IN
+                         (SELECT ID FROM JMDefinition WHERE Bezeichnung = 'Endstich' AND year = ?)";
 
-// load_endschresultate.php
-$jahr = isset($_POST['jahr']) ? $_POST['jahr'] : date('Y'); // Jahr aus der POST-Anfrage holen
-error_log($jahr);  // Zum Überprüfen, ob das Jahr korrekt übergeben wurde
-
-// Transaktion starten
-$conn->begin_transaction();
-
-try {
-    // Bestehende Löschungen
-    $conn->query("DELETE FROM `endstich` WHERE `Jahr` = $jahr;");
-    $conn->query("DELETE FROM `glueck` WHERE `Jahr` = $jahr;");
-    $conn->query("DELETE FROM `kunst` WHERE `Jahr` = $jahr;");
-    $conn->query("DELETE FROM `schwini` WHERE `Jahr` = $jahr;");
-    $conn->query("DELETE FROM `zabig` WHERE `Jahr` = $jahr;");
-    
-    // NEUE SICHERHEITSLÖSCHUNG: Lösche alle jmresultate-Einträge, die zum Endstich gehören
-    // Zuerst die ID des Endstich-Wettbewerbs für das gewählte Jahr ermitteln
-    $sql_endstich_id = "SELECT ID FROM JMDefinition 
-                        WHERE Bezeichnung = 'Endstich' 
-                        AND year = ?";
-    
-    $stmt = $conn->prepare($sql_endstich_id);
-    $stmt->bind_param('i', $jahr);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($row = $result->fetch_assoc()) {
-        $endstich_id = $row['ID'];
-        
-        // Jetzt alle jmresultate-Einträge für diesen Endstich löschen
-        $sql_delete_jmresultate = "DELETE FROM jmresultate 
-                                   WHERE jmdefinitionID = ?";
-        
-        $stmt_delete = $conn->prepare($sql_delete_jmresultate);
-        $stmt_delete->bind_param('i', $endstich_id);
-        $stmt_delete->execute();
-        
-        $deleted_rows = $stmt_delete->affected_rows;
-        error_log("Gelöschte jmresultate-Einträge für Endstich: " . $deleted_rows);
+msvJahrLoeschen($conn, 'endsch-loeschen', 'Endschiessen-Einträge',
+    function (mysqli $c, int $j): int {
+        $n = 0;
+        foreach (ENDSCH_TABELLEN as $t) {
+            $n += msvJahrLoeschenZahl($c, "SELECT COUNT(*) FROM `$t` WHERE `Jahr` = ?", $j);
+        }
+        return $n + msvJahrLoeschenZahl($c, 'SELECT COUNT(*) ' . ENDSCH_JM_SQL, $j);
+    },
+    function (mysqli $c, int $j): int {
+        $n = 0;
+        foreach (ENDSCH_TABELLEN as $t) {
+            $n += msvJahrLoeschenAusfuehren($c, "DELETE FROM `$t` WHERE `Jahr` = ?", $j);
+        }
+        return $n + msvJahrLoeschenAusfuehren($c, 'DELETE ' . ENDSCH_JM_SQL, $j);
     }
-
-    // Transaktion erfolgreich abschliessen
-    $conn->commit();
-    echo "Tabellen erfolgreich geleert.";
-} catch (Exception $e) {
-    // Bei einem Fehler Transaktion rückgängig machen
-    $conn->rollback();
-    echo "Fehler beim Leeren der Tabellen: " . $e->getMessage();
-}
-
-// Verbindung schliessen
-$conn->close();
-?>
+);

@@ -127,7 +127,7 @@ include 'header.inc.php';
                     <i class="bi bi-question-circle me-2"></i>
                     Import bestätigen
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
             </div>
             <div class="modal-body">
                 <p>Möchtest du die ausgewählten Programme wirklich importieren?</p>

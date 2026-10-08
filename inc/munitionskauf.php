@@ -51,7 +51,7 @@ $page_specific_css = '
 
 /* === COMPACT FORM ROW === */
 .compact-form-row {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    background: #f8f9fa;
     border: 1px solid #dee2e6;
     border-radius: var(--border-radius);
     padding: 0.75rem 1rem;
@@ -515,7 +515,7 @@ $page_specific_css = '
 
     /* Mobile Stats Summary */
     .mobile-stats-bar {
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        background: #f8f9fa;
         border: 1px solid #dee2e6;
         border-radius: 0.5rem;
         padding: 0.6rem 1rem;
@@ -754,7 +754,7 @@ include 'header.inc.php';
                 <span class="total-amount ms-3" id="total_preis">CHF 0.00</span>
               </div>
               <div class="action-buttons">
-                <button type="button" id="btnReset" class="btn btn-sm btn-outline-secondary" title="Zurücksetzen">
+                <button type="button" id="btnReset" class="btn btn-sm btn-outline-secondary" data-tooltip="Zurücksetzen">
                   <i class="bi bi-arrow-counterclockwise"></i>
                 </button>
                 <button type="submit" id="btnSave" class="btn btn-sm btn-outline-primary">

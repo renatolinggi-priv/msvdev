@@ -291,17 +291,6 @@
                 self.saveData();
             });
 
-            // Confirm Action
-            $('#confirmAction').off('click.msv').on('click.msv', function() {
-                self.executeDelete();
-            });
-
-            // Modal verstecken - Reset
-            $('#confirmModal').on('hidden.bs.modal', function() {
-                self.deleteType = '';
-                self.itemToDelete = null;
-            });
-
             // Spezielle End-Resultate Events
             if (this.type === 'end') {
                 this.bindEndResultateEvents();
@@ -388,72 +377,51 @@
                 }
             });
         }
+        // Bestätigung über die zentralen Dialoge aus msv-toast.js (kein eigenes Modal mehr).
         showDeleteConfirmation(type, name = '') {
-            let message = '';
+            const self = this;
+            const selectedYear = $('#yearSelect').val();
             if (type === 'all') {
-                message = `
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-exclamation-triangle text-danger me-3" style="font-size: 2rem;"></i>
-                        <div>
-                            <strong>Möchten Sie wirklich ALLE Resultate des aktuellen Jahres löschen?</strong>
-                            <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden!</small>
-                        </div>
-                    </div>
-                `;
-            } else {
-                message = `
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
-                        <div>
-                            <strong>Möchten Sie die Resultate von "${name}" wirklich löschen?</strong>
-                            <br><small class="text-muted">Diese Aktion kann nicht rückgängig gemacht werden.</small>
-                        </div>
-                    </div>
-                `;
+                msvJahrLoeschen({
+                    url: this.basePath + this.config.deleteUrl,
+                    year: selectedYear,
+                    was: this.config.title + '-Resultate',
+                    done: () => self.loadData(selectedYear)
+                });
+                return;
             }
-            $('#confirmModal .modal-body').html(message);
-            $('#confirmModal').modal('show');
+            // Einzeln löschen nur mit eigenem Endpunkt – der Jahres-Endpunkt würde alles löschen.
+            if (!this.config.deleteOneUrl) return;
+            msvConfirmDelete('die Resultate von ' + msvEsc(name.trim())).then(function (res) {
+                if (res.isConfirmed) self.executeDelete();
+            });
         }
+        // Einzel-Löschung (nur Typen mit deleteOneUrl); «Alle» läuft über msvJahrLoeschen.
         executeDelete() {
             const self = this;
-            const $btn = $('#confirmAction');
             const selectedYear = $('#yearSelect').val();
-            $btn.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm me-2"></span>Verarbeite...');
-            let ajaxConfig = {
+            if (this.itemToDelete === null || !this.config.deleteOneUrl) return;
+            $.ajax({
+                url: this.basePath + this.config.deleteOneUrl,
                 method: 'POST',
                 data: {
                     jahr: selectedYear,
                     year: selectedYear,
+                    mitgliedID: this.itemToDelete,
                     csrf_token: $('input[name="csrf_token"]').val()
                 },
+                success: function() {
+                    self.toastManager.show('Resultate gelöscht', 'success');
+                    self.loadData(selectedYear);
+                },
+                error: function(xhr) {
+                    self.toastManager.show(msvXhrMessage(xhr, 'Löschen fehlgeschlagen'), 'error');
+                },
                 complete: function() {
-                    $btn.prop('disabled', false)
-                        .html('<i class="bi bi-check-circle me-1"></i>Bestätigen');
-                    $('#confirmModal').modal('hide');
+                    self.deleteType = '';
+                    self.itemToDelete = null;
                 }
-            };
-            if (this.deleteType === 'all') {
-                ajaxConfig.url = this.basePath + this.config.deleteUrl;
-                ajaxConfig.success = function() {
-                    self.toastManager.show('Alle Resultate erfolgreich gelöscht', 'success');
-                    setTimeout(() => self.loadData(selectedYear), 800);
-                };
-                ajaxConfig.error = function() {
-                    self.toastManager.show('Fehler beim Löschen', 'error');
-                };
-            } else if (this.deleteType === 'single' && this.itemToDelete !== null) {
-                ajaxConfig.url = this.basePath + (this.config.deleteOneUrl || this.config.deleteUrl);
-                ajaxConfig.data.mitgliedID = this.itemToDelete;
-                ajaxConfig.success = function() {
-                    self.toastManager.show('Resultate erfolgreich gelöscht', 'success');
-                    setTimeout(() => self.loadData(selectedYear), 800);
-                };
-                ajaxConfig.error = function() {
-                    self.toastManager.show('Fehler beim Löschen', 'error');
-                };
-            }
-            $.ajax(ajaxConfig);
+            });
         }
         enhanceMobileRows() {
             if (!window.matchMedia('(max-width: 768px)').matches) return;

@@ -183,7 +183,6 @@ $recaptcha_site_key = $config['recaptcha']['site_key'] ?? '';
             border-radius: 6px;
             padding: 1rem 1.25rem;
             margin-bottom: 1rem;
-            border-left: 3px solid var(--accent);
         }
         .question-group label {
             font-weight: 600;
@@ -213,14 +212,14 @@ $recaptcha_site_key = $config['recaptcha']['site_key'] ?? '';
             margin-bottom: 1rem;
         }
         .alert-danger-custom {
-            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            background: #f8d7da;
             color: #721c24;
-            border-left: 3px solid var(--danger);
+            border: 1px solid var(--danger);
         }
         .alert-success-custom {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            background: #d4edda;
             color: #155724;
-            border-left: 3px solid var(--success);
+            border: 1px solid var(--success);
         }
 
         /* --- Erfolgs-Screen --- */

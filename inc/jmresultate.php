@@ -376,7 +376,7 @@ $page_specific_css = "
     border-bottom: 1px solid #e7edf3;
 }
 .jm-detail-group-title { font-weight: 700; font-size: 0.82rem; color: #334155; }
-.jm-detail-group-meta  { font-size: 0.72rem; color: #94a3b8; }
+.jm-detail-group-meta  { font-size: 0.72rem; color: #64748b; }
 .jm-group-pflicht .jm-detail-group-title { color: #0f766e; }
 .jm-group-streich .jm-detail-group-title { color: #1d4ed8; }
 
@@ -395,7 +395,7 @@ $page_specific_css = "
 .jm-line-name { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jm-line-pts  { display: inline-flex; align-items: baseline; gap: 0.35rem; flex-shrink: 0; white-space: nowrap; }
 .jm-line-val  { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
-.jm-line-max  { font-size: 0.72rem; color: #94a3b8; }
+.jm-line-max  { font-size: 0.72rem; color: #64748b; }
 .jm-line-empty .jm-line-name,
 .jm-line-empty .jm-line-val { color: #adb5bd; font-weight: 400; }
 
@@ -440,7 +440,7 @@ $page_specific_css = "
 .rank-table-wrapper .table-title {
     position: relative !important;
     z-index: 100 !important;
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%) !important;
+    background: var(--light-color) !important;
     padding: 0.75rem 1.25rem !important;
     margin: 0 !important;
     border-bottom: 2px solid #dee2e6 !important;
@@ -545,7 +545,7 @@ try {
                                             </button>
                                         </div>
                                         <div class="col-6">
-                                            <button id="btnPublishJm" type="button" class="btn btn-outline-success btn-sm w-100 <?= $__jmUnpublished > 0 ? '' : 'd-none' ?>" title="Unveröffentlichte JM-Resultate freigeben">
+                                            <button id="btnPublishJm" type="button" class="btn btn-outline-success btn-sm w-100 <?= $__jmUnpublished > 0 ? '' : 'd-none' ?>" data-tooltip="Unveröffentlichte JM-Resultate freigeben">
                                                 <i class="bi bi-megaphone me-1"></i>Veröffentlichen <span id="publishBadge" class="badge bg-warning text-dark ms-1"><?= $__jmUnpublished > 0 ? (int) $__jmUnpublished : '' ?></span>
                                             </button>
                                         </div>
@@ -674,7 +674,7 @@ try {
     </div>
     <div class="anlass-panel-search">
         <div class="position-relative flex-fill">
-            <i class="bi bi-search" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+            <i class="bi bi-search" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#64748b;"></i>
             <input type="text" id="anlassPanelSearch" class="form-control form-control-sm"
                    placeholder="Mitglied suchen..." style="padding-left:2.5rem; border-radius:8px;">
         </div>
@@ -776,7 +776,7 @@ try {
             <table class="table table-sm table-hover align-middle mb-0" id="pdfImportPreviewTable">
               <thead class="table-light" style="position:sticky; top:0; z-index:2;">
                 <tr>
-                  <th style="width:36px;"><input type="checkbox" id="pdfImportSelectAll" class="form-check-input" title="Alle"></th>
+                  <th style="width:36px;"><input type="checkbox" id="pdfImportSelectAll" class="form-check-input" data-tooltip="Alle auswählen" aria-label="Alle auswählen"></th>
                   <th style="width:64px;">Rang</th>
                   <th>Name (PDF)</th>
                   <th>Mitglied</th>
@@ -898,23 +898,14 @@ try {
         });
 
         // Löschen
-        $('#delete-btn').on('click', async function (e) {
+        $('#delete-btn').on('click', function (e) {
             e.preventDefault();
-            const r = await msvConfirm(
-                'Möchtest du wirklich ALLE Resultate des aktuellen Jahres löschen?',
-                'Alle Resultate löschen',
-                'Ja, alles löschen'
-            );
-            if (!r.isConfirmed) return;
-
-            $.post(basePath + 'jmresultate/delete_jmresultate.php', {
-                year: $yearDD.val(),
-                csrf_token: $('input[name="csrf_token"]').val()
-            }).done(function () {
-                showMessage('Alle aktuellen Resultate erfolgreich gelöscht', 'success');
-                setTimeout(() => loadJMResultate($yearDD.val()), 600);
-            }).fail(function () {
-                showMessage('Fehler beim Löschen der aktuellen Resultate', 'danger');
+            const year = $yearDD.val();
+            msvJahrLoeschen({
+                url: basePath + 'jmresultate/delete_jmresultate.php',
+                year: year,
+                was: 'JM-Resultate',
+                done: () => loadJMResultate(year)
             });
         });
 
@@ -1314,7 +1305,7 @@ try {
                 const def = resp.definition;
 
                 // Header aktualisieren
-                $('#anlassPanelTitle').html('<i class="bi bi-crosshair me-2"></i>' + def.bezeichnung);
+                $('#anlassPanelTitle').html('<i class="bi bi-crosshair me-2"></i>' + msvEsc(def.bezeichnung));
                 let metaHtml = '<span><i class="bi bi-trophy me-1"></i>Max: ' + def.maxpunkte + ' Punkte</span>';
                 if (def.streicher) metaHtml += '<span class="ms-3"><i class="bi bi-dash-circle me-1"></i>Streicher</span>';
                 $('#anlassPanelMeta').html(metaHtml);
@@ -1359,26 +1350,27 @@ try {
                     const hasValue = hasMemberValue(m);
                     const rowClass = hasValue ? 'has-value' : '';
 
-                    html += '<div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom anlass-member-row ' + rowClass + '" data-name="' + m.name.toLowerCase() + '">';
-                    html += '<span style="width:30px; text-align:center; font-size:0.8rem; color:#94a3b8; font-weight:600;">' + __pos + '</span>';
-                    html += '<span class="flex-fill" style="font-weight:500; color:#1e293b; font-size:0.95rem;">' + m.name;
+                    const nameEsc = msvEsc(m.name);
+                    html += '<div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom anlass-member-row ' + rowClass + '" data-name="' + msvEsc(m.name.toLowerCase()) + '">';
+                    html += '<span style="width:30px; text-align:center; font-size:0.8rem; color:#64748b; font-weight:600;">' + __pos + '</span>';
+                    html += '<span class="flex-fill" style="font-weight:500; color:#1e293b; font-size:0.95rem;">' + nameEsc;
                     if (m.status === 'entwurf') {
-                        html += ' <span title="Vom Mitglied gemeldet – noch nicht bestätigt" style="display:inline-block; margin-left:4px; font-size:0.66rem; font-weight:700; color:#92700c; background:#fff3cd; border:1px solid #ffe69c; border-radius:999px; padding:1px 8px; vertical-align:middle; white-space:nowrap;"><i class="bi bi-person-check"></i> gemeldet</span>';
+                        html += ' <span data-tooltip="Vom Mitglied gemeldet – noch nicht bestätigt" style="display:inline-block; margin-left:4px; font-size:0.66rem; font-weight:700; color:#92700c; background:#fff3cd; border:1px solid #ffe69c; border-radius:999px; padding:1px 8px; vertical-align:middle; white-space:nowrap;"><i class="bi bi-person-check"></i> gemeldet</span>';
                     }
                     html += '</span>';
 
                     if (def.isSektionsmeisterschaft) {
                         html += '<div class="d-flex align-items-center gap-1">';
-                        html += '<span style="font-size:0.7rem; font-weight:700; color:#94a3b8;">R1:</span>';
-                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde1" value="' + (m.punkte_runde1 ?? '') + '" inputmode="numeric" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
-                        html += '<span style="font-size:0.7rem; font-weight:700; color:#94a3b8; margin-left:4px;">R2:</span>';
-                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde2" value="' + (m.punkte_runde2 ?? '') + '" inputmode="numeric" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
+                        html += '<span style="font-size:0.7rem; font-weight:700; color:#64748b;" aria-hidden="true">R1:</span>';
+                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde1" value="' + (m.punkte_runde1 ?? '') + '" inputmode="numeric" aria-label="Runde 1, ' + nameEsc + '" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
+                        html += '<span style="font-size:0.7rem; font-weight:700; color:#64748b; margin-left:4px;" aria-hidden="true">R2:</span>';
+                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte_runde2" value="' + (m.punkte_runde2 ?? '') + '" inputmode="numeric" aria-label="Runde 2, ' + nameEsc + '" style="width:65px; text-align:center; font-weight:600; border-radius:8px;">';
                         html += '</div>';
                     } else if (def.isReadonly) {
                         html += '<span style="font-weight:700; color:#059669; min-width:60px; text-align:center;">' + (m.punkte || '\u2013') + '</span>';
                     } else {
                         const draftStyle = (m.status === 'entwurf') ? ' border-color:#ffc107; background:#fffbea; box-shadow:inset 0 0 0 1px #ffc107;' : '';
-                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte" value="' + (m.punkte ?? '') + '" inputmode="numeric" placeholder="\u2013" style="width:80px; text-align:center; font-weight:600; font-size:1rem; border-radius:8px;' + draftStyle + '">';
+                        html += '<input type="text" class="form-control form-control-sm anlass-input" data-mid="' + m.mitgliedID + '" data-field="punkte" value="' + (m.punkte ?? '') + '" inputmode="numeric" placeholder="\u2013" aria-label="Punkte, ' + nameEsc + '" data-max="' + (parseInt(def.maxpunkte, 10) || '') + '" style="width:80px; text-align:center; font-weight:600; font-size:1rem; border-radius:8px;' + draftStyle + '">';
                     }
 
                     html += '</div>';
@@ -1466,13 +1458,36 @@ try {
         });
     }
 
+    // Plausibilität: Zahl, nicht negativ, höchstens Max-Punkte des Anlasses (data-max).
+    // Liefert einen Fehlertext oder ''.
+    function pruefePunkte(input) {
+        const roh = input.value.trim();
+        let fehler = '';
+        if (roh !== '') {
+            const zahl = Number(roh.replace(',', '.'));
+            const max = parseInt(input.getAttribute('data-max'), 10);
+            if (!isFinite(zahl) || zahl < 0) fehler = 'Keine gültige Punktzahl';
+            else if (max > 0 && zahl > max) fehler = 'Höchstens ' + max + ' Punkte';
+        }
+        input.classList.toggle('is-invalid', fehler !== '');
+        if (fehler) {
+            input.setAttribute('aria-invalid', 'true');
+            input.setAttribute('data-tooltip', fehler);
+        } else {
+            input.removeAttribute('aria-invalid');
+            input.removeAttribute('data-tooltip');
+        }
+        return fehler;
+    }
+
     // Input-Events im Panel
     $(document).on('input', '.anlass-input', function() {
         updatePanelCounter();
         $(this).toggleClass('border-success', this.value.trim() !== '');
+        pruefePunkte(this);
     });
 
-    // Enter-Navigation: zum nächsten Input
+    // Enter-Navigation: zum nächsten Input, im letzten Feld speichern
     $(document).on('keydown', '.anlass-input', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -1481,7 +1496,17 @@ try {
             if (idx >= 0 && allInputs[idx + 1]) {
                 allInputs[idx + 1].focus();
                 allInputs[idx + 1].select();
+            } else if (idx === allInputs.length - 1) {
+                $('#btnAnlassSave:visible').trigger('click');
             }
+        }
+    });
+
+    // Ctrl+S / Cmd+S speichert das offene Erfassungs-Panel
+    $(document).on('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S') && $('#anlassPanel').hasClass('open')) {
+            e.preventDefault();
+            $('#btnAnlassSave:visible').trigger('click');
         }
     });
 
@@ -1491,7 +1516,20 @@ try {
     // ---- Speichern ----
     $('#btnAnlassSave').on('click', function() {
         if (!currentAnlassData) return;
+        if ($(this).prop('disabled')) return;
         const def = currentAnlassData.definition;
+
+        // Unplausible Werte zuerst korrigieren lassen
+        const ungueltig = $('#anlassPanelBody .anlass-input').toArray().filter(inp => pruefePunkte(inp) !== '');
+        if (ungueltig.length) {
+            const erstes = ungueltig[0];
+            const name = $(erstes).closest('.anlass-member-row').find('.flex-fill').first().text().trim();
+            msvToast(pruefePunkte(erstes) + ' – bitte bei ' + name + ' korrigieren'
+                + (ungueltig.length > 1 ? ' (' + ungueltig.length + ' Felder)' : ''), 'warning');
+            erstes.focus();
+            return;
+        }
+
         const $btn = $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Speichere...');
 
         // Daten sammeln
@@ -1524,10 +1562,10 @@ try {
                 loadAnlaesse($yearDD.val());
                 if (window.loadRanglisten) window.loadRanglisten($yearDD.val());
             } else {
-                msvToast('Fehler: ' + resp.message, 'error');
+                msvToast('Nicht gespeichert: ' + (resp.message || 'unbekannter Fehler') + '. Die Eingaben sind noch da.', 'error');
             }
         })
-        .fail(function() { msvToast('Speichern fehlgeschlagen', 'error'); })
+        .fail(function(xhr) { msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler') + '. Die Eingaben sind noch da.', 'error'); })
         .always(function() { $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Speichern'); });
     });
 
@@ -1953,7 +1991,7 @@ try {
             const trCls = isDup ? 'row-dup' : (r.match_status === 'none' ? 'row-none' : '');
             const dupVal = (r.dup_jm && r.dup_jm_punkte != null) ? ': ' + r.dup_jm_punkte : '';
             const dupNote = isDup ? '<span class="badge bg-warning text-dark ms-1">bereits erfasst' + dupVal + '</span>' : '';
-            const top10 = r.is_top10 ? ' <i class="bi bi-trophy-fill text-warning" title="Top 10 – auch Einzelrangierung"></i>' : '';
+            const top10 = r.is_top10 ? ' <i class="bi bi-trophy-fill text-warning" data-tooltip="Top 10 – auch Einzelrangierung" aria-label="Top 10"></i>' : '';
             const preisCell = r.is_top10
                 ? '<input type="text" class="form-control form-control-sm preis-input" value="' + (r.preis !== null ? r.preis : '') + '" inputmode="decimal">'
                 : '<span class="text-muted small">–</span>';
@@ -1993,7 +2031,7 @@ try {
             'Bereits erfasste Disziplinen bleiben leer (gelbe Zeile), unsichere Zuordnungen sind standardmässig abgewählt.');
 
         $('#pdfImportPreviewTable thead tr').html(
-            '<th style="width:36px;"><input type="checkbox" id="pdfImportSelectAll" class="form-check-input" title="Alle"></th>' +
+            '<th style="width:36px;"><input type="checkbox" id="pdfImportSelectAll" class="form-check-input" data-tooltip="Alle auswählen" aria-label="Alle auswählen"></th>' +
             '<th>Mitglied</th>' +
             '<th>Name (PDF) / Quelle</th>' +
             '<th style="width:120px;">Geschossen</th>' +

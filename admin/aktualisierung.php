@@ -32,6 +32,7 @@ $db = getDB();
 $results = null;
 $baselineCount = null;
 $flashError = null;
+$sicherungDatei = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!hash_equals($_SESSION['csrf_token'], $token)) {
@@ -41,7 +42,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'baseline') {
             $baselineCount = markBaseline($db, $migrationsDir);
         } elseif ($action === 'run') {
-            $results = runPendingMigrations($db, $migrationsDir);
+            // Standard: vorher die ganze DB sichern. Schlägt das fehl, läuft keine Migration.
+            if (!empty($_POST['vorher_sichern'])) {
+                require_once __DIR__ . '/../inc/backup_dump.inc.php';
+                $sicherung = msvBackupVorher('migration');
+                if ($sicherung['ok']) {
+                    $sicherungDatei = $sicherung['datei'];
+                    $results = runPendingMigrations($db, $migrationsDir);
+                } else {
+                    $flashError = 'Die Sicherung vor der Aktualisierung ist fehlgeschlagen ('
+                                . $sicherung['meldung'] . '). Es wurde keine Migration ausgeführt.';
+                }
+            } else {
+                $results = runPendingMigrations($db, $migrationsDir);
+            }
         }
     }
 }
@@ -66,7 +80,7 @@ $page_specific_css = <<<'CSS'
 }
 .akt-card-header {
   padding: 0.85rem 1.1rem; font-weight: 600; color: #334155;
-  border-bottom: 1px solid #eef2f7; background: linear-gradient(135deg,#f8fafc,#eef2f7);
+  border-bottom: 1px solid #eef2f7; background: #f8fafc;
   display: flex; align-items: center; justify-content: space-between;
 }
 .akt-card-header .count {
@@ -97,7 +111,7 @@ include 'header.inc.php';
 
         <div class="row mb-3 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Datenbank aktualisieren <button type="button" class="btn-help" data-help="aktualisierung.uebersicht" aria-label="Hilfe"></button>
+            <h2 class="h4 mb-0 page-title">Datenbank aktualisieren <button type="button" class="btn-help" data-help="aktualisierung.uebersicht" aria-label="Hilfe"></button>
             </h2>
           </div>
         </div>
@@ -123,6 +137,12 @@ include 'header.inc.php';
             <?php endif; ?>
 
             <?php if ($results !== null): ?>
+              <?php if ($sicherungDatei): ?>
+                <div class="alert alert-light border small">
+                  <i class="bi bi-shield-check me-1"></i>Vorher gesichert: <code><?= htmlspecialchars($sicherungDatei, ENT_QUOTES, 'UTF-8') ?></code>
+                  (wiederherstellbar auf der Seite «Backup &amp; Restore»)
+                </div>
+              <?php endif; ?>
               <?php if (!empty($results['applied'])): ?>
                 <div class="alert alert-success">
                   <strong><?= count($results['applied']) ?> Migration(en) angewendet:</strong>
@@ -147,7 +167,7 @@ include 'header.inc.php';
             <?php if ($trackingEmpty && !empty($files)): ?>
               <!-- Erstmalige Einrichtung: Baseline -->
               <div class="akt-card" style="border-color:#fcd34d;">
-                <div class="akt-card-header" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);">
+                <div class="akt-card-header" style="background:#fffbeb;">
                   <span><i class="bi bi-info-circle me-2 text-warning"></i>Erstmalige Einrichtung <button type="button" class="btn-help" data-help="aktualisierung.baseline" aria-label="Hilfe"></button></span>
                 </div>
                 <div class="p-3">
@@ -165,7 +185,7 @@ include 'header.inc.php';
                   <form method="POST" class="m-0">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="action" value="baseline">
-                    <button type="submit" class="btn btn-warning">
+                    <button type="submit" class="btn btn-outline-warning btn-sm">
                       <i class="bi bi-flag me-1"></i>Bestehende als angewendet markieren (Baseline)
                     </button>
                   </form>
@@ -181,7 +201,8 @@ include 'header.inc.php';
                   <form method="POST" class="m-0" id="aktRunForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="action" value="run">
-                    <button type="button" class="btn btn-success btn-sm" id="aktRunBtn"
+                    <input type="hidden" name="vorher_sichern" value="1" id="aktVorherSichern">
+                    <button type="button" class="btn btn-outline-warning btn-sm" id="aktRunBtn"
                             data-pending="<?= count($pendingFiles) ?>">
                       <i class="bi bi-play-fill me-1"></i>Ausstehende ausführen
                     </button>
@@ -259,13 +280,18 @@ document.querySelectorAll('.navbar a[href], .offcanvas-nav a[href], #logoutModal
       icon: 'warning',
       title: 'Migrationen ausführen?',
       html: 'Es ' + (count === 1 ? 'wird <strong>1</strong> ausstehende Migration' : 'werden <strong>' + count + '</strong> ausstehende Migrationen')
-            + ' ausgeführt. Verändert die DB-Struktur, nicht automatisch umkehrbar.',
+            + ' ausgeführt. Das verändert die Datenbank und lässt sich nur über eine Sicherung zurücknehmen.',
+      input: 'checkbox',
+      inputValue: 1,
+      inputPlaceholder: 'Vorher eine Sicherung der Datenbank erstellen',
       showCancelButton: true,
+      focusCancel: true,
       confirmButtonText: '<i class="bi bi-play-fill me-1"></i>Jetzt ausführen',
       cancelButtonText: 'Abbrechen',
-      customClass: msvSwalButtons('btn-success')
+      customClass: msvSwalButtons('btn-warning')
     });
     if (result.isConfirmed) {
+      document.getElementById('aktVorherSichern').value = result.value ? '1' : '';
       document.getElementById('aktRunForm').submit();
     }
   });

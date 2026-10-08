@@ -37,7 +37,7 @@ $page_specific_css = <<<'CSS'
   margin: 0; padding: 1rem 1.25rem; font-weight: 600;
   color: #64748b;
   border-bottom: 2px solid #e2e8f0;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  background: #f8fafc;
   border-radius: 12px 12px 0 0;
   display: flex; align-items: center; justify-content: space-between;
 }
@@ -47,7 +47,7 @@ $page_specific_css = <<<'CSS'
 .hybrid-table thead th {
   padding: 0.45rem 0.7rem; font-size: 0.68rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-  background: linear-gradient(180deg, #f8fafc, #eef2f7);
+  background: #f8fafc;
   border-bottom: 2px solid #e2e8f0;
   position: sticky; top: 0; z-index: 6;
 }
@@ -81,14 +81,14 @@ $page_specific_css = <<<'CSS'
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   vertical-align: middle;
 }
-.h-parent { color: #94a3b8; font-size: 0.8rem; font-style: italic; }
+.h-parent { color: #64748b; font-size: 0.8rem; font-style: italic; }
 
 /* Drag Handle */
 .drag-grip {
   color: #cbd5e1; cursor: grab; font-size: 1.1rem;
   padding: 2px 4px; border-radius: 4px; transition: color 0.15s;
 }
-.drag-grip:hover { color: #94a3b8; }
+.drag-grip:hover { color: #64748b; }
 .drag-grip:active { cursor: grabbing; }
 .nav-row-dragging { background: #fff !important; box-shadow: 0 10px 24px rgba(0,0,0,.12); z-index: 100; }
 .nav-row-placeholder {
@@ -260,7 +260,7 @@ include 'header.inc.php';
         <!-- Titel -->
         <div class="row mb-3 d-none d-md-flex">
           <div class="col-md-12">
-            <h2 class="h4 mb-0" style="color: var(--secondary-color);">Navigation verwalten <button type="button" class="btn-help" data-help="nav_admin.uebersicht" aria-label="Hilfe"></button>
+            <h2 class="h4 mb-0 page-title">Navigation verwalten <button type="button" class="btn-help" data-help="nav_admin.uebersicht" aria-label="Hilfe"></button>
             </h2>
           </div>
         </div>
@@ -603,7 +603,7 @@ function renderTable() {
     const isCollapsed = collapsedRoots.has(item.id);
     let toggleHtml;
     if (item.level === 0 && hasKids) {
-      toggleHtml = '<button class="btn-toggle-collapse" data-root-id="' + item.id + '" type="button" title="' + (isCollapsed ? 'Ausklappen' : 'Einklappen') + '">'
+      toggleHtml = '<button class="btn-toggle-collapse" data-root-id="' + item.id + '" type="button" data-tooltip="' + (isCollapsed ? 'Ausklappen' : 'Einklappen') + '">'
         + '<i class="bi bi-chevron-' + (isCollapsed ? 'right' : 'down') + '"></i></button>';
     } else {
       toggleHtml = '<span class="btn-toggle-placeholder"></span>';
@@ -1271,7 +1271,7 @@ function createPickerDropdown() {
 
   const $grid = $pickerDropdown.find('.icon-picker-grid');
   ICON_LIST.forEach(ic => {
-    $grid.append('<div class="icon-picker-item" data-icon="' + ic.name + '" title="' + ic.name + '">'
+    $grid.append('<div class="icon-picker-item" data-icon="' + ic.name + '" data-tooltip="' + ic.name + '">'
       + '<i class="bi ' + ic.name + '"></i><span>' + esc(ic.label) + '</span></div>');
   });
 

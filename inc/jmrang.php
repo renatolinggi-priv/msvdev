@@ -15,7 +15,7 @@ $page_specific_css = '
 .table-wrapper .table-title {
     position: relative !important;
     z-index: 100 !important;
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%) !important;
+    background: var(--light-color) !important;
     padding: 1rem 1.5rem !important;
     margin: 0 !important;
     border-bottom: 2px solid #dee2e6 !important;
@@ -168,7 +168,7 @@ $page_specific_css = '
     border-bottom: 1px solid #e7edf3;
 }
 .jm-detail-group-title { font-weight: 700; font-size: 0.82rem; color: #334155; }
-.jm-detail-group-meta  { font-size: 0.72rem; color: #94a3b8; }
+.jm-detail-group-meta  { font-size: 0.72rem; color: #64748b; }
 .jm-group-pflicht .jm-detail-group-title { color: #0f766e; }
 .jm-group-streich .jm-detail-group-title { color: #1d4ed8; }
 
@@ -189,7 +189,7 @@ $page_specific_css = '
 .jm-line-name { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jm-line-pts  { display: inline-flex; align-items: baseline; gap: 0.35rem; flex-shrink: 0; white-space: nowrap; }
 .jm-line-val  { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
-.jm-line-max  { font-size: 0.72rem; color: #94a3b8; }
+.jm-line-max  { font-size: 0.72rem; color: #64748b; }
 .jm-line-empty .jm-line-name,
 .jm-line-empty .jm-line-val { color: #adb5bd; font-weight: 400; }
 

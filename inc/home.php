@@ -104,7 +104,7 @@ include 'header.inc.php';
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #3b5998, #0ea5e9);
+    background: var(--bs-primary, #0d6efd);
     transform: scaleX(0);
     transition: transform 0.2s ease;
 }
@@ -114,8 +114,7 @@ include 'header.inc.php';
 }
 
 .home-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     border-color: #cbd5e1;
 }
 
@@ -165,7 +164,7 @@ include 'header.inc.php';
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #94a3b8;
+    color: #64748b;
     margin: 0 0 0.6rem;
 }
 
@@ -198,7 +197,7 @@ include 'header.inc.php';
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #94a3b8;
+    color: #64748b;
     list-style: none;
     padding: 0.35rem 0;
 }
@@ -282,7 +281,7 @@ include 'header.inc.php';
    unterschiedlich hohe Kacheln ohnehin aus. */
 .home-card-desc {
     font-size: 0.75rem;
-    color: #94a3b8;
+    color: #64748b;
     margin: 0;
     overflow-wrap: anywhere;
 }
@@ -433,7 +432,7 @@ include 'header.inc.php';
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #94a3b8;
+    color: #64748b;
     margin: 0 0 0.5rem;
 }
 

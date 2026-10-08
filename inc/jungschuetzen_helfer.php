@@ -121,7 +121,7 @@ function ladeHelferstunden() {
         const wilen = event.helferWilen ?? '';
         const wollerau = event.helferWollerau ?? '';
         const name = event.name ?? '';
-        //const datum = event.date ? new Date(event.date).toLocaleDateString('de-DE') : 'â€"';
+        //const datum = event.date ? new Date(event.date).toLocaleDateString('de-DE') : '—';
         const datum = event.date
         ? (() => {
             const d = new Date(event.date);
@@ -130,7 +130,7 @@ function ladeHelferstunden() {
             const jahr = d.getFullYear();
             return `${tag}.${monat}.${jahr}`;
             })()
-        : 'â€"';
+        : '—';
 
         html += `<tr>
           <td align="right">${datum}</td>

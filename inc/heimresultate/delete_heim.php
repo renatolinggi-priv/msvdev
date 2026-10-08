@@ -1,35 +1,16 @@
-
 <?php
+/**
+ * Löscht alle Heimresultate eines Jahres (vorher automatische DB-Sicherung).
+ * POST: jahr, csrf_token, optional nur_zaehlen=1. Ablauf: inc/jahr_loeschen.inc.php
+ */
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
+require_once __DIR__ . '/../jahr_loeschen.inc.php';
 
-// CSRF-Schutz
-if (session_status() === PHP_SESSION_NONE) session_start();
-$csrf = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die('Ungültige Anfrage');
-}
-
-// Prüfen, ob die Verbindung erfolgreich ist
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-$jahr = isset($_POST['jahr']) ? $_POST['jahr'] : date('Y'); // Jahr wird aus der POST-Anfrage übernommen, falls nicht gesetzt, Standardwert ist das aktuelle Jahr
-// Transaktion starten
-$conn->begin_transaction();
-
-try {
-    $conn->query("DELETE FROM `heimresultate` WHERE `Jahr` = $jahr;");
-    // Transaktion erfolgreich abschliessen
-    $conn->commit();
-    json_encode(['status' => 'success', 'message' => 'Script ausgeführt']);
-
-} catch (Exception $e) {
-    // Bei einem Fehler Transaktion rückgängig machen
-    $conn->rollback();
-    echo "Fehler beim Leeren der Tabellen: " . $e->getMessage();
-}
-
-// Schliessen der Verbindung
-$conn->close();
-?>
+msvJahrLoeschen($conn, 'heim-loeschen', 'Heimresultate',
+    fn(mysqli $c, int $j): int => msvJahrLoeschenZahl($c, "SELECT COUNT(*) FROM `heimresultate` WHERE `Jahr` = ?", $j),
+    fn(mysqli $c, int $j): int => msvJahrLoeschenAusfuehren($c, "DELETE FROM `heimresultate` WHERE `Jahr` = ?", $j)
+);

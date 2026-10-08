@@ -71,13 +71,13 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     font-size: 0.875rem;
     font-weight: 600;
 }
-.initial-admin { background: linear-gradient(135deg, #dc3545, #c82333); }
-.initial-vorstand { background: linear-gradient(135deg, #ffc107, #e0a800); color: #343a40; }
-.initial-mitglied { background: linear-gradient(135deg, #667eea, #764ba2); }
-.initial-jungschuetze { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.initial-admin { background: #dc3545; }
+.initial-vorstand { background: #ffc107; color: #343a40; }
+.initial-mitglied { background: #6366f1; }
+.initial-jungschuetze { background: #14b8a6; }
 .info-card {
     background-color: #f8f9fa;
-    border-left: 4px solid var(--secondary-color);
+    border: 1px solid var(--secondary-color);
     padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
     border-radius: 0.25rem;
@@ -88,9 +88,9 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     color: var(--secondary-color);
 }
 .pending-alert {
-    background: linear-gradient(135deg, #fff9e6, #fff3cd);
+    background: #fff9e6;
     border: 1px solid #ffc107;
-    border-left: 4px solid #ffc107;
+    border: 1px solid #ffc107;
     border-radius: 0.375rem;
     padding: 1rem 1.5rem;
     margin-bottom: 1rem;

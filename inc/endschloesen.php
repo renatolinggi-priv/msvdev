@@ -106,7 +106,7 @@ $page_specific_css = "
 .stich-tile-optional { border-style: dashed; background: #fafbfd; }
 .stich-tile-optional.selected { border-style: solid; }
 /* Symbol oben rechts in der Kachel (wie der Partner-Schalter bei Mitgliedern) */
-.stich-tile-badge { position: absolute; top: 0.55rem; right: 0.6rem; font-size: 0.85rem; line-height: 1; color: #94a3b8; pointer-events: auto; }
+.stich-tile-badge { position: absolute; top: 0.55rem; right: 0.6rem; font-size: 0.85rem; line-height: 1; color: #64748b; pointer-events: auto; }
 .stich-tile-optional .stich-tile-head { padding-right: 1.5rem; }
 .stich-tile.selected .stich-tile-badge { color: #15803d; }
 .stich-tile .form-check-input:checked { background-color: #15803d; border-color: #15803d; }
@@ -192,7 +192,7 @@ $page_specific_css = "
 #adminPanel .preis-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0; }
 #adminPanel .preis-row + .preis-row { border-top: 1px solid #f1f5f9; }
 #adminPanel .preis-row .preis-label { flex: 1 1 auto; font-size: 0.82rem; }
-#adminPanel .preis-row .preis-label small { display: block; color: #94a3b8; font-size: 0.7rem; }
+#adminPanel .preis-row .preis-label small { display: block; color: #64748b; font-size: 0.7rem; }
 #adminPanel .preis-row .input-group { width: 9.5rem; flex: 0 0 auto; }
 #adminPanel .def-edit { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.85rem 1rem; }
 

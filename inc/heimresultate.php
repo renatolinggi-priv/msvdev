@@ -121,7 +121,7 @@ $page_specific_css = "
 }
 
 .results-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+    background: var(--light-color);
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #dee2e6;
     margin: 0;
@@ -1167,18 +1167,11 @@ $(document).ready(function() {
     // ===== Löschen =====
     $('#delete-btn').on('click', function() {
         var selectedYear = $('#yearSelect').val();
-        msvConfirmDelete('alle Resultate des Jahres ' + selectedYear).then(function(res) {
-            if (!res.isConfirmed) return;
-            $.ajax({
-                url: 'heimresultate/delete_heim.php',
-                method: 'POST',
-                data: { jahr: selectedYear, csrf_token: $('input[name="csrf_token"]').val() },
-                success: function() {
-                    msvToast('Alle Resultate erfolgreich gelöscht', 'success');
-                    setTimeout(function() { loadResultate(selectedYear); }, 500);
-                },
-                error: function() { msvToast('Fehler beim Löschen', 'error'); }
-            });
+        msvJahrLoeschen({
+            url: 'heimresultate/delete_heim.php',
+            year: selectedYear,
+            was: 'Heimresultate',
+            done: function() { loadResultate(selectedYear); }
         });
     });
 

@@ -25,7 +25,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 
 <style>
 .changelog-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: #f8f9fa;
     border-radius: 1rem;
     padding: 1.5rem;
     margin-bottom: 1.5rem;

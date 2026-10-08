@@ -31,7 +31,7 @@ function get_db_connection() {
         if ($GLOBALS['conn']->ping()) return $GLOBALS['conn'];
     }
 
-    // Fallback: neue Verbindung aufbauen â€“ nimm die gleichen Credentials wie oben
+    // Fallback: neue Verbindung aufbauen – nimm die gleichen Credentials wie oben
     $servername = $GLOBALS['servername'] ?? null;
     $username   = $GLOBALS['username']   ?? null;
     $password   = $GLOBALS['password']   ?? null;

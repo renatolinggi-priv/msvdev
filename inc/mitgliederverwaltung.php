@@ -10,7 +10,7 @@ include 'dbconnect.inc.php';
 $page_specific_css = <<<'CSS'
 #panelId[readonly] { background: #f1f5f9; }
 .mv-search { max-width: 350px; }
-.import-area-icon { font-size: 2rem; color: #94a3b8; }
+.import-area-icon { font-size: 2rem; color: #64748b; }
 .import-preview-scroll { max-height: 200px; overflow-y: auto; }
 /* kurzes Feedback nach dem Auto-Save einer Zeile */
 .hybrid-table tbody tr.row-saved td { background: #e8f5e9 !important; transition: background .6s; }

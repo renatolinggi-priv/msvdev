@@ -84,16 +84,22 @@ function msvToast(message, type = 'success') {
     // Responsive: Mobile kompakter und unter Navbar, Desktop wie gewohnt
     const isMobile = window.innerWidth < 992;
 
+    // Fehler und Warnungen bleiben länger stehen und pausieren unter der Maus,
+    // damit man sie fertig lesen kann.
+    const dauer = type === 'error' ? 7000 : (type === 'warning' ? 5000 : 3000);
+
     const Toast = Swal.mixin({
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
-        timer: 3000,
+        timer: dauer,
         timerProgressBar: true,
         customClass: {
             popup: isMobile ? 'swal2-toast-mobile' : ''
         },
         didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
             // Mobile: Kompakteres Styling unter dem Hamburger-Button
             if (isMobile) {
                 toast.style.top = '60px'; // Unter der Navbar/Hamburger
@@ -131,6 +137,70 @@ function msvConfirmDelete(itemName, opts) {
         confirmButtonText: opts.confirmText || 'Ja, löschen',
         cancelButtonText: 'Abbrechen'
     });
+}
+
+// «Alle Resultate eines Jahres löschen» – einheitlich für JM, Endschiessen, Heim, Kanti.
+// Fragt erst die Anzahl ab, nennt Jahr und Anzahl im Dialog; der Server sichert die
+// Datenbank vor dem Löschen (inc/jahr_loeschen.inc.php).
+// opts: { url, year, was: 'Heimresultate', done: function(resp) }
+async function msvJahrLoeschen(opts) {
+    const tokenEl = document.querySelector('input[name="csrf_token"]');
+    const basis = { year: opts.year, jahr: opts.year, csrf_token: tokenEl ? tokenEl.value : '' };
+    const senden = async function (extra) {
+        const res = await fetch(opts.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(Object.assign({}, basis, extra || {}))
+        });
+        let data = null;
+        try { data = await res.json(); } catch (e) { data = null; }
+        if (!res.ok || !data || data.success !== true) {
+            const st = res.status;
+            throw new Error((data && data.message) ||
+                (st === 401 ? 'Sitzung abgelaufen – bitte neu anmelden' :
+                 st === 403 ? 'Keine Berechtigung' : 'Serverfehler (' + st + ')'));
+        }
+        return data;
+    };
+
+    let anzahl;
+    try {
+        anzahl = (await senden({ nur_zaehlen: 1 })).anzahl;
+    } catch (e) {
+        msvToast(e.message, 'error');
+        return;
+    }
+    if (!anzahl) {
+        msvToast('Für ' + opts.year + ' sind keine ' + opts.was + ' erfasst.', 'info');
+        return;
+    }
+
+    const r = await msvConfirmDelete('', {
+        title: opts.was + ' ' + opts.year + ' löschen?',
+        html: '<strong>' + anzahl + ' ' + msvEsc(opts.was) + '</strong> des Jahres <strong>'
+            + msvEsc(String(opts.year)) + '</strong> werden gelöscht.'
+            + '<div class="small text-muted mt-2">Vorher wird automatisch eine Sicherung der ganzen '
+            + 'Datenbank erstellt. Sie steht danach auf der Seite «Backup &amp; Restore».</div>',
+        confirmText: 'Ja, ' + anzahl + ' löschen'
+    });
+    if (!r.isConfirmed) return;
+
+    msvSwal.fire({
+        title: 'Sichern und löschen …',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: function () { Swal.showLoading(); }
+    });
+    try {
+        const resp = await senden();
+        Swal.close();
+        msvToast(resp.message || (opts.was + ' gelöscht'), 'success');
+        if (typeof opts.done === 'function') opts.done(resp);
+    } catch (e) {
+        Swal.close();
+        msvError(e.message);
+    }
 }
 
 // Zentrale Fehler-Anzeige (Dialog, muss bestätigt werden – für Toasts msvToast(msg,'error'))

@@ -17,7 +17,7 @@ $page_specific_css = <<<'CSS'
   margin: 0; padding: 1rem 1.25rem; font-weight: 600;
   color: var(--th-text);
   border-bottom: 2px solid var(--cell-border);
-  background: linear-gradient(135deg, var(--light) 0%, #e9ecef 100%);
+  background: var(--light-color);
 }
 
 /* --- Hybrid-Tabelle (Read-only) --- */
@@ -126,7 +126,7 @@ $page_specific_css = <<<'CSS'
 }
 .ssb-windows { display: flex; flex-direction: column; gap: 0.4rem; }
 .ssb-window { display: flex; align-items: center; gap: 0.4rem; }
-.ssb-window .ssb-sep { color: #94a3b8; }
+.ssb-window .ssb-sep { color: #64748b; }
 .ssb-window input[type="time"] { max-width: 110px; }
 .ssb-window input.ssb-invalid { border-color: #ef4444; background: #fef2f2; }
 .ssb-iconbtn {
@@ -158,7 +158,7 @@ $page_specific_css = <<<'CSS'
   border: 1px solid #fde68a; border-radius: 6px;
   padding: 0.35rem 0.55rem; margin-bottom: 0.5rem;
 }
-.ssb-empty { font-size: 0.82rem; color: #94a3b8; padding: 0.3rem 0 0.5rem; }
+.ssb-empty { font-size: 0.82rem; color: #64748b; padding: 0.3rem 0 0.5rem; }
 
 CSS;
 
@@ -602,7 +602,7 @@ $(function () {
           '<div class="ssb-day-head">' +
             '<input type="date" class="form-control form-control-sm ssb-date" value="' + (d.date || '') + '">' +
             '<span class="ssb-weekday">' + weekdayOf(d.date) + '</span>' +
-            '<button type="button" class="ssb-iconbtn ssb-del-day" title="Tag entfernen">&times;</button>' +
+            '<button type="button" class="ssb-iconbtn ssb-del-day" data-tooltip="Tag entfernen" aria-label="Tag entfernen">&times;</button>' +
           '</div>' +
           '<div class="ssb-windows">';
         (d.windows || []).forEach(w => {
@@ -611,7 +611,7 @@ $(function () {
             '<input type="time" class="form-control form-control-sm ssb-start' + bad + '" value="' + (w.start || '') + '">' +
             '<span class="ssb-sep">–</span>' +
             '<input type="time" class="form-control form-control-sm ssb-end' + bad + '" value="' + (w.end || '') + '">' +
-            '<button type="button" class="ssb-iconbtn ssb-del-win" title="Zeitfenster entfernen">&times;</button>' +
+            '<button type="button" class="ssb-iconbtn ssb-del-win" data-tooltip="Zeitfenster entfernen" aria-label="Zeitfenster entfernen">&times;</button>' +
           '</div>';
         });
         html += '</div>' +

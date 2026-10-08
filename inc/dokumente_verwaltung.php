@@ -30,8 +30,8 @@ $page_specific_css = <<<'CSS'
 .dv-chip.green { background:#d1f4dd; color:#1e7e44; }
 .dv-chip.blue  { background:#dbe4f7; color:#2d4373; }
 .dv-title { font-weight:600; }
-.dv-meta  { font-size:0.8rem; color:#94a3b8; }
-.dv-empty { text-align:center; color:#94a3b8; padding:2rem 1rem; }
+.dv-meta  { font-size:0.8rem; color:#64748b; }
+.dv-empty { text-align:center; color:#64748b; padding:2rem 1rem; }
 .dv-empty i { font-size:1.6rem; opacity:.5; display:block; margin-bottom:.5rem; }
 .vis-badge { font-size:0.66rem; vertical-align:middle; }
 .ez-group-header { cursor:pointer; }

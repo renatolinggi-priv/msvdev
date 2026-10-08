@@ -251,14 +251,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-bottom: 1rem;
         }
         .alert-danger {
-            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            background: #f8d7da;
             color: #721c24;
-            border-left: 4px solid var(--danger-color);
+            border: 1px solid var(--danger-color);
         }
         .alert-success {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            background: #d4edda;
             color: #155724;
-            border-left: 4px solid var(--success-color);
+            border: 1px solid var(--success-color);
         }
         .info-hint {
             font-size: 0.8rem;
@@ -345,7 +345,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <p class="info-hint"><i class="bi bi-info-circle me-1"></i>Wenn deine E-Mail beim Verein hinterlegt ist, wirst du automatisch freigeschaltet</p>
 
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="reg_password" name="password"
+                        <input type="password" class="form-control" id="reg_password" autocomplete="new-password" name="password"
                                placeholder="Passwort" required minlength="8">
                         <label for="reg_password">
                             <i class="bi bi-key me-1"></i>Passwort (min. 8 Zeichen)
@@ -353,7 +353,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
 
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="password_confirm" name="password_confirm"
+                        <input type="password" class="form-control" id="password_confirm" autocomplete="new-password" name="password_confirm"
                                placeholder="Passwort bestätigen" required>
                         <label for="password_confirm">
                             <i class="bi bi-key me-1"></i>Passwort bestätigen

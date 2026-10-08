@@ -113,7 +113,7 @@ $page_specific_css = "
 }
 
 .results-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+    background: var(--light-color);
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #dee2e6;
     color: var(--dark-color);
@@ -187,7 +187,7 @@ $page_specific_css = "
     font-weight: 400;
     text-transform: none;
     letter-spacing: 0;
-    color: #94a3b8;
+    color: #64748b;
     margin-top: 2px;
 }
 

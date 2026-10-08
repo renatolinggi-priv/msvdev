@@ -52,7 +52,7 @@ $page_specific_css = <<<'CSS'
 .pd-card > h3, .pd-toggle { font-size:.95rem; font-weight:600; color:#1e293b; margin:0 0 10px; }
 .pd-toggle { display:flex; width:100%; align-items:center; justify-content:space-between; background:none; border:0; padding:0; cursor:pointer; text-align:left; }
 .pd-toggle:focus-visible { outline:2px solid #3b5998; outline-offset:2px; border-radius:4px; }
-.pd-chevron { font-size:.8rem; color:#94a3b8; transition:transform .2s; }
+.pd-chevron { font-size:.8rem; color:#64748b; transition:transform .2s; }
 .pd-toggle[aria-expanded="false"] { margin:0; }
 .pd-toggle[aria-expanded="false"] .pd-chevron { transform:rotate(-90deg); }
 .pd-field { display:flex; align-items:center; gap:10px; padding:5px 0; }

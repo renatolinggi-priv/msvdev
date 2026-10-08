@@ -158,7 +158,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo escape_output($Seitentitel); ?></title>
 
     <!-- Favicon -->
@@ -197,6 +197,8 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     <script src="<?php echo $incBase; ?>js/msv-toast.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-toast.js') ?: '1'; ?>"></script>
     <!-- MSV Tooltip System -->
     <script src="<?php echo $incBase; ?>js/msv-tooltips.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-tooltips.js') ?: '1'; ?>"></script>
+    <!-- Slide-Panels: Fokusführung für Tastatur/Screenreader -->
+    <script src="<?php echo $incBase; ?>js/msv-panel-a11y.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-panel-a11y.js') ?: '1'; ?>"></script>
     <!-- MSV Mobile Cards Helper -->
     <script src="<?php echo $incBase; ?>js/mobile-cards.js?v=<?php echo @filemtime(__DIR__ . '/js/mobile-cards.js') ?: '1'; ?>"></script>
     <!-- MSV Hilfesystem («?»-Buttons, Modal in footer.inc.php, Pflege in hilfetexte.php) -->
@@ -216,7 +218,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
         }
         
         .modal-header {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            background: #f8f9fa;
             border-radius: 15px 15px 0 0;
             padding: 1rem 1.5rem;
         }
@@ -241,7 +243,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
             font-weight: 500;
             font-size: 0.875rem;
             line-height: 1.5;
-            transition: all 0.3s ease;
+            transition: color .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
         }
         .btn-sm,
         .btn-group-sm > .btn {
@@ -251,11 +253,8 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
             line-height: 1.5;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
+        /* Kein Anheben beim Hover: Buttons bleiben ruhig, Rückmeldung kommt über die Farbe */
+
         /* Session Warning kompakt */
         .session-warning {
             max-width: 300px;
@@ -337,7 +336,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
 
             <span class="navbar-page-title"><?php echo escape_output($navPageTitle); ?></span>
 
-            <button class="navbar-toggler" type="button">
+            <button class="navbar-toggler" type="button" aria-label="Menü öffnen">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -352,34 +351,18 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     NavigationManager::getInstance()->generateMobileMenu();
     ?>
 
-    <!-- Kompakte Logout Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title">
-                        <i class="bi bi-box-arrow-right me-2"></i>Abmelden
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center py-3">
-                    <i class="bi bi-question-circle text-warning" style="font-size: 2.5rem;"></i>
-                    <p class="mt-3 mb-0">Wirklich abmelden?</p>
-                </div>
-                <div class="modal-footer border-0 justify-content-center">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-1"></i>Abbrechen
-                    </button>
-                    <form method="post" action="<?php echo $incBase; ?>user_logout.php" class="d-inline">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-box-arrow-right me-1"></i>Abmelden
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Abmelden: direkt per POST (mit CSRF), ohne Rückfrage – Links tragen data-msv-logout -->
+    <form method="post" action="<?php echo $incBase; ?>user_logout.php" id="msvLogoutForm" class="d-none">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
+    </form>
+    <script>
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest('[data-msv-logout]');
+            if (!link) return;
+            e.preventDefault();
+            document.getElementById('msvLogoutForm').submit();
+        });
+    </script>
 
     <div class="container-fluid">
         <div class="row">

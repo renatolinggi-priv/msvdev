@@ -72,7 +72,7 @@ $page_specific_css = "
 .ranking-table .ranking-row:hover .row-actions .btn { opacity: 1; }
 
 /* Leer-/Lade-Zustand */
-.ranking-empty { padding: 3rem 1rem; text-align: center; color: #94a3b8; }
+.ranking-empty { padding: 3rem 1rem; text-align: center; color: #64748b; }
 .ranking-empty i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .6; }
 
 /* Karte für neue Rangierung */

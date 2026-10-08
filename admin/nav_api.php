@@ -220,7 +220,7 @@ switch($action){
         $stmt->fetch(); 
         $stmt->close();
         if ($cnt>0) {
-            bad('Eintrag hat Unterpunkte â€“ zuerst Kinder umhängen oder löschen');
+            bad('Eintrag hat Unterpunkte – zuerst Kinder umhängen oder löschen');
         }
 
         // Get parent for reordering

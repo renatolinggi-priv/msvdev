@@ -113,7 +113,7 @@ $page_specific_css = "
 }
 
 .results-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+    background: var(--light-color);
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #dee2e6;
     color: var(--dark-color);
@@ -1047,30 +1047,17 @@ $(document).ready(function() {
     $('#redirect-btn').on('click', function() { window.location.href = 'endschrang.php'; });
 
     // Alle löschen
-    $('#delall-btn').on('click', async function(e) {
+    $('#delall-btn').on('click', function(e) {
         e.preventDefault();
-        const r = await msvConfirm(
-            'Möchtest du wirklich ALLE Resultate des aktuellen Jahres löschen?',
-            'Alle Daten löschen',
-            'Ja, alles löschen'
-        );
-        if (!r.isConfirmed) return;
-
         const selectedYear = $('#yearSelect').val();
-        $.ajax({
+        msvJahrLoeschen({
             url: 'endschresultate/delete_endschresultate.php',
-            method: 'POST',
-            data: {
-                jahr: selectedYear,
-                year: selectedYear,
-                csrf_token: $('input[name="csrf_token"]').val()
-            },
-            success: function() {
-                msvToast('Alle Resultate erfolgreich gelöscht', 'success');
+            year: selectedYear,
+            was: 'Endschiessen-Einträge',
+            done: function() {
                 EndEditPanel.close();
                 loadData(selectedYear);
-            },
-            error: function() { msvToast('Fehler beim Löschen', 'error'); }
+            }
         });
     });
 

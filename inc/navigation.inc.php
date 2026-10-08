@@ -173,7 +173,7 @@ class NavigationManager {
 
         // Logout
         echo '<li class="mobile-nav-item">';
-        echo '<a class="mobile-user-menu-link text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">';
+        echo '<a class="mobile-user-menu-link text-danger" href="#" role="button" data-msv-logout>';
         echo '<i class="bi bi-box-arrow-right me-2"></i>Abmelden';
         echo '</a></li>';
 
@@ -490,7 +490,7 @@ class NavigationManager {
         echo '<li><a class="dropdown-item" href="changelog.php"><i class="bi bi-megaphone me-2"></i>Changelog</a></li>';
         echo '<li><hr class="dropdown-divider"></li>';
 
-        echo '<li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="bi bi-box-arrow-right me-2"></i>Abmelden</a></li>';
+        echo '<li><a class="dropdown-item text-danger" href="#" role="button" data-msv-logout><i class="bi bi-box-arrow-right me-2"></i>Abmelden</a></li>';
         echo '</ul></li>';
     }
 
@@ -549,7 +549,7 @@ class NavigationManager {
 .navbar {
     min-height: var(--nav-height);
     padding: 0.5rem 1rem !important;
-    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    background: #fff;
     border-bottom: 1px solid rgba(0,0,0,0.05);
     z-index: 1030;
     transition: var(--nav-transition);
@@ -615,7 +615,6 @@ class NavigationManager {
 
 .navbar-nav .nav-link:hover {
     background: rgba(52, 152, 219, 0.08);
-    transform: translateY(-1px);
 }
 
 /* Subtilerer Active-Style */
@@ -634,7 +633,7 @@ class NavigationManager {
     left: 20%;
     right: 20%;
     height: 3px;
-    background: linear-gradient(90deg, #3498db, #2563eb);
+    background: var(--bs-primary, #0d6efd);
     border-radius: 3px;
     animation: slideIn 0.3s ease;
 }
@@ -815,6 +814,10 @@ class NavigationManager {
     .navbar-toggler:focus {
         box-shadow: none;
     }
+    .navbar-toggler:focus-visible {
+        outline: 2px solid #0d6efd;
+        outline-offset: 2px;
+    }
 
     /* Off-Canvas Container */
     .offcanvas-nav {
@@ -866,7 +869,7 @@ class NavigationManager {
         justify-content: space-between;
         padding: 1rem 1.25rem;
         border-bottom: 2px solid #e9ecef;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: #f8f9fa;
     }
 
     .offcanvas-title {
@@ -1016,7 +1019,7 @@ class NavigationManager {
     .mobile-user-icon {
         width: 36px;
         height: 36px;
-        background: linear-gradient(135deg, #3498db, #2563eb);
+        background: var(--bs-primary, #0d6efd);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -1347,6 +1350,19 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    // aria-expanded der Untermenü-Schalter folgt der Klasse .expanded (gilt für alle Codepfade:
+    // Off-Canvas, Sidebar, wiederhergestellter Zustand)
+    (function () {
+        const sync = el => el.setAttribute("aria-expanded", el.classList.contains("expanded") ? "true" : "false");
+        const toggles = document.querySelectorAll("[data-has-submenu]");
+        const mo = new MutationObserver(ms => ms.forEach(m => sync(m.target)));
+        toggles.forEach(el => {
+            el.setAttribute("role", "button");
+            sync(el);
+            mo.observe(el, { attributes: true, attributeFilter: ["class"] });
+        });
+    })();
+
     // === MOBILE OFF-CANVAS MENU ===
     // Immer initialisieren (CSS regelt Sichtbarkeit per Media Query)
     initMobileOffCanvas();
@@ -1366,28 +1382,36 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        console.log("Off-Canvas menu initialized");
-
         // Remove Bootstrap data attributes from toggler
         toggler.removeAttribute("data-bs-toggle");
         toggler.removeAttribute("data-bs-target");
+        toggler.setAttribute("aria-expanded", "false");
 
         // Open menu
         toggler.addEventListener("click", function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log("Toggler clicked - opening menu");
             offcanvas.classList.add("show");
             overlay.classList.add("show");
             document.body.style.overflow = "hidden";
+            toggler.setAttribute("aria-expanded", "true");
+            const erstes = offcanvas.querySelector("a[href], button");
+            if (erstes) setTimeout(() => erstes.focus({ preventScroll: true }), 50);
         });
 
         // Close menu
         function closeMenu() {
+            const fokusDrin = offcanvas.contains(document.activeElement);
             offcanvas.classList.remove("show");
             overlay.classList.remove("show");
             document.body.style.overflow = "";
+            toggler.setAttribute("aria-expanded", "false");
+            if (fokusDrin) toggler.focus({ preventScroll: true });
         }
+
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape" && offcanvas.classList.contains("show")) closeMenu();
+        });
 
         if (closeBtn) {
             closeBtn.addEventListener("click", closeMenu);

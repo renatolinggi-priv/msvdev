@@ -69,7 +69,7 @@ $page_specific_css = <<<'CSS'
 .winner-row:hover .winner-action .btn, .winner-row:focus-within .winner-action .btn { opacity: 1; }
 
 /* === EMPTY STATE === */
-.empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: #64748b; }
 .empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem; }
 
 /* === MOBILE === */

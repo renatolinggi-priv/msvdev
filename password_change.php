@@ -251,23 +251,23 @@ function validate_password($password, $username) {
         }
 
         .alert-danger {
-            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            background: #f8d7da;
             color: #721c24;
-            border-left: 4px solid var(--danger-color);
+            border: 1px solid var(--danger-color);
         }
 
         .alert-success {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            background: #d4edda;
             color: #155724;
-            border-left: 4px solid var(--success-color);
+            border: 1px solid var(--success-color);
         }
 
         .password-requirements {
-            background: linear-gradient(135deg, #e2e3e5, #f8f9fa);
+            background: #f1f3f5;
             border-radius: var(--border-radius);
             padding: 1rem;
             margin-bottom: 1.5rem;
-            border-left: 4px solid var(--info-color);
+            border: 1px solid var(--info-color);
         }
 
         .password-requirements h6 {
@@ -382,14 +382,14 @@ function validate_password($password, $username) {
 
                 <form method="post" action="" id="changePasswordForm">
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="old_password" name="old_password" placeholder="Aktuelles Passwort" required>
+                        <input type="password" class="form-control" id="old_password" autocomplete="current-password" name="old_password" placeholder="Aktuelles Passwort" required>
                         <label for="old_password">
                             <i class="bi bi-lock me-2"></i>Aktuelles Passwort
                         </label>
                     </div>
                     
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Neues Passwort" required>
+                        <input type="password" class="form-control" id="new_password" autocomplete="new-password" name="new_password" placeholder="Neues Passwort" required>
                         <label for="new_password">
                             <i class="bi bi-key me-2"></i>Neues Passwort
                         </label>
@@ -399,7 +399,7 @@ function validate_password($password, $username) {
                     </div>
                     
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" placeholder="Neues Passwort bestätigen" required>
+                        <input type="password" class="form-control" id="new_password_confirm" autocomplete="new-password" name="new_password_confirm" placeholder="Neues Passwort bestätigen" required>
                         <label for="new_password_confirm">
                             <i class="bi bi-shield-check me-2"></i>Neues Passwort bestätigen
                         </label>

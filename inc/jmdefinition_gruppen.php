@@ -30,7 +30,7 @@ $page_specific_css = <<<'CSS'
 .gr-count { background: #eef2f7; color: #3b5998; font-weight: 700; font-size: .72rem; border-radius: 999px; padding: 1px 9px; }
 .member-search { position: relative; margin-bottom: .5rem; }
 .member-search input { padding-left: 1.9rem; }
-.member-search .bi-search { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .85rem; }
+.member-search .bi-search { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #64748b; font-size: .85rem; }
 #gruppenname { max-width: 320px; }
 .gr-edit-hint { display: none; }
 .gr-edit-mode .gr-edit-hint { display: inline; }

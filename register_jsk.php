@@ -156,8 +156,8 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
             color:#fff; font-weight:600; padding:0.75rem 2rem; width:100%; margin-top:0.5rem; transition:all var(--transition-speed) ease; }
         .btn-register:hover { transform:translateY(-2px); box-shadow:var(--box-shadow-hover); color:#fff; background:linear-gradient(135deg,#34528c,#23355c); }
         .alert { border:none; border-radius:var(--border-radius); font-weight:500; margin-bottom:1rem; }
-        .alert-danger { background:linear-gradient(135deg,#f8d7da,#f5c6cb); color:#721c24; border-left:4px solid var(--danger-color); }
-        .alert-warning { background:linear-gradient(135deg,#fff3cd,#ffe69c); color:#664d03; border-left:4px solid #ffc107; }
+        .alert-danger { background:#f8d7da; color:#721c24; border:1px solid var(--danger-color); }
+        .alert-warning { background:#fff3cd; color:#664d03; border:1px solid #ffc107; }
         .info-hint { font-size:0.8rem; color:var(--secondary-color); margin-top:-0.5rem; margin-bottom:1rem; }
     </style>
 </head>
@@ -221,11 +221,11 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
 
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="reg_password" name="password" placeholder="Passwort" required minlength="8">
+                        <input type="password" class="form-control" id="reg_password" autocomplete="new-password" name="password" placeholder="Passwort" required minlength="8">
                         <label for="reg_password"><i class="bi bi-key me-1"></i>Passwort (min. 8 Zeichen)</label>
                     </div>
                     <div class="form-floating">
-                        <input type="password" class="form-control" id="password_confirm" name="password_confirm" placeholder="Passwort bestätigen" required>
+                        <input type="password" class="form-control" id="password_confirm" autocomplete="new-password" name="password_confirm" placeholder="Passwort bestätigen" required>
                         <label for="password_confirm"><i class="bi bi-key me-1"></i>Passwort bestätigen</label>
                     </div>
 

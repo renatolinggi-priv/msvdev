@@ -20,7 +20,7 @@ $page_specific_css = <<<'CSS'
   margin: 0; padding: 0.75rem 1rem; font-weight: 600; font-size: 0.95rem;
   color: var(--dark-color);
   border-bottom: 2px solid #e2e8f0;
-  background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
+  background: var(--light-color);
 }
 
 /* --- Hybrid-Tabelle (kompakt) --- */
@@ -61,7 +61,7 @@ $page_specific_css = <<<'CSS'
   width: 26px; height: 26px; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 0.75rem; border-radius: 4px;
-  color: #94a3b8; border: 1px solid transparent; background: transparent;
+  color: #64748b; border: 1px solid transparent; background: transparent;
   transition: all 0.15s;
 }
 .btn-delete-sm:hover {
@@ -73,7 +73,7 @@ $page_specific_css = <<<'CSS'
   padding: 0.35rem 0.75rem;
   font-size: 0.7rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.5px;
-  color: #94a3b8; background: #fafbfc;
+  color: #64748b; background: #fafbfc;
   border-bottom: 1px solid #e2e8f0;
   cursor: default;
 }
@@ -101,7 +101,7 @@ $page_specific_css = <<<'CSS'
 
 /* --- Empty State --- */
 .empty-state {
-  padding: 3rem 1rem; text-align: center; color: #94a3b8;
+  padding: 3rem 1rem; text-align: center; color: #64748b;
 }
 .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
 

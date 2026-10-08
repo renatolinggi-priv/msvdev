@@ -191,12 +191,12 @@ function validate_password($password, $username) {
 
                     <form method="post" action="" id="changePasswordForm">
                         <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="old_password" name="old_password" placeholder="Aktuelles Passwort" required>
+                            <input type="password" class="form-control" id="old_password" autocomplete="current-password" name="old_password" placeholder="Aktuelles Passwort" required>
                             <label for="old_password"><i class="bi bi-lock me-2"></i>Aktuelles Passwort</label>
                         </div>
 
                         <div class="form-floating mb-1">
-                            <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Neues Passwort" required>
+                            <input type="password" class="form-control" id="new_password" autocomplete="new-password" name="new_password" placeholder="Neues Passwort" required>
                             <label for="new_password"><i class="bi bi-key me-2"></i>Neues Passwort</label>
                         </div>
                         <div class="password-strength-indicator mb-1">
@@ -205,7 +205,7 @@ function validate_password($password, $username) {
                         <small class="password-strength-text text-muted d-block mb-3" id="strengthText"></small>
 
                         <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" placeholder="Neues Passwort bestätigen" required>
+                            <input type="password" class="form-control" id="new_password_confirm" autocomplete="new-password" name="new_password_confirm" placeholder="Neues Passwort bestätigen" required>
                             <label for="new_password_confirm"><i class="bi bi-shield-check me-2"></i>Neues Passwort bestätigen</label>
                         </div>
 

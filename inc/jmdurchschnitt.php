@@ -34,7 +34,7 @@ $page_specific_css = "
 
 .calculation-info {
     background: #e3f2fd;
-    border-left: 4px solid #2196f3;
+    border: 1px solid #2196f3;
     padding: 1rem;
     margin-bottom: 1.5rem;
     border-radius: 0.375rem;
@@ -156,8 +156,7 @@ if (empty($_SESSION['csrf_token'])) {
                             <span class="mx-1 text-muted d-none d-md-inline">|</span>
 
                             <label for="zaehlendeInput" class="form-label fw-bold mb-0 text-nowrap"
-                                   data-bs-toggle="tooltip"
-                                   title="Anzahl der besten Resultate, die in den Durchschnitt einfliessen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
+                                   data-tooltip="Anzahl der besten Resultate, die in den Durchschnitt einfliessen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
                                 <i class="bi bi-list-ol me-1"></i>Zählende Resultate: <button type="button" class="btn-help" data-help="jmdurchschnitt.zaehlende" aria-label="Hilfe"></button>
                             </label>
                             <input type="number" id="zaehlendeInput" class="form-control form-control-sm"
