@@ -1,138 +1,91 @@
 <?php
-// kantiabr.php - Kantonalstich Ranglisten im Stil von backup_restore.php
+// kantiabr.php – Kantonalstich: Ranglisten Kat. A/B und SKSG-Abrechnungsformular
 include 'dbconnect.inc.php';
 
-// Seitenspezifische Styles definieren
+// Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
 $page_specific_css = "
-/* Kantonalstich spezifische Styles */
-.main-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: 2rem;
-    margin-bottom: 2rem;
-}
-
-.sidebar-card,
-...
-.table tbody tr:nth-child(2) td:first-child { color: #C0C0C0; } /* Silber */
-.table tbody tr:nth-child(3) td:first-child { color: #CD7F32; } /* Bronze */
-
-/* Button Styles */
-.btn-compact-standard {
-    padding: .375rem .75rem;
-    font-size: .875rem;
-}
-
-/* Export Links */
-#pdf-link a {
-    display: inline-block;
-    margin-top: 1rem;
-    padding: .5rem 1rem;
-    background
+.ka-tabellen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+@media (max-width: 991.98px) { .ka-tabellen { grid-template-columns: 1fr; } }
+.ka-karte { overflow: hidden; margin-bottom: 14px; }
+.ka-tabellen .ka-karte { margin-bottom: 0; }
+.ka-karte .table-responsive { min-height: 0 !important; max-height: none !important; }
+.ka-karte .table { margin: 0; }
+.ka-karte .table thead th:first-child, .ka-karte .table tbody td:first-child { padding-left: 20px; }
+.ka-karte .table thead th:last-child, .ka-karte .table tbody td:last-child { padding-right: 20px; font-weight: 700; }
+.ka-karte .table tbody tr:nth-child(-n+3) td:first-child { font-weight: 700; }
+.ka-sksg { padding: 14px var(--ui-pad) var(--ui-pad); }
+.ka-sksg-text { max-width: 70ch; margin: 0 0 12px; font-size: .85rem; color: var(--ui-text-2); }
+.ka-aktionen { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 ";
-?>
-<?php include 'header.inc.php'; ?>
 
-<style>
-<?= $page_specific_css ?>
-</style>
+include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
+
+// Kopfangaben für das SKSG-Abrechnungsformular (werden beim Erstellen gespeichert)
+$kantiKopf = ['kanti_verantwortlicher_id' => '', 'kanti_adresse1' => '', 'kanti_adresse2' => '', 'kanti_email' => ''];
+$kantiMitglieder = [];
+try {
+    $stKopf = getDB()->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('kanti_verantwortlicher_id','kanti_adresse1','kanti_adresse2','kanti_email')");
+    foreach ($stKopf->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) { $kantiKopf[$k] = (string) $v; }
+    // Aktive, lebende Mitglieder als Auswahl für den Verantwortlichen (gewähltes Mitglied immer dabei)
+    $stMit = getDB()->prepare("SELECT ID, Vorname, Name, Strasse, PLZ, Ort, Email FROM mitglieder
+                               WHERE (Status = 1 AND Verstorben = 0) OR ID = :sel ORDER BY Name, Vorname");
+    $stMit->execute([':sel' => (int) $kantiKopf['kanti_verantwortlicher_id']]);
+    $kantiMitglieder = $stMit->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { /* Felder bleiben leer */ }
+?>
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-9 col-lg-8">
-      <div class="main-card">
-        <div class="d-none d-md-flex align-items-center justify-content-between mb-3">
-          <h2 class="h4 mb-0 page-title">Kantonalstich – Ranglisten <button type="button" class="btn-help" data-help="kantiabr.uebersicht" aria-label="Hilfe"></button></h2>
-          <div class="d-flex gap-2">
-            <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
-            <button id="reload-btn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Neu laden</button>
-            <button id="redirect-btn" class="btn btn-outline-primary btn-sm"><i class="bi bi-list-ol me-1"></i>Zur Erfassung</button>
-          </div>
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-wide">
+        <?php
+        $page_title = 'Kantonalstich – Ranglisten';
+        $page_title_after = '<button type="button" class="btn-help" data-help="kantiabr.uebersicht" aria-label="Hilfe"></button>'
+            . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+            . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+        $page_actions = '<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i>Rangliste PDF</button>'
+            . '<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>'
+            . '<button type="button" id="redirect-btn" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Zur Erfassung</button>';
+        $page_show_mobile = true;
+        include 'partials/page_header.inc.php';
+        ?>
+
+        <div id="pdf-link"></div>
+
+        <!-- Ranglisten Kategorie A und B -->
+        <div class="ka-tabellen">
+          <?php foreach (['A' => 'KantonalA', 'B' => 'KantonalB'] as $kat => $tab): ?>
+          <section class="ui-karte ka-karte" aria-label="Kategorie <?= $kat ?>">
+            <div class="ui-tab-kopf">
+              <span class="ui-tab-titel">Kategorie <?= $kat ?></span>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-auto ka-neu" data-kat="<?= $kat ?>" data-tooltip="Neu laden" aria-label="Kategorie <?= $kat ?> neu laden"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></button>
+            </div>
+            <div class="table-responsive">
+              <table id="<?= $tab ?>" class="table table-sm mb-0">
+                <thead>
+                  <tr><th>#</th><th>Name</th><th>Hauptdoppel</th><th>1. ND</th><th>2. ND</th><th>3. ND</th><th>4. ND</th><th>Total</th></tr>
+                </thead>
+                <tbody><!-- wird via AJAX gefüllt --></tbody>
+              </table>
+            </div>
+          </section>
+          <?php endforeach; ?>
         </div>
 
-        <div class="row g-3">
-          <div class="col-12 col-lg-6">
-            <div class="card">
-              <div class="card-header d-flex align-items-center justify-content-between">
-                <span><i class="bi bi-trophy me-2"></i>Kategorie A</span>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadKantonala()"><i class="bi bi-arrow-repeat"></i></button>
-              </div>
-              <div class="card-body p-0">
-                <div class="table-responsive">
-                  <table id="KantonalA" class="table table-sm mb-0">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Hauptdoppel</th>
-                        <th>1. ND</th>
-                        <th>2. ND</th>
-                        <th>3. ND</th>
-                        <th>4. ND</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <!-- wird via AJAX gefüllt -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+        <!-- SKSG-Abrechnungsformular -->
+        <section class="ui-karte ka-karte" aria-label="SKSG-Abrechnung">
+          <div class="ui-tab-kopf">
+            <span class="ui-tab-titel">SKSG-Abrechnung <button type="button" class="btn-help" data-help="kantiabr.sksg" aria-label="Hilfe"></button></span>
           </div>
-
-          <div class="col-12 col-lg-6">
-            <div class="card">
-              <div class="card-header d-flex align-items-center justify-content-between">
-                <span><i class="bi bi-trophy-fill me-2"></i>Kategorie B</span>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadKantonalb()"><i class="bi bi-arrow-repeat"></i></button>
-              </div>
-              <div class="card-body p-0">
-                <div class="table-responsive">
-                  <table id="KantonalB" class="table table-sm mb-0">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Hauptdoppel</th>
-                        <th>1. ND</th>
-                        <th>2. ND</th>
-                        <th>3. ND</th>
-                        <th>4. ND</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <!-- wird via AJAX gefüllt -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-12">
-            <?php
-            // Kopfangaben für das SKSG-Abrechnungsformular (werden beim Export gemerkt)
-            $kantiKopf = ['kanti_verantwortlicher_id' => '', 'kanti_adresse1' => '', 'kanti_adresse2' => '', 'kanti_email' => ''];
-            $kantiMitglieder = [];
-            try {
-                $stKopf = getDB()->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('kanti_verantwortlicher_id','kanti_adresse1','kanti_adresse2','kanti_email')");
-                foreach ($stKopf->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) { $kantiKopf[$k] = (string) $v; }
-                // Aktive, lebende Mitglieder als Auswahl für den Verantwortlichen (gewähltes Mitglied immer dabei)
-                $stMit = getDB()->prepare("SELECT ID, Vorname, Name, Strasse, PLZ, Ort, Email FROM mitglieder
-                                           WHERE (Status = 1 AND Verstorben = 0) OR ID = :sel ORDER BY Name, Vorname");
-                $stMit->execute([':sel' => (int) $kantiKopf['kanti_verantwortlicher_id']]);
-                $kantiMitglieder = $stMit->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Throwable $e) { /* Felder bleiben leer */ }
-            require_once __DIR__ . '/csrf.inc.php';
-            ?>
-            <div class="row g-2 mt-3" id="kanti-kopf">
+          <div class="ka-sksg">
+            <p class="ka-sksg-text">Füllt das Abrechnungsformular des SKSG (xlsm) mit Titelblatt und Kontrollblatt für das gewählte Jahr. Verantwortlicher und Adresse werden beim Erstellen gespeichert.</p>
+            <div class="row g-2" id="kanti-kopf">
               <input type="hidden" id="kanti-csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
               <div class="col-12 col-md-3">
+                <label class="form-label small mb-1" for="kanti-verantwortlicher">Verantwortlicher</label>
                 <select class="form-select form-select-sm" id="kanti-verantwortlicher" data-tooltip="Verantwortlicher auf dem SKSG-Abrechnungsformular; die Wahl bleibt gespeichert">
-                  <option value="">– Verantwortlicher wählen –</option>
+                  <option value="">– wählen –</option>
                   <?php foreach ($kantiMitglieder as $m): ?>
                   <option value="<?= (int) $m['ID'] ?>"<?= (int) $m['ID'] === (int) $kantiKopf['kanti_verantwortlicher_id'] ? ' selected' : '' ?>
                           data-strasse="<?= htmlspecialchars((string) $m['Strasse'], ENT_QUOTES) ?>"
@@ -142,44 +95,29 @@ $page_specific_css = "
                 </select>
               </div>
               <div class="col-12 col-md-3">
+                <label class="form-label small mb-1" for="kanti-adresse1">Strasse</label>
                 <input type="text" class="form-control form-control-sm" id="kanti-adresse1" placeholder="Strasse Nr." maxlength="120" value="<?= htmlspecialchars($kantiKopf['kanti_adresse1'], ENT_QUOTES) ?>">
               </div>
               <div class="col-12 col-md-3">
+                <label class="form-label small mb-1" for="kanti-adresse2">PLZ Ort</label>
                 <input type="text" class="form-control form-control-sm" id="kanti-adresse2" placeholder="PLZ Ort" maxlength="120" value="<?= htmlspecialchars($kantiKopf['kanti_adresse2'], ENT_QUOTES) ?>">
               </div>
               <div class="col-12 col-md-3">
+                <label class="form-label small mb-1" for="kanti-email">E-Mail</label>
                 <input type="email" class="form-control form-control-sm" id="kanti-email" placeholder="E-Mail-Adresse" maxlength="120" value="<?= htmlspecialchars($kantiKopf['kanti_email'], ENT_QUOTES) ?>">
               </div>
             </div>
-            <div class="d-flex gap-2 mt-2">
-              <button class="btn btn-sm btn-outline-info pdf-btn">
-                <i class="bi bi-file-pdf me-2"></i>PDF generieren
+            <div class="ka-aktionen">
+              <button type="button" class="btn btn-sm btn-outline-info word-btn" data-tooltip="SKSG-Abrechnungsformular (xlsm) mit Titelblatt und Kontrollblatt befüllen">
+                <i class="bi bi-file-earmark-excel me-1"></i>SKSG-Abrechnung (Excel)
               </button>
-              <button type="button" class="btn btn-sm btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
-              <button class="btn btn-sm btn-outline-info word-btn" data-tooltip="SKSG-Abrechnungsformular (xlsm) mit Titelblatt und Kontrollblatt befüllen">
-                <i class="bi bi-file-earmark-excel me-2"></i>SKSG-Abrechnung (Excel)
-              </button>
-              <button type="button" class="btn-help" data-help="kantiabr.sksg" aria-label="Hilfe"></button>
             </div>
-            <div id="pdf-link" class="mt-3"></div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-xl-3 col-lg-4">
-      <div class="sidebar-card">
-        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Hinweise</h5>
-        <ul class="small mb-0">
-          <li>Jahr oben wählen, um Ranglisten neu zu laden.</li>
-          <li>PDF/Excel generiert jeweils eine Datei zum Download.</li>
-          <li>Bei Problemen erscheint unten eine Fehlermeldung.</li>
-        </ul>
+        </section>
       </div>
     </div>
   </div>
 </div>
-
 <script>
 $(document).ready(function() {
     var basePath = '';
@@ -356,15 +294,14 @@ $(document).ready(function() {
         $('#pdf-link').empty(); // Clear previous download links
     });
 
-    // Reload Button
-    $('#reload-btn').on('click', function() {
-        loadKantonala();
-        loadKantonalb();
+    // Neu laden pro Kategorie (vorher inline onclick auf nicht globale Funktionen – lief ins Leere)
+    $(document).on('click', '.ka-neu', function() {
+        if ($(this).data('kat') === 'A') loadKantonala(); else loadKantonalb();
     });
 
     // Redirect-Button
     $('#redirect-btn').on('click', function() {
-        window.location.href = 'https://jahresmeisterschaft.msvwilen.ch/inc/kantiresultate.php';
+        window.location.href = 'kantiresultate.php';
     });
 
     // Initialisierung

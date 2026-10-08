@@ -6,6 +6,8 @@
  * Die Befüllung der Vorlage liegt in absendenbuch_docx.inc.php (gemeinsam mit dem Broschüren-PDF).
  */
 include '../config.php';                       // $conn + zentraler dat/-Cleanup
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/absendenbuch_docx.inc.php';
 
 $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : (int)date('Y');

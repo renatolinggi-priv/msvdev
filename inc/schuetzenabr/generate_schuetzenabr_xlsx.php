@@ -3,6 +3,8 @@
 //generate_schuetzenabr_xls.php
 require '../vendor/autoload.php'; // Pfad zu Composer's autoload Datei
 require '../config.php'; // Deine Konfigurationsdatei
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet die Session
 require 'functions.inc.php';
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;

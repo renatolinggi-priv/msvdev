@@ -2,14 +2,11 @@
 //schuetzenabr.php
 include 'dbconnect.inc.php';
 
-// Session-Kontrolle wie in jmresultate.php
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 // Alle Styles sind jetzt zentral in msv-styles.css verwaltet
 $page_specific_css = '';
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 
 <!-- Schuetzenabr.php HTML-Gerüst nach heimrang.php Vorbild -->
@@ -19,37 +16,23 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Schützenabrechnung'; $page_actions = '<button type="button" class="btn-help" data-help="schuetzenabr.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+$page_title = 'Schützenabrechnung';
+$page_show_mobile = true;
+ob_start(); ?>
+<button type="button" class="btn-help" data-help="schuetzenabr.uebersicht" aria-label="Hilfe"></button>
+<label for="yearSelect" class="visually-hidden">Jahr</label>
+<select id="yearSelect" class="form-select form-select-sm"></select>
+<?php $page_title_after = ob_get_clean();
+ob_start(); ?>
+<button type="button" class="xlsx-btn btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
+<?php $page_actions = ob_get_clean();
+include 'partials/page_header.inc.php'; ?>
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="schuetzenabr-form">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-                    <!-- Jahr-Auswahl + Aktionen nebeneinander -->
-                    <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                            <i class="bi bi-calendar3 me-1"></i>Jahr:
-                        </label>
-                        <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
-                    </div>
-                    <!-- Aktionsbereich (Bootstrap Collapse) -->
-<?php
-                    $ac_id = 'schuetzenabrActions';
-                    ob_start();
-                    ?>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <button class="xlsx-btn btn btn-outline-info btn-sm w-100" type="button">
-                                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="excel-link" class="mt-2"></div>
-                    <?php
-                    $ac_body = ob_get_clean();
-                    include 'partials/action_card.inc.php';
-                    ?>
-                    </div><!-- Ende flex-row Jahr+Aktionen -->
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <div id="excel-link"></div>
                     <!-- Info-Bereich -->
                     <div class="table-wrapper">
                         <h5 class="table-title">

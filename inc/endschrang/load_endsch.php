@@ -11,6 +11,8 @@ $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 $kat = isset($_GET['kat']) ? $_GET['kat'] : 'A'; // Standard: A
 
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }

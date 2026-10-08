@@ -1,6 +1,8 @@
 <?php
 // Beispiel: load_heimresultate.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../partials/empty_state.inc.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

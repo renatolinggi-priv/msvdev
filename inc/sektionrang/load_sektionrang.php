@@ -4,6 +4,8 @@
  * GET: year. Antwort: JSON mit fertigen <tr>-Blöcken für Runde 1 und Runde 2 samt Schnitt.
  */
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/functions.inc.php';
 require_once __DIR__ . '/../partials/empty_state.inc.php';
 

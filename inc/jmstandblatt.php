@@ -28,58 +28,33 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-narrow">
-        <?php $page_title = 'JM Standblatt'; $page_actions = '<button type="button" class="btn-help" data-help="jmstandblatt.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+        <?php
+$page_title = 'JM Standblatt';
+$page_show_mobile = true;
+ob_start(); ?>
+<button type="button" class="btn-help" data-help="jmstandblatt.uebersicht" aria-label="Hilfe"></button>
+<label for="yearSelect" class="visually-hidden">Jahr</label>
+<select id="yearSelect" class="form-select form-select-sm" data-msv-jahr>
+<?php for ($y = $currentYear + 1; $y >= $currentYear - 3; $y--): ?><option value="<?= $y ?>" <?= $y == $jahrStandard ? 'selected' : '' ?>><?= $y ?></option><?php endfor; ?>
+</select>
+<?php $page_title_after = ob_get_clean();
+ob_start(); ?>
+<button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1"></i>Alle (DOCX)</button>
+<button type="button" id="btnDownloadAllPdf" class="btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>Alle (PDF)</button>
+<button type="button" id="btnPrintAll" class="btn btn-outline-info btn-sm" disabled data-tooltip="QZ Tray nicht verbunden"><i class="bi bi-printer me-1"></i>Alle drucken</button>
+<?php $page_actions = ob_get_clean();
+ob_start(); ?>
+<span class="ui-chip">Direktdruck <span id="qzBadge" class="badge bg-secondary">prüfe…</span></span>
+<?php $page_extra = ob_get_clean();
+include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
-          <!-- Filter-Bereich -->
-          <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-            <!-- Suchfeld -->
-            <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width:280px;">
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Mitglied suchen..." aria-label="Mitglied suchen">
-              </div>
-            </div>
-
-            <!-- Jahr-Auswahl -->
-            <div class="d-flex align-items-center gap-2">
-              <label class="form-label mb-0 small fw-bold" for="yearSelect">Jahr:</label>
-              <select id="yearSelect" class="form-select form-select-sm" style="width:100px" data-msv-jahr>
-                <?php for ($y = $currentYear + 1; $y >= $currentYear - 3; $y--): ?>
-                  <option value="<?= $y ?>" <?= $y == $jahrStandard ? 'selected' : '' ?>><?= $y ?></option>
-                <?php endfor; ?>
-              </select>
-            </div>
-
-            <!-- Aktionen (zentrales Partial) -->
-            <?php
-            $ac_id = 'sbActions';
-            ob_start(); ?>
-                  <div class="row g-2">
-                    <div class="col-6">
-                      <button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm w-100">
-                        <i class="bi bi-download me-1"></i>Alle (DOCX)
-                      </button>
-                    </div>
-                    <div class="col-6">
-                      <button type="button" id="btnDownloadAllPdf" class="btn btn-outline-info btn-sm w-100">
-                        <i class="bi bi-file-earmark-pdf me-1"></i>Alle (PDF)
-                      </button>
-                    </div>
-                    <div class="col-6">
-                      <button type="button" id="btnPrintAll" class="btn btn-outline-info btn-sm w-100" disabled data-tooltip="QZ Tray nicht verbunden">
-                        <i class="bi bi-printer me-1"></i>Alle drucken
-                      </button>
-                    </div>
-                    <div class="col-6 d-flex align-items-center small text-muted">
-                      <span class="me-2">Direktdruck:</span><span id="qzBadge" class="badge bg-secondary">prüfe…</span>
-                    </div>
-                  </div>
-            <?php
-            $ac_body = ob_get_clean();
-            include 'partials/action_card.inc.php';
-            ?>
-          </div>
+          <!-- Suche -->
+          <label class="ui-suche ms-0 mb-3">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span class="visually-hidden">Mitglied suchen</span>
+            <input type="search" id="searchInput" placeholder="Mitglied suchen" autocomplete="off">
+          </label>
 
           <!-- Tabelle -->
           <div class="table-wrapper">

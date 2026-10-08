@@ -6,17 +6,16 @@ include 'dbconnect.inc.php';
 $page_specific_css = "
 /* === RANGIERUNGEN – modernes, einheitliches Design === */
 .ranking-shell {
-    background: #ffffff;
-    border: 1px solid #e9eef5;
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     overflow: hidden;
 }
 
 .ranking-table { font-size: .85rem; margin-bottom: 0; }
 
 .ranking-table thead th {
-    background-color: #f8f9fa;
+    background-color: var(--ui-flaeche-2);
     font-weight: 600;
     text-transform: uppercase;
     font-size: .75rem;
@@ -39,7 +38,7 @@ $page_specific_css = "
 .ranking-table th:first-child { text-align: left !important; }
 
 .ranking-table .ranking-row { cursor: pointer; transition: background .15s ease; }
-.ranking-table .ranking-row:hover { background: #f6faff; }
+.ranking-table .ranking-row:hover { background: var(--ui-flaeche-2); }
 
 /* Globale .table-Regeln aus msv-styles/resultate-unified neutralisieren:
    keine vertikalen Gitterlinien, kein erzwungener Leerraum, keine 1.-Spalte-Tönung */
@@ -62,7 +61,7 @@ $page_specific_css = "
 /* Rang-Badge mit Medaillen-Farben (.rang-badge/.r1/.r2/.r3) jetzt zentral in css/msv-styles.css. */
 
 /* Preis-Zelle */
-.preis-cell { font-weight: 700; color: #0f766e; white-space: nowrap; }
+.preis-cell { font-weight: 700; color: var(--ui-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* Aktionen: Löschen erst bei Hover deutlich sichtbar */
 .ranking-table .row-actions .btn {
@@ -72,18 +71,18 @@ $page_specific_css = "
 .ranking-table .ranking-row:hover .row-actions .btn { opacity: 1; }
 
 /* Leer-/Lade-Zustand */
-.ranking-empty { padding: 3rem 1rem; text-align: center; color: #64748b; }
+.ranking-empty { padding: 3rem 1rem; text-align: center; color: var(--ui-text-2); }
 .ranking-empty i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .6; }
 
 /* Karte für neue Rangierung */
 .add-ranking-card {
-    background: #f8fafc;
-    border: 1px solid #e9eef5;
-    border-radius: .85rem;
+    background: var(--ui-flaeche-2);
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
     padding: 1.25rem;
     margin-bottom: 1.25rem;
 }
-.add-ranking-card h6 { color: #334155; }
+.add-ranking-card h6 { color: var(--ui-text); font-weight: 600; }
 
 /* Mobile */
 @media (max-width: 767.98px) {
@@ -94,21 +93,18 @@ $page_specific_css = "
 /* === EDIT SLIDE PANEL === */
 .edit-panel { position: fixed; top: 0; right: -460px; width: 440px; height: 100vh; background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.12); z-index: 1060; transition: right 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; }
 .edit-panel.open { right: 0; }
-.edit-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s; }
+.edit-panel-overlay { position: fixed; inset: 0; background: rgba(26, 35, 50, .28); z-index: 1055; opacity: 0; visibility: hidden; transition: all 0.3s; }
 .edit-panel-overlay.show { opacity: 1; visibility: visible; }
-.edit-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0; }
-.edit-panel-header h6 { margin: 0; font-weight: 600; color: #1e293b; }
+.edit-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--ui-rand); background: var(--ui-flaeche); flex-shrink: 0; }
+.edit-panel-header h6 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--ui-text); }
 .edit-panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
 .edit-panel-label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.35rem; }
 @media (max-width: 767.98px) { .edit-panel { width: 100%; right: -100%; } }
 ";
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 
-// CSRF Token generieren
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 ?>
 
 <div class="container-fluid">
@@ -116,51 +112,26 @@ if (empty($_SESSION['csrf_token'])) {
         <div class="col-12 ps-0">
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
-                <?php $page_title = 'Einzelrangierungen'; $page_actions = '<button type="button" class="btn-help" data-help="einzelrangierung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+$page_title = 'Einzelrangierungen';
+$page_show_mobile = true;
+ob_start(); ?>
+<button type="button" class="btn-help" data-help="einzelrangierung.uebersicht" aria-label="Hilfe"></button>
+<label for="yearSelect" class="visually-hidden">Jahr</label>
+<select id="yearSelect" class="form-select form-select-sm"></select>
+<?php $page_title_after = ob_get_clean();
+ob_start(); ?>
+<button type="button" id="addNewBtn" class="btn btn-outline-success btn-sm" disabled><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
+<button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm" style="display: none;"><i class="bi bi-file-pdf me-1"></i>PDF</button>
+<button type="button" id="printPdfBtn" class="btn btn-outline-info btn-sm msv-druck" style="display: none;" data-druck-doctype="einzelrangierung" data-druck-label="Einzelrangierungen" aria-label="Einzelrangierungen direkt drucken"><i class="bi bi-printer"></i></button>
+<?php $page_actions = ob_get_clean();
+include 'partials/page_header.inc.php'; ?>
                 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <form id="rankingForm">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                         
-                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
-                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                                    <i class="bi bi-calendar3 me-1"></i>Jahr:
-                                </label>
-                                <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
-                                    <!-- Optionen werden per JavaScript eingefügt -->
-                                </select>
-                            </div>
-
-                            <!-- Aktionsbereich (Bootstrap Collapse) -->
-<?php
-                            $ac_id = 'einzelrangActions';
-                            ob_start();
-                            ?>
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <button type="button" id="addNewBtn" class="btn btn-outline-success btn-sm w-100" disabled>
-                                                    <i class="bi bi-plus-circle me-1"></i>Hinzufügen
-                                                </button>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="btn-group w-100">
-                                                    <button type="button" id="exportPdfBtn" class="btn btn-outline-info btn-sm w-100" style="display: none;">
-                                                        <i class="bi bi-file-pdf me-1"></i>PDF
-                                                    </button>
-                                                    <button type="button" id="printPdfBtn" class="btn btn-outline-info btn-sm msv-druck flex-grow-0" style="display: none;" data-druck-doctype="einzelrangierung" data-druck-label="Einzelrangierungen" aria-label="Einzelrangierungen direkt drucken">
-                                                        <i class="bi bi-printer"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                            <?php
-                            $ac_body = ob_get_clean();
-                            include 'partials/action_card.inc.php';
-                            ?>
-                        </div><!-- Ende flex-row Jahr+Aktionen -->
 
                         <!-- Neue Rangierung hinzufügen -->
                         <div class="add-ranking-card" id="addRankingCard" style="display: none;">

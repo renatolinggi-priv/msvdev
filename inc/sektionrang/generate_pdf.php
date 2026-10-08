@@ -14,6 +14,8 @@ ini_set('display_errors', 0);
 try {
     require '../vendor/autoload.php';
     include '../config.php';
+    require_once __DIR__ . '/../admin_api_guard.inc.php';
+    adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
     require_once __DIR__ . '/../pdf/pdf_theme.php';
     require_once __DIR__ . '/functions.inc.php';
 

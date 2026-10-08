@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.42.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Ranglisten und Ausdrucke im neuen Aufbau",
+        "beschreibung": "Auf allen Ranglisten- und Abrechnungsseiten (Heim, Kanti, Sektion, Cup, JM, Endschiessen, Einzel- und Sektionsrangierungen, Sektionsabrechnungen, Schützenabrechnung, JM-Standblatt, Fragebogen-Auswertung, Monatsblatt, Kanti-Abrechnung) stehen Jahr, Exporte und der Link zur Erfassung jetzt in der Kopf-Karte; auf der Endschiessen-Rangliste bleiben die vielen Exporte als Gruppe «Dokumente erstellen» im Inhalt. Die JM-Rangliste und die Endschiessen-Ranglisten haben die ruhigeren Farben (Podium leicht getönt statt Seitenstreifen). Die Kanti-Abrechnung ist neu aufgebaut: zwei Ranglisten-Karten und eine Karte für das SKSG-Formular mit beschrifteten Feldern. Behoben: Die Neu-laden-Knöpfe der Kanti-Abrechnung funktionierten nicht; mehrere «Resultate bearbeiten»-Knöpfe sprangen auf eine feste Adresse statt auf dieselbe Domain; die Endschiessen-Rangliste begann mit einem verkürzten PHP-Tag. Alle zugehörigen Lade-, PDF- und Excel-Endpunkte prüfen jetzt Anmeldung und Rolle (mehrere waren ohne Anmeldung abrufbar und starteten die Sitzung selbst). Braucht die Datenbank-Aktualisierung 077 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.41.0",
     "datum": "2026-10-08",
     "aenderungen": [

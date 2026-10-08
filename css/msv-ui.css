@@ -330,6 +330,16 @@ tr.ui-markiert > td:last-child { box-shadow: inset -2px 2px 0 var(--ui-akzent), 
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:is(.selected, .ui-markiert):hover > td:is(:first-child, :last-child) { background-color: var(--ui-gewaehlt) !important; }
 .min-w-0 { min-width: 0; }
 
+/* ---------- Export-Toolbar (gruppierte Dokument-Knöpfe, css/msv-styles.css) ---------- */
+.export-toolbar { background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad-l); box-shadow: none; padding: 12px var(--ui-pad); }
+.content-background .export-toolbar,
+.content-wrapper .export-toolbar { padding: 0 0 14px; border: 0; border-bottom: 1px solid var(--ui-linie); border-radius: 0; }
+.export-toolbar-head { color: var(--ui-text); font-size: .875rem; font-weight: 600; border-bottom-color: var(--ui-linie); }
+.export-toolbar-head > .bi { color: var(--ui-text-3); }
+.export-year-label { color: var(--ui-text-2); }
+.export-toolbar-divider { background: var(--ui-rand); }
+.export-group-label { color: var(--ui-text-2); font-size: .72rem; font-weight: 600; letter-spacing: .05em; }
+
 /* Stich-Karten im Erfassungs-Panel (Endschiessen, Partnerinnen; Klassen .shot-*) */
 .hybrid-edit-panel .panel-body:has(.shot-section) { background: var(--ui-grund); }
 .shot-section {

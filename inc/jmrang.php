@@ -2,72 +2,33 @@
 // jmrang.php
 include 'dbconnect.inc.php';
 
-// Session-Kontrolle wie in jmresultate.php
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 // CSS für Hybrid-Layout (kompakte Tabelle + aufklappbare Details)
 $page_specific_css = '
 /* === JM-RANG: HYBRID-LAYOUT === */
 
-/* Table Title */
+/* Tabellentitel Kat. A / Kat. B */
 .table-wrapper .table-title {
     position: relative !important;
     z-index: 100 !important;
-    background: var(--light-color) !important;
-    padding: 1rem 1.5rem !important;
+    background: var(--ui-flaeche) !important;
+    padding: 12px 20px !important;
     margin: 0 !important;
-    border-bottom: 2px solid #dee2e6 !important;
+    border-bottom: 1px solid var(--ui-linie) !important;
 }
 
 /* ===== Tabelle: separate borders gegen sticky-bleed ===== */
-#JMA,
-#JMB {
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-}
-
-/* Doppel-Borders vermeiden bei border-collapse:separate; keine vertikalen Linien (saubere Rangliste) */
-#JMA tbody td,
-#JMB tbody td {
-    border-top: none !important;
-    border-right: none !important;
-    border-bottom: 1px solid #dee2e6 !important;
-}
-
-/* thead selbst als opake Hintergrund-Schicht */
-#JMA thead,
-#JMB thead {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 11 !important;
-}
-
-/* ===== HEADER: horizontal, NICHT vertikal ===== */
-#JMA thead th,
-#JMB thead th {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 10 !important;
-    background-color: var(--light-color) !important;
-    vertical-align: bottom !important;
-    /* Vertikale Rotation aus msv-styles.css zurücksetzen */
-    writing-mode: horizontal-tb !important;
-    text-orientation: initial !important;
-    height: auto !important;
-    min-width: auto !important;
-    max-width: none !important;
-    white-space: normal !important;
-    overflow: visible !important;
-    font-size: 0.75rem !important;
-    text-transform: uppercase !important;
-    padding: 0.75rem !important;
-    font-weight: 600 !important;
-    /* Border durch box-shadow ersetzen (kein bleed-through bei sticky) */
-    border-bottom: none !important;
-    border-top: none !important;
-    box-shadow: inset 0 -2px 0 #dee2e6 !important;
+#JMA, #JMB { border-collapse: separate !important; border-spacing: 0 !important; }
+#JMA tbody td, #JMB tbody td { vertical-align: middle; border-top: none !important; border-right: none !important; border-bottom: 1px solid var(--ui-linie-zart) !important; }
+#JMA thead, #JMB thead { position: sticky !important; top: 0 !important; z-index: 11 !important; }
+/* Kopfzeile horizontal (Rotation aus msv-styles.css zurücksetzen), Linie per box-shadow gegen sticky-bleed */
+#JMA thead th, #JMB thead th {
+    position: sticky !important; top: 0 !important; z-index: 10 !important;
+    background-color: var(--ui-flaeche-2) !important; color: var(--ui-text-2);
+    vertical-align: bottom !important; writing-mode: horizontal-tb !important; text-orientation: initial !important;
+    height: auto !important; min-width: auto !important; max-width: none !important; white-space: normal !important; overflow: visible !important;
+    font-size: .75rem !important; font-weight: 600 !important; text-transform: none !important; letter-spacing: 0 !important;
+    padding: 8px 6px !important; border-top: none !important; border-bottom: none !important; box-shadow: inset 0 -1px 0 var(--ui-linie) !important;
 }
 
 /* Spaltenbreiten (width statt min-width, da #JMx thead th min-width:auto erzwingt) */
@@ -75,203 +36,67 @@ $page_specific_css = '
 .jm-th-result{ width: 84px !important; }
 .jm-th-total { width: 90px !important; }
 .jm-th-toggle{ width: 40px !important; }
-
 /* Lange Anlass-Namen in der Kopfzeile kürzen (voller Name via Tooltip) */
-.jm-th-label {
-    display: block;
-    max-width: 78px;
-    margin: 0 auto;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+.jm-th-label { display: block; max-width: 78px; margin: 0 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Klickbare Hauptzeilen */
 .jm-main-row { cursor: pointer; }
-
-/* Gruppen-Trennzeile: "Ohne gewertetes JM-Resultat" */
-.jm-group-row td.jm-group-cell {
-    background: #eef2f7 !important;
-    color: #475569 !important;
-    font-size: 0.72rem !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: left !important;
-    padding: 0.4rem 1rem !important;
-    border-top: 1px solid #e2e8f0 !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-}
-.jm-group-row:hover td.jm-group-cell { background: #eef2f7 !important; }
-
-#JMA tbody tr.jm-main-row:hover td,
-#JMB tbody tr.jm-main-row:hover td {
-    background-color: rgba(108, 117, 125, 0.06) !important;
-}
-
-/* Zellen: Resultate ausgerichtet, Total hervorgehoben, Streicher rot durchgestrichen */
+#JMA tbody tr.jm-main-row:hover td, #JMB tbody tr.jm-main-row:hover td { background-color: var(--ui-flaeche-2) !important; }
+/* Trennzeile «Ohne gewertetes JM-Resultat» */
+.jm-group-row td.jm-group-cell,
+.jm-group-row:hover td.jm-group-cell { padding: 6px 12px !important; background: var(--ui-grund) !important; color: var(--ui-text-2) !important; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; border-top: 1px solid var(--ui-linie) !important; border-bottom: 1px solid var(--ui-linie) !important; }
+.jm-group-row td.jm-group-cell i { display: none; }
 .jm-result-cell   { font-variant-numeric: tabular-nums; }
-.jm-cell-strichen { color: #dc3545; text-decoration: line-through; }
-.jm-total-cell    { color: #198754; font-variant-numeric: tabular-nums; font-size: 1rem; }
-.jm-rang-cell     { color: #334155; }
-
-/* Toggle-Button */
-.jm-toggle-btn {
-    color: #6c757d !important;
-    text-decoration: none !important;
-    font-size: 1rem !important;
-}
-.jm-toggle-btn i { transition: transform 0.2s ease; }
+.jm-cell-strichen { color: var(--ui-k-rot); text-decoration: line-through; }
+.jm-total-cell    { color: var(--ui-text); font-variant-numeric: tabular-nums; font-size: 1rem; }
+.jm-rang-cell     { color: var(--ui-text-2); }
+.jm-toggle-btn { color: var(--ui-text-3) !important; text-decoration: none !important; font-size: 1rem !important; }
+.jm-toggle-btn i { transition: transform .2s ease; }
 .jm-toggle-btn.expanded i { transform: rotate(180deg); }
-.jm-toggle-btn:hover { color: var(--primary-color) !important; }
+.jm-toggle-btn:hover { color: var(--ui-akzent) !important; }
 
-/* ===== DETAIL-PANEL (gruppiert) ===== */
-.jm-detail-row > td {
-    padding: 0 !important;
-    border-top: none !important;
-    /* Override .table td:first-child (width:60px, text-align:center) */
-    width: auto !important;
-    text-align: left !important;
-    background-color: transparent !important;
-    font-weight: normal !important;
-}
-
-.jm-detail-panel {
-    background: #f8fafb !important;
-    border-top: 1px solid #e2e8f0 !important;
-    border-bottom: 2px solid #dee2e6 !important;
-    padding: 1rem 1.25rem !important;
-    text-align: left !important;
-}
-
-/* Zwei Gruppen nebeneinander (Desktop) / gestapelt (Mobile) */
-.jm-detail-groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
-    align-items: start;
-}
-
-.jm-detail-group {
-    background: #fff;
-    border: 1px solid #e7edf3;
-    border-radius: 0.6rem;
-    overflow: hidden;
-}
-
-.jm-detail-group-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 0.5rem 0.85rem;
-    background: #f1f5f9;
-    border-bottom: 1px solid #e7edf3;
-}
-.jm-detail-group-title { font-weight: 700; font-size: 0.82rem; color: #334155; }
-.jm-detail-group-meta  { font-size: 0.72rem; color: #64748b; }
-.jm-group-pflicht .jm-detail-group-title { color: #0f766e; }
-.jm-group-streich .jm-detail-group-title { color: #1d4ed8; }
-
-.jm-detail-lines { padding: 0.25rem 0.35rem; }
-
-.jm-detail-line {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.5rem;
-    padding: 0.34rem 0.5rem;
-    border-radius: 0.35rem;
-    font-size: 0.85rem;
-}
-.jm-detail-line + .jm-detail-line { border-top: 1px solid #f1f5f9; }
-.jm-detail-line:hover { background: #f8fafc; }
-
-.jm-line-name { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jm-line-pts  { display: inline-flex; align-items: baseline; gap: 0.35rem; flex-shrink: 0; white-space: nowrap; }
-.jm-line-val  { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
-.jm-line-max  { font-size: 0.72rem; color: #64748b; }
+/* ===== Aufschlüsselung (Detail-Zeile) ===== */
+.jm-detail-row > td { padding: 0 !important; border-top: none !important; width: auto !important; text-align: left !important; background-color: transparent !important; font-weight: normal !important; }
+.jm-detail-panel { padding: 14px 20px !important; text-align: left !important; background: var(--ui-grund) !important; border-top: 1px solid var(--ui-linie) !important; border-bottom: 1px solid var(--ui-rand) !important; }
+.jm-detail-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
+.jm-detail-group { overflow: hidden; background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: 10px; }
+.jm-detail-group-head { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 12px; background: var(--ui-flaeche-2); border-bottom: 1px solid var(--ui-linie); }
+.jm-detail-group-title { font-size: .82rem; font-weight: 600; color: var(--ui-text); }
+.jm-detail-group-meta  { font-size: .72rem; color: var(--ui-text-2); }
+.jm-detail-lines { padding: 4px 6px; }
+.jm-detail-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 5px 8px; border-radius: 6px; font-size: .85rem; }
+.jm-detail-line + .jm-detail-line { border-top: 1px solid var(--ui-linie-zart); }
+.jm-detail-line:hover { background: var(--ui-flaeche-2); }
+.jm-line-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-text); }
+.jm-line-pts  { display: inline-flex; align-items: baseline; gap: .35rem; flex-shrink: 0; white-space: nowrap; }
+.jm-line-val  { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+.jm-line-max  { font-size: .72rem; color: var(--ui-text-3); }
 .jm-line-empty .jm-line-name,
-.jm-line-empty .jm-line-val { color: #adb5bd; font-weight: 400; }
+.jm-line-empty .jm-line-val { font-weight: 400; color: #b8c0cc; }
+.jm-detail-line.gestrichen { opacity: .75; }
+.jm-detail-line.gestrichen .jm-line-val { color: var(--ui-k-rot); text-decoration: line-through; }
+.jm-line-tag { padding: 1px 6px; border-radius: 6px; background: #fdecea; color: var(--ui-k-rot); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.jm-detail-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--ui-flaeche-2); border-top: 1px solid var(--ui-linie); font-size: .8rem; font-weight: 600; color: var(--ui-text-2); }
+.jm-detail-subtotal span:last-child { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+.jm-detail-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; background: var(--ui-ok-bg); border: 1px solid var(--ui-ok-rand); border-radius: var(--ui-rad); font-size: .95rem; font-weight: 700; color: var(--ui-ok-fg); }
+.jm-detail-total-val { font-size: 1.1rem; color: var(--ui-ok-fg); font-variant-numeric: tabular-nums; }
+.jm-detail-total.jm-detail-total-offen { background: var(--ui-flaeche-2); border-color: var(--ui-rand); color: var(--ui-text-2); font-size: .85rem; font-weight: 600; }
 
-/* Gestrichene Resultate */
-.jm-detail-line.gestrichen { opacity: 0.7; }
-.jm-detail-line.gestrichen .jm-line-val { color: #dc3545; text-decoration: line-through; }
-.jm-line-tag {
-    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.4px;
-    color: #b91c1c; background: #fee2e2; border-radius: 999px;
-    padding: 0.06rem 0.4rem; font-weight: 700;
-}
-
-/* Zwischentotal je Gruppe */
-.jm-detail-subtotal {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.45rem 0.85rem;
-    border-top: 1px solid #e7edf3;
-    background: #fbfdff;
-    font-size: 0.8rem; font-weight: 600; color: #475569;
-}
-.jm-detail-subtotal span:last-child { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
-
-/* Gesamttotal */
-.jm-detail-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0.85rem;
-    padding: 0.6rem 0.9rem;
-    background: rgba(25, 135, 84, 0.08);
-    border: 1px solid rgba(25, 135, 84, 0.25);
-    border-radius: 0.5rem;
-    font-weight: 700; font-size: 0.95rem; color: #14532d;
-}
-.jm-detail-total-val { color: #198754; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
-.jm-detail-total.jm-detail-total-offen {
-    background: #f1f5f9; border-color: #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.85rem;
-}
-
-/* Mobile */
+/* ===== Handy ===== */
 @media (max-width: 767.98px) {
     .jm-detail-groups { grid-template-columns: 1fr !important; }
-
-    /* JM Mobile Card Styles */
-    .jm-mobile-card .mobile-card-header { padding: 0.75rem 1rem; }
-    .jm-mobile-rang {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: #e9ecef;
-        font-weight: 700;
-        font-size: 0.85rem;
-        color: #495057;
-        flex-shrink: 0;
-    }
-    .rank-1 .jm-mobile-rang { background: #ffd700; color: #5a4800; }
-    .rank-2 .jm-mobile-rang { background: #c0c0c0; color: #3a3a3a; }
-    .rank-3 .jm-mobile-rang { background: #cd7f32; color: #fff; }
-
-    .jm-mobile-total {
-        font-weight: 700;
-        font-size: 0.95rem;
-        color: #198754;
-        white-space: nowrap;
-    }
-
-    /* Detail-Panel innerhalb Mobile Card Body */
+    .jm-mobile-card .mobile-card-header { padding: .75rem 1rem; }
+    .jm-mobile-rang { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); font-size: .85rem; font-weight: 700; color: var(--ui-text-2); }
+    .rank-1 .jm-mobile-rang { background: #ffd700; border-color: #ffd700; color: #5a4800; }
+    .rank-2 .jm-mobile-rang { background: #c0c0c0; border-color: #c0c0c0; color: #3a3a3a; }
+    .rank-3 .jm-mobile-rang { background: #cd7f32; border-color: #cd7f32; color: #fff; }
+    .jm-mobile-total { white-space: nowrap; font-size: .95rem; font-weight: 700; color: var(--ui-text); }
     .jm-mobile-card .mobile-card-body { padding: 0 !important; }
-    .jm-mobile-card .mobile-card-body .jm-detail-panel {
-        border-top: none !important;
-        border-bottom: none !important;
-        padding: 0.75rem !important;
-    }
+    .jm-mobile-card .mobile-card-body .jm-detail-panel { padding: .75rem !important; border-top: none !important; border-bottom: none !important; }
 }
 ';
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 
 <div class="container-fluid">
@@ -280,39 +105,28 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = "Jahresmeisterschaft Ranglisten"; $page_actions = '<button type="button" class="btn-help" data-help="jmrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                $page_title = "Jahresmeisterschaft Ranglisten";
+                $page_title_after = '<button type="button" class="btn-help" data-help="jmrang.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_show_mobile = true;
+                ob_start(); ?>
+<button type="button" class="btn-help" data-help="jmrang.dokumente" aria-label="Hilfe"></button>
+<button type="button" class="btn btn-outline-info btn-sm pdfrang-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Rang)</span></button>
+<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer"></i></button>
+<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Name)</span></button>
+<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer"></i></button>
+<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten </button>
+                <?php $page_actions = ob_get_clean();
+                include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="jmresultateForm">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
-                    <div class="export-toolbar mb-3">
-                        <div class="export-toolbar-head">
-                            <label for="yearSelect" class="export-year-label mb-0">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
-                            <span class="export-toolbar-divider" aria-hidden="true"></span>
-                            <i class="bi bi-file-earmark-arrow-down"></i>
-                            <span>Dokumente erstellen <button type="button" class="btn-help" data-help="jmrang.dokumente" aria-label="Hilfe"></button></span>
-                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
-                                <i class="bi bi-pencil me-1"></i>Resultate bearbeiten
-                            </button>
-                        </div>
-                        <div class="export-group-btns">
-                            <button class="btn btn-outline-info btn-sm pdfrang-btn">
-                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Rang)</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer"></i></button>
-                            <button class="btn btn-outline-info btn-sm pdf-btn">
-                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste (nach Name)</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer"></i></button>
-                        </div>
-                        <div id="pdf-link" class="mt-2"></div>
-                    </div>
+                    <div id="pdf-link"></div>
 
                     <!-- Kategorie A Tabelle -->
                     <div class="table-wrapper">
@@ -584,7 +398,7 @@ $(document).ready(function() {
             .html('<span class="spinner-border spinner-border-sm me-2"></span>Lade...');
         
         setTimeout(() => {
-            window.location.href = 'https://jahresmeisterschaft.msvwilen.ch/inc/jmresultate.php';
+            window.location.href = 'jmresultate.php';
         }, 500);
     });
 

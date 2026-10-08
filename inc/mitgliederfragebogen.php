@@ -6,41 +6,35 @@ include 'dbconnect.inc.php';
 $page_specific_css = @file_get_contents(__DIR__ . '/../css/mitgliederfragebogen.css') ?: '';
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
-                <?php $page_title = 'Auswertung Fragebogen'; $page_actions = '<button type="button" class="btn-help" data-help="mitgliederfragebogen.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+$page_title = 'Auswertung Fragebogen';
+$page_show_mobile = true;
+ob_start(); ?>
+<button type="button" class="btn-help" data-help="mitgliederfragebogen.uebersicht" aria-label="Hilfe"></button>
+<label for="yearSelect" class="visually-hidden">Jahr</label>
+<select id="yearSelect" class="form-select form-select-sm"></select>
+<?php $page_title_after = ob_get_clean();
+ob_start(); ?>
+<button type="button" class="btn-help" data-help="mitgliederfragebogen.pdf" aria-label="Hilfe"></button>
+<button type="button" class="pdf-btn btn btn-outline-info btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i><span>Fragebogen PDF</span></button>
+<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="fragebogen" data-druck-label="Fragebogen" data-druck-linkprefix="" aria-label="Fragebogen direkt drucken"><i class="bi bi-printer"></i></button>
+<button type="submit" form="fragebogenForm" class="btn btn-primary btn-sm" id="btnSave"><i class="bi bi-save me-1"></i>Speichern</button>
+<?php $page_actions = ob_get_clean();
+include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="fragebogenForm" class="fragebogen-form">
                         <input type="hidden" name="csrf_token"
-                            value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                            value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr + Speichern (Primäraktion sichtbar) + Exporte -->
-                        <div class="export-toolbar mb-3">
-                            <div class="export-toolbar-head">
-                                <label for="yearSelect" class="export-year-label mb-0"><i class="bi bi-calendar3 me-1"></i>Jahr:</label>
-                                <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
-                                <span class="export-toolbar-divider" aria-hidden="true"></span>
-                                <i class="bi bi-file-earmark-arrow-down"></i>
-                                <span>Dokumente erstellen <button type="button" class="btn-help" data-help="mitgliederfragebogen.pdf" aria-label="Hilfe"></button></span>
-                                <button type="submit" class="btn btn-outline-primary btn-sm ms-auto" id="btnSave">
-                                    <i class="bi bi-save me-1"></i>Speichern
-                                </button>
-                            </div>
-                            <div class="export-group-btns">
-                                <button type="button" class="pdf-btn btn btn-outline-info btn-sm">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i><span>Fragebogen PDF</span>
-                                </button>
-                                <button type="button" class="btn btn-outline-info btn-sm msv-druck"
-                                        data-druck-doctype="fragebogen" data-druck-label="Fragebogen" data-druck-linkprefix=""
-                                        aria-label="Fragebogen direkt drucken"><i class="bi bi-printer"></i></button>
-                            </div>
-                            <div id="pdf-link" class="mt-2"></div>
-                        </div>
+                        <div id="pdf-link"></div>
 
                         <!-- Filter + weitere Aktionen -->
                         <div class="d-flex flex-wrap align-items-start gap-3 mb-3">

@@ -6,12 +6,12 @@ include 'dbconnect.inc.php';
 $page_specific_css = "
 /* === DURCHSCHNITT RESULTATE STYLES === */
 .definition-selection-card {
-    background: #ffffff;
+    background: var(--ui-flaeche-2);
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     padding: 1.5rem;
     margin-bottom: 2rem;
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--ui-rand);
 }
 
 .definition-checkbox {
@@ -23,18 +23,18 @@ $page_specific_css = "
 }
 
 .definition-checkbox:hover {
-    background-color: #f8f9fa;
-    border-color: #007bff;
+    background-color: var(--ui-flaeche-2);
+    border-color: var(--ui-akzent);
 }
 
 .definition-checkbox input:checked + label {
     font-weight: 600;
-    color: #007bff;
+    color: var(--ui-akzent-dunkel);
 }
 
 .calculation-info {
-    background: #e3f2fd;
-    border: 1px solid #2196f3;
+    background: var(--ui-akzent-hell);
+    border: 1px solid #bcd2f7;
     padding: 1rem;
     margin-bottom: 1.5rem;
     border-radius: 0.375rem;
@@ -52,7 +52,7 @@ $page_specific_css = "
     letter-spacing: 0.5px;
     padding: 0.75rem;
     color: var(--secondary-color);
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 1px solid var(--ui-linie);
 }
 
 .result-preview-table td {
@@ -67,12 +67,12 @@ $page_specific_css = "
 
 .average-score {
     font-weight: 700;
-    color: #007bff;
+    color: var(--ui-akzent-dunkel);
 }
 
 .teilnehmer-count {
     font-size: 0.8rem;
-    color: #6c757d;
+    color: var(--ui-text-2);
 }
 
 /* Mobile Anpassungen */
@@ -94,20 +94,16 @@ $page_specific_css = "
 /* Mobile Cards: zählende Resultate grün markieren (analog Desktop table-success) */
 @media (max-width: 767.98px) {
     .mobile-card.card-used {
-        border-color: #198754;
+        border-color: var(--ui-ok-rand);
     }
     .mobile-card.card-used .mobile-card-header {
-        background-color: #d1e7dd;
+        background-color: var(--ui-ok-bg);
     }
 }
 ";
 
 include 'header.inc.php';
-
-// CSRF Token generieren
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 
 <!-- Select2 (für Schiessanlass-Auswahl) -->
@@ -137,23 +133,21 @@ if (empty($_SESSION['csrf_token'])) {
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Sektionsabrechnungen'; $page_actions = '<button type="button" class="btn-help" data-help="jmdurchschnitt.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                $page_title = 'Sektionsabrechnungen';
+                $page_title_after = '<button type="button" class="btn-help" data-help="jmdurchschnitt.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php'; ?>
                 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                     <form id="durchschnittForm">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                         
-                        <!-- Jahr-Auswahl + Konfiguration -->
+                        <!-- Konfiguration des gewählten Jahres -->
                         <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
-                                <!-- Optionen werden per JavaScript eingefügt -->
-                            </select>
-
-                            <span class="mx-1 text-muted d-none d-md-inline">|</span>
 
                             <label for="zaehlendeInput" class="form-label fw-bold mb-0 text-nowrap"
                                    data-tooltip="Anzahl der besten Resultate, die in den Durchschnitt einfliessen (bei vielen Teilnehmern greift weiterhin die Hälfte-Regel).">
@@ -267,23 +261,23 @@ if (empty($_SESSION['csrf_token'])) {
                                             <div class="row text-center g-3">
                                                 <div class="col-6 col-md-2">
                                                     <strong>Teilnehmer:</strong><br>
-                                                    <span id="totalParticipants" class="h5 text-primary">-</span>
+                                                    <span id="totalParticipants" class="h5">-</span>
                                                 </div>
                                                 <div class="col-6 col-md-2">
                                                     <strong>Pflichtteilnehmer:</strong><br>
-                                                    <span id="usedResults" class="h5 text-info">-</span>
+                                                    <span id="usedResults" class="h5">-</span>
                                                 </div>
                                                 <div class="col-6 col-md-3">
                                                     <strong>Durchschnitt:</strong><br>
-                                                    <span id="averageScore" class="h5 text-warning">-</span>
+                                                    <span id="averageScore" class="h5">-</span>
                                                 </div>
                                                 <div class="col-6 col-md-2">
                                                     <strong>Beteiligungszuschlag:</strong><br>
-                                                    <span id="bonusPoints" class="h5 text-secondary">-</span>
+                                                    <span id="bonusPoints" class="h5">-</span>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <strong>Endergebnis:</strong><br>
-                                                    <span id="finalResult" class="h3 text-success">-</span>
+                                                    <span id="finalResult" class="h3 fw-bold">-</span>
                                                 </div>
                                             </div>
                                         </div>

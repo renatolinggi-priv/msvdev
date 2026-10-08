@@ -1,7 +1,8 @@
 <?php
 // save_ranking.php
-session_start();
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet die Session
 require_once __DIR__ . '/../csrf.inc.php';
 
 // Überprüfen der Datenbankverbindung

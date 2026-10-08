@@ -10,6 +10,7 @@ $page_specific_css = <<<'CSS'
 CSS;
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 
 $monate = [1 => 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 $aktMonat = (int)date('n');
@@ -19,11 +20,11 @@ $aktMonat = (int)date('n');
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <?php $page_title = 'Monatsblatt'; $page_actions = '<button type="button" class="btn-help" data-help="monatsblatt.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Monatsblatt'; $page_title_after = '<button type="button" class="btn-help" data-help="monatsblatt.uebersicht" aria-label="Hilfe"></button>'; $page_show_mobile = true; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                     <form id="pdfExportForm">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                         <!-- Jahr/Zeitraum + Dokument erstellen (Export-Toolbar wie auf den Ranglisten-Seiten) -->
                         <div class="export-toolbar mb-3">

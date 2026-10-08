@@ -1,77 +1,28 @@
-<?
-//endschrang.php
+<?php
+// endschrang.php – Endschiessen Ranglisten (Kat. A/B) und Dokumente
 include 'dbconnect.inc.php';
 
-// Session-Kontrolle wie in jmresultate.php
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+// Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
+$page_specific_css = '
+/* Ladesymbol der Export-Knöpfe */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.rotating-icon { display: inline-block; animation: spin 1s linear infinite; font-size: .875rem; }
 
-// Alle Styles sind jetzt zentral in msv-styles.css verwaltet
-$page_specific_css = '';
-include 'header.inc.php';
-?>
-
-<style>
-/* Rotating Icon Animation statt Spinner */
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.rotating-icon {
-    display: inline-block;
-    animation: spin 1s linear infinite;
-    font-size: 0.875rem;
-}
-
-/* "Resultate bearbeiten" im Toolbar-Kopf kompakter (Desktop) */
-@media (min-width: 768px) {
-    #redirect-btn {
-        min-height: 0 !important;
-        padding: 0.2rem 0.6rem !important;
-        font-size: 0.78rem !important;
-        line-height: 1.4;
-    }
-    #redirect-btn i { font-size: 0.8rem !important; }
-}
-
-/* Export-Toolbar-Styles (.export-toolbar / .export-group*) sind zentral in css/msv-styles.css */
-
-/* ==========================================
-   TABELLEN-FEINSCHLIFF (Rang A/B)
-   ========================================== */
-/* Zahlenspalten zentrieren, Name linksbündig */
+/* Ranglisten Kat. A / B: Zahlen zentriert, Name links, Total betont */
 #EndA thead th, #EndB thead th,
 #EndA tbody td, #EndB tbody td { text-align: center; }
 #EndA thead th:nth-child(2), #EndB thead th:nth-child(2),
-#EndA tbody td:nth-child(2), #EndB tbody td:nth-child(2) {
-    text-align: left;
-    font-weight: 500;
-}
-/* Total-Spalte hervorheben */
-#EndA tbody td:last-child, #EndB tbody td:last-child {
-    font-weight: 700;
-    color: var(--secondary-color);
-    background-color: rgba(99, 102, 241, 0.06);
-}
-#EndA thead th:last-child, #EndB thead th:last-child { color: var(--secondary-color); }
-/* Zebra-Streifen */
-#EndA tbody tr:nth-child(even) td, #EndB tbody tr:nth-child(even) td {
-    background-color: rgba(241, 245, 249, 0.55);
-}
-/* Podium: Top-3 mit Medaillen-Akzent */
-#EndA tbody tr.rank-1 td:first-child, #EndB tbody tr.rank-1 td:first-child { box-shadow: inset 4px 0 0 #f59e0b; }
-#EndA tbody tr.rank-2 td:first-child, #EndB tbody tr.rank-2 td:first-child { box-shadow: inset 4px 0 0 #94a3b8; }
-#EndA tbody tr.rank-3 td:first-child, #EndB tbody tr.rank-3 td:first-child { box-shadow: inset 4px 0 0 #cd7f32; }
-#EndA tbody tr.rank-1 td, #EndB tbody tr.rank-1 td { background-color: rgba(245, 158, 11, 0.07); }
-#EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: rgba(148, 163, 184, 0.07); }
-#EndA tbody tr.rank-3 td, #EndB tbody tr.rank-3 td { background-color: rgba(205, 127, 50, 0.07); }
-#EndA tbody tr.rank-1 td:first-child, #EndB tbody tr.rank-1 td:first-child,
-#EndA tbody tr.rank-2 td:first-child, #EndB tbody tr.rank-2 td:first-child,
-#EndA tbody tr.rank-3 td:first-child, #EndB tbody tr.rank-3 td:first-child { font-weight: 800; }
-
-</style>
+#EndA tbody td:nth-child(2), #EndB tbody td:nth-child(2) { text-align: left; font-weight: 500; }
+#EndA tbody td:last-child, #EndB tbody td:last-child { font-weight: 700; color: var(--ui-text); background-color: var(--ui-flaeche-2); font-variant-numeric: tabular-nums; }
+/* Podium: Top 3 leicht in Gold, Silber und Bronze getönt, Rang fett */
+#EndA tbody tr.rank-1 td, #EndB tbody tr.rank-1 td { background-color: rgba(245, 158, 11, .09); }
+#EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: rgba(148, 163, 184, .12); }
+#EndA tbody tr.rank-3 td, #EndB tbody tr.rank-3 td { background-color: rgba(205, 127, 50, .09); }
+#EndA tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child,
+#EndB tbody tr:is(.rank-1, .rank-2, .rank-3) td:first-child { font-weight: 800; }
+';
+include 'header.inc.php';
+?>
 
 <!-- Header -->
 <div class="container-fluid">
@@ -80,25 +31,22 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = "Endschiessen Ranglisten"; $page_actions = '<button type="button" class="btn-help" data-help="endschrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                $page_title = "Endschiessen Ranglisten";
+                $page_title_after = '<button type="button" class="btn-help" data-help="endschrang.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_actions = '<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten</button>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php'; ?>
                 <!-- Weisser Container für den Rest -->
                 <div class="content-background">
-                <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
+                <!-- Dokumente erstellen (gruppiert); Jahr und «Resultate bearbeiten» stehen in der Kopf-Card -->
                 <div class="export-toolbar mb-3">
                     <div class="export-toolbar-head">
-                        <label for="yearSelect" class="export-year-label mb-0">
-                            <i class="bi bi-calendar3 me-1"></i>Jahr:
-                        </label>
-                        <select id="yearSelect" class="form-select form-select-sm export-year-select">
-                            <!-- Optionen werden per JavaScript eingefügt -->
-                        </select>
-                        <span class="export-toolbar-divider" aria-hidden="true"></span>
-                        <i class="bi bi-file-earmark-arrow-down"></i>
+                        <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
                         <span>Dokumente erstellen</span>
                         <button type="button" class="btn-help" data-help="endschrang.dokumente" aria-label="Hilfe"></button>
-                        <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
-                            <i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten
-                        </button>
                     </div>
                     <div class="export-groups">
                         <!-- Gruppe: Ranglisten / Übersicht -->
@@ -177,7 +125,7 @@ include 'header.inc.php';
                     <h5 class="table-title">Endschiessen Kat. A <button type="button" class="btn-help" data-help="endschrang.wertung" aria-label="Hilfe"></button></h5>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
-                            <table class="table table-bordered mb-0" id="EndA">
+                            <table class="table table-hover mb-0" id="EndA">
                                 <thead>
                                     <tr>
                                         <th scope="col">Rang</th>
@@ -216,7 +164,7 @@ include 'header.inc.php';
                     <h5 class="table-title">Endschiessen Kat. B <button type="button" class="btn-help" data-help="endschrang.kategorien" aria-label="Hilfe"></button></h5>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
-                            <table class="table table-bordered mb-0" id="EndB">
+                            <table class="table table-hover mb-0" id="EndB">
                                 <thead>
                                     <tr>
                                         <th scope="col">Rang</th>

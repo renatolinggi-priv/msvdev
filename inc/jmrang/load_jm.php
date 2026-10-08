@@ -6,6 +6,8 @@ declare(strict_types=1);
 const DEZIMALSTELLEN = 2;   // Für Punkt-Ausgabe
 
 require_once '../config.php'; // $conn (mysqli)
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 // ======= Hilfsfunktionen =======
 

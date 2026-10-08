@@ -12,11 +12,9 @@ require_once 'config_pdf.php';
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-// Session-Kontrolle
-session_start();
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+// Zugriff nur Admin-Bereich (admin/vorstand); startet auch die Session
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json');
 
 // 1) GET-Parameter: Jahr
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');

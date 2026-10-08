@@ -2,9 +2,6 @@
 // sektionrang.php — Rangliste Sektionsmeisterschaft (Runde 1 und Runde 2, je mit Schnitt)
 include 'dbconnect.inc.php';
 
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 $page_specific_css = '
     .sektionrang-count { font-size: 0.75rem; font-weight: 500; color: #6c757d; margin-left: auto; }
@@ -28,39 +25,30 @@ $page_specific_css = '
 ';
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <?php $page_title = "Sektionsmeisterschaft Rangliste"; $page_actions = '<button type="button" class="btn-help" data-help="sektionrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                $page_title = "Sektionsmeisterschaft Rangliste";
+                $page_title_after = '<button type="button" class="btn-help" data-help="sektionrang.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_show_mobile = true;
+                ob_start(); ?>
+<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste</span></button>
+<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="sektionrang" data-druck-label="Sektionsmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
+<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten </button>
+                <?php $page_actions = ob_get_clean();
+                include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                 <form id="sektionrangForm">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl + Dokumente erstellen -->
-                    <div class="export-toolbar mb-3">
-                        <div class="export-toolbar-head">
-                            <label for="yearSelect" class="export-year-label mb-0">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
-                            <span class="export-toolbar-divider" aria-hidden="true"></span>
-                            <i class="bi bi-file-earmark-arrow-down"></i>
-                            <span>Dokumente erstellen</span>
-                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
-                                <i class="bi bi-pencil me-1"></i>Resultate bearbeiten
-                            </button>
-                        </div>
-                        <div class="export-group-btns">
-                            <button type="button" class="btn btn-outline-info btn-sm pdf-btn">
-                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="sektionrang" data-druck-label="Sektionsmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
-                        </div>
-                        <div id="pdf-link" class="mt-2"></div>
-                    </div>
+                    <div id="pdf-link"></div>
 
                     <!-- Runde 1 + Runde 2 nebeneinander -->
                     <div class="row g-4 sektionrang-runden">

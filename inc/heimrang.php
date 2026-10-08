@@ -2,12 +2,9 @@
 //heimrang.php
 include 'dbconnect.inc.php';
 
-// Session-Kontrolle wie in jmresultate.php
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 <!-- Heimrang.php HTML-Gerüst nach jmrang.php Vorbild -->
 <div class="container-fluid">
@@ -16,35 +13,26 @@ include 'header.inc.php';
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = "Heimmeisterschaft Ranglisten"; $page_actions = '<button type="button" class="btn-help" data-help="heimrang.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                $page_title = "Heimmeisterschaft Ranglisten";
+                $page_title_after = '<button type="button" class="btn-help" data-help="heimrang.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_show_mobile = true;
+                ob_start(); ?>
+<button type="button" class="btn-help" data-help="heimrang.dokumente" aria-label="Hilfe"></button>
+<button type="button" class="btn btn-outline-info btn-sm pdf-btn"><i class="bi bi-file-pdf me-1"></i><span>Rangliste</span></button>
+<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="heimrang" data-druck-label="Heimmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
+<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Resultate bearbeiten </button>
+                <?php $page_actions = ob_get_clean();
+                include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Hintergrund-Container -->
                 <div class="content-background">
                 <form id="heimresultateForm">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-                    <!-- Jahr-Auswahl + Dokumente erstellen (eine kompakte Karte) -->
-                    <div class="export-toolbar mb-3">
-                        <div class="export-toolbar-head">
-                            <label for="yearSelect" class="export-year-label mb-0">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm export-year-select"></select>
-                            <span class="export-toolbar-divider" aria-hidden="true"></span>
-                            <i class="bi bi-file-earmark-arrow-down"></i>
-                            <span>Dokumente erstellen <button type="button" class="btn-help" data-help="heimrang.dokumente" aria-label="Hilfe"></button></span>
-                            <button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm ms-auto">
-                                <i class="bi bi-pencil me-1"></i>Resultate bearbeiten
-                            </button>
-                        </div>
-                        <div class="export-group-btns">
-                            <button class="btn btn-outline-info btn-sm pdf-btn">
-                                <i class="bi bi-file-pdf me-1"></i><span>Rangliste</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="heimrang" data-druck-label="Heimmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer"></i></button>
-                        </div>
-                        <div id="pdf-link" class="mt-2"></div>
-                    </div>
+                    <div id="pdf-link"></div>
 
                     <!-- Kategorie A Tabelle -->
                     <div class="table-wrapper">
@@ -148,7 +136,7 @@ include 'header.inc.php';
             if (redirectButton) {
                 redirectButton.addEventListener('click', function () {
                     console.log('Button clicked, redirecting...');
-                    window.location.href = 'https://jahresmeisterschaft.msvwilen.ch/inc/heimresultate.php';
+                    window.location.href = 'heimresultate.php';
                 });
             }
         });
