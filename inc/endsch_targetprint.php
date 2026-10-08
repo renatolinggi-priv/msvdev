@@ -109,11 +109,13 @@ try {
                                     </div>
                                     <div class="col-md-6">
                                         <label for="jahrSelect" class="form-label"><strong>Jahr:</strong></label>
-                                        <select id="jahrSelect" class="form-select">
+                                        <select id="jahrSelect" class="form-select" data-msv-jahr>
                                             <?php
                                             $currentYear = (int) date('Y');
+                                            require_once __DIR__ . '/jahr.inc.php';
+                                            $jahrStandard = msvJahrStandard(range(2024, $currentYear + 1));
                                             for ($year = 2024; $year <= $currentYear + 1; $year++) {
-                                                echo '<option value="' . $year . '"' . ($year === $currentYear ? ' selected' : '') . '>' . $year . '</option>';
+                                                echo '<option value="' . $year . '"' . ($year === $jahrStandard ? ' selected' : '') . '>' . $year . '</option>';
                                             }
                                             ?>
                                         </select>

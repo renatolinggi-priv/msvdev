@@ -119,12 +119,14 @@ include 'header.inc.php';
                                 <label for="jahrSelect" class="form-label">
                                     <strong>Jahr:</strong>
                                 </label>
-                                <select id="jahrSelect" class="form-select">
+                                <select id="jahrSelect" class="form-select" data-msv-jahr>
                                     <?php
                                     $currentYear = date('Y');
+                                    require_once __DIR__ . '/jahr.inc.php';
+                                    $jahrStandard = msvJahrStandard(range((int)$currentYear, (int)$currentYear - 5));
                                     for ($year = $currentYear; $year >= $currentYear - 5; $year--) {
                                         echo '<option value="' . $year . '"' .
-                                             ($year == $currentYear ? ' selected' : '') . '>' .
+                                             ($year == $jahrStandard ? ' selected' : '') . '>' .
                                              $year . '</option>';
                                     }
                                     ?>

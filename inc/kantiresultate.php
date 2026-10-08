@@ -497,11 +497,6 @@ if (empty($_SESSION['csrf_token'])) {
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="border-top mt-2 pt-2 text-end">
-                                        <button id="delete-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
-                                            <i class="bi bi-trash me-1"></i>Alle Resultate löschen
-                                        </button>
-                                    </div>
                         <?php
                         $ac_body = ob_get_clean();
                         include 'partials/action_card.inc.php';
@@ -620,13 +615,7 @@ $(document).ready(function() {
     }
 
     function initializeYearDropdown() {
-        const $yearSelect = $('#yearSelect').empty();
-        const currentYear = new Date().getFullYear();
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const $option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) $option.prop('selected', true);
-            $yearSelect.append($option);
-        }
+        msvJahrAuswahl('#yearSelect');
     }
 
     // Falls die PHP-Datei noch keine Total/Beste-Zellen liefert, fügt JS sie hinzu
@@ -755,16 +744,6 @@ $(document).ready(function() {
         });
     });
 
-    // Löschen
-    $('#delete-btn').on('click', function() {
-        var selectedYear = $('#yearSelect').val();
-        msvJahrLoeschen({
-            url: 'kantiresultate/delete_kanti.php',
-            year: selectedYear,
-            was: 'Kantonalstich-Resultate',
-            done: function() { loadResultate(selectedYear); }
-        });
-    });
 
     // Rangliste
     $('#redirect-btn').on('click', function() { window.location.href = 'kantirang.php'; });
@@ -1330,7 +1309,7 @@ $(document).ready(function() {
 
     // Init
     initializeYearDropdown();
-    loadResultate(new Date().getFullYear());
+    loadResultate($('#yearSelect').val());
     setTimeout(calculateTableHeight, 200);
 });
 </script>

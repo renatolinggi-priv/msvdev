@@ -78,15 +78,7 @@ include 'header.inc.php';
 <script>
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
-        const yearSelect = $('#yearSelect').empty();
-        const currentYear = new Date().getFullYear();
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) {
-                option.prop('selected', true);
-            }
-            yearSelect.append(option);
-        }
+        msvJahrAuswahl('#yearSelect');
     }
     $(document).ready(function() {
 

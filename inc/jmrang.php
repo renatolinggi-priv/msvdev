@@ -399,14 +399,7 @@ $(document).ready(function() {
 
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
-        const yearSelect = $('#yearSelect').empty();
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) {
-                option.prop('selected', true);
-            }
-            yearSelect.append(option);
-        }
+        msvJahrAuswahl('#yearSelect');
     }
 
     // Tabelleninhalt aktualisieren mit Animation

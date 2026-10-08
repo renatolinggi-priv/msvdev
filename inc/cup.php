@@ -241,11 +241,7 @@ $(document).ready(function() {
 
     /* ── Year Dropdown ────────────────────── */
     function initYearDropdown() {
-        const $sel = $('#yearSelect').empty();
-        const selectedYear = <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'currentYear'; ?>;
-        for (let y = currentYear; y >= currentYear - 3; y--) {
-            $sel.append($('<option>').val(y).text(y).prop('selected', y === selectedYear));
-        }
+        msvJahrAuswahl('#yearSelect', { jahr: <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'null'; ?> });
     }
 
     /* ── Responsive Tabs ──────────────────── */

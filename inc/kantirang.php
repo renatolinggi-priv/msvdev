@@ -145,19 +145,7 @@ include 'header.inc.php';
 <script>
     // Initialisierung des Jahres-Dropdowns
     function initializeYearDropdown() {
-        const yearSelect = $('#yearSelect').empty();
-        const currentYear = new Date().getFullYear();
-        console.log('Current year:', currentYear); // Debug-Ausgabe
-        
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) {
-                option.prop('selected', true);
-            }
-            yearSelect.append(option);
-        }
-
-        console.log('Selected year after init:', yearSelect.val()); // Debug-Ausgabe
+        msvJahrAuswahl('#yearSelect');
     }
 
     document.addEventListener('DOMContentLoaded', function() {

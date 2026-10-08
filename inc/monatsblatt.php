@@ -77,11 +77,7 @@ $aktMonat = (int)date('n');
 $(function() {
     // Jahr-Dropdown: aktuelles Jahr + 1 bis -3 (wie JM-Definition)
     (function() {
-        const $y = $('#exportYear').empty();
-        const cur = new Date().getFullYear();
-        for (let y = cur + 1; y >= cur - 3; y--) {
-            $y.append($('<option></option>').val(y).text(y).prop('selected', y === cur));
-        }
+        msvJahrAuswahl('#exportYear', { plus1: true });
     })();
 
     // Von-Monat darf nicht nach dem Bis-Monat liegen: sanft mitziehen

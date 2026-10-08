@@ -485,7 +485,8 @@ if (empty($_SESSION['csrf_token'])) {
 // (kein AJAX-Flackern). Fallback: JS laedt per AJAX.
 require_once __DIR__ . '/jmresultate/anlaesse_data.php';
 require_once __DIR__ . '/changelog_helper.php';
-$__jmInitYear = (int) date('Y');
+require_once __DIR__ . '/jahr.inc.php';
+$__jmInitYear = msvJahrStandard(isset($conn) && $conn instanceof mysqli ? msvJahreMitDaten($conn) : null);
 $__jmInitAnlaesse = ['anlaesse' => [], 'totalMembers' => 0];
 $__jmUnpublished = 0;
 try {
@@ -549,11 +550,6 @@ try {
                                                 <i class="bi bi-megaphone me-1"></i>Veröffentlichen <span id="publishBadge" class="badge bg-warning text-dark ms-1"><?= $__jmUnpublished > 0 ? (int) $__jmUnpublished : '' ?></span>
                                             </button>
                                         </div>
-                                    </div>
-                                    <div class="border-top mt-2 pt-2 text-end">
-                                        <button id="delete-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
-                                            <i class="bi bi-trash me-1"></i>Alle Resultate löschen
-                                        </button>
                                     </div>
                         <?php
                         $ac_body = ob_get_clean();
@@ -801,7 +797,7 @@ try {
 
 <script>
     // Serverseitig vorberechnet (siehe PHP oben) -> sofortige Anzeige ohne AJAX-Verzoegerung
-    window.JM_INITIAL_ANLAESSE = <?= json_encode($__jmInitAnlaesse, JSON_UNESCAPED_UNICODE) ?>;
+    window.JM_INITIAL_ANLAESSE = <?= json_encode($__jmInitAnlaesse + ['jahr' => $__jmInitYear], JSON_UNESCAPED_UNICODE) ?>;
 </script>
 <script>
     $(function () {
@@ -813,9 +809,7 @@ try {
         function showMessage(m, t) { const map = { danger: 'error', success: 'success', warning: 'warning', info: 'info' }; msvToast(m, map[t] || 'info'); }
 
         // Jahr-Dropdown
-        $yearDD.empty();
-        for (let y = currentYear; y >= startYear; y--) $yearDD.append($('<option>', { value: y, text: y }));
-        $yearDD.val(currentYear);
+        msvJahrAuswahl($yearDD);
 
         // Daten laden
         window.loadJMResultate = function(year) {
@@ -862,7 +856,7 @@ try {
                     msvToast('Fehler beim Laden der Daten', 'error');
                 });
         }
-        loadJMResultate(currentYear);
+        loadJMResultate($yearDD.val());
         $yearDD.on('change', function () { loadJMResultate($(this).val()); });
 
         // Speichern - nach erfolgreichem Speichern isDirty zurücksetzen
@@ -897,17 +891,6 @@ try {
                 });
         });
 
-        // Löschen
-        $('#delete-btn').on('click', function (e) {
-            e.preventDefault();
-            const year = $yearDD.val();
-            msvJahrLoeschen({
-                url: basePath + 'jmresultate/delete_jmresultate.php',
-                year: year,
-                was: 'JM-Resultate',
-                done: () => loadJMResultate(year)
-            });
-        });
 
         // Mobile Cards für JM-Resultate generieren
         function buildMobileJMCards() {
@@ -1269,7 +1252,7 @@ try {
     // sonst Fallback auf AJAX.
     $(function() {
         const init = window.JM_INITIAL_ANLAESSE;
-        if (init && Array.isArray(init.anlaesse) && init.anlaesse.length) {
+        if (init && String(init.jahr) === String($yearDD.val()) && Array.isArray(init.anlaesse) && init.anlaesse.length) {
             buildAnlassCards(init.anlaesse);
         } else {
             loadAnlaesse($yearDD.val());

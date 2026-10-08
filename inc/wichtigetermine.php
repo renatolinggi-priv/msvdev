@@ -490,12 +490,8 @@ $(function() {
 
   // ========== Year-Select (Desktop + Mobile) ==========
   function initializeYearDropdown() {
-    $('#eventYear, #eventYearMobile').each(function() {
-      const $sel = $(this).empty();
-      for (let y = currentYear + 1; y >= currentYear - 3; y--) {
-        $sel.append($('<option/>').val(y).text(y).prop('selected', y === currentYear));
-      }
-    });
+      msvJahrAuswahl('#eventYear', { plus1: true });
+      msvJahrAuswahl('#eventYearMobile', { plus1: true });
   }
 
   // ========== Vom Vorjahr übernehmen ==========
@@ -879,7 +875,7 @@ $(function() {
 
   // ========== Start ==========
   initializeYearDropdown();
-  loadEvents(currentYear);
+  loadEvents($('#eventYear').val());
 });
 </script>
 

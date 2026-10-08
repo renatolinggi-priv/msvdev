@@ -611,11 +611,6 @@ if (empty($_SESSION['csrf_token'])) {
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="border-top mt-2 pt-2 text-end">
-                                        <button id="delete-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
-                                            <i class="bi bi-trash me-1"></i>Alle Resultate löschen
-                                        </button>
-                                    </div>
                         <?php
                         $ac_body = ob_get_clean();
                         include 'partials/action_card.inc.php';
@@ -748,13 +743,7 @@ $(document).ready(function() {
 
     // ===== Jahr-Dropdown =====
     function initializeYearDropdown() {
-        var $yearSelect = $('#yearSelect').empty();
-        var currentYear = new Date().getFullYear();
-        for (var year = currentYear; year >= currentYear - 3; year--) {
-            var $option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) $option.prop('selected', true);
-            $yearSelect.append($option);
-        }
+        msvJahrAuswahl('#yearSelect');
     }
 
     // ===== Resultate laden =====
@@ -1164,16 +1153,6 @@ $(document).ready(function() {
         });
     });
 
-    // ===== Löschen =====
-    $('#delete-btn').on('click', function() {
-        var selectedYear = $('#yearSelect').val();
-        msvJahrLoeschen({
-            url: 'heimresultate/delete_heim.php',
-            year: selectedYear,
-            was: 'Heimresultate',
-            done: function() { loadResultate(selectedYear); }
-        });
-    });
 
     // ===== Rangliste =====
     $('#redirect-btn').on('click', function() { window.location.href = 'heimrang.php'; });
@@ -1513,7 +1492,7 @@ $(document).ready(function() {
 
     // ===== Init =====
     initializeYearDropdown();
-    loadResultate(new Date().getFullYear());
+    loadResultate($('#yearSelect').val());
     setTimeout(calculateTableHeight, 200);
 });
 </script>

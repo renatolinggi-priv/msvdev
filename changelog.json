@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.36.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Kein Löschen ganzer Jahre mehr, zentrale Jahresauswahl",
+        "beschreibung": "Der Knopf «Alle Resultate löschen» ist auf den Seiten JM-, Endschiessen-, Heim- und Kantiresultate entfernt; jedes Jahr bleibt erhalten. Die Jahresauswahl auf allen Erfassungs-, Ranglisten- und Abrechnungsseiten (u.a. JM, Endschiessen, Heim, Kanti, Sektion, Cup, Einzel- und Sektionsrangierungen, Durchschnitt, Standblatt, Fragebogen, Monatsblatt, Termine, Munitionskauf, Importe) bietet neu alle Jahre an, für die Daten existieren, statt nur der letzten vier. Das gewählte Jahr gilt einige Stunden lang auch auf den anderen Seiten. Ist nicht das laufende Jahr gewählt, steht neben der Auswahl «Archiv 2025» bzw. «Planung 2027» mit einem Knopf zurück zum laufenden Jahr. Braucht die Datenbank-Aktualisierung 071 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.35.0",
     "datum": "2026-10-07",
     "aenderungen": [

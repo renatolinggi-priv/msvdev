@@ -947,13 +947,7 @@ $(document).ready(function() {
     //  Jahr-Dropdown
     // =========================================
     function initializeYearDropdown() {
-        var $yearSelect = $('#yearSelect').empty();
-        var currentYear = new Date().getFullYear();
-        for (var year = currentYear; year >= currentYear - 3; year--) {
-            var $option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) $option.prop('selected', true);
-            $yearSelect.append($option);
-        }
+        msvJahrAuswahl('#yearSelect');
     }
 
     // =========================================
@@ -1323,7 +1317,7 @@ $(document).ready(function() {
     //  Init
     // =========================================
     initializeYearDropdown();
-    loadData(new Date().getFullYear());
+    loadData($('#yearSelect').val());
 });
 </script>
 

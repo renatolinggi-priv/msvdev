@@ -320,11 +320,6 @@ if (empty($_SESSION['csrf_token'])) {
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="border-top mt-2 pt-2 text-end">
-                                        <button id="delall-btn" type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
-                                            <i class="bi bi-trash me-1"></i>Alle Resultate löschen
-                                        </button>
-                                    </div>
                         <?php
                         $ac_body = ob_get_clean();
                         include 'partials/action_card.inc.php';
@@ -822,14 +817,7 @@ $(document).ready(function() {
     //  Jahr-Dropdown
     // =========================================
     function initializeYearDropdown() {
-        var $yearSelect = $('#yearSelect').empty();
-        var currentYear = new Date().getFullYear();
-        var selectedYear = <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'currentYear'; ?>;
-        for (var year = currentYear; year >= currentYear - 3; year--) {
-            var $option = $('<option></option>').val(year).text(year);
-            if (year === selectedYear) $option.prop('selected', true);
-            $yearSelect.append($option);
-        }
+        msvJahrAuswahl('#yearSelect', { jahr: <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'null'; ?> });
     }
 
     // =========================================
@@ -1046,20 +1034,6 @@ $(document).ready(function() {
     // Rangliste
     $('#redirect-btn').on('click', function() { window.location.href = 'endschrang.php'; });
 
-    // Alle löschen
-    $('#delall-btn').on('click', function(e) {
-        e.preventDefault();
-        const selectedYear = $('#yearSelect').val();
-        msvJahrLoeschen({
-            url: 'endschresultate/delete_endschresultate.php',
-            year: selectedYear,
-            was: 'Endschiessen-Einträge',
-            done: function() {
-                EndEditPanel.close();
-                loadData(selectedYear);
-            }
-        });
-    });
 
     // Klick auf Tabellenzeile → Panel öffnen
     $(document).on('click', '.hybrid-row', function() {

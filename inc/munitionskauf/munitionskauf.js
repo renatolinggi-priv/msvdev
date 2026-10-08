@@ -79,17 +79,8 @@
 
   // === Year/Date ===
   function initYearSelector() {
-    var sel = document.getElementById('yearSelect');
-    sel.innerHTML = '';
-    var currentYear = new Date().getFullYear();
-    for (var y = currentYear; y >= currentYear - 3; y--) {
-      var opt = document.createElement('option');
-      opt.value = String(y);
-      opt.textContent = String(y);
-      if (y === currentYear) opt.selected = true;
-      sel.appendChild(opt);
-    }
-    document.getElementById('statsYear').textContent = currentYear;
+      var jahr = msvJahrAuswahl('#yearSelect');
+      document.getElementById('statsYear').textContent = jahr;
   }
 
   function initDateField() {

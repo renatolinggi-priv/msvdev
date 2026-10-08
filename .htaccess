@@ -42,3 +42,10 @@ Options -Indexes
     # (openPortalDoc) nutzt iframes innerhalb derselben Herkunft, SAMEORIGIN genuegt.
     Header always set X-Frame-Options "SAMEORIGIN"
 </IfModule>
+
+# Interne Dokumente (Markdown) nicht ausliefern (eingefuehrt 08.10.2026): Konzepte,
+# Changelog, PRODUCT.md/DESIGN.md liegen teils im Docroot, sind aber nicht fuer den Browser
+# bestimmt. PHP liest sie weiterhin; gesperrt ist nur der Abruf per HTTP.
+<FilesMatch "\.(md|markdown)$">
+    Require all denied
+</FilesMatch>

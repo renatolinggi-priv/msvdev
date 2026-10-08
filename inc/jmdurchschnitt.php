@@ -305,14 +305,7 @@ $(document).ready(function () {
 
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
-        const yearSelect = $('#yearSelect').empty();
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) {
-                option.prop('selected', true);
-            }
-            yearSelect.append(option);
-        }
+        msvJahrAuswahl('#yearSelect');
     }
 
     // Konfiguration (Anzahl zählende Resultate) für ein Jahr laden
@@ -590,8 +583,8 @@ $(document).ready(function () {
 
     // Initialisierung
     initializeYearDropdown();
-    loadConfig(currentYear);
-    loadAvailableDefinitions(currentYear);
+    loadConfig($('#yearSelect').val());
+    loadAvailableDefinitions($('#yearSelect').val());
 
     // Tooltip aktivieren
     if (window.bootstrap && bootstrap.Tooltip) {

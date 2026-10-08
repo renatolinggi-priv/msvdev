@@ -1439,3 +1439,13 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 /* Sichtbarer Tastaturfokus für eigene Klick-Elemente */
 .btn-help:focus-visible,
 .home-card:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; }
+
+/* Jahresauswahl: Hinweis, wenn nicht das laufende Jahr gewählt ist (inc/js/msv-jahr.js) */
+.msv-jahr-hinweis { display: inline-flex; align-items: center; gap: .35rem; margin-left: .4rem; padding: .1rem .2rem .1rem .55rem;
+    border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; vertical-align: middle; }
+.msv-jahr-hinweis.is-archiv  { background: #fff7e6; color: #8a5300; border: 1px solid #f5d9a8; }
+.msv-jahr-hinweis.is-planung { background: #eef4ff; color: #1d4ed8; border: 1px solid #c7d7fe; }
+.msv-jahr-hinweis button { border: 0; background: rgba(255,255,255,.75); color: inherit; font: inherit; font-weight: 600;
+    border-radius: 999px; padding: .05rem .5rem; cursor: pointer; }
+.msv-jahr-hinweis button:hover { background: #fff; }
+.msv-jahr-hinweis button:focus-visible { outline: 2px solid #0d6efd; outline-offset: 1px; }

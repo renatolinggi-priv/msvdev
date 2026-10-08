@@ -131,10 +131,7 @@ $(function () {
 
     // Jahr-Dropdown
     (function () {
-        const $y = $('#yearSelect');
-        for (let y = currentYear + 1; y >= currentYear - 3; y--) {
-            $y.append($('<option></option>').val(y).text(y).prop('selected', y === currentYear));
-        }
+        msvJahrAuswahl('#yearSelect', { plus1: true });
     })();
 
     function ajaxMsg(xhr, fallback) { return msvXhrMessage(xhr, fallback); } // zentral in msv-toast.js
@@ -177,7 +174,7 @@ $(function () {
     }
 
     $('#yearSelect').on('change', function () { loadFragebogen(this.value); });
-    loadFragebogen(currentYear);
+    loadFragebogen($('#yearSelect').val());
 
     // Tabelle: Änderungen
     $(document).on('change', '#fragebogenTabelle select[name*="[waffenID]"]', applyNntFilter);

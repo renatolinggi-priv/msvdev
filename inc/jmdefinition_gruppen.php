@@ -189,8 +189,7 @@ $(function() {
 
     // ---- Jahr (wie JM-Definition: Folgejahr bis -3) ----
     (function() {
-        const $y = $('#yearSelect').empty(), cur = new Date().getFullYear();
-        for (let y = cur + 1; y >= cur - 3; y--) $y.append($('<option></option>').val(y).text(y).prop('selected', y === cur));
+        msvJahrAuswahl('#yearSelect', { plus1: true });
     })();
 
     // ---- Chip-Helfer (Desktop-Container sind die einzige Datenquelle) ----

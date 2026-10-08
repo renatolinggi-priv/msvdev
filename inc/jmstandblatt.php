@@ -4,6 +4,8 @@ require_once 'dbconnect.inc.php';               // $conn (header.inc.php bindet 
 require_once 'partials/empty_state.inc.php';    // msv_empty_row()
 
 $currentYear = (int)date('Y');
+require_once __DIR__ . '/jahr.inc.php';
+$jahrStandard = msvJahrStandard(range($currentYear + 1, $currentYear - 3));
 
 // Aktive Mitglieder laden
 $mitglieder = [];
@@ -42,9 +44,9 @@ include 'header.inc.php';
             <!-- Jahr-Auswahl -->
             <div class="d-flex align-items-center gap-2">
               <label class="form-label mb-0 small fw-bold" for="yearSelect">Jahr:</label>
-              <select id="yearSelect" class="form-select form-select-sm" style="width:100px">
+              <select id="yearSelect" class="form-select form-select-sm" style="width:100px" data-msv-jahr>
                 <?php for ($y = $currentYear + 1; $y >= $currentYear - 3; $y--): ?>
-                  <option value="<?= $y ?>" <?= $y == $currentYear ? 'selected' : '' ?>><?= $y ?></option>
+                  <option value="<?= $y ?>" <?= $y == $jahrStandard ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>
               </select>
             </div>

@@ -977,12 +977,7 @@ $(function () {
 
   // ========== Year-Select ==========
   function initializeYearDropdown() {
-    const $sel = $('#yearSelect').empty();
-    for (let y = currentYear + 1; y >= currentYear - 3; y--) {
-      const $o = $('<option/>').val(y).text(y);
-      if (y === currentYear) $o.prop('selected', true);
-      $sel.append($o);
-    }
+      msvJahrAuswahl('#yearSelect', { plus1: true });
   }
 
   // ========== Skeleton ==========
@@ -1394,9 +1389,9 @@ $(function () {
 
   // ========== Start ==========
   initializeYearDropdown();
-  loadJMDefinition(currentYear);
+  loadJMDefinition($('#yearSelect').val());
   loadZusatztext();
-  loadParameter(currentYear);
+  loadParameter($('#yearSelect').val());
 });
 </script>
 

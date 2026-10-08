@@ -27,7 +27,8 @@ $page_specific_css = '
     .container-fluid { padding: 0.5rem !important; }
 }
 ';
-$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+require_once __DIR__ . '/jahr.inc.php';
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : msvJahrStandard();
 
 include 'header.inc.php';
 ?>
@@ -218,13 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const current = new Date().getFullYear();
     const selected = <?= (int)$selectedYear ?>;
 
-    for (let y = current; y >= current - 3; y--) {
-        const opt = document.createElement('option');
-        opt.value = y; 
-        opt.textContent = y;
-        if (y === selected) opt.selected = true;
-        yearSelect.appendChild(opt);
-    }
+    msvJahrAuswahl(yearSelect, { jahr: selected });
     
     // Bei Jahr-Änderung Seite neu laden
     yearSelect.addEventListener('change', function() {

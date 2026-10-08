@@ -289,14 +289,7 @@ $(document).ready(function () {
 
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
-        const yearSelect = $('#yearSelect').empty();
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) {
-                option.prop('selected', true);
-            }
-            yearSelect.append(option);
-        }
+        selectedYear = msvJahrAuswahl('#yearSelect');
     }
 
     // Verfügbare Anlässe laden (alle JM-Anlässe)
@@ -655,9 +648,9 @@ $(document).ready(function () {
 
     // Initialisierung
     initializeYearDropdown();
-    loadAvailableDefinitions(currentYear);
+    loadAvailableDefinitions(selectedYear);
     loadAvailableMembers();
-    loadExistingRankings(currentYear);
+    loadExistingRankings(selectedYear);
 });
 
     // Mobile Cards Builder für Einzelrangierungen

@@ -280,12 +280,7 @@ $(document).ready(function () {
 
     // Jahr-Dropdown initialisieren
     function initializeYearDropdown() {
-        const yearSelect = $('#yearSelect').empty();
-        for (let year = currentYear; year >= currentYear - 3; year--) {
-            const option = $('<option></option>').val(year).text(year);
-            if (year === currentYear) option.prop('selected', true);
-            yearSelect.append(option);
-        }
+        selectedYear = msvJahrAuswahl('#yearSelect');
     }
 
     // Verfügbare Anlässe laden
@@ -611,8 +606,8 @@ $(document).ready(function () {
 
     // Initialisierung
     initializeYearDropdown();
-    loadAvailableDefinitions(currentYear);
-    loadExistingRankings(currentYear);
+    loadAvailableDefinitions(selectedYear);
+    loadExistingRankings(selectedYear);
 });
 
     // Mobile Cards Builder für Sektionsrangierungen

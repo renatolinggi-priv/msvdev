@@ -1438,10 +1438,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   //  Stammdaten laden / Init
   // =========================================================================
   function populateYearSelect() {
-    const sel = $id('yearSelect');
-    const y = new Date().getFullYear();
-    sel.innerHTML = '';
-    for (let i = y; i >= y - 3; i--) sel.add(new Option(String(i), String(i), i === y, i === y));
+      msvJahrAuswahl($id('yearSelect'));
   }
 
   async function loadMitglieder() {

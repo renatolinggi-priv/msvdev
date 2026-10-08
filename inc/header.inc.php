@@ -195,6 +195,10 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- MSV Toast System -->
     <script src="<?php echo $incBase; ?>js/msv-toast.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-toast.js') ?: '1'; ?>"></script>
+    <!-- Zentrale Jahresauswahl: alle Jahre mit Daten, seitenübergreifend gemerkt (inc/jahr.inc.php) -->
+    <?php require_once __DIR__ . '/jahr.inc.php'; ?>
+    <script>window.MSV_JAHRE = <?php echo json_encode(msvJahreMitDaten($conn ?? null)); ?>;</script>
+    <script src="<?php echo $incBase; ?>js/msv-jahr.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-jahr.js') ?: '1'; ?>"></script>
     <!-- MSV Tooltip System -->
     <script src="<?php echo $incBase; ?>js/msv-tooltips.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-tooltips.js') ?: '1'; ?>"></script>
     <!-- Slide-Panels: Fokusführung für Tastatur/Screenreader -->
