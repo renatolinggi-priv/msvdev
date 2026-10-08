@@ -331,7 +331,7 @@ include 'header.inc.php';
 <div class="nav-edit-panel" id="editPanel">
   <div class="panel-header">
     <h6 class="mb-0" id="panelTitle"><i class="bi bi-pencil-square me-2"></i>Eintrag bearbeiten</h6>
-    <button class="btn btn-sm btn-outline-secondary" id="panelClose"><i class="bi bi-x-lg"></i></button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="panelClose" aria-label="Schliessen (Esc)" data-tooltip="Schliessen (Esc)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
   </div>
   <div class="panel-body">
     <div class="panel-section">
@@ -390,6 +390,12 @@ include 'header.inc.php';
       <button class="btn btn-outline-danger w-100" id="panelDeleteBtn">
         <i class="bi bi-trash me-1"></i>Eintrag löschen
       </button>
+    </div>
+  </div>
+  <div class="panel-footer">
+    <div class="d-flex gap-2 w-100 align-items-center">
+      <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">S</kbd> speichern · <kbd class="ui-kbd">Esc</kbd> schliessen</span>
+      <button type="button" class="btn btn-primary btn-sm" id="panelSaveBtn"><i class="bi bi-save me-1"></i>Speichern</button>
     </div>
   </div>
 </div>
@@ -755,11 +761,28 @@ const NavPanel = {
   currentId: null,
   dirty: false,
 
+  setPanelDirty(an) { this.dirty = !!an; msvPanelUngespeichert($('#panelTitle'), this.dirty); },
+
+  // Schliessen oder Wechseln mit offenen Eingaben: nachfragen (Speichern / Verwerfen / Zurück).
+  // Die Felder schreiben erst beim Speichern in die Liste, «Verwerfen» schliesst also nur.
+  async schuetze(weiter) {
+    if (!this.dirty) { weiter(); return; }
+    const wahl = await msvUngespeichert({ wer: $('#panelText').val().trim() });
+    if (wahl === 'speichern') { if (await this.saveCurrent()) weiter(); }
+    else if (wahl === 'verwerfen') { this.setPanelDirty(false); weiter(); }
+  },
+
+  versucheSchliessen() { this.schuetze(() => this.close()); },
+
   open(tr) {
-    if (this.dirty && this.currentId) this.saveCurrent();
+    if (this.dirty && this.currentId && parseInt(tr.dataset.id) !== this.currentId) {
+      const id = tr.dataset.id;
+      this.schuetze(() => this.open(document.getElementById('navRow' + id) || tr));
+      return;
+    }
     const d = tr.dataset;
     this.currentId = parseInt(d.id);
-    this.dirty = false;
+    this.setPanelDirty(false);
     $('#panelText').val(d.text);
     $('#panelLink').val(d.link);
     $('#panelIcon').val(d.icon || '');
@@ -779,13 +802,13 @@ const NavPanel = {
     setTimeout(() => $('#panelText').focus(), 300);
   },
 
+  // Nur schliessen; gefragt wird vorher in versucheSchliessen()
   close() {
-    if (this.dirty && this.currentId) this.saveCurrent();
     $('#editPanel').removeClass('open');
     $('#panelOverlay').removeClass('show');
     $('.hybrid-row').removeClass('selected');
     this.currentId = null;
-    this.dirty = false;
+    this.setPanelDirty(false);
   },
 
   fillParentSelect(excludeId) {
@@ -811,17 +834,18 @@ const NavPanel = {
     $('#panelLevelDown').prop('disabled', level >= MAX_DEPTH);
   },
 
+  // Speichert den offenen Eintrag. Rückgabe: Promise<true|false>; erst nach Erfolg gilt er als gespeichert.
   saveCurrent() {
     const id = this.currentId;
-    if (!id) return;
+    if (!id) return Promise.resolve(false);
     const item = allItems.find(i => i.id === id);
-    if (!item) return;
+    if (!item) return Promise.resolve(false);
     const istTrenn = $('#panelIstTrennlinie').prop('checked') ? 1 : 0;
     const text = $('#panelText').val().trim();
     const link = $('#panelLink').val().trim();
-    if (!istTrenn && (!text || !link)) { msvToast('Titel und Link sind Pflichtfelder', 'warning'); return; }
+    if (!istTrenn && (!text || !link)) { msvToast('Titel und Link sind Pflichtfelder', 'warning'); return Promise.resolve(false); }
 
-    apiPost({
+    return new Promise(fertig => apiPost({
       action: 'update', id,
       text, link,
       icon: $('#panelIcon').val().trim(),
@@ -830,17 +854,17 @@ const NavPanel = {
       nur_admin: $('#panelNurAdmin').prop('checked') ? 1 : 0
     })
     .done(resp => {
-      if (!resp.success) { msvToast(resp.message || 'Fehler', 'error'); return; }
+      if (!resp.success) { msvToast(resp.message || 'Fehler', 'error'); fertig(false); return; }
       allItems = normalizeItems(resp.items);
       originalItems = JSON.parse(JSON.stringify(allItems));
       renderTable();
       buildMobileCards();
+      NavPanel.setPanelDirty(false);
+      setDirty(false);
       msvToast('Gespeichert', 'success');
+      fertig(true);
     })
-    .fail(() => msvToast('Fehler beim Speichern', 'error'));
-
-    this.dirty = false;
-    setDirty(false);
+    .fail(() => { msvToast('Fehler beim Speichern', 'error'); fertig(false); }));
   }
 };
 
@@ -849,15 +873,16 @@ $(document).on('click', '.hybrid-row', function(e) {
   if ($(e.target).closest('.drag-grip, .btn-level-up, .btn-level-down, .btn-duplicate, .btn-toggle-collapse').length) return;
   NavPanel.open(this);
 });
-$('#panelClose, #panelOverlay').on('click', () => NavPanel.close());
+$('#panelClose, #panelOverlay').on('click', () => NavPanel.versucheSchliessen());
 $(document).on('keydown', e => {
-  if (e.key === 'Escape' && $('#editPanel').hasClass('open')) {
-    NavPanel.close();
+  if (e.key === 'Escape' && $('#editPanel').hasClass('open') && !(window.Swal && Swal.isVisible())) {
     e.stopImmediatePropagation();
+    NavPanel.versucheSchliessen();
   }
 });
-$('#panelText, #panelLink, #panelIcon').on('input', () => NavPanel.dirty = true);
-$('#panelParent, #panelIstTrennlinie, #panelNurAdmin').on('change', () => NavPanel.dirty = true);
+$('#panelText, #panelLink, #panelIcon').on('input', () => NavPanel.setPanelDirty(true));
+$('#panelParent, #panelIstTrennlinie, #panelNurAdmin').on('change', () => NavPanel.setPanelDirty(true));
+$('#panelSaveBtn').on('click', () => { if (NavPanel.dirty) NavPanel.saveCurrent(); else msvToast('Keine Änderungen', 'info'); });
 $('#panelIstTrennlinie').on('change', () => applyTrennlinieMode('panel'));
 $('#newIstTrennlinie').on('change', () => applyTrennlinieMode('new'));
 
@@ -1191,7 +1216,11 @@ $(document).on('click', '.mobile-dup-nav', function() {
 
 // ========== Shortcuts ==========
 $(document).on('keydown', function(e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); $('#btnSaveAll').click(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if ($('#editPanel').hasClass('open')) { if (NavPanel.dirty) NavPanel.saveCurrent(); else msvToast('Keine Änderungen', 'info'); }
+    else $('#btnSaveAll').click();
+  }
   if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); $('#btnAddEntry').click(); }
 });
 

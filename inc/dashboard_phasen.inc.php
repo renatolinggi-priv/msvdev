@@ -319,7 +319,7 @@ function msvDashboardKarten(mysqli $conn, int $jahr, string $heute, int $aussteh
     // --- Dauerhaft sichtbar ---------------------------------------------
     $karten[] = [
         'id' => 'munition', 'titel' => 'Munitionsverkauf', 'desc' => 'Bezüge am Stand erfassen',
-        'icon' => 'bi-cart-check', 'iconClass' => 'red', 'link' => 'munitionskauf.php',
+        'icon' => 'bi-cart-check', 'iconClass' => '', 'link' => 'munitionskauf.php',
         'dauerhaft' => true, 'aktiv' => true, 'hinweis' => '',
     ];
     $karten[] = [
@@ -386,7 +386,7 @@ function msvDashboardKarten(mysqli $conn, int $jahr, string $heute, int $aussteh
     $endstichTag = $a['endstich']['von'] ?? null;
     $karte = msvDashFenster([
         'id' => 'stichausgabe', 'titel' => 'Endschiessen Stiche lösen', 'desc' => 'Anmeldung und Stiche',
-        'icon' => 'bi-bullseye', 'iconClass' => 'red', 'link' => 'endschloesen.php',
+        'icon' => 'bi-bullseye', 'iconClass' => '', 'link' => 'endschloesen.php',
     ], $heute,
         msvDashPlus($endstichTag, -MSV_DASH_VORLAUF_STICHAUSGABE),
         msvDashPlus($a['endstich']['bis'] ?? null, MSV_DASH_NACHLAUF_STICHAUSGABE));

@@ -39,7 +39,7 @@
     --ui-rand: #e8ecf1;
     --ui-linie: #eef1f5;
     --ui-linie-zart: #f1f4f8;
-    --ui-feldrand: #d5dbe3;
+    --ui-feldrand: #8a94a5;       /* Rand von Eingabefeldern und Bedienelementen: 3:1 gegen Weiss (WCAG 1.4.11), Entscheid 08.10.2026 */
     --ui-text: #1a2332;
     --ui-text-2: #5a6577;
     --ui-text-3: #667080;
@@ -52,8 +52,8 @@
     --ui-fehler-bg: #fef3f2; --ui-fehler: #b42318; --ui-fehler-rand: #f5c2bd;
     /* Leere Werte und Zahlenfelder im Raster */
     --ui-leer: #b8c0cc;           /* leere Zellen, Striche, fehlende Werte */
-    --ui-feldrand-leer: #dde3ea;  /* Rand eines leeren Zahlenfelds (heller als --ui-feldrand) */
-    --ui-rand-stark: #c5ccd6;     /* Rand eines gefüllten Zahlenfelds, Hover-Rand von Kacheln */
+    --ui-feldrand-leer: #8a94a5;  /* Rand eines leeren Zahlenfelds: wie --ui-feldrand; leer zeigt sich über die Fläche */
+    --ui-rand-stark: #7d8899;     /* Rand eines gefüllten Zahlenfelds (kräftiger als leer), Hover-Rand von Kacheln */
     /* Podest Rang 1–3: Marke voll, Zeilen und Kartenköpfe mischen die Fläche mit Weiss */
     --ui-gold-bg: #f6e3a1;   --ui-gold-fg: #6b4f00;
     --ui-silber-bg: #e2e7ee; --ui-silber-fg: #3d4757;

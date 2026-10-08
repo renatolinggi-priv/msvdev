@@ -83,8 +83,8 @@
       if (e.key !== 'Tab') return;
       const panel = offenesPanel();
       if (!panel) return;
-      // Dialoge über dem Panel (SweetAlert, Bootstrap-Modal, Hilfe) führen den Fokus selbst.
-      if (document.querySelector('.swal2-container, .modal.show')) return;
+      // Dialoge über dem Panel (SweetAlert, Bootstrap-Modal, Hilfe-Fenster) führen den Fokus selbst.
+      if (document.querySelector('.swal2-container, .modal.show, .help-modal.open')) return;
       const felder = sichtbareFelder(panel);
       if (!felder.length) { e.preventDefault(); panel.focus(); return; }
       const erstes = felder[0];

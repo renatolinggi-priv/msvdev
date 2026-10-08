@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->store_result();
 
     // Immer dieselbe Antwort senden, um nicht preiszugeben, ob die E-Mail existiert
-    $message = "Wenn die E-Mail-Adresse registriert ist, erhalten Sie eine E-Mail mit weiteren Anweisungen.";
+    $message = "Wenn die E-Mail-Adresse registriert ist, bekommst du eine E-Mail mit einem Link zum Zurücksetzen.";
 
     if ($stmt->num_rows > 0) {
         $stmt->bind_result($user_id);
@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // E-Mail senden
         $reset_link = "https://jahresmeisterschaft.msvwilen.ch/password_reset.php?token=$token";
         $subject = "Passwort zurücksetzen";
-        $message_email = "Hallo,\n\nKlicken Sie auf den folgenden Link, um Ihr Passwort zurückzusetzen:\n\n$reset_link\n\nFalls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail bitte.";
+        $message_email = "Hallo\n\nÜber den folgenden Link setzt du dein Passwort für MSV Wilen neu. Er ist eine Stunde gültig:\n\n$reset_link\n\nFalls du das nicht angefordert hast, kannst du diese E-Mail ignorieren.";
         $headers = "From: noreply@msvwilen.ch\r\n";
 
         mail($email, $subject, $message_email, $headers);

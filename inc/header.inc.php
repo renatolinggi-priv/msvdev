@@ -298,7 +298,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
                             <strong>Sitzung läuft bald ab</strong><br>
                             Ohne Aktivität wirst du in 2 Minuten abgemeldet; offene Eingaben vorher speichern.
                             <div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary" id="sessionBleiben">Angemeldet bleiben</button></div>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Hinweis schliessen"></button>
                         </div>
                     `);
                     warningShown = true;

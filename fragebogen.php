@@ -9,7 +9,7 @@ $config = require __DIR__ . '/../msvjm_config.php';
 $recaptcha_site_key = $config['recaptcha']['site_key'] ?? '';
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

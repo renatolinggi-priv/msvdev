@@ -64,6 +64,19 @@
             var closeBtn = this._modal.querySelector('.help-modal-close');
             if (closeBtn) closeBtn.addEventListener('click', function () { self.close(); });
 
+            // Tab bleibt im offenen Hilfe-Fenster (Capture-Phase: auch über einem Slide-Panel mit eigener Tab-Schleife)
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== 'Tab' || !self._isOpen) return;
+                var f = Array.prototype.filter.call(self._modal.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+                    function (el) { return el.offsetParent !== null; });
+                e.stopImmediatePropagation();
+                if (!f.length) { e.preventDefault(); return; }
+                var erstes = f[0], letztes = f[f.length - 1], aktiv = document.activeElement;
+                if (!self._modal.contains(aktiv)) { e.preventDefault(); erstes.focus(); }
+                else if (e.shiftKey && aktiv === erstes) { e.preventDefault(); letztes.focus(); }
+                else if (!e.shiftKey && aktiv === letztes) { e.preventDefault(); erstes.focus(); }
+            }, true);
+
             // ESC in der Capture-Phase, damit ein offenes Slide-Panel nicht gleichzeitig zugeht.
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && self._isOpen) {

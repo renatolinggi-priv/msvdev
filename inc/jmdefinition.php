@@ -316,7 +316,8 @@ ob_start();
     </div>
     <hr>
     <div class="d-flex gap-2">
-      <button class="btn btn-outline-danger btn-sm flex-fill" id="panelDeleteBtn">
+      <button type="submit" form="jmdefinitionForm" class="btn btn-primary btn-sm flex-fill" id="panelSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>
+      <button type="button" class="btn btn-outline-danger btn-sm flex-fill" id="panelDeleteBtn">
         <i class="bi bi-trash me-1"></i>Löschen
       </button>
     </div>
@@ -632,10 +633,34 @@ $(function () {
   // ========== Slide-Panel Steuerung ==========
   const JMEditPanel = {
     currentRowId: null,
+    geaendert: false,   // Eingaben im offenen Panel seit dem Öffnen
+    snapshot: null,     // Zeile beim Öffnen (für «Verwerfen»)
+    vorher: false,      // hasChanges beim Öffnen
+
+    setGeaendert(an) { this.geaendert = !!an; msvPanelUngespeichert($('#editPanelTitel'), this.geaendert); },
+
+    // Schliessen mit Eingaben im Panel: nachfragen. «Speichern» speichert die Tabelle (schliesst und lädt neu).
+    async schuetze(weiter) {
+      if (!this.geaendert) { weiter(); return; }
+      const wahl = await msvUngespeichert({ wer: ($('#panelBezeichnung').val() || '').split('\n')[0].trim() });
+      if (wahl === 'speichern') { jmSpeichern(); return; }
+      if (wahl === 'verwerfen') {
+        msvZeileZurueck(document.getElementById('row' + this.currentRowId), this.snapshot);
+        hasChanges = this.vorher;
+        this.setGeaendert(false);
+        weiter();
+      }
+    },
+
+    versucheSchliessen() { this.schuetze(() => this.close()); },
 
     open(tr) {
+      if (this.geaendert && this.currentRowId && tr.dataset.id !== this.currentRowId) { this.schuetze(() => this.open(tr)); return; }
       const id = tr.dataset.id;
       this.currentRowId = id;
+      this.snapshot = msvZeileMerken(tr);
+      this.vorher = hasChanges;
+      this.setGeaendert(false);
 
       // Daten aus data-Attributen lesen
       $('#panelBezeichnung').val(tr.dataset.bezeichnung);
@@ -664,16 +689,15 @@ $(function () {
       setTimeout(() => $('#panelBezeichnung').focus(), 300);
     },
 
+    // Nur schliessen. Gefragt wird vorher in versucheSchliessen(); andere offene Änderungen (Reihenfolge,
+    // Zusatztext) bleiben stehen und werden mit «Speichern» bzw. vor dem Neuladen gesichert.
     close() {
       $('#editPanel').removeClass('open');
       $('#panelOverlay').removeClass('show');
       $('.hybrid-row').removeClass('selected');
       this.currentRowId = null;
-
-      // Auto-Save bei ungespeicherten Änderungen
-      if (hasChanges) {
-        $('#jmdefinitionForm').submit();
-      }
+      this.snapshot = null;
+      this.setGeaendert(false);
     },
 
     // Sync: Panel -> Hidden Inputs + Tabellen-TD
@@ -701,6 +725,7 @@ $(function () {
       }
 
       hasChanges = true;
+      this.setGeaendert(true);
     },
 
     // Sync: Checkbox-Toggle
@@ -724,6 +749,7 @@ $(function () {
         .toggleClass('off', !checked);
 
       hasChanges = true;
+      this.setGeaendert(true);
     }
   };
 
@@ -734,13 +760,11 @@ $(function () {
     if ($(e.target).closest('.drag-grip').length) return;
     JMEditPanel.open(this);
   });
-  $('#panelClose, #panelOverlay').on('click', () => JMEditPanel.close());
+  $('#panelClose, #panelOverlay').on('click', () => JMEditPanel.versucheSchliessen());
   $(document).on('keydown', e => {
-    if (e.key === 'Escape') {
-      if ($('#editPanel').hasClass('open')) {
-        JMEditPanel.close();
-        e.stopImmediatePropagation();
-      }
+    if (e.key === 'Escape' && $('#editPanel').hasClass('open') && !(window.Swal && Swal.isVisible())) {
+      e.stopImmediatePropagation();
+      JMEditPanel.versucheSchliessen();
     }
   });
 
@@ -761,8 +785,7 @@ $(function () {
   $('#panelDeleteBtn').on('click', function() {
     const deleteId = $(this).data('id');
     const name = (($('#panelBezeichnung').val() || '').split('\n')[0] || '').trim() || 'diesen Anlass';
-    JMEditPanel.close();
-    deleteJMDefinitionById(deleteId, name);
+    JMEditPanel.schuetze(() => { JMEditPanel.close(); deleteJMDefinitionById(deleteId, name); });
   });
 
   // ========== Vom Vorjahr übernehmen ==========
@@ -926,8 +949,14 @@ $(function () {
   }
 
   // ========== Laden ==========
+  // Neu laden. Offene Änderungen der geladenen Tabelle (Reihenfolge, Felder) werden vorher gespeichert, damit
+  // ein Neuladen nach Hinzufügen, Übernehmen oder Löschen nichts verliert; der Jahreswechsel fragt vorher nach.
   function loadJMDefinition(year, done) {
-    JMEditPanel.close(); // speichert ggf. noch unter currentLoadedYear (altes Jahr)
+    if (hasChanges && currentLoadedYear) { jmSpeichern(() => ladenJMDefinition(year, done)); return; }
+    ladenJMDefinition(year, done);
+  }
+  function ladenJMDefinition(year, done) {
+    JMEditPanel.close(); // nur das Panel schliessen
     currentLoadedYear = String(year);
     showSkeleton();
     $.get(basePath + 'jmdefinition/load_jmdefinition_form.php', { year }, function(html) {
@@ -1087,8 +1116,7 @@ $(function () {
 
   // ========== Aenderungs-Tracking ==========
   let hasChanges = false;
-  // Jahr der aktuell geladenen Tabelle. Beim Jahreswechsel speichert JMEditPanel.close()
-  // noch die ALTE Tabelle -> darf nicht das neue Dropdown-Jahr mitschicken.
+  // Jahr der aktuell geladenen Tabelle: gespeichert wird immer dieses Jahr, nie das neue im Dropdown.
   let currentLoadedYear = null;
   $('body').on('change input', '#zusatzText, #anzahlStreicherInput', function() {
     hasChanges = true;
@@ -1098,8 +1126,10 @@ $(function () {
   });
 
   // ========== Speichern ==========
-  $('#jmdefinitionForm').on('submit', function(e) {
-    e.preventDefault();
+  $('#jmdefinitionForm').on('submit', function(e) { e.preventDefault(); jmSpeichern(); });
+
+  // Speichert die Tabelle des geladenen Jahres; nachher() ersetzt das Neuladen danach (z.B. beim Jahreswechsel)
+  function jmSpeichern(nachher) {
     const $btn = $('#jmdefSpeichernBtn');
     const txt = $btn.html();
     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
@@ -1113,14 +1143,14 @@ $(function () {
     // Jahr der geladenen Tabelle, nicht das Dropdown (beim Jahreswechsel laeuft dieser
     // Handler noch fuer das alte Jahr)
     const selectedYear = currentLoadedYear || $('#yearSelect').val();
-    const formData = $(this).serialize()
+    const formData = $('#jmdefinitionForm').serialize()
       + '&order=' + order.join(',')
       + '&year=' + encodeURIComponent(selectedYear)
       + '&zusatztext=' + encodeURIComponent($('#zusatzText').val())
       + '&excludeCount=' + encodeURIComponent(parseInt($('#anzahlStreicherInput').val()) || 3);
 
     // Ein Request: Definition + Schiesstage + Zusatztext + Anzahl Streicher in einer Transaktion
-    $.post(basePath + 'jmdefinition/save_jmdefinition.php', formData)
+    return $.post(basePath + 'jmdefinition/save_jmdefinition.php', formData)
      .done(function(resp) {
         if (!resp || !resp.success) { showErrorToast((resp && resp.message) || 'Fehler beim Speichern'); return; }
         showSuccessToast('Änderungen gespeichert!');
@@ -1129,12 +1159,13 @@ $(function () {
         }
         hasChanges = false;
         JMEditPanel.close();
+        if (typeof nachher === 'function') nachher();
         // Nur neu laden, wenn inzwischen kein anderes Jahr geladen wurde
-        if (currentLoadedYear === String(selectedYear)) loadJMDefinition(selectedYear);
+        else if (currentLoadedYear === String(selectedYear)) loadJMDefinition(selectedYear);
      })
      .fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Fehler beim Speichern')))
      .always(() => $btn.prop('disabled', false).html(txt));
-  });
+  }
 
   // ========== Neuer Anlass ==========
   function validateAnlass() {
@@ -1216,6 +1247,7 @@ $(function () {
       .done(function(resp) {
         if (!resp || !resp.success) { showErrorToast((resp && resp.message) || 'Fehler beim Löschen'); return; }
         showSuccessToast((resp.message || 'Anlass gelöscht') + (resp.sicherung ? ' – Sicherung ' + resp.sicherung : ''));
+        $('#row' + deleteId).remove();
         loadJMDefinition($('#yearSelect').val());
       })
       .fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Fehler beim Löschen')));
@@ -1298,11 +1330,17 @@ $(function () {
   });
 
   // ========== Jahrwechsel ==========
-  $('#yearSelect').on('change', function() {
+  // Jahreswechsel mit offenen Änderungen: nachfragen statt still unter dem alten Jahr speichern
+  $('#yearSelect').on('change', async function() {
     const y = $(this).val();
-    loadJMDefinition(y);
-    loadZusatztext();
-    loadParameter(y);
+    const jahrLaden = () => { loadJMDefinition(y); loadZusatztext(); loadParameter(y); };
+    if (hasChanges && currentLoadedYear && y !== currentLoadedYear) {
+      const wahl = await msvUngespeichert({ wer: 'die Anlässe ' + currentLoadedYear });
+      if (wahl === 'zurueck') { $(this).val(currentLoadedYear); return; }
+      if (wahl === 'speichern') { jmSpeichern(jahrLaden); return; }
+      hasChanges = false;
+    }
+    jahrLaden();
   });
 
   // ========== Veröffentlichen ==========

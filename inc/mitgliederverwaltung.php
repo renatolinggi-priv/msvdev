@@ -216,12 +216,14 @@ ob_start();
     </div>
 
     <hr>
-    <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Änderungen werden beim Schliessen (Esc) und beim Wechsel zu einem anderen Mitglied automatisch gespeichert, sofort mit Ctrl+S. Enter springt ins nächste Feld.</p>
+    <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Speichern mit dem Knopf unten oder Ctrl+S. Schliessen mit offenen Änderungen fragt nach. Enter springt ins nächste Feld.</p>
     <button type="button" class="btn btn-outline-danger btn-sm w-100" id="panelDeleteBtn">
       <i class="bi bi-trash me-1"></i>Mitglied löschen
     </button>
 <?php
 $panel_body = ob_get_clean();
+$panel_footer = '<div class="d-flex gap-2 w-100 align-items-center"><span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">S</kbd> speichern · <kbd class="ui-kbd">Esc</kbd> schliessen</span>'
+    . '<button type="button" class="btn btn-primary btn-sm" id="panelSaveBtn"><i class="bi bi-save me-1"></i>Speichern</button></div>';
 include 'partials/side_panel.inc.php';
 ?>
 
@@ -373,12 +375,35 @@ $(function() {
   const MVPanel = {
     currentId: null,
     dirty: false,
+    snapshot: null,   // Zeile beim Öffnen bzw. nach dem letzten Speichern (für «Verwerfen»)
+
+    setDirty(an) { this.dirty = !!an; msvPanelUngespeichert($('#editPanelTitel'), this.dirty); },
+
+    // Schliessen oder Wechseln mit offenen Änderungen: nachfragen (Speichern / Verwerfen / Zurück).
+    // weiter() läuft nach «Verwerfen» oder nach erfolgreichem Speichern.
+    async schuetze(weiter) {
+      if (!this.dirty) { weiter(); return; }
+      const wahl = await msvUngespeichert({ wer: $('#panelTitle').text().trim() });
+      if (wahl === 'speichern') { try { await this.saveCurrent(weiter); } catch (e) { /* Meldung kommt aus saveCurrent */ } }
+      else if (wahl === 'verwerfen') {
+        msvZeileZurueck(document.getElementById('row' + this.currentId), this.snapshot);
+        this.setDirty(false);
+        weiter();
+      }
+    },
+
+    versucheSchliessen() { this.schuetze(() => this.close()); },
 
     open(tr) {
-      if (this.dirty && this.currentId) this.saveCurrent(); // vorheriges Mitglied sichern
+      if (this.dirty && this.currentId && tr.dataset.id !== this.currentId) {
+        const ziel = tr.id;
+        this.schuetze(() => this.open(document.getElementById(ziel) || tr));
+        return;
+      }
 
       const d = tr.dataset;
       this.currentId = d.id;
+      this.snapshot = msvZeileMerken(tr);
 
       $('#panelAnrede').val(d.anrede || '');
       $('#panelId').val(d.id);
@@ -406,7 +431,7 @@ $(function() {
       $('#panelTitle').text(d.vorname + ' ' + d.name);
       $('#panelDeleteBtn').data('id', d.id);
 
-      this.dirty = false;
+      this.setDirty(false);
       $('.hybrid-row').removeClass('selected');
       $(tr).addClass('selected');
 
@@ -414,24 +439,25 @@ $(function() {
       $('#panelOverlay').addClass('show');
     },
 
+    // Nur schliessen; gefragt wird vorher in versucheSchliessen()
     close() {
-      if (this.dirty && this.currentId) this.saveCurrent();
       $('#editPanel').removeClass('open');
       $('#panelOverlay').removeClass('show');
       $('.hybrid-row').removeClass('selected');
       this.currentId = null;
-      this.dirty = false;
+      this.snapshot = null;
+      this.setDirty(false);
     },
 
-    saveCurrent() {
+    // Speichert das offene Mitglied; erst nach Erfolg gilt es als gespeichert (sonst bleibt der Hinweis stehen)
+    saveCurrent(weiter) {
       const id = this.currentId;
-      if (!id) return;
+      if (!id) return $.Deferred().reject().promise();
       const $row = $(`#row${id}`);
-      if (!$row.length) return;
+      if (!$row.length) return $.Deferred().reject().promise();
       const d = $row[0].dataset;
-      this.dirty = false;
 
-      $.post(basePath + 'mitgliederverwaltung/save_single_mitglied.php', {
+      return $.post(basePath + 'mitgliederverwaltung/save_single_mitglied.php', {
         id, anrede: d.anrede || '', name: d.name, vorname: d.vorname, geburtsdatum: d.geburtsdatum,
         waffenid: d.waffenid, strasse: d.strasse, plz: d.plz, ort: d.ort, email: d.email,
         telefon: d.telefon, mobile: d.mobile, kommunikation: d.kommunikation || '', notizen: d.notizen,
@@ -440,7 +466,12 @@ $(function() {
         vereinsaufnahme: d.vereinsaufnahme || '', csrf_token: CSRF
       }, null, 'json')
       .done(r => {
-        if (r && r.success) { msvToast('Gespeichert', 'success'); $row.addClass('row-saved'); setTimeout(() => $row.removeClass('row-saved'), 1200); }
+        if (r && r.success) {
+          MVPanel.setDirty(false);
+          MVPanel.snapshot = msvZeileMerken($row[0]);
+          msvToast('Gespeichert', 'success'); $row.addClass('row-saved'); setTimeout(() => $row.removeClass('row-saved'), 1200);
+          if (typeof weiter === 'function') weiter();
+        }
         else msvToast((r && r.message) || 'Fehler beim Speichern', 'error');
       })
       .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Speichern'), 'error'));
@@ -457,7 +488,7 @@ $(function() {
         const p = value.split('-');
         if (p.length === 3) $row.find('.h-date').text(p[2] + '.' + p[1] + '.' + p[0]);
       }
-      this.dirty = true;
+      this.setDirty(true);
     },
 
     syncSelect(field, value) {
@@ -465,7 +496,7 @@ $(function() {
       const $row = $(`#row${this.currentId}`);
       $row.attr(`data-${field}`, value);
       if (field === 'waffenid') $row.find('td:nth-child(5)').text($('#panelWaffe option:selected').text());
-      this.dirty = true;
+      this.setDirty(true);
     },
 
     syncFlag(flag, checked) {
@@ -474,17 +505,17 @@ $(function() {
       $row.attr(`data-${flag}`, checked ? '1' : '0');
       $row.find(`.flag-dot[data-flag="${flag}"]`).toggleClass('on', checked).toggleClass('off', !checked);
       if (flag === 'verstorben') $row.css('opacity', checked ? 0.5 : 1);
-      this.dirty = true;
+      this.setDirty(true);
     }
   };
 
   // Panel Events
   $(document).on('click', '.hybrid-row', function() { MVPanel.open(this); });
-  $('#panelClose, #panelOverlay').on('click', () => MVPanel.close());
+  $('#panelClose, #panelOverlay').on('click', () => MVPanel.versucheSchliessen());
   $(document).on('keydown', e => {
     if (!$('#editPanel').hasClass('open')) return;
-    if (e.key === 'Escape') { MVPanel.close(); e.stopImmediatePropagation(); }
-    // Enter: ins nächste Feld wie auf allen Erfassungsseiten (gespeichert wird beim Schliessen/Wechseln oder mit Ctrl+S)
+    if (e.key === 'Escape' && !(window.Swal && Swal.isVisible())) { e.stopImmediatePropagation(); MVPanel.versucheSchliessen(); }
+    // Enter: ins nächste Feld wie auf allen Erfassungsseiten (gespeichert wird mit «Speichern» oder Ctrl+S)
     if (e.key === 'Enter' && $(e.target).is('input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), select')) {
       e.preventDefault();
       const felder = $('#editPanel').find('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)').filter(':visible').toArray();
@@ -496,6 +527,7 @@ $(function() {
   $(document).on('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (MVPanel.dirty) MVPanel.saveCurrent(); else msvToast('Keine Änderungen', 'info'); }
   });
+  $('#panelSaveBtn').on('click', function() { if (MVPanel.dirty) MVPanel.saveCurrent(); else msvToast('Keine Änderungen', 'info'); });
   $(window).on('beforeunload', function() { if (MVPanel.dirty) return 'Ungespeicherte Änderungen!'; });
 
   // Live-Sync Panel -> Zeile
@@ -597,7 +629,11 @@ $(function() {
     const $row = $(`#row${deleteId}`);
     const name = (($row.data('vorname') || '') + ' ' + ($row.data('name') || '')).trim();
     const url = basePath + 'mitgliederverwaltung/delete_mitglied.php';
-    MVPanel.close(); // offene Änderungen werden wie immer beim Schliessen gespeichert
+    // Offene Änderungen zuerst klären (Speichern / Verwerfen / Zurück), dann prüfen
+    let weiter = false;
+    await MVPanel.schuetze(() => { weiter = true; });
+    if (!weiter) return;
+    MVPanel.close();
     let p;
     try { p = await $.post(url, { id: deleteId, aktion: 'pruefen', csrf_token: CSRF }, null, 'json'); }
     catch (xhr) { msvToast(ajaxMsg(xhr, 'Prüfen fehlgeschlagen'), 'error'); return; }

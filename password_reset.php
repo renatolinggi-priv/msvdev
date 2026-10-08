@@ -50,7 +50,7 @@ if (isset($_GET['token'])) {
                         $delete_stmt->execute();
                         $delete_stmt->close();
 
-                        $success = "Ihr Passwort wurde erfolgreich zurückgesetzt.";
+                        $success = "Dein Passwort ist zurückgesetzt. Du kannst dich jetzt anmelden.";
                         $show_form = false;
                     } else {
                         // Fehler anzeigen
@@ -61,16 +61,16 @@ if (isset($_GET['token'])) {
                 }
             }
         } else {
-            $error = "Der Link ist abgelaufen. Bitte fordern Sie einen neuen Link an.";
+            $error = "Der Link ist abgelaufen. Bitte fordere auf der Anmeldeseite einen neuen an.";
         }
     } else {
-        $error = "Ungültiger Link. Bitte fordern Sie einen neuen Link an.";
+        $error = "Dieser Link ist ungültig. Bitte fordere auf der Anmeldeseite einen neuen an.";
     }
 
     $stmt->close();
     $conn->close();
 } else {
-    $error = "Kein Token angegeben. Bitte verwenden Sie den Link aus der E-Mail.";
+    $error = "Der Link ist unvollständig. Bitte öffne den Link aus der E-Mail.";
 }
 
 // Funktion zur Passwortvalidierung
@@ -98,7 +98,7 @@ function validate_password($password, $username) {
         $categories++;
     }
     if ($categories < 3) {
-        $errors[] = "Das Passwort muss mindestens 3 der folgenden Kategorien enthalten: Großbuchstaben, Kleinbuchstaben, Ziffern, Sonderzeichen.";
+        $errors[] = "Das Passwort muss mindestens 3 der folgenden Kategorien enthalten: Grossbuchstaben, Kleinbuchstaben, Ziffern, Sonderzeichen.";
     }
 
     // 3. Benutzernamen prüfen
@@ -111,7 +111,7 @@ function validate_password($password, $username) {
 ?>
 
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -400,7 +400,7 @@ function validate_password($password, $username) {
                     <img src="images/MSVWilen_Logo.jpg" alt="MSV Wilen Logo" class="logo">
                 </div>
                 <h1><i class="bi bi-arrow-clockwise me-2"></i>Passwort zurücksetzen</h1>
-                <p>Setzen Sie ein neues, sicheres Passwort</p>
+                <p>Setze ein neues, sicheres Passwort</p>
             </div>
             
             <div class="reset-body">
@@ -429,7 +429,7 @@ function validate_password($password, $username) {
                             <li>Mindestens 10 Zeichen lang</li>
                             <li>Mindestens 3 der folgenden Kategorien:
                                 <ul>
-                                    <li>Großbuchstaben (A-Z)</li>
+                                    <li>Grossbuchstaben (A-Z)</li>
                                     <li>Kleinbuchstaben (a-z)</li>
                                     <li>Ziffern (0-9)</li>
                                     <li>Sonderzeichen (!@#$%^&*)</li>
@@ -539,7 +539,7 @@ function validate_password($password, $username) {
                 if (/[^A-Za-z0-9]/.test(password)) categories++;
                 
                 if (categories < 3) {
-                    errors.push('Das Passwort muss mindestens 3 der folgenden Kategorien enthalten: Großbuchstaben, Kleinbuchstaben, Ziffern, Sonderzeichen.');
+                    errors.push('Das Passwort muss mindestens 3 der folgenden Kategorien enthalten: Grossbuchstaben, Kleinbuchstaben, Ziffern, Sonderzeichen.');
                 }
 
                 if (password !== passwordConfirm) {

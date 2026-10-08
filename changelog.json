@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.56.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Ausdrücklich speichern, kräftigere Feldränder, Startseite",
+        "beschreibung": "Mitglieder, JM-Definition und Navigation speichern nicht mehr still beim Schliessen des Panels. Jedes dieser Panels hat einen Knopf «Speichern» (auch Ctrl+S) und zeigt «Nicht gespeichert», solange Eingaben offen sind; Schliessen mit Escape, Kreuz oder Klick daneben fragt dann «Speichern, Verwerfen oder Zurück», wie bei der Resultaterfassung. Bei den Mitgliedern stellt «Verwerfen» die Zeile wieder her, und schlägt das Speichern fehl, bleibt der Hinweis stehen. In der JM-Definition fragt auch der Jahreswechsel nach, statt die Tabelle still unter dem alten Jahr zu speichern. Eingabefelder und neutrale Knöpfe haben einen kräftigeren Rand (Kontrast 3:1 statt 1,4:1), gefüllte Zahlenfelder einen noch etwas stärkeren. Startseite: Die Begrüssung ist ein Seitenkopf wie überall, «Das wartet auf dich» ist offen, «Jetzt aktuell» steht vor Terminen und Geburtstagen, Kacheln ohne Schatten und ohne rote Symbole. Das Hilfe-Fenster hält den Tastaturfokus auch über einem offenen Panel. Login meldet bei falschem Benutzernamen dasselbe wie bei falschem Passwort. Registrierung und «Passwort zurücksetzen» duzen wie der Rest der App. Braucht die Datenbank-Aktualisierung 085 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.55.0",
     "datum": "2026-10-08",
     "aenderungen": [

@@ -8,57 +8,8 @@ include 'header.inc.php';
 <style>
 /* Home-Page – Kompakte Version */
 
-/* Willkommenszeile */
-.home-welcome {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 14px;
-    padding: 14px var(--ui-pad);
-    background: var(--ui-flaeche);
-    border: 1px solid var(--ui-rand);
-    border-radius: var(--ui-rad-l);
-}
-
-.home-welcome-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.home-welcome-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border: 2px solid #fff;
-}
-
-.home-welcome-text h1 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--ui-text);
-    margin: 0;
-    line-height: 1.3;
-}
-
-.home-welcome-text .subtitle {
-    font-size: 0.78rem;
-    color: var(--ui-text-2);
-    margin: 0;
-}
-
-.home-welcome-right {
-    font-size: 0.78rem;
-    color: var(--ui-text-2);
-}
-
-.home-welcome-right i {
-    color: #38a169;
-    margin-right: 0.25rem;
-}
+/* Vereinslogo im Seitenkopf */
+.msv-kopf .home-welcome-logo { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; vertical-align: middle; }
 
 /* Quick Access Grid – die Spaltenzahl waechst in festen Stufen mit der
    Bildschirmbreite. Feste Stufen statt auto-fill, damit auf sehr breiten
@@ -94,30 +45,14 @@ include 'header.inc.php';
     background: #fff;
     border: 1px solid var(--ui-rand);
     border-radius: var(--ui-rad-l);
-    transition: all 0.2s ease;
+    transition: background-color .15s ease, border-color .15s ease;
     position: relative;
     overflow: hidden;
 }
 
-.home-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--bs-primary, var(--ui-akzent));
-    transform: scaleX(0);
-    transition: transform 0.2s ease;
-}
-
-.home-card:hover::before {
-    transform: scaleX(1);
-}
-
 .home-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border-color: var(--ui-feldrand);
+    background: var(--ui-flaeche-2);
+    border-color: var(--ui-rand-stark);
 }
 
 .home-card a {
@@ -153,8 +88,8 @@ include 'header.inc.php';
 }
 
 .home-card-icon.info {
-    background: #ecfeff;
-    color: #0e7490;
+    background: color-mix(in srgb, var(--ui-k-tuerkis) 10%, var(--ui-flaeche));
+    color: var(--ui-k-tuerkis);
 }
 
 /* Zonen-Überschrift */
@@ -299,7 +234,7 @@ include 'header.inc.php';
     transform: translateX(3px);
 }
 
-/* Aufgaben – "Das wartet auf dich", standardmässig eingeklappt */
+/* Aufgaben – «Das wartet auf dich», offen, sobald es etwas zu tun gibt */
 .home-tasks {
     background: var(--ui-warn-zeile);
     border: 1px solid var(--ui-warn-rand);
@@ -503,11 +438,6 @@ include 'header.inc.php';
         gap: 0.5rem;
     }
 
-    .home-welcome {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
     .home-card a {
         padding: 0.75rem;
     }
@@ -522,24 +452,15 @@ include 'header.inc.php';
 
 </style>
 
-<div class="main-content-wrapper">
+<div class="main-content-wrapper content-width-wide">
     
-    <!-- Willkommenszeile -->
-    <div class="home-welcome">
-        <div class="home-welcome-left">
-            <img src="jmrang/dat/MSVWilen_Logo.jpg" alt="MSV Wilen" class="home-welcome-logo">
-            <div class="home-welcome-text">
-                <h1>Willkommen, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Benutzer'); ?> <button type="button" class="btn-help" data-help="home.uebersicht" aria-label="Hilfe"></button></h1>
-                <p class="subtitle">MSV Wilen – Resultaterfassung & Verwaltung</p>
-            </div>
-        </div>
-        <div class="home-welcome-right">
-            <?php 
-            $login_time = $_SESSION['session_created'] ?? $_SESSION['last_activity'] ?? time();
-            ?>
-            <i class="bi bi-clock-fill"></i>Login: <?php echo date('d.m.Y H:i', $login_time); ?>
-        </div>
-    </div>
+    <!-- Seitenkopf: Begrüssung mit Vereinslogo -->
+    <?php
+    $page_title = '<img src="jmrang/dat/MSVWilen_Logo.jpg" alt="" class="home-welcome-logo">Willkommen, ' . htmlspecialchars($_SESSION['username'] ?? 'Benutzer', ENT_QUOTES, 'UTF-8');
+    $page_title_after = '<button type="button" class="btn-help" data-help="home.uebersicht" aria-label="Hilfe"></button>';
+    $page_subtitle = 'MSV Wilen – Resultaterfassung und Verwaltung';
+    $page_show_mobile = true;
+    include 'partials/page_header.inc.php'; ?>
 
     <!-- Offene Punkte quer durch die App -->
     <?php
@@ -556,7 +477,7 @@ include 'header.inc.php';
     ?>
 
     <?php if ($aufgaben): ?>
-        <details class="home-tasks">
+        <details class="home-tasks" open>
             <summary>
                 <i class="bi bi-chevron-right home-tasks-caret"></i>
                 <i class="bi bi-exclamation-triangle"></i>
@@ -582,58 +503,6 @@ include 'header.inc.php';
             <h6><i class="bi bi-check-circle me-1"></i>Nichts offen – alles erledigt</h6>
         </div>
     <?php endif; ?>
-
-    <!-- Nächste Termine und Jubiläen – nebeneinander, sobald Platz da ist -->
-    <?php
-    $naechste_termine = msvDashTermine($conn, $today);
-    $jubilaeen        = msvDashJubilaeen($conn, $current_year, $today);
-    ?>
-    <div class="home-cols">
-        <div class="home-panel">
-            <h6><i class="bi bi-calendar-event"></i>Nächste Termine</h6>
-            <?php if ($naechste_termine): ?>
-                <?php foreach ($naechste_termine as $termin): ?>
-                    <div class="home-panel-row">
-                        <span class="home-panel-datum"><?php echo htmlspecialchars(msvDashDatumBereich($termin['von'], $termin['bis'])); ?></span>
-                        <span class="home-panel-name"><?php echo htmlspecialchars($termin['titel']); ?></span>
-                        <span class="home-panel-tag"><?php echo htmlspecialchars(msvDashRelativ($termin['von'], $today)); ?></span>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="home-panel-leer">Keine kommenden Termine gefunden</div>
-            <?php endif; ?>
-        </div>
-
-        <div class="home-panel">
-            <h6><i class="bi bi-award"></i>Vereinsjubiläen <?php echo (int)$current_year; ?></h6>
-            <?php if ($jubilaeen['jubilaeen']): ?>
-                <?php foreach ($jubilaeen['jubilaeen'] as $j): ?>
-                    <div class="home-panel-row">
-                        <span class="home-panel-datum"><?php echo (int)$j['jahre']; ?> Jahre</span>
-                        <span class="home-panel-name"><?php echo htmlspecialchars($j['person']); ?></span>
-                        <span class="home-panel-tag">seit <?php echo (int)$j['seit']; ?></span>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="home-panel-leer">Keine Vereinsjubiläen gefunden</div>
-            <?php endif; ?>
-        </div>
-
-        <div class="home-panel">
-            <h6><i class="bi bi-balloon"></i>Geburtstage</h6>
-            <?php if ($jubilaeen['geburtstage']): ?>
-                <?php foreach ($jubilaeen['geburtstage'] as $g): ?>
-                    <div class="home-panel-row<?php echo !empty($g['rund']) ? ' home-panel-rund' : ''; ?>">
-                        <span class="home-panel-datum"><?php echo htmlspecialchars(msvDashDatum($g['datum'])); ?></span>
-                        <span class="home-panel-name"><?php echo htmlspecialchars($g['person']); ?></span>
-                        <span class="home-panel-tag">wird <?php echo (int)$g['alter']; ?></span>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="home-panel-leer">Keine Geburtstage in den nächsten 90 Tagen</div>
-            <?php endif; ?>
-        </div>
-    </div>
 
     <!-- Quick Access – saisonal gesteuert, siehe dashboard_phasen.inc.php -->
     <?php
@@ -694,6 +563,58 @@ include 'header.inc.php';
             </div>
         </details>
     <?php endif; ?>
+
+    <!-- Nächste Termine und Jubiläen – nebeneinander, sobald Platz da ist -->
+    <?php
+    $naechste_termine = msvDashTermine($conn, $today);
+    $jubilaeen        = msvDashJubilaeen($conn, $current_year, $today);
+    ?>
+    <div class="home-cols">
+        <div class="home-panel">
+            <h6><i class="bi bi-calendar-event"></i>Nächste Termine</h6>
+            <?php if ($naechste_termine): ?>
+                <?php foreach ($naechste_termine as $termin): ?>
+                    <div class="home-panel-row">
+                        <span class="home-panel-datum"><?php echo htmlspecialchars(msvDashDatumBereich($termin['von'], $termin['bis'])); ?></span>
+                        <span class="home-panel-name"><?php echo htmlspecialchars($termin['titel']); ?></span>
+                        <span class="home-panel-tag"><?php echo htmlspecialchars(msvDashRelativ($termin['von'], $today)); ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="home-panel-leer">Keine kommenden Termine gefunden</div>
+            <?php endif; ?>
+        </div>
+
+        <div class="home-panel">
+            <h6><i class="bi bi-award"></i>Vereinsjubiläen <?php echo (int)$current_year; ?></h6>
+            <?php if ($jubilaeen['jubilaeen']): ?>
+                <?php foreach ($jubilaeen['jubilaeen'] as $j): ?>
+                    <div class="home-panel-row">
+                        <span class="home-panel-datum"><?php echo (int)$j['jahre']; ?> Jahre</span>
+                        <span class="home-panel-name"><?php echo htmlspecialchars($j['person']); ?></span>
+                        <span class="home-panel-tag">seit <?php echo (int)$j['seit']; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="home-panel-leer">Keine Vereinsjubiläen gefunden</div>
+            <?php endif; ?>
+        </div>
+
+        <div class="home-panel">
+            <h6><i class="bi bi-balloon"></i>Geburtstage</h6>
+            <?php if ($jubilaeen['geburtstage']): ?>
+                <?php foreach ($jubilaeen['geburtstage'] as $g): ?>
+                    <div class="home-panel-row<?php echo !empty($g['rund']) ? ' home-panel-rund' : ''; ?>">
+                        <span class="home-panel-datum"><?php echo htmlspecialchars(msvDashDatum($g['datum'])); ?></span>
+                        <span class="home-panel-name"><?php echo htmlspecialchars($g['person']); ?></span>
+                        <span class="home-panel-tag">wird <?php echo (int)$g['alter']; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="home-panel-leer">Keine Geburtstage in den nächsten 90 Tagen</div>
+            <?php endif; ?>
+        </div>
+    </div>
 
 </div>
 

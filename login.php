@@ -142,7 +142,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         exit();
                     }
                 } else {
-                    $error = "Ungültige Anmeldedaten";
+                    $error = "Benutzername oder Passwort stimmt nicht.";
                 }
             } else {
 
@@ -163,11 +163,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         exit();
                     }
                 } else {
-                    $error = "Ungültige Anmeldedaten";
+                    $error = "Benutzername oder Passwort stimmt nicht.";
                 }
             }
         } else {
-            $error = "Ungültiger Benutzername";
+            $error = "Benutzername oder Passwort stimmt nicht.";
         }
         $stmt->close();
         $conn->close();

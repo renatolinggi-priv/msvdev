@@ -376,6 +376,18 @@ async function msvLoeschenGesperrt(opts) {
     return !!(opts.alternative && r.isConfirmed);
 }
 
+// Zeile einer Tabelle merken und wiederherstellen («Verwerfen» in Panels, die live in die Zeile schreiben):
+// alle Attribute (data-*, class, style) und der Inhalt samt versteckten Feldern.
+function msvZeileMerken(tr) {
+    return tr ? { html: tr.innerHTML, attrs: Array.from(tr.attributes).map(function (a) { return [a.name, a.value]; }) } : null;
+}
+function msvZeileZurueck(tr, s) {
+    if (!tr || !s) return;
+    Array.from(tr.attributes).forEach(function (a) { tr.removeAttribute(a.name); });
+    s.attrs.forEach(function (a) { tr.setAttribute(a[0], a[1]); });
+    tr.innerHTML = s.html;
+}
+
 // Kennzeichen «Nicht gespeichert» im Panelkopf ein-/ausblenden. ziel: Element, an das der
 // Chip angehängt wird (z.B. der Container des Panel-Untertitels). Einmal angelegt, dann nur umgeschaltet.
 function msvPanelUngespeichert(ziel, an) {

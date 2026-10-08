@@ -10,7 +10,7 @@ colors:
   rand: "#e8ecf1"
   linie: "#eef1f5"
   linie-zart: "#f1f4f8"
-  feldrand: "#d5dbe3"
+  feldrand: "#8a94a5"
   text: "#1a2332"
   text-2: "#5a6577"
   text-3: "#667080"
@@ -31,8 +31,8 @@ colors:
   fehler: "#b42318"
   fehler-rand: "#f5c2bd"
   leer: "#b8c0cc"
-  feldrand-leer: "#dde3ea"
-  rand-stark: "#c5ccd6"
+  feldrand-leer: "#8a94a5"
+  rand-stark: "#7d8899"
   gold-bg: "#f6e3a1"
   gold-fg: "#6b4f00"
   silber-bg: "#e2e7ee"
@@ -288,8 +288,8 @@ Gedämpfte Metalltöne, flach, nie als Verlauf. Die Marke (`.rang-badge.r1–r3`
 - **Hover-Grau** (`hover`): Hover neutraler Knöpfe.
 - **Auswahl-Hauch** (`gewaehlt`): gewählte Zeile, fokussiertes Eingabefeld im Raster.
 - **Kartenrand** (`rand`), **Trennlinie** (`linie`), **zarte Linie** (`linie-zart`): Rand aller Karten; Linien unter Köpfen; Zeilentrenner in Tabellen.
-- **Feldrand** (`feldrand`): Rand von Eingabefeldern, Suchfeld, neutralen Knöpfen, `kbd`, Upload-Fläche.
-- **Zahlenfelder im Raster:** leer `feldrand-leer` (heller als `feldrand`, das Feld tritt zurück), gefüllt `rand-stark`; `rand-stark` ist auch der Hover-Rand anklickbarer Kacheln (Anlässe, Stiche).
+- **Feldrand** (`feldrand`): Rand von Eingabefeldern, Suchfeld, neutralen Knöpfen, `kbd`, Upload-Fläche. Mindestens 3:1 gegen Weiss (WCAG 1.4.11, Entscheid 08.10.2026): Felder müssen am Abend auf dem Laptop als Felder erkennbar sein.
+- **Zahlenfelder im Raster:** leer `feldrand-leer` (gleich `feldrand`; leer zeigt sich über die getönte Fläche), gefüllt `rand-stark` (kräftiger); `rand-stark` ist auch der Hover-Rand anklickbarer Kacheln (Anlässe, Stiche).
 - **Leerwert** (`leer`): leere Zellen, Striche und fehlende Werte in Tabellen, ausgeschaltete Flag-Dots. Nur für «nichts da», nie für Text, den man lesen muss (Kontrast unter 3:1).
 - **Tinte** (`text`), **Zweittext** (`text-2`), **Dritttext** (`text-3`): Inhalt; Untertitel, Tabellenköpfe, Zähler; Hinweise und Icons.
 
