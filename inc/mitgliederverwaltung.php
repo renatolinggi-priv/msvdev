@@ -590,18 +590,35 @@ $(function() {
   });
 
   // ========== Löschen ==========
-  $('#panelDeleteBtn').on('click', function() {
+  // Löschen nur ohne Geschichte: erst fragen, was am Mitglied hängt (Resultate, Einsätze, Konto …).
+  // Mit Geschichte ist Löschen gesperrt und «Auf inaktiv setzen» der Weg; ohne wird vorher gesichert.
+  $('#panelDeleteBtn').on('click', async function() {
     const deleteId = $(this).data('id');
     const $row = $(`#row${deleteId}`);
     const name = (($row.data('vorname') || '') + ' ' + ($row.data('name') || '')).trim();
-    MVPanel.dirty = false; // nicht mehr speichern, was gleich gelöscht wird
-    MVPanel.close();
-    msvConfirmDelete(name).then(function(res) {
-      if (!res.isConfirmed) return;
-      $.post(basePath + 'mitgliederverwaltung/delete_mitglied.php', { id: deleteId, csrf_token: CSRF })
-        .done(function() { msvToast('Mitglied gelöscht', 'success'); loadMitglieder(); })
-        .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Löschen'), 'error'));
+    const url = basePath + 'mitgliederverwaltung/delete_mitglied.php';
+    MVPanel.close(); // offene Änderungen werden wie immer beim Schliessen gespeichert
+    let p;
+    try { p = await $.post(url, { id: deleteId, aktion: 'pruefen', csrf_token: CSRF }, null, 'json'); }
+    catch (xhr) { msvToast(ajaxMsg(xhr, 'Prüfen fehlgeschlagen'), 'error'); return; }
+    if (p.gesperrt) {
+      const inaktiv = await msvLoeschenGesperrt({
+        text: '<strong>' + msvEsc(name) + '</strong> hat Daten im Verein. Löschen würde das Mitglied aus früheren Ranglisten und Listen entfernen, darum ist es gesperrt.',
+        bezuege: p.bezuege,
+        hinweis: p.aktiv ? 'Wer nicht mehr dabei ist, wird auf inaktiv gesetzt: Das Mitglied fällt aus den aktuellen Listen, seine Resultate bleiben.' : 'Das Mitglied ist bereits inaktiv.',
+        alternative: p.aktiv ? 'Auf inaktiv setzen' : ''
+      });
+      if (inaktiv) msvPost(url, { id: deleteId, aktion: 'inaktiv' }, r => { msvToast(r.message || 'Auf inaktiv gesetzt', 'success'); loadMitglieder(); }, { csrf: CSRF });
+      return;
+    }
+    const res = await msvConfirmDelete(name, {
+      html: 'Möchtest du <strong>' + msvEsc(name) + '</strong> wirklich löschen? Es hängen keine Resultate, Einsätze oder Konten daran. Vorher wird die Datenbank gesichert.'
     });
+    if (!res.isConfirmed) return;
+    msvPost(url, { id: deleteId, aktion: 'loeschen' }, r => {
+      msvToast((r.message || 'Mitglied gelöscht') + (r.sicherung ? ' – Sicherung ' + r.sicherung : ''), 'success');
+      loadMitglieder();
+    }, { csrf: CSRF, failMsg: 'Fehler beim Löschen' });
   });
 
   // ========== CSV Import ==========

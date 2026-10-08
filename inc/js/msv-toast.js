@@ -337,6 +337,28 @@ async function msvUngespeichert(opts) {
     return 'zurueck';
 }
 
+// Löschen gesperrt, weil Daten daran hängen (Server: inc/loesch_sperre.inc.php). Zeigt, was dranhängt,
+// und bietet optional eine Alternative an (z.B. «Auf inaktiv setzen»). Rückgabe: true = Alternative gewählt.
+// opts: { text (HTML, Namen vorher mit msvEsc), bezuege: {Bezeichnung: Anzahl}, hinweis (HTML), alternative (Knopftext) }
+async function msvLoeschenGesperrt(opts) {
+    opts = opts || {};
+    var b = opts.bezuege || {};
+    var liste = Object.keys(b).map(function (k) {
+        return '<li>' + msvEsc(k) + ': <strong>' + msvEsc(b[k]) + '</strong></li>';
+    }).join('');
+    var r = await msvSwal.fire({
+        title: opts.title || 'Löschen nicht möglich',
+        html: '<p class="mb-2">' + (opts.text || '') + '</p>'
+            + (liste ? '<ul class="text-start mb-2 ps-3">' + liste + '</ul>' : '')
+            + (opts.hinweis ? '<p class="mb-0">' + opts.hinweis + '</p>' : ''),
+        icon: 'info',
+        showCancelButton: !!opts.alternative,
+        confirmButtonText: opts.alternative || 'OK',
+        cancelButtonText: 'Abbrechen'
+    });
+    return !!(opts.alternative && r.isConfirmed);
+}
+
 // Kennzeichen «Nicht gespeichert» im Panelkopf ein-/ausblenden. ziel: Element, an das der
 // Chip angehängt wird (z.B. der Container des Panel-Untertitels). Einmal angelegt, dann nur umgeschaltet.
 function msvPanelUngespeichert(ziel, an) {

@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.50.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Löschen nur ohne Geschichte: Mitglieder und JM-Anlässe",
+        "beschreibung": "Mitglieder: Bevor gelöscht wird, prüft die Seite, was am Mitglied hängt (Resultate aller Wettkämpfe, Einsätze, Benutzerkonto, Fragebogen, Umfragen, Munitionskäufe). Hängt etwas daran, ist Löschen gesperrt; der Dialog nennt die Zahlen und bietet «Auf inaktiv setzen» an, so fällt das Mitglied aus den aktuellen Listen und seine Resultate bleiben in früheren Ranglisten. Ohne Geschichte (z.B. ein Fehleintrag) wird vor dem Löschen die Datenbank gesichert. Vorher löschte der Knopf jedes Mitglied endgültig, ohne Sicherung, und es verschwand aus allen früheren Ranglisten. JM-Anlässe: Mit Resultaten, importierten Ranglisten, Fragebogen-Antworten oder Fotos in der Galerie ist Löschen gesperrt und der Dialog nennt, was dranhängt; ohne Daten wird vorher gesichert, Schiesstage, Gruppen und Kranzlimiten gehen mit. Vorher blieben die Resultate verwaist liegen und die Galerie verschwand samt Foto-Einträgen. Die Bezüge werden zur Laufzeit aus der Datenbankstruktur ermittelt, neue Tabellen zählen also automatisch mit. Braucht die Datenbank-Aktualisierung 081 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.49.0",
     "datum": "2026-10-08",
     "aenderungen": [

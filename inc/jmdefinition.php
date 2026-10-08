@@ -1191,21 +1191,34 @@ $(function () {
     deleteJMDefinitionById(deleteId, name);
   });
 
-  function deleteJMDefinitionById(deleteId, name) {
+  // Löschen nur ohne Daten: erst fragen, was am Anlass hängt (Resultate, Ranglisten, Antworten, Fotos).
+  // Mit Daten ist Löschen gesperrt; ohne wird vorher die Datenbank gesichert.
+  async function deleteJMDefinitionById(deleteId, name) {
     if (!deleteId) return;
-    msvConfirmDelete(name).then(function(res) {
-      if (!res.isConfirmed) return;
-      $.post(basePath + 'jmdefinition/delete_jmdefinition.php', {
-        id: deleteId,
-        csrf_token: $('input[name="csrf_token"]').val()
-      })
+    const url = basePath + 'jmdefinition/delete_jmdefinition.php';
+    const csrf = $('input[name="csrf_token"]').val();
+    let p;
+    try { p = await $.post(url, { id: deleteId, aktion: 'pruefen', csrf_token: csrf }, null, 'json'); }
+    catch (xhr) { showErrorToast(ajaxErrorMessage(xhr, 'Prüfen fehlgeschlagen')); return; }
+    if (p && p.gesperrt) {
+      await msvLoeschenGesperrt({
+        text: 'Am Anlass <strong>' + msvEsc(name) + '</strong> hängen Daten. Damit nichts verloren geht, lässt er sich nicht löschen.',
+        bezuege: p.bezuege,
+        hinweis: 'Resultate lassen sich in der JM-Erfassung leeren und Fotos in der Galerie-Verwaltung entfernen; danach ist Löschen möglich.'
+      });
+      return;
+    }
+    const res = await msvConfirmDelete(name, {
+      html: 'Möchtest du <strong>' + msvEsc(name) + '</strong> wirklich löschen? Am Anlass hängen keine Resultate, Ranglisten, Antworten oder Fotos; Schiesstage und Gruppen gehen mit. Vorher wird die Datenbank gesichert.'
+    });
+    if (!res.isConfirmed) return;
+    $.post(url, { id: deleteId, aktion: 'loeschen', csrf_token: csrf }, null, 'json')
       .done(function(resp) {
         if (!resp || !resp.success) { showErrorToast((resp && resp.message) || 'Fehler beim Löschen'); return; }
-        showSuccessToast('Eintrag gelöscht');
+        showSuccessToast((resp.message || 'Anlass gelöscht') + (resp.sicherung ? ' – Sicherung ' + resp.sicherung : ''));
         loadJMDefinition($('#yearSelect').val());
       })
       .fail(xhr => showErrorToast(ajaxErrorMessage(xhr, 'Fehler beim Löschen')));
-    });
   }
 
   // ========== Exporte ==========
