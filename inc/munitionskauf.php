@@ -597,7 +597,7 @@ include 'header.inc.php';
     <div class="main-content-wrapper content-width-wide">
 
       <?php
-      $page_title = 'Munitionskauf erfassen';
+      $page_title = 'Munitionsverkauf';
       $page_title_after = '<button type="button" class="btn-help" data-help="munitionskauf.uebersicht" aria-label="Hilfe"></button>'
           . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
           . '<select id="yearSelect" class="form-select form-select-sm"></select>';

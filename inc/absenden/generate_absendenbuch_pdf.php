@@ -108,7 +108,7 @@ try {
 } catch (Throwable $e) {
     error_log('[absendenbuch_pdf] ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Absendenbuch-PDF fehlgeschlagen: ' . $e->getMessage()]);
+    echo json_encode(['error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)]);
 } finally {
     if ($tmpDocx && file_exists($tmpDocx)) @unlink($tmpDocx);
     if ($tmpPdf && file_exists($tmpPdf)) @unlink($tmpPdf);

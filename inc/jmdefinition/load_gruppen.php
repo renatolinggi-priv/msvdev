@@ -30,7 +30,7 @@ $sql = "
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     header('Content-Type: application/json');
-    echo json_encode(['message' => 'Fehler beim Vorbereiten des Statements: ' . $conn->error]);
+    echo json_encode(['message' => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $conn->error)]);
     exit;
 }
 $stmt->bind_param("ii", $eventID, $year);

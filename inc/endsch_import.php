@@ -21,7 +21,7 @@ $csrf = csrf_token();
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'CSV Import - Endschiessen'; $page_title_after = '<button type="button" class="btn-help" data-help="endsch_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Endschiessen importieren'; $page_title_after = '<button type="button" class="btn-help" data-help="endsch_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     

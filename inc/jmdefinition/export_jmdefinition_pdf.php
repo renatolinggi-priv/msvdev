@@ -76,7 +76,7 @@ $zusatztext = str_replace('{anzahl_streicher}', (string)$anzahl_streicher_pdf, $
 $sql = "SELECT Reihenfolge, Bezeichnung, Schiesstage, Maxpunkte, Streicher, Erweitert, Info FROM JMDefinition WHERE year = ? ORDER BY Reihenfolge";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => "Fehler bei der Datenbankabfrage: " . $conn->error]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $conn->error)]);
     exit;
 }
 $stmt->bind_param("i", $currentYear);

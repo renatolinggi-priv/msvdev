@@ -338,7 +338,7 @@ try {
     error_log('[generate_standblatt] ' . $e->getMessage());
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
-    echo 'PDF-Konvertierung fehlgeschlagen: ' . $e->getMessage();
+    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 } finally {
     // Temporäre Dateien aufräumen
     if ($tmpPdf && file_exists($tmpPdf)) @unlink($tmpPdf);

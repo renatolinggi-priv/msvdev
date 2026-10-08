@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF prüfen
     if (!validateCsrf($input['csrf_token'] ?? '')) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Ungültiges CSRF-Token. Bitte Seite neu laden.']);
+        echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']);
         exit;
     }
 

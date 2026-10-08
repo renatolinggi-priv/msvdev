@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.55.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Einheitliche Seitennamen und verständliche Fehlermeldungen",
+        "beschreibung": "Menü, Seitentitel und Browser-Tab tragen jetzt überall denselben Namen, nach dem Schema Wettkampf vorne, Tätigkeit hinten: «Jahresmeisterschaft erfassen», «Kantonalstich Rangliste», «Kantonalstich Abrechnung», «Endschiessen Stiche lösen», «Endschiessen Partnerinnen erfassen», «Vereinscup erfassen», «Munitionsverkauf», «Heim und Kanti importieren», «Imetron-Stichnummern»; die Hauptgruppen heissen «Resultate erfassen» und «Schiessdaten importieren». Hilfetexte und Startseiten-Kacheln nennen die neuen Namen. Fehlermeldungen: Statt technischer Texte wie «Prepare failed», «SQLSTATE» oder «CSRF-Validierung fehlgeschlagen» steht jetzt, was nicht geklappt hat und was zu tun ist, z.B. «Speichern hat nicht geklappt. Bitte nochmals versuchen.» oder «Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.»; die technischen Details stehen weiterhin im Fehlerprotokoll des Servers. Meldungen erscheinen nicht mehr doppelt («Fehler beim Speichern: Fehler beim Speichern …»), und die letzten Stellen in Sie-Form (Passwort ändern, Import) sind in Du-Form. Braucht die Datenbank-Aktualisierung 084 (Menütexte und Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.54.0",
     "datum": "2026-10-08",
     "aenderungen": [

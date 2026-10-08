@@ -77,7 +77,7 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => false, 'message' => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e)], JSON_UNESCAPED_UNICODE);
 }
 
 $conn->close();

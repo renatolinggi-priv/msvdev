@@ -77,7 +77,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Fehler beim Löschen: ' . $e->getMessage()
+        'message' => msvFehler('Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.', $e)
     ]);
 } finally {
     $conn->close();

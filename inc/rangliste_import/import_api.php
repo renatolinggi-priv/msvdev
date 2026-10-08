@@ -36,7 +36,7 @@ $conn->set_charset('utf8mb4');
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], (string) $csrf)) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF Token. Bitte Seite neu laden.', 'csrf_expired' => true]);
+    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.', 'csrf_expired' => true]);
     exit;
 }
 
@@ -303,7 +303,7 @@ function handleImport($conn) {
         $conn->rollback();
         error_log('rangliste_import import error: ' . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Fehler beim Import: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => msvFehler('Der Import hat nicht geklappt. Bitte die Datei prüfen und nochmals versuchen.', $e)]);
         return;
     }
 
@@ -611,7 +611,7 @@ function handleImportOpfs($conn) {
         $conn->rollback();
         error_log('rangliste_import opfs import error: ' . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Fehler beim Import: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => msvFehler('Der Import hat nicht geklappt. Bitte die Datei prüfen und nochmals versuchen.', $e)]);
         return;
     }
 

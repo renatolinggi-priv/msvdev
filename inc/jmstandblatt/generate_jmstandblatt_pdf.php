@@ -46,7 +46,7 @@ try {
 } catch (Throwable $e) {
     error_log('[jmstandblatt_pdf] Fehler: ' . $e->getMessage());
     http_response_code(500);
-    echo 'PDF-Konvertierung fehlgeschlagen: ' . $e->getMessage();
+    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 } finally {
     if ($tmpPdf && file_exists($tmpPdf)) unlink($tmpPdf);
     if ($tmpDocx && file_exists($tmpDocx)) unlink($tmpDocx);

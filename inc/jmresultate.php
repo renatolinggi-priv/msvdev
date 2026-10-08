@@ -157,7 +157,7 @@ try {
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide">
                 <?php
-                $page_title = 'Erfassung Jahresmeisterschaft';
+                $page_title = 'Jahresmeisterschaft erfassen';
                 $page_title_after = '<button type="button" class="btn-help" data-help="jmresultate.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
@@ -1003,7 +1003,7 @@ try {
         })
             .done(function (resp) {
                 if (!resp.success) {
-                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen. Bitte Seite neu laden.'); return; }
+                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.'); return; }
                     msvToast(resp.message || 'Fehler beim Parsen', 'error');
                     $dz.html(dropzoneHtml);
                     return;
@@ -1245,7 +1245,7 @@ try {
                     modal.hide();
                     $('#yearSelect').trigger('change'); // Anlass-Karten + Ranglisten neu laden
                 } else {
-                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen. Bitte Seite neu laden.'); return; }
+                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.'); return; }
                     msvToast(resp.message || 'Fehler beim Import', 'error');
                 }
             })
@@ -1282,7 +1282,7 @@ try {
                     modal.hide();
                     $('#yearSelect').trigger('change'); // Anlass-Karten + Ranglisten neu laden
                 } else {
-                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen. Bitte Seite neu laden.'); return; }
+                    if (resp.csrf_expired) { msvError('Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.'); return; }
                     msvToast(resp.message || 'Fehler beim Import', 'error');
                 }
             })

@@ -123,7 +123,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Fehler bei der Berechnung: ' . $e->getMessage()
+        'message' => msvFehler('Die Berechnung hat nicht geklappt. Bitte die Seite neu laden.', $e)
     ]);
 } finally {
     $conn->close();

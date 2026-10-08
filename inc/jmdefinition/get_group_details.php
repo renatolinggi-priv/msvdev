@@ -27,7 +27,7 @@ $sql = "
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    echo json_encode(['message' => 'Statement-Fehler: '.$conn->error]);
+    echo json_encode(['message' => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $conn->error)]);
     exit;
 }
 $stmt->bind_param("i", $groupUID);

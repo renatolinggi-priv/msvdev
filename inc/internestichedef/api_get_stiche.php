@@ -11,7 +11,7 @@ adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet di
 // CSRF prüfen
 $input = json_decode(file_get_contents('php://input'), true);
 if (empty($_SESSION['csrf_token']) || !isset($input['csrf_token']) || !hash_equals($_SESSION['csrf_token'], (string)$input['csrf_token'])) {
-    echo json_encode(['success' => false, 'message' => 'Ungültiger CSRF-Token']);
+    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']);
     exit;
 }
 
@@ -37,6 +37,6 @@ try {
     // Falls etwas schiefgeht: JSON-Fehlerantwort
     echo json_encode([
         'success' => false,
-        'message' => 'Fehler beim Laden der Daten: ' . $e->getMessage()
+        'message' => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e)
     ]);
 }

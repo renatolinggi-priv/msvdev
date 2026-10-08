@@ -51,7 +51,7 @@ try {
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $e)
     ]);
 }
 

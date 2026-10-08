@@ -78,7 +78,7 @@ try {
     $conn->rollback();
     echo json_encode([
         'success' => false,
-        'message' => 'Datenbankfehler: ' . $e->getMessage()
+        'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)
     ]);
 }
 

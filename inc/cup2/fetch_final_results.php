@@ -57,7 +57,7 @@ $result = $stmt->get_result();
 
 if (!$result) {
     error_log("SQL Fehler: " . $conn->error);
-    echo json_encode(["error" => "Fehler bei der Abfrage: " . $conn->error]);
+    echo json_encode(["error" => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $conn->error)]);
     exit;
 }
 

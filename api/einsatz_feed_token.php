@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // CSRF vor requireLogin prüfen (Remember-Me kann session_regenerate_id auslösen)
 if (!validateCsrf($_POST['csrf_token'] ?? '')) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen. Bitte Seite neu laden.', 'csrf_expired' => true]);
+    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.', 'csrf_expired' => true]);
     exit;
 }
 

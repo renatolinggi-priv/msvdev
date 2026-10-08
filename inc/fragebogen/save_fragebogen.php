@@ -117,7 +117,7 @@ try {
 } catch (InvalidArgumentException $e) {
     $conn->rollback();
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)]);
 } catch (Throwable $e) {
     $conn->rollback();
     error_log('[save_fragebogen] ' . $e->getMessage());

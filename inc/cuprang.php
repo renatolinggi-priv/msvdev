@@ -33,7 +33,7 @@ require_once __DIR__ . '/csrf.inc.php';
             <div class="main-content-wrapper content-width-default">
                 <!-- Header ausserhalb des inneren Containers -->
                 <?php
-                $page_title = "MSV Wilen Vereinscup – Übersicht";
+                $page_title = "Vereinscup Rangliste";
                 $page_title_after = '<button type="button" class="btn-help" data-help="cuprang.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';

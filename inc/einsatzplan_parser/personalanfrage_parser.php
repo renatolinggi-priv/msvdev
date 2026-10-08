@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 /**
  * inc/einsatzplan_parser/personalanfrage_parser.php – Excel «Personalanfrage» des OK Schlossturm lesen.
  *
@@ -24,7 +25,7 @@ function parsePersonalanfrageXlsx(string $filepath): array
         $reader->setReadDataOnly(true);
         $sheet = $reader->load($filepath)->getSheet(0);
     } catch (Throwable $e) {
-        return ['success' => false, 'message' => 'Excel konnte nicht gelesen werden: ' . $e->getMessage(), 'zeilen' => []];
+        return ['success' => false, 'message' => msvFehler('Die Datei konnte nicht gelesen werden. Bitte die Datei prüfen und nochmals hochladen.', $e), 'zeilen' => []];
     }
     $maxRow = $sheet->getHighestRow();
     $maxCol = Coordinate::columnIndexFromString($sheet->getHighestColumn());

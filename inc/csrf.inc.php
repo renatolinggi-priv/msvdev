@@ -54,9 +54,9 @@ if (!function_exists('csrf_require')) {
         http_response_code(403);
         if ($json) {
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']);
+            echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']);
         } else {
-            echo 'CSRF-Validierung fehlgeschlagen';
+            echo 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.';
         }
         exit;
     }

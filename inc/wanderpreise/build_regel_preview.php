@@ -25,5 +25,5 @@ try {
     $sql = wp_build_regel_sql($typ, $params);
     echo json_encode(['success' => true, 'sql' => $sql]);
 } catch (InvalidArgumentException $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $e)]);
 }

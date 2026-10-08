@@ -17,7 +17,7 @@ require_once __DIR__ . '/../eingabe_pruefen.inc.php';
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+    die(json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']));
 }
 
 // Input validation
@@ -35,7 +35,7 @@ $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
     http_response_code(500);
-    die(json_encode(['message' => 'Tabelle endresultate_partner existiert nicht. Führen Sie zuerst database_setup.sql aus.']));
+    die(json_encode(['message' => 'Die Tabelle für die Partnerinnen fehlt in der Datenbank. Bitte den Administrator informieren.']));
 }
 
 // Validate inputs
@@ -193,7 +193,7 @@ try {
     
     http_response_code(500);
     echo json_encode([
-        'message' => 'Fehler beim Speichern: ' . $e->getMessage()
+        'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)
     ]);
     
 } finally {

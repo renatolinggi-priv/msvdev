@@ -58,7 +58,7 @@ try{
              auto_verknuepfung,verknuepfung_regel,verknuepfung_jahr,created_at,updated_at)
             VALUES (?,?,?,?,?,?, NULL, ?, NOW(), NOW())";
     $stmt = $conn->prepare($sql);
-    if (!$stmt) { log_add('prepare-ERR: '.$conn->error); out(['success'=>false,'message'=>'DB-Fehler (prepare): '.$conn->error],500); }
+    if (!$stmt) { log_add('prepare-ERR: '.$conn->error); out(['success'=>false,'message'=>msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $conn->error)],500); }
 
     //           s   s   s/i  i    s   i    i
     $stmt->bind_param("sssisii",
@@ -76,7 +76,7 @@ try{
              auto_verknuepfung,verknuepfung_regel,verknuepfung_jahr,created_at,updated_at)
             VALUES (?,?,?,?,?,?,?, ?, NOW(), NOW())";
     $stmt = $conn->prepare($sql);
-    if (!$stmt) { log_add('prepare-ERR: '.$conn->error); out(['success'=>false,'message'=>'DB-Fehler (prepare): '.$conn->error],500); }
+    if (!$stmt) { log_add('prepare-ERR: '.$conn->error); out(['success'=>false,'message'=>msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $conn->error)],500); }
 
     //           s   s   s/i  i    s   i   s   i
     $stmt->bind_param("ssiisisi",
@@ -93,7 +93,7 @@ try{
 
   if (!$stmt->execute()) {
     log_add('execute-ERR: '.$stmt->error.' | SQL='.$sql.' | POST='.json_encode($_POST));
-    out(['success'=>false,'message'=>'DB-Fehler (execute): '.$stmt->error],500);
+    out(['success'=>false,'message'=>msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $stmt->error)],500);
   }
   if ($stmt->affected_rows < 1) {
     log_add('affected_rows=0 | SQL='.$sql.' | POST='.json_encode($_POST));
@@ -103,5 +103,5 @@ try{
   out(['success'=>true,'message'=>'Wanderpreis erfolgreich hinzugefügt','wanderpreis_id'=>$conn->insert_id]);
 } catch (Throwable $e){
   log_add('Throwable: '.$e->getMessage());
-  out(['success'=>false,'message'=>$e->getMessage()],500);
+  out(['success'=>false,'message'=> msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)],500);
 }

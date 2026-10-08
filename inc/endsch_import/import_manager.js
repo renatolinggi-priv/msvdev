@@ -269,7 +269,7 @@ const ImportManagerSingle = {
               
               <div class="alert alert-info">
                 <i class="bi bi-question-circle me-2"></i>
-                <strong>Möchten Sie eine weitere CSV-Datei importieren?</strong>
+                <strong>Weitere CSV-Datei importieren?</strong>
               </div>
             </div>
             <div class="modal-footer">

@@ -132,7 +132,7 @@ class MonatsblattPDFExporter {
             
         } catch (Throwable $e) { // auch \Error (z. B. aus Dompdf), sonst PHP-Fatal statt Meldung
             error_log("PDF Generation Error: " . $e->getMessage());
-            return ['message' => 'Fehler bei der PDF-Erstellung: ' . $e->getMessage()];
+            return ['message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)];
         }
     }
 
@@ -646,13 +646,13 @@ try {
 } catch (InvalidArgumentException $e) {
     http_response_code(400);
     header('Content-Type: text/plain; charset=utf-8');
-    echo $e->getMessage();
+    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 
 } catch (Throwable $e) {
     error_log('[export_monatsblatt] ' . $e->getMessage());
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
-    echo $e->getMessage();
+    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 
 } finally {
     if (isset($conn)) {

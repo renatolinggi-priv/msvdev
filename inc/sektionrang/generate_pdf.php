@@ -141,5 +141,5 @@ try {
     error_log('Sektionsmeisterschaft-PDF Fehler: ' . $e->getMessage());
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['pdf_link' => null, 'error' => $e->getMessage()]);
+    echo json_encode(['pdf_link' => null, 'error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)]);
 }

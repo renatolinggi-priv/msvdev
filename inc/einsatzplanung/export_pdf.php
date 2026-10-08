@@ -61,7 +61,7 @@ try {
     ep_json($antwort);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/export_pdf] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'PDF konnte nicht erstellt werden: ' . $e->getMessage()], 500);
+    ep_json(['success' => false, 'message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)], 500);
 } finally {
     if ($tmpDocx && file_exists($tmpDocx)) @unlink($tmpDocx);
     if ($tmpPdf && file_exists($tmpPdf)) @unlink($tmpPdf);

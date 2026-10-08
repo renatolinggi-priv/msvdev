@@ -201,7 +201,7 @@ try {
 } catch (Exception $e) {
     echo '<div class="alert alert-danger">';
     echo '<i class="bi bi-exclamation-triangle me-2"></i>';
-    echo 'Fehler beim Laden der Gewinner-Historie: ' . htmlspecialchars($e->getMessage());
+    echo htmlspecialchars(msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e));
     echo '</div>';
     wanderpreise_debug('Error in get_gewinner_history', ['error' => $e->getMessage()]);
 }

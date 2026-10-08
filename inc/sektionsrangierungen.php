@@ -104,7 +104,7 @@ require_once __DIR__ . '/csrf.inc.php';
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
                 <?php
-$page_title = 'Sektionsrangierungen';
+$page_title = 'Sektionsrangierungen erfassen';
 $page_show_mobile = true;
 ob_start(); ?>
 <button type="button" class="btn-help" data-help="sektionsrangierungen.uebersicht" aria-label="Hilfe"></button>
@@ -409,7 +409,7 @@ $(document).ready(function () {
                     loadAvailableDefinitions(selectedYear);
                     loadExistingRankings(selectedYear);
                 } else {
-                    msvToast('Fehler beim Speichern: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast(response.message || 'Speichern hat nicht geklappt. Bitte nochmals versuchen.', 'error');
                 }
             },
             error: function() {
@@ -472,7 +472,7 @@ $(document).ready(function () {
                     closeEditPanel();
                     loadExistingRankings(selectedYear);
                 } else {
-                    msvToast('Fehler beim Aktualisieren: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast(response.message || 'Ändern hat nicht geklappt. Bitte nochmals versuchen.', 'error');
                 }
             },
             error: function() {
@@ -506,7 +506,7 @@ $(document).ready(function () {
                     loadAvailableDefinitions(selectedYear);
                     loadExistingRankings(selectedYear);
                 } else {
-                    msvToast('Fehler beim Löschen: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast(response.message || 'Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.', 'error');
                 }
             },
             error: function() {
@@ -548,7 +548,7 @@ $(document).ready(function () {
                     link.click();
                     document.body.removeChild(link);
                 } else {
-                    msvToast('Fehler beim PDF-Export: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast(response.message || 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', 'error');
                 }
             },
             error: function() {

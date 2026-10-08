@@ -112,7 +112,7 @@ try {
 } catch (Exception $e) {
     ob_end_clean();
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['message' => 'PDF-Generierung fehlgeschlagen: ' . $e->getMessage()]);
+    echo json_encode(['message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)]);
     exit;
 }
 

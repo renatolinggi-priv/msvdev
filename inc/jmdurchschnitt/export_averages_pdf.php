@@ -157,7 +157,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Fehler beim PDF-Export: ' . $e->getMessage()
+        'message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)
     ]);
 } finally {
     $conn->close();

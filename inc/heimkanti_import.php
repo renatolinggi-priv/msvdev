@@ -22,7 +22,7 @@ $csrf = csrf_token();
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'CSV Import - Heim- und Kantimeisterschaft'; $page_title_after = '<button type="button" class="btn-help" data-help="heimkanti_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'Heim und Kanti importieren'; $page_title_after = '<button type="button" class="btn-help" data-help="heimkanti_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
                 

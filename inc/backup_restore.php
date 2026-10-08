@@ -340,8 +340,8 @@ $BACKUP_API_KEY = $cfg['backup']['api_key'] ?? '';
           isJSON,
           payload,
           message: isJSON
-            ? (payload && (payload.message || payload.error) || 'Unbekannter Fehler (JSON)')
-            : (typeof payload === 'string' && payload.trim() ? payload.trim() : 'Unbekannter Fehler (Text)'),
+            ? (payload && (payload.message || payload.error) || 'Die Aktion hat nicht geklappt (Serverfehler ' + res.status + '). Details stehen im PHP-Log.')
+            : (typeof payload === 'string' && payload.trim() && !/<[a-z!]/i.test(payload) && payload.trim().length < 300 ? payload.trim() : 'Die Aktion hat nicht geklappt (Serverfehler ' + res.status + '). Details stehen im PHP-Log.'),
         };
       }
 

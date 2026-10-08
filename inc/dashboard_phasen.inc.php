@@ -318,7 +318,7 @@ function msvDashboardKarten(mysqli $conn, int $jahr, string $heute, int $aussteh
 
     // --- Dauerhaft sichtbar ---------------------------------------------
     $karten[] = [
-        'id' => 'munition', 'titel' => 'Munitionverkauf', 'desc' => 'Munitionskäufe erfassen',
+        'id' => 'munition', 'titel' => 'Munitionsverkauf', 'desc' => 'Bezüge am Stand erfassen',
         'icon' => 'bi-cart-check', 'iconClass' => 'red', 'link' => 'munitionskauf.php',
         'dauerhaft' => true, 'aktiv' => true, 'hinweis' => '',
     ];
@@ -370,7 +370,7 @@ function msvDashboardKarten(mysqli $conn, int $jahr, string $heute, int $aussteh
     // Der Cup kann nicht vorgeschossen werden, darum kein Vorlauf.
     $cupVon = $a['cup']['von'] ?? null;
     $karte = msvDashFenster([
-        'id' => 'cup', 'titel' => 'CUP', 'desc' => 'CUP Resultate erfassen',
+        'id' => 'cup', 'titel' => 'Vereinscup', 'desc' => 'Resultate erfassen',
         'icon' => 'bi-journals', 'iconClass' => '', 'link' => 'cup.php',
     ], $heute, $cupVon, null);
     if ($a['cup_fertig']) {
@@ -385,7 +385,7 @@ function msvDashboardKarten(mysqli $conn, int $jahr, string $heute, int $aussteh
     // --- Endschiessen Stichausgabe: 1 Monat vor bis 1 Woche nach dem Endstich ---
     $endstichTag = $a['endstich']['von'] ?? null;
     $karte = msvDashFenster([
-        'id' => 'stichausgabe', 'titel' => 'Endschiessen Stichausgabe', 'desc' => 'Stiche ausgeben',
+        'id' => 'stichausgabe', 'titel' => 'Endschiessen Stiche lösen', 'desc' => 'Anmeldung und Stiche',
         'icon' => 'bi-bullseye', 'iconClass' => 'red', 'link' => 'endschloesen.php',
     ], $heute,
         msvDashPlus($endstichTag, -MSV_DASH_VORLAUF_STICHAUSGABE),

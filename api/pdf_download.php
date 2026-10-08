@@ -49,7 +49,7 @@ $result = json_decode($output, true);
 if (!$result || !isset($result['success']) || !$result['success']) {
     header('Content-Type: text/plain; charset=utf-8');
     http_response_code(500);
-    die('Fehler beim Generieren des PDFs: ' . ($result['message'] ?? 'Unbekannter Fehler'));
+    die($result['message'] ?? 'Das PDF konnte nicht erstellt werden. Bitte später nochmals versuchen.');
 }
 
 // PDF-Pfad aus JSON extrahieren

@@ -242,7 +242,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error'   => 'Datenbankfehler: ' . $e->getMessage(),
+        'error'   => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e),
         'details' => [
             'file' => basename($e->getFile()),
             'line' => $e->getLine()

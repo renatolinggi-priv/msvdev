@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 echo json_encode(['success' => true, 'umfragen' => $umfragen, 'total_mitglieder' => $total]);
             } catch (Exception $e) {
                 error_log('umfrage_admin list: ' . $e->getMessage());
-                echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten.']);
+                echo json_encode(['success' => false, 'message' => 'Die Umfragen konnten nicht geladen werden. Bitte die Seite neu laden.']);
             }
             break;
 
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // CSRF prüfen
 if (!validateCsrf($_POST['csrf_token'] ?? '')) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Ungültiges CSRF-Token. Bitte Seite neu laden.']);
+    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']);
     exit;
 }
 
@@ -222,7 +222,7 @@ switch ($action) {
         } catch (Exception $e) {
             $db->rollBack();
             error_log('umfrage_admin: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.']);
+            echo json_encode(['success' => false, 'message' => 'Die Umfrage konnte nicht gespeichert werden. Bitte nochmals versuchen.']);
         }
         break;
 
@@ -306,7 +306,7 @@ switch ($action) {
         } catch (Exception $e) {
             $db->rollBack();
             error_log('umfrage_admin: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.']);
+            echo json_encode(['success' => false, 'message' => 'Die Umfrage konnte nicht kopiert werden. Bitte nochmals versuchen.']);
         }
         break;
 
@@ -335,7 +335,7 @@ switch ($action) {
             }
         } catch (Exception $e) {
             error_log('umfrage_admin: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.']);
+            echo json_encode(['success' => false, 'message' => 'Die Antworten konnten nicht gelöscht werden. Bitte nochmals versuchen.']);
         }
         break;
 

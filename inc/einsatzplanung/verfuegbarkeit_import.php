@@ -145,5 +145,5 @@ try {
     ep_json(['success' => false, 'message' => 'Unbekannte Aktion'], 400);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/verfuegbarkeit_import] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Import fehlgeschlagen: ' . $e->getMessage()], 500);
+    ep_json(['success' => false, 'message' => msvFehler('Der Import hat nicht geklappt. Bitte die Datei prüfen und nochmals versuchen.', $e)], 500);
 }

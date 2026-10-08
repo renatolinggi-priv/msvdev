@@ -54,13 +54,13 @@ window.InterneStiche = (function(){
         body: JSON.stringify({ csrf_token: CSRF_TOKEN })
       });
       const data = await res.json();
-      if(!data.success){ throw new Error(data.message || 'Unbekannter Fehler'); }
+      if(!data.success){ throw new Error(data.message || 'Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.'); }
       fillRows(data.rows || {});
       originalData = gatherRows();
       setDirtyState(false);
     }catch(err){
       console.error(err);
-      toast('Laden fehlgeschlagen: ' + err.message, 'error');
+      toast(err instanceof TypeError || err instanceof SyntaxError ? 'Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.' : err.message, 'error');
     }finally{
       $btnLoad().prop('disabled', false);
     }
@@ -76,13 +76,13 @@ window.InterneStiche = (function(){
         body: JSON.stringify({ csrf_token: CSRF_TOKEN, rows })
       });
       const data = await res.json();
-      if(!data.success){ throw new Error(data.message || 'Unbekannter Fehler'); }
+      if(!data.success){ throw new Error(data.message || 'Speichern hat nicht geklappt. Bitte nochmals versuchen.'); }
       originalData = gatherRows();
       setDirtyState(false);
       toast('Erfolgreich gespeichert.', 'success');
     }catch(err){
       console.error(err);
-      toast('Speichern fehlgeschlagen: ' + err.message, 'error');
+      toast(err instanceof TypeError || err instanceof SyntaxError ? 'Speichern hat nicht geklappt. Bitte nochmals versuchen.' : err.message, 'error');
     }
   }
 

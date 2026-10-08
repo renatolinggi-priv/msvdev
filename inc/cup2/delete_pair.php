@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $conn->close();
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => msvFehler('Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.', $e)]);
     }
 } else {
     $conn->close();

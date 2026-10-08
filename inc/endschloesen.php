@@ -179,7 +179,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 <div class="col-12 ps-0">
   <div class="main-content-wrapper content-width-wide">
     <?php
-    $page_title = 'Endschiessen – Stiche lösen';
+    $page_title = 'Endschiessen Stiche lösen';
     $page_title_after = '<button type="button" class="btn-help" data-help="endschloesen.uebersicht" aria-label="Hilfe"></button>'
         . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
         . '<select id="yearSelect" class="form-select form-select-sm"></select>';

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 // inc/einsatzplan_parser/docx_parser.php - Parst Einsatzpläne aus DOCX-Dateien
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -25,7 +26,7 @@ function parseEinsatzplanDocx($filepath, $vereineBehalten = false) {
     try {
         $phpWord = IOFactory::load($filepath);
     } catch (Exception $e) {
-        return ['success' => false, 'data' => [], 'message' => 'DOCX konnte nicht geladen werden: ' . $e->getMessage()];
+        return ['success' => false, 'data' => [], 'message' => msvFehler('Die Datei konnte nicht gelesen werden. Bitte die Datei prüfen und nochmals hochladen.', $e)];
     }
 
     $zuweisungen = [];

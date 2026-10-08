@@ -38,7 +38,7 @@ $stmt = $conn->prepare($sql);
 $stmt->bind_param("sssii", $eventName, $eventDate, $eventTime, $eventYear, $fuerJsk);
 
 if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $stmt->error]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $stmt->error)]);
     $stmt->close();
     $conn->close();
     exit;

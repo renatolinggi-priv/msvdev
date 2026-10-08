@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // wodurch das in der Seite eingebettete Token nicht mehr passt.
 if (!validateCsrf($_POST['csrf_token'] ?? '')) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen. Bitte Seite neu laden.', 'csrf_expired' => true]);
+    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.', 'csrf_expired' => true]);
     exit;
 }
 
@@ -221,7 +221,7 @@ function handleSave($db) {
 
     } catch (Exception $e) {
         $db->rollBack();
-        echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)]);
     }
 }
 

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 // inc/einsatzplan_parser/pdf_parser.php - Parst Einsatzpläne aus PDF-Dateien
 // Nutzt Textpositionen (X/Y-Koordinaten) für korrekte Spalten-Trennung
 // Fallback: getText() mit Spalten-Erkennung über Leerzeichen
@@ -26,7 +27,7 @@ function parseEinsatzplanPdf($filepath, $debug = false) {
         $parser = new Parser();
         $pdf = $parser->parseFile($filepath);
     } catch (Exception $e) {
-        return ['success' => false, 'data' => [], 'message' => 'PDF konnte nicht geladen werden: ' . $e->getMessage()];
+        return ['success' => false, 'data' => [], 'message' => msvFehler('Die Datei konnte nicht gelesen werden. Bitte die Datei prüfen und nochmals hochladen.', $e)];
     }
 
     $debugInfo = ['strategies' => []];

@@ -87,7 +87,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Fehler beim Aktualisieren: ' . $e->getMessage()
+        'message' => msvFehler('Ändern hat nicht geklappt. Bitte nochmals versuchen.', $e)
     ]);
 } finally {
     $conn->close();

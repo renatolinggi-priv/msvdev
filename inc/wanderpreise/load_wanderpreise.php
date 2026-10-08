@@ -153,7 +153,7 @@ try {
 } catch (Exception $e) {
     echo '<div class="p-4 text-center text-danger">';
     echo '<i class="bi bi-exclamation-triangle me-2"></i>';
-    echo 'Fehler beim Laden der Wanderpreise: ' . htmlspecialchars($e->getMessage());
+    echo htmlspecialchars(msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e));
     echo '</div>';
 }
 ?>

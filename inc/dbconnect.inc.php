@@ -1,6 +1,8 @@
 <?php
 //dbconnect.inc.php
 // Verbindung zur Datenbank herstellen
+// msvFehler(): Klartext an die Oberfläche, technische Fehlertexte nur ins Log
+require_once __DIR__ . '/fehler.inc.php';
 $config = require __DIR__ . '/../../msvjm_config.php';
 $dbConf = $config['db'];
 

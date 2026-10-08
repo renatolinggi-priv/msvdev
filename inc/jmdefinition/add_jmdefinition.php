@@ -70,7 +70,7 @@ try {
     $conn->rollback();
     error_log('[add_jmdefinition] ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)]);
 }
 
 $conn->close();

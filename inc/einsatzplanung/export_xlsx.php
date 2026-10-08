@@ -25,5 +25,5 @@ try {
     ep_json(['success' => true, 'link' => 'dat/' . $datei, 'message' => 'Excel erstellt']);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/export_xlsx] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Excel konnte nicht erstellt werden: ' . $e->getMessage()], 500);
+    ep_json(['success' => false, 'message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)], 500);
 }

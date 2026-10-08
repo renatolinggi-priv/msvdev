@@ -277,8 +277,8 @@ preselectMemberByLicenseFallback(lizenzNr) {
                     }
                 }, 2000);
             } else {
-                const errors = results.filter(r => !r.success).map(r => r.message || 'Unbekannter Fehler');
-                UIHelper.showToast('Teilweise Fehler beim Import: ' + errors.join(', '), 'warning');
+                const errors = results.filter(r => !r.success).map(r => r.message || 'ein Eintrag ohne Meldung');
+                UIHelper.showToast('Nicht alles wurde importiert: ' + errors.join('; '), 'warning');
             }
             
         } catch (error) {

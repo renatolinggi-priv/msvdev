@@ -97,7 +97,7 @@ try {
 } catch (Throwable $e) {
     while (ob_get_level()) { ob_end_clean(); }
     wanderpreise_debug('Historie Export Error', [
-        'error' => $e->getMessage(),
+        'error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e),
         'file'  => $e->getFile(),
         'line'  => $e->getLine(),
     ]);

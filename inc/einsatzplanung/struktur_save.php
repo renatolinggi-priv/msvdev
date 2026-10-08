@@ -182,7 +182,7 @@ try {
     }
 } catch (InvalidArgumentException $e) {
     if ($db->inTransaction()) $db->rollBack();
-    ep_json(['success' => false, 'message' => $e->getMessage()], 422);
+    ep_json(['success' => false, 'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $e)], 422);
 } catch (Throwable $e) {
     if ($db->inTransaction()) $db->rollBack();
     error_log('[einsatzplanung/struktur_save] ' . $e->getMessage());

@@ -318,7 +318,7 @@ $(function() {
             $.post('sieger/delete_sieger.php', { sieger_id: siegerId, csrf_token: $('#csrf_token').val() }, null, 'json')
                 .done(r => {
                     if (r && r.success) { msvToast('Sieger gelöscht', 'success'); loadSieger($('#filterYear').val()); }
-                    else msvToast('Fehler: ' + ((r && r.message) || 'Unbekannter Fehler'), 'error');
+                    else msvToast((r && r.message) || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                 })
                 .fail(xhr => msvToast((xhr.responseJSON && xhr.responseJSON.message) || 'Fehler beim Löschen', 'error'));
         });
@@ -355,7 +355,7 @@ $(function() {
                     }
                     loadSieger($('#filterYear').val());
                 } else {
-                    msvToast('Fehler: ' + ((r && r.message) || 'Unbekannter Fehler'), 'error');
+                    msvToast((r && r.message) || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                 }
             })
             .fail(xhr => msvToast((xhr.responseJSON && xhr.responseJSON.message) || 'Fehler beim Speichern', 'error'))

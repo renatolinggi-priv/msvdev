@@ -44,7 +44,7 @@ $csrf = csrf_token();
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide ui-vollhoehe">
                 <?php
-                $page_title = 'Endschiessen Resultaterfassung';
+                $page_title = 'Endschiessen Resultate erfassen';
                 $page_title_after = '<button type="button" class="btn-help" data-help="endresultate.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';

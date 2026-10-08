@@ -68,5 +68,5 @@ try {
 } catch (Throwable $e) {
     if ($db->inTransaction()) $db->rollBack();
     error_log('[einsatzplanung/einteilung_vorschlag] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Einteilung fehlgeschlagen: ' . $e->getMessage()], 500);
+    ep_json(['success' => false, 'message' => msvFehler('Die Einteilung hat nicht geklappt. Bitte nochmals versuchen.', $e)], 500);
 }

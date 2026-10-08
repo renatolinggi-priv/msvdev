@@ -91,12 +91,12 @@ try {
 } catch (InvalidArgumentException $e) {
     $conn->rollback();
     http_response_code(400);
-    die(json_encode(['success' => false, 'message' => $e->getMessage()]));
+    die(json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)]));
 } catch (Throwable $e) {
     $conn->rollback();
     error_log('[save_jmdefinition] ' . $e->getMessage());
     http_response_code(500);
-    die(json_encode(['success' => false, 'message' => 'Fehler beim Speichern: ' . $e->getMessage()]));
+    die(json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)]));
 }
 
 // 4. Sektionsmeisterschaft: bei mehr als einer SSM einen versteckten Sammel-Eintrag "SSM" anlegen

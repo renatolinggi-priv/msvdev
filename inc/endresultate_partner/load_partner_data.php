@@ -28,7 +28,7 @@ $tableCheckSql = "SHOW TABLES LIKE 'endresultate_partner'";
 $tableCheck = $conn->query($tableCheckSql);
 if ($tableCheck->num_rows == 0) {
     http_response_code(500);
-    echo json_encode(['message' => 'Tabelle endresultate_partner existiert nicht. Führen Sie zuerst database_setup.sql aus.']);
+    echo json_encode(['message' => 'Die Tabelle für die Partnerinnen fehlt in der Datenbank. Bitte den Administrator informieren.']);
     exit;
 }
 
@@ -85,7 +85,7 @@ try {
     
     http_response_code(500);
     echo json_encode([
-        'message' => 'Fehler beim Laden der Partner-Daten: ' . $e->getMessage()
+        'message' => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e)
     ]);
     
 } finally {

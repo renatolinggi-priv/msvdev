@@ -96,10 +96,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $update_stmt->bind_param("si", $new_password_hash, $user_id);
 
             if ($update_stmt->execute()) {
-                $success         = "Ihr Passwort wurde erfolgreich geändert.";
+                $success         = "Dein Passwort ist geändert.";
                 $password_changed = true;
             } else {
-                $error = "Fehler beim Ändern des Passworts. Bitte versuchen Sie es später erneut.";
+                $error = "Das Passwort konnte nicht geändert werden. Bitte später nochmals versuchen.";
             }
             $update_stmt->close();
         } else {

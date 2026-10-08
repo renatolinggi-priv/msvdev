@@ -171,7 +171,7 @@ try {
     
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)
     ]);
 }
 

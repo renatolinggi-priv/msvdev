@@ -76,7 +76,7 @@ try {
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $e)]);
 }
 
 $conn->close();

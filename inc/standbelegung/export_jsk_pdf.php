@@ -237,7 +237,7 @@ try {
     
     header('Content-Type: text/html; charset=utf-8');
     echo '<h1>Fehler beim Erstellen des PDFs</h1>';
-    echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+    echo '<p>' . htmlspecialchars(msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)) . '</p>';
     echo '<p><a href="javascript:history.back()">Zurück</a></p>';
 }
 ?>

@@ -59,7 +59,7 @@ $csrf = csrf_token();
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-wide ui-vollhoehe">
                 <?php
-                $page_title = 'Endschiessen Partner';
+                $page_title = 'Endschiessen Partnerinnen erfassen';
                 $page_title_after = '<button type="button" class="btn-help" data-help="endresultate_partner.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
@@ -224,7 +224,7 @@ $csrf = csrf_token();
                            inputmode="numeric">
                     <?php endfor; ?>
                 </div>
-                <div class="shot-hint mt-2">Zusammen mit den Schüssen 6–10 des Mitglieds (in der Endschiessen-Resultaterfassung). Jeder Wert zählt nur einmal, Doppelte sind rot durchgestrichen.</div>
+                <div class="shot-hint mt-2">Zusammen mit den Schüssen 6–10 des Mitglieds (unter Endschiessen Resultate erfassen). Jeder Wert zählt nur einmal, Doppelte sind rot durchgestrichen.</div>
             </div>
         </div>
 

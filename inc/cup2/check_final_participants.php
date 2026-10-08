@@ -18,7 +18,7 @@ $result = $stmt->get_result();
 
 if ($conn->error) {
     // Gib eine detaillierte Fehlermeldung zurück, falls die SQL-Abfrage fehlschlägt
-    echo "Fehler in der Datenbankabfrage: " . $conn->error;
+    echo msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $conn->error);
     exit();
 }
 

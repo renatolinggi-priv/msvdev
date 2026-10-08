@@ -48,7 +48,7 @@ include 'header.inc.php';
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
                 <?php
-                $page_title = "Endschiessen Ranglisten";
+                $page_title = "Endschiessen Rangliste";
                 $page_title_after = '<button type="button" class="btn-help" data-help="endschrang.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';

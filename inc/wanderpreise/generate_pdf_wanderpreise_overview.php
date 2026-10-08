@@ -40,7 +40,7 @@ try {
     $report->generate();
 } catch (Exception $e) {
     header('Content-Type: application/json');
-    echo json_encode(['message' => $e->getMessage()]);
+    echo json_encode(['message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)]);
 } finally {
     $conn->close();
 }

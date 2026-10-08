@@ -8,7 +8,7 @@ adminApiGuard('json');
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+    die(json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']));
 }
 
 if ($conn->connect_error) {
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order'])) {
     if (!$stmt) {
         echo json_encode([
             "success" => false,
-            "message" => "Fehler beim Vorbereiten der Datenbankabfrage: " . $conn->error
+            "message" => msvFehler('Ändern hat nicht geklappt. Bitte nochmals versuchen.', $conn->error)
         ]);
         $conn->close();
         exit;
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order'])) {
         $conn->rollback(); // Änderungen zurücksetzen
         echo json_encode([
             "success" => false,
-            "message" => $e->getMessage()
+            "message" => msvFehler('Ändern hat nicht geklappt. Bitte nochmals versuchen.', $e)
         ]);
     } finally {
         $stmt->close();

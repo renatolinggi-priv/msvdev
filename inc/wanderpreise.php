@@ -93,7 +93,7 @@ if (WANDERPREISE_DEBUG) {
             <div class="main-content-wrapper content-width-default">
                 <!-- Header ausserhalb des inneren Containers -->
                 <?php
-                $page_title = 'Wanderpreise verwalten';
+                $page_title = 'Wanderpreise';
                 $page_title_after = '<button type="button" class="btn-help" data-help="wanderpreise.uebersicht" aria-label="Hilfe"></button>';
                 ob_start(); ?>
 <button type="button" class="btn-help" data-help="wanderpreise.aktionen" aria-label="Hilfe zu den Aktionen"></button>
@@ -1035,7 +1035,7 @@ $('#startExport').on('click', function () {
                             $('#zuordnungForm')[0].reset();
                             loadWanderpreise();
                         } else {
-                            msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                            msvToast(jsonResponse.message || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                         }
                     } catch (e) {
                         msvToast('Fehler beim Zuordnen des Gewinners', 'error');
@@ -1081,7 +1081,7 @@ $('#startExport').on('click', function () {
                             location.reload();
                         }
                     } else {
-                        msvToast('Fehler: ' + (res?.message || 'Unbekannter Fehler'), 'error');
+                        msvToast(res?.message || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                     }
                 })
                 .fail(function (xhr) {
@@ -1152,11 +1152,11 @@ $('#startExport').on('click', function () {
                             msvToast(res.message || 'Wanderpreis erfolgreich gelöscht', 'success');
                             loadWanderpreise();
                         } else {
-                            msvToast('Löschen fehlgeschlagen: ' + (res?.message || 'Unbekannter Fehler'), 'error');
+                            msvToast(res?.message || 'Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.', 'error');
                         }
                     })
                     .fail(function (xhr) {
-                        let msg = (xhr.responseJSON && xhr.responseJSON.message) || xhr.responseText || xhr.statusText || 'Unbekannter Fehler';
+                        let msg = msvXhrMessage(xhr, 'Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.');
                         if (xhr.status === 409) {
                             // typischer FK-Fehler (z. B. verknüpfte Gewinner/Historie)
                             msg = 'Löschen nicht möglich: Es existieren verknüpfte Datensätze (z. B. Gewinner/Historie).';
@@ -1200,7 +1200,7 @@ $('#startExport').on('click', function () {
                         $('#vergangeneGewinnerForm')[0].reset();
                         loadWanderpreise();
                     } else {
-                        msvToast('Fehler: ' + ((json && json.message) || 'Unbekannter Fehler'), 'error');
+                        msvToast((json && json.message) || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                     }
                 },
                 error: function (xhr) {
@@ -1401,7 +1401,7 @@ $('#startExport').on('click', function () {
                             `);
                             }
                         } else {
-                            msvToast('Fehler beim Laden der Historie: ' + (data.message || 'Unbekannter Fehler'), 'error');
+                            msvToast(data.message || 'Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', 'error');
                         }
                     } catch (e) {
                         msvToast('Fehler beim Verarbeiten der Historie-Daten', 'error');
@@ -1447,7 +1447,7 @@ $('#startExport').on('click', function () {
 
     msvToast('Historie-PDF erfolgreich erstellt!', 'success');
   } else {
-    msvToast('Fehler beim Erstellen des PDFs: ' + (response.message || 'Unbekannter Fehler'), 'error');
+    msvToast(response.message || 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', 'error');
   }
 },
 
@@ -1591,7 +1591,7 @@ $('#startExport').on('click', function () {
                         $('#editWanderpreisModal').modal('hide');
                         loadWanderpreise();
                     } else {
-                        msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
+                        msvToast(jsonResponse.message || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                     }
                 },
                 error: function (xhr) {
@@ -1619,7 +1619,7 @@ $('#startExport').on('click', function () {
                 return;
             }
             if (!csrfToken) {
-                (window.showToast ? showToast : alert)('Kein CSRF-Token gefunden.', 'error');
+                (window.showToast ? showToast : alert)('Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.', 'error');
                 return;
             }
 
@@ -1654,7 +1654,7 @@ $('#startExport').on('click', function () {
                         if (typeof loadWanderpreise === 'function') loadWanderpreise();
                     } else {
                         (window.showToast ? showToast : alert)(
-                            'Fehler: ' + ((json && json.message) || 'Unbekannter Fehler'), 'error');
+                            (json && json.message) || 'Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', 'error');
                     }
                 }
             });

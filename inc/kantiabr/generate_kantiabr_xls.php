@@ -105,5 +105,5 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     error_log('generate_kantiabr_xls: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Abrechnung konnte nicht erstellt werden: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => false, 'message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)], JSON_UNESCAPED_UNICODE);
 }

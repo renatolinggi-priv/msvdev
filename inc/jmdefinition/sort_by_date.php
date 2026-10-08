@@ -131,7 +131,7 @@ try {
     
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Ändern hat nicht geklappt. Bitte nochmals versuchen.', $e)]);
 }
 
 $conn->close();

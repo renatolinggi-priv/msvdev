@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
     if (!$stmt) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Prepare fehlgeschlagen: ' . $conn->error]);
+        echo json_encode(['success' => false, 'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $conn->error)]);
         exit;
     }
     $stmt->bind_param("ii", $year, $katb);

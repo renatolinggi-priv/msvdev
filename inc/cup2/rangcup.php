@@ -383,7 +383,7 @@ try {
     header('Content-Type: application/json');
     echo json_encode([
         'success' => false,
-        'error' => 'Fehler beim Erstellen des PDFs: ' . $e->getMessage()
+        'error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)
     ]);
 }
 

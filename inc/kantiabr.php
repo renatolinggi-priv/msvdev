@@ -40,7 +40,7 @@ try {
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-wide">
         <?php
-        $page_title = 'Kantonalstich – Ranglisten';
+        $page_title = 'Kantonalstich Abrechnung';
         $page_title_after = '<button type="button" class="btn-help" data-help="kantiabr.uebersicht" aria-label="Hilfe"></button>'
             . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
             . '<select id="yearSelect" class="form-select form-select-sm"></select>';

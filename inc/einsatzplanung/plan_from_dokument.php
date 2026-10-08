@@ -49,8 +49,8 @@ try {
         'statistik' => $s,
     ]);
 } catch (InvalidArgumentException $e) {
-    ep_json(['success' => false, 'message' => $e->getMessage()], 422);
+    ep_json(['success' => false, 'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $e)], 422);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/plan_from_dokument] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Übernahme fehlgeschlagen: ' . $e->getMessage()], 500);
+    ep_json(['success' => false, 'message' => msvFehler('Der Import hat nicht geklappt. Bitte die Datei prüfen und nochmals versuchen.', $e)], 500);
 }

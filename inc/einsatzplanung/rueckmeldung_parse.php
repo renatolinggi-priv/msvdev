@@ -44,7 +44,7 @@ if ($check['ext'] !== 'docx') ep_json(['success' => false, 'message' => 'Bitte d
 try {
     $phpWord = IOFactory::load($_FILES['datei']['tmp_name']);
 } catch (Throwable $e) {
-    ep_json(['success' => false, 'message' => 'Word konnte nicht gelesen werden: ' . $e->getMessage()], 422);
+    ep_json(['success' => false, 'message' => msvFehler('Die Datei konnte nicht gelesen werden. Bitte die Datei prüfen und nochmals hochladen.', $e)], 422);
 }
 $table = null;
 foreach ($phpWord->getSections() as $section) {

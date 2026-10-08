@@ -52,5 +52,5 @@ try {
     error_log('[helferabrechnung/export_pdf] ' . $e->getMessage());
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['success' => false, 'message' => 'PDF konnte nicht erstellt werden: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)]);
 }

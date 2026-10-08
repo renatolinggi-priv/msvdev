@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 /**
  * Keiler-Zielscheibe Generator (Linksläufig)
  * 
@@ -121,7 +122,7 @@ class ZielscheibeGeneratorKeiler {
             error_log("Fehler beim Generieren der Keiler-Zielscheibe: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)
             ];
         }
     }

@@ -18,7 +18,7 @@ $csrf = csrf_token();
 <div class="col-12 ps-0">
     <div class="main-content-wrapper content-width-default">
     <?php
-    $page_title = 'CUP Resultaterfassung';
+    $page_title = 'Vereinscup erfassen';
     $page_title_after = '<button type="button" class="btn-help" data-help="cup.uebersicht" aria-label="Hilfe"></button>'
         . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
         . '<select id="yearSelect" class="form-select form-select-sm"></select>';

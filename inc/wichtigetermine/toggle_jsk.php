@@ -22,7 +22,7 @@ $stmt->bind_param("ii", $fuerJsk, $eventId);
 if ($stmt->execute()) {
     echo json_encode(['success' => true, 'fuer_jsk' => $fuerJsk]);
 } else {
-    echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern: ' . $stmt->error]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $stmt->error)]);
 }
 
 $stmt->close();

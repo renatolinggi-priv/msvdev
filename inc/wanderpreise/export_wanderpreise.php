@@ -60,7 +60,7 @@ $sql = "SELECT
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     wanderpreise_debug('CSV Export SQL Error', ['error' => $conn->error]);
-    die('Fehler beim Vorbereiten der SQL-Abfrage: ' . $conn->error);
+    die(msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $conn->error));
 }
 
 $stmt->bind_param("i", $jahr);

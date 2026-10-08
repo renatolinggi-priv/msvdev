@@ -8,7 +8,7 @@ adminApiGuard('json');
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
+    die(json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']));
 }
 
 header('Content-Type: application/json; charset=utf-8');
@@ -57,7 +57,7 @@ try {
     ]);
     
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Löschen hat nicht geklappt. Bitte die Liste neu laden und prüfen.', $e)]);
 }
 
 $conn->close();

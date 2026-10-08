@@ -287,6 +287,6 @@ try {
 } catch (Exception $e) {
     error_log('[endschloesen_standblatt_pdf] Fehler: ' . $e->getMessage());
     http_response_code(500);
-    echo 'PDF-Generierung fehlgeschlagen: ' . $e->getMessage();
+    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 }
 exit;

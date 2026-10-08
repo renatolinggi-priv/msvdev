@@ -21,6 +21,6 @@ try {
     ]);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Die Daten konnten nicht geladen werden. Bitte die Seite neu laden.', $e)]);
 }
 $conn->close();

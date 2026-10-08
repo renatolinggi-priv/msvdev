@@ -50,7 +50,7 @@ try {
     echo json_encode(['success' => true, 'count' => $count]);
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['success' => false, 'message' => 'Fehler: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Das hat nicht geklappt. Bitte nochmals versuchen; bleibt der Fehler, die Seite neu laden.', $e)]);
 }
 
 $conn->close();

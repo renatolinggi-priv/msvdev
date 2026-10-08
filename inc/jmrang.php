@@ -106,7 +106,7 @@ require_once __DIR__ . '/csrf.inc.php';
             <div class="main-content-wrapper content-width-wide">
                 <!-- Header ausserhalb des inneren Containers -->
                 <?php
-                $page_title = "Jahresmeisterschaft Ranglisten";
+                $page_title = "Jahresmeisterschaft Rangliste";
                 $page_title_after = '<button type="button" class="btn-help" data-help="jmrang.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';

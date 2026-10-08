@@ -93,7 +93,7 @@ try {
 } catch (Throwable $e) {
     error_log('[jmstandblatt_all_pdf] Merge-Fehler: ' . $e->getMessage());
     http_response_code(500);
-    echo 'PDF-Zusammenführung fehlgeschlagen: ' . $e->getMessage();
+    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 } finally {
     if ($mergedPdf && file_exists($mergedPdf)) unlink($mergedPdf);
     foreach ($pdfFiles as $f) {

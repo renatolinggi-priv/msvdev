@@ -157,12 +157,18 @@ nur Syntax — kein Runtime, keine DB.
   einen Eintrag für den Vorstand aus (Häkchen im Editor); die Seite muss den Zugriff trotzdem selbst prüfen.
   Links relativ zu `inc/` (`seite.php`), Seiten unter `admin/` mit führendem Slash (`/admin/seite.php`); der
   Renderer macht relative Links über `$incBase` absolut. Menüeinträge per idempotenter Migration (Muster 030/069).
-- Seitentitel = Menütext = Browser-Tab (Regel aus Migration 043/049). Partials nutzen:
+- Seitentitel = Menütext = Browser-Tab (Regel aus Migration 043/049, Schema seit Mig. 084: Wettkampf vorne,
+  Tätigkeit hinten, z.B. «Jahresmeisterschaft erfassen», «Kantonalstich Rangliste»). Partials nutzen:
   `partials/page_header.inc.php` (`$page_title`, optional `$page_actions`, `$page_show_mobile`),
   `partials/side_panel.inc.php`, `partials/action_card.inc.php`, `msv_empty_row()`.
 - JS-Helfer zentral in `inc/js/msv-toast.js`: `msvToast/msvError/msvConfirm/msvConfirmDelete`,
-  `msvEsc()` (HTML-Escaping), `msvXhrMessage(xhr, fallback)`, `msvPost(url, data, ok, {csrf, failMsg})`.
-  Keine lokalen Kopien von `esc()`/`ajaxMsg()` mehr anlegen.
+  `msvEsc()` (HTML-Escaping), `msvXhrMessage(xhr, fallback)`, `msvFetchMessage(response, fallback)` (fetch),
+  `msvPost(url, data, ok, {csrf, failMsg})`. Keine lokalen Kopien von `esc()`/`ajaxMsg()` mehr anlegen.
+- **Fehlermeldungen in Endpunkten:** nie `$e->getMessage()` oder `$conn->error` in eine Antwort, sondern
+  `msvFehler('Klartext mit nächstem Schritt.', $e)` aus `inc/fehler.inc.php` (über `inc/config.php` und
+  `inc/dbconnect.inc.php` immer geladen): Technik geht ins PHP-Log, bewusst formulierte Meldungen aus dem
+  eigenen Code bleiben sichtbar. Im Client die Server-Meldung ohne eigenen Vorspann zeigen
+  (`r.message || 'Klartext'`), sonst steht alles doppelt.
 - **Hilfesystem** (seit 22.09.2026, Mig. 066/067, Vorbild jungschuetzen.sksg.ch): `<button type="button"
   class="btn-help" data-help="seite.thema" aria-label="Hilfe"></button>` neben Seitentitel
   (`$page_actions`), Abschnitts-/Card-Titel oder einem erklärungsbedürftigen Feld – **nicht pro Button**

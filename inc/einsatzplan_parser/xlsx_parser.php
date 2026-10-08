@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 // inc/einsatzplan_parser/xlsx_parser.php - Parst Einsatzpläne aus XLSX-Dateien
 // Unterstützte Formate:
 //   - Schlossturm: Mehrere Vereine, nur MSV Wilen wird importiert (Check-Spalte)
@@ -26,7 +27,7 @@ function parseEinsatzplanXlsx($filepath, $vereineBehalten = false) {
     try {
         $spreadsheet = IOFactory::load($filepath);
     } catch (Exception $e) {
-        return ['success' => false, 'data' => [], 'message' => 'XLSX konnte nicht geladen werden: ' . $e->getMessage()];
+        return ['success' => false, 'data' => [], 'message' => msvFehler('Die Datei konnte nicht gelesen werden. Bitte die Datei prüfen und nochmals hochladen.', $e)];
     }
 
     // Sheet auswählen: bevorzugt "definitiv", sonst erstes Sheet

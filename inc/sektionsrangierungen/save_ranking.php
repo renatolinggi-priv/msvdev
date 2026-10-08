@@ -99,7 +99,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Fehler beim Speichern der Rangierung: ' . $e->getMessage()
+        'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)
     ]);
 } finally {
     $conn->close();

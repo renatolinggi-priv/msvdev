@@ -7,7 +7,7 @@ adminApiGuard('json');
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']);
+    echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']);
     exit;
 }
 

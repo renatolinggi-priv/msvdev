@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 
 /**
  * ZielscheibeGeneratorImagick - erzeugt hochqualitative Visualisierungen mit ImageMagick.
@@ -134,7 +135,7 @@ class ZielscheibeGeneratorImagick
             error_log("Fehler beim Generieren der Zielscheibe: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)
             ];
         }
     }

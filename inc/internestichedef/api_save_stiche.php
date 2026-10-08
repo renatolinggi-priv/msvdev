@@ -24,7 +24,7 @@ try {
 
     // CSRF prüfen
     if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-        echo json_encode(['success' => false, 'message' => 'Ungültiges CSRF-Token.']);
+        echo json_encode(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.']);
         exit;
     }
 
@@ -49,7 +49,7 @@ try {
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
-        echo json_encode(['success' => false, 'message' => 'DB-Fehler (prepare): ' . $conn->error]);
+        echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $conn->error)]);
         exit;
     }
 
@@ -64,12 +64,12 @@ try {
 
         // alle als Strings binden
         if (!$stmt->bind_param('ssss', $stich, $n1, $n2, $n3)) {
-            echo json_encode(['success' => false, 'message' => 'DB-Fehler (bind): ' . $stmt->error]);
+            echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $stmt->error)]);
             $stmt->close();
             exit;
         }
         if (!$stmt->execute()) {
-            echo json_encode(['success' => false, 'message' => 'DB-Fehler (execute): ' . $stmt->error]);
+            echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $stmt->error)]);
             $stmt->close();
             exit;
         }
@@ -83,6 +83,6 @@ try {
 
 } catch (Throwable $e) {
     // Immer JSON, nie HTML
-    echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Speichern hat nicht geklappt. Bitte nochmals versuchen.', $e)]);
     exit;
 }

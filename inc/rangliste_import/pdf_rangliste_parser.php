@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../fehler.inc.php'; // msvFehler()
 // inc/rangliste_import/pdf_rangliste_parser.php
 // Parst externe Einzelranglisten (Vereinsstich o.ae.) aus PDF-Dateien.
 //
@@ -36,7 +37,7 @@ function parseRanglistePdf($filepath, $debug = false, $ownClubNeedles = ['wilen'
         $parser = new Parser();
         $pdf = $parser->parseFile($filepath);
     } catch (Throwable $e) {
-        return ['success' => false, 'rows' => [], 'message' => 'PDF konnte nicht geladen werden: ' . $e->getMessage()];
+        return ['success' => false, 'rows' => [], 'message' => msvFehler('Die Datei konnte nicht gelesen werden. Bitte die Datei prüfen und nochmals hochladen.', $e)];
     }
 
     // 1) Zeilen rekonstruieren – positionsbasiert (primaer), sonst getText() (Fallback)

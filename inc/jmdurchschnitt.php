@@ -435,7 +435,7 @@ $(document).ready(function () {
                     }
                 } else {
                     $('#noResultsMessage').show();
-                    msvToast('Fehler bei der Berechnung: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast(response.message || 'Die Berechnung hat nicht geklappt. Bitte die Seite neu laden.', 'error');
                 }
             },
             error: function() {
@@ -508,7 +508,7 @@ $(document).ready(function () {
                     link.click();
                     msvToast('PDF erfolgreich generiert', 'success');
                 } else {
-                    msvToast('Fehler beim PDF-Export: ' + (response.message || 'Unbekannter Fehler'), 'error');
+                    msvToast(response.message || 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', 'error');
                 }
             },
             error: function() {
