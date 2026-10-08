@@ -800,8 +800,8 @@ $('#startExport').on('click', function () {
                     msvToast('Fehler: ' + response.error, 'error');
                 }
             },
-            error: function (xhr, status, error) {
-                msvToast('Fehler beim Generieren: ' + error, 'error');
+            error: function (xhr) {
+                msvToast(msvXhrMessage(xhr, 'Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -1084,8 +1084,8 @@ $('#startExport').on('click', function () {
                         msvToast('Fehler: ' + (res?.message || 'Unbekannter Fehler'), 'error');
                     }
                 })
-                .fail(function (xhr, status, error) {
-                    msvToast('Fehler bei der automatischen Zuordnung: ' + error, 'error');
+                .fail(function (xhr) {
+                    msvToast(msvXhrMessage(xhr, 'Die automatische Zuordnung hat nicht geklappt. Bitte die Liste prüfen und nochmals versuchen.'), 'error');
                 })
                 .always(function () {
                     $btn.prop('disabled', false).html(originalText);
@@ -1594,8 +1594,8 @@ $('#startExport').on('click', function () {
                         msvToast('Fehler: ' + (jsonResponse.message || 'Unbekannter Fehler'), 'error');
                     }
                 },
-                error: function (xhr, status, error) {
-                    msvToast('Fehler beim Aktualisieren des Wanderpreises: ' + error, 'error');
+                error: function (xhr) {
+                    msvToast(msvXhrMessage(xhr, 'Der Wanderpreis konnte nicht gespeichert werden. Bitte nochmals versuchen.'), 'error');
                 },
                 complete: function () {
                     $btn.prop('disabled', false).html(originalText);

@@ -116,7 +116,7 @@ $(function() {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: p.body
             });
-            if (!response.ok) throw new Error((await response.text()) || 'Fehler beim Generieren');
+            if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das Monatsblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'));
             const blob = await response.blob();
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -126,7 +126,8 @@ $(function() {
             msvToast('PDF heruntergeladen', 'success');
         } catch (err) {
             console.error('PDF Export Error:', err);
-            msvToast('Fehler beim Generieren des PDFs: ' + err.message, 'error');
+            // TypeError = fetch ohne Antwort (offline, Zeitüberschreitung)
+            msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
         } finally {
             $btn.prop('disabled', false).html(orig);
         }

@@ -221,12 +221,13 @@ $(document).ready(function() {
                     msvToast('PDF-Generierung fehlgeschlagen', 'error');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
+                const meldung = msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.');
                 $('#pdf-link').html(
                     '<div class="alert alert-danger">' +
-                    '<i class="bi bi-x-circle-fill me-2"></i>Fehler: ' + error + '</div>'
+                    '<i class="bi bi-x-circle-fill me-2" aria-hidden="true"></i>' + msvEsc(meldung) + '</div>'
                 );
-                msvToast('Fehler beim Generieren der PDF: ' + error, 'error');
+                msvToast(meldung, 'error');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalHtml);

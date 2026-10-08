@@ -99,9 +99,9 @@ include 'partials/page_header.inc.php'; ?>
                         msvToast('Fehler beim Verarbeiten der Antwort.', 'error');
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(xhr) {
                     console.error('AJAX Error:', xhr.responseText);
-                    msvToast('Fehler beim Generieren der Excel-Datei: ' + error, 'error');
+                    msvToast(msvXhrMessage(xhr, 'Die Excel-Datei konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
                 },
                 complete: function() {
 

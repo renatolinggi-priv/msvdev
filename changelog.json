@@ -12,6 +12,18 @@
     ]
   },
   {
+    "version": "1.52.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Helferstunden Jungschützen abgesichert und repariert; Fehlermeldungen in Klartext",
+        "beschreibung": "Helferstunden der Jungschützen: Die Liste und das PDF waren ohne Anmeldung abrufbar; jetzt nur noch für Admin und Vorstand, wie alle Verwaltungsseiten. Speichern und Löschen schlugen bisher immer fehl (fehlendes Sicherheits-Token) und funktionieren wieder. Stunden müssen zwischen 0 und 999 liegen, die Bezeichnung eines freien Einsatzes höchstens 255 Zeichen haben. Während des Speicherns ist der Knopf gesperrt, damit kein Eintrag doppelt entsteht; bei einem Fehler bleiben die Eingaben stehen, und die Liste lässt sich mit «Nochmals laden» erneut holen. Fehlermeldungen beim Erstellen von PDFs, Excel und Standblättern (Heim-, JM-, Sektionsrangliste, Kantonalstich-Abrechnung, Schützenabrechnung, Wanderpreise, JM-Standblatt, Monatsblatt, Zielscheiben, Munitionskauf) zeigen jetzt Klartext wie «Sitzung abgelaufen – bitte neu anmelden» oder «Keine Verbindung zum Server» statt technischer Texte wie «Internal Server Error» oder einer ganzen Fehlerseite.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.51.0",
     "datum": "2026-10-08",
     "aenderungen": [

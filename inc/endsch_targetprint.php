@@ -311,7 +311,8 @@ function parseCSV(content, filename) {
         showPreview();
     } catch (error) {
         console.error('[TARGETPRINT] Parse error:', error);
-        msvToast('Fehler beim Parsen der CSV: ' + error.message, 'error');
+        // Technische Details nur in die Konsole; der Vorstand braucht den nächsten Schritt
+        msvToast('Die Datei konnte nicht gelesen werden. Bitte den CSV-Export des Endschiessens aus Imetron wählen (Trennzeichen Semikolon).', 'error');
     }
 }
 

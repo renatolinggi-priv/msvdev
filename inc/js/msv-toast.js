@@ -253,6 +253,23 @@ function msvXhrMessage(xhr, fallback) {
     return fallback || 'Serverfehler' + (st > 0 ? ' (' + st + ')' : '');
 }
 
+// Dasselbe für fetch(): JSON-message des Servers, sonst Klartext nach Status – nie den rohen
+// Antworttext (bei einem PHP-Fehler wäre das eine ganze HTML-Seite). Gibt ein Promise<string>.
+// Aufruf: if (!res.ok) throw new Error(await msvFetchMessage(res, 'Das PDF konnte nicht erstellt werden.'));
+function msvFetchMessage(response, fallback) {
+    if (!response) return Promise.resolve('Keine Verbindung zum Server');
+    var st = response.status;
+    function nachStatus() {
+        if (st === 401) return 'Sitzung abgelaufen – bitte neu anmelden';
+        if (st === 403) return 'Keine Berechtigung';
+        if (st === 413) return 'Anfrage zu gross für den Server';
+        return fallback || 'Serverfehler' + (st > 0 ? ' (' + st + ')' : '');
+    }
+    return response.clone().json()
+        .then(function (r) { return (r && (r.message || r.error)) || nachStatus(); })
+        .catch(nachStatus);
+}
+
 // Gemeinsamer JSON-POST für Admin-Endpunkte (jQuery). Hängt das CSRF-Token an
 // (opts.csrf, sonst <meta name="csrf-token"> oder das erste [name=csrf_token]),
 // ruft ok(r) bei r.success, zeigt sonst einen Fehler-Toast (r.message bzw. opts.failMsg).

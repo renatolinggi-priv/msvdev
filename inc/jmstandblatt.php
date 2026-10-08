@@ -208,12 +208,13 @@ async function downloadStandblatt(btn, mitgliedId, vorname, name) {
 
   try {
     const response = await fetch(standblattUrl('generate_jmstandblatt.php', mitgliedId));
-    if (!response.ok) throw new Error(await response.text() || 'Fehler beim Generieren');
+    if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'));
     saveBlob(await response.blob(), `JM_Standblatt_${jahr}_${vorname}${name}.docx`);
     return true;
   } catch (err) {
     console.error(err);
-    msvToast('Fehler beim Generieren des Standblatts: ' + err.message, 'error');
+    // TypeError = fetch ohne Antwort (offline, Zeitüberschreitung)
+    msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
     return false;
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
@@ -296,7 +297,7 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
     try {
         if (!printReady()) throw new Error('QZ Tray nicht verbunden oder kein Druckprofil');
         const response = await fetch(standblattUrl('generate_jmstandblatt_all_pdf.php'));
-        if (!response.ok) throw new Error(await response.text() || 'PDF-Generierung fehlgeschlagen');
+        if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das PDF für den Druck konnte nicht erstellt werden. Bitte nochmals versuchen.'));
         const blob = await response.blob();
 
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Drucke…';
@@ -309,7 +310,7 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
         if (ok) meldeUebersprungene(response);
     } catch (err) {
         console.error('Druckfehler:', err);
-        msvToast('Druckfehler: ' + err.message, 'error');
+        msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
     } finally {
         btn.innerHTML = originalHTML;
         updateQzBadge();
@@ -326,14 +327,14 @@ document.getElementById('btnDownloadAllPdf').addEventListener('click', async fun
 
     try {
         const response = await fetch(standblattUrl('generate_jmstandblatt_all_pdf.php'));
-        if (!response.ok) throw new Error(await response.text() || 'Fehler beim Generieren');
+        if (!response.ok) throw new Error(await msvFetchMessage(response, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'));
         const blob = await response.blob();
         saveBlob(blob, `JM_Standblaetter_${jahr}_alle.pdf`);
         msvToast(`PDF heruntergeladen (${(blob.size / 1024 / 1024).toFixed(1)} MB)`, 'success');
         meldeUebersprungene(response);
     } catch (err) {
         console.error(err);
-        msvToast('Fehler: ' + err.message, 'error');
+        msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalHTML;

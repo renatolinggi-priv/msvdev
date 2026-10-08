@@ -232,9 +232,9 @@ require_once __DIR__ . '/csrf.inc.php';
                             msvError('Fehler: ' + response.error);
                         }
                     },
-                    error: function (xhr, status, error) {
+                    error: function (xhr) {
                         console.error('AJAX Error:', xhr.responseText);
-                        msvError('Fehler beim Generieren des PDFs: ' + error);
+                        msvError(msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'));
                     }
                 });
             });

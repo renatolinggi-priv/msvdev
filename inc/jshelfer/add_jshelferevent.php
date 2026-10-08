@@ -1,21 +1,41 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 header('Content-Type: application/json');
 include '../config.php';
-require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
+// CSRF-Schutz
+require_once __DIR__ . '/../csrf.inc.php';
 csrf_require(true);
-if (empty($_SESSION['user_id'])) { http_response_code(403); header('Content-Type: application/json'); echo json_encode(['success'=>false,'message'=>'Nicht angemeldet']); exit; }
 
 $freierTitel     = trim($_POST['freierTitel'] ?? '');
-$freierWilen     = floatval($_POST['freierWilen'] ?? 0);
-$freierWollerau  = floatval($_POST['freierWollerau'] ?? 0);
+$freierWilenRoh  = trim((string)($_POST['freierWilen'] ?? ''));
+$freierWollRoh   = trim((string)($_POST['freierWollerau'] ?? ''));
 
-// Validierung
-if ($freierTitel === '' || ($freierWilen == 0 && $freierWollerau == 0)) {
-  echo json_encode(['message' => 'Bitte gültige Daten eingeben.']);
+// Validierung: Titel Pflicht (max. 255 Zeichen), Stunden 0–999, mindestens ein Wert über 0
+$istStunde = function (string $v): bool {
+    return $v === '' || (is_numeric($v) && (float)$v >= 0 && (float)$v <= 999);
+};
+if ($freierTitel === '') {
+  http_response_code(422);
+  echo json_encode(['success' => false, 'message' => 'Bitte eine Bezeichnung eingeben.']);
+  exit;
+}
+if (mb_strlen($freierTitel) > 255) {
+  http_response_code(422);
+  echo json_encode(['success' => false, 'message' => 'Die Bezeichnung ist zu lang (höchstens 255 Zeichen).']);
+  exit;
+}
+if (!$istStunde($freierWilenRoh) || !$istStunde($freierWollRoh)) {
+  http_response_code(422);
+  echo json_encode(['success' => false, 'message' => 'Stunden müssen eine Zahl zwischen 0 und 999 sein (z.B. 2.5).']);
+  exit;
+}
+$freierWilen    = (float)$freierWilenRoh;
+$freierWollerau = (float)$freierWollRoh;
+if ($freierWilen == 0 && $freierWollerau == 0) {
+  http_response_code(422);
+  echo json_encode(['success' => false, 'message' => 'Bitte Stunden für Wilen oder Wollerau eingeben.']);
   exit;
 }
 
@@ -28,10 +48,12 @@ try {
     $stmt->execute();
     $stmt->close();
 
-    echo json_encode(['success' => 'Freier Eintrag gespeichert.']);
+    echo json_encode(['success' => true, 'message' => 'Freier Eintrag gespeichert.']);
 
 } catch (Exception $e) {
-    echo json_encode(['message' => 'Fehler beim Speichern: ' . $e->getMessage()]);
+    error_log('add_jshelferevent: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Der Eintrag konnte nicht gespeichert werden. Bitte nochmals versuchen.']);
 }
 
 $conn->close();

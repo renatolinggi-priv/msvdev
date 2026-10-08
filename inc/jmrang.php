@@ -436,8 +436,8 @@ $(document).ready(function() {
                     msvToast('PDF konnte nicht generiert werden.', 'error');
                 }
             },
-            error: function(xhr, status, error) {
-                msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+            error: function(xhr) {
+                msvToast(msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
@@ -479,8 +479,8 @@ $(document).ready(function() {
                     msvToast('PDF konnte nicht generiert werden.', 'error');
                 }
             },
-            error: function(xhr, status, error) {
-                msvToast('Fehler beim Generieren des PDFs: ' + error, 'error');
+            error: function(xhr) {
+                msvToast(msvXhrMessage(xhr, 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'), 'error');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);

@@ -2,24 +2,36 @@
 //save_jshelfer.php
 header('Content-Type: application/json');
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 // CSRF-Schutz
-if (session_status() === PHP_SESSION_NONE) session_start();
-$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
-}
-
-file_put_contents('debug_post.txt', print_r($_POST, true));
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 // POST-Daten auslesen
 $wilen     = $_POST['helferWilen']    ?? [];
 $wollerau  = $_POST['helferWollerau'] ?? [];
 
-if (empty($wilen) && empty($wollerau)) {
-    echo json_encode(['message' => 'Keine Daten übermittelt.']);
+if (!is_array($wilen) || !is_array($wollerau) || (empty($wilen) && empty($wollerau))) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Es gibt nichts zu speichern.']);
     exit;
+}
+
+// Stunden: leer = 0, sonst eine Zahl von 0 bis 999 (Schritt 0.5 gibt das Formular vor)
+$stundenOk = function ($v): bool {
+    $v = trim((string)$v);
+    return $v === '' || (is_numeric($v) && (float)$v >= 0 && (float)$v <= 999);
+};
+foreach ([$wilen, $wollerau, [$_POST['freierWilen'] ?? '', $_POST['freierWollerau'] ?? '']] as $werte) {
+    foreach ($werte as $v) {
+        if (!$stundenOk($v)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Stunden müssen eine Zahl zwischen 0 und 999 sein (z.B. 2.5). Nichts wurde gespeichert.']);
+            exit;
+        }
+    }
 }
 
 $conn->begin_transaction();
@@ -70,7 +82,6 @@ try {
     $freierTitel     = trim($_POST['freierTitel'] ?? '');
     $freierWilen     = floatval($_POST['freierWilen'] ?? 0);
     $freierWollerau  = floatval($_POST['freierWollerau'] ?? 0);
-    file_put_contents('debug_freier.txt', "Titel: $freierTitel | Wilen: $freierWilen | Wollerau: $freierWollerau\n", FILE_APPEND);
 
     if ($freierTitel !== '' && ($freierWilen > 0 || $freierWollerau > 0)) {
         // Prüfen, ob bereits ein Eintrag mit diesem Titel existiert (case-insensitive)
@@ -98,11 +109,13 @@ try {
 
     // Abschluss
     $conn->commit();
-    echo json_encode(['success' => 'Helferstunden erfolgreich gespeichert.']);
+    echo json_encode(['success' => true, 'message' => 'Helferstunden gespeichert.']);
 
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['message' => 'Fehler beim Speichern: ' . $e->getMessage()]);
+    error_log('save_jshelfer: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Die Helferstunden konnten nicht gespeichert werden; es wurde nichts geändert. Deine Eingaben sind noch da, bitte nochmals speichern.']);
 }
 
 $conn->close();

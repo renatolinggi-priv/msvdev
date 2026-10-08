@@ -309,7 +309,13 @@
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
       body: JSON.stringify(requestData)
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (r.ok) return r.json();
+      // Fehlerantwort (z.B. PHP-Fehlerseite) nie roh anzeigen; Status für die Weiche unten mitgeben
+      return msvFetchMessage(r, 'Die Bestellung konnte nicht gespeichert werden.').then(function(m) {
+        var e = new Error(m); e.status = r.status; throw e;
+      });
+    })
     .then(function(data) {
       if (data.success) {
         msvToast('Bestellung erfolgreich gespeichert', 'success');
@@ -323,11 +329,15 @@
       }
     })
     .catch(function(err) {
-      if (err.message && err.message.indexOf('403') !== -1) {
+      if (err.status === 401 || err.status === 403) {
         msvToast('Sitzung abgelaufen – Seite wird neu geladen', 'danger');
         setTimeout(function() { window.location.reload(); }, 2000);
+      } else if (err.status) {
+        msvToast(err.message, 'danger');                 // Klartext vom Server bzw. nach Status
+      } else if (err instanceof TypeError) {             // fetch ohne Antwort
+        msvToast('Keine Verbindung zum Server. Die Bestellung ist nicht gespeichert, die Eingaben sind noch da.', 'danger');
       } else {
-        msvToast('Netzwerkfehler: ' + err.message, 'danger');
+        msvToast('Die Antwort des Servers war unlesbar. Bitte die Liste prüfen, bevor du nochmals speicherst.', 'danger');
       }
     })
     .finally(function() {
