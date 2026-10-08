@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.53.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Ranglisten: «Absenden vorbereiten»",
+        "beschreibung": "Neue Karte oben auf der Seite: Eine Prüfliste zeigt für das gewählte Jahr, ob noch Mitglieder offene Stiche haben, ob alle Partnerinnen erfasst sind und wie viele Wanderpreise schon einen Gewinner haben, jeweils mit Link zur Stelle, wo es zu erledigen ist; oben rechts steht «bereit fürs Absenden» oder wie viele Punkte offen sind. Daneben die drei Dokumente fürs Absenden mit Formatangabe: Absendenbuch (Word), Broschüre (PDF) und Gesamtrangliste (PDF), mit Druckknopf. Die übrigen Ranglisten und Listen stehen darunter unter «Weitere Ranglisten und Listen». Fehlermeldungen beim Laden und Erstellen sind lesbar statt eines rohen Status-Texts. Behoben: Am Seitenende stand ein verkürztes PHP-Tag vor dem Einbinden des Seitenfusses. Braucht die Datenbank-Aktualisierung 083 (Hilfetexte).",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.51.0",
     "datum": "2026-10-08",
     "aenderungen": [
