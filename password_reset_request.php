@@ -35,9 +35,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // E-Mail senden
         $reset_link = "https://jahresmeisterschaft.msvwilen.ch/password_reset.php?token=$token";
-        $subject = "Passwort zurücksetzen";
+        // Betreff und Text als UTF-8 kennzeichnen, sonst kommen «ü» und «Ü» je nach Mailprogramm verstümmelt an
+        $subject = '=?UTF-8?B?' . base64_encode('MSV Wilen – Passwort zurücksetzen') . '?=';
         $message_email = "Hallo\n\nÜber den folgenden Link setzt du dein Passwort für MSV Wilen neu. Er ist eine Stunde gültig:\n\n$reset_link\n\nFalls du das nicht angefordert hast, kannst du diese E-Mail ignorieren.";
-        $headers = "From: noreply@msvwilen.ch\r\n";
+        $headers = "From: noreply@msvwilen.ch\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n";
 
         mail($email, $subject, $message_email, $headers);
     }

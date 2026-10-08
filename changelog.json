@@ -14,6 +14,12 @@
         "beschreibung": "Die Lösch-Bestätigung zeigt Namen mit Sonderzeichen (z.B. «&» oder «<») jetzt als Text an, statt sie als HTML zu deuten; das galt vorher nur auf einem Teil der Seiten. Im Vereinscup heissen die Resultatfelder «Pkt» statt «Res» und werden vom Screenreader als «Punkte» angesagt. Der Seitentitel in der Kopf-Card ist jetzt die Hauptüberschrift der Seite, das Aussehen bleibt gleich.",
         "typ": "verbesserung",
         "admin_only": true
+      },
+      {
+        "titel": "Passwort-Mail mit korrekten Umlauten",
+        "beschreibung": "Die Mail «Passwort zurücksetzen» ist jetzt als UTF-8 gekennzeichnet; Betreff und Text kommen auch in Mailprogrammen ohne Raten richtig an («zurücksetzen» statt «zurÃ¼cksetzen»). Der Betreff nennt neu den Verein.",
+        "typ": "fix",
+        "admin_only": true
       }
     ]
   },
