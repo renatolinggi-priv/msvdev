@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-08T16:00:00+02:00",
+  "title": "Design System: MSV Wilen – Admin",
+  "extensions": {
+    "colorMeta": {
+      "akzent":        { "role": "primary",   "displayName": "Ruhiges Signalblau", "canonical": "oklch(55.0% 0.161 262)", "tonalRamp": ["#000135", "#011c5c", "#143986", "#2c58b1", "#4c7cdb", "#76a3fa", "#a1caff", "#e6efff"] },
+      "akzent-dunkel": { "role": "primary",   "displayName": "Tiefes Amtsblau" },
+      "akzent-hell":   { "role": "primary",   "displayName": "Helles Auswahlblau" },
+      "k-blau":        { "role": "secondary", "displayName": "Tiefes Amtsblau (Speichern/Bearbeiten)" },
+      "k-gruen":       { "role": "secondary", "displayName": "Tannengrün (Anlegen/Import)", "canonical": "oklch(51.5% 0.110 157)", "tonalRamp": ["#001301", "#002f12", "#004e2a", "#156f44", "#459267", "#73b68e", "#a1dab6", "#e6f2ea"] },
+      "k-tuerkis":     { "role": "secondary", "displayName": "Petroltürkis (Export/PDF/Drucken)", "canonical": "oklch(49.3% 0.081 206)", "tonalRamp": ["#001117", "#002c33", "#004a52", "#086a74", "#448d96", "#73b1b9", "#a0d6dd", "#e6f1f2"] },
+      "k-rot":         { "role": "secondary", "displayName": "Signalrot (nur Löschen/Fehler)", "canonical": "oklch(50.0% 0.182 30)", "tonalRamp": ["#2e0000", "#560000", "#800000", "#ac1d13", "#d15041", "#f27e6d", "#ffaa9a", "#ffe8e4"] },
+      "k-grau":        { "role": "secondary", "displayName": "Schiefergrau (Abbrechen/neutral)" },
+      "ok-fg":         { "role": "tertiary",  "displayName": "Erledigt-Grün" },
+      "ok-bg":         { "role": "tertiary",  "displayName": "Erledigt-Grün hell" },
+      "ok-rand":       { "role": "tertiary",  "displayName": "Erledigt-Grün Rand" },
+      "warn-punkt":    { "role": "tertiary",  "displayName": "Bernstein", "canonical": "oklch(66.6% 0.157 58)", "tonalRamp": ["#220000", "#451000", "#6a2b00", "#924600", "#bf6500", "#e98a34", "#ffb46e", "#fbebdf"] },
+      "warn-fg":       { "role": "tertiary",  "displayName": "Bernstein Text" },
+      "warn-bg":       { "role": "tertiary",  "displayName": "Bernstein hell" },
+      "warn-zeile":    { "role": "tertiary",  "displayName": "Offene Zeile" },
+      "warn-rand":     { "role": "tertiary",  "displayName": "Bernstein Rand" },
+      "fehler":        { "role": "tertiary",  "displayName": "Fehlerrot" },
+      "fehler-bg":     { "role": "tertiary",  "displayName": "Fehlerrosa" },
+      "fehler-rand":   { "role": "tertiary",  "displayName": "Fehlerrosa Rand (nur in msv-oeffentlich.css als Token; msv-ui.css schreibt den Wert direkt)" },
+      "grund":         { "role": "neutral",   "displayName": "Bürogrund" },
+      "flaeche":       { "role": "neutral",   "displayName": "Papierweiss" },
+      "flaeche-2":     { "role": "neutral",   "displayName": "Leicht getönt" },
+      "hover":         { "role": "neutral",   "displayName": "Hover-Grau" },
+      "gewaehlt":      { "role": "neutral",   "displayName": "Auswahl-Hauch" },
+      "rand":          { "role": "neutral",   "displayName": "Kartenrand" },
+      "linie":         { "role": "neutral",   "displayName": "Trennlinie" },
+      "linie-zart":    { "role": "neutral",   "displayName": "Zarte Linie" },
+      "feldrand":      { "role": "neutral",   "displayName": "Feldrand" },
+      "text":          { "role": "neutral",   "displayName": "Tinte", "canonical": "oklch(25.5% 0.031 260)", "tonalRamp": ["#050b17", "#1b2433", "#37404f", "#565e6c", "#79818e", "#9ea5b0", "#c5cbd4", "#edeef2"] },
+      "text-2":        { "role": "neutral",   "displayName": "Zweittext" },
+      "text-3":        { "role": "neutral",   "displayName": "Dritttext" }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Seitentitel", "purpose": "Titel in der Kopf-Card, einmal pro Seite." },
+      "title":    { "displayName": "Panel-Titel", "purpose": "Kopf des Slide-Panels." },
+      "title-sm": { "displayName": "Card-Titel", "purpose": "Titel von Tabellen-Cards und Abschnitten in Erfassungskarten." },
+      "body":     { "displayName": "Grundschrift", "purpose": "Ganze App, mit Tabellenziffern." },
+      "body-sm":  { "displayName": "Bedienelemente", "purpose": "btn-sm, Filter, Status, Chips." },
+      "label":    { "displayName": "Spaltenlabel", "purpose": "Tabellenköpfe, Gruppenzeilen, Export-Gruppen; Versalien, nur über Daten." },
+      "zahl":     { "displayName": "Total", "purpose": "Totale in Erfassungskarten und Schnellerfassung." }
+    },
+    "shadows": [
+      { "name": "panel", "value": "-10px 0 30px rgba(26, 35, 50, .14)", "purpose": "Slide-Panel über der Seite." },
+      { "name": "dialog", "value": "0 16px 40px rgba(26, 35, 50, .18)", "purpose": "Bootstrap-Modals." },
+      { "name": "menue", "value": "0 8px 24px rgba(26, 35, 50, .12)", "purpose": "Dropdown-Menüs." },
+      { "name": "segment", "value": "0 1px 2px rgba(16, 24, 40, .12)", "purpose": "Aktiver Knopf im Segment-Schalter." },
+      { "name": "oeffentliche-karte", "value": "0 1px 2px rgba(26, 35, 50, .04), 0 8px 24px rgba(26, 35, 50, .06)", "purpose": "Einzelkarte der öffentlichen Seiten." },
+      { "name": "overlay", "value": "rgba(26, 35, 50, .28)", "purpose": "Abdunklung hinter dem Slide-Panel (Hintergrundfarbe, kein Schatten)." }
+    ],
+    "motion": [
+      { "name": "farbe", "value": "color .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease", "purpose": "Hover und Fokus an Knöpfen; nur Farbe, keine Lage." },
+      { "name": "panel", "value": "right 0.3s cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Ein- und Ausfahren des Slide-Panels." },
+      { "name": "fortschritt", "value": "width .4s ease", "purpose": "Füllung des Fortschrittsbalkens." }
+    ],
+    "breakpoints": [
+      { "name": "mobil", "value": "767.98px", "purpose": "Tabellen werden zu Karten, Erfassungskarten stapeln, Padding 12px." },
+      { "name": "md", "value": "768px", "purpose": "Kopf-Card ab hier sichtbar (ohne $page_show_mobile)." },
+      { "name": "lg", "value": "992px", "purpose": "Sidebar-Navigation ab hier, darunter Off-Canvas." }
+    ],
+    "layout": {
+      "contentWidths": { "content-width-wide": "1500px", "content-width-default": "1200px", "content-width-narrow": "850px" },
+      "sidebarWidth": "280px",
+      "panelWidthDefault": "500px",
+      "loadOrder": ["bootstrap 5.3", "css/msv-styles.css", "css/fixes/resultate-unified.css", "css/mobile-cards.css", "header inline <style>", "css/msv-ui.css", "$page_specific_css"]
+    }
+  },
+  "components": [
+    {
+      "name": "Hauptknopf",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Die eine gefüllte Hauptaktion einer Fläche (Seite, Panel, Dialog), meist Speichern.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Speichern</button>",
+      "css": ".ds-btn { font-family: var(--ui-schrift, 'IBM Plex Sans', sans-serif); font-size: 0.8rem; font-weight: 600; line-height: 1.5; padding: 0.2rem 0.6rem; border-radius: 7px; border: 1px solid transparent; cursor: pointer; transition: color .15s ease, background-color .15s ease, border-color .15s ease; } .ds-btn-primary { background: var(--ui-k-blau, #2b52a0); border-color: var(--ui-k-blau, #2b52a0); color: #fff; } .ds-btn-primary:hover { background: #22448a; border-color: #22448a; } .ds-btn-primary:active { background: #1e3f80; border-color: #1e3f80; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ui-akzent-dunkel, #2b52a0); outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline-Knöpfe nach Zweck",
+      "kind": "button",
+      "refersTo": "button-outline-anlegen",
+      "description": "Grün Anlegen/Import, Blau Speichern/Bearbeiten, Türkis Export/PDF, Rot nur Löschen, Grau Abbrechen; alle btn-sm.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-ob ds-ob-gruen\">Neu</button><button class=\"ds-ob ds-ob-blau\">Bearbeiten</button><button class=\"ds-ob ds-ob-tuerkis\">PDF</button><button class=\"ds-ob ds-ob-rot\">Löschen</button><button class=\"ds-ob ds-ob-grau\">Abbrechen</button></div>",
+      "css": ".ds-row { display: flex; gap: 8px; flex-wrap: wrap; } .ds-ob { font-family: var(--ui-schrift, 'IBM Plex Sans', sans-serif); font-size: 0.8rem; font-weight: 600; line-height: 1.5; padding: 0.2rem 0.6rem; border-radius: 7px; border: 1px solid; background: #fff; cursor: pointer; transition: color .15s ease, background-color .15s ease, border-color .15s ease; } .ds-ob:focus-visible { outline: 2px solid #2b52a0; outline-offset: 2px; } .ds-ob-gruen { color: #1f7a4d; border-color: #1f7a4d; } .ds-ob-gruen:hover { color: #fff; background: #1f7a4d; } .ds-ob-blau { color: #2b52a0; border-color: #3b6cce; } .ds-ob-blau:hover { color: #fff; background: #2b52a0; border-color: #2b52a0; } .ds-ob-tuerkis { color: #0e6e78; border-color: #0e6e78; } .ds-ob-tuerkis:hover { color: #fff; background: #0e6e78; } .ds-ob-rot { color: #b42318; border-color: #b42318; } .ds-ob-rot:hover { color: #fff; background: #b42318; } .ds-ob-grau { color: #5a6577; border-color: #d5dbe3; } .ds-ob-grau:hover { color: #1a2332; background: #f1f5f9; }"
+    },
+    {
+      "name": "Kopf-Card",
+      "kind": "card",
+      "refersTo": "kopf-card",
+      "description": "Seitenkopf: Titel, «?»-Hilfe und Jahr links, Aktionen rechts.",
+      "html": "<header class=\"ds-kopf\"><div class=\"ds-kopf-titel\"><h2>Heimmeisterschaft Resultaterfassung</h2><button class=\"ds-help\" aria-label=\"Hilfe\">?</button><select class=\"ds-jahr\"><option>2026</option></select></div><div class=\"ds-row\"><button class=\"ds-ob-t\">PDF</button><button class=\"ds-fill\">Speichern</button></div></header>",
+      "css": ".ds-kopf { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; padding: 14px 20px; background: #fff; border: 1px solid #e8ecf1; border-radius: 12px; font-family: 'IBM Plex Sans', sans-serif; color: #1a2332; } .ds-kopf-titel { display: flex; align-items: center; gap: 4px 14px; } .ds-kopf h2 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; } .ds-help { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #d5dbe3; background: #fff; color: #5a6577; font-size: 0.8rem; cursor: pointer; } .ds-help:hover { border-color: #3b6cce; color: #2b52a0; background: #e8f0fe; } .ds-jahr { font: inherit; font-size: 0.9rem; font-weight: 600; padding: 0.2rem 0.5rem; border: 1px solid #d5dbe3; border-radius: 8px; background: #f8fafb; } .ds-jahr:focus-visible { outline: none; border-color: #2b52a0; box-shadow: 0 0 0 1px #2b52a0; } .ds-row { display: flex; gap: 8px; } .ds-ob-t, .ds-fill { font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 7px; cursor: pointer; } .ds-ob-t { color: #0e6e78; border: 1px solid #0e6e78; background: #fff; } .ds-ob-t:hover { color: #fff; background: #0e6e78; } .ds-fill { color: #fff; background: #2b52a0; border: 1px solid #2b52a0; } .ds-fill:hover { background: #22448a; }"
+    },
+    {
+      "name": "Tabellen-Card mit Filter und Suche",
+      "kind": "card",
+      "refersTo": "inhalts-card",
+      "description": "Weisse Karte mit Kopfzeile (Titel, Segment-Filter, Suche) und Zeilenzuständen offen und gewählt.",
+      "html": "<section class=\"ds-karte\"><div class=\"ds-tab-kopf\"><span class=\"ds-tab-titel\">Mitglieder</span><div class=\"ds-filter\"><button aria-pressed=\"true\">Alle <span>42</span></button><button aria-pressed=\"false\">Offen <span>5</span></button></div><label class=\"ds-suche\"><input placeholder=\"Name suchen\"></label></div><table class=\"ds-tab\"><thead><tr><th>Name</th><th>Total</th><th>Status</th></tr></thead><tbody><tr><td>Meier Hans</td><td>762</td><td><span class=\"ds-status ok\"><i></i>erfasst</span></td></tr><tr class=\"ds-offen\"><td>Keller Anna</td><td>–</td><td><span class=\"ds-status offen\"><i></i>offen</span></td></tr><tr class=\"ds-sel\"><td>Huber Beat</td><td>748</td><td><span class=\"ds-status ok\"><i></i>erfasst</span></td></tr></tbody></table></section>",
+      "css": ".ds-karte { background: #fff; border: 1px solid #e8ecf1; border-radius: 12px; overflow: hidden; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; color: #1a2332; font-variant-numeric: tabular-nums; } .ds-tab-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 10px 20px; border-bottom: 1px solid #eef1f5; } .ds-tab-titel { font-weight: 600; font-size: 0.95rem; } .ds-filter { display: flex; gap: 2px; padding: 2px; background: #f1f4f8; border-radius: 8px; } .ds-filter button { height: 26px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 0.8rem; font-weight: 600; color: #1a2332; cursor: pointer; } .ds-filter button:hover { background: rgba(255,255,255,.65); } .ds-filter button[aria-pressed=\"true\"] { background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.12); } .ds-filter button span { font-weight: 500; color: #5a6577; } .ds-suche { margin-left: auto; width: 17rem; max-width: 100%; height: 30px; display: flex; align-items: center; padding: 0 10px; border: 1px solid #d5dbe3; border-radius: 8px; background: #f8fafb; } .ds-suche:focus-within { border-color: #2b52a0; box-shadow: 0 0 0 1px #2b52a0; } .ds-suche input { border: 0; outline: 0; background: transparent; flex: 1; font: inherit; font-size: 0.85rem; } .ds-tab { width: 100%; border-collapse: separate; border-spacing: 0; } .ds-tab th { background: #f8fafb; color: #5a6577; font-size: 0.71875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; padding: 8px 20px; border-bottom: 1px solid #eef1f5; } .ds-tab td { padding: 8px 20px; border-bottom: 1px solid #f1f4f8; } .ds-tab tbody tr:hover > td { background: #f8fafb; } .ds-offen > td { background: #fffbeb; } .ds-offen:hover > td { background: #fef6d8 !important; } .ds-sel > td { background: #eef4ff !important; box-shadow: inset 0 2px 0 #3b6cce, inset 0 -2px 0 #3b6cce; } .ds-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; } .ds-status i { width: 8px; height: 8px; border-radius: 50%; } .ds-status.ok { color: #166534; } .ds-status.ok i { background: #166534; } .ds-status.offen { color: #92400e; } .ds-status.offen i { background: #d97706; }"
+    },
+    {
+      "name": "Eingabefeld",
+      "kind": "input",
+      "refersTo": "feld",
+      "description": "Feld mit Feldrand; Fokus als scharfer 1px-Ring in Amtsblau; Fehler über aria-invalid.",
+      "html": "<div class=\"ds-felder\"><input class=\"ds-feld\" value=\"Wilen\"><input class=\"ds-feld\" aria-invalid=\"true\" value=\"112\"></div>",
+      "css": ".ds-felder { display: flex; gap: 10px; } .ds-feld { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; color: #1a2332; padding: 0.375rem 0.75rem; border: 1px solid #d5dbe3; border-radius: 8px; background: #fff; } .ds-feld:focus { outline: 0; border-color: #2b52a0; box-shadow: 0 0 0 1px #2b52a0; } .ds-feld[aria-invalid=\"true\"] { border-color: #b42318; background: #fef3f2; color: #b42318; box-shadow: 0 0 0 1px #b42318; }"
+    },
+    {
+      "name": "Chips und Fortschritt",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Zähler und Stand in der zweiten Zeile der Kopf-Card.",
+      "html": "<div class=\"ds-stand\"><div class=\"ds-fort\"><span class=\"ds-zahl\">37 <span>von 42 erfasst</span></span><div class=\"ds-balken\"><span style=\"width:88%\"></span></div></div><span class=\"ds-chip\"><i></i><b>5</b> offen</span><span class=\"ds-chip\"><i class=\"neu\"></i><b>2</b> ungespeichert</span></div>",
+      "css": ".ds-stand { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 22px; font-family: 'IBM Plex Sans', sans-serif; color: #1a2332; } .ds-fort { display: flex; align-items: center; gap: 10px; } .ds-zahl { font-weight: 700; font-size: 0.95rem; } .ds-zahl span { font-weight: 500; font-size: 0.85rem; color: #5a6577; } .ds-balken { width: 160px; height: 6px; border-radius: 3px; background: #eef1f5; overflow: hidden; } .ds-balken span { display: block; height: 100%; background: #166534; border-radius: 3px; transition: width .4s ease; } .ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 6px; font-size: 0.8rem; background: #f4f6f9; color: #3d4757; } .ds-chip b { font-weight: 600; } .ds-chip i { width: 7px; height: 7px; border-radius: 50%; background: #d97706; } .ds-chip i.neu { background: #3b6cce; }"
+    },
+    {
+      "name": "Slide-Panel mit Erfassungskarte",
+      "kind": "custom",
+      "refersTo": "slide-panel",
+      "description": "Rechts einfahrendes Panel; Grund getönt, Erfassungskarten weiss, Total rechts, ein Hauptknopf im Fuss, Tastenhinweise.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-p-kopf\"><h6>Meier Hans</h6><button class=\"ds-x\" aria-label=\"Schliessen\">×</button></div><div class=\"ds-p-body\"><div class=\"ds-shot\"><div class=\"ds-shot-kopf\"><span>Endstich</span><span class=\"ds-total\">94</span></div><div class=\"ds-shot-felder\"><input value=\"10\"><input value=\"9\"><input value=\"10\"><input></div></div></div><div class=\"ds-p-fuss\"><span class=\"ds-tasten\"><kbd>Ctrl</kbd>+<kbd>S</kbd> speichern · <kbd>Esc</kbd> schliessen</span><button class=\"ds-fill\">Speichern</button></div></div>",
+      "css": ".ds-panel { width: 360px; display: flex; flex-direction: column; background: #fff; box-shadow: -10px 0 30px rgba(26,35,50,.14); font-family: 'IBM Plex Sans', sans-serif; color: #1a2332; font-variant-numeric: tabular-nums; } .ds-p-kopf { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e8ecf1; } .ds-p-kopf h6 { margin: 0; font-size: 1rem; font-weight: 700; } .ds-x { width: 28px; height: 28px; border: 1px solid #d5dbe3; border-radius: 7px; background: #fff; color: #5a6577; cursor: pointer; } .ds-x:hover { background: #f1f5f9; color: #1a2332; } .ds-p-body { padding: 14px; background: #f5f6fa; } .ds-shot { background: #fff; border: 1px solid #e8ecf1; border-radius: 10px; padding: 12px 14px; } .ds-shot-kopf { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 0.9rem; font-weight: 600; } .ds-total { font-size: 1.35rem; font-weight: 700; line-height: 1.1; } .ds-shot-felder { display: flex; gap: 6px; } .ds-shot-felder input { width: 38px; height: 36px; text-align: center; font: inherit; font-size: 0.95rem; border: 1px solid #d5dbe3; border-radius: 6px; background: #fbfcfd; } .ds-shot-felder input:focus { outline: 0; border-color: #2b52a0; box-shadow: 0 0 0 1px #2b52a0; background: #eef4ff; } .ds-p-fuss { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid #e8ecf1; } .ds-tasten { font-size: 0.78rem; color: #5a6577; } .ds-tasten kbd { display: inline-flex; min-width: 22px; justify-content: center; padding: 1px 5px; font: inherit; font-size: 0.75rem; font-weight: 700; border: 1px solid #d5dbe3; border-bottom-width: 2px; border-radius: 5px; background: #fff; color: #1a2332; } .ds-fill { font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 7px; color: #fff; background: #2b52a0; border: 1px solid #2b52a0; cursor: pointer; } .ds-fill:hover { background: #22448a; }"
+    },
+    {
+      "name": "Hinweise",
+      "kind": "custom",
+      "refersTo": "alert",
+      "description": "Flache Hinweise mit 1px-Rand im Ton, Radius 10px, ohne Seitenstreifen.",
+      "html": "<div class=\"ds-alerts\"><div class=\"ds-alert info\">Du arbeitest im Jahr 2025.</div><div class=\"ds-alert ok\">Gespeichert.</div><div class=\"ds-alert warn\">5 Resultate fehlen noch.</div><div class=\"ds-alert err\">Speichern fehlgeschlagen.</div></div>",
+      "css": ".ds-alerts { display: grid; gap: 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.9rem; } .ds-alert { padding: 10px 14px; border: 1px solid; border-radius: 10px; } .ds-alert.info { background: #eef4ff; border-color: #c9d9f7; color: #1e3f80; } .ds-alert.ok { background: #ecfdf3; border-color: #a7e9c0; color: #166534; } .ds-alert.warn { background: #fef3c7; border-color: #f7d98a; color: #92400e; } .ds-alert.err { background: #fef3f2; border-color: #f5c2bd; color: #b42318; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Das aufgeräumte Vereinsbüro",
+    "overview": "Der Admin-Bereich ist ein Arbeitsplatz für Ehrenamtliche, die am Abend am Laptop Resultate erfassen, Ranglisten erzeugen und Mitglieder pflegen. Er sieht aus wie ein gut geführtes Büro: heller, kühler Grund (`grund`), darauf weisse Flächen mit feinem Rand, links das Menü, oben jeder Seite eine Kopf-Card mit Titel, Jahr und Aktionen, darunter kompakte Tabellen. Bearbeitet wird in einem Slide-Panel, das von rechts einfährt, ohne die Liste zu verlassen. Das System stammt aus derselben Familie wie die Schwesterprojekte SFARL, JSK und EWS.\n\nDie Dichte ist bewusst hoch (Grundschrift 0.9rem, Knöpfe ~28px, Tabellenköpfe in kleinen Versalien), die Stimmung ruhig: keine Verläufe, keine farbigen Rahmen, keine Bewegung, die nicht etwas mitteilt. Farbe trägt Bedeutung, nicht Stimmung: ein dunkles Blau als Akzent und für Speichern, Grün für Anlegen, Türkis für Ausgaben, Rot nur für Gefahr. Das Vereinsrot des Logos bleibt im Logo.\n\nZahlen stehen im Zentrum der Arbeit (Passen, Stiche, Totale, Ränge). Deshalb rechnet die ganze Oberfläche mit Tabellenziffern, und Totale erhalten eine eigene, grössere Zahlenrolle.",
+    "keyCharacteristics": [
+      "Heller Grund, weisse Karten mit 1px-Rand, flach (keine Schatten auf Karten)",
+      "Eine Kopf-Card pro Seite: Titel, «?»-Hilfe und Jahr links, Aktionen rechts",
+      "Kompakte Tabellen mit Zeilenzuständen (offen, gewählt) statt Symbolen",
+      "Slide-Panel rechts für Bearbeiten und Erfassen",
+      "Knopffarbe = Zweck; alle Knöpfe Outline und klein, genau ein gefüllter Hauptknopf je Fläche",
+      "IBM Plex Sans, lokal ausgeliefert, Tabellenziffern überall"
+    ],
+    "rules": [
+      { "name": "The Vereinsrot-im-Logo Rule", "body": "Das Rot des Vereinslogos kommt in der Oberfläche nicht vor. Rot (`k-rot`) bedeutet ausschliesslich Gefahr: Löschen, Fehler, ungültige Eingabe. Vereinsidentität (Name, Logo, Farbe) bleibt eine austauschbare Schicht.", "section": "colors" },
+      { "name": "The Farbe-ist-Zweck Rule", "body": "Eine Farbe wird nie zur Dekoration eingesetzt. Wer Grün sieht, legt an; wer Türkis sieht, bekommt ein Dokument; wer Rot sieht, löscht.", "section": "colors" },
+      { "name": "The Token-Pflicht Rule", "body": "Farben in `$page_specific_css` und neuem CSS kommen aus den `--ui-*` Variablen, nie als Hex-Wert.", "section": "colors" },
+      { "name": "The Tabellenziffern Rule", "body": "`font-variant-numeric: tabular-nums` gilt global am `body`. Zahlen stehen untereinander; keine Proportionalziffern in Ranglisten oder Rastern.", "section": "typography" },
+      { "name": "The Eine-Familie Rule", "body": "Keine zweite Schrift, keine Systemschrift als Auszeichnung, keine externen Schriftserver. Schrift wird lokal ausgeliefert (CSP `font-src 'self'`).", "section": "typography" },
+      { "name": "The Eine-Breitenklasse Rule", "body": "Die Breite einer Seite steht in genau einer Klasse am `.main-content-wrapper`, nirgends sonst.", "section": "layout" },
+      { "name": "The Kopf-Card Rule", "body": "Jede Admin-Seite beginnt mit dem Partial `partials/page_header.inc.php`. Seitentitel = Menütext = Browser-Tab.", "section": "layout" },
+      { "name": "The Flach-bis-es-schwebt Rule", "body": "Ein Schatten zeigt an, dass etwas über der Seite liegt (Panel, Dialog, Menü). Karten in der Seite bekommen nie einen.", "section": "elevation" },
+      { "name": "The Kein-Hüpfen Rule", "body": "Hover verändert Farbe, nie Lage: kein `translateY`, kein Anheben, kein Schatten beim Überfahren.", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** jede Seite mit `partials/page_header.inc.php` beginnen; Seitentitel = Menütext = Browser-Tab.",
+      "**Do** die Jahresauswahl in `$page_title_after` neben den Titel setzen, hinter die «?»-Hilfe, und dann `$page_show_mobile = true`.",
+      "**Do** die Breite mit genau einer Klasse `content-width-wide|default|narrow` am `.main-content-wrapper` setzen.",
+      "**Do** alle Knöpfe als Outline nach Zweck und `btn-sm`: grün Anlegen/Hochladen/Import, blau Speichern/Bearbeiten, türkis Export/PDF/Drucken, rot nur Löschen, grau Abbrechen/neutral.",
+      "**Do** pro Fläche (Seite, Panel, Dialog) höchstens einen gefüllten `btn-primary` für die Hauptaktion verwenden.",
+      "**Do** `$page_specific_css` als rohes CSS schreiben (der Header wrappt es in `<style>`) und Farben darin nur über `--ui-*` angeben.",
+      "**Do** die «?»-Hilfe (`.btn-help`, `data-help=\"seite.thema\"`) neben Seiten-, Card- und Abschnittstitel setzen und den Text als Migration mitliefern.",
+      "**Do** Erklärungen an Knöpfen über `data-tooltip` geben.",
+      "**Do** auf Seiten mit Tastenkürzeln (Ctrl+S, Enter, Esc) die Leiste `.ui-tasten` mit `kbd` zeigen.",
+      "**Do** Zustände über Zeilenfarbe und Statuspunkt zeigen (`tr.ui-offen`, `.ui-status`), Auswahl über `tr.selected`/`.ui-markiert`.",
+      "**Do** Bearbeiten im Slide-Panel über `partials/side_panel.inc.php`; Löschen bestätigen mit `msvConfirmDelete`.",
+      "**Do** Token-Änderungen in `msv-ui.css` von Hand in `msv-oeffentlich.css` nachziehen."
+    ],
+    "donts": [
+      "**Don't** Verläufe einsetzen (`linear-gradient`, `radial-gradient`) – auch nicht für Ränge oder Fortschritt.",
+      "**Don't** farbige Seitenstreifen (`border-left` über 1px als Akzent) an Karten, Hinweisen oder Menüeinträgen.",
+      "**Don't** Hover mit Bewegung: kein `transform: translateY`, kein Anheben, kein Hover-Schatten.",
+      "**Don't** Vereinsrot ausserhalb des Logos zeigen; Rot nur für Gefahr.",
+      "**Don't** `title=` für Tooltips verwenden.",
+      "**Don't** die «?»-Hilfe pro Knopf setzen.",
+      "**Don't** ein eigenes `max-width` auf Seiten setzen.",
+      "**Don't** `<style>` oder `<link>` in `$page_specific_css` schreiben.",
+      "**Don't** Karten in Karten verschachteln oder Karten einen Schatten geben.",
+      "**Don't** Hex-Farben in neues Seiten-CSS schreiben.",
+      "**Don't** neue Optik in `css/msv-styles.css` oder `css/fixes/resultate-unified.css` ablegen; Aussehen gehört nach `msv-ui.css`.",
+      "**Don't** eine zweite Schrift oder externe Schriftserver einbinden."
+    ]
+  }
+}

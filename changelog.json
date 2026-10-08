@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.47.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Fragebogen: ganzes Jahr löschen entfernt; unbenutzte Dateien weg",
+        "beschreibung": "In der Fragebogen-Auswertung gibt es den Knopf «Alle Antworten des Jahres löschen» nicht mehr, passend zum Entscheid, dass ganze Jahre nicht gelöscht werden; der zugehörige Endpunkt ist entfernt. Ebenfalls entfernt, weil nirgends mehr aufgerufen: die alte Seite password_change.php im Hauptverzeichnis (das Menü nutzt inc/password_change.php), das Löschen eines Cup-Jahres (delete_cup.php), das frühere JM-Sammelspeichern (save_jmresultate.php, load_jmresultate_form.php) und das Löschen eines Partnerinnen-Jahres (delete_year_data.php). Braucht die Datenbank-Aktualisierung 079 (Hilfetext).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.46.0",
     "datum": "2026-10-08",
     "aenderungen": [

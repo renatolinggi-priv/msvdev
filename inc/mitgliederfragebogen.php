@@ -42,20 +42,6 @@ include 'partials/page_header.inc.php'; ?>
                                 <i class="bi bi-eye me-1"></i><span class="nnt-text">Nicht-Teilnehmer anzeigen</span>
                                 <span id="nntCount" class="badge bg-secondary ms-1">0</span>
                             </button>
-                            <?php
-                            $ac_id = 'fragebogenActions';
-                            ob_start(); ?>
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <button id="delete-btn" type="button" class="btn btn-outline-danger btn-sm w-100">
-                                            <i class="bi bi-trash me-1"></i>Alle Antworten des Jahres löschen
-                                        </button>
-                                    </div>
-                                </div>
-                            <?php
-                            $ac_body = ob_get_clean();
-                            include 'partials/action_card.inc.php';
-                            ?>
                         </div>
 
                         <!-- Tabelle -->
@@ -231,21 +217,6 @@ $(function () {
         }));
     }
 
-    // Alle Antworten eines Jahres löschen
-    $('#delete-btn').on('click', async function () {
-        const year = $('#yearSelect').val();
-        const result = await msvConfirmDelete('alle Fragebogen-Antworten für ' + year);
-        if (!result.isConfirmed) return;
-        const $btn = $(this), orig = $btn.html();
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Lösche...');
-        $.post('fragebogen/delete_fragebogen.php', { year, csrf_token: $('input[name="csrf_token"]').val() }, null, 'json')
-            .done(function (r) {
-                if (r && r.success) { msvToast((r.count || 0) + ' Antworten gelöscht', 'success'); loadFragebogen(year); }
-                else msvToast((r && r.message) || 'Fehler beim Löschen', 'error');
-            })
-            .fail(xhr => msvToast(ajaxMsg(xhr, 'Fehler beim Löschen der Einträge'), 'error'))
-            .always(() => $btn.prop('disabled', false).html(orig));
-    });
 });
 </script>
 
