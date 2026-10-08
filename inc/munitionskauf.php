@@ -630,11 +630,11 @@ include 'header.inc.php';
             <!-- Kompakte Zeile: Jahr / Datum / Anlass -->
             <div class="compact-form-row">
               <div class="form-group" style="flex: 1; min-width: 160px;">
-                <label><i class="bi bi-calendar-event me-1"></i>Kaufdatum</label>
+                <label for="kaufDatum"><i class="bi bi-calendar-event me-1"></i>Kaufdatum</label>
                 <input type="date" id="kaufDatum" class="form-control form-control-sm" required>
               </div>
               <div class="form-group" style="flex: 0 0 100%;">
-                <label><i class="bi bi-tag me-1"></i>Anlass</label>
+                <label for="anlass"><i class="bi bi-tag me-1"></i>Anlass</label>
                 <input type="text" id="anlass" class="form-control form-control-sm" placeholder="z.B. Training, Feldschiessen...">
               </div>
             </div>
@@ -642,14 +642,14 @@ include 'header.inc.php';
             <!-- Mitglied / Gast: nebeneinander -->
             <div class="kaeufer-row">
               <div class="form-group">
-                <label><i class="bi bi-person me-1"></i>Mitglied</label>
+                <label for="mitgliedSelect"><i class="bi bi-person me-1"></i>Mitglied</label>
                 <select id="mitgliedSelect" class="form-select form-select-sm">
                   <option value="">– Mitglied wählen –</option>
                 </select>
               </div>
               <div class="separator">oder</div>
               <div class="form-group">
-                <label><i class="bi bi-person-plus me-1"></i>Gast</label>
+                <label for="gastName"><i class="bi bi-person-plus me-1"></i>Gast</label>
                 <input type="text" class="form-control form-control-sm" id="gastName" placeholder="Gast-Name eingeben">
               </div>
             </div>

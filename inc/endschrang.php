@@ -112,7 +112,7 @@ include 'header.inc.php';
                             <div class="export-group-label">Einzelwettbewerbe</div>
                             <div class="export-group-btns">
                                 <button class="btn btn-compact-standard btn-outline-info end-btn">
-                                    <i class="bi bi-award me-1"></i><span>Endstich</span>
+                                    <i class="bi bi-bullseye me-1"></i><span>Endstich</span>
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_end.php" data-druck-job="Endschiessen Endstich" aria-label="Endstich drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info sch-btn">
@@ -124,15 +124,15 @@ include 'header.inc.php';
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_kunst.php" data-druck-job="Endschiessen Kunst" aria-label="Kunst drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info glu-btn">
-                                    <i class="bi bi-dice-3 me-1"></i><span>Glück</span>
+                                    <i class="bi bi-clover me-1"></i><span>Glück</span>
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_glueck.php" data-druck-job="Endschiessen Glück" aria-label="Glück drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info zab-btn">
-                                    <i class="bi bi-cup-straw me-1"></i><span>Zabig</span>
+                                    <i class="bi bi-moon-stars me-1"></i><span>Zabig</span>
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_zabig.php" data-druck-job="Endschiessen Zabig" aria-label="Zabig drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info dif-btn">
-                                    <i class="bi bi-sliders me-1"></i><span>Differenzler</span>
+                                    <i class="bi bi-chat-square-text me-1"></i><span>Differenzler</span>
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_diff.php" data-druck-job="Endschiessen Differenzler" aria-label="Differenzler drucken"><i class="bi bi-printer"></i></button>
                             </div>
@@ -142,11 +142,11 @@ include 'header.inc.php';
                             <div class="export-group-label">Partner</div>
                             <div class="export-group-btns">
                                 <button class="btn btn-compact-standard btn-outline-info part-btn">
-                                    <i class="bi bi-people me-1"></i><span>Partner</span>
+                                    <i class="bi bi-heart me-1"></i><span>Partner</span>
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_partner.php" data-druck-job="Endschiessen Partner" aria-label="Partner drucken"><i class="bi bi-printer"></i></button>
                                 <button class="btn btn-compact-standard btn-outline-info sieer-btn">
-                                    <i class="bi bi-bullseye me-1"></i><span>Sie &amp; Er</span>
+                                    <i class="bi bi-people me-1"></i><span>Sie &amp; Er</span>
                                 </button>
                                 <button type="button" class="btn btn-compact-standard btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_sieer.php" data-druck-job="Endschiessen Sie und Er" aria-label="Sie und Er drucken"><i class="bi bi-printer"></i></button>
                             </div>

@@ -55,7 +55,7 @@ $page_specific_css = <<<'CSS'
 .h-date { font-size: 0.8rem; white-space: nowrap; color: var(--ui-text-2); }
 .h-time { text-align: center; font-size: 0.8rem; }
 .jsk-toggle { cursor: pointer; user-select: none; vertical-align: middle; transition: filter .15s, transform .15s; }
-.jsk-toggle:hover { filter: brightness(0.95); transform: translateY(-1px); }
+.jsk-toggle:hover { filter: brightness(0.95); }
 
 /* Kompakter Delete-Button */
 .btn-delete-sm {

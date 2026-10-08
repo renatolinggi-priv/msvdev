@@ -401,7 +401,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     <div class="shot-section shot-first">
       <div class="shot-section-head">
         <span class="shot-section-title"><i class="bi bi-card-list"></i>Stiche <button type="button" class="btn-help" data-help="endschloesen.definition" aria-label="Hilfe"></button></span>
-        <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddNewStich"><i class="bi bi-plus-lg me-1"></i>Neuer Stich</button>
+        <button type="button" class="btn btn-outline-success btn-sm" id="btnAddNewStich"><i class="bi bi-plus-lg me-1"></i>Neuer Stich</button>
       </div>
       <div class="shot-section-body">
         <div class="def-edit mb-3" id="defEdit" hidden>

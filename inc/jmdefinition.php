@@ -409,7 +409,7 @@ include 'partials/side_panel.inc.php';
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Abbrechen</button>
-        <button type="button" class="btn btn-outline-info btn-sm" id="copyApplyBtn"><i class="bi bi-check2-circle me-1"></i>Übernehmen</button>
+        <button type="button" class="btn btn-outline-success btn-sm" id="copyApplyBtn"><i class="bi bi-check2-circle me-1"></i>Übernehmen</button>
       </div>
     </div>
   </div>

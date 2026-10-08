@@ -50,11 +50,6 @@ if (!function_exists('cup_inject_cup_styles')) {
   position:relative; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center;
   background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:5px 10px;
 }
-.cardline::before{
-  content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:3px;
-  background: linear-gradient(180deg, var(--accent), #76a5ff);
-  opacity:.5;
-}
 .cardline.top1{ background: var(--gold); }
 .cardline.top2{ background: var(--silver); }
 .cardline.top3{ background: var(--bronze); }

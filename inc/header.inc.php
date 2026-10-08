@@ -155,7 +155,7 @@ $Seitentitel = get_page_title($conn);
 $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -295,8 +295,9 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
                         <div id="sessionWarning" class="alert alert-warning alert-dismissible fade show session-warning" role="alert"
                              style="position:fixed; right:1rem; bottom:1rem; z-index:1080;">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <strong>Session läuft ab!</strong><br>
-                            Automatische Abmeldung in 2 Min.
+                            <strong>Sitzung läuft bald ab</strong><br>
+                            Ohne Aktivität wirst du in 2 Minuten abgemeldet; offene Eingaben vorher speichern.
+                            <div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary" id="sessionBleiben">Angemeldet bleiben</button></div>
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     `);
@@ -304,6 +305,11 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
                 }
             }
 
+            // «Angemeldet bleiben»: eine Anfrage an die aktuelle Seite hält die Sitzung auf dem Server frisch;
+            // der Klick selbst setzt die Zeitgeber zurück und blendet den Hinweis aus.
+            $(document).on('click', '#sessionBleiben', function() {
+                fetch(location.href, { method: 'HEAD', credentials: 'same-origin', cache: 'no-store' }).catch(function() {});
+            });
             $(document).on('mousemove keypress click scroll', resetTimers);
             resetTimers();
         });

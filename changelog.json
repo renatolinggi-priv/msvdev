@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.54.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Schliff: Navigation, Sitzungswarnung, Login, Symbole und Knopffarben",
+        "beschreibung": "Navigation: Der aktive Eintrag ist in den Dropdowns und im Handymenü getönt statt mit einem blauen Seitenstreifen markiert, alle Menüfarben laufen über das Erscheinungsbild, der Unterstrich unter dem aktiven Menüpunkt springt nicht mehr herein, und in der Seitenleiste unterscheiden sich Darüberfahren (zart) und aktiver Eintrag (Akzent) wieder. Sitzungswarnung: «Sitzung läuft bald ab» statt «Session läuft ab!», mit Knopf «Angemeldet bleiben». Login: Meldungen in Du-Form wie im Rest der App. Endschiessen Ranglisten: Endstich, Glück, Zabig, Differenzler, Sie und Er und Partner haben dieselben Symbole wie in der Erfassung. Knopffarben nach Zweck: «Neuer Stich» (Endschiessen lösen) und «Übernehmen» (JM-Definition vom Vorjahr) sind grün wie alles, was anlegt. Kein Anheben beim Darüberfahren mehr bei den Termin-Schaltern, kein Verlaufsstreifen an den Karten der Cup-Rangliste. Munitionskauf: Die Feldbeschriftungen sind mit ihren Feldern verbunden. Seitensprache de-CH.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.53.0",
     "datum": "2026-10-08",
     "aenderungen": [

@@ -541,8 +541,8 @@ class NavigationManager {
     --nav-shadow: 0 2px 4px rgba(0,0,0,0.08);
     --nav-shadow-scrolled: 0 4px 12px rgba(0,0,0,0.12);
     --nav-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --nav-active-color: #2563eb;
-    --nav-active-bg: rgba(52, 152, 219, 0.12);
+    --nav-active-color: var(--ui-akzent-dunkel);
+    --nav-active-bg: var(--ui-akzent-hell);
     --nav-sidebar-w: 280px;
 }
 
@@ -614,13 +614,13 @@ class NavigationManager {
 }
 
 .navbar-nav .nav-link:hover {
-    background: rgba(52, 152, 219, 0.08);
+    background: var(--ui-hover);
 }
 
 /* Subtilerer Active-Style */
 .navbar-nav .nav-link.active {
-    background: rgba(52, 152, 219, 0.12);
-    color: #2563eb !important;
+    background: var(--ui-akzent-hell);
+    color: var(--ui-akzent-dunkel) !important;
     font-weight: 600;
     position: relative;
 }
@@ -633,14 +633,8 @@ class NavigationManager {
     left: 20%;
     right: 20%;
     height: 3px;
-    background: var(--bs-primary, #0d6efd);
+    background: var(--ui-akzent);
     border-radius: 3px;
-    animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-    from { width: 0; left: 50%; right: 50%; }
-    to { left: 20%; right: 20%; }
 }
 
 .navbar-nav .nav-item.ms-auto,
@@ -649,7 +643,7 @@ class NavigationManager {
 }
 
 .navbar-nav .nav-link.user-menu {
-    background: rgba(52, 152, 219, 0.1);
+    background: var(--ui-hover);
     padding: 0.3rem 0.6rem !important;
     border-radius: 20px;
     font-size: 0.85rem;
@@ -671,7 +665,7 @@ class NavigationManager {
 /* Hover-Indikator für Dropdown-Toggle */
 @media (min-width: 992px) {
     .navbar .nav-item.dropdown:hover .nav-link {
-        background: rgba(52, 152, 219, 0.08);
+        background: var(--ui-hover);
     }
 }
 
@@ -690,16 +684,14 @@ class NavigationManager {
 }
 
 .navbar .dropdown-item:hover {
-    background: rgba(52, 152, 219, 0.1);
+    background: var(--ui-hover);
 }
 
 /* Subtilerer Active-Style für Dropdown Items */
 .navbar .dropdown-item.active {
-    background: rgba(52, 152, 219, 0.15);
-    color: #2563eb;
+    background: var(--ui-akzent-hell);
+    color: var(--ui-akzent-dunkel);
     font-weight: 600;
-    border-left: 3px solid #3498db;
-    padding-left: calc(0.75rem - 3px);
 }
 
 .navbar .dropdown-item i {
@@ -738,7 +730,7 @@ class NavigationManager {
 }
 
 .navbar .dropdown-submenu-toggle:hover {
-    background: rgba(52, 152, 219, 0.1);
+    background: var(--ui-hover);
 }
 
 .navbar .dropdown-submenu-toggle i {
@@ -933,11 +925,9 @@ class NavigationManager {
     }
 
     .mobile-nav-link.active {
-        background: rgba(52, 152, 219, 0.1);
-        color: #2563eb;
+        background: var(--ui-akzent-hell);
+        color: var(--ui-akzent-dunkel);
         font-weight: 600;
-        border-left: 4px solid #3498db;
-        padding-left: 16px;
     }
 
     .mobile-nav-link i.bi-chevron-down {
@@ -984,8 +974,8 @@ class NavigationManager {
     }
 
     .mobile-submenu-link.active {
-        background: rgba(52, 152, 219, 0.15);
-        color: #2563eb;
+        background: var(--ui-akzent-hell);
+        color: var(--ui-akzent-dunkel);
         font-weight: 600;
     }
 
@@ -1054,11 +1044,9 @@ class NavigationManager {
     }
 
     .mobile-user-menu-link.active {
-        background: rgba(52, 152, 219, 0.1);
-        color: #2563eb;
+        background: var(--ui-akzent-hell);
+        color: var(--ui-akzent-dunkel);
         font-weight: 600;
-        border-left: 4px solid #3498db;
-        padding-left: 16px;
     }
 
     .mobile-user-menu-link i {
@@ -1191,11 +1179,12 @@ class NavigationManager {
     }
     body.nav-sidebar .offcanvas-nav .mobile-nav-link:hover,
     body.nav-sidebar .offcanvas-nav .mobile-nav-link.active {
-        background: var(--sb-accent-light);
-        color: var(--sb-accent-dark);
         border-left: 0;
         padding-left: 1rem;
     }
+    /* Hover zart, aktiv in der Akzentfarbe (vorher sahen beide gleich aus) */
+    body.nav-sidebar .offcanvas-nav .mobile-nav-link:hover { background: var(--ui-hover); color: var(--sb-text); }
+    body.nav-sidebar .offcanvas-nav .mobile-nav-link.active { background: var(--sb-accent-light); color: var(--sb-accent-dark); font-weight: 600; }
     body.nav-sidebar .offcanvas-nav .mobile-nav-link i.bi-chevron-down {
         font-size: 0.7rem;
     }

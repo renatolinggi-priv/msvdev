@@ -176,11 +176,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Meldungen für Logout und Timeout
 if (isset($_GET['logout'])) {
-    $success = "Sie wurden erfolgreich abgemeldet.";
+    $success = "Du bist abgemeldet.";
 }
 
 if (isset($_GET['timeout'])) {
-    $error = "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.";
+    $error = "Deine Sitzung ist abgelaufen. Bitte melde dich neu an.";
 }
 
 if (isset($_GET['registered'])) {
@@ -198,7 +198,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
 ?>
 
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -690,7 +690,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
                         <i class="bi bi-arrow-clockwise me-2"></i>
                         Passwort zurücksetzen
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
                 </div>
                 <div class="modal-body">
                     <form id="passwordResetForm">
@@ -801,7 +801,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
                         $('#passwordResetMessage').html(`
                             <div class="alert alert-danger">
                                 <i class="bi bi-exclamation-triangle me-2"></i>
-                                Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.
+                                Das hat nicht geklappt. Bitte versuch es später noch einmal.
                             </div>
                         `);
                         msvToast('Fehler beim Senden der E-Mail', 'error');
