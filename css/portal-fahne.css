@@ -1,0 +1,397 @@
+/* ============================================================
+   Mitgliederportal «Vereinsfahne» – neue Mitglieder-Optik (Okt 2026)
+   Laedt nur, wenn portal/portal_header.php die Vorschau aktiv hat
+   (<html class="portal-fahne">). Alle Regeln haengen an html.portal-fahne:
+   ohne Vorschau aendert diese Datei nichts.
+
+   Welt: Die Fahne aus dem Vereinslogo traegt den Kopf jeder Seite (Fahnenrot),
+   darunter ruhiger Inhalt. Koenigsblau aus der Zielscheibe fuer Knoepfe, Links
+   und Daten, Loewengold nur fuer Ehre (Kranz, Rang, Wanderpreis, naechster Anlass).
+   Flach: keine Schatten, keine Verlaeufe. Grundschrift 16px, nichts unter 12px,
+   Text >= 4.5:1, Tippflaechen >= 44px.
+
+   Vereins-Schicht (--verein*, --akzent*, --ehre*): pro Verein austauschbar
+   (PRODUCT.md Prinzip 5). Die alten Portal-Tokens (--primary-color, --p-text …)
+   werden darauf abgebildet, damit alle Seiten sofort mitziehen.
+   ============================================================ */
+
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('fonts/ibm-plex-sans/ibm-plex-sans-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('fonts/ibm-plex-sans/ibm-plex-sans-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Tokens -------------------------------------------------------- */
+html.portal-fahne {
+    /* Vereins-Schicht (aus dem Logo gemessen) */
+    --verein:        #c00000;   /* Fahnenrot, weisse Schrift 6.5:1 */
+    --verein-tief:   #9a0000;
+    --verein-hell:   #fbeaea;
+    --akzent:        #0052a0;   /* Koenigsblau der Zielscheibe, 7.7:1 auf Weiss */
+    --akzent-tief:   #003f7d;
+    --akzent-hell:   #e6eef8;
+    --ehre:          #ffe707;   /* Loewengold, nur mit --ehre-text darauf */
+    --ehre-text:     #3d3200;
+    --ehre-hell:     #fff6bf;
+
+    /* Neutrale Welt */
+    --tinte:         #1a1a24;
+    --tinte-2:       #5f636d;   /* Nebentext, 5.8:1 auf Weiss */
+    --grund:         #f2f2f0;
+    --flaeche:       #ffffff;
+    --linie:         #e2e2dd;
+    --linie-stark:   #8b8c85;   /* Feldrand, 3.4:1 */
+    --gefahr:        #b42318;   /* nie Farbe allein: immer mit Symbol und Text */
+    --gefahr-hell:   #fef3f2;
+    --gut:           #1f7a4d;
+    --gut-hell:      #e8f4ed;
+    --warn-hell:     #fff4d6;
+    --warn-text:     #7a4a00;
+    --radius:        10px;
+    --radius-sm:     8px;
+
+    /* Alte Portal-Tokens auf die Welt abbilden */
+    --primary-color:   var(--akzent);
+    --secondary-color: var(--tinte-2);
+    --success-color:   var(--gut);
+    --danger-color:    var(--gefahr);
+    --p-text:          var(--tinte);
+    --p-text-muted:    var(--tinte-2);
+    --p-border:        var(--linie);
+    --p-radius:        var(--radius);
+    --p-radius-sm:     var(--radius-sm);
+    --p-shadow:        none;
+    --p-shadow-hover:  none;
+
+    /* Bootstrap-Bruecke */
+    --bs-primary: #0052a0;
+    --bs-primary-rgb: 0, 82, 160;
+    --bs-danger: #b42318;
+    --bs-danger-rgb: 180, 35, 24;
+    --bs-success: #1f7a4d;
+    --bs-success-rgb: 31, 122, 77;
+    --bs-body-color: #1a1a24;
+    --bs-body-color-rgb: 26, 26, 36;
+    --bs-secondary-color: #5f636d;
+    --bs-border-color: #e2e2dd;
+    --bs-link-color: #0052a0;
+    --bs-link-color-rgb: 0, 82, 160;
+    --bs-link-hover-color: #003f7d;
+    --bs-link-hover-color-rgb: 0, 63, 125;
+    --bs-focus-ring-color: rgba(0, 82, 160, .5);
+    --bs-body-font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+    font-size: 16px;
+    caret-color: var(--akzent);
+    accent-color: var(--akzent);
+    scrollbar-color: var(--linie-stark) transparent;
+}
+
+/* ---- Grundlagen ---------------------------------------------------- */
+html.portal-fahne body {
+    font-family: var(--bs-body-font-family);
+    background: var(--grund);
+    color: var(--tinte);
+}
+.portal-fahne ::selection { background: #cfe0f3; color: var(--tinte); }
+.portal-fahne a { text-underline-offset: .18em; }
+.portal-fahne :focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
+.portal-fahne .portal-navbar :focus-visible,
+.portal-fahne .offcanvas-header :focus-visible { outline-color: #fff; }
+.portal-fahne .text-muted { color: var(--tinte-2) !important; }
+
+/* ---- Fahnenkopf ---------------------------------------------------- */
+.portal-fahne .portal-navbar {
+    background: var(--verein);
+    border-bottom: 0;
+    box-shadow: none;
+    --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+.portal-fahne .portal-navbar .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+.portal-fahne .portal-brand-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #fff;
+    vertical-align: middle;
+}
+.portal-fahne .fahne-vorschau {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-transform: none;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 999px;
+    padding: .05rem .5rem;
+}
+.portal-fahne .portal-navbar .nav-link {
+    color: #fff;
+    font-size: .875rem;
+}
+.portal-fahne .portal-navbar .nav-link:hover,
+.portal-fahne .portal-navbar .nav-link:focus { background: rgba(255, 255, 255, .14); color: #fff; }
+.portal-fahne .portal-navbar .nav-link.active { background: rgba(255, 255, 255, .16); color: #fff; font-weight: 700; }
+.portal-fahne .portal-navbar .nav-link.active::after { background: #fff; height: 3px; bottom: -3px; }
+.portal-fahne .portal-user-badge {
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .55);
+}
+.portal-fahne .portal-bell .portal-bell-btn,
+.portal-fahne .portal-bell .portal-bell-btn:hover { color: #fff; min-width: 44px; min-height: 44px; }
+.portal-fahne .portal-bell .bn-badge { background-color: #fff !important; color: var(--verein-tief); font-weight: 700; }
+.portal-fahne .navbar-toggler { color: #fff; }
+.portal-fahne .navbar-toggler:focus { box-shadow: none; }
+
+/* Aufklappmenues (Desktop-Navigation, Benutzermenue, Glocke) */
+.portal-fahne .portal-navbar .dropdown-menu { border-color: var(--linie); box-shadow: 0 6px 18px rgba(26, 26, 36, .12); }
+.portal-fahne .portal-navbar .dropdown-item { color: var(--tinte); font-size: .9375rem; padding-top: .55rem; padding-bottom: .55rem; }
+.portal-fahne .portal-navbar .dropdown-item i { color: var(--tinte-2); }
+.portal-fahne .portal-navbar .dropdown-item:hover,
+.portal-fahne .portal-navbar .dropdown-item:focus { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .portal-navbar .dropdown-item.active,
+.portal-fahne .portal-navbar .dropdown-item:active { background: var(--akzent-hell); color: var(--akzent-tief); font-weight: 700; }
+.portal-fahne .portal-navbar .dropdown-item.active i,
+.portal-fahne .portal-navbar .dropdown-item:hover i { color: var(--akzent); }
+.portal-fahne .bn-dd-head { color: var(--tinte); border-color: var(--linie); }
+.portal-fahne .bn-dd-head .bn-mark-all { color: var(--akzent); font-size: .8125rem; padding: .5rem .25rem; }
+.portal-fahne .bn-item { border-color: var(--linie); }
+.portal-fahne .bn-item.unread { background: var(--akzent-hell); }
+.portal-fahne .bn-item-icon { color: var(--akzent); }
+.portal-fahne .bn-item-title { color: var(--tinte); font-size: .9rem; }
+.portal-fahne .bn-item-text { color: var(--tinte-2); font-size: .8125rem; }
+.portal-fahne .bn-item-time { color: var(--tinte-2); font-size: .75rem; }
+.portal-fahne .bn-dd-foot { color: var(--akzent); border-color: var(--linie); font-size: .875rem; }
+
+/* ---- Menue am Handy ------------------------------------------------ */
+@media (max-width: 991.98px) {
+    .portal-fahne .offcanvas-nav { box-shadow: 4px 0 18px rgba(26, 26, 36, .18); }
+    .portal-fahne .offcanvas-header { background: var(--verein); border-bottom: 0; min-height: var(--nav-height); }
+    .portal-fahne .offcanvas-title {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        color: #fff;
+        font-size: .95rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+    .portal-fahne .offcanvas-title .portal-brand-logo { width: 32px; height: 32px; margin: 0 !important; }
+    .portal-fahne .offcanvas-close { color: #fff; min-width: 44px; min-height: 44px; }
+    .portal-fahne .offcanvas-close:active { background: rgba(255, 255, 255, .16); }
+    .portal-fahne .mobile-nav-item { border-color: var(--linie); }
+    .portal-fahne .mobile-nav-link { color: var(--tinte); font-size: 1rem; min-height: 48px; padding: .6rem 1rem; }
+    .portal-fahne .mobile-nav-link i { color: var(--tinte-2); font-size: 1.05rem; width: 24px; margin-right: .75rem; }
+    .portal-fahne .mobile-nav-link:active { background: var(--grund); }
+    .portal-fahne .mobile-nav-link.active {
+        background: var(--akzent-hell);
+        color: var(--akzent-tief);
+        font-weight: 700;
+        border-left: 0;
+        padding-left: 1rem;
+    }
+    .portal-fahne .mobile-nav-link.active i { color: var(--akzent); }
+    .portal-fahne .mobile-nav-link.text-danger,
+    .portal-fahne .mobile-nav-link.text-danger i { color: var(--gefahr) !important; }
+    .portal-fahne .mobile-user-section { background: var(--grund); border-top: 1px solid var(--linie); }
+    .portal-fahne .mobile-user-icon { background: var(--verein); }
+    .portal-fahne .mobile-user-name { color: var(--tinte); font-size: 1rem; }
+    .portal-fahne .mobile-user-role { color: var(--tinte-2); font-size: .8125rem; }
+}
+
+/* ---- Seitentitel --------------------------------------------------- */
+.portal-fahne .portal-page-header h1 {
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--tinte);
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    overflow-wrap: break-word;
+}
+@media (max-width: 767.98px) {
+    .portal-fahne .portal-page-header h1 { font-size: 1.25rem; }
+}
+.portal-fahne .portal-back-link { color: var(--tinte-2); font-size: .9375rem; min-height: 44px; }
+.portal-fahne .portal-back-link:hover { color: var(--akzent); }
+@media (max-width: 767.98px) {
+    .portal-fahne .portal-back-fab { background: var(--akzent); box-shadow: 0 3px 10px rgba(26, 26, 36, .25); }
+    .portal-fahne .portal-back-fab:hover,
+    .portal-fahne .portal-back-fab:active { background: var(--akzent-tief); transform: none; }
+}
+
+/* ---- Flaechen: flach, feiner Rand, kein Anheben -------------------- */
+.portal-fahne .p-card,
+.portal-fahne .portal-card,
+.portal-fahne .p-section,
+.portal-fahne .p-list-row,
+.portal-fahne .p-stat,
+.portal-fahne .result-summary,
+.portal-fahne .passe-list {
+    background: var(--flaeche);
+    border-color: var(--linie);
+    box-shadow: none;
+}
+.portal-fahne .portal-card:hover,
+.portal-fahne .p-card.is-clickable:hover,
+.portal-fahne a.p-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--linie-stark);
+}
+.portal-fahne .p-section-title {
+    font-size: .8125rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--tinte);
+}
+.portal-fahne .p-eyebrow { font-size: .75rem; color: var(--tinte-2); }
+.portal-fahne .p-info-row { font-size: .9375rem; }
+.portal-fahne .p-list-title { font-size: 1rem; }
+.portal-fahne .p-list-meta { font-size: .8125rem; color: var(--tinte-2); }
+
+/* Zahlen gross, Beschriftung klein und lesbar */
+.portal-fahne .p-stat .label,
+.portal-fahne .result-summary .rs-lbl { font-size: .75rem; color: var(--tinte-2); }
+.portal-fahne .result-summary .rs-num { font-size: 1.5rem; }
+.portal-fahne .passe-row .passe-score { font-size: 1.25rem; }
+.portal-fahne .passe-row .passe-status { font-size: .75rem; color: var(--tinte-2); }
+.portal-fahne .p-stat.total { border-top: 1px solid var(--linie); background: var(--akzent-hell); }
+.portal-fahne .p-stat.total .number,
+.portal-fahne .result-summary .rs-item.total .rs-num { color: var(--akzent-tief); }
+.portal-fahne .p-stat .label i { color: var(--akzent); }
+
+/* Ehre: Kranz in Loewengold */
+.portal-fahne .passe-row.kranz { background: var(--ehre-hell); }
+.portal-fahne .passe-row.kranz .passe-score,
+.portal-fahne .passe-row.kranz .passe-status { color: var(--ehre-text); }
+
+/* ---- Icon-Chips in den Farben der Welt ----------------------------- */
+.portal-fahne .p-chip.blue   { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .p-chip.green  { background: var(--gut-hell);    color: #1a6640; }
+.portal-fahne .p-chip.orange { background: var(--ehre-hell);   color: var(--ehre-text); }
+.portal-fahne .p-chip.red    { background: var(--verein-hell); color: var(--verein-tief); }
+.portal-fahne .p-chip.purple,
+.portal-fahne .p-chip.gray   { background: #ececea;           color: var(--tinte-2); }
+
+/* ---- Knoepfe ------------------------------------------------------- */
+.portal-fahne .p-btn.primary,
+.portal-fahne .btn-club { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.portal-fahne .p-btn.primary:hover,
+.portal-fahne .btn-club:hover,
+.portal-fahne .btn-club:focus { background: var(--akzent-tief); border-color: var(--akzent-tief); color: #fff; transform: none; box-shadow: none; }
+.portal-fahne .btn-outline-club { color: var(--akzent); border-color: var(--akzent); }
+.portal-fahne .btn-outline-club:hover { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.portal-fahne .p-btn.ghost { background: #ececea; color: var(--tinte); }
+.portal-fahne .p-btn.ghost:hover { background: #e2e2dd; }
+.portal-fahne .btn-primary {
+    --bs-btn-bg: var(--akzent); --bs-btn-border-color: var(--akzent);
+    --bs-btn-hover-bg: var(--akzent-tief); --bs-btn-hover-border-color: var(--akzent-tief);
+    --bs-btn-active-bg: var(--akzent-tief); --bs-btn-active-border-color: var(--akzent-tief);
+    --bs-btn-disabled-bg: var(--akzent); --bs-btn-disabled-border-color: var(--akzent);
+    --bs-btn-focus-shadow-rgb: 0, 82, 160;
+}
+.portal-fahne .btn-outline-primary {
+    --bs-btn-color: var(--akzent); --bs-btn-border-color: var(--akzent);
+    --bs-btn-hover-bg: var(--akzent); --bs-btn-hover-border-color: var(--akzent);
+    --bs-btn-active-bg: var(--akzent-tief); --bs-btn-active-border-color: var(--akzent-tief);
+    --bs-btn-disabled-color: var(--akzent); --bs-btn-disabled-border-color: var(--akzent);
+    --bs-btn-focus-shadow-rgb: 0, 82, 160;
+}
+.portal-fahne .btn-success {
+    --bs-btn-bg: var(--gut); --bs-btn-border-color: var(--gut);
+    --bs-btn-hover-bg: #186240; --bs-btn-hover-border-color: #186240;
+    --bs-btn-active-bg: #186240; --bs-btn-active-border-color: #186240;
+}
+.portal-fahne .btn-outline-success {
+    --bs-btn-color: var(--gut); --bs-btn-border-color: var(--gut);
+    --bs-btn-hover-bg: var(--gut); --bs-btn-hover-border-color: var(--gut);
+    --bs-btn-active-bg: #186240; --bs-btn-active-border-color: #186240;
+}
+.portal-fahne .btn-danger {
+    --bs-btn-bg: var(--gefahr); --bs-btn-border-color: var(--gefahr);
+    --bs-btn-hover-bg: #8f1c13; --bs-btn-hover-border-color: #8f1c13;
+    --bs-btn-active-bg: #8f1c13; --bs-btn-active-border-color: #8f1c13;
+}
+.portal-fahne .btn-outline-danger {
+    --bs-btn-color: var(--gefahr); --bs-btn-border-color: var(--gefahr);
+    --bs-btn-hover-bg: var(--gefahr); --bs-btn-hover-border-color: var(--gefahr);
+    --bs-btn-active-bg: #8f1c13; --bs-btn-active-border-color: #8f1c13;
+}
+.portal-fahne .btn-outline-secondary {
+    --bs-btn-color: var(--tinte-2); --bs-btn-border-color: var(--linie-stark);
+    --bs-btn-hover-bg: #ececea; --bs-btn-hover-color: var(--tinte); --bs-btn-hover-border-color: var(--linie-stark);
+    --bs-btn-active-bg: #e2e2dd; --bs-btn-active-color: var(--tinte); --bs-btn-active-border-color: var(--linie-stark);
+}
+
+/* Tippflaechen am Touchscreen: mindestens 44px */
+@media (pointer: coarse) {
+    .portal-fahne .btn,
+    .portal-fahne .p-btn,
+    .portal-fahne .form-select-sm,
+    .portal-fahne .form-control-sm { min-height: 44px; }
+    .portal-fahne .btn-sm { padding-left: .75rem; padding-right: .75rem; font-size: .875rem; }
+    .portal-fahne .btn:has(> .bi:only-child) { min-width: 44px; }
+}
+
+/* ---- Formulare: 16px gegen iOS-Zoom, deutlicher Rand und Fokus ----- */
+.portal-fahne .form-control,
+.portal-fahne .form-select,
+.portal-fahne .p-field input,
+.portal-fahne .p-field select,
+.portal-fahne .p-field textarea { border-color: var(--linie-stark); color: var(--tinte); }
+.portal-fahne .p-field > label,
+.portal-fahne .form-label { font-size: .8125rem; color: var(--tinte-2); font-weight: 600; }
+.portal-fahne input:focus,
+.portal-fahne select:focus,
+.portal-fahne textarea:focus,
+.portal-fahne .form-control:focus,
+.portal-fahne .form-select:focus {
+    border-color: var(--akzent);
+    outline: 2px solid var(--akzent);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+@media (max-width: 991.98px) {
+    .portal-fahne input:not([type=checkbox]):not([type=radio]):not([type=range]),
+    .portal-fahne select,
+    .portal-fahne textarea { font-size: 16px !important; }
+}
+
+/* ---- Fusszeile ----------------------------------------------------- */
+html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .8125rem !important; }
+
+/* ---- Weniger Bewegung, wenn gewuenscht ----------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .portal-fahne *,
+    .portal-fahne *::before,
+    .portal-fahne *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

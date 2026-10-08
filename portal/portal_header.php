@@ -52,13 +52,43 @@ if (isJungschuetze()) {
 $portal_user_name = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'Mitglied';
 $portal_user_role = $_SESSION['user_role'] ?? 'mitglied';
 $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
+
+// Vorschau «Vereinsfahne» (neue Mitglieder-Optik, Okt 2026): nur Admins sehen sie, per Schalter im
+// Benutzermenü (?vorschau=an|aus, Cookie 30 Tage). Alle anderen sehen das bisherige Portal, bis der
+// Benutzer die neue Optik freigibt. Stil: css/portal-fahne.css, alle Regeln unter html.portal-fahne.
+$portal_fahne = false;
+$portal_vorschau_link = '';
+if (isAdmin()) {
+    $__seite = basename($_SERVER['PHP_SELF']);
+    if (isset($_GET['vorschau']) && in_array($_GET['vorschau'], ['an', 'aus'], true)) {
+        $__an = ($_GET['vorschau'] === 'an');
+        $__q = $_GET;
+        unset($__q['vorschau']);
+        if (!headers_sent()) {
+            setcookie('msv_portal_fahne', $__an ? '1' : '', [
+                'expires'  => $__an ? time() + 30 * 86400 : time() - 3600,
+                'path'     => '/',
+                'secure'   => !empty($_SERVER['HTTPS']),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+            header('Location: ' . $__seite . ($__q ? '?' . http_build_query($__q) : ''));
+            exit;
+        }
+        $_COOKIE['msv_portal_fahne'] = $__an ? '1' : '';
+    }
+    $portal_fahne = (($_COOKIE['msv_portal_fahne'] ?? '') === '1');
+    $__q = $_GET;
+    $__q['vorschau'] = $portal_fahne ? 'aus' : 'an';
+    $portal_vorschau_link = htmlspecialchars($__seite . '?' . http_build_query($__q), ENT_QUOTES, 'UTF-8');
+}
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH"<?php echo $portal_fahne ? ' class="portal-fahne"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#3b5998">
+    <meta name="theme-color" content="<?php echo $portal_fahne ? '#c00000' : '#3b5998'; ?>">
     <title><?php echo htmlspecialchars($portal_page_title); ?> - MSV Wilen</title>
 
     <!-- iOS PWA: Remember-Token in localStorage sichern (persistiert nach App-Neustart) -->
@@ -563,6 +593,9 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
         /* Seitenspezifische Styles koennen via $portal_page_css eingebunden werden */
         <?php echo $portal_page_css ?? ''; ?>
     </style>
+    <?php if ($portal_fahne): ?>
+    <link rel="stylesheet" href="../css/portal-fahne.css?v=<?php echo @filemtime(__DIR__ . '/../css/portal-fahne.css') ?: '1'; ?>">
+    <?php endif; ?>
 </head>
 <body class="<?php echo htmlspecialchars($portal_body_class ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <?php
@@ -644,7 +677,11 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <nav class="navbar navbar-expand-lg fixed-top portal-navbar">
         <div class="container-fluid" style="max-width: 1200px;">
             <a class="navbar-brand" href="dashboard.php">
+                <?php if ($portal_fahne): ?>
+                <img src="../icons/icon-96x96.png" alt="" width="36" height="36" class="portal-brand-logo"><span>MSV Wilen</span><span class="fahne-vorschau">Vorschau</span>
+                <?php else: ?>
                 <img src="../icons/icon-32x32.png" alt="MSV" width="22" height="22" style="border-radius:4px; vertical-align:-3px;"> MSV Wilen
+                <?php endif; ?>
             </a>
 
             <!-- Glocke + Hamburger: rechts gruppiert. Glocke immer sichtbar (neben dem
@@ -727,6 +764,14 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
+                            <?php if (isAdmin()): ?>
+                            <li>
+                                <a class="dropdown-item" href="<?php echo $portal_vorschau_link; ?>">
+                                    <i class="bi bi-flag me-2 text-muted"></i><?php echo $portal_fahne ? 'Vorschau «Vereinsfahne» aus' : 'Vorschau «Vereinsfahne» an'; ?>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
                             <?php if (!isJungschuetze()): ?>
                             <li>
                                 <a class="dropdown-item <?php echo $current_page == 'meine_daten.php' ? 'active' : ''; ?>" href="meine_daten.php">
@@ -764,7 +809,11 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
     <div class="offcanvas-overlay" id="portalOverlay"></div>
     <div class="offcanvas-nav" id="portalOffcanvas">
         <div class="offcanvas-header">
+            <?php if ($portal_fahne): ?>
+            <h5 class="offcanvas-title"><img src="../icons/icon-96x96.png" alt="" width="32" height="32" class="portal-brand-logo">MSV Wilen</h5>
+            <?php else: ?>
             <h5 class="offcanvas-title"><img src="../icons/icon-32x32.png" alt="MSV" width="20" height="20" style="border-radius:4px; vertical-align:-2px; margin-right:8px;">MSV Wilen Mitgliederportal</h5>
+            <?php endif; ?>
             <button class="offcanvas-close" id="portalMenuClose" aria-label="Schliessen">
                 <i class="bi bi-x"></i>
             </button>
@@ -801,6 +850,14 @@ $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
                     </div>
                 </div>
                 <ul class="mobile-nav-list">
+                    <?php if (isAdmin()): ?>
+                    <li class="mobile-nav-item">
+                        <a class="mobile-nav-link" href="<?php echo $portal_vorschau_link; ?>">
+                            <i class="bi bi-flag"></i>
+                            <?php echo $portal_fahne ? 'Vorschau «Vereinsfahne» aus' : 'Vorschau «Vereinsfahne» an'; ?>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                     <?php if (!isJungschuetze()): ?>
                     <li class="mobile-nav-item">
                         <a class="mobile-nav-link <?php echo $current_page == 'meine_daten.php' ? 'active' : ''; ?>" href="meine_daten.php">
