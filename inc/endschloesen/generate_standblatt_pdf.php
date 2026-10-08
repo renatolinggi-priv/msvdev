@@ -10,6 +10,8 @@ ini_set('log_errors', 1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../dbconnect.inc.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('plain'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 use Dompdf\Dompdf;
 use Dompdf\Options;

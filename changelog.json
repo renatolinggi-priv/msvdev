@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.40.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen – Stiche lösen: neuer Aufbau",
+        "beschreibung": "Jahr, Abrechnung (PDF und Direktdruck) und Definition stehen jetzt in der Kopf-Karte, dazu die Zahl der Teilnehmer nach Typ und die Summe des Jahres. Das Formular ist eine Karte mit durch Linien getrennten Abschnitten; Teilnehmertyp und Zahlungsart sind Segment-Schalter, gewählte Stiche erscheinen blau. Die Übersicht der erfassten Teilnehmer hat eine Suche, die bearbeitete Zeile ist umrandet. Behoben: Das Standblatt-PDF liess sich ohne Anmeldung abrufen. Braucht die Datenbank-Aktualisierung 075 (Hilfetexte, u.a. aktuelle Preisregeln für Gäste).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.39.0",
     "datum": "2026-10-08",
     "aenderungen": [

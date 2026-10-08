@@ -11,115 +11,70 @@ try {
 
 $page_specific_css = "
 /* =========================================
-   Endschiessen lösen – Formular links, Übersicht rechts
+   Endschiessen lösen – Formular links, Übersicht rechts (ab 1400 px nebeneinander)
    ========================================= */
-.main-content-wrapper {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-}
-.erfassung-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+.erfassung-layout { display: flex; flex-direction: column; gap: 14px; }
 .erfassung-form-col, .erfassung-table-col { min-width: 0; }
-.erfassung-form-col .content-background {
-    padding: 1.25rem 1.5rem !important;
-    background: #fff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 0.75rem !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-    margin-bottom: 0 !important;
-}
-.erfassung-table-col .table-wrapper {
-    margin-bottom: 0;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    overflow: hidden;
-}
-.erfassung-table-col .table-title {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-}
-/* Innenabstand der Karte: Tabelle klebt sonst am Rand */
-.erfassung-table-col .desktop-table-container { padding: 0.75rem 1.25rem 1.25rem; }
-.erfassung-table-col .table-responsive { max-height: calc(100vh - 230px); overflow-y: auto; }
-#erfassteTabelle thead th:first-child, #erfassteTabelle tbody td:first-child { padding-left: 0.75rem; }
 @media (min-width: 1400px) {
     .erfassung-layout { flex-direction: row; align-items: flex-start; }
     .erfassung-form-col { flex: 0 0 clamp(520px, 39%, 600px); }
     .erfassung-table-col { flex: 1 1 auto; min-width: 0; }
 }
+.es-karte { padding: 0 var(--ui-pad) var(--ui-pad); }
 
-/* Abschnitte im Formular: gleiche Sprache wie das Erfassungs-Panel (.shot-section zentral) */
-#stichForm .shot-section { padding: 1rem 0; }
-#stichForm .shot-section.shot-first { padding-top: 0; }
-#stichForm .shot-section-head { margin-bottom: 0.75rem; flex-wrap: wrap; }
-#stichForm .shot-section-title { font-size: 0.8rem; color: #475569; flex-wrap: wrap; }
-#stichForm .shot-hint { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
-#stichForm .panel-label { font-size: 0.82rem; color: #475569; }
-#stichForm .form-control, #stichForm .form-select { min-height: 2.5rem; }
-#stichForm .munition-toggle {
-    width: 100%; padding: 0; border: 0; background: transparent; text-align: left;
-}
-#stichForm .munition-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; border-radius: 0.25rem; }
+/* Abschnitte im Formular: durch Linien getrennt, keine Karten in der Karte */
+#stichForm .shot-section { margin: 0; padding: 14px 0; background: transparent; border: 0; border-top: 1px solid var(--ui-linie); border-radius: 0; }
+#stichForm .shot-section.shot-first { border-top: 0; }
+#stichForm .shot-section-head { margin-bottom: 10px; flex-wrap: wrap; }
+#stichForm .shot-hint { font-size: .8rem; line-height: 1.5; color: var(--ui-text-2); }
+#stichForm .panel-label { font-size: .8rem; font-weight: 500; color: var(--ui-text-2); }
+#stichForm .form-control, #stichForm .form-select { min-height: 2.25rem; }
+#stichForm .munition-toggle { width: 100%; padding: 0; border: 0; background: transparent; text-align: left; }
+#stichForm .munition-toggle:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 4px; border-radius: 4px; }
+#stichForm .munition-toggle[aria-expanded='false'] { margin-bottom: 0; }
+#munitionBadge { min-width: 0; font-size: .85rem; font-weight: 600; color: var(--ui-text); }
 
-/* Waffenwahl: gleiche Breite und Abstände wie die Mitgliedersuche */
-#stichForm .waffe-field { margin-top: 1rem; }
-#stichForm .waffe-field .panel-label { display: block; margin-bottom: 0.35rem; }
-#waffeSelect {
-    width: 100%; padding: 0.5rem 2.25rem 0.5rem 0.75rem;
-    font-size: 0.875rem; color: #334155; border-radius: 0.375rem;
-}
-#waffeHint { margin-top: 0.35rem; }
+/* Waffenwahl: gleiche Breite wie die Mitgliedersuche */
+#stichForm .waffe-field { margin-top: 10px; }
+#stichForm .waffe-field .panel-label { display: block; margin-bottom: 4px; }
+#waffeSelect { width: 100%; font-size: .875rem; }
+#waffeHint { margin-top: 4px; }
 #waffeHint:empty { display: none; }
 
-/* Teilnehmer-Umschalter */
-.typ-switch .btn { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
-.typ-switch .btn i { font-size: 0.85em; }
+/* Umschalter (Teilnehmer, Zahlung) als Segment-Schalter wie .ui-filter */
+#stichForm .typ-switch { display: inline-flex; gap: 2px; padding: 2px; background: #f1f4f8; border-radius: 8px; }
+#stichForm .typ-switch > .btn { margin: 0 !important; padding: 5px 12px; border: 0 !important; border-radius: 6px !important; background: transparent; color: var(--ui-text); font-size: .82rem; font-weight: 600; box-shadow: none; }
+#stichForm .typ-switch > .btn:hover { background: rgba(255, 255, 255, .65); color: var(--ui-text); }
+#stichForm .typ-switch > .btn-check:checked + .btn { background: #fff; color: var(--ui-text); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+#stichForm .typ-switch > .btn-check:focus-visible + .btn { outline: 2px solid var(--ui-akzent); outline-offset: 1px; }
+#stichForm .typ-switch .btn i { font-size: .85em; color: var(--ui-text-2); }
 
-/* Stich-Kacheln */
-.stich-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 0.65rem; }
+/* Stich-Kacheln: gewählt = Akzentfarbe */
+.stich-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
 @media (max-width: 575.98px) { .stich-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.stich-tile {
-    position: relative; container-type: inline-size;
-    display: flex; flex-direction: column;
-    border: 1px solid #dbe2ea; border-radius: 0.65rem; background: #fff;
-    user-select: none;
-    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
-}
-.stich-tile:hover { border-color: #b6c6d9; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.stich-tile:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; }
-.stich-tile-main {
-    position: relative; display: flex; flex: 1; flex-direction: column; gap: 0.55rem;
-    padding: 0.85rem 0.75rem 0.75rem; margin: 0; cursor: pointer;
-}
-.stich-tile .form-check-input {
-    position: absolute; left: 0.75rem; top: 0.95rem; margin: 0; cursor: pointer;
-}
+.stich-tile { position: relative; container-type: inline-size; display: flex; flex-direction: column; background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad); user-select: none; transition: border-color .15s, background-color .15s; }
+.stich-tile:hover { border-color: #c5ccd6; }
+.stich-tile:focus-within { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
+.stich-tile-main { position: relative; display: flex; flex: 1; flex-direction: column; gap: 6px; margin: 0; padding: 10px 10px 8px; cursor: pointer; }
+.stich-tile .form-check-input { position: absolute; left: 10px; top: 12px; margin: 0; cursor: pointer; }
 .stich-tile-head { display: flex; min-width: 0; padding-left: 1.5rem; }
 .stich-tile:has(.stich-tile-partner) .stich-tile-head { padding-right: 4rem; }
-.stich-tile-name { font-size: 0.9rem; font-weight: 600; color: #1e293b; line-height: 1.4; overflow-wrap: anywhere; }
-.stich-tile-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.5rem; margin-top: auto; font-size: 0.78rem; color: #64748b; }
-.stich-tile-meta .stich-price { font-weight: 600; color: #334155; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.stich-tile.selected { background: #f0fdf4; border-color: #86cfa2; }
-/* Gast: optionale Stiche (nicht im Kombi-Preis) leicht abgesetzt, mit Badge */
-.stich-tile-optional { border-style: dashed; background: #fafbfd; }
+.stich-tile-name { font-size: .875rem; font-weight: 600; line-height: 1.35; color: var(--ui-text); overflow-wrap: anywhere; }
+.stich-tile-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2px 8px; margin-top: auto; font-size: .78rem; color: var(--ui-text-2); }
+.stich-tile-meta .stich-price { margin-left: auto; white-space: nowrap; font-weight: 600; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+.stich-tile.selected { background: var(--ui-gewaehlt); border-color: var(--ui-akzent); box-shadow: 0 0 0 1px var(--ui-akzent); }
+.stich-tile.selected .stich-tile-meta .stich-price { color: var(--ui-akzent-dunkel); }
+.stich-tile .form-check-input:checked { background-color: var(--ui-akzent-dunkel); border-color: var(--ui-akzent-dunkel); }
+/* Gast: optionale Stiche (nicht im Kombi-Preis) gestrichelt, mit Symbol */
+.stich-tile-optional { border-style: dashed; background: var(--ui-flaeche-2); }
 .stich-tile-optional.selected { border-style: solid; }
-/* Symbol oben rechts in der Kachel (wie der Partner-Schalter bei Mitgliedern) */
-.stich-tile-badge { position: absolute; top: 0.55rem; right: 0.6rem; font-size: 0.85rem; line-height: 1; color: #64748b; pointer-events: auto; }
+.stich-tile-badge { position: absolute; top: 8px; right: 9px; font-size: .85rem; line-height: 1; color: var(--ui-text-3); pointer-events: auto; }
 .stich-tile-optional .stich-tile-head { padding-right: 1.5rem; }
-.stich-tile.selected .stich-tile-badge { color: #15803d; }
-.stich-tile .form-check-input:checked { background-color: #15803d; border-color: #15803d; }
-.stich-tile.selected .stich-tile-meta .stich-price { color: #15803d; }
-.stich-tile-partner {
-    position: absolute; top: 0.6rem; right: 0.5rem;
-    display: flex; align-items: center; gap: 0.3rem;
-    font-size: 0.75rem; color: #475569; cursor: pointer; margin: 0;
-    padding: 0.25rem; line-height: 1.5;
-}
+.stich-tile.selected .stich-tile-badge { color: var(--ui-akzent-dunkel); }
+.stich-tile-partner { position: absolute; top: 7px; right: 7px; display: flex; align-items: center; gap: 5px; margin: 0; padding: 4px; font-size: .75rem; line-height: 1.5; color: var(--ui-text-2); cursor: pointer; }
 .stich-tile-partner .partner-icon { display: none; }
-.stich-tile.selected .stich-tile-partner:has(:checked) { color: #15803d; font-weight: 600; }
-.stich-tile-partner .form-check-input { position: static; margin: 0; width: 1.1em; height: 1.1em; flex-shrink: 0; }
+.stich-tile.selected .stich-tile-partner:has(:checked) { color: var(--ui-akzent-dunkel); font-weight: 600; }
+.stich-tile-partner .form-check-input { position: static; flex-shrink: 0; width: 1.1em; height: 1.1em; margin: 0; }
 @container (max-width: 155px) {
     .stich-tile:has(.stich-tile-partner) .stich-tile-head { padding-right: 2.5rem; }
     .stich-tile-partner .partner-text { display: none; }
@@ -127,144 +82,95 @@ $page_specific_css = "
 }
 
 /* Zusatzmunition */
-.muni-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; }
-.muni-row + .muni-row { border-top: 1px solid #f1f5f9; }
-.muni-row .form-check { margin: 0; flex: 1 1 auto; }
-.muni-row .form-check-label { font-size: 0.85rem; }
-.muni-row .muni-price { font-size: 0.78rem; color: #475569; font-weight: 600; min-width: 5.5rem; text-align: right; }
+.muni-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.muni-row + .muni-row { border-top: 1px solid var(--ui-linie-zart); }
+.muni-row .form-check { flex: 1 1 auto; margin: 0; }
+.muni-row .form-check-label { font-size: .85rem; }
+.muni-row .muni-price { min-width: 5.5rem; text-align: right; font-size: .78rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
 .muni-row .muni-input { width: 5.5rem; text-align: center; }
-.muni-row .muni-label { flex: 1 1 auto; font-size: 0.82rem; }
+.muni-row .muni-label { flex: 1 1 auto; font-size: .82rem; }
 
 /* Total-Leiste */
-.total-actions-row {
-    display: flex; flex-direction: column; gap: 1rem;
-    margin-top: 1rem; padding: 1rem; border: 1px solid #dbe5f1; border-radius: 0.75rem;
-    background: #f4f7fb;
-}
-.total-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.total-kpi { display: flex; flex-direction: column; gap: 0.25rem; line-height: 1.2; }
-.total-kpi small { font-size: 0.72rem; color: #64748b; font-weight: 600; }
-.total-kpi strong { font-size: 1rem; color: #1e293b; font-variant-numeric: tabular-nums; }
+.total-actions-row { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; padding: 12px 14px; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad-l); }
+.total-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+.total-kpi { display: flex; flex-direction: column; gap: 3px; line-height: 1.2; }
+.total-kpi small { font-size: .72rem; font-weight: 600; color: var(--ui-text-2); }
+.total-kpi strong { font-size: 1rem; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .total-price-block { margin-left: auto; text-align: right; }
-.total-amount {
-    font-size: 1.45rem; font-weight: 700; color: #1e293b; white-space: nowrap;
-    font-variant-numeric: tabular-nums; line-height: 1.2;
-}
-.action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.action-buttons .btn { min-height: 2.6rem; padding: 0.5rem 0.75rem; }
+.total-amount { font-size: 1.45rem; font-weight: 700; line-height: 1.2; white-space: nowrap; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+.action-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 #btnSave { margin-left: auto; min-width: 8rem; font-weight: 600; }
 
-/* Übersichtstabelle */
-#erfassteTabelle th { font-size: 0.72rem; vertical-align: bottom; padding: 0.4rem 0.35rem; white-space: nowrap; }
-#erfassteTabelle .stich-header {
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    text-align: left; font-weight: 600; letter-spacing: 0.3px;
-    height: 92px; min-width: 24px; max-width: 28px; padding: 0.3rem 0.15rem !important;
-    text-transform: none;
-}
-#erfassteTabelle tbody td { vertical-align: middle; padding: 0.65rem 0.45rem; font-size: 0.85rem; border-bottom: 1px solid #eef2f7; }
+/* Übersicht (Tabellen-Card) */
+.es-tabelle { overflow: hidden; }
+.es-anzahl { margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: #f4f6f9; font-size: .78rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-tabelle .table-responsive { max-height: calc(100vh - 240px) !important; min-height: 0 !important; overflow: auto !important; }
+#erfassteTabelle { margin: 0; }
+#erfassteTabelle th { padding: 6px 5px; vertical-align: bottom; white-space: nowrap; font-size: .72rem; }
+#erfassteTabelle .stich-header { writing-mode: vertical-rl; transform: rotate(180deg); height: 92px; min-width: 24px; max-width: 28px; padding: 5px 2px !important; text-align: left; font-weight: 600; letter-spacing: .02em; text-transform: none; }
+#erfassteTabelle tbody td { padding: 8px 6px; vertical-align: middle; font-size: .85rem; border-bottom: 1px solid var(--ui-linie-zart); }
 #erfassteTabelle th, #erfassteTabelle td { border-right: 0; }
-#erfassteTabelle thead th { color: #475569; background-color: #f8fafc; }
-#erfassteTabelle td.check-cell { padding-left: 0.15rem; padding-right: 0.15rem; }
-#erfassteTabelle td.waffe-cell { white-space: nowrap; font-size: 0.75rem; color: #64748b; }
-#erfassteTabelle td.name-cell { white-space: nowrap; font-weight: 500; text-align: left; }
-#erfassteTabelle thead th:first-child { text-align: left; }
-#erfassteTabelle td.name-cell .typ-badge {
-    display: inline-block; margin-left: 0.4rem; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.4px; padding: 0.05rem 0.4rem; border-radius: 999px; background: #f1f5f9; color: #64748b; vertical-align: middle;
-}
-#erfassteTabelle td.name-cell .typ-badge.js { background: #dbeafe; color: #1d4ed8; }
-#erfassteTabelle td.check-cell { text-align: center; color: #16a34a; font-size: 0.95rem; }
-#erfassteTabelle td.check-cell .partner-mark { font-size: 0.6rem; color: #1d4ed8; vertical-align: super; }
-#erfassteTabelle td.check-cell .empty { color: #d9e0e8; }
-#erfassteTabelle td.muni-cell { white-space: nowrap; font-size: 0.75rem; color: #475569; }
-#erfassteTabelle td.muni-cell .muni-tag {
-    display: inline-block; padding: 0.05rem 0.4rem; border-radius: 4px; background: #f1f5f9; margin-right: 0.25rem;
-}
-#erfassteTabelle td.total-cell { text-align: right; font-weight: 700; white-space: nowrap; color: #1e293b; font-variant-numeric: tabular-nums; }
-#erfassteTabelle tbody tr.row-selected { background: rgba(74,144,217,0.08); box-shadow: inset 3px 0 0 #4a90d9; }
+#erfassteTabelle thead th:first-child, #erfassteTabelle tbody td:first-child { padding-left: 20px; text-align: left; }
+#erfassteTabelle thead th:last-child, #erfassteTabelle tbody td:last-child { padding-right: 16px; }
+#erfassteTabelle td.check-cell { padding-left: 2px; padding-right: 2px; text-align: center; font-size: .95rem; color: var(--ui-ok-fg); }
+#erfassteTabelle td.check-cell .partner-mark { font-size: .6rem; vertical-align: super; color: var(--ui-akzent-dunkel); }
+#erfassteTabelle td.check-cell .empty { color: #d5dbe3; }
+#erfassteTabelle td.waffe-cell { white-space: nowrap; font-size: .75rem; color: var(--ui-text-2); }
+#erfassteTabelle td.name-cell { white-space: nowrap; font-weight: 600; }
+#erfassteTabelle td.name-cell .typ-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: #f1f4f8; color: var(--ui-text-2); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: middle; }
+#erfassteTabelle td.name-cell .typ-badge.js { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
+#erfassteTabelle td.muni-cell { white-space: nowrap; font-size: .75rem; color: var(--ui-text-2); }
+#erfassteTabelle td.muni-cell .muni-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 4px; background: #f1f4f8; }
+#erfassteTabelle td.total-cell { text-align: right; white-space: nowrap; font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 #erfassteTabelle .dropdown-toggle::after { display: none; }
-#erfassteTabelle .dropdown-menu { font-size: 0.85rem; }
+#erfassteTabelle .dropdown-menu { font-size: .85rem; }
 
-/* Admin-Panel: Definitionen + Spezialpreise */
-#adminPanel .def-table td, #adminPanel .def-table th { padding: 0.35rem 0.4rem; font-size: 0.82rem; vertical-align: middle; }
-#adminPanel .def-table code { font-size: 0.72rem; color: #64748b; }
-#adminPanel .preis-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0; }
-#adminPanel .preis-row + .preis-row { border-top: 1px solid #f1f5f9; }
-#adminPanel .preis-row .preis-label { flex: 1 1 auto; font-size: 0.82rem; }
-#adminPanel .preis-row .preis-label small { display: block; color: #64748b; font-size: 0.7rem; }
-#adminPanel .preis-row .input-group { width: 9.5rem; flex: 0 0 auto; }
-#adminPanel .def-edit { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.85rem 1rem; }
+/* Definition (Slide-Panel): Stiche + Spezialpreise */
+#adminPanel .def-table td, #adminPanel .def-table th { padding: 6px; font-size: .82rem; vertical-align: middle; }
+#adminPanel .def-table code { font-size: .72rem; color: var(--ui-text-2); }
+#adminPanel .preis-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+#adminPanel .preis-row + .preis-row { border-top: 1px solid var(--ui-linie-zart); }
+#adminPanel .preis-row .preis-label { flex: 1 1 auto; font-size: .82rem; }
+#adminPanel .preis-row .preis-label small { display: block; font-size: .7rem; color: var(--ui-text-2); }
+#adminPanel .preis-row .input-group { flex: 0 0 auto; width: 9.5rem; }
+#adminPanel .def-edit { padding: 12px 14px; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad); }
 
-/* Select2 an form-select-sm angleichen */
-#stichForm .select2-container--bootstrap-5 .select2-selection--single {
-    font-size: 0.875rem; min-height: 2.5rem; padding: 0.5rem 0.75rem;
-}
+/* Select2 an die Formularfelder angleichen */
+#stichForm .select2-container--bootstrap-5 .select2-selection--single { min-height: 2.25rem; padding: .35rem .75rem; font-size: .875rem; }
 .select2-container { z-index: 1065; }
 
-/* Kompakter Formularbereich auf Desktop und Tablet */
-@media (min-width: 768px) {
-    .erfassung-form-col .content-background { padding: 1rem 1.5rem !important; }
-    #stichForm .shot-section { padding: 0.65rem 0; }
-    #stichForm .shot-section-head { margin-bottom: 0.45rem; }
-    #stichForm .munition-toggle[aria-expanded='false'] { margin-bottom: 0; }
-    #stichForm .typ-switch.mb-3 { margin-bottom: 0.5rem !important; }
-    #stichForm .typ-switch .btn { padding-top: 0.35rem; padding-bottom: 0.35rem; }
-    #stichForm .waffe-field { margin-top: 0.6rem; }
-    #stichForm .form-control, #stichForm .form-select { min-height: 2.25rem; }
-    #stichForm .select2-container--bootstrap-5 .select2-selection--single {
-        min-height: 2.25rem; padding-top: 0.35rem; padding-bottom: 0.35rem;
-    }
-    #waffeSelect { padding-top: 0.35rem; padding-bottom: 0.35rem; }
-    #stichForm .stich-grid { gap: 0.5rem; }
-    #stichForm .stich-tile-main { padding-top: 0.65rem; padding-bottom: 0.55rem; gap: 0.35rem; }
-    #stichForm .stich-tile .form-check-input { top: 0.75rem; }
-    #stichForm .stich-tile-partner { top: 0.4rem; }
-    #stichForm .total-actions-row { margin-top: 0.5rem; padding: 0.75rem; gap: 0.65rem; }
-    #stichForm .action-buttons .btn { min-height: 2.25rem; padding-top: 0.35rem; padding-bottom: 0.35rem; }
-}
-
 @media (max-width: 767.98px) {
-    .erfassung-layout { gap: 1rem; }
-    .erfassung-form-col .content-background { padding: 1rem !important; }
+    .es-karte { padding: 0 14px 14px; }
     #stichForm .typ-switch { display: flex; width: 100%; }
-    #stichForm .typ-switch .btn { display: flex; align-items: center; justify-content: center; padding: 0.5rem; min-height: 2.75rem; }
+    #stichForm .typ-switch > .btn { display: flex; flex: 1 1 0; align-items: center; justify-content: center; min-height: 2.75rem; padding: 6px; }
     #stichForm .typ-switch .btn i { display: none; }
-    #stichForm .total-actions-row {
-        position: sticky; bottom: 0.5rem; bottom: max(0.5rem, env(safe-area-inset-bottom)); z-index: 10;
-        padding: 0.85rem; box-shadow: 0 4px 18px rgba(15,23,42,0.12);
-    }
-    .total-bar { gap: 0.75rem; }
+    #stichForm .total-actions-row { position: sticky; bottom: .5rem; bottom: max(.5rem, env(safe-area-inset-bottom)); z-index: 10; box-shadow: 0 4px 18px rgba(26, 35, 50, .12); }
+    .total-bar { gap: 12px; }
     .total-amount { font-size: 1.25rem; }
     .action-buttons .btn { min-height: 2.75rem; }
     #btnSave { min-width: 0; flex: 1; }
-    .muni-row { flex-wrap: wrap; gap: 0.5rem; }
+    .muni-row { flex-wrap: wrap; gap: 8px; }
     .muni-row .muni-label { flex-basis: 100%; }
     .muni-row .muni-price { margin-left: auto; }
-    .erfassung-table-col .table-title { gap: 0.75rem; }
     #mobileCardsEndsch .mobile-card-header { padding: 1rem; }
-    .erfassung-table-col .desktop-table-container { display: none !important; }
-    .erfassung-table-col .mobile-cards-container { display: flex !important; }
-    .erfassung-table-col .table-responsive { max-height: none; }
+    .es-tabelle .desktop-table-container { display: none !important; }
+    .es-tabelle .mobile-cards-container { display: flex !important; }
+    .es-tabelle .table-responsive { max-height: none !important; }
 }
-@media (min-width: 768px) { .erfassung-table-col .mobile-cards-container { display: none !important; } }
+@media (min-width: 768px) { .es-tabelle .mobile-cards-container { display: none !important; } }
 @media (max-width: 359.98px) {
-    .action-buttons .btn { padding: 0.5rem; white-space: nowrap; }
+    .action-buttons .btn { padding: .5rem; white-space: nowrap; }
     #btnStandblatt i, #btnSave > i { display: none; }
     #btnStandblatt span { margin-left: 0 !important; }
 }
 ";
 
 include 'header.inc.php';
-
-if (!isset($_SESSION)) { session_start(); }
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+require_once __DIR__ . '/csrf.inc.php';
+$csrf = csrf_token();
 // Definitionen und Preise dürfen Admin und Vorstand pflegen (gleiche Regel wie adminApiGuard)
 $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], true);
 ?>
-<style><?= $page_specific_css ?></style>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
 
@@ -273,8 +179,16 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 <div class="col-12 ps-0">
   <div class="main-content-wrapper content-width-wide">
     <?php
-    $page_title   = 'Endschiessen – Stiche lösen';
-    $page_actions = '<button type="button" class="btn-help" data-help="endschloesen.uebersicht" aria-label="Hilfe"></button>';
+    $page_title = 'Endschiessen – Stiche lösen';
+    $page_title_after = '<button type="button" class="btn-help" data-help="endschloesen.uebersicht" aria-label="Hilfe"></button>'
+        . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+        . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+    $page_actions = '<button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm" data-tooltip="Abrechnung des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1"></i>Abrechnung</button>'
+        . '<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="endschiessen_abrechnung" data-druck-label="Endschiessen Abrechnung" aria-label="Abrechnung direkt drucken"><i class="bi bi-printer"></i></button>'
+        . ($kannDefinieren ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="btnAdminSettings" data-tooltip="Stiche und Preise definieren"><i class="bi bi-gear me-1"></i>Definition</button>' : '');
+    $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
+        . '<div class="ui-chips" id="progressChips"></div>';
+    $page_show_mobile = true;
     include 'partials/page_header.inc.php';
     ?>
 
@@ -282,19 +196,15 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
       <!-- ================= Formular ================= -->
       <div class="erfassung-form-col">
-      <div class="content-background">
+      <section class="ui-karte es-karte" aria-label="Stiche lösen">
         <form id="stichForm" autocomplete="off">
-          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
           <input type="hidden" id="gastId" value="">
 
           <!-- Teilnehmer -->
           <div class="shot-section shot-first">
             <div class="shot-section-head">
               <span class="shot-section-title"><i class="bi bi-person"></i>Teilnehmer <button type="button" class="btn-help" data-help="endschloesen.teilnehmer" aria-label="Hilfe"></button></span>
-              <div class="d-flex align-items-center gap-2">
-                <label for="yearSelect" class="shot-hint mb-0">Jahr</label>
-                <select id="yearSelect" class="form-select form-select-sm" style="width:auto"></select>
-              </div>
             </div>
             <div class="shot-section-body">
               <div class="btn-group btn-group-sm typ-switch mb-3" role="group" aria-label="Teilnehmertyp">
@@ -430,27 +340,19 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
             </div>
           </div>
         </form>
-      </div>
+      </section>
       </div>
 
       <!-- ================= Übersicht ================= -->
       <div class="erfassung-table-col">
-        <div class="table-wrapper">
-          <div class="table-title">
-            <span><i class="bi bi-table me-2"></i>Erfasste Teilnehmer <span class="badge bg-light text-dark border ms-1" id="erfasstCount">0</span></span>
-            <div class="d-flex gap-2">
-              <button type="button" id="btnGeneratePDF" class="btn btn-outline-info btn-sm" data-tooltip="Abrechnung als PDF">
-                <i class="bi bi-file-earmark-pdf me-1"></i>Abrechnung
-              </button>
-              <button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="endschiessen_abrechnung" data-druck-label="Endschiessen Abrechnung" aria-label="Abrechnung direkt drucken">
-                <i class="bi bi-printer"></i>
-              </button>
-              <?php if ($kannDefinieren): ?>
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAdminSettings" data-tooltip="Stiche und Preise definieren">
-                <i class="bi bi-gear me-1"></i>Definition
-              </button>
-              <?php endif; ?>
-            </div>
+        <section class="ui-karte es-tabelle" aria-label="Erfasste Teilnehmer">
+          <div class="ui-tab-kopf">
+            <span class="ui-tab-titel">Erfasste Teilnehmer <span class="es-anzahl" id="erfasstCount">0</span></span>
+            <label class="ui-suche d-none d-md-flex">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <span class="visually-hidden">Teilnehmer suchen</span>
+              <input type="search" id="esSuche" placeholder="Teilnehmer suchen" autocomplete="off">
+            </label>
           </div>
 
           <div class="desktop-table-container">
@@ -464,7 +366,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
                   </tr>
                 </thead>
                 <tbody id="erfassteTableBody">
-                  <tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten...</td></tr>
+                  <tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td></tr>
                 </tbody>
               </table>
             </div>
@@ -479,7 +381,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
             </div>
             <div class="mobile-cards-scroll"></div>
           </div>
-        </div>
+        </section>
       </div>
 
     </div>
@@ -487,14 +389,13 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 </div>
 </div>
 </div>
-
 <?php if ($kannDefinieren): ?>
 <!-- Admin-Panel: Stich-Definitionen + Spezialpreise (Slide-Panel statt Modal) -->
 <div class="panel-overlay" id="adminOverlay"></div>
 <div class="hybrid-edit-panel" id="adminPanel" style="--panel-width: 620px;">
   <div class="panel-header">
-    <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Endschiessen Definition</h6>
-    <button type="button" class="btn btn-sm btn-outline-secondary" id="adminClose"><i class="bi bi-x-lg"></i></button>
+    <h6 class="mb-0">Endschiessen Definition</h6>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="adminClose" data-tooltip="Schliessen (Esc)" aria-label="Schliessen (Esc)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
   </div>
   <div class="panel-body">
     <div class="shot-section shot-first">
@@ -558,7 +459,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   </div>
   <div class="panel-footer">
     <div class="d-flex gap-2 w-100 justify-content-end">
-      <button type="button" class="btn btn-outline-primary btn-sm" id="btnSaveSpezialpreise">
+      <button type="button" class="btn btn-primary btn-sm" id="btnSaveSpezialpreise">
         <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpezialpreiseSpinner"></span>
         <i class="bi bi-save me-1"></i>Spezialpreise speichern
       </button>
@@ -1013,7 +914,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   // =========================================================================
   function markRow(entity) {
     document.querySelectorAll('#erfassteTabelle tbody tr').forEach(tr => {
-      tr.classList.toggle('row-selected', !!entity && tr.dataset.typ === entity.typ && Number(tr.dataset.entityId) === entity.id);
+      tr.classList.toggle('selected', !!entity && tr.dataset.typ === entity.typ && Number(tr.dataset.entityId) === entity.id);
     });
   }
 
@@ -1049,6 +950,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const tbody = $id('erfassteTableBody');
     const rows = state.uebersicht;
     $id('erfasstCount').textContent = rows.length;
+    kopfZahlen(rows);
     if (!rows.length) {
       tbody.innerHTML = `<tr><td colspan="${stiche.length + 6}" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Für ${esc($id('yearSelect').value)} ist noch niemand erfasst</td></tr>`;
       buildMobileEndschCards();
@@ -1100,8 +1002,29 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
         </tr>`;
     }).join('');
     markRow(state.aktuelleEntity);
+    filterUebersicht();
     buildMobileEndschCards();
   }
+
+  // Kopf-Card: Teilnehmer nach Typ und Summe des Jahres
+  function kopfZahlen(rows) {
+    const n = { mitglied: 0, gast: 0, js: 0 };
+    let summe = 0;
+    rows.forEach(e => { n[e.teilnehmer_typ] = (n[e.teilnehmer_typ] || 0) + 1; summe += Number(e.total_price) || 0; });
+    $id('progressText').innerHTML = rows.length + ' <span>Teilnehmer · ' + esc(fmtCHF(summe)) + '</span>';
+    const chip = (zahl, eins, mehr) => zahl ? `<span class="ui-chip"><b>${zahl}</b> ${zahl === 1 ? eins : mehr}</span>` : '';
+    $id('progressChips').innerHTML = chip(n.mitglied, 'Mitglied', 'Mitglieder') + chip(n.gast, 'Gast', 'Gäste') + chip(n.js, 'Jungschütze/-in', 'Jungschützen');
+  }
+
+  // Suche in der Übersicht (nach Name)
+  function filterUebersicht() {
+    const q = ($id('esSuche').value || '').trim().toLowerCase();
+    document.querySelectorAll('#erfassteTableBody tr[data-entity-id]').forEach(tr => {
+      const name = tr.querySelector('.name-cell');
+      tr.style.display = !q || (name && name.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  }
+  $id('esSuche').addEventListener('input', filterUebersicht);
 
   document.addEventListener('click', async (e) => {
     const edit = e.target.closest('.act-edit');
