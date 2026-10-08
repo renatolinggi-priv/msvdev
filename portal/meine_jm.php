@@ -73,7 +73,7 @@ function renderJmEingabe(array $s): string {
     ob_start();
     ?>
     <div class="jm-eingabe" onclick="event.stopPropagation()">
-        <label>Mein Resultat:</label>
+        <label<?php echo $locked ? '' : ' for="jmIn' . $defid . '"'; ?>>Mein Resultat:</label>
         <?php if ($locked): ?>
             <span class="jm-punkte-display"><strong><?php echo $val_attr !== '' ? $val_attr : '&ndash;'; ?></strong></span>
             <?php if ($val_attr !== ''): ?><span class="jm-eingabe-max">/ <?php echo $maxpunkte; ?></span><?php endif; ?>
@@ -81,6 +81,8 @@ function renderJmEingabe(array $s): string {
             <input type="number" inputmode="numeric"
                    min="0" max="<?php echo $maxpunkte; ?>" step="1"
                    class="jm-punkte-input"
+                   id="jmIn<?php echo $defid; ?>"
+                   aria-describedby="jmErr<?php echo $defid; ?>"
                    value="<?php echo $val_attr; ?>"
                    data-defid="<?php echo $defid; ?>"
                    data-orig="<?php echo $val_attr; ?>"
@@ -96,6 +98,7 @@ function renderJmEingabe(array $s): string {
             </span>
             <span class="jm-save-spinner d-none"><i class="bi bi-arrow-repeat"></i></span>
             <span class="jm-save-ok d-none"><i class="bi bi-check-circle-fill"></i> gespeichert</span>
+            <span class="jm-save-err" id="jmErr<?php echo $defid; ?>" role="alert" hidden></span>
         <?php endif; ?>
     </div>
     <?php
@@ -534,6 +537,8 @@ include 'portal_header.php';
 .jm-status-cup        { background: #cfe2ff; color: #084298; }
 .jm-save-spinner i { animation: jm-spin 0.8s linear infinite; }
 .jm-save-ok { color: var(--success-color); font-size: 0.78rem; font-weight: 600; }
+.jm-save-err { flex-basis: 100%; color: var(--danger-color); font-size: 0.85rem; font-weight: 600; }
+.jm-punkte-input[aria-invalid=true] { border-color: var(--danger-color); box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15); }
 @keyframes jm-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 575.98px) {
@@ -760,6 +765,19 @@ function toggleJmDetail(id, triggerEl) {
         setTimeout(() => ok.classList.add('d-none'), 2500);
     }
 
+    // Fehler bleiben beim Feld stehen, die Eingabe wird nie verworfen: Feld nochmals verlassen
+    // (oder Enter) versucht es erneut; Escape stellt den gespeicherten Wert wieder her.
+    function fehlerZeigen(input, text) {
+        const box = document.getElementById(input.getAttribute('aria-describedby'));
+        input.setAttribute('aria-invalid', 'true');
+        if (box) { box.textContent = text; box.hidden = false; }
+    }
+    function fehlerWeg(input) {
+        const box = document.getElementById(input.getAttribute('aria-describedby'));
+        input.removeAttribute('aria-invalid');
+        if (box) { box.textContent = ''; box.hidden = true; }
+    }
+
     async function saveInput(input) {
         const newVal = input.value.trim();
         const oldVal = input.dataset.orig || '';
@@ -768,20 +786,17 @@ function toggleJmDetail(id, triggerEl) {
         // Client-side Validierung
         if (newVal !== '') {
             if (!/^\d+$/.test(newVal)) {
-                if (window.msvToast) msvToast('Punktzahl muss eine Ganzzahl sein.', 'error');
-                input.value = oldVal;
+                fehlerZeigen(input, 'Bitte eine ganze Zahl eingeben.');
                 return;
             }
             const max = parseInt(input.dataset.max || '0', 10);
             const num = parseInt(newVal, 10);
             if (max > 0 && num > max) {
-                if (window.msvToast) msvToast(`Maximal ${max} Punkte erlaubt.`, 'error');
-                input.value = oldVal;
+                fehlerZeigen(input, `Höchstens ${max} Punkte möglich.`);
                 return;
             }
             if (num < 0) {
-                if (window.msvToast) msvToast('Punktzahl darf nicht negativ sein.', 'error');
-                input.value = oldVal;
+                fehlerZeigen(input, 'Die Punktzahl darf nicht negativ sein.');
                 return;
             }
         }
@@ -796,15 +811,18 @@ function toggleJmDetail(id, triggerEl) {
 
         try {
             const res = await fetch(SAVE_URL, { method: 'POST', body: fd, credentials: 'same-origin' });
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-                throw new Error(data.message || 'Fehler beim Speichern');
+            let data = null;
+            try { data = await res.json(); } catch (e) { data = null; }
+            if (!res.ok || !data || !data.success) {
+                throw new Error((data && data.message) || 'Der Server hat nicht geantwortet.');
             }
+            fehlerWeg(input);
             updateAfterSave(input, data);
             showOk(input);
         } catch (err) {
-            if (window.msvToast) msvToast(err.message || 'Speichern fehlgeschlagen', 'error');
-            input.value = oldVal;
+            // TypeError = keine Verbindung (fetch); sonst die Meldung des Servers
+            const grund = (err instanceof TypeError) ? 'keine Verbindung.' : String(err.message || 'unbekannter Fehler').replace(/\.?$/, '.');
+            fehlerZeigen(input, 'Nicht gespeichert: ' + grund + ' Deine Eingabe ist noch da – verlasse das Feld nochmals, um es erneut zu versuchen.');
         } finally {
             showSpinner(input, false);
         }
@@ -813,15 +831,23 @@ function toggleJmDetail(id, triggerEl) {
     inputs.forEach(input => {
         if (input.disabled) return;
         input.addEventListener('blur', () => saveInput(input));
+        input.addEventListener('input', () => fehlerWeg(input));
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 input.blur();
             } else if (e.key === 'Escape') {
                 input.value = input.dataset.orig || '';
+                fehlerWeg(input);
                 input.blur();
             }
         });
+    });
+
+    // Wer mit einer nicht gespeicherten Eingabe die Seite verlässt, wird gewarnt (laufende Speicherungen sind gesperrt und zählen nicht)
+    window.addEventListener('beforeunload', (e) => {
+        const offen = Array.from(inputs).some(i => !i.disabled && i.value.trim() !== (i.dataset.orig || ''));
+        if (offen) { e.preventDefault(); e.returnValue = ''; }
     });
 })();
 </script>

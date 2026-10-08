@@ -566,12 +566,14 @@ include 'portal_header.php';
 
                 <!-- Fehler -->
                 <div id="importError" class="alert alert-danger d-none"></div>
+                <?php if (isAdmin()): /* Technik-Details nur für Admins */ ?>
                 <div id="importDebugArea" class="d-none mt-2">
                     <button class="btn btn-sm btn-outline-secondary" id="importDebugBtn">
                         <i class="bi bi-bug me-1"></i>Debug-Infos laden
                     </button>
                     <pre id="importDebugOutput" class="d-none mt-2 p-2 bg-light border rounded" style="max-height:300px;overflow:auto;font-size:0.75rem;"></pre>
                 </div>
+                <?php endif; ?>
 
                 <!-- Vorschau -->
                 <div id="importResult" class="d-none">
@@ -784,8 +786,8 @@ $(document).on('click', '.btn-import-einsatz', function() {
         }
     }, 'json').fail(function(xhr) {
         $('#importLoading').hide();
-        var msg = 'Fehler beim Parsen des Dokuments';
-        if (xhr.responseText) msg += ': ' + xhr.responseText.substring(0, 200);
+        // Keine rohe Serverantwort: Klartext mit nächstem Schritt (Admins sehen die Technik über «Debug-Infos laden»)
+        var msg = msvXhrMessage(xhr, 'Das Dokument konnte nicht gelesen werden. Prüfe, ob es ein Einsatzplan als Word, Excel oder PDF ist, und versuche es nochmals.');
         $('#importError').removeClass('d-none').text(msg);
         $('#importDebugArea').removeClass('d-none');
     });
