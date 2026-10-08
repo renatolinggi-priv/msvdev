@@ -332,6 +332,13 @@ tr.ui-markiert > td:last-child { box-shadow: inset -2px 2px 0 var(--ui-akzent), 
 :is(#mitgliederTabelle, #heimresultateTabelle, #kantiresultateTabelle) > tbody > tr:is(.selected, .ui-markiert):hover > td:is(:first-child, :last-child) { background-color: var(--ui-gewaehlt) !important; }
 .min-w-0 { min-width: 0; }
 
+/* Erfassungs-Panels (msv-toast.js): «Nicht gespeichert» im Kopf, Fehlerliste über den Knöpfen */
+.msv-ungespeichert { margin-left: 8px; vertical-align: middle; background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); font-weight: 600; font-size: 0.75rem; padding: 1px 8px; }
+.msv-ungespeichert .ui-punkt { background: var(--ui-akzent); }
+.msv-eingabe-fehler { margin-bottom: 10px; }
+.msv-eingabe-fehler a { color: inherit; font-weight: 600; text-underline-offset: 2px; }
+input.form-control[aria-invalid="true"] { border-color: var(--ui-fehler); background-color: var(--ui-fehler-bg); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
+
 /* ---------- Export-Toolbar (gruppierte Dokument-Knöpfe, css/msv-styles.css) ---------- */
 .export-toolbar { background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad-l); box-shadow: none; padding: 12px var(--ui-pad); }
 .content-background .export-toolbar,

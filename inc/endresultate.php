@@ -178,13 +178,13 @@ $csrf = csrf_token();
                 <div class="shot-row">
                     <div class="shot-grid">
                         <?php for ($i=1; $i<=10; $i++): ?>
-                        <input type="number" class="shot-input endschuss focusable-input" id="Schuss<?= $i ?>" name="Schuss<?= $i ?>" min="0" max="10" inputmode="numeric">
+                        <input type="number" class="shot-input endschuss focusable-input" id="Schuss<?= $i ?>" name="Schuss<?= $i ?>" aria-label="Endstich Schuss <?= $i ?>" min="0" max="10" inputmode="numeric">
                         <?php endfor; ?>
                     </div>
                 </div>
                 <div class="shot-row">
                     <span class="shot-row-label">Tiefschuss</span>
-                    <input type="number" class="shot-input shot-input-wide focusable-input" id="Tiefschuss" name="Tiefschuss" min="0" max="100" inputmode="numeric">
+                    <input type="number" class="shot-input shot-input-wide focusable-input" id="Tiefschuss" name="Tiefschuss" aria-label="Endstich Tiefschuss" min="0" max="100" inputmode="numeric">
                 </div>
             </div>
         </div>
@@ -200,7 +200,7 @@ $csrf = csrf_token();
                     <span class="shot-row-label">Passe 1</span>
                     <div class="shot-grid">
                         <?php for ($i=1; $i<=6; $i++): ?>
-                        <input type="number" class="shot-input schwini-schuss1 focusable-input" id="P1Schuss<?= $i ?>" name="P1Schuss<?= $i ?>" min="0" max="10" inputmode="numeric">
+                        <input type="number" class="shot-input schwini-schuss1 focusable-input" id="P1Schuss<?= $i ?>" name="P1Schuss<?= $i ?>" aria-label="Schwini Passe 1, Schuss <?= $i ?>" min="0" max="10" inputmode="numeric">
                         <?php endfor; ?>
                     </div>
                     <span class="shot-status">Nicht gelöst</span>
@@ -210,7 +210,7 @@ $csrf = csrf_token();
                     <span class="shot-row-label">Passe 2</span>
                     <div class="shot-grid">
                         <?php for ($i=1; $i<=6; $i++): ?>
-                        <input type="number" class="shot-input schwini-schuss2 focusable-input" id="P2Schuss<?= $i ?>" name="P2Schuss<?= $i ?>" min="0" max="10" inputmode="numeric">
+                        <input type="number" class="shot-input schwini-schuss2 focusable-input" id="P2Schuss<?= $i ?>" name="P2Schuss<?= $i ?>" aria-label="Schwini Passe 2, Schuss <?= $i ?>" min="0" max="10" inputmode="numeric">
                         <?php endfor; ?>
                     </div>
                     <span class="shot-status">Nicht gelöst</span>
@@ -230,7 +230,7 @@ $csrf = csrf_token();
                 <div class="shot-section-body">
                     <div class="shot-grid">
                         <?php for ($i=1; $i<=5; $i++): ?>
-                        <input type="number" class="shot-input kunst focusable-input" id="KSchuss<?= $i ?>" name="KSchuss<?= $i ?>" min="0" max="100" inputmode="numeric">
+                        <input type="number" class="shot-input kunst focusable-input" id="KSchuss<?= $i ?>" name="KSchuss<?= $i ?>" aria-label="Kunst Schuss <?= $i ?>" min="0" max="100" inputmode="numeric">
                         <?php endfor; ?>
                     </div>
                 </div>
@@ -243,7 +243,7 @@ $csrf = csrf_token();
                 <div class="shot-section-body">
                     <div class="shot-grid">
                         <?php for ($i=1; $i<=3; $i++): ?>
-                        <input type="number" class="shot-input glueck focusable-input" id="GSchuss<?= $i ?>" name="GSchuss<?= $i ?>" min="0" max="100" inputmode="numeric">
+                        <input type="number" class="shot-input glueck focusable-input" id="GSchuss<?= $i ?>" name="GSchuss<?= $i ?>" aria-label="Glück Schuss <?= $i ?>" min="0" max="100" inputmode="numeric">
                         <?php endfor; ?>
                     </div>
                 </div>
@@ -260,7 +260,7 @@ $csrf = csrf_token();
             <div class="shot-section-body">
                 <div class="shot-grid">
                     <?php for ($i=1; $i<=6; $i++): ?>
-                    <input type="number" class="shot-input zabig focusable-input" id="ZSchuss<?= $i ?>" name="ZSchuss<?= $i ?>" min="0" max="100" inputmode="numeric">
+                    <input type="number" class="shot-input zabig focusable-input" id="ZSchuss<?= $i ?>" name="ZSchuss<?= $i ?>" aria-label="Zabig Schuss <?= $i ?>" min="0" max="100" inputmode="numeric">
                     <?php endfor; ?>
                 </div>
             </div>
@@ -279,12 +279,12 @@ $csrf = csrf_token();
                     <input type="number"
                            class="shot-input shot-input-dec sie-er-schuss sie-er-mitglied focusable-input"
                            id="SieErSchuss<?= $i ?>"
-                           name="SieErSchuss<?= $i ?>"
+                           name="SieErSchuss<?= $i ?>" aria-label="Sie und Er Schuss <?= $i ?>"
                            data-position="<?= $i ?>"
                            data-source="mitglied"
-                           min="0" max="10" step="0.1"
+                           min="0" max="10"
                            placeholder="<?= $i ?>"
-                           inputmode="decimal">
+                           inputmode="numeric">
                     <?php endfor; ?>
                 </div>
                 <div class="shot-hint mt-2">Zusammen mit den Schüssen 1–5 der Partnerin. Jeder Wert zählt nur einmal, Doppelte sind rot durchgestrichen.</div>
@@ -299,7 +299,7 @@ $csrf = csrf_token();
                     <span class="shot-status">Nicht gelöst</span>
                 </div>
                 <div class="shot-section-body">
-                    <input type="number" class="shot-input shot-input-wide focusable-input" id="Ansage" name="Ansage" min="0" max="999" inputmode="numeric">
+                    <input type="number" class="shot-input shot-input-wide focusable-input" id="Ansage" name="Ansage" aria-label="Ansage (Differenzler)" min="0" max="999" inputmode="numeric">
                 </div>
             </div>
             <div class="shot-section" id="Absendenanmeldung">
@@ -307,12 +307,13 @@ $csrf = csrf_token();
                     <span class="shot-section-title"><i class="bi bi-calendar-check"></i>Absenden</span>
                 </div>
                 <div class="shot-section-body">
-                    <input type="text" class="form-control form-control-sm focusable-input" id="AbsendenAnmeldung" name="AbsendenAnmeldung" placeholder="Anmeldung">
+                    <input type="text" class="form-control form-control-sm focusable-input" id="AbsendenAnmeldung" name="AbsendenAnmeldung" aria-label="Absenden: Anmeldung" placeholder="Anmeldung">
                 </div>
             </div>
         </div>
     </div>
     <div class="panel-footer">
+        <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler" id="panelFehler" role="alert" hidden></div>
         <div class="d-flex gap-2 w-100 align-items-center">
             <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn" data-tooltip="Resultate dieses Mitglieds löschen" aria-label="Resultate dieses Mitglieds löschen">
                 <i class="bi bi-trash" aria-hidden="true"></i>
@@ -339,6 +340,24 @@ $(document).ready(function() {
         allRows: [],
         currentIndex: -1,
         _loadingXhr: null,
+        geaendert: false,
+
+        // «Nicht gespeichert» merken und im Panelkopf zeigen
+        setGeaendert(an) {
+            this.geaendert = !!an;
+            msvPanelUngespeichert($('#panelSubtitle').parent(), this.geaendert);
+        },
+
+        // Vor Schliessen oder Wechseln: Ungespeichertes nie still verwerfen. weiter() läuft nach
+        // «Verwerfen» oder nach erfolgreichem Speichern; bei «Zurück» bleibt das Panel, wie es ist.
+        async schuetze(weiter) {
+            if (!this.geaendert) { weiter(); return; }
+            const wahl = await msvUngespeichert({ wer: $('#panelTitle').text().trim() });
+            if (wahl === 'verwerfen') { this.setGeaendert(false); weiter(); }
+            else if (wahl === 'speichern') this.save(weiter);
+        },
+
+        versucheSchliessen() { this.schuetze(() => this.close()); },
 
         open(mitgliedId) {
             this.currentMitgliedId = mitgliedId;
@@ -381,6 +400,8 @@ $(document).ready(function() {
         },
 
         close() {
+            this.setGeaendert(false);
+            msvEingabeFehler('#panelFehler', []);
             $('#editPanel').removeClass('open');
             $('#panelOverlay').removeClass('show');
             $('.hybrid-row').removeClass('selected');
@@ -393,6 +414,9 @@ $(document).ready(function() {
         },
 
         resetForm() {
+            this.setGeaendert(false);
+            $('#editPanel [aria-invalid]').removeAttr('aria-invalid');
+            msvEingabeFehler('#panelFehler', []);
             // Alle Inputs leeren
             $('#editPanel .focusable-input').val('');
             $('#editPanel .shot-input').val('').removeClass('filled is-unique is-dup');
@@ -455,10 +479,13 @@ $(document).ready(function() {
         navigate(direction) {
             const newIndex = this.currentIndex + direction;
             if (newIndex < 0 || newIndex >= this.allRows.length) return;
-            this.open(this.allRows[newIndex].id);
+            const id = this.allRows[newIndex].id;
+            this.schuetze(() => this.open(id));
         },
 
         save(callback) {
+            // Unplausible Werte zuerst korrigieren lassen (der Server prüft ebenfalls)
+            if (msvEingabeFehler('#panelFehler', msvPruefeFelder('#editPanel'))) return;
             const $saveBtn = $('#panelSaveBtn');
             const $saveNextBtn = $('#panelSaveNextBtn');
             const originalSave = $saveBtn.html();
@@ -479,6 +506,7 @@ $(document).ready(function() {
                         msvToast('Nicht gespeichert: ' + ((resp && resp.message) || 'unbekannter Fehler') + '. Die Eingaben sind noch da.', 'error');
                         return;
                     }
+                    EndEditPanel.setGeaendert(false);
                     msvToast('Resultate gespeichert', 'success');
                     if (callback) {
                         // Tabelle neu laden, Panel bleibt offen, danach weiter
@@ -843,13 +871,13 @@ $(document).ready(function() {
     });
 
     // Panel schliessen
-    $('#panelClose, #panelOverlay').on('click', function() { EndEditPanel.close(); });
+    $('#panelClose, #panelOverlay').on('click', function() { EndEditPanel.versucheSchliessen(); });
 
     // Escape schliesst Panel
     $(document).on('keydown', function(e) {
-        if (e.key === 'Escape' && $('#editPanel').hasClass('open')) {
-            EndEditPanel.close();
+        if (e.key === 'Escape' && $('#editPanel').hasClass('open') && !(window.Swal && Swal.isVisible())) {
             e.stopImmediatePropagation();
+            EndEditPanel.versucheSchliessen();
         }
     });
 
@@ -904,6 +932,17 @@ $(document).ready(function() {
     $(document).on('input change', '#editPanel .shot-input', function() {
         $(this).toggleClass('filled', this.value !== '');
     });
+
+    // Eingaben: «Nicht gespeichert» setzen, Zahl sofort prüfen; eine offene Fehlerliste frischt sich mit auf
+    $(document).on('input', '#editPanel input:not([type="hidden"])', function() {
+        EndEditPanel.setGeaendert(true);
+        if (this.type === 'number') msvPruefeZahl(this);
+        if (!$('#panelFehler').prop('hidden')) msvEingabeFehler('#panelFehler', msvPruefeFelder('#editPanel'), false);
+    });
+    $(document).on('change', '#editPanel select', function(e) { if (e.originalEvent) EndEditPanel.setGeaendert(true); });
+
+    // Seite verlassen mit offenen Eingaben: der Browser fragt nach
+    $(window).on('beforeunload', function() { if (EndEditPanel.geaendert) return 'Nicht gespeicherte Eingaben'; });
 
     // Sie und Er Berechnung
     $(document).on('input change', '.sie-er-schuss', function() {

@@ -245,6 +245,7 @@ try {
         <!-- Wird per JS befüllt -->
     </div>
     <div class="panel-footer">
+        <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler" id="anlassPanelFehler" role="alert" hidden></div>
         <div class="d-flex gap-2 w-100 align-items-center">
             <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Enter</kbd> nächstes Feld · <kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">S</kbd> speichern</span>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="anlassPanelCancelBtn">Abbrechen</button>
@@ -351,6 +352,7 @@ try {
     const $yearDD = $('#yearSelect');
     let currentAnlassData = null;
     let panelGeaendert = false;   // Eingaben im offenen Panel noch nicht gespeichert
+    function jmGeaendert(an) { panelGeaendert = !!an; msvPanelUngespeichert($('#anlassPanelMeta').parent(), panelGeaendert); }
 
     // ---- Anlässe laden (Jahreswechsel, nach dem Speichern) ----
     function loadAnlaesse(year) {
@@ -390,7 +392,8 @@ try {
         const $body = $('#anlassPanelBody');
         $body.html('<div class="jm-panel-leer"><div class="spinner-border spinner-border-sm me-2"></div>Lade Mitglieder …</div>');
         $('#anlassPanelCounter').text('');
-        panelGeaendert = false;
+        jmGeaendert(false);
+        msvEingabeFehler('#anlassPanelFehler', []);
 
         $('.jm-anlass').removeClass('selected').attr('aria-pressed', 'false');
         $('.jm-anlass[data-id="' + jmdefID + '"]').addClass('selected').attr('aria-pressed', 'true');
@@ -481,14 +484,16 @@ try {
         $('#anlassPanelOverlay').removeClass('show');
         $('.jm-anlass').removeClass('selected').attr('aria-pressed', 'false');
         currentAnlassData = null;
-        panelGeaendert = false;
+        jmGeaendert(false);
+        msvEingabeFehler('#anlassPanelFehler', []);
     }
 
     // Schliessen ohne Speichern: bei ungespeicherten Eingaben zuerst nachfragen
     async function versucheSchliessen() {
         if (panelGeaendert) {
-            const r = await msvConfirm('Die Eingaben in diesem Anlass sind noch nicht gespeichert.', 'Eingaben verwerfen?', 'Verwerfen');
-            if (!r.isConfirmed) return;
+            const wahl = await msvUngespeichert({ wer: $('#anlassPanelTitle').text().trim() });
+            if (wahl === 'zurueck') return;
+            if (wahl === 'speichern') { $('#btnAnlassSave').trigger('click'); return; } // schliesst nach Erfolg selbst
         }
         closeAnlassPanel();
     }
@@ -535,6 +540,7 @@ try {
             const max = parseInt(input.getAttribute('data-max'), 10);
             if (!isFinite(zahl) || zahl < 0) fehler = 'Keine gültige Punktzahl';
             else if (max > 0 && zahl > max) fehler = 'Höchstens ' + max + ' Punkte';
+            else if (!Number.isInteger(zahl)) fehler = 'Nur ganze Punkte';
         }
         input.classList.toggle('is-invalid', fehler !== '');
         if (fehler) {
@@ -547,12 +553,25 @@ try {
         return fehler;
     }
 
+    // Alle unplausiblen Felder als Liste für msvEingabeFehler (Mitglied + Feld)
+    function jmFehlerliste() {
+        return $('#anlassPanelBody .anlass-input').toArray().map(function(inp) {
+            const fehler = pruefePunkte(inp);
+            if (!fehler) return null;
+            const name = $(inp).closest('.anlass-member-row').find('.jm-name').contents().first().text().trim();
+            const feld = inp.getAttribute('aria-label');
+            return { el: inp, name: name + (feld ? ', ' + feld : ''), wert: inp.value, fehler: fehler };
+        }).filter(Boolean);
+    }
+
     // Eingaben im Panel
     $(document).on('input', '.anlass-input', function() {
-        panelGeaendert = true;
+        jmGeaendert(true);
         updatePanelCounter();
         pruefePunkte(this);
+        if (!$('#anlassPanelFehler').prop('hidden')) msvEingabeFehler('#anlassPanelFehler', jmFehlerliste(), false);
     });
+    $(window).on('beforeunload', function() { if (panelGeaendert) return 'Nicht gespeicherte Eingaben'; });
 
     // Enter: nächstes Feld, im letzten Feld speichern; Pfeil auf/ab: gleiches Feld der Nachbarzeile
     $(document).on('keydown', '.anlass-input', function(e) {
@@ -595,15 +614,7 @@ try {
         const def = currentAnlassData.definition;
 
         // Unplausible Werte zuerst korrigieren lassen
-        const ungueltig = $('#anlassPanelBody .anlass-input').toArray().filter(function(inp) { return pruefePunkte(inp) !== ''; });
-        if (ungueltig.length) {
-            const erstes = ungueltig[0];
-            const name = $(erstes).closest('.anlass-member-row').find('.jm-name').contents().first().text().trim();
-            msvToast(pruefePunkte(erstes) + ' – bitte bei ' + name + ' korrigieren'
-                + (ungueltig.length > 1 ? ' (' + ungueltig.length + ' Felder)' : ''), 'warning');
-            erstes.focus();
-            return;
-        }
+        if (msvEingabeFehler('#anlassPanelFehler', jmFehlerliste())) return;
 
         const $btn = $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Speichere …');
 

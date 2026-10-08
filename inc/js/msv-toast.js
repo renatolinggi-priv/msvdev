@@ -17,22 +17,26 @@
     if (typeof document === 'undefined' || document.getElementById('msv-swal-css')) return;
     var css = [
         /* Popup: schmal, wenig Padding, Grundschrift 0.9rem */
-        '.msv-swal.swal2-popup{width:22rem;max-width:calc(100vw - 2rem);padding:1rem 1rem 1rem;border-radius:.75rem;font-size:.9rem;color:#212529}',
+        /* Farben über die --ui-* Tokens (Admin, öffentliche Seiten); das Portal hat sie nicht → Rückfallwert */
+        '.msv-swal.swal2-popup{width:22rem;max-width:calc(100vw - 2rem);padding:1rem 1rem 1rem;border-radius:.75rem;font-size:.9rem;color:var(--ui-text,#212529)}',
+        /* Drei Knöpfe (Zurück / Verwerfen / Speichern) brauchen etwas mehr Breite */
+        '.msv-swal.msv-swal-drei.swal2-popup{width:26rem}',
+        '.msv-swal.msv-swal-drei .swal2-actions .btn{min-width:0;flex:1 1 0}',
         /* Icon: SweetAlert zeichnet alle Icons in em → über font-size skalieren, dann stimmen auch Häkchen/Kreuz */
         '.msv-swal .swal2-icon{font-size:.55em;margin:.25rem auto .75rem;border-width:.28em}',
-        '.msv-swal .swal2-title{font-size:1.05rem;font-weight:600;line-height:1.3;padding:0 .25rem;color:#212529}',
-        '.msv-swal .swal2-html-container{font-size:.9rem;line-height:1.45;margin:.5rem .25rem 0;color:#495057}',
-        '.msv-swal .swal2-html-container strong{color:#212529}',
+        '.msv-swal .swal2-title{font-size:1.05rem;font-weight:600;line-height:1.3;padding:0 .25rem;color:var(--ui-text,#212529)}',
+        '.msv-swal .swal2-html-container{font-size:.9rem;line-height:1.45;margin:.5rem .25rem 0;color:var(--ui-text-2,#495057)}',
+        '.msv-swal .swal2-html-container strong{color:var(--ui-text,#212529)}',
         /* Eingaben (input/select/textarea/checkbox/radio) auf Formular-Grösse der App */
-        '.msv-swal .swal2-input,.msv-swal .swal2-select,.msv-swal .swal2-textarea{width:100%;height:auto;margin:.75rem 0 0;padding:.4rem .6rem;font-size:.9rem;border:1px solid #ced4da;border-radius:.375rem;box-shadow:none}',
-        '.msv-swal .swal2-input:focus,.msv-swal .swal2-textarea:focus,.msv-swal .swal2-select:focus{border-color:#86b7fe;box-shadow:0 0 0 .2rem rgba(13,110,253,.25)}',
-        '.msv-swal .swal2-checkbox,.msv-swal .swal2-radio{margin:.75rem 0 0;font-size:.85rem;color:#495057}',
+        '.msv-swal .swal2-input,.msv-swal .swal2-select,.msv-swal .swal2-textarea{width:100%;height:auto;margin:.75rem 0 0;padding:.4rem .6rem;font-size:.9rem;border:1px solid var(--ui-feldrand,#ced4da);border-radius:.375rem;box-shadow:none}',
+        '.msv-swal .swal2-input:focus,.msv-swal .swal2-textarea:focus,.msv-swal .swal2-select:focus{border-color:var(--ui-akzent-dunkel,#86b7fe);box-shadow:0 0 0 1px var(--ui-akzent-dunkel,#86b7fe)}',
+        '.msv-swal .swal2-checkbox,.msv-swal .swal2-radio{margin:.75rem 0 0;font-size:.85rem;color:var(--ui-text-2,#495057)}',
         '.msv-swal .swal2-checkbox input,.msv-swal .swal2-radio input{margin-right:.4rem}',
         '.msv-swal .swal2-validation-message{margin:.6rem 0 0;padding:.4rem .6rem;font-size:.85rem}',
         /* Buttons: Bootstrap-Klassen, zentriert, Abstand klein */
         '.msv-swal .swal2-actions{margin:1rem 0 0;gap:.5rem;flex-wrap:nowrap}',
         '.msv-swal .swal2-actions .btn{min-width:6.5rem}',
-        '.msv-swal .swal2-actions .btn:focus{box-shadow:0 0 0 .2rem rgba(13,110,253,.25)}',
+        '.msv-swal .swal2-actions .btn:focus{box-shadow:0 0 0 .2rem var(--bs-focus-ring-color,rgba(13,110,253,.25))}',
         '.msv-swal .swal2-actions .btn-danger:focus{box-shadow:0 0 0 .2rem rgba(220,53,69,.25)}',
         '.msv-swal .swal2-actions .btn-outline-secondary:focus{box-shadow:0 0 0 .2rem rgba(108,117,125,.25)}',
         '.msv-swal .swal2-loader{width:1.5rem;height:1.5rem;border-width:.2rem}',
@@ -304,4 +308,120 @@ function msvDownload(url, filename) {
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { document.body.removeChild(a); }, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Erfassungs-Panels: ungespeicherte Eingaben schützen, Zahlen prüfen
+// ---------------------------------------------------------------------------
+
+// Panel mit ungespeicherten Eingaben schliessen oder wechseln: nie still verwerfen.
+// Rückgabe (Promise): 'speichern' | 'verwerfen' | 'zurueck'. Esc oder Klick daneben = 'zurueck'.
+// opts: { wer: 'Muster Max' (Name, wird escaped) }
+async function msvUngespeichert(opts) {
+    opts = opts || {};
+    var r = await msvSwal.fire({
+        title: 'Noch nicht gespeichert',
+        html: 'Die Eingaben' + (opts.wer ? ' für <strong>' + msvEsc(opts.wer) + '</strong>' : '')
+            + ' sind noch nicht gespeichert.',
+        icon: 'warning',
+        showCancelButton: true,
+        showDenyButton: true,
+        focusConfirm: true,
+        customClass: Object.assign(msvSwalButtons('btn-primary'), { popup: 'msv-swal msv-swal-drei' }),
+        confirmButtonText: 'Speichern',
+        denyButtonText: 'Verwerfen',
+        cancelButtonText: 'Zurück'
+    });
+    if (r.isConfirmed) return 'speichern';
+    if (r.isDenied) return 'verwerfen';
+    return 'zurueck';
+}
+
+// Kennzeichen «Nicht gespeichert» im Panelkopf ein-/ausblenden. ziel: Element, an das der
+// Chip angehängt wird (z.B. der Container des Panel-Untertitels). Einmal angelegt, dann nur umgeschaltet.
+function msvPanelUngespeichert(ziel, an) {
+    var el = ziel && (ziel.jquery ? ziel[0] : ziel);
+    if (!el) return;
+    var chip = el.querySelector('.msv-ungespeichert');
+    if (!chip) {
+        chip = document.createElement('span');
+        chip.className = 'ui-chip msv-ungespeichert';
+        chip.innerHTML = '<span class="ui-punkt" aria-hidden="true"></span>Nicht gespeichert';
+        el.appendChild(chip);
+    }
+    chip.hidden = !an;
+}
+
+// Lesbarer Name eines Felds für Meldungen: aria-label, sonst <label for>, sonst name.
+function msvFeldName(el) {
+    var n = el.getAttribute('aria-label');
+    if (!n && el.id) {
+        var l = document.querySelector('label[for="' + el.id + '"]');
+        if (l) n = l.textContent;
+    }
+    return String(n || el.name || 'Feld').replace(/\s+/g, ' ').trim();
+}
+
+// Zahlenfeld gegen min/max (bzw. data-max) und step prüfen. Leer ist gültig, Komma zählt als Dezimalpunkt.
+// Setzt aria-invalid und gibt den Fehlertext zurück ('' = gültig).
+function msvPruefeZahl(el) {
+    var roh = String(el.value == null ? '' : el.value).trim();
+    var fehler = '';
+    if (el.validity && el.validity.badInput) {
+        fehler = 'keine gültige Zahl';
+    } else if (roh !== '') {
+        var zahl = Number(roh.replace(',', '.'));
+        var minA = el.getAttribute('min'), maxA = el.getAttribute('max') || el.getAttribute('data-max');
+        var min = minA !== null && minA !== '' ? Number(minA) : null;
+        var max = maxA !== null && maxA !== '' && Number(maxA) > 0 ? Number(maxA) : null;
+        var step = el.getAttribute('step');
+        var schritt = step && step !== 'any' ? Number(step) : (step === 'any' ? 0 : 1);
+        if (!isFinite(zahl)) fehler = 'keine gültige Zahl';
+        else if ((min !== null && zahl < min) || (max !== null && zahl > max)) {
+            fehler = max !== null ? 'erlaubt ' + (min !== null ? min : 0) + ' bis ' + max : 'mindestens ' + min;
+        } else if (schritt > 0 && Math.abs(Math.round(zahl / schritt) * schritt - zahl) > 1e-9) {
+            fehler = schritt === 1 ? 'nur ganze Zahlen' : 'höchstens ' + (String(schritt).split('.')[1] || '').length + ' Nachkommastelle';
+        }
+    }
+    if (fehler) el.setAttribute('aria-invalid', 'true');
+    else el.removeAttribute('aria-invalid');
+    return fehler;
+}
+
+// Alle aktiven Zahlenfelder eines Containers prüfen. Rückgabe: [{ el, name, wert, fehler }]
+function msvPruefeFelder(container) {
+    var root = container && (container.jquery ? container[0] : (typeof container === 'string' ? document.querySelector(container) : container));
+    if (!root) return [];
+    var liste = [];
+    root.querySelectorAll('input[type="number"]:not(:disabled), input[data-max]:not(:disabled)').forEach(function (el) {
+        var f = msvPruefeZahl(el);
+        if (f) liste.push({ el: el, name: msvFeldName(el), wert: el.value, fehler: f });
+    });
+    return liste;
+}
+
+// Fehlerliste in einem Hinweis-Kasten anzeigen (leer = Kasten ausblenden). Jeder Eintrag
+// springt per Klick ins Feld; die Felder verweisen per aria-describedby auf den Kasten.
+// Gibt true zurück, wenn Fehler angezeigt werden. fokus=false: nur auffrischen (beim Tippen), Fokus bleibt.
+function msvEingabeFehler(box, liste, fokus) {
+    var el = box && (box.jquery ? box[0] : (typeof box === 'string' ? document.querySelector(box) : box));
+    if (!el) return liste && liste.length > 0;
+    if (!el.id) el.id = 'msvEingabeFehler' + Math.random().toString(36).slice(2, 8);
+    document.querySelectorAll('[aria-describedby="' + el.id + '"]').forEach(function (f) { f.removeAttribute('aria-describedby'); });
+    if (!liste || !liste.length) { el.hidden = true; el.innerHTML = ''; return false; }
+    var n = liste.length;
+    el.innerHTML = '<strong>Nicht gespeichert – ' + (n === 1 ? 'eine Eingabe' : n + ' Eingaben') + ' prüfen:</strong><ul class="mb-0 ps-3">'
+        + liste.map(function (x, i) {
+            return '<li><a href="#" data-i="' + i + '">' + msvEsc(x.name) + (x.wert !== '' ? ' (' + msvEsc(x.wert) + ')' : '') + '</a>: ' + msvEsc(x.fehler) + '</li>';
+        }).join('') + '</ul>';
+    liste.forEach(function (x) { x.el.setAttribute('aria-describedby', el.id); });
+    el.querySelectorAll('a[data-i]').forEach(function (a) {
+        a.addEventListener('click', function (e) { e.preventDefault(); var f = liste[+a.getAttribute('data-i')].el; f.focus(); if (f.select) f.select(); });
+    });
+    el.hidden = false;
+    if (fokus !== false) {
+        liste[0].el.focus();
+        if (liste[0].el.select) liste[0].el.select();
+    }
+    return true;
 }

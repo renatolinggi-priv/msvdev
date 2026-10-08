@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.48.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Erfassung: nichts geht mehr still verloren, Werte werden geprüft",
+        "beschreibung": "Endschiessen und Partnerinnen: Das Erfassungs-Panel merkt sich ungespeicherte Eingaben (Hinweis «Nicht gespeichert» im Kopf). Schliessen mit Escape, Kreuz oder Klick daneben sowie Blättern fragen dann «Speichern, Verwerfen oder Zurück»; vorher gingen die Eingaben ohne Rückfrage verloren. Auch die JM-Erfassung bietet in dieser Rückfrage neu «Speichern» an, und alle drei warnen beim Verlassen der Seite. Werteprüfung: Schüsse ausserhalb des erlaubten Bereichs oder keine Zahl werden rot markiert, beim Speichern listet ein Hinweis über den Knöpfen jede Fehleingabe mit Sprung ins Feld, gespeichert wird erst, wenn alles stimmt. Der Server prüft dieselben Grenzen: Endschiessen nahm bisher jede Zahl an (auch 77 bei einem Zehnerschuss), Partnerinnen setzte Werte über 10 still auf 0, Heim und Kanti kappten über 100 still auf 100, und bei der JM wurde ein Wert, der keine Zahl war, still als Löschen des Resultats behandelt. Sie und Er nimmt nur noch ganze Zahlen an, wie die Datenbank sie speichert. Die Schussfelder haben Namen für Screenreader. Mitglieder: Enter springt ins nächste Feld, statt das Panel zu schliessen; gespeichert wird weiterhin automatisch beim Schliessen und Wechseln. Dialogfarben laufen über die Tokens des Erscheinungsbilds. Braucht die Datenbank-Aktualisierung 080 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.47.0",
     "datum": "2026-10-08",
     "aenderungen": [

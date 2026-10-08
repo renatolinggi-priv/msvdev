@@ -209,7 +209,7 @@ $csrf = csrf_token();
             <div class="shot-section-body">
                 <div class="shot-grid">
                     <?php for ($i=1; $i<=10; $i++): ?>
-                    <input type="number" class="shot-input shot-input-dec endstich-schuss focusable-input" id="EndstichSchuss<?= $i ?>" name="EndstichSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
+                    <input type="number" class="shot-input shot-input-dec endstich-schuss focusable-input" id="EndstichSchuss<?= $i ?>" name="EndstichSchuss<?= $i ?>" aria-label="Endstich Schuss <?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
                     <?php endfor; ?>
                 </div>
             </div>
@@ -227,12 +227,12 @@ $csrf = csrf_token();
                     <input type="number"
                            class="shot-input shot-input-dec sie-er-schuss sie-er-partner focusable-input"
                            id="SieErSchuss<?= $i ?>"
-                           name="SieErSchuss<?= $i ?>"
+                           name="SieErSchuss<?= $i ?>" aria-label="Sie und Er Schuss <?= $i ?>"
                            data-position="<?= $i ?>"
                            data-source="partner"
-                           min="0" max="10" step="0.1"
+                           min="0" max="10"
                            placeholder="<?= $i ?>"
-                           inputmode="decimal">
+                           inputmode="numeric">
                     <?php endfor; ?>
                 </div>
                 <div class="shot-hint mt-2">Zusammen mit den Schüssen 6–10 des Mitglieds (in der Endschiessen-Resultaterfassung). Jeder Wert zählt nur einmal, Doppelte sind rot durchgestrichen.</div>
@@ -250,7 +250,7 @@ $csrf = csrf_token();
                     <span class="shot-row-label">Passe 1</span>
                     <div class="shot-grid">
                         <?php for ($i=1; $i<=6; $i++): ?>
-                        <input type="number" class="shot-input shot-input-dec schwini-passe1 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
+                        <input type="number" class="shot-input shot-input-dec schwini-passe1 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" aria-label="Schwini Schuss <?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
                         <?php endfor; ?>
                     </div>
                     <span class="shot-total" id="schwiniSumme1">0</span>
@@ -259,7 +259,7 @@ $csrf = csrf_token();
                     <span class="shot-row-label">Passe 2</span>
                     <div class="shot-grid">
                         <?php for ($i=7; $i<=12; $i++): ?>
-                        <input type="number" class="shot-input shot-input-dec schwini-passe2 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
+                        <input type="number" class="shot-input shot-input-dec schwini-passe2 focusable-input" id="PartnerSchwiniSchuss<?= $i ?>" name="PartnerSchwiniSchuss<?= $i ?>" aria-label="Schwini Schuss <?= $i ?>" min="0" max="10" step="0.1" inputmode="decimal">
                         <?php endfor; ?>
                     </div>
                     <span class="shot-total" id="schwiniSumme2">0</span>
@@ -268,6 +268,7 @@ $csrf = csrf_token();
         </div>
     </div>
     <div class="panel-footer">
+        <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler" id="panelFehler" role="alert" hidden></div>
         <div class="d-flex gap-2 w-100 align-items-center">
             <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn" data-tooltip="Partnerin löschen" aria-label="Partnerin löschen">
                 <i class="bi bi-trash" aria-hidden="true"></i>
@@ -295,6 +296,25 @@ $(document).ready(function() {
         currentIndex: -1,
         _loadingXhr: null,
         isNewEntry: false,
+        geaendert: false,
+
+        // «Nicht gespeichert» merken und im Panelkopf zeigen
+        setGeaendert(an) {
+            this.geaendert = !!an;
+            msvPanelUngespeichert($('#panelSubtitle').parent(), this.geaendert);
+        },
+
+        // Vor Schliessen oder Wechseln: Ungespeichertes nie still verwerfen. weiter() läuft nach
+        // «Verwerfen» oder nach erfolgreichem Speichern; bei «Zurück» bleibt das Panel, wie es ist.
+        async schuetze(weiter) {
+            if (!this.geaendert) { weiter(); return; }
+            const wahl = await msvUngespeichert({ wer: $('#panelTitle').text().trim() });
+            if (wahl === 'verwerfen') { this.setGeaendert(false); weiter(); }
+            else if (wahl === 'speichern') this.save(() => loadData($('#yearSelect').val(), weiter));
+        },
+
+        versucheSchliessen() { this.schuetze(() => this.close()); },
+
 
         open(partnerId) {
             this.currentPartnerId = partnerId;
@@ -376,6 +396,8 @@ $(document).ready(function() {
         },
 
         close() {
+            this.setGeaendert(false);
+            msvEingabeFehler('#panelFehler', []);
             $('#editPanel').removeClass('open');
             $('#panelOverlay').removeClass('show');
             $('.hybrid-row').removeClass('selected');
@@ -389,6 +411,9 @@ $(document).ready(function() {
         },
 
         resetForm() {
+            this.setGeaendert(false);
+            $('#editPanel [aria-invalid]').removeAttr('aria-invalid');
+            msvEingabeFehler('#panelFehler', []);
             // Alle Inputs leeren
             $('#editPanel .focusable-input').val('');
             $('#editPanel .shot-input').val('').removeClass('filled is-unique is-dup');
@@ -455,6 +480,7 @@ $(document).ready(function() {
         navigate(direction) {
             const newIndex = this.currentIndex + direction;
             if (newIndex < 0 || newIndex >= this.allRows.length) return;
+            if (this.geaendert) { this.schuetze(() => this.navigate(direction)); return; }
 
             const nextRow = this.allRows[newIndex];
             if (nextRow.isGuest) {
@@ -483,6 +509,9 @@ $(document).ready(function() {
                 return;
             }
 
+            // Unplausible Werte zuerst korrigieren lassen (der Server prüft ebenfalls)
+            if (msvEingabeFehler('#panelFehler', msvPruefeFelder('#editPanel'))) return;
+
             const $saveBtn = $('#panelSaveBtn');
             const $saveNextBtn = $('#panelSaveNextBtn');
             const originalSave = $saveBtn.html();
@@ -500,7 +529,8 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(data) {
                     if (data.success) {
-                        msvToast('Partnerin gespeichert!', 'success');
+                        PartnerEditPanel.setGeaendert(false);
+                        msvToast('Partnerin gespeichert', 'success');
 
                         if (callback) {
                             callback();
@@ -863,13 +893,13 @@ $(document).ready(function() {
     });
 
     // Panel schliessen
-    $('#panelClose, #panelOverlay').on('click', function() { PartnerEditPanel.close(); });
+    $('#panelClose, #panelOverlay').on('click', function() { PartnerEditPanel.versucheSchliessen(); });
 
     // Escape schliesst Panel
     $(document).on('keydown', function(e) {
-        if (e.key === 'Escape' && $('#editPanel').hasClass('open')) {
-            PartnerEditPanel.close();
+        if (e.key === 'Escape' && $('#editPanel').hasClass('open') && !(window.Swal && Swal.isVisible())) {
             e.stopImmediatePropagation();
+            PartnerEditPanel.versucheSchliessen();
         }
     });
 
@@ -885,6 +915,17 @@ $(document).ready(function() {
 
     // Löschen aus Panel
     $('#panelDeleteBtn').on('click', function() { PartnerEditPanel.deletePartner(); });
+
+    // Eingaben: «Nicht gespeichert» setzen, Zahl sofort prüfen; eine offene Fehlerliste frischt sich mit auf
+    $(document).on('input', '#editPanel input:not([type="hidden"])', function() {
+        PartnerEditPanel.setGeaendert(true);
+        if (this.type === 'number') msvPruefeZahl(this);
+        if (!$('#panelFehler').prop('hidden')) msvEingabeFehler('#panelFehler', msvPruefeFelder('#editPanel'), false);
+    });
+    $(document).on('change', '#editPanel select', function(e) { if (e.originalEvent) PartnerEditPanel.setGeaendert(true); });
+
+    // Seite verlassen mit offenen Eingaben: der Browser fragt nach
+    $(window).on('beforeunload', function() { if (PartnerEditPanel.geaendert) return 'Nicht gespeicherte Eingaben'; });
 
     // Summen-Berechnung bei Input
     $(document).on('input change', '.endstich-schuss, .schwini-passe1, .schwini-passe2', function() {

@@ -65,6 +65,8 @@ function generateMemberRow($mitglied, $resultate, $year) {
         $html .= 'value="' . $passe . '" ';
         $html .= 'autocomplete="off" ';
         $html .= 'maxlength="3" ';
+        $html .= 'data-max="100" ';
+        $html .= 'aria-label="' . $name . ' ' . $vorname . ', Passe ' . $i . '" ';
         $html .= 'pattern="[0-9]*" ';
         $html .= 'data-tooltip="Nur Zahlen erlaubt">';
         $html .= '</td>';

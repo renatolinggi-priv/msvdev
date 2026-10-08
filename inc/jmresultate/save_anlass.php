@@ -28,11 +28,32 @@ try {
     }
 
     // Jahr des Anlasses, nicht das Kalenderjahr: Änderungsprotokoll und «Veröffentlichen» zählen pro Jahr
-    $stJahr = $conn->prepare('SELECT year FROM JMDefinition WHERE ID = ?');
+    $stJahr = $conn->prepare('SELECT year, Maxpunkte FROM JMDefinition WHERE ID = ?');
     $stJahr->bind_param('i', $jmdefID);
     $stJahr->execute();
-    $jahrAnlass = (int) $stJahr->get_result()->fetch_column() ?: (int) date('Y');
+    $defRow = $stJahr->get_result()->fetch_assoc() ?: [];
+    $jahrAnlass = (int) ($defRow['year'] ?? 0) ?: (int) date('Y');
+    $maxPunkte = (int) ($defRow['Maxpunkte'] ?? 0);
     $stJahr->close();
+
+    // Punkte prüfen, bevor etwas geschrieben wird: keine Zahl, negativ, nicht ganz oder über den Max-Punkten
+    // → nichts speichern. Früher wurde «keine Zahl» still als Löschen behandelt und Kommastellen abgeschnitten.
+    require_once __DIR__ . '/../eingabe_pruefen.inc.php';
+    $felder = $isSektionsmeisterschaft ? ['punkte_runde1' => 'Runde 1', 'punkte_runde2' => 'Runde 2'] : ['punkte' => 'Punkte'];
+    $fehler = [];
+    foreach ($members as $m) {
+        if (!is_array($m)) continue;
+        $regeln = [];
+        foreach ($felder as $f => $label) {
+            $regeln[$f] = [0, $maxPunkte > 0 ? $maxPunkte : 100000, 0, 'Mitglied Nr. ' . (int)($m['mitgliedID'] ?? 0) . ', ' . $label];
+        }
+        $fehler = array_merge($fehler, msvPruefeZahlen($m, $regeln));
+    }
+    if ($fehler) {
+        http_response_code(422);
+        echo json_encode(['success' => false, 'message' => 'Ungültige Eingabe – ' . implode('; ', array_slice($fehler, 0, 5))], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     // Vorstand-User-ID fuer Freigabe-Audit (kann NULL sein, wenn Session fehlt).
     // Durch das Speichern bestaetigt der Vorstand implizit alle erfassten Resultate
@@ -71,7 +92,7 @@ try {
  * damit Mitglied-Eingaben (status='entwurf') automatisch bestaetigt und gesperrt werden.
  */
 function saveOrDeleteJMResultat($conn, $mitgliedID, $definitionID, $rawValue, $info, $vorstandUserId = null) {
-    $val = trim((string)$rawValue);
+    $val = str_replace(',', '.', trim((string)$rawValue));
 
     if ($info === '') {
         // Normal (Info = '' oder NULL)

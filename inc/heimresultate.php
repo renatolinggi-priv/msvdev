@@ -32,6 +32,8 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 #hkScroll #heimresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid #c5ccd6 !important; border-radius: 6px !important; box-shadow: none; }
 #hkScroll #heimresultateTabelle input.small-input:not(.filled) { background: var(--ui-flaeche-2); border-color: #dde3ea !important; font-weight: 400; color: var(--ui-text-2); }
 #hkScroll #heimresultateTabelle input.small-input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel) !important; box-shadow: 0 0 0 1px var(--ui-akzent-dunkel) !important; outline: 0; }
+#hkScroll #heimresultateTabelle input.small-input[aria-invalid=true] { background: var(--ui-fehler-bg) !important; border-color: var(--ui-fehler) !important; color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler) !important; }
+#hkFehler { margin: 10px var(--ui-pad) 0; }
 #heimresultateTabelle .sum-cell { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 #heimresultateTabelle .sum-cell.empty { font-weight: 400; color: #b8c0cc; }
 #hkScroll #heimresultateTabelle tbody tr.group-header td.group-header-cell { position: static !important; height: auto; padding: 6px 20px !important; text-align: left !important; background: var(--ui-grund) !important; color: var(--ui-text-2); font-size: .72rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .05em; border-left: 0 !important; border-right: 0 !important; border-bottom: 1px solid var(--ui-linie) !important; cursor: default; }
@@ -139,6 +141,7 @@ $csrf = csrf_token();
                             <input type="search" id="hkSuche" placeholder="Mitglied suchen" autocomplete="off">
                         </label>
                     </div>
+                    <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler" id="hkFehler" role="alert" hidden></div>
                     <!-- Desktop: Raster -->
                     <div id="desktopTableContainer" class="hk-desktop">
                         <div class="hk-scroll" id="hkScroll">
@@ -492,8 +495,8 @@ $(document).ready(function() {
             var syncName = $this.data('sync');
             var value = $this.val().replace(/[^0-9]/g, '');
             if (value.length > 3) value = value.substring(0, 3);
-            if (value !== '' && parseInt(value, 10) > 100) value = '100';
             $this.val(value);
+            $this.attr('aria-invalid', value !== '' && parseInt(value, 10) > 100 ? 'true' : null);
 
             // Wert in Desktop-Tabelle synchronisieren
             var $ziel = $('input[name="' + syncName + '"]').not('.mobile-passe-input').val(value);
@@ -639,8 +642,9 @@ $(document).ready(function() {
         $inputs.off('input.heim').on('input.heim', function(e) {
             var value = $(this).val().replace(/[^0-9]/g, '');
             if (value.length > 3) value = value.substring(0, 3);
-            if (value !== '' && parseInt(value, 10) > 100) value = '100';
             $(this).val(value);
+            msvPruefeZahl(this);
+            if (!$('#hkFehler').prop('hidden')) msvEingabeFehler('#hkFehler', msvPruefeFelder('#heimresultateTabelle'), false);
             // nur echte Eingaben im Raster; Übernahmen aus dem Panel markiert syncField
             if (e.originalEvent) markGeaendert($(this).closest('tr'));
         });
@@ -673,14 +677,14 @@ $(document).ready(function() {
     // ===== Speichern =====
     $('#heimresultateForm').on('submit', function(e) {
         e.preventDefault();
+        if (isMobile()) syncMobileToDesktop();
+        // Werte über 100 oder keine Zahl: nicht speichern, sondern zeigen, wo
+        if (msvEingabeFehler('#hkFehler', msvPruefeFelder('#heimresultateTabelle'))) return;
 
         var $submitBtn = $('#rasterSpeichernBtn');
         var originalText = $submitBtn.html();
         $submitBtn.prop('disabled', true)
             .html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
-
-        // Bei Mobile: zuerst syncen
-        if (isMobile()) syncMobileToDesktop();
 
         fillEmptyWithZero();
 

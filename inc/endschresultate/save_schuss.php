@@ -16,6 +16,19 @@ $mitgliedID = intval($_POST['mitgliedID']);
 $jahr = isset($_POST['jahr']) ? intval($_POST['jahr']) : intval(date('Y'));
 $schussData = $_POST;
 
+// Werte prüfen, bevor etwas geschrieben wird (früher übernahm intval jede Eingabe, auch «77»)
+require_once __DIR__ . '/../eingabe_pruefen.inc.php';
+msvPruefeZahlenOderAbbruch($schussData,
+    msvZahlRegeln('Schuss', 1, 10, 0, 10, 0, 'Endstich Schuss')
+    + ['Tiefschuss' => [0, 100, 0, 'Endstich Tiefschuss']]
+    + msvZahlRegeln('P1Schuss', 1, 6, 0, 10, 0, 'Schwini Passe 1, Schuss')
+    + msvZahlRegeln('P2Schuss', 1, 6, 0, 10, 0, 'Schwini Passe 2, Schuss')
+    + msvZahlRegeln('KSchuss', 1, 5, 0, 100, 0, 'Kunst Schuss')
+    + msvZahlRegeln('GSchuss', 1, 3, 0, 100, 0, 'Glück Schuss')
+    + msvZahlRegeln('ZSchuss', 1, 6, 0, 100, 0, 'Zabig Schuss')
+    + ['Ansage' => [0, 999, 0, 'Ansage']]
+    + msvZahlRegeln('SieErSchuss', 6, 10, 0, 10, 0, 'Sie und Er Schuss'));
+
 if ($conn->connect_error) {
     http_response_code(500);
     die(json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $conn->connect_error]));

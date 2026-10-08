@@ -213,7 +213,7 @@ ob_start();
     </div>
 
     <hr>
-    <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Änderungen werden beim Schliessen des Panels gespeichert (Enter oder Escape).</p>
+    <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Änderungen werden beim Schliessen (Esc) und beim Wechsel zu einem anderen Mitglied automatisch gespeichert, sofort mit Ctrl+S. Enter springt ins nächste Feld.</p>
     <button type="button" class="btn btn-outline-danger btn-sm w-100" id="panelDeleteBtn">
       <i class="bi bi-trash me-1"></i>Mitglied löschen
     </button>
@@ -481,7 +481,13 @@ $(function() {
   $(document).on('keydown', e => {
     if (!$('#editPanel').hasClass('open')) return;
     if (e.key === 'Escape') { MVPanel.close(); e.stopImmediatePropagation(); }
-    if (e.key === 'Enter' && !$(e.target).is('textarea')) { e.preventDefault(); MVPanel.close(); } // close speichert
+    // Enter: ins nächste Feld wie auf allen Erfassungsseiten (gespeichert wird beim Schliessen/Wechseln oder mit Ctrl+S)
+    if (e.key === 'Enter' && $(e.target).is('input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), select')) {
+      e.preventDefault();
+      const felder = $('#editPanel').find('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)').filter(':visible').toArray();
+      const i = felder.indexOf(e.target);
+      if (i >= 0 && i < felder.length - 1) { felder[i + 1].focus(); if (felder[i + 1].select) felder[i + 1].select(); }
+    }
   });
   // Ctrl+S: aktuelles Panel speichern
   $(document).on('keydown', function(e) {

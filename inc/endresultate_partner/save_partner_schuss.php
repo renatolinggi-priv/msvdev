@@ -11,6 +11,7 @@
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
+require_once __DIR__ . '/../eingabe_pruefen.inc.php';
 
 // CSRF-Schutz
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
@@ -55,6 +56,13 @@ if ($jahr < 2000 || $jahr > $currentYear + 1) {
     die(json_encode(['message' => 'Ungültiges Jahr']));
 }
 
+// Werte prüfen statt still auf 0 zu setzen (vor der Transaktion): Endstich und Schwini mit einer
+// Nachkommastelle (decimal(4,1)), Sie und Er ganzzahlig (decimal(2,0))
+msvPruefeZahlenOderAbbruch($_POST,
+    msvZahlRegeln('EndstichSchuss', 1, 10, 0, 10, 1, 'Endstich Schuss')
+    + msvZahlRegeln('SieErSchuss', 1, 5, 0, 10, 0, 'Sie und Er Schuss')
+    + msvZahlRegeln('PartnerSchwiniSchuss', 1, 12, 0, 10, 1, 'Schwini Schuss'));
+
 try {
     // Start transaction
     $conn->autocommit(false);
@@ -87,12 +95,8 @@ try {
     $allFields = array_merge($endstichFields, $sieErFields, $schwiniFields);
     
     foreach ($allFields as $field) {
-        $value = isset($_POST[$field]) ? floatval($_POST[$field]) : 0;
-        // Validate shot values (0-10 for most shots)
-        if ($value < 0 || $value > 10) {
-            $value = 0;
-        }
-        $shotData[$field] = $value;
+        // geprüft oben (msvPruefeZahlenOderAbbruch); Komma als Dezimalpunkt
+        $shotData[$field] = isset($_POST[$field]) ? floatval(str_replace(',', '.', (string)$_POST[$field])) : 0;
     }
     
     if ($checkResult->num_rows > 0) {
