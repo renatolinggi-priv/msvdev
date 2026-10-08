@@ -20,28 +20,28 @@ $page_specific_css = <<<'CSS'
 /* ===== JSK-Verwaltung ===== */
 /* Flag-Dot base/off/hover jetzt zentral in css/msv-styles.css.
    Nur grüne .on-Variante als Seiten-Override (zentral ist blau). */
-.flag-dot.on { background:#22c55e; color:#fff; }
+.flag-dot.on { background:var(--ui-ok-fg); color:#fff; }
 /* Slide-Panel (.hybrid-edit-panel/.panel-overlay/.panel-header/.panel-body/.panel-label/.panel-section)
    jetzt zentral in css/msv-styles.css. Breite 520px via --panel-width am Panel.
    Import-Area (.import-area*) ebenfalls zentral in css/msv-styles.css. */
-.feature-switch-card { border:1px solid #e2e8f0; border-radius:0.75rem; background:#fff; }
+.feature-switch-card { border:1px solid var(--ui-rand); border-radius:0.75rem; background:#fff; }
 /* Teilnehmerlisten – kompakte Tabelle (Spalten richten sich aus) */
 .tl-table { width:100%; border-collapse:collapse; }
-.tl-table td { padding:0.4rem 0.65rem 0.4rem 0; border-bottom:1px solid #eef1f6; vertical-align:baseline; }
+.tl-table td { padding:0.4rem 0.65rem 0.4rem 0; border-bottom:1px solid var(--ui-linie); vertical-align:baseline; }
 .tl-table tr:last-child td { border-bottom:0; }
 .tl-row--past { opacity:0.55; }
-.tl-row--next td { background:#eef3ff; }
-.tl-row--next .tl-d { color:#3b5998; }
-.tl-next-badge { display:inline-block; margin-left:0.45rem; font-size:0.68rem; font-weight:700; color:#3b5998; background:#dbe4f7; padding:0.06rem 0.5rem; border-radius:999px; vertical-align:middle; }
-.tl-d { width:1%; white-space:nowrap; font-weight:700; color:#3b5998; font-size:0.85rem; }
-.tl-row--past .tl-d { color:#64748b; }
+.tl-row--next td { background:var(--ui-akzent-hell); }
+.tl-row--next .tl-d { color:var(--ui-akzent-dunkel); }
+.tl-next-badge { display:inline-block; margin-left:0.45rem; font-size:0.68rem; font-weight:700; color:var(--ui-akzent-dunkel); background:var(--ui-akzent-hell); padding:0.06rem 0.5rem; border-radius:999px; vertical-align:middle; }
+.tl-d { width:1%; white-space:nowrap; font-weight:700; color:var(--ui-akzent-dunkel); font-size:0.85rem; }
+.tl-row--past .tl-d { color:var(--ui-text-2); }
 .tl-t { width:1%; white-space:nowrap; font-weight:600; font-size:0.9rem; }
-.tl-t .zeit { font-weight:400; color:#64748b; font-size:0.8rem; }
+.tl-t .zeit { font-weight:400; color:var(--ui-text-2); font-size:0.8rem; }
 .tl-c { width:1%; white-space:nowrap; }
 .tl-pill { display:inline-block; font-weight:700; font-size:0.8rem; padding:0.1rem 0.55rem; border-radius:999px; white-space:nowrap; }
-.tl-pill.ja { background:#d1f4dd; color:#155724; }
-.tl-pill.nein { background:#fde2e2; color:#842029; margin-left:0.25rem; }
-.tl-nicht { font-size:0.82rem; color:#842029; padding-left:0.5rem !important; }
+.tl-pill.ja { background:var(--ui-ok-bg); color:#155724; }
+.tl-pill.nein { background:var(--ui-fehler-bg); color:var(--ui-k-rot); margin-left:0.25rem; }
+.tl-nicht { font-size:0.82rem; color:var(--ui-k-rot); padding-left:0.5rem !important; }
 .tl-nicht .lbl { font-weight:700; }
 @media (max-width: 767.98px) {
   .desktop-table-container { display:none !important; }
@@ -52,10 +52,8 @@ $page_specific_css = <<<'CSS'
 CSS;
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 $featureAktiv  = jskFeatureAktiv();
 $canToggle     = isAdmin();
 $jahrVorschlag = (int) date('Y');
@@ -172,7 +170,7 @@ try {
           <i class="bi bi-chevron-right fs-6 text-secondary"></i>
         </a>
 
-        <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-3" role="tablist">
@@ -376,7 +374,7 @@ include 'partials/side_panel.inc.php';
           </div>
         </div>
         <div class="import-area" id="dropZone">
-          <i class="bi bi-cloud-upload d-block" style="font-size:2rem;color:#64748b;"></i>
+          <i class="bi bi-cloud-upload d-block" style="font-size:2rem;color:var(--ui-text-2);"></i>
           <p class="mb-0 mt-2 text-muted">Excel-Datei hier ablegen oder klicken (.xlsx, .xls, .csv)</p>
           <input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" style="display:none;">
         </div>

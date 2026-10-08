@@ -1,9 +1,9 @@
 <?php
 // internestichedef/api_save_stiche.php
 header('Content-Type: application/json; charset=utf-8');
-session_start();
-
-require_once __DIR__ . '/../config.php'; // liefert $conn (mysqli) – wie in save_ranking.php
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet die Session // liefert $conn (mysqli) – wie in save_ranking.php
 
 // (Optionales) Debug nur in DEV aktivieren
 // ini_set('display_errors', 1);

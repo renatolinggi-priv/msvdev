@@ -2,12 +2,11 @@
 // api_get_stiche.php
 header('Content-Type: application/json; charset=utf-8');
 
-// Debug (nur in DEV aktivieren!)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-session_start();
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet die Session
 
 // CSRF prüfen
 $input = json_decode(file_get_contents('php://input'), true);

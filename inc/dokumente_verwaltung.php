@@ -11,6 +11,7 @@
  *   api/dokument_upload.php · dokument_update.php · dokument_delete.php · dokument_download.php
  */
 require_once 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 require_once __DIR__ . '/../auth.php';
 
 // Zugriffsschutz: nur Vorstand/Admin (vor header.inc.php, da dieser Output erzeugt)
@@ -20,18 +21,18 @@ if (!(isAdmin() || isVorstand()) && (int)($_SESSION['user_id'] ?? 0) !== 1) {
 }
 
 $page_specific_css = <<<'CSS'
-.dv-upload { background:#f8fafc; border:2px dashed #cbd5e1; border-radius:0.75rem; padding:1rem 1.1rem; margin-bottom:1.1rem; }
-.dv-upload h6 { color:#475569; }
+.dv-upload { background:var(--ui-flaeche-2); border:2px dashed #cbd5e1; border-radius:0.75rem; padding:1rem 1.1rem; margin-bottom:1.1rem; }
+.dv-upload h6 { color:var(--ui-text-2); }
 .dv-table { width:100%; }
-.dv-table td { vertical-align:middle; border-bottom:1px solid #eef1f6; }
+.dv-table td { vertical-align:middle; border-bottom:1px solid var(--ui-linie); }
 .dv-table tr:last-child td { border-bottom:0; }
 .dv-chip { width:38px; height:38px; border-radius:0.6rem; display:inline-flex; align-items:center; justify-content:center; font-size:1.15rem; }
-.dv-chip.red   { background:#fde2e2; color:#c0392b; }
-.dv-chip.green { background:#d1f4dd; color:#1e7e44; }
-.dv-chip.blue  { background:#dbe4f7; color:#2d4373; }
+.dv-chip.red   { background:var(--ui-fehler-bg); color:#c0392b; }
+.dv-chip.green { background:var(--ui-ok-bg); color:#1e7e44; }
+.dv-chip.blue  { background:var(--ui-akzent-hell); color:#2d4373; }
 .dv-title { font-weight:600; }
-.dv-meta  { font-size:0.8rem; color:#64748b; }
-.dv-empty { text-align:center; color:#64748b; padding:2rem 1rem; }
+.dv-meta  { font-size:0.8rem; color:var(--ui-text-2); }
+.dv-empty { text-align:center; color:var(--ui-text-2); padding:2rem 1rem; }
 .dv-empty i { font-size:1.6rem; opacity:.5; display:block; margin-bottom:.5rem; }
 .vis-badge { font-size:0.66rem; vertical-align:middle; }
 .ez-group-header { cursor:pointer; }
@@ -42,7 +43,7 @@ CSS;
 
 include 'header.inc.php';
 
-$csrf          = htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8');
+$csrf          = htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8');
 $db            = getDB();
 $isAdminUser   = isAdmin();
 $selected_year = (int)($_GET['year'] ?? date('Y'));

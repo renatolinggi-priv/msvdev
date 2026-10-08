@@ -1,11 +1,8 @@
 <?php
 // check_resultscsv.php - CSV Viewer für alle Stiche
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
-// Session-Kontrolle
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 include 'header.inc.php';
 ?>
@@ -14,11 +11,11 @@ include 'header.inc.php';
     .main-content-wrapper { max-width: 980px; }
 
     .upload-area {
-        border: 2px dashed #dee2e6;
+        border: 2px dashed var(--ui-rand);
         border-radius: 0.75rem;
         padding: 3rem;
         text-align: center;
-        background-color: #f8f9fa;
+        background-color: var(--ui-flaeche-2);
         transition: all 0.3s ease;
         cursor: pointer;
         margin-bottom: 2rem;
@@ -26,13 +23,13 @@ include 'header.inc.php';
     }
     
     .upload-area:hover {
-        border-color: #6c757d;
-        background-color: #e9ecef;
+        border-color: var(--ui-text-2);
+        background-color: var(--ui-rand);
     }
     
     .upload-area.dragover {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
+        border-color: var(--ui-akzent);
+        background-color: var(--ui-akzent-hell);
     }
     
     /* Fix für Scroll-Layout */
@@ -66,7 +63,7 @@ include 'header.inc.php';
         min-height: 0;
         overflow-y: auto;
         overflow-x: auto;
-        border-bottom: 1px solid #dee2e6;
+        border-bottom: 1px solid var(--ui-rand);
     }
     
     /* Card-Footer immer unten fixiert */
@@ -76,7 +73,7 @@ include 'header.inc.php';
         bottom: 0;
         background: white;
         z-index: 10;
-        border-top: 2px solid #dee2e6;
+        border-top: 2px solid var(--ui-rand);
     }
 </style>
 
@@ -92,7 +89,7 @@ include 'header.inc.php';
                     <!-- Upload Area -->
                     <div id="uploadPhase">
                         <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                            <i class="bi bi-cloud-upload" style="font-size: 3rem; color: var(--ui-text-2);"></i>
                             <h4 class="mt-3">CSV-Datei hier ablegen oder klicken zum Auswählen</h4>
                             <p class="text-muted mb-0">Unterstützte Formate: .csv</p>
                             <input type="file" id="fileInput" accept=".csv" style="display: none;">

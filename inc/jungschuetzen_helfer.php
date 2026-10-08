@@ -1,6 +1,7 @@
 <?php
 // jungschuetzen_helfer.php
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 include 'header.inc.php';
 ?>
 
@@ -54,7 +55,7 @@ include 'header.inc.php';
 <div class="modal fade" id="freierEintragModal" tabindex="-1" aria-labelledby="freierEintragLabel" aria-hidden="true">
   <div class="modal-dialog">
     <form id="freierEintragForm" class="modal-content">
-      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
       <div class="modal-header">
         <h5 class="modal-title" id="freierEintragLabel">Freier Helfereinsatz erfassen</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>

@@ -5,15 +5,16 @@
  * des Panels (save_single_mitglied.php); der frühere Sammel-Speichern-Pfad ist entfernt.
  */
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 // Seiten-CSS: Panel, Aktions-Card, Flag-Dots, Skeleton, Import-Area sind zentral (msv-styles.css)
 $page_specific_css = <<<'CSS'
-#panelId[readonly] { background: #f1f5f9; }
+#panelId[readonly] { background: var(--ui-linie-zart); }
 .mv-search { max-width: 350px; }
-.import-area-icon { font-size: 2rem; color: #64748b; }
+.import-area-icon { font-size: 2rem; color: var(--ui-text-2); }
 .import-preview-scroll { max-height: 200px; overflow-y: auto; }
 /* kurzes Feedback nach dem Auto-Save einer Zeile */
-.hybrid-table tbody tr.row-saved td { background: #e8f5e9 !important; transition: background .6s; }
+.hybrid-table tbody tr.row-saved td { background: var(--ui-ok-bg) !important; transition: background .6s; }
 CSS;
 
 include 'header.inc.php';
@@ -23,51 +24,25 @@ include 'header.inc.php';
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-wide">
-        <?php $page_title = 'Mitgliederverwaltung'; $page_actions = '<button type="button" class="btn-help" data-help="mitgliederverwaltung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+        <?php
+        $page_title = 'Mitgliederverwaltung';
+        $page_title_after = '<button type="button" class="btn-help" data-help="mitgliederverwaltung.uebersicht" aria-label="Hilfe"></button>';
+        $page_actions = '<button type="button" class="btn btn-outline-success btn-sm" id="btnNewMember"><i class="bi bi-person-plus me-1"></i>Hinzufügen</button>'
+            . '<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-upload me-1"></i>Import</button>'
+            . '<a href="mitgliederverwaltung/export_csv.php" class="btn btn-outline-info btn-sm"><i class="bi bi-download me-1"></i>CSV</a>'
+            . '<button type="button" class="btn btn-outline-info btn-sm xlsx-export-btn"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Adressliste</button>';
+        include 'partials/page_header.inc.php';
+        ?>
 
         <div class="content-background">
-          <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+          <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-          <!-- Suche + Aktionen -->
-          <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-            <div class="d-flex align-items-center gap-2 flex-grow-1 mv-search">
-              <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Suchen..." aria-label="Mitglieder suchen">
-              </div>
-            </div>
-
-<?php
-            $ac_id = 'mvActions';
-            ob_start();
-            ?>
-                  <div class="row g-2">
-                    <div class="col-6">
-                      <button type="button" class="btn btn-outline-success btn-sm w-100" id="btnNewMember">
-                        <i class="bi bi-person-plus me-1"></i>Hinzufügen
-                      </button>
-                    </div>
-                    <div class="col-6">
-                      <button type="button" class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#importModal">
-                        <i class="bi bi-upload me-1"></i>Import
-                      </button>
-                    </div>
-                    <div class="col-6">
-                      <a href="mitgliederverwaltung/export_csv.php" class="btn btn-outline-info btn-sm w-100">
-                        <i class="bi bi-download me-1"></i>CSV
-                      </a>
-                    </div>
-                    <div class="col-6">
-                      <button type="button" class="btn btn-outline-info btn-sm w-100 xlsx-export-btn">
-                        <i class="bi bi-file-earmark-spreadsheet me-1"></i>Adressliste
-                      </button>
-                    </div>
-                  </div>
-            <?php
-            $ac_body = ob_get_clean();
-            include 'partials/action_card.inc.php';
-            ?>
-          </div>
+          <!-- Suche -->
+          <label class="ui-suche ms-0 mb-3">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span class="visually-hidden">Mitglieder suchen</span>
+            <input type="search" id="searchInput" placeholder="Mitglieder suchen" autocomplete="off">
+          </label>
 
           <!-- Desktop: Hybrid-Tabelle -->
           <div class="table-wrapper">
@@ -256,7 +231,7 @@ include 'partials/side_panel.inc.php';
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
       </div>
       <form id="newMemberForm">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
         <div class="modal-body">
           <div class="row g-2 mb-2">
             <div class="col-4">

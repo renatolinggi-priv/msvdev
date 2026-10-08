@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.43.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Verwaltungsseiten im neuen Aufbau",
+        "beschreibung": "Mitglieder-, Wanderpreis-, Galerie-, Dokumente-, Sieger-, Regel-, JSK- und Jungschützen-Verwaltung, Munitionskauf, Standbelegung, interne Stichdefinition, Resultat-CSV-Prüfung und «Passwort ändern» verwenden jetzt die Farben des neuen Erscheinungsbilds; der Hilfe-Knopf steht überall neben dem Seitentitel. Mitglieder- und Wanderpreis-Verwaltung haben ihre Knöpfe in der Kopf-Karte statt in einer aufklappbaren Aktionen-Karte; die Wanderpreis-Berichte und Gravur-Aufträge sind im Menü «Dokumente» zusammengefasst (vorher rote Knöpfe, Rot ist dem Löschen vorbehalten). Munitionskauf: Jahr in der Kopf-Karte, Tabs als Segment-Schalter, Speichern als Hauptknopf; behoben: das Erfassungsformular stand seit dem neuen Erscheinungsbild ohne Karte auf dem grauen Grund. «Passwort ändern» hat Kopf-Karte und Inhalts-Karte. Die Endpunkte der internen Stichdefinition und das Munitions-PDF prüfen jetzt Anmeldung und Rolle. Braucht die Datenbank-Aktualisierung 078 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.42.0",
     "datum": "2026-10-08",
     "aenderungen": [

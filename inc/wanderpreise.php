@@ -2,11 +2,8 @@
 // wanderpreise.php - Hauptseite für Wanderpreise-Verwaltung
 require_once 'wanderpreise/wanderpreise_config.php';
 require_once 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
-// Session-Kontrolle
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 // Alle Styles sind jetzt zentral in msv-styles.css verwaltet
 $page_specific_css = "
@@ -95,99 +92,35 @@ if (WANDERPREISE_DEBUG) {
             <!-- Äusserer weisser Container -->
             <div class="main-content-wrapper content-width-default">
                 <!-- Header ausserhalb des inneren Containers -->
-                <?php $page_title = 'Wanderpreise verwalten'; $page_actions = '<button type="button" class="btn-help" data-help="wanderpreise.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php
+                $page_title = 'Wanderpreise verwalten';
+                $page_title_after = '<button type="button" class="btn-help" data-help="wanderpreise.uebersicht" aria-label="Hilfe"></button>';
+                ob_start(); ?>
+<button type="button" class="btn-help" data-help="wanderpreise.aktionen" aria-label="Hilfe zu den Aktionen"></button>
+<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#addWanderpreisModal"><i class="bi bi-plus-circle me-1"></i>Hinzufügen</button>
+<button type="button" id="zuordnungButton" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#zuordnungModal"><i class="bi bi-link-45deg me-1"></i>Zuordnen</button>
+<button type="button" id="autoZuordnungButton" class="btn btn-outline-primary btn-sm"><i class="bi bi-magic me-1"></i>Auto-Zuordnung</button>
+<button type="button" id="vergangeneGewinnerButton" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal"><i class="bi bi-clock-history me-1"></i>Historie</button>
+<div class="dropdown">
+  <button type="button" class="btn btn-outline-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1"></i>Dokumente</button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><h6 class="dropdown-header">Listen &amp; Berichte</h6></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="csv"><i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-all"><i class="bi bi-file-earmark-pdf me-2"></i>PDF Alle</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-jm"><i class="bi bi-file-earmark-pdf me-2"></i>JM Preise</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-mitglieder-info"><i class="bi bi-people-fill me-2"></i>Mitglieder</button></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header">Gravur-Aufträge</h6></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-schnitzerei"><i class="bi bi-file-earmark-pdf me-2"></i>Schnitzerei</button></li>
+    <li><button type="button" class="dropdown-item export-btn" data-export-type="pdf-akura"><i class="bi bi-file-earmark-pdf me-2"></i>Akura</button></li>
+  </ul>
+</div>
+<?php $page_actions = ob_get_clean();
+                include 'partials/page_header.inc.php'; ?>
 
                 <!-- Weisser Container für den Rest -->
                 <div class="content-background">
 
-                    <!-- Aktionsbereich (Bootstrap Collapse) -->
-<?php
-                    $ac_id = 'wanderpreiseActions';
-                    $ac_card_class = 'mb-3';
-                    $ac_title = 'Aktionen <button type="button" class="btn-help" data-help="wanderpreise.aktionen" aria-label="Hilfe"></button>';
-                    ob_start();
-                    ?>
-                                <!-- Verwaltung -->
-                                <small class="text-muted d-block mb-2"><i class="bi bi-tools me-1"></i>Verwaltung</small>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6 col-md-4 col-lg-3">
-                                        <button class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal"
-                                            data-bs-target="#addWanderpreisModal">
-                                            <i class="bi bi-plus-circle me-1"></i>Hinzufügen
-                                        </button>
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-3">
-                                        <button type="button" id="zuordnungButton" class="btn btn-outline-primary btn-sm w-100"
-                                            data-bs-toggle="modal" data-bs-target="#zuordnungModal">
-                                            <i class="bi bi-link-45deg me-1"></i>Zuordnen
-                                        </button>
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-3">
-                                        <button type="button" id="autoZuordnungButton" class="btn btn-outline-warning btn-sm w-100">
-                                            <i class="bi bi-magic me-1"></i>Auto-Zuordnung
-                                        </button>
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-3">
-                                        <button type="button" id="vergangeneGewinnerButton" class="btn btn-outline-info btn-sm w-100"
-                                            data-bs-toggle="modal" data-bs-target="#vergangeneGewinnerModal">
-                                            <i class="bi bi-clock-history me-1"></i>Historie
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Listen & Berichte -->
-                                <div class="border-top pt-2 mb-3">
-                                    <small class="text-muted d-block mb-2"><i class="bi bi-list-ul me-1"></i>Listen &amp; Berichte</small>
-                                    <div class="row g-2">
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <button type="button" class="btn btn-outline-success btn-sm w-100 export-btn"
-                                                data-export-type="csv">
-                                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
-                                                data-export-type="pdf-all">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>PDF Alle
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
-                                                data-export-type="pdf-jm">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>JM Preise
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 export-btn"
-                                                data-export-type="pdf-mitglieder-info">
-                                                <i class="bi bi-people-fill me-1"></i>Mitglieder
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Gravur-Aufträge -->
-                                <div class="border-top pt-2">
-                                    <small class="text-muted d-block mb-2"><i class="bi bi-pen me-1"></i>Gravur-Aufträge</small>
-                                    <div class="row g-2">
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
-                                                data-export-type="pdf-schnitzerei">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>Schnitzerei
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 export-btn"
-                                                data-export-type="pdf-akura">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i>Akura
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                    <?php
-                    $ac_body = ob_get_clean();
-                    include 'partials/action_card.inc.php';
-                    ?>
 
                     <!-- Wanderpreise Liste -->
                     <div class="table-wrapper mb-4">
@@ -221,7 +154,7 @@ if (WANDERPREISE_DEBUG) {
             <div class="modal-body">
                 <form id="addWanderpreisForm" method="post">
                     <input type="hidden" name="csrf_token"
-                        value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                        value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="row mb-3">
                         <div class="col-12">
@@ -435,7 +368,7 @@ if (WANDERPREISE_DEBUG) {
             <div class="modal-body">
                 <form id="vergangeneGewinnerForm">
                     <input type="hidden" name="csrf_token"
-                        value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                        value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -585,7 +518,7 @@ if (WANDERPREISE_DEBUG) {
                 <form id="editWanderpreisForm">
                     <input type="hidden" id="edit_wanderpreis_id" name="wanderpreis_id">
                     <input type="hidden" name="csrf_token"
-                        value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                        value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="row mb-3">
                         <div class="col-12">

@@ -1,6 +1,7 @@
 <?php
 // wanderpreise_regeln.php – Wanderpreis-Regeln (Zuordnung der Gewinner per SQL-Regel; geführt, Baukasten oder Experte)
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 require_once __DIR__ . '/wanderpreise/regel_builder.inc.php'; // Registry + Schema-Referenz fuer den Builder
 
 $wp_wettbewerbe = wp_wettbewerb_registry();
@@ -10,21 +11,21 @@ $wp_schema_ref  = wp_regel_schema_reference();
 $page_specific_css = <<<'CSS'
 .title-search { width: 200px; }
 .title-search input { font-size: 0.85rem; border-radius: 20px; padding-left: 2rem; }
-.title-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem; }
-.regel-name { font-weight: 500; color: #1e293b; }
-.regel-desc { display: block; color: #64748b; font-size: 0.85rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
-.flag-dot.on { background: #22c55e; color: #fff; } /* Status "aktiv" grün statt zentral blau */
+.title-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ui-text-2); font-size: 0.8rem; }
+.regel-name { font-weight: 500; color: var(--ui-text); }
+.regel-desc { display: block; color: var(--ui-text-2); font-size: 0.85rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+.flag-dot.on { background: var(--ui-ok-fg); color: #fff; } /* Status "aktiv" grün statt zentral blau */
 .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .row-actions .btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 .fs-xs { font-size: 0.75rem; }
 .fs-xxs { font-size: 0.72rem; }
 .w-140 { width: 140px; } .w-200 { width: 200px; }
 .w-op { max-width: 11rem; } .w-val { max-width: 6.5rem; } .w-dir { max-width: 13rem; }
-.sql-editor { font-family: 'Courier New', monospace; font-size: 0.85rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; tab-size: 4; line-height: 1.5; }
-.sql-editor:focus { background: #fff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.sql-editor { font-family: 'Courier New', monospace; font-size: 0.85rem; background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: 6px; tab-size: 4; line-height: 1.5; }
+.sql-editor:focus { background: #fff; border-color: var(--ui-akzent); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
 .panel-label .hint { font-weight: 400; text-transform: none; }
 .mobile-card.regel-inaktiv { opacity: .75; }
-.mobile-card .card-code { font-family: 'Courier New', monospace; background: #eff6ff; color: #1e40af; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+.mobile-card .card-code { font-family: 'Courier New', monospace; background: var(--ui-akzent-hell); color: #1e40af; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
 @media (max-width: 767.98px) { .title-search { display: none; } }
 CSS;
 
@@ -39,7 +40,7 @@ include 'header.inc.php';
         <?php $page_title = 'Wanderpreis-Regeln'; $page_actions = '<button type="button" class="btn-help" data-help="wanderpreise_regeln.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
-          <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+          <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
           <!-- Toolbar: Neue Regel (auch mobil sichtbar) -->
           <div class="export-toolbar mb-3">
@@ -104,7 +105,7 @@ $panel_width = '620px';
 $panel_title = '<span id="panelTitle"><i class="bi bi-plus-circle me-2"></i>Neue Regel erstellen</span>';
 ob_start(); ?>
     <form id="regelForm">
-      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
       <input type="hidden" name="id" id="regelId" value="">
 
       <div class="mb-3">

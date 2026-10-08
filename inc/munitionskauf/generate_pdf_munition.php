@@ -2,6 +2,8 @@
 // generate_pdf_munition.php - PDF-Report für Munitionsbestellungen
 
 require_once '../wanderpreise/PDFGenerator.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 /**
  * Munitionskauf Auswertungs-Report

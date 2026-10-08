@@ -1,11 +1,8 @@
 <?php
 // internestichdef.php - Frontend für Stichnummer Definition
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
-// Session-Kontrolle
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 // Lade Mitglieder für Dropdown
 // Versuche Lizenznummer zu laden falls vorhanden
@@ -151,7 +148,7 @@ include 'header.inc.php';
 
 <!-- CSRF Token für JavaScript -->
 <script>
-const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
+const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
 </script>
 
 <!-- JavaScript für Interne Stiche -->

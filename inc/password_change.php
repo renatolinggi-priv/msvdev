@@ -5,10 +5,10 @@ include 'dbconnect.inc.php';
 // Seitenspezifische CSS definieren (vor header.inc.php!)
 $page_specific_css = '
     .password-requirements {
-        background: #f8f9fa;
-        border-radius: 0.375rem;
+        background: var(--ui-flaeche-2);
+        border: 1px solid var(--ui-rand);
+        border-radius: var(--ui-rad);
         padding: 0.75rem 1rem;
-        border-left: 3px solid #adb5bd;
     }
 
     #password-requirements-list li {
@@ -16,11 +16,11 @@ $page_specific_css = '
     }
 
     #password-requirements-list li.fulfilled {
-        color: #28a745;
+        color: var(--ui-ok-fg);
     }
 
     #password-requirements-list li.fulfilled i {
-        color: #28a745;
+        color: var(--ui-ok-fg);
     }
 
     #password-requirements-list li i {
@@ -30,7 +30,7 @@ $page_specific_css = '
 
     .password-strength-indicator {
         height: 4px;
-        background: #e9ecef;
+        background: var(--ui-rand);
         border-radius: 2px;
         margin-top: 0.5rem;
         overflow: hidden;
@@ -43,9 +43,9 @@ $page_specific_css = '
         border-radius: 2px;
     }
 
-    .strength-weak   { background: #dc3545; }
-    .strength-medium { background: #ffc107; }
-    .strength-strong { background: #28a745; }
+    .strength-weak   { background: var(--ui-k-rot); }
+    .strength-medium { background: var(--ui-warn-punkt); }
+    .strength-strong { background: var(--ui-ok-fg); }
 
     .password-strength-text {
         font-weight: 500;
@@ -128,18 +128,13 @@ function validate_password($password, $username) {
 }
 ?>
 
-<div class="row">
-    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto">
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-narrow">
+        <?php $page_title = 'Passwort ändern'; $page_show_mobile = true; include 'partials/page_header.inc.php'; ?>
 
-        <div class="row mb-3">
-            <div class="col">
-                <h2 class="h4 mb-0 page-title">Passwort ändern
-                </h2>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
+        <div class="content-background">
 
                 <?php if (isset($error)): ?>
                     <div class="alert alert-danger" role="alert">
@@ -210,7 +205,7 @@ function validate_password($password, $username) {
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-secondary" id="changeBtn">
+                            <button type="submit" class="btn btn-primary" id="changeBtn">
                                 <i class="bi bi-shield-lock me-2"></i>Passwort ändern
                             </button>
                             <a href="home.php" class="btn btn-outline-secondary">
@@ -221,10 +216,10 @@ function validate_password($password, $username) {
 
                 <?php endif; ?>
 
-            </div>
-        </div>
-
+        </div><!-- content-background -->
+      </div>
     </div>
+  </div>
 </div>
 
 <script>

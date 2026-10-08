@@ -18,6 +18,11 @@ $ph_after   = $page_title_after ?? '';
 $ph_actions = $page_actions ?? '';
 $ph_extra   = $page_extra ?? '';
 $ph_vis     = !empty($page_show_mobile) ? 'd-flex' : 'd-none d-md-flex';
+// Hilfe-«?» gehört neben den Titel: steht er (noch) am Anfang der Aktionen, dorthin verschieben
+if ($ph_after === '' && preg_match('/^\s*(<button type="button" class="btn-help"[^>]*><\/button>)\s*/', $ph_actions, $ph_m)) {
+    $ph_after   = $ph_m[1];
+    $ph_actions = substr($ph_actions, strlen($ph_m[0]));
+}
 ?>
 <header class="msv-kopf <?= $ph_vis ?>">
   <div class="msv-kopf-titel">

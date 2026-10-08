@@ -1,58 +1,23 @@
 <?php
 // munitionskauf.php - Munitionsbestellungen erfassen (Redesign v2)
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
-// CSRF Token (wird bereits in header.inc.php generiert)
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 $page_specific_css = '
-/* === MUNITIONSKAUF TABS === */
-.msv-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid #dee2e6;
-    margin-bottom: 1.25rem;
-}
-
-.msv-tab {
-    padding: 0.6rem 1.25rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--secondary-color);
-    border: none;
-    background: none;
-    cursor: pointer;
-    position: relative;
-    transition: color 0.2s;
-}
-
-.msv-tab:hover { color: var(--dark-color); }
-
-.msv-tab.active {
-    color: var(--dark-color);
-    font-weight: 600;
-}
-
-.msv-tab.active::after {
-    content: "";
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--dark-color);
-    border-radius: 2px 2px 0 0;
-}
+/* === MUNITIONSKAUF TABS (Segment-Schalter wie .ui-filter) === */
+.msv-tabs { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 14px; background: #f1f4f8; border-radius: 8px; }
+.msv-tab { height: 30px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--ui-text); font-size: .82rem; font-weight: 600; cursor: pointer; }
+.msv-tab:hover { background: rgba(255, 255, 255, .65); }
+.msv-tab.active { background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
 
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
 
 /* === COMPACT FORM ROW === */
 .compact-form-row {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background: var(--ui-flaeche-2);
+    border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.75rem 1rem;
     margin-bottom: 1rem;
@@ -108,9 +73,9 @@ $page_specific_css = '
 
 /* === MUNITIONS GRID === */
 .munitions-section {
-    background: var(--light-color);
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius);
+    background: var(--ui-flaeche-2);
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
     padding: 1rem;
     margin-bottom: 1rem;
 }
@@ -130,7 +95,7 @@ $page_specific_css = '
 
 .munitions-col {
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.75rem;
 }
@@ -164,7 +129,7 @@ $page_specific_css = '
 
 .total-actions-row .total-bar {
     background: #fff;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.45rem 0.75rem;
     display: flex;
@@ -194,9 +159,9 @@ $page_specific_css = '
 }
 
 .stats-card-inner {
-    background: var(--light-color);
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius);
+    background: var(--ui-flaeche-2);
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
     padding: 1rem;
 }
 
@@ -218,7 +183,7 @@ $page_specific_css = '
 .stat-row strong { color: var(--secondary-color); }
 
 .stat-row.stat-total {
-    border-top: 2px solid #dee2e6;
+    border-top: 2px solid var(--ui-rand);
     margin-top: 0.25rem;
     padding-top: 0.5rem;
 }
@@ -245,7 +210,7 @@ $page_specific_css = '
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #e9ecef;
+    background: var(--ui-rand);
     font-size: 0.7rem;
     font-weight: 700;
     color: var(--secondary-color);
@@ -265,7 +230,7 @@ $page_specific_css = '
 
 .ammo-summary-card {
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--ui-rand);
     border-radius: var(--border-radius);
     padding: 0.75rem;
     text-align: center;
@@ -293,16 +258,8 @@ $page_specific_css = '
 .erfassung-form-col,
 .erfassung-table-col { width: 100%; }
 
-/* Erfassungs-Card flach: das Formular sitzt bereits im weissen
-   .main-content-wrapper. Die zusaetzliche weisse .content-background-Card
-   (global padding 2.5rem + Shadow) erzeugt nur einen dicken weissen Rand. */
-.erfassung-form-col .content-background {
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    margin-bottom: 0 !important;
-}
+/* Erfassungs-Formular als Inhalts-Card (css/msv-ui.css) */
+.erfassung-form-col .content-background { margin-bottom: 0 !important; }
 
 @media (min-width: 1200px) {
     .erfassung-layout {
@@ -378,7 +335,7 @@ $page_specific_css = '
     z-index: 6;
     background: var(--light-color);
     border-bottom: none;
-    box-shadow: inset 0 -2px 0 #dee2e6;
+    box-shadow: inset 0 -2px 0 var(--ui-rand);
 }
 
 /* Total-Zeile am unteren Rand fixieren, solange der Body scrollt */
@@ -386,8 +343,8 @@ $page_specific_css = '
     position: sticky;
     bottom: 0;
     z-index: 6;
-    background: #f8f9fa;
-    box-shadow: inset 0 2px 0 #dee2e6;
+    background: var(--ui-flaeche-2);
+    box-shadow: inset 0 2px 0 var(--ui-rand);
 }
 
 /* === MOBILE === */
@@ -497,7 +454,7 @@ $page_specific_css = '
         border-radius: 2rem;
         font-size: 0.82rem;
         font-weight: 500;
-        border: 1px solid #dee2e6;
+        border: 1px solid var(--ui-rand);
         background: #fff;
         color: var(--secondary-color);
         white-space: nowrap;
@@ -515,8 +472,8 @@ $page_specific_css = '
 
     /* Mobile Stats Summary */
     .mobile-stats-bar {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
+        background: var(--ui-flaeche-2);
+        border: 1px solid var(--ui-rand);
         border-radius: 0.5rem;
         padding: 0.6rem 1rem;
         margin-bottom: 0.75rem;
@@ -539,7 +496,7 @@ $page_specific_css = '
     /* Mobile Card */
     .mobile-kauf-card {
         background: #fff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ui-rand);
         border-radius: 0.5rem;
         margin-bottom: 0.5rem;
         overflow: hidden;
@@ -550,8 +507,8 @@ $page_specific_css = '
         justify-content: space-between;
         align-items: center;
         padding: 0.75rem 1rem;
-        background: #fafbfc;
-        border-bottom: 1px solid #f1f3f4;
+        background: var(--ui-flaeche-2);
+        border-bottom: 1px solid var(--ui-linie-zart);
     }
 
     .mobile-kauf-card-title {
@@ -590,7 +547,7 @@ $page_specific_css = '
         display: flex;
         gap: 0.5rem;
         padding: 0.4rem 1rem;
-        border-top: 1px solid #f1f3f4;
+        border-top: 1px solid var(--ui-linie-zart);
         justify-content: flex-end;
     }
 
@@ -639,13 +596,14 @@ include 'header.inc.php';
   <div class="col-12 ps-0">
     <div class="main-content-wrapper content-width-wide">
 
-      <!-- Page Title -->
-      <div class="row mb-3 d-none d-md-flex">
-        <div class="col-md-12">
-          <h2 class="h4 mb-0 page-title">Munitionskauf erfassen <button type="button" class="btn-help" data-help="munitionskauf.uebersicht" aria-label="Hilfe"></button>
-          </h2>
-        </div>
-      </div>
+      <?php
+      $page_title = 'Munitionskauf erfassen';
+      $page_title_after = '<button type="button" class="btn-help" data-help="munitionskauf.uebersicht" aria-label="Hilfe"></button>'
+          . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+          . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+      $page_show_mobile = true;
+      include 'partials/page_header.inc.php';
+      ?>
 
       <!-- Tabs -->
       <div class="msv-tabs">
@@ -667,14 +625,10 @@ include 'header.inc.php';
         <div class="erfassung-form-col">
         <div class="content-background">
           <form id="munitionForm">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
             <!-- Kompakte Zeile: Jahr / Datum / Anlass -->
             <div class="compact-form-row">
-              <div class="form-group" style="flex: 0 0 110px;">
-                <label><i class="bi bi-calendar3 me-1"></i>Jahr</label>
-                <select id="yearSelect" class="form-select form-select-sm"></select>
-              </div>
               <div class="form-group" style="flex: 1; min-width: 160px;">
                 <label><i class="bi bi-calendar-event me-1"></i>Kaufdatum</label>
                 <input type="date" id="kaufDatum" class="form-control form-control-sm" required>
@@ -757,7 +711,7 @@ include 'header.inc.php';
                 <button type="button" id="btnReset" class="btn btn-sm btn-outline-secondary" data-tooltip="Zurücksetzen">
                   <i class="bi bi-arrow-counterclockwise"></i>
                 </button>
-                <button type="submit" id="btnSave" class="btn btn-sm btn-outline-primary">
+                <button type="submit" id="btnSave" class="btn btn-sm btn-primary">
                   <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpinner"></span>
                   <i class="bi bi-save me-1"></i>Speichern
                 </button>

@@ -1,6 +1,7 @@
 <?php
 // sieger.php – Sieger der letzten Jahre (Kategorie-Karten pro Jahr, Slide-Panel zum Erfassen/Bearbeiten)
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 $page_specific_css = <<<'CSS'
 /* === CATEGORY GRID === */
@@ -16,10 +17,10 @@ $page_specific_css = <<<'CSS'
 .sieger-group-title {
     display: flex; align-items: center; gap: 0.4rem;
     margin: 0 0 0.6rem; padding-bottom: 0.35rem;
-    font-size: 0.95rem; font-weight: 700; color: #1e293b;
-    border-bottom: 2px solid #e2e8f0;
+    font-size: 0.95rem; font-weight: 700; color: var(--ui-text);
+    border-bottom: 2px solid var(--ui-rand);
 }
-.sieger-group-title i { color: #64748b; }
+.sieger-group-title i { color: var(--ui-text-2); }
 
 /* === CATEGORY CARD (kompakt) === */
 .cat-card {
@@ -33,9 +34,9 @@ $page_specific_css = <<<'CSS'
 .cat-card-head {
     display: flex; align-items: center; gap: 0.45rem;
     padding: 0.3rem 0.6rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--ui-linie-zart);
 }
-.cat-card-head h6 { margin: 0; font-weight: 600; font-size: 0.82rem; color: #1e293b; }
+.cat-card-head h6 { margin: 0; font-weight: 600; font-size: 0.82rem; color: var(--ui-text); }
 .cat-card-body { padding: 0.1rem 0 0.2rem; }
 
 /* === CATEGORY ICON === */
@@ -44,8 +45,8 @@ $page_specific_css = <<<'CSS'
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; flex-shrink: 0;
 }
-.cat-icon.gold   { background: #fff8e1; color: #ffc107; border: 1px solid #ffe082; }
-.cat-icon.blue   { background: #dbeafe; color: #2563eb; border: 1px solid #bfdbfe; }
+.cat-icon.gold   { background: var(--ui-warn-zeile); color: var(--ui-warn-punkt); border: 1px solid var(--ui-warn-rand); }
+.cat-icon.blue   { background: #dbeafe; color: var(--ui-akzent); border: 1px solid #bfdbfe; }
 .cat-icon.green  { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
 .cat-icon.purple { background: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; }
 
@@ -53,14 +54,14 @@ $page_specific_css = <<<'CSS'
 .winner-row {
     display: flex; align-items: center; gap: 0.45rem;
     padding: 0.25rem 0.6rem;
-    border-bottom: 1px solid #f8fafc;
+    border-bottom: 1px solid var(--ui-flaeche-2);
     cursor: pointer; transition: background 0.15s;
 }
 .winner-row:hover, .winner-row:focus-visible { background: rgba(99,102,241,0.07); outline: none; }
 .winner-row:focus-visible { box-shadow: inset 0 0 0 2px rgba(99,102,241,0.35); }
 .winner-row:last-child { border-bottom: none; }
-.winner-name  { flex: 1; font-weight: 500; color: #334155; font-size: 0.8rem; }
-.winner-score { font-weight: 700; color: #1e293b; font-size: 0.8rem; min-width: 38px; text-align: right; }
+.winner-name  { flex: 1; font-weight: 500; color: var(--ui-text); font-size: 0.8rem; }
+.winner-score { font-weight: 700; color: var(--ui-text); font-size: 0.8rem; min-width: 38px; text-align: right; }
 .winner-action { display: flex; gap: 0.2rem; }
 .winner-action .btn {
     padding: 0.1rem 0.35rem; font-size: 0.72rem; line-height: 1.3;
@@ -69,7 +70,7 @@ $page_specific_css = <<<'CSS'
 .winner-row:hover .winner-action .btn, .winner-row:focus-within .winner-action .btn { opacity: 1; }
 
 /* === EMPTY STATE === */
-.empty-state { text-align: center; padding: 3rem 1rem; color: #64748b; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--ui-text-2); }
 .empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem; }
 
 /* === MOBILE === */
@@ -104,7 +105,7 @@ rsort($years);
     <div class="row">
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
-                <input type="hidden" id="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" id="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                 <?php $page_title = 'Sieger der letzten Jahre'; $page_actions = '<button type="button" class="btn-help" data-help="sieger.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
@@ -148,7 +149,7 @@ $panel_title      = '<i class="bi bi-plus-circle me-2"></i>Neuen Sieger hinzufü
 ob_start();
 ?>
         <form id="addSiegerForm">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="mb-3">
                 <label class="panel-label" for="memberSelect"><i class="bi bi-person me-1"></i>Mitglied</label>

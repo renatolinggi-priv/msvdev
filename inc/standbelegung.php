@@ -3,6 +3,7 @@
 // Aufbau (Review 09.2026): Daten in standbelegung/load_page_data.inc.php, Tabs als Partials,
 // Logik in js/standbelegung.js, Konfiguration (Art-Codes/Regeln) in standbelegung/standbelegung_config.inc.php.
 require_once 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 require_once 'standbelegung/load_page_data.inc.php';
 
 $page_specific_css = @file_get_contents(__DIR__ . '/../css/standbelegung.css') ?: '';
@@ -14,7 +15,7 @@ include 'header.inc.php';
 
 // Seitendaten fuer js/standbelegung.js – JSON_HEX_* verhindert </script>-Ausbruch aus Bezeichnungen
 $sbInit = json_encode([
-    'csrf'       => $_SESSION['csrf_token'],
+    'csrf'       => csrf_token(),
     'artCodes'   => SB_ART_CODES,
     'kategorien' => SB_KATEGORIEN,
     'rules'      => SB_ART_RULES,
