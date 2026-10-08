@@ -7,388 +7,134 @@ try {
     die("System error. Please try again later.");
 }
 
-// Seitenspezifische Styles
+// Seitenspezifische Styles: nur noch Aufbau dieser Seite; Optik kommt aus css/msv-ui.css
 $page_specific_css = "
-/* =========================================
-   Endresultate – Slide-Panel Layout
-   ========================================= */
+/* Kopf-Card + Tabellen-Card füllen das Fenster, die Tabelle scrollt innen */
+.end-seite { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h, 76px) - 28px); min-height: 520px; margin-bottom: 0 !important; }
+.end-seite > .msv-kopf { flex-shrink: 0; }
+.end-tabelle { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.end-tabelle .desktop-table-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.end-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; outline: none; }
+#mitgliederTabelle { margin: 0; border-collapse: separate; border-spacing: 0; }
+#mitgliederTabelle thead th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; white-space: nowrap; text-align: right; }
+#mitgliederTabelle tbody td { height: 40px; padding: 0 10px; white-space: nowrap; text-align: right; vertical-align: middle; border-bottom: 1px solid var(--ui-linie-zart); }
+#mitgliederTabelle thead th:first-child, #mitgliederTabelle tbody td:first-child { text-align: left; padding-left: 20px; }
+#mitgliederTabelle tbody td:first-child { font-weight: 600; }
+#mitgliederTabelle thead th:last-child, #mitgliederTabelle tbody td:last-child { text-align: left; padding-right: 20px; }
+#mitgliederTabelle tbody tr.hybrid-row { cursor: pointer; }
+#mitgliederTabelle tbody tr.hybrid-row:hover > td { background: var(--ui-flaeche-2); }
+#mitgliederTabelle tbody tr.ui-leer td { height: auto; padding: 32px 16px; text-align: center; color: var(--ui-text-2); white-space: normal; cursor: default; }
+#editPanel .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
+#editPanel .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
+#editPanel .panel-footer .ui-kbd { margin: 0 2px; }
 
-:root {
-    --app-header: 76px;
-    --app-footer: 0px;
-}
-
-.main-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    min-height: 0 !important;
-    height: calc(100vh - var(--app-header) - var(--app-footer) - 20px) !important;
-    margin-bottom: 0 !important;
-}
-
-.content-background {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: hidden;
-}
-
-#endresultateForm {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-}
-
-#resultateContainer {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.desktop-table-container {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.table-wrapper {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    margin-bottom: 0 !important;
-    overflow: hidden !important;
-}
-
-.table-responsive {
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    overflow: auto !important;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    -webkit-overflow-scrolling: touch;
-}
-
-.table {
-    border: none;
-    margin-bottom: 0;
-}
-
-.table thead th {
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0.75rem;
-    background-color: #f8f9fa;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.table tbody td {
-    padding: 0.5rem 0.75rem;
-    vertical-align: middle;
-    border: none;
-    text-align: center;
-}
-
-.table tbody td:first-child {
-    text-align: left;
-}
-
-.results-list-card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    overflow: hidden;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    flex: 0 1 auto;
-    min-height: 0;
-}
-
-.results-header {
-    background: var(--light-color);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #dee2e6;
-    color: var(--dark-color);
-    font-weight: 600;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.spinner-border { color: var(--secondary-color) !important; }
-
-/* =========================================
-   Hybrid Rows (klickbare Tabelle)
-   ========================================= */
-#mitgliederTabelle tbody tr.hybrid-row {
-    cursor: pointer;
-    transition: background 0.15s, box-shadow 0.15s;
-    border-bottom: 1px solid #f1f3f4;
-}
-#mitgliederTabelle tbody tr.hybrid-row:hover {
-    background: rgba(99,102,241,0.05);
-}
-#mitgliederTabelle tbody tr.hybrid-row.selected {
-    background: rgba(0,123,255,0.08);
-    box-shadow: inset 4px 0 0 #007bff;
-}
-#mitgliederTabelle tbody tr.hybrid-row[data-has-data='1'] td:first-child {
-    box-shadow: inset 4px 0 0 #28a745;
-}
-#mitgliederTabelle tbody tr.hybrid-row[data-has-data='0'] td:first-child {
-    box-shadow: inset 4px 0 0 #dee2e6;
-}
-#mitgliederTabelle tbody tr.hybrid-row.selected td:first-child {
-    box-shadow: inset 4px 0 0 #007bff;
-}
-
-/* =========================================
-   Fortschrittsbalken
-   ========================================= */
-.progress-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius);
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 0.75rem;
-    box-shadow: var(--box-shadow);
-    flex-shrink: 0;
-}
-
-/* =========================================
-   Slide-Panel: Container/Overlay/Header/Body zentral in css/msv-styles.css
-   (Breite via panel-width Custom-Property am Panel-Element)
-   ========================================= */
-.panel-footer {
-    padding: 0.75rem 1.25rem;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
-    flex-shrink: 0;
-}
-
-/* =========================================
-   Stich-Sektionen im Panel: zentral .shot-* in css/msv-styles.css
-   ========================================= */
-
-/* Gelöst-Markierung in der Tabelle (Schütze gelöst, noch kein Resultat) */
-.geloest-pill {
-    display: inline-block;
-    font-size: 0.62rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: #0f766e;
-    background: #ccfbf1;
-    border-radius: 999px;
-    padding: 0.1rem 0.5rem;
-    line-height: 1.4;
-    white-space: nowrap;
-}
-#mitgliederTabelle tbody td .cell-empty { color: #cbd5e1; }
-@media (max-width: 576px) {
-    .button-toolbar { flex-direction: column; }
-    .button-toolbar .btn { width: 100%; }
-}
-
-/* =========================================
-   Mobile
-   ========================================= */
 @media (max-width: 767.98px) {
-    /* Touch-Target-Grössen (form-controls/.btn) zentral in css/msv-styles.css */
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
-
-    .main-content-wrapper {
-        height: auto !important;
-        min-height: calc(100vh - var(--app-header) - 10px) !important;
-    }
-
-    .content-background {
-        overflow: visible !important;
-    }
-
-    .table-wrapper {
-        overflow: visible !important;
-    }
-
-    /* Panel wird Fullscreen auf Mobile */
-    .hybrid-edit-panel {
-        width: 100vw;
-        right: -100vw;
-    }
+    .end-seite { height: auto; min-height: 0; }
+    .end-tabelle { overflow: visible; }
+    .hybrid-edit-panel { width: 100vw; right: -100vw; }
     .panel-overlay { display: none !important; }
-
-    .panel-footer {
-        position: sticky;
-        bottom: 0;
-    }
-    .panel-footer .btn {
-        min-height: 48px;
-        font-size: 0.9rem;
-    }
-
-    .mobile-card-detail-row {
-        padding: 0.75rem 0 !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-    }
-
-    .mobile-card-detail-label {
-        font-size: 0.875rem !important;
-        color: #64748b !important;
-        font-weight: 500 !important;
-    }
-
-    .mobile-card-detail-value {
-        font-size: 1rem !important;
-        color: #1e293b !important;
-    }
-
-    .mobile-card-body .btn {
-        min-height: 48px !important;
-        font-size: 1rem !important;
-    }
+    .panel-footer { position: sticky; bottom: 0; }
+    .panel-footer .btn { min-height: 48px; font-size: 0.9rem; }
+    .mobile-card-detail-row { padding: 0.75rem 0 !important; border-bottom: 1px solid var(--ui-linie-zart) !important; }
+    .mobile-card-detail-label { font-size: 0.875rem !important; color: var(--ui-text-2) !important; font-weight: 500 !important; }
+    .mobile-card-detail-value { font-size: 1rem !important; color: var(--ui-text) !important; }
+    .mobile-card-body .btn { min-height: 48px !important; font-size: 1rem !important; }
 }
-
 @media (min-width: 768px) {
     .mobile-cards-container { display: none !important; }
-    /* Kompakte Tabellen-Kopfzeile wie auf den anderen Resultate-Seiten
-       (kanti/heim) – vorher 0.85rem/1rem -> wirkte viel zu gross. */
-    #resultateContainer #mitgliederTabelle thead th {
-        font-size: 0.72rem !important;
-        padding: 0.6rem 0.4rem !important;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-    }
-    #resultateContainer #mitgliederTabelle tbody td { padding: 0.35rem 0.4rem !important; }
-    /* Mitglied-Spalte: Inhaltsbreite, kein Umbruch -> eine Zeile pro Mitglied */
-    #resultateContainer #mitgliederTabelle thead th:first-child,
-    #resultateContainer #mitgliederTabelle tbody td:first-child {
-        width: 1%;
-        white-space: nowrap;
-        padding-right: 1.25rem !important;
-    }
-    #resultateContainer #mitgliederTabelle tbody td:first-child { font-weight: 500; }
 }
 ";
 
 include 'header.inc.php';
-?>
-<style><?= $page_specific_css ?></style>
-<?php
-if (!isset($_SESSION)) { session_start(); }
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+require_once __DIR__ . '/csrf.inc.php';
+$csrf = csrf_token();
 ?>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-wide">
-                <!-- Header -->
-                <?php $page_title = 'Endschiessen Resultaterfassung'; $page_actions = '<button type="button" class="btn-help" data-help="endresultate.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+            <div class="main-content-wrapper content-width-wide end-seite">
+                <?php
+                $page_title = 'Endschiessen Resultaterfassung';
+                $page_title_after = '<button type="button" class="btn-help" data-help="endresultate.uebersicht" aria-label="Hilfe"></button>'
+                    . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                $page_actions = '<a href="endsch_import.php" class="btn btn-outline-success btn-sm"><i class="bi bi-upload me-1"></i>CSV importieren</a>'
+                    . '<button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm"><i class="bi bi-list-ol me-1"></i>Rangliste</button>';
+                $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span>'
+                    . '<span class="ui-balken" aria-hidden="true"><span id="progressBar"></span></span></div>'
+                    . '<div class="ui-chips" id="progressChips"></div>';
+                $page_show_mobile = true;
+                include 'partials/page_header.inc.php';
+                ?>
 
-                <div class="content-background">
-                    <form id="endresultateForm">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                <form id="endresultateForm" class="ui-karte end-tabelle" onsubmit="return false">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
-                        <!-- Jahr-Auswahl + Aktionen nebeneinander -->
-                        <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                                <i class="bi bi-calendar3 me-1"></i>Jahr:
-                            </label>
-                            <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel">Mitglieder</span>
+                        <div class="ui-filter" role="group" aria-label="Nach Stand filtern">
+                            <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="nAlle">0</span></button>
+                            <button type="button" data-filter="offen" aria-pressed="false">Offen <span id="nOffen">0</span></button>
+                            <button type="button" data-filter="ok" aria-pressed="false">Vollständig <span id="nOk">0</span></button>
                         </div>
+                        <label class="ui-suche d-none d-md-flex">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span class="visually-hidden">Mitglied suchen</span>
+                            <input type="search" id="endSuche" placeholder="Mitglied suchen" autocomplete="off">
+                        </label>
+                    </div>
 
-                        <!-- Aktionsbereich (Bootstrap Collapse) -->
-<?php
-                        $ac_id = 'endresultateActions';
-                        ob_start();
-                        ?>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm w-100">
-                                                <i class="bi bi-trophy me-1"></i>Rangliste
-                                            </button>
-                                        </div>
-                                    </div>
-                        <?php
-                        $ac_body = ob_get_clean();
-                        include 'partials/action_card.inc.php';
-                        ?>
-                        </div><!-- Ende flex-row Jahr+Aktionen -->
-
-                        <!-- Fortschrittsbalken -->
-                        <div class="progress-card">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="fw-semibold small">
-                                    <i class="bi bi-people me-1"></i>Erfassungsfortschritt
-                                </span>
-                                <span class="badge bg-success" id="progressBadge">0 / 0</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
-                            </div>
+                    <!-- Desktop: Tabelle -->
+                    <div class="desktop-table-container">
+                        <div class="end-scroll" id="endScroll" tabindex="0" aria-label="Mitglieder. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                            <table class="table mb-0" id="mitgliederTabelle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Mitglied</th>
+                                        <th scope="col">Endstich</th>
+                                        <th scope="col">Schwini</th>
+                                        <th scope="col">Kunst</th>
+                                        <th scope="col">Glück</th>
+                                        <th scope="col">Zabig</th>
+                                        <th scope="col">Sie und Er</th>
+                                        <th scope="col">Ansage</th>
+                                        <th scope="col">Stand</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="ui-leer">
+                                        <td colspan="9"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
 
-                        <!-- Tabelle Container -->
-                        <div id="resultateContainer">
-                            <div class="results-list-card">
-                                <div class="table-wrapper">
-                                    <!-- Desktop: Tabelle -->
-                                    <div class="desktop-table-container">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover mb-0" id="mitgliederTabelle">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col"><i class="bi bi-person me-1"></i>Mitglied</th>
-                                                        <th scope="col" class="text-center">Endstich</th>
-                                                        <th scope="col" class="text-center">Schwini</th>
-                                                        <th scope="col" class="text-center">Kunst</th>
-                                                        <th scope="col" class="text-center">Glück</th>
-                                                        <th scope="col" class="text-center">Zabig</th>
-                                                        <th scope="col" class="text-center">Sie und Er</th>
-                                                        <th scope="col" class="text-center">Ansage</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td colspan="8" class="text-center py-4">
-                                                            <div class="spinner-border spinner-border-sm me-2"></div>
-                                                            Lade Daten...
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <!-- Mobile: Cards -->
-                                    <div class="mobile-cards-container" id="mobileCardsEnd">
-                                        <div class="mobile-search">
-                                            <div class="position-relative">
-                                                <i class="bi bi-search search-icon"></i>
-                                                <input type="text" class="form-control" placeholder="Mitglied suchen..."
-                                                       oninput="filterMobileEnd(this)">
-                                            </div>
-                                        </div>
-                                        <div class="mobile-cards-scroll">
-                                            <!-- Cards werden per JavaScript generiert -->
-                                        </div>
-                                    </div>
-                                </div>
+                    <!-- Mobile: Cards -->
+                    <div class="mobile-cards-container" id="mobileCardsEnd">
+                        <div class="mobile-search">
+                            <div class="position-relative">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" class="form-control" placeholder="Mitglied suchen..."
+                                       oninput="filterMobileEnd(this)">
                             </div>
                         </div>
-                    </form>
-                </div>
+                        <div class="mobile-cards-scroll">
+                            <!-- Cards werden per JavaScript generiert -->
+                        </div>
+                    </div>
+
+                    <div class="ui-tasten d-none d-md-flex">
+                        <span><kbd>↑</kbd> <kbd>↓</kbd> wählen</span>
+                        <span><kbd>Enter</kbd> erfassen</span>
+                        <span>im Panel: <kbd>Enter</kbd> nächstes Feld</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>S</kbd> speichern</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> speichern &amp; nächstes offenes</span>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -400,21 +146,21 @@ if (empty($_SESSION['csrf_token'])) {
 <!-- Slide-Panel -->
 <div class="hybrid-edit-panel" id="editPanel" style="--panel-width: 600px;">
     <div class="panel-header">
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorheriger">
-                <i class="bi bi-chevron-left"></i>
+        <div class="min-w-0">
+            <h6 class="mb-0" id="panelTitle">Erfassen</h6>
+            <small class="panel-pos" id="panelSubtitle"></small>
+        </div>
+        <div class="d-flex align-items-center gap-1 ms-auto">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorheriges Mitglied" aria-label="Vorheriges Mitglied">
+                <i class="bi bi-chevron-up" aria-hidden="true"></i>
             </button>
-            <div>
-                <h6 class="mb-0" id="panelTitle"><i class="bi bi-target me-2"></i>Erfassen</h6>
-                <small class="text-muted" id="panelSubtitle"></small>
-            </div>
-            <button class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächster">
-                <i class="bi bi-chevron-right"></i>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächstes Mitglied" aria-label="Nächstes Mitglied">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelClose" data-tooltip="Schliessen (Esc)" aria-label="Schliessen (Esc)">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" id="panelClose">
-            <i class="bi bi-x-lg"></i>
-        </button>
     </div>
 
     <div class="panel-body" id="panelBody">
@@ -567,15 +313,16 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
     </div>
     <div class="panel-footer">
-        <div class="d-flex gap-2 w-100">
-            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn">
-                <i class="bi bi-trash"></i>
+        <div class="d-flex gap-2 w-100 align-items-center">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn" data-tooltip="Resultate dieses Mitglieds löschen" aria-label="Resultate dieses Mitglieds löschen">
+                <i class="bi bi-trash" aria-hidden="true"></i>
             </button>
-            <button type="button" class="btn btn-outline-primary flex-fill" id="panelSaveBtn">
+            <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> nächstes offenes</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="panelSaveBtn">
                 <i class="bi bi-save me-1"></i>Speichern
             </button>
-            <button type="button" class="btn btn-outline-primary flex-fill" id="panelSaveNextBtn">
-                Speichern & Nächster <i class="bi bi-arrow-right ms-1"></i>
+            <button type="button" class="btn btn-primary btn-sm" id="panelSaveNextBtn">
+                Speichern &amp; nächstes offenes <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
     </div>
@@ -609,8 +356,8 @@ $(document).ready(function() {
             const name = this.currentIndex >= 0
                 ? $(this.allRows[this.currentIndex].tr).find('td:first').text().trim()
                 : '';
-            $('#panelTitle').html('<i class="bi bi-target me-2"></i>' + name);
-            $('#panelSubtitle').text((this.currentIndex + 1) + ' / ' + this.allRows.length);
+            $('#panelTitle').text(name || 'Erfassen');
+            $('#panelSubtitle').text((this.currentIndex + 1) + ' von ' + this.allRows.length);
 
             // Navigation
             $('#panelPrev').prop('disabled', this.currentIndex <= 0);
@@ -726,25 +473,23 @@ $(document).ready(function() {
                 url: 'endschresultate/save_schuss.php',
                 type: 'POST',
                 data: formData,
-                success: function() {
-                    msvToast('Resultate gespeichert!', 'success');
-
-                    // Zeile als "hat Daten" markieren
-                    if (EndEditPanel.currentIndex >= 0) {
-                        EndEditPanel.allRows[EndEditPanel.currentIndex].hasData = true;
-                        $(EndEditPanel.allRows[EndEditPanel.currentIndex].tr).attr('data-has-data', '1');
+                dataType: 'json',
+                success: function(resp) {
+                    if (!resp || resp.success !== true) {
+                        msvToast('Nicht gespeichert: ' + ((resp && resp.message) || 'unbekannter Fehler') + '. Die Eingaben sind noch da.', 'error');
+                        return;
                     }
-                    EndEditPanel.updateProgress();
-
+                    msvToast('Resultate gespeichert', 'success');
                     if (callback) {
-                        callback();
+                        // Tabelle neu laden, Panel bleibt offen, danach weiter
+                        loadData($('#yearSelect').val(), callback);
                     } else {
-                        // Tabelle neu laden
+                        EndEditPanel.close();
                         loadData($('#yearSelect').val());
                     }
                 },
-                error: function() {
-                    msvToast('Fehler beim Speichern', 'error');
+                error: function(xhr) {
+                    msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler') + '. Die Eingaben sind noch da.', 'error');
                 },
                 complete: function() {
                     $saveBtn.prop('disabled', false).html(originalSave);
@@ -754,25 +499,19 @@ $(document).ready(function() {
         },
 
         saveAndNext() {
+            const gespeichert = this.currentMitgliedId;
             this.save(function() {
-                // Nächsten Schützen ohne Daten finden
-                for (let i = EndEditPanel.currentIndex + 1; i < EndEditPanel.allRows.length; i++) {
-                    if (!EndEditPanel.allRows[i].hasData) {
-                        EndEditPanel.open(EndEditPanel.allRows[i].id);
-                        return;
-                    }
+                // Nach dem Neuladen: nächstes Mitglied mit offenen Stichen, nach dem gespeicherten beginnend
+                const rows = EndEditPanel.allRows;
+                const i = rows.findIndex(r => r.id == gespeichert);
+                const reihe = i >= 0 ? rows.slice(i + 1).concat(rows.slice(0, i)) : rows;
+                const naechstes = reihe.find(r => r.stand === 'offen');
+                if (naechstes) {
+                    EndEditPanel.open(naechstes.id);
+                } else {
+                    msvToast('Alle gelösten Stiche sind erfasst', 'success');
+                    EndEditPanel.close();
                 }
-                // Auch vor dem aktuellen suchen
-                for (let i = 0; i < EndEditPanel.currentIndex; i++) {
-                    if (!EndEditPanel.allRows[i].hasData) {
-                        EndEditPanel.open(EndEditPanel.allRows[i].id);
-                        return;
-                    }
-                }
-                // Alle erfasst
-                msvToast('Alle Schützen erfasst!', 'success');
-                EndEditPanel.close();
-                loadData($('#yearSelect').val());
             });
         },
 
@@ -796,9 +535,11 @@ $(document).ready(function() {
         buildRowIndex() {
             this.allRows = [];
             $('#mitgliederTabelle tbody tr.hybrid-row').each((_, tr) => {
+                const hasData = String($(tr).data('has-data')) === '1';
                 this.allRows.push({
                     id: $(tr).data('mitglied-id'),
-                    hasData: String($(tr).data('has-data')) === '1',
+                    hasData: hasData,
+                    stand: $(tr).attr('data-stand') || (hasData ? 'ok' : 'offen'),
                     tr: tr
                 });
             });
@@ -806,10 +547,18 @@ $(document).ready(function() {
 
         updateProgress() {
             const total = this.allRows.length;
-            const withData = this.allRows.filter(r => r.hasData).length;
-            const pct = total > 0 ? Math.round((withData / total) * 100) : 0;
-            $('#progressBadge').text(withData + ' / ' + total);
+            const ok = this.allRows.filter(r => r.stand === 'ok').length;
+            const offen = total - ok;
+            const pct = total > 0 ? Math.round((ok / total) * 100) : 0;
+            $('#progressText').html(ok + ' von ' + total + ' <span>vollständig erfasst</span>');
             $('#progressBar').css('width', pct + '%');
+            $('#progressChips').html(
+                '<span class="ui-chip"><b>' + total + '</b> Mitglieder mit gelösten Stichen</span>' +
+                (offen ? '<span class="ui-chip"><span class="ui-punkt"></span><b>' + offen + '</b> mit offenen Stichen</span>' : '')
+            );
+            $('#nAlle').text(total);
+            $('#nOffen').text(offen);
+            $('#nOk').text(ok);
         }
     };
 
@@ -823,15 +572,12 @@ $(document).ready(function() {
     // =========================================
     //  Daten laden
     // =========================================
-    function loadData(year) {
-        EndEditPanel.close();
-
+    function loadData(year, nachher) {
         var $tbody = $('#mitgliederTabelle tbody');
-        $tbody.html(
-            '<tr><td colspan="8" class="text-center py-4">' +
-            '<div class="spinner-border spinner-border-sm me-2"></div>' +
-            'Lade Daten...</td></tr>'
-        );
+        if (!nachher) {
+            EndEditPanel.close();
+            $tbody.html('<tr class="ui-leer"><td colspan="9"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td></tr>');
+        }
 
         $.ajax({
             url: 'endschresultate/load_endschresultate.php',
@@ -841,18 +587,73 @@ $(document).ready(function() {
                 $tbody.html(response);
                 EndEditPanel.buildRowIndex();
                 EndEditPanel.updateProgress();
+                filterAnwenden();
                 buildMobileEndCards();
+                if (typeof nachher === 'function') nachher();
             },
-            error: function() {
-                $tbody.html(
-                    '<tr><td colspan="8" class="text-center text-danger py-4">' +
-                    '<i class="bi bi-exclamation-triangle me-2"></i>' +
-                    'Fehler beim Laden der Daten</td></tr>'
-                );
-                msvToast('Fehler beim Laden der Daten', 'error');
+            error: function(xhr) {
+                $tbody.html('<tr class="ui-leer"><td colspan="9" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Die Daten konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
             }
         });
     }
+
+    // =========================================
+    //  Filter (Alle / Offen / Vollständig) und Suche
+    // =========================================
+    var endFilter = 'alle', endSuchtext = '';
+    function filterAnwenden() {
+        var sichtbar = 0;
+        EndEditPanel.allRows.forEach(function(r) {
+            var name = $(r.tr).find('td:first').text().toLowerCase();
+            var zeigen = (endFilter === 'alle' || r.stand === endFilter) && name.indexOf(endSuchtext) !== -1;
+            r.tr.style.display = zeigen ? '' : 'none';
+            if (zeigen) sichtbar++;
+        });
+        $('#endKeineTreffer').remove();
+        if (!sichtbar && EndEditPanel.allRows.length) {
+            $('#mitgliederTabelle tbody').append(
+                '<tr class="ui-leer" id="endKeineTreffer"><td colspan="9">Keine Mitglieder für diese Auswahl. ' +
+                '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="endFilterZurueck">Filter zurücksetzen</button></td></tr>');
+        }
+    }
+    $(document).on('click', '.ui-filter button', function() {
+        endFilter = $(this).data('filter');
+        $('.ui-filter button').attr('aria-pressed', 'false');
+        $(this).attr('aria-pressed', 'true');
+        filterAnwenden();
+    });
+    $('#endSuche').on('input', function() { endSuchtext = this.value.trim().toLowerCase(); filterAnwenden(); });
+    $(document).on('click', '#endFilterZurueck', function() {
+        endFilter = 'alle'; endSuchtext = ''; $('#endSuche').val('');
+        $('.ui-filter button').attr('aria-pressed', 'false');
+        $('.ui-filter button[data-filter="alle"]').attr('aria-pressed', 'true');
+        filterAnwenden();
+    });
+
+    // Tabelle per Tastatur: Pfeile wählen, Enter öffnet
+    $('#endScroll').on('keydown', function(e) {
+        var zeilen = EndEditPanel.allRows.filter(function(r) { return r.tr.style.display !== 'none'; });
+        if (!zeilen.length) return;
+        var akt = zeilen.findIndex(function(r) { return r.tr.classList.contains('ui-markiert'); });
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var neu = akt < 0 ? 0 : Math.max(0, Math.min(zeilen.length - 1, akt + (e.key === 'ArrowDown' ? 1 : -1)));
+            zeilen.forEach(function(r) { r.tr.classList.remove('ui-markiert'); });
+            zeilen[neu].tr.classList.add('ui-markiert');
+            zeilen[neu].tr.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && akt >= 0) {
+            e.preventDefault();
+            EndEditPanel.open(zeilen[akt].id);
+        }
+    });
+    $('#endScroll').on('blur', function() { $('#mitgliederTabelle tr.ui-markiert').removeClass('ui-markiert'); });
+
+    // Panel: Ctrl+S speichert, Ctrl+Enter speichert und öffnet das nächste offene Mitglied
+    $(document).on('keydown', function(e) {
+        if (!$('#editPanel').hasClass('open') || !(e.ctrlKey || e.metaKey)) return;
+        if (e.key === 's' || e.key === 'S') { e.preventDefault(); EndEditPanel.save(); }
+        else if (e.key === 'Enter') { e.preventDefault(); EndEditPanel.saveAndNext(); }
+    });
 
     // =========================================
     //  Summen berechnen
@@ -884,14 +685,14 @@ $(document).ready(function() {
     function setupEnterNavigation() {
         var $inputs = $('#editPanel .focusable-input:not(:disabled)');
         $inputs.off('keydown.nav').on('keydown.nav', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                 e.preventDefault();
                 var currentIndex = $inputs.index(this);
                 var nextIndex = currentIndex + 1;
                 if (nextIndex < $inputs.length) {
                     $inputs.eq(nextIndex).focus().select();
                 } else {
-                    $('#panelSaveBtn').focus();
+                    EndEditPanel.saveAndNext();
                 }
             }
         });
@@ -1067,12 +868,12 @@ $(document).ready(function() {
         const mitgliedId = EndEditPanel.currentMitgliedId;
         if (!mitgliedId) return;
 
-        const name = $('#panelTitle').text().replace('Erfassen', '').replace('–', '').trim();
-        const r = await msvConfirm(
-            'Möchtest du die Resultate von "' + name + '" wirklich löschen?',
-            'Resultate löschen',
-            'Ja, löschen'
-        );
+        const name = $('#panelTitle').text().trim();
+        const r = await msvConfirmDelete('', {
+            title: 'Resultate löschen?',
+            html: 'Alle Endschiessen-Resultate ' + $('#yearSelect').val() + ' von <strong>' + msvEsc(name) + '</strong> werden gelöscht.',
+            confirmText: 'Ja, löschen'
+        });
         if (!r.isConfirmed) return;
 
         $.ajax({
@@ -1083,12 +884,14 @@ $(document).ready(function() {
                 jahr: $('#yearSelect').val(),
                 csrf_token: $('#editPanel input[name="csrf_token"]').val()
             },
-            success: function() {
+            dataType: 'json',
+            success: function(resp) {
+                if (resp && resp.success === false) { msvToast('Nicht gelöscht: ' + (resp.message || 'unbekannter Fehler'), 'error'); return; }
                 msvToast('Resultate gelöscht', 'success');
                 EndEditPanel.close();
                 loadData($('#yearSelect').val());
             },
-            error: function() { msvToast('Fehler beim Löschen', 'error'); }
+            error: function(xhr) { msvToast('Nicht gelöscht: ' + msvXhrMessage(xhr, 'Serverfehler'), 'error'); }
         });
     });
 

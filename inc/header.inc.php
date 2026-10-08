@@ -309,6 +309,9 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
         });
     </script>
 
+    <!-- Erscheinungsbild (seit 10/2026, angelehnt an SFARL): nach allen Basis-Styles, vor dem Seiten-CSS -->
+    <link rel="stylesheet" href="../css/msv-ui.css?v=<?php echo @filemtime(__DIR__ . '/../css/msv-ui.css') ?: '1'; ?>">
+
     <?php if (!empty($page_specific_css)): ?>
     <style>
     <?php echo $page_specific_css; ?>
@@ -321,7 +324,7 @@ $navPageTitle = preg_replace('/\s+-\s+MSV Wilen$/', '', $Seitentitel);
         // Navigation-Layout-Preference (Sidebar links / Topbar oben) VOR dem Rendern
         // anwenden -> verhindert sichtbares Umspringen ("Flicker") beim Seitenaufbau.
         try {
-            if (localStorage.getItem('msvNavSidebar') === '1') {
+            if (localStorage.getItem('msvNavSidebar') !== '0') {
                 document.body.classList.add('nav-sidebar');
             }
         } catch (e) {}

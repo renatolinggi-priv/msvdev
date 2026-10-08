@@ -1181,12 +1181,12 @@ class NavigationManager {
         border-bottom: none;
     }
     body.nav-sidebar .offcanvas-nav .mobile-nav-link {
-        padding: 0.75rem 1.25rem;
+        padding: 0.4rem 1rem;
         font-size: 0.85rem;
-        font-weight: 700;
+        font-weight: 600;
         color: var(--sb-text);
         border-bottom: 1px solid var(--sb-border);
-        min-height: 44px;
+        min-height: 34px;
         white-space: nowrap;
     }
     body.nav-sidebar .offcanvas-nav .mobile-nav-link:hover,
@@ -1194,7 +1194,7 @@ class NavigationManager {
         background: var(--sb-accent-light);
         color: var(--sb-accent-dark);
         border-left: 0;
-        padding-left: 1.25rem;
+        padding-left: 1rem;
     }
     body.nav-sidebar .offcanvas-nav .mobile-nav-link i.bi-chevron-down {
         font-size: 0.7rem;
@@ -1236,8 +1236,8 @@ class NavigationManager {
     body.nav-sidebar .offcanvas-nav .mobile-submenu-link {
         display: flex;
         align-items: center;
-        padding: 0.5rem 1rem 0.5rem 1.75rem;
-        min-height: 38px;
+        padding: 0.28rem 1rem 0.28rem 1.75rem;
+        min-height: 30px;
         font-size: 0.8rem;
         font-weight: 400;
         color: #3c4858;

@@ -1,0 +1,360 @@
+/* ==========================================================================
+   msv-ui.css – Erscheinungsbild Admin (seit Oktober 2026)
+   Klassisches Admin, angelehnt an die Schwesterprojekte SFARL / JSK:
+   heller Grund, weisse Flächen mit feinem Rand, Navigation links, Kopf-Card,
+   kompakte Tabellen, Slide-Panel. Vereinsrot nur im Logo und bei Gefahr.
+
+   Ladereihenfolge (header.inc.php): Bootstrap → msv-styles.css → fixes → mobile-cards
+   → Inline-<style> im Header → DIESE DATEI → $page_specific_css der Seite.
+   Seiteneigenes CSS gewinnt also noch; es wird Seitentyp um Seitentyp abgebaut.
+   ========================================================================== */
+
+/* ---------- Schrift (lokal, keine externen Server) ---------- */
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('fonts/ibm-plex-sans/ibm-plex-sans-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('fonts/ibm-plex-sans/ibm-plex-sans-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+    --ui-grund: #f5f6fa;
+    --ui-flaeche: #ffffff;
+    --ui-flaeche-2: #f8fafb;
+    --ui-hover: #f1f5f9;
+    --ui-gewaehlt: #eef4ff;
+    --ui-rand: #e8ecf1;
+    --ui-linie: #eef1f5;
+    --ui-linie-zart: #f1f4f8;
+    --ui-feldrand: #d5dbe3;
+    --ui-text: #1a2332;
+    --ui-text-2: #5a6577;
+    --ui-text-3: #667080;
+    --ui-akzent: #3b6cce;
+    --ui-akzent-dunkel: #2b52a0;
+    --ui-akzent-hell: #e8f0fe;
+    --ui-ok-bg: #ecfdf3;   --ui-ok-fg: #166534;   --ui-ok-rand: #a7e9c0;
+    --ui-warn-bg: #fef3c7; --ui-warn-fg: #92400e; --ui-warn-zeile: #fffbeb; --ui-warn-rand: #f7d98a; --ui-warn-punkt: #d97706;
+    --ui-fehler-bg: #fef3f2; --ui-fehler: #b42318;
+    /* Knopf-Semantik (bleibt): grün Anlegen/Import, blau Speichern/Bearbeiten, türkis Export/PDF, rot Löschen, grau Abbrechen */
+    --ui-k-gruen: #1f7a4d;
+    --ui-k-blau: #2b52a0;
+    --ui-k-tuerkis: #0e6e78;
+    --ui-k-rot: #b42318;
+    --ui-k-grau: #5a6577;
+    --ui-rad: 8px;
+    --ui-rad-l: 12px;
+    --ui-pad: 20px;
+    --ui-schrift: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Bootstrap auf die Familie abstimmen */
+    --bs-body-font-family: var(--ui-schrift);
+    --bs-body-color: var(--ui-text);
+    --bs-body-bg: var(--ui-grund);
+    --bs-border-color: var(--ui-rand);
+    --bs-border-radius: var(--ui-rad);
+    --bs-primary: #3b6cce;
+    --bs-primary-rgb: 59, 108, 206;
+    --bs-link-color: #2b52a0;
+    --bs-link-color-rgb: 43, 82, 160;
+    --bs-link-hover-color: #1e3f80;
+    --bs-link-hover-color-rgb: 30, 63, 128;
+    --bs-focus-ring-color: rgba(59, 108, 206, .25);
+    --bs-secondary-color: var(--ui-text-2);
+}
+
+/* ---------- Grundlage ---------- */
+body {
+    font-family: var(--ui-schrift);
+    font-size: 0.9rem;
+    color: var(--ui-text);
+    background-color: var(--ui-grund);
+    font-variant-numeric: tabular-nums;
+}
+::selection { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
+a { color: var(--ui-akzent-dunkel); }
+a:hover { color: #1e3f80; }
+:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 2px; }
+.text-muted { color: var(--ui-text-2) !important; }
+
+/* ---------- Seitenaufbau: Kopf-Card + Inhalts-Card auf hellem Grund ---------- */
+.main-content-wrapper {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+}
+.msv-kopf {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin: 0 0 14px;
+    padding: 14px var(--ui-pad);
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
+}
+.msv-kopf .page-title,
+h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; color: var(--ui-text); line-height: 1.25; }
+.msv-kopf-sub { margin: 2px 0 0; color: var(--ui-text-2); font-size: 0.85rem; }
+.page-title { color: var(--ui-text); }
+
+.content-wrapper,
+.content-background,
+.main-content-wrapper .content-background,
+.main-content-wrapper .content-wrapper {
+    background: var(--ui-flaeche) !important;
+    border: 1px solid var(--ui-rand) !important;
+    border-radius: var(--ui-rad-l) !important;
+    box-shadow: none !important;
+    padding: 16px var(--ui-pad) !important;
+    margin-bottom: 14px !important;
+}
+.content-background > * { margin-bottom: 1.25rem !important; }
+.content-background > *:last-child { margin-bottom: 0 !important; }
+
+/* Tabellenblöcke innerhalb der Inhalts-Card: keine Karte in der Karte */
+.content-wrapper .table-wrapper,
+.content-background .table-wrapper {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.table-title,
+.table-header {
+    background: var(--ui-flaeche);
+    color: var(--ui-text);
+    font-weight: 600;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--ui-linie);
+}
+
+/* Freistehende Karten (Bootstrap .card) im gleichen Stil */
+.card { border-color: var(--ui-rand); border-radius: var(--ui-rad-l); box-shadow: none; }
+.card-header { background: var(--ui-flaeche-2); border-bottom-color: var(--ui-linie); font-weight: 600; color: var(--ui-text); }
+.card-header:first-child { border-radius: calc(var(--ui-rad-l) - 1px) calc(var(--ui-rad-l) - 1px) 0 0; }
+
+/* ---------- Tabellen ---------- */
+.table { --bs-table-color: var(--ui-text); --bs-table-hover-bg: var(--ui-flaeche-2); --bs-table-border-color: var(--ui-linie-zart); }
+.table thead th,
+.hybrid-table thead th {
+    background-color: var(--ui-flaeche-2);
+    color: var(--ui-text-2);
+    font-size: 0.71875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--ui-linie);
+}
+.table td,
+.hybrid-table td { border-bottom-color: var(--ui-linie-zart); }
+.table-hover > tbody > tr:hover > *,
+.hybrid-table tbody tr.hybrid-row:hover { background-color: var(--ui-flaeche-2); --bs-table-accent-bg: var(--ui-flaeche-2); }
+.hybrid-table tbody tr.hybrid-row.selected,
+.hybrid-table tbody tr.hybrid-row.selected td { background-color: var(--ui-gewaehlt); }
+
+/* ---------- Formulare ---------- */
+.form-control,
+.form-select {
+    border-color: var(--ui-feldrand);
+    border-radius: var(--ui-rad);
+    color: var(--ui-text);
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--ui-akzent-dunkel);
+    box-shadow: 0 0 0 1px var(--ui-akzent-dunkel);
+}
+.form-check-input:checked { background-color: var(--ui-akzent); border-color: var(--ui-akzent); }
+.form-check-input:focus { border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 .2rem rgba(59, 108, 206, .2); }
+.form-label { color: var(--ui-text); }
+
+/* ---------- Knöpfe: Form neu, Farbsemantik unverändert ---------- */
+.btn { border-radius: var(--ui-rad); font-weight: 600; }
+.btn-sm, .btn-group-sm > .btn { border-radius: 7px; }
+
+.btn-outline-primary   { color: var(--ui-k-blau);    border-color: var(--ui-akzent);  background-color: var(--ui-flaeche); --bs-btn-hover-bg: var(--ui-k-blau);    --bs-btn-hover-border-color: var(--ui-k-blau); }
+.btn-outline-primary:hover,   .btn-outline-primary:active   { color: #fff; background-color: var(--ui-k-blau);    border-color: var(--ui-k-blau); }
+.btn-outline-success   { color: var(--ui-k-gruen);   border-color: var(--ui-k-gruen); background-color: var(--ui-flaeche); }
+.btn-outline-success:hover,   .btn-outline-success:active   { color: #fff; background-color: var(--ui-k-gruen);   border-color: var(--ui-k-gruen); }
+.btn-outline-info      { color: var(--ui-k-tuerkis); border-color: var(--ui-k-tuerkis); background-color: var(--ui-flaeche); }
+.btn-outline-info:hover,      .btn-outline-info:active      { color: #fff; background-color: var(--ui-k-tuerkis); border-color: var(--ui-k-tuerkis); }
+.btn-outline-danger    { color: var(--ui-k-rot);     border-color: var(--ui-k-rot);   background-color: var(--ui-flaeche); }
+.btn-outline-danger:hover,    .btn-outline-danger:active    { color: #fff; background-color: var(--ui-k-rot);     border-color: var(--ui-k-rot); }
+.btn-outline-secondary { color: var(--ui-k-grau);    border-color: var(--ui-feldrand); background-color: var(--ui-flaeche); }
+.btn-outline-secondary:hover, .btn-outline-secondary:active { color: var(--ui-text); background-color: var(--ui-hover); border-color: var(--ui-feldrand); }
+.btn-outline-warning   { color: var(--ui-warn-fg);   border-color: var(--ui-warn-punkt); background-color: var(--ui-flaeche); }
+.btn-outline-warning:hover,   .btn-outline-warning:active   { color: #fff; background-color: #b45309; border-color: #b45309; }
+
+/* Gefüllt = die eine Hauptaktion einer Seite (sparsam einsetzen) */
+.btn-primary { --bs-btn-bg: var(--ui-k-blau); --bs-btn-border-color: var(--ui-k-blau); --bs-btn-hover-bg: #22448a; --bs-btn-hover-border-color: #22448a; --bs-btn-active-bg: #1e3f80; --bs-btn-active-border-color: #1e3f80; --bs-btn-disabled-bg: var(--ui-k-blau); --bs-btn-disabled-border-color: var(--ui-k-blau); }
+.btn-success { --bs-btn-bg: var(--ui-k-gruen); --bs-btn-border-color: var(--ui-k-gruen); --bs-btn-hover-bg: #17613d; --bs-btn-hover-border-color: #17613d; }
+.btn-danger  { --bs-btn-bg: var(--ui-k-rot); --bs-btn-border-color: var(--ui-k-rot); --bs-btn-hover-bg: #912018; --bs-btn-hover-border-color: #912018; }
+
+/* Export-Toolbars (msv-styles setzt hier !important-Farben) */
+.btn-compact-standard.btn-outline-info { color: var(--ui-k-tuerkis) !important; border-color: var(--ui-k-tuerkis) !important; }
+.btn-compact-standard.btn-outline-info:hover { color: #fff !important; background-color: var(--ui-k-tuerkis) !important; border-color: var(--ui-k-tuerkis) !important; }
+.btn-compact-standard.btn-outline-success { color: var(--ui-k-gruen) !important; border-color: var(--ui-k-gruen) !important; }
+.btn-compact-standard.btn-outline-success:hover { color: #fff !important; background-color: var(--ui-k-gruen) !important; border-color: var(--ui-k-gruen) !important; }
+.btn-compact, .btn-compact-standard { border-radius: var(--ui-rad) !important; box-shadow: none !important; }
+
+/* «?»-Hilfe */
+.btn-help { border-color: var(--ui-feldrand); color: var(--ui-text-2); width: 22px; height: 22px; font-size: 0.8rem; }
+.btn-help:hover { border-color: var(--ui-akzent); color: var(--ui-akzent-dunkel); background: var(--ui-akzent-hell); }
+
+/* ---------- Kleine Bausteine ---------- */
+.badge { border-radius: 6px; font-weight: 600; }
+.badge.bg-light { background-color: #f4f6f9 !important; color: #3d4757 !important; }
+.alert { border-radius: 10px; }
+.alert-info    { background: #eef4ff; border-color: #c9d9f7; color: #1e3f80; }
+.alert-success { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); color: var(--ui-ok-fg); }
+.alert-warning { background: var(--ui-warn-bg); border-color: var(--ui-warn-rand); color: var(--ui-warn-fg); }
+.alert-danger  { background: var(--ui-fehler-bg); border-color: #f5c2bd; color: var(--ui-fehler); }
+.progress { background-color: var(--ui-linie); border-radius: 3px; }
+.progress-bar.bg-success { background-color: var(--ui-ok-fg) !important; }
+.nav-tabs .nav-link.active { color: var(--ui-text); border-color: var(--ui-rand) var(--ui-rand) var(--ui-flaeche); }
+.nav-tabs .nav-link { color: var(--ui-text-2); }
+.dropdown-menu { border-color: var(--ui-rand); border-radius: 10px; box-shadow: 0 8px 24px rgba(26, 35, 50, .12); }
+.dropdown-item.active, .dropdown-item:active { background-color: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
+
+/* Dialoge (Bootstrap-Modals; SweetAlert-Dialoge kommen aus msv-toast.js) */
+.modal-content { border: 1px solid var(--ui-rand); border-radius: var(--ui-rad-l); box-shadow: 0 16px 40px rgba(26, 35, 50, .18); }
+.modal-header { background: var(--ui-flaeche); border-bottom-color: var(--ui-linie); border-radius: var(--ui-rad-l) var(--ui-rad-l) 0 0; }
+.modal-footer { background: var(--ui-flaeche-2); border-top-color: var(--ui-linie); border-radius: 0 0 var(--ui-rad-l) var(--ui-rad-l); }
+
+/* ---------- Slide-Panel ---------- */
+.hybrid-edit-panel, .mv-edit-panel, .anlass-panel, .add-sieger-panel, .side-panel {
+    box-shadow: -10px 0 30px rgba(26, 35, 50, .14);
+    border-left: 0;
+}
+.panel-header { background: var(--ui-flaeche); border-bottom-color: var(--ui-rand); }
+.panel-header h6 { font-size: 1rem; font-weight: 700; color: var(--ui-text); }
+.panel-body { background: var(--ui-flaeche); }
+.panel-footer { background: var(--ui-flaeche); border-top: 1px solid var(--ui-rand); }
+.panel-overlay { background: rgba(26, 35, 50, .28); }
+
+/* ---------- Aktions-Card (Mobile: aufklappbar) ---------- */
+.action-card-header { background-color: var(--ui-flaeche-2); }
+
+/* ---------- Mobile-Karten ---------- */
+.mobile-card { border-color: var(--ui-rand) !important; border-radius: 10px !important; box-shadow: none !important; }
+
+/* ---------- Jahresauswahl-Hinweis in den Farben der Familie ---------- */
+.msv-jahr-hinweis { border-radius: 999px; }
+.msv-jahr-hinweis.is-archiv { background: var(--ui-warn-bg); color: var(--ui-warn-fg); border-color: var(--ui-warn-rand); }
+.msv-jahr-hinweis.is-planung { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); border-color: #bcd2f7; }
+
+/* ---------- Tastenhinweise (wie SFARL) ---------- */
+.ui-tasten { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; padding: 8px var(--ui-pad); border-top: 1px solid var(--ui-rand); background: var(--ui-flaeche-2); font-size: 0.78rem; color: var(--ui-text-2); }
+.ui-tasten kbd, kbd.ui-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; padding: 1px 5px; font-family: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1.35; border: 1px solid var(--ui-feldrand); border-bottom-width: 2px; border-radius: 5px; background: #fff; color: var(--ui-text); box-shadow: none; }
+
+/* ---------- Schmale Bildschirme ---------- */
+@media (max-width: 768px) {
+    .content-wrapper,
+    .content-background,
+    .main-content-wrapper .content-background { padding: 12px !important; border-radius: 10px !important; }
+    .msv-kopf { padding: 12px; }
+}
+
+/* ==========================================================================
+   Bausteine für Erfassungsseiten (Pilot: Endschiessen erfassen)
+   ========================================================================== */
+
+/* Kopf-Card: Titel mit Jahr daneben, zweite Zeile für den Stand */
+.msv-kopf-titel { display: flex; align-items: center; gap: 4px 14px; flex-wrap: wrap; }
+.msv-kopf-titel .msv-kopf-sub { flex-basis: 100%; }
+.msv-kopf-neben { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.msv-kopf-neben .form-select { width: auto; min-width: 92px; font-weight: 600; background-color: var(--ui-flaeche-2); }
+.msv-kopf-extra { flex: 1 0 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 22px; margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--ui-linie); }
+
+/* Fortschritt und Zähler */
+.ui-fortschritt { display: flex; align-items: center; gap: 10px; }
+.ui-fortschritt .ui-zahl { font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+.ui-fortschritt .ui-zahl span { font-weight: 500; color: var(--ui-text-2); font-size: 0.85rem; }
+.ui-balken { width: 160px; height: 6px; border-radius: 3px; background: var(--ui-linie); overflow: hidden; flex: none; }
+.ui-balken > span { display: block; height: 100%; width: 0; background: var(--ui-ok-fg); border-radius: 3px; transition: width .4s ease; }
+.ui-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.ui-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 6px; font-size: 0.8rem; background: #f4f6f9; color: #3d4757; white-space: nowrap; }
+.ui-chip b { font-weight: 600; }
+.ui-chip .ui-punkt { width: 7px; height: 7px; border-radius: 50%; background: var(--ui-warn-punkt); }
+
+/* Tabellen-Card mit Kopf (Titel, Filter, Suche) */
+.ui-karte { background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: var(--ui-rad-l); }
+.ui-tab-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 10px var(--ui-pad); border-bottom: 1px solid var(--ui-linie); }
+.ui-tab-titel { font-weight: 600; font-size: 0.95rem; }
+.ui-filter { display: flex; gap: 2px; padding: 2px; background: #f1f4f8; border-radius: 8px; }
+.ui-filter button { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-size: 0.8rem; font-weight: 600; color: var(--ui-text); cursor: pointer; white-space: nowrap; }
+.ui-filter button:hover { background: rgba(255, 255, 255, .65); }
+.ui-filter button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
+.ui-filter button span { font-weight: 500; color: var(--ui-text-2); }
+.ui-suche { margin-left: auto; width: 17rem; max-width: 100%; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--ui-feldrand); border-radius: var(--ui-rad); background: var(--ui-flaeche-2); }
+.ui-suche:focus-within { border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
+.ui-suche i { color: var(--ui-text-3); }
+.ui-suche input { border: 0; outline: 0; background: transparent; flex: 1; min-width: 0; font-size: 0.85rem; }
+
+/* Zeilenzustände */
+.ui-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.ui-status .ui-punkt { width: 8px; height: 8px; border-radius: 50%; }
+.ui-status.ok { color: var(--ui-ok-fg); } .ui-status.ok .ui-punkt { background: var(--ui-ok-fg); }
+.ui-status.offen { color: var(--ui-warn-fg); } .ui-status.offen .ui-punkt { background: var(--ui-warn-punkt); }
+.geloest-pill { display: inline-block; padding: 1px 7px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; background: var(--ui-warn-bg); color: var(--ui-warn-fg); text-transform: none; letter-spacing: 0; }
+.cell-empty { color: #b8c0cc; }
+tr.ui-offen > td { background: var(--ui-warn-zeile) !important; border-bottom-color: #fdecb5 !important; }
+tr.ui-offen:hover > td { background: #fef6d8 !important; }
+tr.selected > td,
+tr.ui-markiert > td { background: var(--ui-gewaehlt) !important; box-shadow: inset 0 2px 0 var(--ui-akzent), inset 0 -2px 0 var(--ui-akzent) !important; }
+tr.selected > td:first-child,
+tr.ui-markiert > td:first-child { box-shadow: inset 2px 2px 0 var(--ui-akzent), inset 0 -2px 0 var(--ui-akzent) !important; }
+tr.selected > td:last-child,
+tr.ui-markiert > td:last-child { box-shadow: inset -2px 2px 0 var(--ui-akzent), inset 0 -2px 0 var(--ui-akzent) !important; }
+
+/* Stich-Karten im Erfassungs-Panel (Endschiessen, Partnerinnen; Klassen .shot-*) */
+.hybrid-edit-panel .panel-body:has(.shot-section) { background: var(--ui-grund); }
+.shot-section {
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+.shot-first { border-top: 1px solid var(--ui-rand); padding-top: 12px; }
+.shot-cols { display: flex; gap: 12px; padding: 0; border-top: 0; margin-bottom: 0; align-items: stretch; }
+.shot-cols > .shot-section,
+.shot-cols > .shot-field { border: 1px solid var(--ui-rand); padding: 12px 14px; }
+.shot-section-head { margin-bottom: 10px; min-height: 1.75rem; }
+.shot-section-title { font-size: 0.9rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ui-text); }
+.shot-section-title i { color: var(--ui-text-3); font-size: 0.95rem; }
+.shot-hint { font-size: 0.78rem; color: var(--ui-text-3); font-weight: 400; }
+.shot-total { font-size: 1.35rem; font-weight: 700; color: var(--ui-text); background: none; border-radius: 0; padding: 0; min-width: 3rem; text-align: right; line-height: 1.1; }
+.shot-row .shot-total { font-size: 0.95rem; min-width: 2rem; }
+.shot-status { text-transform: none; letter-spacing: 0; font-size: 0.75rem; color: var(--ui-text-2); background: #f1f4f8; border: 1px solid #dde3ea; }
+.shot-section.disabled { background: var(--ui-flaeche-2); padding: 10px 14px; }
+.shot-section.disabled .shot-section-title { color: var(--ui-text-2); }
+.shot-row-label { text-transform: none; letter-spacing: 0; font-size: 0.8rem; font-weight: 500; color: var(--ui-text-2); }
+.shot-input { border: 1px solid var(--ui-feldrand); border-radius: 6px; color: var(--ui-text); }
+.shot-input:focus { border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); background: var(--ui-gewaehlt); }
+.shot-input.filled { background: #fbfcfd; border-color: #c5ccd6; }
+.shot-input.is-unique { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); }
+.shot-input[aria-invalid="true"] { border-color: var(--ui-fehler); background: var(--ui-fehler-bg); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
+@media (min-width: 768px) {
+    .shot-input { width: 38px; height: 36px; font-size: 0.95rem; }
+    .shot-input-dec { width: 46px; }
+    .shot-input-wide { width: 56px; }
+}
+@media (max-width: 767.98px) {
+    .shot-cols { flex-direction: column; gap: 0; }
+    .shot-cols > .shot-section { margin-bottom: 12px; }
+}

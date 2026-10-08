@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.37.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Neues Erscheinungsbild im Admin-Bereich",
+        "beschreibung": "Der Admin-Bereich erhält ein ruhigeres, einheitliches Aussehen in der Art der Schwester-Anwendungen (SFARL, Jungschützen): heller Grund, weisse Flächen mit feinem Rand, Schrift IBM Plex Sans (lokal ausgeliefert), Navigation standardmässig links und kompakter, Seitentitel als Kopf-Karte, Inhalt als Karte, ruhige Tabellen und Knöpfe mit abgerundeten Ecken. Die Farbbedeutung der Knöpfe bleibt (grün anlegen, blau speichern, türkis Export, rot löschen, grau abbrechen); das Türkis ist dunkler und damit besser lesbar. Die Navigation lässt sich weiterhin oben rechts nach oben umschalten. Die Seiten werden Typ um Typ nachgezogen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen erfassen: Stand, Filter und schnelleres Erfassen",
+        "beschreibung": "Jede Zelle zeigt das Resultat, «gelöst» (bezahlt, noch kein Resultat) oder «–» (nicht gelöst); die neue Spalte «Stand» sagt, ob ein Mitglied vollständig erfasst ist, offene Zeilen sind gelb. Oben stehen Fortschritt und Zähler, darüber Filter (Alle, Offen, Vollständig) und Suche. Mit den Pfeiltasten wählt man eine Zeile, Enter öffnet die Erfassung. Im Panel springt «Speichern & nächstes offenes» (auch Ctrl+Enter oder Enter im letzten Feld) direkt zum nächsten Mitglied mit offenen Stichen, Ctrl+S speichert. Behoben: Die Seite meldete «gespeichert», auch wenn der Server einen Fehler zurückgab, und nach «Speichern & Nächster» blieb die Tabelle veraltet. Braucht die Datenbank-Aktualisierung 072 (Hilfetext).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.36.0",
     "datum": "2026-10-08",
     "aenderungen": [

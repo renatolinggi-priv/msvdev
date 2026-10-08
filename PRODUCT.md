@@ -46,6 +46,7 @@ Kein generisches Vereins-Tool: Die Regeln eines Schweizer Schützenvereins sind 
 
 - **Vereinslogo verbindlich**: «Militärschützenverein Wilen, 1894 / 1992» (`images/MSVWilen_Logo.jpg`, App-Icons in `icons/`). Darüber hinaus ist das Erscheinungsbild der App frei (bestätigt 08.10.2026).
 - **Name**: «MSV Wilen» (App- und PWA-Name).
+- **Erscheinungsbild (Entscheid 08.10.2026)**: klassisches Admin, angelehnt an das Schwesterprojekt **SFARL** (`C:\TEMP\webapps\sfarl.sksg.ch`, gleiche Familie wie JSK/EWS): heller Grund, weisse Flächen mit feinem Rand, Menü links, Kopf-Card, kompakte Erfassungstabellen, Slide-Panel. Vereinsrot nur sparsam (Logo, Gefahr), kein dominanter Farbrahmen; eine eigene Bildsprache wie ein «Saisonfahrplan» war zu viel. Bleibt: Button-Farbsemantik, kompakte Dichte, Bedienmuster Tabelle + Slide-Panel.
 - **Stimme**: sachlich, freundlich, Du-Form, kurze Sätze in der Sprache des Vereins (Fachbegriffe oben), keine Entwicklersprache in der Oberfläche.
 
 ## Evidence on Hand

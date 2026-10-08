@@ -45,79 +45,78 @@ function validateYear($year) {
 }
 
 /**
- * Tabellenzelle für einen Stich ohne Resultat: "gelöst" (ggf. mit Passen) oder leerer Strich
+ * Eine Tabellenzelle je Stich: Resultat, «gelöst» (bezahlt, noch kein Resultat) oder «–» (nicht gelöst).
  *
- * @param array $codes       Gelöste Stich-Codes des Schützen
- * @param array $stichCodes  Codes, die zu dieser Spalte gehören
- * @param bool  $showPassen  Schwini: P1/P2 einzeln ausweisen
+ * @param bool        $geloest  Stich gelöst
+ * @param string|null $wert     Anzeige des Resultats oder null, wenn keines erfasst ist
+ * @param string      $label    Text der «gelöst»-Marke (Schwini: P1/P2 einzeln)
  */
-function geloestCell(array $codes, array $stichCodes, bool $showPassen = false) {
-    $hit = array_values(array_intersect($stichCodes, $codes));
-    if (!$hit) {
-        return "<td class='text-center'><span class='cell-empty'>–</span></td>";
+function stichZelle(bool $geloest, ?string $wert, string $label = 'gelöst') {
+    if ($wert !== null) {
+        return "<td>" . htmlspecialchars($wert, ENT_QUOTES, 'UTF-8') . "</td>";
     }
-    if ($showPassen && count($hit) < count($stichCodes)) {
-        $label = 'gelöst ' . str_replace('SCHWINI_', '', $hit[0]);
-    } else {
-        $label = 'gelöst';
+    if ($geloest) {
+        return "<td><span class='geloest-pill'>" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</span></td>";
     }
-    return "<td class='text-center'><span class='geloest-pill'>" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</span></td>";
+    return "<td><span class='cell-empty' aria-label='nicht gelöst'>–</span></td>";
 }
 
 /**
- * Generate HTML for a result row with existing data
+ * Tabellenzeile eines Mitglieds. «Stand» ist offen, sobald ein gelöster Stich noch kein Resultat hat.
  *
- * @param array $row Database row with member and score data
- * @return string HTML table row
+ * @param array $row Datenbankzeile mit Mitglied, Summen und gelösten Codes
+ * @return string HTML-Zeile
  */
 function generateResultRow($row) {
-    $schwini_hoeher = max($row['Schwini_Summe1'], $row['Schwini_Summe2']);
-    $schwini_tiefer = min($row['Schwini_Summe1'], $row['Schwini_Summe2']);
+    $codes = array_filter(array_map('trim', explode(',', (string)($row['geloeste_codes'] ?? ''))));
+    $hat = fn(array $c) => (bool)array_intersect($c, $codes);
 
-    // Calculate Z-result points
-    $ZResult = 0;
+    $s1 = (int)$row['Schwini_Summe1'];
+    $s2 = (int)$row['Schwini_Summe2'];
+    $zabig = 0;
     for ($i = 1; $i <= 6; $i++) {
-        $ZResult += calculatePoints($row['ZSchuss' . $i] ?? 0);
+        $zabig += calculatePoints($row['ZSchuss' . $i] ?? 0);
+    }
+    $zabigErfasst = false;
+    for ($i = 1; $i <= 6; $i++) {
+        if (($row['ZSchuss' . $i] ?? null) !== null && $row['ZSchuss' . $i] !== '') { $zabigErfasst = true; break; }
     }
 
-    // Prüfen ob echte Daten vorliegen
-    $hasRealData = ($row['Endstich_Summe'] > 0
-                    || $row['Schwini_Summe1'] > 0
-                    || $row['Schwini_Summe2'] > 0
-                    || $row['Kunst_Summe'] > 0
-                    || ($row['max_glueck'] ?? 0) > 0
-                    || ($row['SieUndEr_Summe'] ?? 0) > 0
-                    || !empty($row['Ansage']));
-    $dataAttr = $hasRealData ? '1' : '0';
+    // [Code(s), gelöst-Label, Anzeige oder null]
+    $schwiniHit = array_values(array_intersect(['SCHWINI_P1', 'SCHWINI_P2'], $codes));
+    $spalten = [
+        [['END'],     'gelöst', $row['Endstich_Summe'] > 0 ? (string)$row['Endstich_Summe'] : null],
+        [['SCHWINI_P1', 'SCHWINI_P2'], count($schwiniHit) === 1 ? 'gelöst ' . str_replace('SCHWINI_', '', $schwiniHit[0]) : 'gelöst',
+                      ($s1 > 0 || $s2 > 0) ? max($s1, $s2) . ', ' . min($s1, $s2) : null],
+        [['KUNST'],   'gelöst', $row['Kunst_Summe'] > 0 ? (string)$row['Kunst_Summe'] : null],
+        [['GLUECK'],  'gelöst', ($row['max_glueck'] ?? 0) > 0
+                                  ? $row['max_glueck'] . ' (' . $row['GSchuss1'] . ',' . $row['GSchuss2'] . ',' . $row['GSchuss3'] . ')' : null],
+        [['ZABIG'],   'gelöst', ($zabigErfasst && $zabig > 0) ? (string)$zabig : null],
+        [['SIEUNDER'],'gelöst', ($row['SieUndEr_Summe'] ?? 0) > 0 ? (string)$row['SieUndEr_Summe'] : null],
+        [['DIFF'],    'gelöst', ($row['Ansage'] ?? '') !== '' && $row['Ansage'] !== null ? (string)$row['Ansage'] : null],
+    ];
+
+    $hatDaten = false;
+    $offen = false;
+    $zellen = '';
+    foreach ($spalten as [$c, $label, $wert]) {
+        $geloest = $hat($c);
+        if ($wert !== null) $hatDaten = true;
+        if ($geloest && $wert === null) $offen = true;
+        $zellen .= stichZelle($geloest, $wert, $label);
+    }
+    $stand = $offen ? 'offen' : 'ok';
+    $standZelle = $offen
+        ? "<td><span class='ui-status offen'><span class='ui-punkt'></span>offen</span></td>"
+        : "<td><span class='ui-status ok'><span class='ui-punkt'></span>vollständig</span></td>";
 
     $id = htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');
     $name = htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8');
+    $klasse = 'hybrid-row' . ($offen ? ' ui-offen' : '');
 
-    $html = "<tr class='hybrid-row' data-mitglied-id='{$id}' data-has-data='{$dataAttr}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'>";
-    $html .= "<td>{$name}</td>";
-
-    if ($hasRealData) {
-        $html .= "<td class='text-center'>" . htmlspecialchars($row['Endstich_Summe'], ENT_QUOTES, 'UTF-8') . "</td>";
-        $html .= "<td class='text-center'>" . htmlspecialchars($schwini_hoeher . ", " . $schwini_tiefer, ENT_QUOTES, 'UTF-8') . "</td>";
-        $html .= "<td class='text-center'>" . htmlspecialchars($row['Kunst_Summe'], ENT_QUOTES, 'UTF-8') . "</td>";
-        $html .= "<td class='text-center'>" . htmlspecialchars($row['max_glueck'] . " (" . $row['GSchuss1'] . "," . $row['GSchuss2'] . "," . $row['GSchuss3'] . ")", ENT_QUOTES, 'UTF-8') . "</td>";
-        $html .= "<td class='text-center'>" . htmlspecialchars($ZResult, ENT_QUOTES, 'UTF-8') . "</td>";
-        $html .= "<td class='text-center'>" . htmlspecialchars($row['SieUndEr_Summe'] ?? '-', ENT_QUOTES, 'UTF-8') . "</td>";
-        $html .= "<td class='text-center'>" . htmlspecialchars($row['Ansage'] ?? '', ENT_QUOTES, 'UTF-8') . "</td>";
-    } else {
-        // Noch keine Resultate: pro Spalte anzeigen, ob der Stich gelöst ist
-        $codes = array_filter(array_map('trim', explode(',', (string)($row['geloeste_codes'] ?? ''))));
-        $html .= geloestCell($codes, ['END']);
-        $html .= geloestCell($codes, ['SCHWINI_P1', 'SCHWINI_P2'], true);
-        $html .= geloestCell($codes, ['KUNST']);
-        $html .= geloestCell($codes, ['GLUECK']);
-        $html .= geloestCell($codes, ['ZABIG']);
-        $html .= geloestCell($codes, ['SIEUNDER']);
-        $html .= geloestCell($codes, ['DIFF']);
-    }
-    $html .= "</tr>";
-
-    return $html;
+    return "<tr class='{$klasse}' data-mitglied-id='{$id}' data-has-data='" . ($hatDaten ? '1' : '0') . "'"
+         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'>"
+         . "<td>{$name}</td>{$zellen}{$standZelle}</tr>";
 }
 
 // Include database configuration
@@ -209,7 +208,7 @@ try {
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
-        echo msv_empty_row(8, 'Keine Ergebnisse gefunden');
+        echo msv_empty_row(9, 'Noch niemand hat für dieses Jahr Stiche gelöst');
     } else {
         while ($row = $result->fetch_assoc()) {
             echo generateResultRow($row);
@@ -221,7 +220,7 @@ try {
 } catch (Exception $e) {
     // Log error for debugging while showing user-friendly message
     error_log("Database error in load_endschresultate.php: " . $e->getMessage());
-    echo "<tr><td colspan='8'>Fehler beim Laden der Daten. Bitte versuchen Sie es später erneut.</td></tr>";
+    echo "<tr class='ui-leer'><td colspan='9'>Fehler beim Laden der Daten. Bitte die Seite neu laden.</td></tr>";
 } finally {
     // Ensure connection is always closed
     $conn->close();
