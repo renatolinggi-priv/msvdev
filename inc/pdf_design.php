@@ -46,30 +46,30 @@ $groupsOrder = ['Allgemein', 'Tabelle', 'Medaillen', 'Status', 'Layout'];
 
 $page_specific_css = <<<'CSS'
 .pd-wrap { display: grid; grid-template-columns: 440px minmax(0, 1fr); gap: 24px; align-items: start; }
-.pd-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 18px; }
+.pd-card { background:#fff; border:1px solid var(--ui-rand); border-radius:10px; padding:16px 18px; }
 .pd-card + .pd-card { margin-top:14px; }
 /* Sektionstitel: gleiche Optik wie der zentrale Tabellentitel (.table-title), kompakt */
-.pd-card > h3, .pd-toggle { font-size:.95rem; font-weight:600; color:#1e293b; margin:0 0 10px; }
+.pd-card > h3, .pd-toggle { font-size:.95rem; font-weight:600; color:var(--ui-text); margin:0 0 10px; }
 .pd-toggle { display:flex; width:100%; align-items:center; justify-content:space-between; background:none; border:0; padding:0; cursor:pointer; text-align:left; }
-.pd-toggle:focus-visible { outline:2px solid #3b5998; outline-offset:2px; border-radius:4px; }
-.pd-chevron { font-size:.8rem; color:#64748b; transition:transform .2s; }
+.pd-toggle:focus-visible { outline:2px solid var(--ui-akzent-dunkel); outline-offset:2px; border-radius:4px; }
+.pd-chevron { font-size:.8rem; color:var(--ui-text-2); transition:transform .2s; }
 .pd-toggle[aria-expanded="false"] { margin:0; }
 .pd-toggle[aria-expanded="false"] .pd-chevron { transform:rotate(-90deg); }
 .pd-field { display:flex; align-items:center; gap:10px; padding:5px 0; }
-.pd-field label { flex:1; font-size:.86rem; color:#2d3748; }
+.pd-field label { flex:1; font-size:.86rem; color:var(--ui-text); }
 .pd-field input[type=color] { width:42px; height:30px; border:1px solid #cbd5e0; border-radius:6px; padding:0; background:#fff; cursor:pointer; }
 .pd-field input.hex { width:92px; font-family:ui-monospace,Consolas,monospace; font-size:.8rem; text-transform:lowercase; }
 .pd-field input.num { width:92px; }
 .pd-presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
 .pd-actions { display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
-.pd-logo-box { max-height:64px; max-width:160px; border:1px solid #e2e8f0; border-radius:6px; padding:4px; background:#fff; }
+.pd-logo-box { max-height:64px; max-width:160px; border:1px solid var(--ui-rand); border-radius:6px; padding:4px; background:#fff; }
 .pd-logo-text { flex:1; min-width:200px; }
 .pd-crop-wrap { max-height:60vh; overflow:hidden; }
 .pd-crop-wrap img { max-width:100%; display:block; }
 /* Vorschau: Werte kommen ausschliesslich aus dem Inline-Style (PHP) */
 .pd-preview-sticky { position: sticky; top: 16px; }
 @media (max-width: 991.98px) { .pd-wrap { grid-template-columns: 1fr; } .pd-preview-sticky { position: static; } }
-#pdfPreview { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:18px; color:var(--p-text); font-family: Arial, sans-serif; }
+#pdfPreview { background:#fff; border:1px solid var(--ui-rand); border-radius:8px; padding:18px; color:var(--p-text); font-family: Arial, sans-serif; }
 #pdfPreview .pv-logo { width:var(--p-logow); max-width:100%; height:auto; display:block; }
 #pdfPreview h4 { text-align:center; color:var(--p-accent); margin:10px 0 14px; font-size:1.05rem; }
 #pdfPreview table { width:100%; border-collapse:collapse; font-size:calc(var(--p-font) + 3px); background:#fff; }
@@ -94,6 +94,7 @@ $page_specific_css = <<<'CSS'
 CSS;
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 ?>
 
 <div class="container-fluid">
@@ -104,7 +105,7 @@ include 'header.inc.php';
         <?php $page_title = 'PDF-Vorlage'; $page_actions = '<button type="button" class="btn-help" data-help="pdf_design.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <form id="pdfDesignForm">
-          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
           <div class="pd-wrap">
             <!-- LINKS: Einstellungen -->

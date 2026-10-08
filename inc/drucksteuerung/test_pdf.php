@@ -12,6 +12,8 @@
  */
 require_once __DIR__ . '/../session_config.inc.php';
 require_once __DIR__ . '/../../auth.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('plain'); // Direktdruck nur im Admin-Bereich (admin/vorstand)
 
 if (!isset($_SESSION['user_id']) && function_exists('restoreSessionFromToken')) {
     restoreSessionFromToken();

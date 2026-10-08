@@ -1,6 +1,7 @@
 <?php
 // jmdefinition_gruppen.php – Gruppenschiessen: Gruppen pro Anlass (JMDefinition.Gruppe = 1) zusammenstellen
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 // Nur die auf dieser Seite genutzten Klassen (Drag & Drop via SortableJS, Mobile-Touch-Liste).
 $page_specific_css = <<<'CSS'
@@ -8,13 +9,13 @@ $page_specific_css = <<<'CSS'
 .draggable-member {
     display: inline-block; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
     margin: 2px; padding: 4px 10px;
-    border: 1.5px solid #e9ecef; border-radius: var(--border-radius); background: #fff;
+    border: 1.5px solid var(--ui-rand); border-radius: var(--border-radius); background: #fff;
     font-size: 0.78rem; font-weight: 500; color: var(--dark-color);
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.draggable-member:hover { border-color: #3b5998; background: #eef2f7; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
-.draggable-member.sortable-ghost { opacity: .35; background: #eef2f7; border-color: #3b5998; }
-.draggable-member.sortable-chosen { box-shadow: 0 6px 18px rgba(0,0,0,.18); border-color: #3b5998; }
+.draggable-member:hover { border-color: var(--ui-akzent-dunkel); background: var(--ui-linie); box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+.draggable-member.sortable-ghost { opacity: .35; background: var(--ui-linie); border-color: var(--ui-akzent-dunkel); }
+.draggable-member.sortable-chosen { box-shadow: 0 6px 18px rgba(0,0,0,.18); border-color: var(--ui-akzent-dunkel); }
 .draggable-member.sortable-drag { opacity: .9; }
 
 /* Spalten "Verfügbar" und "Gruppe" */
@@ -22,15 +23,15 @@ $page_specific_css = <<<'CSS'
     display: flex; flex-wrap: wrap; align-content: flex-start;
     min-height: 150px; padding: 12px; border-radius: var(--border-radius);
 }
-.available-members-container { background: var(--light-color); border: 1px solid #dee2e6; }
+.available-members-container { background: var(--light-color); border: 1px solid var(--ui-rand); }
 .droppable-group { border: 2px dashed #cbd5e0; background: #fff; }
 .droppable-group p.text-muted { width: 100%; text-align: center; font-style: italic; padding: 1.25rem 0; margin: 0; }
 .gr-col-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
-.gr-col-head .lbl { font-weight: 600; font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .3px; }
-.gr-count { background: #eef2f7; color: #3b5998; font-weight: 700; font-size: .72rem; border-radius: 999px; padding: 1px 9px; }
+.gr-col-head .lbl { font-weight: 600; font-size: .75rem; color: var(--ui-text-2); text-transform: uppercase; letter-spacing: .3px; }
+.gr-count { background: var(--ui-linie); color: var(--ui-akzent-dunkel); font-weight: 700; font-size: .72rem; border-radius: 999px; padding: 1px 9px; }
 .member-search { position: relative; margin-bottom: .5rem; }
 .member-search input { padding-left: 1.9rem; }
-.member-search .bi-search { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #64748b; font-size: .85rem; }
+.member-search .bi-search { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: var(--ui-text-2); font-size: .85rem; }
 #gruppenname { max-width: 320px; }
 .gr-edit-hint { display: none; }
 .gr-edit-mode .gr-edit-hint { display: inline; }
@@ -42,25 +43,25 @@ $page_specific_css = <<<'CSS'
     .mobile-group-container { display: block; }
     .mobile-member-item {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 12px; margin-bottom: 8px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px;
+        padding: 10px 12px; margin-bottom: 8px; background: var(--ui-flaeche-2); border: 2px solid var(--ui-rand); border-radius: 8px;
     }
-    .mobile-member-item.selected { background: #d4edda; border-color: #28a745; }
+    .mobile-member-item.selected { background: #d4edda; border-color: var(--ui-ok-fg); }
     .mobile-member-name { font-size: 16px; font-weight: 500; }
     .mobile-add-btn, .mobile-remove-btn {
         min-width: 44px; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 2px solid; background: #fff;
         font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer;
     }
-    .mobile-add-btn { border-color: #28a745; color: #28a745; }
-    .mobile-add-btn:active { background: #28a745; color: #fff; }
-    .mobile-remove-btn { border-color: #dc3545; color: #dc3545; }
-    .mobile-remove-btn:active { background: #dc3545; color: #fff; }
+    .mobile-add-btn { border-color: var(--ui-ok-fg); color: var(--ui-ok-fg); }
+    .mobile-add-btn:active { background: var(--ui-ok-fg); color: #fff; }
+    .mobile-remove-btn { border-color: var(--ui-k-rot); color: var(--ui-k-rot); }
+    .mobile-remove-btn:active { background: var(--ui-k-rot); color: #fff; }
     .mobile-group-section { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 1rem; margin-bottom: 1rem; }
     .mobile-section-header {
-        font-size: 14px; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px;
-        margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e9ecef;
+        font-size: 14px; font-weight: 600; color: var(--ui-text-2); text-transform: uppercase; letter-spacing: 0.5px;
+        margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--ui-rand);
     }
-    .mobile-group-list { min-height: 100px; padding: 0.5rem; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6; }
-    .mobile-group-list.empty { display: flex; align-items: center; justify-content: center; color: #6c757d; font-style: italic; }
+    .mobile-group-list { min-height: 100px; padding: 0.5rem; background: var(--ui-flaeche-2); border-radius: 8px; border: 2px dashed var(--ui-rand); }
+    .mobile-group-list.empty { display: flex; align-items: center; justify-content: center; color: var(--ui-text-2); font-style: italic; }
 }
 CSS;
 
@@ -74,7 +75,7 @@ include 'header.inc.php';
                 <?php $page_title = 'Gruppenschiessen'; $page_actions = '<button type="button" class="btn-help" data-help="jmdefinition_gruppen.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
                 <div class="content-background">
-                    <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
                     <!-- Jahr + Anlass -->
                     <div class="export-toolbar mb-3">

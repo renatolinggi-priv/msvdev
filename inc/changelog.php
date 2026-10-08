@@ -16,6 +16,8 @@ $typ_badges = [
     'feature'      => ['class' => 'bg-primary',   'label' => 'Feature'],
     'fix'          => ['class' => 'bg-danger',     'label' => 'Fix'],
     'verbesserung' => ['class' => 'bg-success',    'label' => 'Verbesserung'],
+    'verbessert'   => ['class' => 'bg-success',    'label' => 'Verbesserung'],
+    'neu'          => ['class' => 'bg-primary',    'label' => 'Neu'],
     'info'         => ['class' => 'bg-secondary',  'label' => 'Info'],
 ];
 
@@ -25,7 +27,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 
 <style>
 .changelog-header {
-    background: #f8f9fa;
+    background: var(--ui-flaeche-2);
     border-radius: 1rem;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
@@ -33,11 +35,11 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 .changelog-header h2 {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #2d3748;
+    color: var(--ui-text);
     margin: 0;
 }
 .changelog-header .subtitle {
-    color: #718096;
+    color: var(--ui-text-2);
     font-size: 0.9rem;
     margin: 0.25rem 0 0;
 }
@@ -50,10 +52,10 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
     gap: 0.75rem;
     margin-bottom: 0.75rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid var(--ui-rand);
 }
 .version-header .version-tag {
-    background: #2d3748;
+    background: var(--ui-text);
     color: white;
     padding: 0.2rem 0.6rem;
     border-radius: 0.375rem;
@@ -62,7 +64,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
     font-family: monospace;
 }
 .version-header .version-date {
-    color: #718096;
+    color: var(--ui-text-2);
     font-size: 0.85rem;
 }
 .changelog-entry {
@@ -72,7 +74,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
     padding: 0.6rem 0;
 }
 .changelog-entry + .changelog-entry {
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--ui-linie);
 }
 .changelog-entry .badge {
     font-size: 0.7rem;
@@ -81,8 +83,8 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
     margin-top: 0.15rem;
 }
 .changelog-entry .badge-intern {
-    background: #fef3cd;
-    color: #856404;
+    background: var(--ui-warn-bg);
+    color: var(--ui-warn-fg);
     font-size: 0.65rem;
     padding: 0.1rem 0.4rem;
 }
@@ -91,18 +93,18 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 }
 .changelog-entry .entry-title {
     font-weight: 600;
-    color: #2d3748;
+    color: var(--ui-text);
     font-size: 0.95rem;
 }
 .changelog-entry .entry-desc {
-    color: #718096;
+    color: var(--ui-text-2);
     font-size: 0.85rem;
     margin-top: 0.15rem;
 }
 .changelog-empty {
     text-align: center;
     padding: 3rem 1rem;
-    color: #a0aec0;
+    color: var(--ui-text-3);
 }
 .changelog-empty i {
     font-size: 3rem;
@@ -116,12 +118,18 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
 }
 </style>
 
-<div class="content-wrapper">
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-default">
+        <?php
+        $page_title = 'Changelog';
+        $page_subtitle = 'Alle Änderungen und Neuerungen am System';
+        $page_title_after = '<button type="button" class="btn-help" data-help="changelog.uebersicht" aria-label="Hilfe"></button>';
+        $page_show_mobile = true;
+        include 'partials/page_header.inc.php';
+        ?>
     <div class="content-background">
-        <div class="changelog-header">
-            <h2><i class="bi bi-megaphone me-2"></i>Changelog <button type="button" class="btn-help" data-help="changelog.uebersicht" aria-label="Hilfe"></button></h2>
-            <p class="subtitle">Alle Änderungen und Neuerungen am System</p>
-        </div>
 
         <?php if (empty($changelog)): ?>
         <div class="changelog-empty">
@@ -146,7 +154,7 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
                 <?php foreach (($release['aenderungen'] ?? []) as $entry):
                     $typ = $entry['typ'] ?? 'info';
                     $badge = $typ_badges[$typ] ?? $typ_badges['info'];
-                    $is_intern = empty($entry['portal']);
+                    $is_intern = !empty($entry['admin_only']);
                 ?>
                 <div class="changelog-entry">
                     <span class="badge <?php echo $badge['class']; ?>"><?php echo $badge['label']; ?></span>
@@ -165,6 +173,9 @@ $monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','S
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <?php include 'footer.inc.php'; ?>

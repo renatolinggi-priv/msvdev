@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.44.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Planung, Einstellungen und Startseite im neuen Aufbau",
+        "beschreibung": "Einsatzplanung, JM-Definition, Gruppenschiessen, wichtige Termine, Datenbank-Aktualisierung, Navigation, Backup, Benutzerverwaltung, Changelog, CSV-Schnittstelle, Drucksteuerung, Hilfetexte, PDF-Vorlage und Startseite verwenden die Farben des neuen Erscheinungsbilds; Auswahl-Markierungen sind ein Rahmen statt eines Seitenstreifens. Datenbank-Aktualisierung, Navigation, Changelog und CSV-Schnittstelle haben die Kopf-Karte; auf der Startseite ist die Begrüssung eine Kopf-Karte. JM-Definition: Jahr, Hinzufügen, Vom Vorjahr, Sortieren, Veröffentlichen, das Menü «Exporte» und Speichern stehen in der Kopf-Karte statt in einer aufklappbaren Aktionen-Karte. Behoben: Im Changelog erschienen die Typen «neu» und «verbessert» als «Info», und «Intern» richtete sich nach einem Feld, das es nicht gibt. Die Endpunkte der Drucksteuerung (Signatur, Profile, Drucker, Protokoll, Testdruck) verlangen jetzt die Rolle Admin oder Vorstand; vorher genügte irgendein Login, auch ein Portal-Konto.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.43.0",
     "datum": "2026-10-08",
     "aenderungen": [

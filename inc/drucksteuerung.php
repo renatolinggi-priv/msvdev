@@ -11,10 +11,10 @@ $page_specific_css = '
     @media (max-width: 991.98px) { .data-card { max-width: 100%; } }
 
     /* QZ Status Bar */
-    .qz-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; border-radius: 8px 8px 0 0; }
+    .qz-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--ui-flaeche-2); border-bottom: 1px solid var(--ui-rand); border-radius: 8px 8px 0 0; }
     .qz-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .qz-dot.connected { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,.4); }
-    .qz-dot.disconnected { background: #ef4444; }
+    .qz-dot.connected { background: var(--ui-ok-fg); box-shadow: 0 0 6px rgba(34,197,94,.4); }
+    .qz-dot.disconnected { background: var(--ui-k-rot); }
     .qz-bar .qz-text { font-size: 0.85rem; font-weight: 500; }
     .qz-bar .qz-actions { margin-left: auto; display: flex; gap: 6px; }
 
@@ -26,101 +26,102 @@ $page_specific_css = '
         gap: 10px;
         padding: 10px 20px;
         align-items: center;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid var(--ui-linie);
     }
     .profile-matrix-header {
         font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-        letter-spacing: 0.04em; color: #6c757d; background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6; padding: 8px 20px;
+        letter-spacing: 0.04em; color: var(--ui-text-2); background: var(--ui-flaeche-2);
+        border-bottom: 1px solid var(--ui-rand); padding: 8px 20px;
     }
-    .profile-row:hover { background: #f8f9fa; }
+    .profile-row:hover { background: var(--ui-flaeche-2); }
     .profile-row:last-child { border-bottom: none; }
 
     /* Profil-Name */
     .profile-name-label { font-weight: 600; font-size: 0.85rem; display: block; }
-    .profile-name-desc { font-size: 0.75rem; color: #6c757d; display: block; margin-top: 1px; }
+    .profile-name-desc { font-size: 0.75rem; color: var(--ui-text-2); display: block; margin-top: 1px; }
 
     /* Section Labels */
     .profile-section-label {
         font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-        color: #495057; padding: 10px 20px 5px; background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6; cursor: pointer; user-select: none;
+        color: var(--ui-text-2); padding: 10px 20px 5px; background: var(--ui-flaeche-2);
+        border-bottom: 1px solid var(--ui-rand); cursor: pointer; user-select: none;
         display: flex; align-items: center; gap: 6px;
     }
-    .profile-section-label:hover { background: #e9ecef; }
+    .profile-section-label:hover { background: var(--ui-rand); }
     .profile-section-label .section-chevron { font-size: 0.65rem; transition: transform 0.2s ease; display: inline-block; }
     .profile-section-label.collapsed .section-chevron { transform: rotate(-90deg); }
-    .profile-section-label .section-count { font-size: 0.65rem; color: #6c757d; font-weight: 400; margin-left: auto; }
+    .profile-section-label .section-count { font-size: 0.65rem; color: var(--ui-text-2); font-weight: 400; margin-left: auto; }
 
     /* Selects innerhalb der Matrix */
     .profile-select {
-        width: 100%; height: 32px; border: 1px solid #dee2e6; border-radius: 6px;
+        width: 100%; height: 32px; border: 1px solid var(--ui-rand); border-radius: 6px;
         padding: 0 8px; font-size: 0.8rem; background: #fff;
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath d=\'M3 5l3 3 3-3\' stroke=\'%235a6577\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E");
         background-repeat: no-repeat; background-position: right 8px center;
     }
-    .profile-select:focus { outline: none; border-color: #0d6efd; box-shadow: 0 0 0 2px rgba(13,110,253,.15); }
+    .profile-select:focus { outline: none; border-color: var(--ui-akzent); box-shadow: 0 0 0 2px rgba(13,110,253,.15); }
 
     /* Kopien-Input */
     .profile-copies-input {
-        width: 50px; height: 32px; border: 1px solid #dee2e6; border-radius: 6px;
+        width: 50px; height: 32px; border: 1px solid var(--ui-rand); border-radius: 6px;
         padding: 0 6px; font-size: 0.85rem; text-align: center;
     }
-    .profile-copies-input:focus { outline: none; border-color: #0d6efd; }
+    .profile-copies-input:focus { outline: none; border-color: var(--ui-akzent); }
 
     /* Format-Badge */
     .profile-format-badge {
         font-size: 0.75rem; padding: 3px 10px; border-radius: 4px;
-        background: #dcfce7; color: #16a34a; font-weight: 600; white-space: nowrap;
+        background: var(--ui-ok-bg); color: var(--ui-ok-fg); font-weight: 600; white-space: nowrap;
     }
 
     /* Testdruck-Button */
     .profile-test-btn {
         width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-        border-radius: 6px; background: transparent; border: 1px solid #dee2e6;
-        color: #6c757d; cursor: pointer; font-size: 14px; transition: all 0.15s;
+        border-radius: 6px; background: transparent; border: 1px solid var(--ui-rand);
+        color: var(--ui-text-2); cursor: pointer; font-size: 14px; transition: all 0.15s;
     }
-    .profile-test-btn:hover { background: #f8f9fa; color: #212529; }
+    .profile-test-btn:hover { background: var(--ui-flaeche-2); color: var(--ui-text); }
     .profile-test { display: flex; gap: 4px; }
-    .profile-copy-btn:hover { color: #0d6efd; border-color: #0d6efd; }
-    .profile-row-copied { background: #e7f1ff !important; transition: background 0.6s ease; }
+    .profile-copy-btn:hover { color: var(--ui-akzent); border-color: var(--ui-akzent); }
+    .profile-row-copied { background: var(--ui-akzent-hell) !important; transition: background 0.6s ease; }
 
     /* Druckprotokoll */
     .print-log-list { max-height: 240px; overflow-y: auto; }
     .print-log-row {
         display: flex; align-items: center; gap: 8px;
-        padding: 4px 16px; border-bottom: 1px solid #f0f0f0; font-size: 0.78rem;
+        padding: 4px 16px; border-bottom: 1px solid var(--ui-linie); font-size: 0.78rem;
     }
     .print-log-row:last-child { border-bottom: none; }
     .print-log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .print-log-dot.ok { background: #22c55e; }
-    .print-log-dot.err { background: #ef4444; }
-    .print-log-dot.warn { background: #f59e0b; }
-    .print-log-dot.sent { background: #3b82f6; }
+    .print-log-dot.ok { background: var(--ui-ok-fg); }
+    .print-log-dot.err { background: var(--ui-k-rot); }
+    .print-log-dot.warn { background: var(--ui-warn-punkt); }
+    .print-log-dot.sent { background: var(--ui-akzent); }
     .print-log-type { font-weight: 600; white-space: nowrap; }
-    .print-log-file { color: #495057; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
-    .print-log-status { font-size: 0.7rem; white-space: nowrap; padding: 1px 6px; border-radius: 10px; background: #f1f5f9; color: #475569; }
-    .print-log-status.ok { background: #dcfce7; color: #166534; }
-    .print-log-status.err { background: #fee2e2; color: #991b1b; }
-    .print-log-status.sent { background: #dbeafe; color: #1e40af; }
+    .print-log-file { color: var(--ui-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+    .print-log-status { font-size: 0.7rem; white-space: nowrap; padding: 1px 6px; border-radius: 10px; background: var(--ui-linie-zart); color: var(--ui-text-2); }
+    .print-log-status.ok { background: var(--ui-ok-bg); color: var(--ui-ok-fg); }
+    .print-log-status.err { background: var(--ui-fehler-bg); color: var(--ui-k-rot); }
+    .print-log-status.sent { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
     .print-log-row.is-error { cursor: help; }
-    .print-log-printer { color: #6c757d; white-space: nowrap; }
-    .print-log-time { color: #6c757d; margin-left: auto; white-space: nowrap; font-size: 0.72rem; }
-    .print-log-empty { padding: 12px 16px; font-size: 0.8rem; color: #6c757d; text-align: center; }
+    .print-log-printer { color: var(--ui-text-2); white-space: nowrap; }
+    .print-log-time { color: var(--ui-text-2); margin-left: auto; white-space: nowrap; font-size: 0.72rem; }
+    .print-log-empty { padding: 12px 16px; font-size: 0.8rem; color: var(--ui-text-2); text-align: center; }
 
     /* Responsive */
     @media (max-width: 767.98px) {
         .profile-matrix-header { display: none; }
         .profile-row { grid-template-columns: 1fr; gap: 6px; padding: 12px 16px; }
         .profile-row > div { display: flex; align-items: center; gap: 8px; }
-        .profile-row > div::before { content: attr(data-label); font-size: 0.7rem; color: #6c757d; min-width: 80px; }
+        .profile-row > div::before { content: attr(data-label); font-size: 0.7rem; color: var(--ui-text-2); min-width: 80px; }
         .profile-copies-input { width: 100%; }
         .profile-test-btn { margin-left: auto; }
     }
 ';
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 
 // Nur Admin + Vorstand (nach header.inc.php, da dieser user_role setzt)
 if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
@@ -270,7 +271,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
     </div>
 </div>
 
-<script>window._csrfToken = '<?= $_SESSION['csrf_token'] ?? '' ?>';</script>
+<script>window._csrfToken = '<?= csrf_token() ?>';</script>
 
 <!-- QZ Tray Scripts -->
 <script src="js/lib/rsvp.min.js"></script>

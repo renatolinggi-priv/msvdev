@@ -21,24 +21,27 @@ $page_specific_css = '
     }
     .csv-stat-box {
         text-align: center; padding: 12px 8px;
-        background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;
+        background: var(--ui-flaeche-2); border-radius: 8px; border: 1px solid var(--ui-rand);
     }
     .csv-stat-box .stat-value { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
-    .csv-stat-box .stat-label { font-size: 0.72rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
-    .csv-stat-box.mitglied .stat-value { color: #0d6efd; }
-    .csv-stat-box.gast .stat-value { color: #f59e0b; }
-    .csv-stat-box.js .stat-value { color: #22c55e; }
-    .csv-stat-box.total .stat-value { color: #212529; }
+    .csv-stat-box .stat-label { font-size: 0.72rem; color: var(--ui-text-2); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .csv-stat-box.mitglied .stat-value { color: var(--ui-akzent); }
+    .csv-stat-box.gast .stat-value { color: var(--ui-warn-punkt); }
+    .csv-stat-box.js .stat-value { color: var(--ui-ok-fg); }
+    .csv-stat-box.total .stat-value { color: var(--ui-text); }
 
-    .csv-file-info { font-size: 0.8rem; color: #6c757d; }
+    .csv-file-info { font-size: 0.8rem; color: var(--ui-text-2); }
     .csv-file-info i { font-size: 0.7rem; }
 ';
 
 include 'header.inc.php';
 ?>
 
-<div class="container-fluid mt-3">
-    <h2 class="h4 mb-3 page-title">CSV-Schnittstelle (Schiessanlage) <button type="button" class="btn-help" data-help="csv_schnittstelle.uebersicht" aria-label="Hilfe"></button></h2>
+<div class="container-fluid">
+<div class="row">
+<div class="col-12 ps-0">
+<div class="main-content-wrapper content-width-default">
+    <?php $page_title = 'CSV-Schnittstelle (Schiessanlage)'; $page_title_after = '<button type="button" class="btn-help" data-help="csv_schnittstelle.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
     <!-- Einstellungen -->
     <div class="card data-card mb-3">
@@ -122,6 +125,9 @@ include 'header.inc.php';
             </ul>
         </div>
     </div>
+</div>
+</div>
+</div>
 </div>
 
 <script>

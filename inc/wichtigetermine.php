@@ -1,6 +1,7 @@
 <?php
 // wichtigetermine.php – Hybrid Layout (kompakt)
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 $page_specific_css = <<<'CSS'
 /* ===== Wichtige Termine – Kompaktes Hybrid Layout ===== */
@@ -10,7 +11,7 @@ $page_specific_css = <<<'CSS'
 
 /* --- Wrapper --- */
 .table-wrapper {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-rand);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   overflow: visible;
@@ -19,7 +20,7 @@ $page_specific_css = <<<'CSS'
   position: sticky; top: 0; z-index: 8;
   margin: 0; padding: 0.75rem 1rem; font-weight: 600; font-size: 0.95rem;
   color: var(--dark-color);
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--ui-rand);
   background: var(--light-color);
 }
 
@@ -30,8 +31,8 @@ $page_specific_css = <<<'CSS'
 .hybrid-table thead th {
   padding: 0.5rem 0.75rem; font-size: 0.75rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #e2e8f0;
+  background-color: var(--ui-flaeche-2);
+  border-bottom: 2px solid var(--ui-rand);
   position: sticky; top: 0; z-index: 6;
 }
 .hybrid-table tbody tr.hybrid-row {
@@ -42,16 +43,16 @@ $page_specific_css = <<<'CSS'
 }
 .hybrid-table tbody tr.hybrid-row.selected {
   background: rgba(59,130,246,0.08);
-  box-shadow: inset 3px 0 0 #3b82f6;
+  box-shadow: none;
 }
 .hybrid-table tbody td {
   padding: 0.4rem 0.75rem; vertical-align: middle;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--ui-linie-zart);
 }
 
 /* Inhaltsspalten */
 .h-title { font-weight: 500; }
-.h-date { font-size: 0.8rem; white-space: nowrap; color: #64748b; }
+.h-date { font-size: 0.8rem; white-space: nowrap; color: var(--ui-text-2); }
 .h-time { text-align: center; font-size: 0.8rem; }
 .jsk-toggle { cursor: pointer; user-select: none; vertical-align: middle; transition: filter .15s, transform .15s; }
 .jsk-toggle:hover { filter: brightness(0.95); transform: translateY(-1px); }
@@ -61,11 +62,11 @@ $page_specific_css = <<<'CSS'
   width: 26px; height: 26px; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 0.75rem; border-radius: 4px;
-  color: #64748b; border: 1px solid transparent; background: transparent;
+  color: var(--ui-text-2); border: 1px solid transparent; background: transparent;
   transition: all 0.15s;
 }
 .btn-delete-sm:hover {
-  color: #dc3545; border-color: #dc3545; background: rgba(220,53,69,0.05);
+  color: var(--ui-k-rot); border-color: var(--ui-k-rot); background: rgba(220,53,69,0.05);
 }
 
 /* Monats-Separator */
@@ -73,23 +74,23 @@ $page_specific_css = <<<'CSS'
   padding: 0.35rem 0.75rem;
   font-size: 0.7rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.5px;
-  color: #64748b; background: #fafbfc;
-  border-bottom: 1px solid #e2e8f0;
+  color: var(--ui-text-2); background: var(--ui-flaeche-2);
+  border-bottom: 1px solid var(--ui-rand);
   cursor: default;
 }
-.hybrid-table tbody tr.month-separator:hover { background: #fafbfc; }
+.hybrid-table tbody tr.month-separator:hover { background: var(--ui-flaeche-2); }
 
 /* Wochentag-Badge kompakt */
 .wd-badge {
   display: inline-block; font-size: 0.7rem; font-weight: 600;
-  color: #64748b; background: #f1f5f9; border-radius: 3px;
+  color: var(--ui-text-2); background: var(--ui-linie-zart); border-radius: 3px;
   padding: 1px 5px; margin-right: 4px;
 }
 
 /* Zeit-Badge kompakt */
 .time-badge {
   display: inline-block; font-size: 0.75rem; font-weight: 500;
-  color: #0d6efd; background: rgba(13,110,253,0.08); border-radius: 4px;
+  color: var(--ui-akzent); background: rgba(13,110,253,0.08); border-radius: 4px;
   padding: 2px 8px;
 }
 
@@ -101,7 +102,7 @@ $page_specific_css = <<<'CSS'
 
 /* --- Empty State --- */
 .empty-state {
-  padding: 3rem 1rem; text-align: center; color: #64748b;
+  padding: 3rem 1rem; text-align: center; color: var(--ui-text-2);
 }
 .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
 
@@ -164,20 +165,20 @@ $page_specific_css = <<<'CSS'
 
 /* --- Mobile Event Cards --- */
 .mobile-event-card {
-  background: white; border: 1px solid #e2e8f0;
+  background: white; border: 1px solid var(--ui-rand);
   border-radius: 0.75rem; padding: 0.6rem 0.875rem; margin-bottom: 0.5rem;
   cursor: pointer; transition: background 0.15s, border-color 0.15s;
 }
 .mobile-event-card:active {
-  background: #f8fafc;
+  background: var(--ui-flaeche-2);
 }
 .mobile-event-card.selected {
-  border-color: #3b82f6; background: rgba(59,130,246,0.04);
+  border-color: var(--ui-akzent); background: rgba(59,130,246,0.04);
 }
 .mobile-month-header {
   font-weight: 700; font-size: 0.8rem; text-transform: uppercase;
-  letter-spacing: 0.5px; color: #64748b;
-  padding: 0.75rem 0.25rem 0.25rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 0.4rem;
+  letter-spacing: 0.5px; color: var(--ui-text-2);
+  padding: 0.75rem 0.25rem 0.25rem; border-bottom: 1px solid var(--ui-rand); margin-bottom: 0.4rem;
 }
 @media (max-width: 576px) {
   .modal-dialog { margin: 0; max-width: 100%; height: 100%; }
@@ -187,10 +188,6 @@ CSS;
 
 include 'header.inc.php';
 
-// CSRF Token
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 ?>
 
 <div class="container-fluid">
@@ -203,7 +200,7 @@ if (empty($_SESSION['csrf_token'])) {
         ?>
 
         <div class="content-background">
-          <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+          <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
           <!-- Mobile: Neuer-Termin + Jahrauswahl -->
           <div class="d-flex d-md-none align-items-center gap-2 mb-3 justify-content-end">
@@ -700,13 +697,13 @@ $(function() {
         <div class="d-flex justify-content-between align-items-center">
           <div style="min-width:0;">
             <div style="font-weight:600; font-size:0.85rem;">${nameEsc} <span class="jsk-toggle badge ${d.jsk === '1' ? 'bg-info text-dark' : 'bg-light text-muted border'}" role="button" data-id="${d.id}" data-jsk="${d.jsk || '0'}" data-tooltip="Für Jungschützen ein-/ausschalten">JSK</span></div>
-            <div class="d-flex align-items-center gap-1" style="font-size:0.8rem; color:#6c757d; margin-top:0.15rem;">
+            <div class="d-flex align-items-center gap-1" style="font-size:0.8rem; color:var(--ui-text-2); margin-top:0.15rem;">
               <span class="wd-badge">${wd}</span><span>${ds}</span>
-              <span style="color:#ced4da;">·</span>
+              <span style="color:var(--ui-feldrand);">·</span>
               <span class="time-badge">${timeEsc}</span>
             </div>
           </div>
-          <i class="bi bi-chevron-right" style="color:#cbd5e1; font-size:0.9rem; flex-shrink:0;"></i>
+          <i class="bi bi-chevron-right" style="color:var(--ui-feldrand); font-size:0.9rem; flex-shrink:0;"></i>
         </div>
       </div>`;
     });

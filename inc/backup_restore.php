@@ -1,6 +1,7 @@
 <?php
 // backup_restore.php – Vollseite im Stil von gruppenerfassung.php
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 // Seitenspezifische Styles definieren (gleicher Look wie in Deinem Beispiel)
 $page_specific_css = "
@@ -66,7 +67,7 @@ $page_specific_css = "
 .progress {
     height: 4px;
     overflow: hidden;
-    background-color: #e9ecef;
+    background-color: var(--ui-rand);
     border-radius: 2px;
 }
 
@@ -130,10 +131,6 @@ if (($_SESSION['user_role'] ?? '') !== 'admin' && (int)($_SESSION['user_id'] ?? 
     exit();
 }
 
-// CSRF Token (nur falls Du ihn anderweitig brauchst – API nutzt Key)
-if (empty($_SESSION['csrf_token'])) {
-  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 // Pfad anpassen, falls nötig
 $configFile = dirname(__DIR__, 1) . '/../msvjm_config.php';

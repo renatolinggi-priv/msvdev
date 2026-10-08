@@ -11,6 +11,7 @@
  * Datenmodell: Migration 050. Lesetabelle fürs Portal bleibt einsatz_zuweisungen (Projektion).
  */
 require_once 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 require_once __DIR__ . '/../auth.php';
 
 // Zugriffsschutz: nur Vorstand/Admin (vor header.inc.php, da dieser Output erzeugt)
@@ -77,13 +78,13 @@ rsort($years);
 $page_specific_css = <<<'CSS'
 .ep-list td { vertical-align: middle; }
 .ep-status { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; }
-.ep-status.entwurf { background: #e2e8f0; color: #475569; }
-.ep-status.freigegeben { background: #dbeafe; color: #1d4ed8; }
-.ep-status.final { background: #dcfce7; color: #15803d; }
+.ep-status.entwurf { background: var(--ui-rand); color: var(--ui-text-2); }
+.ep-status.freigegeben { background: var(--ui-akzent-hell); color: #1d4ed8; }
+.ep-status.final { background: var(--ui-ok-bg); color: var(--ui-ok-fg); }
 .ep-toolbar { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; align-items: flex-end; }
 .ep-toolbar .btn { white-space: nowrap; }
 .ep-tb-group { display: flex; flex-direction: column; gap: .12rem; }
-.ep-tb-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; font-weight: 600; padding-left: .2rem; }
+.ep-tb-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ui-text-2); font-weight: 600; padding-left: .2rem; }
 .ep-toolbar .dropdown-menu-sm .dropdown-item { font-size: .82rem; padding: .3rem .8rem; }
 /* kleinere Monitore: engere Leiste, Statusgruppe bleibt rechts */
 @media (max-width: 1499px) {
@@ -99,113 +100,113 @@ $page_specific_css = <<<'CSS'
 .ep-toolbar .dropdown-menu-sm .dropdown-item small { font-size: .7rem; }
 /* Anwesenheit im Admin (gleiche Optik wie die Portal-Seite) */
 .an-termine { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .8rem; }
-.an-termine button { border: 1px solid #e2e8f0; border-radius: 999px; padding: .25rem .8rem; font-size: .8rem; color: #334155; background: #fff; }
-.an-termine button.aktiv { background: var(--primary-color, #2d4373); color: #fff; border-color: var(--primary-color, #2d4373); }
+.an-termine button { border: 1px solid var(--ui-rand); border-radius: 999px; padding: .25rem .8rem; font-size: .8rem; color: var(--ui-text); background: #fff; }
+.an-termine button.aktiv { background: var(--primary-color, var(--ui-akzent-dunkel)); color: #fff; border-color: var(--primary-color, var(--ui-akzent-dunkel)); }
 .an-stat { display: flex; gap: .5rem; margin-bottom: .6rem; font-size: .78rem; }
-.an-stat span { border-radius: .5rem; padding: .2rem .55rem; background: #f1f5f9; color: #475569; }
-.an-stat .da { background: #dcfce7; color: #15803d; } .an-stat .nein { background: #fee2e2; color: #b91c1c; }
-.an-fn { font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; font-weight: 700; margin: .6rem 0 .25rem; }
-.an-row { display: flex; align-items: center; gap: .6rem; background: #fff; border: 1px solid #e2e8f0; border-radius: .55rem; padding: .3rem .55rem; margin-bottom: .3rem; }
-.an-row.da { border-color: #86efac; background: #f0fdf4; } .an-row.nein { border-color: #fca5a5; background: #fef2f2; }
+.an-stat span { border-radius: .5rem; padding: .2rem .55rem; background: var(--ui-linie-zart); color: var(--ui-text-2); }
+.an-stat .da { background: var(--ui-ok-bg); color: var(--ui-ok-fg); } .an-stat .nein { background: var(--ui-fehler-bg); color: var(--ui-k-rot); }
+.an-fn { font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ui-text-2); font-weight: 700; margin: .6rem 0 .25rem; }
+.an-row { display: flex; align-items: center; gap: .6rem; background: #fff; border: 1px solid var(--ui-rand); border-radius: .55rem; padding: .3rem .55rem; margin-bottom: .3rem; }
+.an-row.da { border-color: #86efac; background: var(--ui-ok-bg); } .an-row.nein { border-color: #fca5a5; background: var(--ui-fehler-bg); }
 .an-name { flex: 1; min-width: 0; font-weight: 600; font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.an-name small { font-weight: 400; color: #64748b; font-size: .7rem; margin-left: .4rem; }
-.an-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #c62828; }
-.an-dot.freienbach { background: #3b5998; } .an-dot.wollerau { background: #2e7d32; }
-.an-btn { flex: 0 0 auto; width: 2.6rem; height: 2.1rem; border-radius: .5rem; border: 1px solid #cbd5e1; background: #fff; font-size: 1.05rem; color: #64748b; display: flex; align-items: center; justify-content: center; }
-.an-row.da .an-btn.ja { background: #16a34a; border-color: #16a34a; color: #fff; }
-.an-row.nein .an-btn.no { background: #dc2626; border-color: #dc2626; color: #fff; }
+.an-name small { font-weight: 400; color: var(--ui-text-2); font-size: .7rem; margin-left: .4rem; }
+.an-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--ui-k-rot); }
+.an-dot.freienbach { background: var(--ui-akzent-dunkel); } .an-dot.wollerau { background: var(--ui-ok-fg); }
+.an-btn { flex: 0 0 auto; width: 2.6rem; height: 2.1rem; border-radius: .5rem; border: 1px solid var(--ui-feldrand); background: #fff; font-size: 1.05rem; color: var(--ui-text-2); display: flex; align-items: center; justify-content: center; }
+.an-row.da .an-btn.ja { background: var(--ui-ok-fg); border-color: var(--ui-ok-fg); color: #fff; }
+.an-row.nein .an-btn.no { background: var(--ui-k-rot); border-color: var(--ui-k-rot); color: #fff; }
 .an-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0 1rem; }
-.ep-grid-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: .5rem; background: #fff; }
+.ep-grid-wrap { overflow-x: auto; border: 1px solid var(--ui-rand); border-radius: .5rem; background: #fff; }
 .ep-grid { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
-.ep-grid th, .ep-grid td { border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: .35rem .45rem; vertical-align: top; min-width: 170px; }
+.ep-grid th, .ep-grid td { border-right: 1px solid var(--ui-rand); border-bottom: 1px solid var(--ui-rand); padding: .35rem .45rem; vertical-align: top; min-width: 170px; }
 .ep-grid th:last-child, .ep-grid td:last-child { border-right: 0; }
 .ep-grid tbody tr:last-child td { border-bottom: 0; }
-.ep-grid thead th { background: #f8f9fa; font-size: .72rem; text-transform: uppercase; color: #64748b; font-weight: 600; }
-.ep-grid thead th .ep-t-bez { text-transform: none; font-size: .85rem; color: #1e293b; }
-.ep-grid thead th .ep-t-datum { text-transform: none; font-size: .82rem; color: #334155; font-weight: 500; }
+.ep-grid thead th { background: var(--ui-flaeche-2); font-size: .72rem; text-transform: uppercase; color: var(--ui-text-2); font-weight: 600; }
+.ep-grid thead th .ep-t-bez { text-transform: none; font-size: .85rem; color: var(--ui-text); }
+.ep-grid thead th .ep-t-datum { text-transform: none; font-size: .82rem; color: var(--ui-text); font-weight: 500; }
 .ep-grid thead th .ep-t-zeit { text-transform: none; font-weight: 400; }
-.ep-grid thead th .ep-t-info { text-transform: none; font-weight: 400; font-size: .66rem; color: #64748b; margin-top: .1rem; }
-.ep-grid .ep-fn { width: 220px; min-width: 200px; font-weight: 600; background: #fcfcfd; color: #1e293b; }
-.ep-grid .ep-fn small { display: block; font-weight: 400; color: #64748b; }
-.ep-grid .ep-gruppe td { background: #f1f5f9; font-weight: 700; font-size: .72rem; text-transform: uppercase; color: #475569; padding: .25rem .45rem; }
-.ep-chip, .ep-cell { display: flex; align-items: center; gap: .4rem; width: 100%; text-align: left; border: 1px solid #cbd5e1; background: #fff;
+.ep-grid thead th .ep-t-info { text-transform: none; font-weight: 400; font-size: .66rem; color: var(--ui-text-2); margin-top: .1rem; }
+.ep-grid .ep-fn { width: 220px; min-width: 200px; font-weight: 600; background: var(--ui-flaeche-2); color: var(--ui-text); }
+.ep-grid .ep-fn small { display: block; font-weight: 400; color: var(--ui-text-2); }
+.ep-grid .ep-gruppe td { background: var(--ui-linie-zart); font-weight: 700; font-size: .72rem; text-transform: uppercase; color: var(--ui-text-2); padding: .25rem .45rem; }
+.ep-chip, .ep-cell { display: flex; align-items: center; gap: .4rem; width: 100%; text-align: left; border: 1px solid var(--ui-feldrand); background: #fff;
   border-radius: .4rem; padding: .22rem .5rem; margin-bottom: .25rem; font-size: .82rem; line-height: 1.25; cursor: pointer; min-height: 1.9rem; }
 .ep-chip:last-child, .ep-cell:last-child { margin-bottom: 0; }
-.ep-chip:hover, .ep-cell:hover { border-color: #94a3b8; background: #f8fafc; }
-.ep-chip.selected, .ep-cell.selected { outline: 2px solid var(--primary-color, #2d4373); outline-offset: 1px; }
-.ep-chip.ep-offen, .ep-cell.ep-leer { color: #64748b; border-style: dashed; }
+.ep-chip:hover, .ep-cell:hover { border-color: var(--ui-text-3); background: var(--ui-flaeche-2); }
+.ep-chip.selected, .ep-cell.selected { outline: 2px solid var(--primary-color, var(--ui-akzent-dunkel)); outline-offset: 1px; }
+.ep-chip.ep-offen, .ep-cell.ep-leer { color: var(--ui-text-2); border-style: dashed; }
 /* offene Positionen (kein Name, MSV) und Soll-Platzhalter: leicht rot, damit sie nach dem Einteilen auffallen */
-.ep-chip.ep-offen.ep-v-msv, .ep-chip.ep-offen:not([data-verein]), .ep-chip.ep-ph { background: #fff1f2; border-color: #fca5a5; color: #b91c1c; }
+.ep-chip.ep-offen.ep-v-msv, .ep-chip.ep-offen:not([data-verein]), .ep-chip.ep-ph { background: #fff1f2; border-color: #fca5a5; color: var(--ui-k-rot); }
 .ep-chip.ep-offen.ep-v-msv .ep-dot, .ep-chip.ep-offen:not([data-verein]) .ep-dot, .ep-chip.ep-ph .ep-dot { background: #fca5a5; }
 .ep-chip.ep-offen.ep-v-msv:hover, .ep-chip.ep-ph:hover { background: #ffe4e6; border-color: #f87171; }
-.ep-chip.ep-v-freienbach { background: #e8f0fe; border-color: #b6c8f0; color: #2d4373; }
-.ep-chip.ep-v-wollerau   { background: #e8f5e9; border-color: #b5dcb8; color: #2e7d32; }
-.ep-chip.ep-warn { border-color: #f0ad4e; background: #fff7ec; }
-.ep-chip .ep-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #cbd5e1; }
-.ep-chip.ep-v-msv.ep-besetzt .ep-dot { background: #c62828; }
-.ep-chip.ep-v-freienbach .ep-dot { background: #3b5998; }
-.ep-chip.ep-v-wollerau .ep-dot { background: #2e7d32; }
-.ep-chip.ep-warn .ep-dot { background: #f0ad4e; }
+.ep-chip.ep-v-freienbach { background: var(--ui-akzent-hell); border-color: #b6c8f0; color: var(--ui-akzent-dunkel); }
+.ep-chip.ep-v-wollerau   { background: var(--ui-ok-bg); border-color: #b5dcb8; color: var(--ui-ok-fg); }
+.ep-chip.ep-warn { border-color: var(--ui-warn-punkt); background: #fff7ec; }
+.ep-chip .ep-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--ui-feldrand); }
+.ep-chip.ep-v-msv.ep-besetzt .ep-dot { background: var(--ui-k-rot); }
+.ep-chip.ep-v-freienbach .ep-dot { background: var(--ui-akzent-dunkel); }
+.ep-chip.ep-v-wollerau .ep-dot { background: var(--ui-ok-fg); }
+.ep-chip.ep-warn .ep-dot { background: var(--ui-warn-punkt); }
 .ep-chip .ep-txt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ep-chip .ep-bem { font-size: .7rem; color: #64748b; }
+.ep-chip .ep-bem { font-size: .7rem; color: var(--ui-text-2); }
 .ep-chip .ep-anw { font-size: .8rem; flex-shrink: 0; }
-.ep-chip .ep-anw-da { color: #16a34a; } .ep-chip .ep-anw-nein { color: #dc2626; }
+.ep-chip .ep-anw-da { color: var(--ui-ok-fg); } .ep-chip .ep-anw-nein { color: var(--ui-k-rot); }
 .ep-ausw-table td, .ep-ausw-table th { font-size: .8rem; padding: .25rem .4rem; white-space: nowrap; }
 .ep-ausw-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.ep-ausw-table td.ep-fehlt { color: #c62828; font-weight: 600; }
-.ep-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .75rem; color: #64748b; }
+.ep-ausw-table td.ep-fehlt { color: var(--ui-k-rot); font-weight: 600; }
+.ep-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .75rem; color: var(--ui-text-2); }
 /* Editor: Raster links, Mitgliederliste (Drag & Drop) rechts */
 .ep-editor-row { display: flex; gap: 1rem; align-items: flex-start; }
 .ep-grid-col { flex: 1 1 auto; min-width: 0; }
-.ep-side { flex: 0 0 250px; position: sticky; top: 70px; border: 1px solid #e2e8f0; border-radius: .5rem; background: #fff; display: flex; flex-direction: column; max-height: calc(100vh - 90px); }
-.ep-side-head { padding: .35rem .45rem; border-bottom: 1px solid #e2e8f0; background: #f8f9fa; border-radius: .5rem .5rem 0 0; font-size: .72rem; text-transform: uppercase; color: #64748b; font-weight: 600; min-height: 2.65rem; display: flex; align-items: center; }
-.ep-side-search { padding: .35rem .45rem; border-bottom: 1px solid #e2e8f0; }
+.ep-side { flex: 0 0 250px; position: sticky; top: 70px; border: 1px solid var(--ui-rand); border-radius: .5rem; background: #fff; display: flex; flex-direction: column; max-height: calc(100vh - 90px); }
+.ep-side-head { padding: .35rem .45rem; border-bottom: 1px solid var(--ui-rand); background: var(--ui-flaeche-2); border-radius: .5rem .5rem 0 0; font-size: .72rem; text-transform: uppercase; color: var(--ui-text-2); font-weight: 600; min-height: 2.65rem; display: flex; align-items: center; }
+.ep-side-search { padding: .35rem .45rem; border-bottom: 1px solid var(--ui-rand); }
 .ep-side-list { overflow-y: auto; padding: .35rem .45rem; }
 /* Listeneintrag = gleiche Chip-Optik wie eine Position (weiss, roter MSV-Punkt), rechts der Zähler */
-.ep-mitglied { display: flex; align-items: center; gap: .4rem; width: 100%; border: 1px solid #cbd5e1; background: #fff; border-radius: .4rem; padding: .22rem .5rem; margin-bottom: .25rem; font-size: .82rem; line-height: 1.25; min-height: 1.9rem; cursor: grab; user-select: none; }
+.ep-mitglied { display: flex; align-items: center; gap: .4rem; width: 100%; border: 1px solid var(--ui-feldrand); background: #fff; border-radius: .4rem; padding: .22rem .5rem; margin-bottom: .25rem; font-size: .82rem; line-height: 1.25; min-height: 1.9rem; cursor: grab; user-select: none; }
 .ep-mitglied:last-child { margin-bottom: 0; }
-.ep-mitglied:hover { border-color: #94a3b8; background: #f8fafc; }
+.ep-mitglied:hover { border-color: var(--ui-text-3); background: var(--ui-flaeche-2); }
 .ep-mitglied.dragging { opacity: .5; }
 .ep-mitglied .ep-m-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ep-mitglied .ep-m-count { display: none; font-size: .68rem; min-width: 1.35rem; text-align: center; border-radius: .6rem; padding: .05rem .3rem; background: #dcfce7; color: #15803d; font-weight: 600; }
+.ep-mitglied .ep-m-count { display: none; font-size: .68rem; min-width: 1.35rem; text-align: center; border-radius: .6rem; padding: .05rem .3rem; background: var(--ui-ok-bg); color: var(--ui-ok-fg); font-weight: 600; }
 .ep-mitglied.geplant .ep-m-count { display: inline-block; }
-.ep-mitglied.inaktiv .ep-m-name { color: #64748b; font-style: italic; }
+.ep-mitglied.inaktiv .ep-m-name { color: var(--ui-text-2); font-style: italic; }
 .ep-mitglied.extern { border-style: dashed; }
-.ep-mitglied .ep-m-v { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #cbd5e1; }
-.ep-mitglied .ep-m-v.ep-v-msv { background: #c62828; } .ep-mitglied .ep-m-v.ep-v-freienbach { background: #3b5998; } .ep-mitglied .ep-m-v.ep-v-wollerau { background: #2e7d32; }
-.ep-mitglied .ep-m-count-gem { display: inline-block; background: #f1f5f9; color: #64748b; }   /* eingeteilt/angeboten, immer sichtbar */
-.ep-mitglied.geplant .ep-m-count-gem { background: #dcfce7; color: #15803d; }
-.ep-mitglied.extern .ep-m-name::after { content: " (extern)"; color: #64748b; font-size: .7rem; }
-.ep-side-sub { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #64748b; font-weight: 600; margin: .35rem 0 .25rem; padding: .3rem .2rem .15rem; border-top: 1px dashed #e2e8f0; cursor: pointer; user-select: none; display: flex; align-items: center; gap: .3rem; }
+.ep-mitglied .ep-m-v { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--ui-feldrand); }
+.ep-mitglied .ep-m-v.ep-v-msv { background: var(--ui-k-rot); } .ep-mitglied .ep-m-v.ep-v-freienbach { background: var(--ui-akzent-dunkel); } .ep-mitglied .ep-m-v.ep-v-wollerau { background: var(--ui-ok-fg); }
+.ep-mitglied .ep-m-count-gem { display: inline-block; background: var(--ui-linie-zart); color: var(--ui-text-2); }   /* eingeteilt/angeboten, immer sichtbar */
+.ep-mitglied.geplant .ep-m-count-gem { background: var(--ui-ok-bg); color: var(--ui-ok-fg); }
+.ep-mitglied.extern .ep-m-name::after { content: " (extern)"; color: var(--ui-text-2); font-size: .7rem; }
+.ep-side-sub { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: var(--ui-text-2); font-weight: 600; margin: .35rem 0 .25rem; padding: .3rem .2rem .15rem; border-top: 1px dashed var(--ui-rand); cursor: pointer; user-select: none; display: flex; align-items: center; gap: .3rem; }
 .ep-side-group:first-child .ep-side-sub { border-top: 0; margin-top: 0; }
-.ep-side-sub .ep-caret { font-size: .7rem; color: #64748b; transition: transform .15s; }
+.ep-side-sub .ep-caret { font-size: .7rem; color: var(--ui-text-2); transition: transform .15s; }
 .ep-side-group.ep-collapsed .ep-side-sub .ep-caret { transform: rotate(-90deg); }
-.ep-side-sub .ep-g-n { margin-left: auto; font-size: .66rem; min-width: 1.35rem; text-align: center; border-radius: .6rem; padding: .05rem .3rem; background: #e2e8f0; color: #475569; }
+.ep-side-sub .ep-g-n { margin-left: auto; font-size: .66rem; min-width: 1.35rem; text-align: center; border-radius: .6rem; padding: .05rem .3rem; background: var(--ui-rand); color: var(--ui-text-2); }
 .ep-side-group.ep-collapsed .ep-side-items { display: none; }
-.ep-side-foot { padding: .35rem .6rem; border-top: 1px solid #eef1f6; font-size: .7rem; color: #64748b; }
+.ep-side-foot { padding: .35rem .6rem; border-top: 1px solid var(--ui-linie); font-size: .7rem; color: var(--ui-text-2); }
 .ep-side-stunden { padding: 0 .45rem .35rem; }
 .ep-stunden-table { width: 100%; font-size: .74rem; }
 .ep-stunden-table td { padding: .1rem .15rem; white-space: nowrap; }
 .ep-stunden-table td.ep-st-pos, .ep-stunden-table td.ep-st-std { text-align: right; font-variant-numeric: tabular-nums; }
 .ep-stunden-table td.ep-st-vs { font-size: .66rem; text-align: right; }
-.ep-stunden-table tr.ep-st-total td { border-top: 1px solid #e2e8f0; font-weight: 600; }
-.ep-chip.ep-drop { outline: 2px dashed var(--primary-color, #2d4373); outline-offset: 1px; background: #eef2ff; }
+.ep-stunden-table tr.ep-st-total td { border-top: 1px solid var(--ui-rand); font-weight: 600; }
+.ep-chip.ep-drop { outline: 2px dashed var(--primary-color, var(--ui-akzent-dunkel)); outline-offset: 1px; background: var(--ui-akzent-hell); }
 /* Einklappbare Funktionszeilen: Klick auf den Funktionsnamen; eingeklappt nur Zusammenfassung je Zelle */
 .ep-grid .ep-fn { cursor: pointer; user-select: none; }
-.ep-grid .ep-fn .ep-caret { float: right; color: #64748b; font-size: .75rem; margin-top: .15rem; transition: transform .15s; }
+.ep-grid .ep-fn .ep-caret { float: right; color: var(--ui-text-2); font-size: .75rem; margin-top: .15rem; transition: transform .15s; }
 .ep-grid tr.ep-collapsed .ep-fn .ep-caret { transform: rotate(-90deg); }
 .ep-grid tr.ep-collapsed td .ep-chip { display: none; }
-.ep-grid .ep-summary { display: none; color: #475569; background: #f8fafc; border-style: solid; cursor: pointer; }
+.ep-grid .ep-summary { display: none; color: var(--ui-text-2); background: var(--ui-flaeche-2); border-style: solid; cursor: pointer; }
 .ep-grid tr.ep-collapsed .ep-summary { display: flex; }
-.ep-grid .ep-summary.ep-leer { color: #64748b; background: #fff; border-style: dashed; }
-.ep-grid .ep-summary .ep-offen-n { color: #c62828; font-weight: 600; margin-left: auto; font-size: .72rem; }
-.ep-grid .ep-fn .ep-fn-n { display: none; font-size: .68rem; min-width: 1.35rem; text-align: center; border-radius: .6rem; padding: .05rem .3rem; background: #e2e8f0; color: #475569; font-weight: 600; vertical-align: middle; }
+.ep-grid .ep-summary.ep-leer { color: var(--ui-text-2); background: #fff; border-style: dashed; }
+.ep-grid .ep-summary .ep-offen-n { color: var(--ui-k-rot); font-weight: 600; margin-left: auto; font-size: .72rem; }
+.ep-grid .ep-fn .ep-fn-n { display: none; font-size: .68rem; min-width: 1.35rem; text-align: center; border-radius: .6rem; padding: .05rem .3rem; background: var(--ui-rand); color: var(--ui-text-2); font-weight: 600; vertical-align: middle; }
 .ep-grid tr.ep-collapsed .ep-fn .ep-fn-n { display: inline-block; }
-.ep-grid thead th.ep-fn .ep-alle { float: right; font-size: .9rem; line-height: 1; color: var(--primary-color, #2d4373); cursor: pointer; padding: .1rem .25rem; border-radius: .3rem; }
-.ep-grid thead th.ep-fn .ep-alle:hover { background: #e2e8f0; }
+.ep-grid thead th.ep-fn .ep-alle { float: right; font-size: .9rem; line-height: 1; color: var(--primary-color, var(--ui-akzent-dunkel)); cursor: pointer; padding: .1rem .25rem; border-radius: .3rem; }
+.ep-grid thead th.ep-fn .ep-alle:hover { background: var(--ui-rand); }
 /* Einteilungs-Vorschläge (automatisch, noch nicht bestätigt) */
-.ep-chip.ep-vorschlag { border: 1px dashed #3b5998 !important; background: #eef2ff !important; }
-.ep-chip.ep-vorschlag .ep-txt::before { content: "? "; color: #3b5998; font-weight: 700; }
+.ep-chip.ep-vorschlag { border: 1px dashed var(--ui-akzent-dunkel) !important; background: var(--ui-akzent-hell) !important; }
+.ep-chip.ep-vorschlag .ep-txt::before { content: "? "; color: var(--ui-akzent-dunkel); font-weight: 700; }
 /* Verfügbarkeits-Filter in der Mitgliederliste */
 .ep-mitglied.ep-nv { opacity: .35; }
 .ep-verf-table td, .ep-verf-table th { vertical-align: middle; font-size: .8rem; padding: .25rem .35rem; }
@@ -213,14 +214,14 @@ $page_specific_css = <<<'CSS'
 .ep-verf-table .form-check-input { margin-top: .15rem; }
 .ep-verf-badge { font-size: .7rem; }
 .ep-einteilung-tabelle td, .ep-einteilung-tabelle th { font-size: .8rem; padding: .25rem .4rem; text-align: center; }
-.ep-einteilung-tabelle td.ep-fehlt { color: #c62828; font-weight: 600; }
-.ep-chip.ep-add { justify-content: center; color: #64748b; border-style: dashed; background: transparent; min-height: 1.6rem; padding: .05rem .5rem; }
-.ep-chip.ep-add:hover { color: var(--primary-color, #2d4373); border-color: var(--primary-color, #2d4373); background: #f8fafc; }
+.ep-einteilung-tabelle td.ep-fehlt { color: var(--ui-k-rot); font-weight: 600; }
+.ep-chip.ep-add { justify-content: center; color: var(--ui-text-2); border-style: dashed; background: transparent; min-height: 1.6rem; padding: .05rem .5rem; }
+.ep-chip.ep-add:hover { color: var(--primary-color, var(--ui-akzent-dunkel)); border-color: var(--primary-color, var(--ui-akzent-dunkel)); background: var(--ui-flaeche-2); }
 .ep-chip[draggable="true"] { cursor: grab; }
 .ep-chip.dragging { opacity: .5; }
-.ep-side.ep-drop-remove { outline: 2px dashed #c62828; outline-offset: 2px; background: #fff5f5; }
-.ep-side.ep-drop-remove .ep-side-head { color: #c62828; }
-.ep-side-remove-hint { display: none; padding: .5rem .6rem; font-size: .78rem; color: #c62828; text-align: center; }
+.ep-side.ep-drop-remove { outline: 2px dashed var(--ui-k-rot); outline-offset: 2px; background: #fff5f5; }
+.ep-side.ep-drop-remove .ep-side-head { color: var(--ui-k-rot); }
+.ep-side-remove-hint { display: none; padding: .5rem .6rem; font-size: .78rem; color: var(--ui-k-rot); text-align: center; }
 .ep-side.ep-drop-remove .ep-side-remove-hint { display: block; }
 /* Kompaktmodus bei vielen Spalten (Chilbi: 8 Schichten) – passt ohne horizontales Scrollen in den 1500px-Container */
 .ep-editor-row.ep-eng .ep-side { flex-basis: 220px; }
@@ -233,10 +234,10 @@ $page_specific_css = <<<'CSS'
 .ep-grid.ep-eng .ep-chip .ep-dot { width: 6px; height: 6px; }
 @media (max-width: 991px) { .ep-editor-row { flex-direction: column; } .ep-side { position: static; flex-basis: auto; width: 100%; max-height: 320px; } }
 .ep-legend .ep-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .3rem; }
-.ep-person-td { font-weight: 600; white-space: nowrap; background: #fcfcfd; }
-.ep-grid tfoot td { background: #f8f9fa; font-size: .72rem; color: #475569; border-top: 2px solid #e2e8f0; border-bottom: 0; vertical-align: top; }
-.ep-grid tfoot td.ep-fehlt { color: #c62828; font-weight: 600; }
-.ep-grid th.ep-drop { outline: 2px dashed var(--primary-color, #2d4373); outline-offset: -2px; background: #eef2ff; }
+.ep-person-td { font-weight: 600; white-space: nowrap; background: var(--ui-flaeche-2); }
+.ep-grid tfoot td { background: var(--ui-flaeche-2); font-size: .72rem; color: var(--ui-text-2); border-top: 2px solid var(--ui-rand); border-bottom: 0; vertical-align: top; }
+.ep-grid tfoot td.ep-fehlt { color: var(--ui-k-rot); font-weight: 600; }
+.ep-grid th.ep-drop { outline: 2px dashed var(--primary-color, var(--ui-akzent-dunkel)); outline-offset: -2px; background: var(--ui-akzent-hell); }
 .ep-cell[draggable="true"] { cursor: grab; }
 .ep-cell.dragging { opacity: .5; }
 .ep-soll-table input { width: 4.2rem; text-align: center; }
@@ -245,15 +246,15 @@ $page_specific_css = <<<'CSS'
 .ep-preview { max-height: 420px; overflow: auto; }
 .ep-preview td, .ep-preview th { font-size: .8rem; }
 #epMitgliedFilter { margin-bottom: .3rem; }
-.ep-hint { font-size: .78rem; color: #64748b; }
-.ep-chip .ep-ok { order: -1; flex-shrink: 0; font-size: .58rem; font-weight: 800; line-height: 1.2; background: #f59e0b; color: #fff; border-radius: .3rem; padding: 0 .25rem; }   /* vor dem Namen, wird nie abgeschnitten */
+.ep-hint { font-size: .78rem; color: var(--ui-text-2); }
+.ep-chip .ep-ok { order: -1; flex-shrink: 0; font-size: .58rem; font-weight: 800; line-height: 1.2; background: var(--ui-warn-punkt); color: #fff; border-radius: .3rem; padding: 0 .25rem; }   /* vor dem Namen, wird nie abgeschnitten */
 .ep-ok-liste td { vertical-align: middle; }
 .ep-ok-liste .form-switch { min-height: 0; margin: 0; }
 CSS;
 if ($ansichtAbr) $page_specific_css .= "\n" . require __DIR__ . '/helferabrechnung/ansicht_css.inc.php';
 
 include 'header.inc.php';
-$csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
+$csrf = htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8');
 $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 
 // Mitglieder-Options (aktive zuerst) – einmal gerendert, im Panel wiederverwendet
@@ -507,14 +508,14 @@ $page_show_mobile = true;
             </div>
             <?php if ($istA): ?>
             <div class="ep-side-stunden" id="epStunden" data-tooltip="Feste Positionen und Helferstunden (Pauschale bzw. Schichtdauer × Positionen) je Verein, ohne Anwesenheit/OK; Vorschläge separat in Klammern. Abrechnung: Menü «Helferabrechnung»">
-              <div class="ep-side-sub" style="border-top:1px solid #e2e8f0;cursor:default"><i class="bi bi-clock-history"></i>Helferstunden je Verein</div>
+              <div class="ep-side-sub" style="border-top:1px solid var(--ui-rand);cursor:default"><i class="bi bi-clock-history"></i>Helferstunden je Verein</div>
               <table class="ep-stunden-table"><tbody>
                 <?php foreach (EP_VEREINE as $vk => $vl): ?><tr data-verein="<?= $vk ?>"><td><?= $h($vl) ?></td><td class="ep-st-pos">–</td><td class="ep-st-std">–</td><td class="ep-st-vs text-muted"></td></tr><?php endforeach; ?>
                 <tr class="ep-st-total"><td>Total</td><td class="ep-st-pos">–</td><td class="ep-st-std">–</td><td class="ep-st-vs text-muted"></td></tr>
               </tbody></table>
             </div>
             <?php endif; ?>
-            <div class="ep-side-foot"><span class="badge rounded-pill" style="background:#dcfce7;color:#15803d">n</span> = eingeplant (Anzahl Einsätze) · Position auf die Liste ziehen = entfernen, auf eine andere Position = verschieben</div>
+            <div class="ep-side-foot"><span class="badge rounded-pill" style="background:var(--ui-ok-bg);color:var(--ui-ok-fg)">n</span> = eingeplant (Anzahl Einsätze) · Position auf die Liste ziehen = entfernen, auf eine andere Position = verschieben</div>
           </aside>
           <?php $sideHtml = ob_get_clean(); ?>
 
@@ -599,10 +600,10 @@ $page_show_mobile = true;
             </table>
           </div>
           <div class="ep-legend mt-2">
-            <span><span class="ep-dot" style="background:#c62828"></span>MSV Wilen</span>
-            <span><span class="ep-dot" style="background:#3b5998"></span>SV Freienbach</span>
-            <span><span class="ep-dot" style="background:#2e7d32"></span>SV Wollerau</span>
-            <span><span class="ep-dot" style="background:#f0ad4e"></span>Mitglied inaktiv / verstorben – prüfen</span>
+            <span><span class="ep-dot" style="background:var(--ui-k-rot)"></span>MSV Wilen</span>
+            <span><span class="ep-dot" style="background:var(--ui-akzent-dunkel)"></span>SV Freienbach</span>
+            <span><span class="ep-dot" style="background:var(--ui-ok-fg)"></span>SV Wollerau</span>
+            <span><span class="ep-dot" style="background:var(--ui-warn-punkt)"></span>Mitglied inaktiv / verstorben – prüfen</span>
             <span><span class="ep-dot" style="background:#fca5a5"></span>offen (noch niemand eingeteilt)</span>
           </div>
           </div><!-- /ep-grid-col -->
@@ -700,7 +701,7 @@ $page_show_mobile = true;
         <?php foreach ($okPersonen as $p): $nurFn = $p['fn'] >= $p['n']; ?>
           <tr data-suche="<?= $h(mb_strtolower($p['name'])) ?>">
             <td class="fw-semibold"><?= $h($p['name']) ?><?php if ($p['fn'] > 0): ?> <span class="badge bg-light text-dark border" data-tooltip="<?= $p['fn'] ?> Position(en) in Funktionen mit Rolle «OK» – zählen immer als OK">Funktion OK<?= $nurFn ? '' : ' ' . $p['fn'] . '/' . $p['n'] ?></span><?php endif; ?></td>
-            <td><span class="ep-dot d-inline-block me-1" style="width:8px;height:8px;border-radius:50%;background:<?= $p['verein'] === 'msv' ? '#c62828' : ($p['verein'] === 'freienbach' ? '#3b5998' : '#2e7d32') ?>"></span><?= $h(EP_VEREINE[$p['verein']] ?? $p['verein']) ?><?php if (count($p['vereine']) > 1): ?> <span class="badge bg-danger" data-tooltip="Diese Person ist in diesem Plan bei mehreren Vereinen eingetragen (<?= $h(implode(' / ', array_map(fn($k) => EP_VEREINE[$k] ?? $k, array_keys($p['vereine'])))) ?>) – im Raster korrigieren"><?= count($p['vereine']) ?> Vereine</span><?php endif; ?></td>
+            <td><span class="ep-dot d-inline-block me-1" style="width:8px;height:8px;border-radius:50%;background:<?= $p['verein'] === 'msv' ? 'var(--ui-k-rot)' : ($p['verein'] === 'freienbach' ? 'var(--ui-akzent-dunkel)' : 'var(--ui-ok-fg)') ?>"></span><?= $h(EP_VEREINE[$p['verein']] ?? $p['verein']) ?><?php if (count($p['vereine']) > 1): ?> <span class="badge bg-danger" data-tooltip="Diese Person ist in diesem Plan bei mehreren Vereinen eingetragen (<?= $h(implode(' / ', array_map(fn($k) => EP_VEREINE[$k] ?? $k, array_keys($p['vereine'])))) ?>) – im Raster korrigieren"><?= count($p['vereine']) ?> Vereine</span><?php endif; ?></td>
             <td class="text-center"><?= (int)$p['n'] ?></td>
             <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input ep-ok-toggle" type="checkbox" role="switch" data-mid="<?= $p['mid'] ?>" data-name="<?= $h($p['name_text']) ?>" <?= $p['ok'] > 0 || $nurFn ? 'checked' : '' ?> <?= $nurFn ? 'disabled' : '' ?>></div></td>
             <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input ep-ok-stamm" type="checkbox" role="switch" data-mid="<?= $p['mid'] ?>" data-name="<?= $h($p['name_text']) ?>" <?= $p['stamm'] ? 'checked' : '' ?>></div></td>

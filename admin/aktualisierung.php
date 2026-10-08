@@ -75,26 +75,26 @@ foreach ($files as $file) {
 $page_specific_css = <<<'CSS'
 .akt-wrapper { max-width: 860px; }
 .akt-card {
-  border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;
+  border: 1px solid var(--ui-rand); border-radius: 12px; background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 1rem; overflow: hidden;
 }
 .akt-card-header {
-  padding: 0.85rem 1.1rem; font-weight: 600; color: #334155;
-  border-bottom: 1px solid #eef2f7; background: #f8fafc;
+  padding: 0.85rem 1.1rem; font-weight: 600; color: var(--ui-text);
+  border-bottom: 1px solid var(--ui-linie); background: var(--ui-flaeche-2);
   display: flex; align-items: center; justify-content: space-between;
 }
 .akt-card-header .count {
-  font-size: 0.75rem; font-weight: 600; background: #e2e8f0; color: #475569;
+  font-size: 0.75rem; font-weight: 600; background: var(--ui-rand); color: var(--ui-text-2);
   padding: 1px 9px; border-radius: 10px;
 }
 .akt-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
 .akt-table th {
   text-align: left; padding: 0.45rem 1.1rem; font-size: 0.68rem; text-transform: uppercase;
-  letter-spacing: 0.5px; color: #64748b; border-bottom: 1px solid #eef2f7; background: #f8fafc;
+  letter-spacing: 0.5px; color: var(--ui-text-2); border-bottom: 1px solid var(--ui-linie); background: var(--ui-flaeche-2);
 }
-.akt-table td { padding: 0.45rem 1.1rem; border-bottom: 1px solid #f1f5f9; }
+.akt-table td { padding: 0.45rem 1.1rem; border-bottom: 1px solid var(--ui-linie-zart); }
 .akt-table tr:last-child td { border-bottom: none; }
-.akt-table code { font-size: 0.82rem; color: #1e293b; }
+.akt-table code { font-size: 0.82rem; color: var(--ui-text); }
 .akt-collapse-chevron { transition: transform .2s ease; }
 [aria-expanded="true"] .akt-collapse-chevron { transform: rotate(180deg); }
 CSS;
@@ -106,15 +106,10 @@ include 'header.inc.php';
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-xl-12 col-lg-11 col-12 ps-0">
-      <div class="main-content-wrapper">
+    <div class="col-12 ps-0">
+      <div class="main-content-wrapper content-width-wide">
 
-        <div class="row mb-3 d-none d-md-flex">
-          <div class="col-md-12">
-            <h2 class="h4 mb-0 page-title">Datenbank aktualisieren <button type="button" class="btn-help" data-help="aktualisierung.uebersicht" aria-label="Hilfe"></button>
-            </h2>
-          </div>
-        </div>
+        <?php $page_title = 'Datenbank aktualisieren'; $page_title_after = '<button type="button" class="btn-help" data-help="aktualisierung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
 
         <div class="content-background">
           <div class="akt-wrapper">
@@ -166,8 +161,8 @@ include 'header.inc.php';
 
             <?php if ($trackingEmpty && !empty($files)): ?>
               <!-- Erstmalige Einrichtung: Baseline -->
-              <div class="akt-card" style="border-color:#fcd34d;">
-                <div class="akt-card-header" style="background:#fffbeb;">
+              <div class="akt-card" style="border-color:var(--ui-warn-rand);">
+                <div class="akt-card-header" style="background:var(--ui-warn-zeile);">
                   <span><i class="bi bi-info-circle me-2 text-warning"></i>Erstmalige Einrichtung <button type="button" class="btn-help" data-help="aktualisierung.baseline" aria-label="Hilfe"></button></span>
                 </div>
                 <div class="p-3">

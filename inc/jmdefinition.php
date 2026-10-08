@@ -1,13 +1,14 @@
 <?php
 // jmdefinition.php – Hybrid Desktop Layout
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 
 $page_specific_css = <<<'CSS'
 /* ===== JM Definition – Hybrid Layout ===== */
 
 /* --- Wrapper --- */
 .table-wrapper {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-rand);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   overflow: visible;
@@ -27,10 +28,10 @@ $page_specific_css = <<<'CSS'
 .hybrid-table thead th {
   padding: 0.85rem 1rem; font-size: 0.75rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.5px; color: var(--secondary-color);
-  background-color: #f8f9fa;
+  background-color: var(--ui-flaeche-2);
   /* box-shadow statt border-bottom: verhindert Durchscheinen beim Scrollen
      unter dem sticky-Header (border-collapse:collapse-Pitfall, vgl. jmrang) */
-  box-shadow: inset 0 -2px 0 #e2e8f0;
+  box-shadow: inset 0 -2px 0 var(--ui-rand);
   position: sticky; top: 0; z-index: 6;
 }
 .hybrid-table tbody tr.hybrid-row {
@@ -42,21 +43,21 @@ $page_specific_css = <<<'CSS'
 }
 .hybrid-table tbody tr.hybrid-row.selected {
   background: rgba(59,130,246,0.08);
-  box-shadow: inset 4px 0 0 #3b82f6;
+  box-shadow: none;
 }
 .hybrid-table tbody td {
   padding: 0.85rem 1rem; vertical-align: middle;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--ui-linie-zart);
 }
 
 /* Nr. Spalte */
-.h-nr { font-weight: 700; color: #6366f1; text-align: center; white-space: nowrap; }
-.drag-grip { color: #cbd5e1; cursor: grab; margin-right: 4px; font-size: 1.1rem; }
+.h-nr { font-weight: 700; color: var(--ui-akzent); text-align: center; white-space: nowrap; }
+.drag-grip { color: var(--ui-feldrand); cursor: grab; margin-right: 4px; font-size: 1.1rem; }
 .drag-grip:active { cursor: grabbing; }
 
 /* Inhaltsspalten */
 .h-title { font-weight: 500; }
-.h-addr { color: #64748b; font-size: 0.85rem; }
+.h-addr { color: var(--ui-text-2); font-size: 0.85rem; }
 .h-dates { font-size: 0.85rem; }
 .h-max { text-align: center; font-weight: 600; }
 
@@ -76,7 +77,7 @@ $page_specific_css = <<<'CSS'
   cursor: grabbing !important;
 }
 .jm-row-placeholder {
-  background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px) !important;
+  background: repeating-linear-gradient(45deg, var(--ui-linie-zart), var(--ui-linie-zart) 10px, var(--ui-rand) 10px, var(--ui-rand) 20px) !important;
   border: 2px dashed #93c5fd !important;
 }
 
@@ -88,7 +89,7 @@ $page_specific_css = <<<'CSS'
 .jm-edit-body { padding: 0.75rem 1rem 1rem !important; }
 .jm-field-label {
   display: block; font-size: 0.8rem; font-weight: 600;
-  color: #64748b; margin-bottom: 0.25rem;
+  color: var(--ui-text-2); margin-bottom: 0.25rem;
 }
 .jm-edit-body textarea {
   width: 100% !important; min-height: 3rem !important; max-height: 8rem;
@@ -115,59 +116,55 @@ $page_specific_css = <<<'CSS'
 
 /* --- Schiesstage-Builder --- */
 .ssb-day {
-  border: 1px solid #e2e8f0; border-radius: 8px;
-  padding: 0.6rem 0.7rem; margin-bottom: 0.6rem; background: #f8fafc;
+  border: 1px solid var(--ui-rand); border-radius: 8px;
+  padding: 0.6rem 0.7rem; margin-bottom: 0.6rem; background: var(--ui-flaeche-2);
 }
 .ssb-day-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .ssb-day-head .ssb-date { flex: 0 0 auto; max-width: 170px; }
 .ssb-weekday {
-  font-size: 0.8rem; font-weight: 600; color: #6366f1;
+  font-size: 0.8rem; font-weight: 600; color: var(--ui-akzent);
   flex: 1 1 auto; min-width: 0;
 }
 .ssb-windows { display: flex; flex-direction: column; gap: 0.4rem; }
 .ssb-window { display: flex; align-items: center; gap: 0.4rem; }
-.ssb-window .ssb-sep { color: #64748b; }
+.ssb-window .ssb-sep { color: var(--ui-text-2); }
 .ssb-window input[type="time"] { max-width: 110px; }
-.ssb-window input.ssb-invalid { border-color: #ef4444; background: #fef2f2; }
+.ssb-window input.ssb-invalid { border-color: var(--ui-k-rot); background: var(--ui-fehler-bg); }
 .ssb-iconbtn {
-  border: none; background: transparent; color: #cbd5e1;
+  border: none; background: transparent; color: var(--ui-feldrand);
   font-size: 1.1rem; line-height: 1; padding: 0 0.25rem; cursor: pointer;
   transition: color 0.15s;
 }
-.ssb-iconbtn:hover { color: #ef4444; }
+.ssb-iconbtn:hover { color: var(--ui-k-rot); }
 .ssb-add-win {
-  margin-top: 0.45rem; border: 1px dashed #cbd5e1; background: #fff;
-  color: #64748b; border-radius: 6px; font-size: 0.78rem;
+  margin-top: 0.45rem; border: 1px dashed var(--ui-feldrand); background: #fff;
+  color: var(--ui-text-2); border-radius: 6px; font-size: 0.78rem;
   padding: 0.2rem 0.6rem; cursor: pointer;
 }
-.ssb-add-win:hover { border-color: #6366f1; color: #6366f1; }
+.ssb-add-win:hover { border-color: var(--ui-akzent); color: var(--ui-akzent); }
 .ssb-add-day {
-  width: 100%; border: 1px dashed #93c5fd; background: #eff6ff;
-  color: #3b82f6; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+  width: 100%; border: 1px dashed #93c5fd; background: var(--ui-akzent-hell);
+  color: var(--ui-akzent); border-radius: 8px; font-weight: 600; font-size: 0.85rem;
   padding: 0.5rem; cursor: pointer; margin-top: 0.2rem;
 }
-.ssb-add-day:hover { background: #dbeafe; }
+.ssb-add-day:hover { background: var(--ui-akzent-hell); }
 .ssb-tools { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .ssb-link {
-  background: none; border: none; color: #64748b; font-size: 0.78rem;
+  background: none; border: none; color: var(--ui-text-2); font-size: 0.78rem;
   cursor: pointer; text-decoration: underline; padding: 0;
 }
-.ssb-link:hover { color: #6366f1; }
+.ssb-link:hover { color: var(--ui-akzent); }
 .ssb-raw-note {
-  font-size: 0.78rem; color: #b45309; background: #fffbeb;
-  border: 1px solid #fde68a; border-radius: 6px;
+  font-size: 0.78rem; color: var(--ui-warn-fg); background: var(--ui-warn-zeile);
+  border: 1px solid var(--ui-warn-rand); border-radius: 6px;
   padding: 0.35rem 0.55rem; margin-bottom: 0.5rem;
 }
-.ssb-empty { font-size: 0.82rem; color: #64748b; padding: 0.3rem 0 0.5rem; }
+.ssb-empty { font-size: 0.82rem; color: var(--ui-text-2); padding: 0.3rem 0 0.5rem; }
 
 CSS;
 
 include 'header.inc.php';
 
-// CSRF Token
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 ?>
 
 <div class="container-fluid">
@@ -175,102 +172,36 @@ if (empty($_SESSION['csrf_token'])) {
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
         <?php
-        $page_title   = 'Jahresmeisterschaft Definition';
-        $page_actions = '<button type="button" class="btn-help" data-help="jmdefinition.uebersicht" aria-label="Hilfe"></button>';
+        $page_title = 'Jahresmeisterschaft Definition';
+        $page_title_after = '<button type="button" class="btn-help" data-help="jmdefinition.uebersicht" aria-label="Hilfe"></button>'
+            . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+            . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+        ob_start(); ?>
+<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#newAnlassModal"><i class="bi bi-plus-lg me-1"></i>Hinzufügen</button>
+<button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#copyYearModal" data-tooltip="Anlässe vom Vorjahr übernehmen"><i class="bi bi-calendar2-week me-1"></i>Vom Vorjahr</button>
+<button type="button" id="sortByDateButton" class="btn btn-outline-secondary btn-sm" data-tooltip="Sortiert alle Anlässe nach dem ersten Datum im Feld Schiesstage"><i class="bi bi-sort-numeric-down me-1"></i>Sortieren</button>
+<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>
+<div class="dropdown">
+  <button type="button" class="btn btn-outline-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-file-earmark-arrow-down me-1"></i>Exporte</button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" id="exportPdfButton" class="dropdown-item"><i class="bi bi-file-pdf me-2"></i>Jahresprogramm (PDF)</button></li>
+    <li><button type="button" id="exportPdfDraftButton" class="dropdown-item" data-tooltip="PDF mit Wasserzeichen «Entwurf»"><i class="bi bi-file-pdf me-2"></i>Entwurf (PDF)</button></li>
+    <li><button type="button" id="exportWordFragebogen" class="dropdown-item"><i class="bi bi-file-word me-2"></i>Fragebogen (Word)</button></li>
+    <li><button type="button" id="exportICSAll" class="dropdown-item"><i class="bi bi-calendar-plus me-2"></i>Kalender (ICS)</button></li>
+  </ul>
+</div>
+<button type="button" class="btn btn-outline-info btn-sm msv-druck" data-druck-doctype="jmdefinition" data-druck-label="Jahresprogramm" aria-label="Jahresprogramm direkt drucken"><i class="bi bi-printer"></i></button>
+<button type="submit" form="jmdefinitionForm" id="jmdefSpeichernBtn" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Speichern</button>
+<?php   $page_actions = ob_get_clean();
+        $page_show_mobile = true;
         include 'partials/page_header.inc.php';
         ?>
 
         <div class="content-background">
           <form id="jmdefinitionForm">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 
-            <!-- Jahr-Auswahl + Aktionen -->
-            <div class="d-flex flex-wrap gap-3 align-items-start mb-4">
-              <div class="d-flex align-items-center gap-2">
-                <label for="yearSelect" class="form-label fw-bold mb-0 text-nowrap">
-                  <i class="bi bi-calendar3 me-1"></i>Jahr:
-                </label>
-                <select id="yearSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;"></select>
-              </div>
-
-              <!-- Aktionsbereich -->
-<?php
-              $ac_id = 'jmdefActions';
-              ob_start();
-              ?>
-                    <div class="row g-2 mb-3">
-                      <div class="col-6">
-                        <button type="button" class="btn btn-outline-success btn-sm w-100"
-                                data-bs-toggle="modal" data-bs-target="#newAnlassModal">
-                          <i class="bi bi-plus-lg me-1"></i>Hinzufügen
-                        </button>
-                      </div>
-                      <div class="col-6">
-                        <button type="button" class="btn btn-outline-info btn-sm w-100"
-                                data-bs-toggle="modal" data-bs-target="#copyYearModal"
-                                data-tooltip="Anlässe vom Vorjahr übernehmen">
-                          <i class="bi bi-calendar2-week me-1"></i>Vom Vorjahr
-                        </button>
-                      </div>
-                    </div>
-                    <div class="border-top pt-2 mb-1">
-                      <small class="text-muted d-block mb-2"><i class="bi bi-gear me-1"></i>Verwalten</small>
-                      <div class="row g-2">
-                        <div class="col-6">
-                          <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-save me-1"></i>Speichern
-                          </button>
-                        </div>
-                        <div class="col-6">
-                          <button type="button" id="sortByDateButton" class="btn btn-outline-secondary btn-sm w-100"
-                                  data-tooltip="Sortiert alle Anlässe nach dem ersten Datum im Feld Schiesstage">
-                            <i class="bi bi-sort-numeric-down me-1"></i>Sortieren
-                          </button>
-                        </div>
-                        <div class="col-12">
-                          <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="publishChangelogBtn">
-                            <i class="bi bi-megaphone me-1"></i>Veröffentlichen
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="border-top pt-2">
-                      <small class="text-muted d-block mb-2"><i class="bi bi-download me-1"></i>Exporte</small>
-                      <div class="row g-2">
-                        <div class="col-6">
-                          <div class="btn-group w-100">
-                            <button type="button" id="exportPdfButton" class="btn btn-outline-info btn-sm w-100">
-                              <i class="bi bi-file-pdf me-1"></i>PDF
-                            </button>
-                            <button type="button" class="btn btn-outline-info btn-sm msv-druck flex-grow-0" data-druck-doctype="jmdefinition" data-druck-label="Jahresprogramm" aria-label="Jahresprogramm direkt drucken">
-                              <i class="bi bi-printer"></i>
-                            </button>
-                          </div>
-                        </div>
-                        <div class="col-6">
-                          <button type="button" id="exportPdfDraftButton" class="btn btn-outline-info btn-sm w-100"
-                                  data-tooltip="PDF mit Wasserzeichen 'Entwurf'">
-                            <i class="bi bi-file-pdf me-1"></i>Entwurf
-                          </button>
-                        </div>
-                        <div class="col-6">
-                          <button type="button" id="exportWordFragebogen" class="btn btn-outline-info btn-sm w-100">
-                            <i class="bi bi-file-word me-1"></i>Fragen
-                          </button>
-                        </div>
-                        <div class="col-6">
-                          <button type="button" id="exportICSAll" class="btn btn-outline-info btn-sm w-100">
-                            <i class="bi bi-calendar-plus me-1"></i>ICS
-                          </button>
-                        </div>
-                      </div>
-                      <div id="pdfDownloadLink" class="mt-2"></div>
-                    </div>
-              <?php
-              $ac_body = ob_get_clean();
-              include 'partials/action_card.inc.php';
-              ?>
-            </div>
+            <div id="pdfDownloadLink" class="mb-2"></div>
 
             <!-- Desktop: Hybrid-Tabelle -->
             <div class="table-wrapper">
@@ -1169,7 +1100,7 @@ $(function () {
   // ========== Speichern ==========
   $('#jmdefinitionForm').on('submit', function(e) {
     e.preventDefault();
-    const $btn = $(this).find('button[type="submit"]');
+    const $btn = $('#jmdefSpeichernBtn');
     const txt = $btn.html();
     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Speichere...');
 

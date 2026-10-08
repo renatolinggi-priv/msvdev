@@ -9,45 +9,46 @@
  * sieht die Liste lesend. Logik: inc/hilfetexte/hilfetexte.js, Endpunkt inc/hilfetexte/api.php.
  */
 include 'dbconnect.inc.php';
+require_once __DIR__ . '/csrf.inc.php'; // csrf_token(), Session über session_config
 require_once __DIR__ . '/partials/empty_state.inc.php';   // msv_empty_row()
 
 $page_specific_css = <<<'CSS'
 /* ===== Hilfetexte – Editor ===== */
-.hilfe-key   { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 0.8rem; color: #1e40af; }
+.hilfe-key   { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 0.8rem; color: var(--ui-akzent-dunkel); }
 .hilfe-cat   { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.72rem;
-               background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-.hilfe-empty { color: #64748b; }
-.hilfe-date  { color: #64748b; font-size: 0.78rem; white-space: nowrap; }
-.usage-yes   { color: #15803d; font-size: 0.78rem; margin-right: 0.35rem; }
-.usage-no    { color: #b45309; font-size: 0.78rem; }
-.usage-files { color: #64748b; font-size: 0.72rem; word-break: break-all; }
+               background: var(--ui-linie-zart); color: var(--ui-text-2); border: 1px solid var(--ui-rand); }
+.hilfe-empty { color: var(--ui-text-2); }
+.hilfe-date  { color: var(--ui-text-2); font-size: 0.78rem; white-space: nowrap; }
+.usage-yes   { color: var(--ui-ok-fg); font-size: 0.78rem; margin-right: 0.35rem; }
+.usage-no    { color: var(--ui-warn-fg); font-size: 0.78rem; }
+.usage-files { color: var(--ui-text-2); font-size: 0.72rem; word-break: break-all; }
 
 /* Scan-Banner */
 .scan-banner { display: flex; gap: 1rem; align-items: flex-start; padding: 0.75rem 1rem;
                border-radius: 8px; border: 1px solid; margin: 0.75rem 0 0; font-size: 0.85rem; }
-.scan-banner.scan-ok   { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-.scan-banner.scan-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-.scan-banner.scan-bad  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.scan-banner.scan-ok   { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); color: var(--ui-ok-fg); }
+.scan-banner.scan-warn { background: var(--ui-warn-zeile); border-color: var(--ui-warn-rand); color: var(--ui-warn-fg); }
+.scan-banner.scan-bad  { background: var(--ui-fehler-bg); border-color: #fecaca; color: var(--ui-k-rot); }
 .scan-banner-title { font-weight: 600; }
 .scan-stats { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .scan-stat-pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.75rem;
                   background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08); }
 .scan-keylist { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
 .scan-key { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 12px;
-            background: #fff; border: 1px solid #cbd5e1; color: #1e293b; cursor: pointer;
+            background: #fff; border: 1px solid var(--ui-feldrand); color: var(--ui-text); cursor: pointer;
             font-family: Consolas, monospace; font-size: 0.75rem; }
-.scan-key:hover { background: #1e293b; color: #fff; border-color: #1e293b; }
+.scan-key:hover { background: var(--ui-text); color: #fff; border-color: var(--ui-text); }
 
 /* Format-Toolbar über der Textarea */
 .editor-toolbar { display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; margin-bottom: -1px;
-                  background: #f8fafc; border: 1px solid #ced4da; border-bottom: 0; border-radius: 6px 6px 0 0; }
+                  background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .editor-toolbar .ed-btn { border: 1px solid transparent; background: transparent; width: 28px; height: 26px;
-                          border-radius: 4px; font-size: 0.85rem; color: #334155; display: inline-flex;
+                          border-radius: 4px; font-size: 0.85rem; color: var(--ui-text); display: inline-flex;
                           align-items: center; justify-content: center; font-weight: 600; }
-.editor-toolbar .ed-btn:hover { background: #e2e8f0; border-color: #cbd5e1; }
-.editor-toolbar .ed-sep { width: 1px; align-self: stretch; background: #cbd5e1; margin: 3px 4px; }
+.editor-toolbar .ed-btn:hover { background: var(--ui-rand); border-color: var(--ui-feldrand); }
+.editor-toolbar .ed-sep { width: 1px; align-self: stretch; background: var(--ui-feldrand); margin: 3px 4px; }
 #sgInhalt { border-radius: 0 0 6px 6px; font-family: Consolas, 'SF Mono', monospace; font-size: 0.82rem; }
-.tag-hint { font-size: 0.72rem; color: #64748b; margin-top: 0.3rem; }
+.tag-hint { font-size: 0.72rem; color: var(--ui-text-2); margin-top: 0.3rem; }
 .tag-hint code { font-size: 0.7rem; }
 #sgPreview { font-size: 0.88rem; line-height: 1.5; }
 #sgPreview :first-child { margin-top: 0; }
@@ -63,16 +64,16 @@ $page_specific_css = <<<'CSS'
                transition: opacity 0.18s, transform 0.18s, visibility 0.18s; display: flex; flex-direction: column; overflow: hidden; }
 .link-dialog.open { opacity: 1; visibility: visible; transform: translate(-50%,-50%) scale(1); }
 .link-dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem;
-                      background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+                      background: var(--ui-flaeche-2); border-bottom: 1px solid var(--ui-rand); }
 .link-dialog-header h6 { margin: 0; font-weight: 600; font-size: 0.9rem; }
 .link-dialog-body { padding: 0.9rem 1rem; overflow-y: auto; }
 .link-dialog-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.65rem 1rem;
-                      border-top: 1px solid #e2e8f0; background: #f8fafc; }
+                      border-top: 1px solid var(--ui-rand); background: var(--ui-flaeche-2); }
 .link-suggestions { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0.5rem; max-height: 180px; overflow-y: auto;
-                    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+                    background: var(--ui-flaeche-2); border: 1px solid var(--ui-rand); border-radius: 6px; }
 .link-suggestions .link-sug { display: inline-flex; align-items: center; gap: 0.3rem; padding: 3px 9px; font-size: 0.78rem;
-                              background: #fff; color: #334155; border: 1px solid #cbd5e1; border-radius: 14px; cursor: pointer; }
-.link-suggestions .link-sug:hover { background: #1e293b; color: #fff; border-color: #1e293b; }
+                              background: #fff; color: var(--ui-text); border: 1px solid var(--ui-feldrand); border-radius: 14px; cursor: pointer; }
+.link-suggestions .link-sug:hover { background: var(--ui-text); color: #fff; border-color: var(--ui-text); }
 .link-suggestions .link-sug-link { font-family: Consolas, monospace; font-size: 0.7rem; opacity: 0.7; }
 .link-suggestions .hilfe-empty { font-size: 0.8rem; padding: 0.3rem; }
 CSS;
@@ -150,7 +151,7 @@ $page_show_mobile = true;
 // ---------------------------------------------------------------- Slide-Panel
 ob_start(); ?>
   <input type="hidden" id="sgId" value="">
-  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
   <div class="mb-3">
     <label class="form-label" for="sgSchluessel">Schlüssel <span class="text-danger">*</span></label>
     <input type="text" class="form-control form-control-sm" id="sgSchluessel" maxlength="100"

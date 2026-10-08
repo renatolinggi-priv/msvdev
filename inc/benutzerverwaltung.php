@@ -12,11 +12,8 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') != 'admin') {
 }
 
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
 
-// CSRF Token
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
 
 // Alle Benutzer laden (erweitert mit Rolle, Status, Mitglied)
 $result = $conn->query("
@@ -58,9 +55,9 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
 
 <style>
 /* Tabellen-Header kommt zentral (.table thead th: 0.75rem, uppercase) */
-.table > tbody > tr:hover { background-color: #f8f9fa; }
-.row-pending { background-color: #fff9e6 !important; }
-.row-pending:hover { background-color: #fff3cd !important; }
+.table > tbody > tr:hover { background-color: var(--ui-flaeche-2); }
+.row-pending { background-color: var(--ui-warn-zeile) !important; }
+.row-pending:hover { background-color: var(--ui-warn-bg) !important; }
 .user-initial {
     display: inline-flex;
     align-items: center;
@@ -71,12 +68,12 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     font-size: 0.875rem;
     font-weight: 600;
 }
-.initial-admin { background: #dc3545; }
-.initial-vorstand { background: #ffc107; color: #343a40; }
-.initial-mitglied { background: #6366f1; }
-.initial-jungschuetze { background: #14b8a6; }
+.initial-admin { background: var(--ui-k-rot); }
+.initial-vorstand { background: var(--ui-warn-punkt); color: var(--ui-text); }
+.initial-mitglied { background: var(--ui-akzent); }
+.initial-jungschuetze { background: var(--ui-k-tuerkis); }
 .info-card {
-    background-color: #f8f9fa;
+    background-color: var(--ui-flaeche-2);
     border: 1px solid var(--secondary-color);
     padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
@@ -88,9 +85,9 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
     color: var(--secondary-color);
 }
 .pending-alert {
-    background: #fff9e6;
-    border: 1px solid #ffc107;
-    border: 1px solid #ffc107;
+    background: var(--ui-warn-zeile);
+    border: 1px solid var(--ui-warn-punkt);
+    border: 1px solid var(--ui-warn-punkt);
     border-radius: 0.375rem;
     padding: 1rem 1.5rem;
     margin-bottom: 1rem;
@@ -249,7 +246,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                             <?php foreach ($users as $user):
                                 $is_pending = ($user['status'] == 'pending');
                             ?>
-                            <div class="mobile-card" style="<?php echo $is_pending ? 'border-left: 4px solid #ffc107; background: #fff9e6;' : ''; ?> border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div class="mobile-card" style="<?php echo $is_pending ? 'border: 1px solid var(--ui-warn-rand); background: var(--ui-warn-zeile);' : ''; ?> border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <strong><?php echo htmlspecialchars($user['username']); ?></strong>
@@ -261,7 +258,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                                         <?php echo $status_labels[$user['status'] ?? 'approved'] ?? '-'; ?>
                                     </span>
                                 </div>
-                                <div style="font-size: 0.85rem; color: #6c757d;">
+                                <div style="font-size: 0.85rem; color: var(--ui-text-2);">
                                     <div><i class="bi bi-envelope me-1"></i><?php echo htmlspecialchars($user['email']); ?></div>
                                     <div><i class="bi bi-shield me-1"></i><?php echo $role_labels[$user['role'] ?? 'mitglied'] ?? '-'; ?></div>
                                     <?php if ($user['mitglied_id']): ?>
@@ -308,7 +305,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
                     <input type="hidden" name="edit_id" id="edit_id">
                     <div class="mb-3">
                         <label for="username" class="form-label"><i class="bi bi-person me-1"></i>Benutzername</label>
@@ -369,7 +366,7 @@ $status_colors = ['pending' => 'warning', 'approved' => 'success', 'rejected' =>
 <?php
 // Bestehende Speicher-Logik (fuer das Bearbeiten-Modal)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_user']) && isset($_POST['csrf_token'])) {
-    if ($_POST['csrf_token'] === $_SESSION['csrf_token']) {
+    if ($_POST['csrf_token'] === csrf_token()) {
         $editId = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : null;
         $u_username = trim($_POST['username']);
         $u_fullName = trim($_POST['full_name']);
@@ -416,7 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_user']) && isset(
 ?>
 
 <script>
-const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
+const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
 
 function userAction(userId, action) {
     let confirmText = '';

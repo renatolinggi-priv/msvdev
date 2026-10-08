@@ -15,9 +15,11 @@ include 'header.inc.php';
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+    padding: 14px var(--ui-pad);
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
 }
 
 .home-welcome-left {
@@ -37,20 +39,20 @@ include 'header.inc.php';
 .home-welcome-text h1 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--ui-text);
     margin: 0;
     line-height: 1.3;
 }
 
 .home-welcome-text .subtitle {
     font-size: 0.78rem;
-    color: #718096;
+    color: var(--ui-text-2);
     margin: 0;
 }
 
 .home-welcome-right {
     font-size: 0.78rem;
-    color: #718096;
+    color: var(--ui-text-2);
 }
 
 .home-welcome-right i {
@@ -90,8 +92,8 @@ include 'header.inc.php';
 
 .home-card {
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.6rem;
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
@@ -104,7 +106,7 @@ include 'header.inc.php';
     left: 0;
     right: 0;
     height: 3px;
-    background: var(--bs-primary, #0d6efd);
+    background: var(--bs-primary, var(--ui-akzent));
     transform: scaleX(0);
     transition: transform 0.2s ease;
 }
@@ -115,7 +117,7 @@ include 'header.inc.php';
 
 .home-card:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border-color: #cbd5e1;
+    border-color: var(--ui-feldrand);
 }
 
 .home-card a {
@@ -136,18 +138,18 @@ include 'header.inc.php';
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
-    background: #eef2ff;
-    color: #3b5998;
+    background: var(--ui-akzent-hell);
+    color: var(--ui-akzent-dunkel);
 }
 
 .home-card-icon.red {
-    background: #fef2f2;
-    color: #dc3545;
+    background: var(--ui-fehler-bg);
+    color: var(--ui-k-rot);
 }
 
 .home-card-icon.green {
-    background: #f0fdf4;
-    color: #16a34a;
+    background: var(--ui-ok-bg);
+    color: var(--ui-ok-fg);
 }
 
 .home-card-icon.info {
@@ -164,7 +166,7 @@ include 'header.inc.php';
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #64748b;
+    color: var(--ui-text-2);
     margin: 0 0 0.6rem;
 }
 
@@ -172,13 +174,13 @@ include 'header.inc.php';
     content: '';
     flex: 1;
     height: 1px;
-    background: #e2e8f0;
+    background: var(--ui-rand);
 }
 
 /* Saison-Hinweis auf der Kachel */
 .home-card-note {
     font-size: 0.7rem;
-    color: #3b5998;
+    color: var(--ui-akzent-dunkel);
     margin: 0.15rem 0 0;
     overflow-wrap: anywhere;
 }
@@ -197,7 +199,7 @@ include 'header.inc.php';
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #64748b;
+    color: var(--ui-text-2);
     list-style: none;
     padding: 0.35rem 0;
 }
@@ -207,7 +209,7 @@ include 'header.inc.php';
 }
 
 .home-more > summary:hover {
-    color: #3b5998;
+    color: var(--ui-akzent-dunkel);
 }
 
 .home-more > summary .home-more-caret {
@@ -230,22 +232,22 @@ include 'header.inc.php';
     align-items: center;
     gap: 0.6rem;
     padding: 0.5rem 0.7rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--ui-rand);
     border-radius: 0.5rem;
     background: #fff;
     text-decoration: none;
-    color: #64748b;
+    color: var(--ui-text-2);
     font-size: 0.82rem;
     transition: all 0.15s ease;
 }
 
 .home-more-item a:hover {
-    border-color: #cbd5e1;
-    color: #2d3748;
+    border-color: var(--ui-feldrand);
+    color: var(--ui-text);
 }
 
 .home-more-item i.home-more-icon {
-    color: #cbd5e1;
+    color: var(--ui-feldrand);
     font-size: 0.95rem;
 }
 
@@ -259,7 +261,7 @@ include 'header.inc.php';
 
 .home-more-item .home-more-status {
     font-size: 0.68rem;
-    color: #a0aec0;
+    color: var(--ui-text-3);
     white-space: nowrap;
 }
 
@@ -271,7 +273,7 @@ include 'header.inc.php';
 .home-card-title {
     font-size: 0.88rem;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--ui-text);
     margin: 0;
     line-height: 1.3;
 }
@@ -281,26 +283,26 @@ include 'header.inc.php';
    unterschiedlich hohe Kacheln ohnehin aus. */
 .home-card-desc {
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--ui-text-2);
     margin: 0;
     overflow-wrap: anywhere;
 }
 
 .home-card-arrow {
-    color: #cbd5e1;
+    color: var(--ui-feldrand);
     font-size: 0.85rem;
     transition: transform 0.2s ease;
 }
 
 .home-card:hover .home-card-arrow {
-    color: #3b5998;
+    color: var(--ui-akzent-dunkel);
     transform: translateX(3px);
 }
 
 /* Aufgaben – "Das wartet auf dich", standardmässig eingeklappt */
 .home-tasks {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: var(--ui-warn-zeile);
+    border: 1px solid var(--ui-warn-rand);
     border-radius: 0.5rem;
     padding: 0.6rem 0.75rem;
     margin-bottom: 1rem;
@@ -310,7 +312,7 @@ include 'header.inc.php';
     font-size: 0.85rem;
     font-weight: 600;
     margin: 0;
-    color: #92400e;
+    color: var(--ui-warn-fg);
     padding: 0 0.25rem;
 }
 
@@ -322,7 +324,7 @@ include 'header.inc.php';
     list-style: none;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #92400e;
+    color: var(--ui-warn-fg);
     padding: 0 0.25rem;
 }
 
@@ -340,7 +342,7 @@ include 'header.inc.php';
 }
 
 .home-tasks-count {
-    background: #f59e0b;
+    background: var(--ui-warn-punkt);
     color: #fff;
     border-radius: 999px;
     font-size: 0.68rem;
@@ -358,7 +360,7 @@ include 'header.inc.php';
     gap: 0.5rem;
     padding: 0.35rem 0.25rem;
     text-decoration: none;
-    color: #4a5568;
+    color: var(--ui-text-2);
     font-size: 0.82rem;
     border-bottom: 1px solid rgba(0,0,0,0.05);
 }
@@ -368,7 +370,7 @@ include 'header.inc.php';
 }
 
 .home-task a:hover {
-    color: #2d3748;
+    color: var(--ui-text);
 }
 
 .home-task a:hover .home-task-text {
@@ -390,8 +392,8 @@ include 'header.inc.php';
 
 .home-task-badge {
     font-size: 0.68rem;
-    color: #92400e;
-    background: #fef3c7;
+    color: var(--ui-warn-fg);
+    background: var(--ui-warn-bg);
     border-radius: 0.25rem;
     padding: 0.1rem 0.35rem;
     white-space: nowrap;
@@ -399,12 +401,12 @@ include 'header.inc.php';
 
 /* Alles erledigt */
 .home-tasks-ok {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
+    background: var(--ui-ok-bg);
+    border-color: var(--ui-ok-rand);
 }
 
 .home-tasks-ok h6 {
-    color: #166534;
+    color: var(--ui-ok-fg);
     margin: 0;
 }
 
@@ -419,8 +421,8 @@ include 'header.inc.php';
 
 .home-panel {
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.6rem;
+    border: 1px solid var(--ui-rand);
+    border-radius: var(--ui-rad-l);
     padding: 0.75rem 0.9rem;
 }
 
@@ -432,7 +434,7 @@ include 'header.inc.php';
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #64748b;
+    color: var(--ui-text-2);
     margin: 0 0 0.5rem;
 }
 
@@ -442,7 +444,7 @@ include 'header.inc.php';
     gap: 0.6rem;
     padding: 0.32rem 0;
     font-size: 0.82rem;
-    color: #4a5568;
+    color: var(--ui-text-2);
     border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 
@@ -452,7 +454,7 @@ include 'header.inc.php';
 
 .home-panel-datum {
     font-variant-numeric: tabular-nums;
-    color: #3b5998;
+    color: var(--ui-akzent-dunkel);
     font-weight: 600;
     white-space: nowrap;
     font-size: 0.78rem;
@@ -468,24 +470,24 @@ include 'header.inc.php';
 
 .home-panel-tag {
     font-size: 0.68rem;
-    color: #a0aec0;
+    color: var(--ui-text-3);
     white-space: nowrap;
 }
 
 /* Runder Geburtstag – faellt in der Liste auf */
 .home-panel-rund .home-panel-name {
     font-weight: 600;
-    color: #2d3748;
+    color: var(--ui-text);
 }
 
 .home-panel-rund .home-panel-tag {
-    color: #b45309;
+    color: var(--ui-warn-fg);
     font-weight: 600;
 }
 
 .home-panel-leer {
     font-size: 0.8rem;
-    color: #a0aec0;
+    color: var(--ui-text-3);
     padding: 0.32rem 0;
 }
 
