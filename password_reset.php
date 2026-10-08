@@ -389,6 +389,7 @@ function validate_password($password, $username) {
         }
 
     </style>
+    <link rel="stylesheet" href="css/msv-oeffentlich.css?v=<?= @filemtime(__DIR__ . '/css/msv-oeffentlich.css') ?>">
 </head>
 
 <body>

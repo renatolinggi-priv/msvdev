@@ -569,6 +569,7 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
     }
     </style>
 
+    <link rel="stylesheet" href="css/msv-oeffentlich.css?v=<?= @filemtime(__DIR__ . '/css/msv-oeffentlich.css') ?>">
 </head>
 <body>
 
@@ -654,13 +655,13 @@ if (isset($_GET['error']) && $_GET['error'] == 'not_approved') {
                         Passwort vergessen?
                     </a>
                 </div>
-                <div class="text-center mt-3" style="border-top: 1px solid #e9ecef; padding-top: 1rem;">
+                <div class="text-center mt-3" style="border-top: 1px solid var(--ui-linie, #eef1f5); padding-top: 1rem;">
                     <span style="color: var(--secondary-color); font-size: 0.9rem;">Noch kein Konto?</span>
-                    <a href="register.php" style="color: #3b5998; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                    <a href="register.php" style="color: var(--ui-akzent-dunkel, #2b52a0); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                         <i class="bi bi-person-plus me-1"></i>Registrieren
                     </a>
                     <div class="mt-2">
-                        <a href="register_jsk.php" style="color: #0d9488; text-decoration: none; font-weight: 500; font-size: 0.85rem;">
+                        <a href="register_jsk.php" style="color: var(--ui-k-tuerkis, #0e6e78); text-decoration: none; font-weight: 500; font-size: 0.85rem;">
                             <i class="bi bi-person-bounding-box me-1"></i>Bist du Jungschütze? Hier registrieren
                         </a>
                     </div>

@@ -160,6 +160,7 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
         .alert-warning { background:#fff3cd; color:#664d03; border:1px solid #ffc107; }
         .info-hint { font-size:0.8rem; color:var(--secondary-color); margin-top:-0.5rem; margin-bottom:1rem; }
     </style>
+    <link rel="stylesheet" href="css/msv-oeffentlich.css?v=<?= @filemtime(__DIR__ . '/css/msv-oeffentlich.css') ?>">
 </head>
 <body>
     <div class="register-container">
@@ -177,7 +178,7 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
                         Bitte wende dich an den Jungschützenleiter.
                     </div>
                     <div class="text-center mt-3">
-                        <a href="login.php" style="color:#3b5998; text-decoration:none; font-weight:500;">
+                        <a href="login.php" style="color:var(--ui-akzent-dunkel, #2b52a0); text-decoration:none; font-weight:500;">
                             <i class="bi bi-arrow-left me-1"></i>Zurück zur Anmeldung
                         </a>
                     </div>
@@ -238,8 +239,8 @@ if ($featureAktiv && $_SERVER["REQUEST_METHOD"] == "POST") {
                     </button>
                 </form>
 
-                <div class="text-center mt-3" style="border-top:1px solid #e9ecef; padding-top:1rem;">
-                    <a href="login.php" style="color:#3b5998; text-decoration:none; font-weight:500; font-size:0.9rem;">
+                <div class="text-center mt-3" style="border-top:1px solid var(--ui-linie, #eef1f5); padding-top:1rem;">
+                    <a href="login.php" style="color:var(--ui-akzent-dunkel, #2b52a0); text-decoration:none; font-weight:500; font-size:0.9rem;">
                         <i class="bi bi-arrow-left me-1"></i>Zurück zur Anmeldung
                     </a>
                 </div>

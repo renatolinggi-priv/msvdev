@@ -272,6 +272,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             .register-header h1 { font-size: 1.4rem; }
         }
     </style>
+    <link rel="stylesheet" href="css/msv-oeffentlich.css?v=<?= @filemtime(__DIR__ . '/css/msv-oeffentlich.css') ?>">
 </head>
 <body>
     <div class="register-container">
@@ -365,8 +366,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </button>
                 </form>
 
-                <div class="text-center mt-3" style="border-top: 1px solid #e9ecef; padding-top: 1rem;">
-                    <a href="login.php" style="color: #3b5998; text-decoration: none; font-weight: 500; font-size: 0.9rem;">
+                <div class="text-center mt-3" style="border-top: 1px solid var(--ui-linie, #eef1f5); padding-top: 1rem;">
+                    <a href="login.php" style="color: var(--ui-akzent-dunkel, #2b52a0); text-decoration: none; font-weight: 500; font-size: 0.9rem;">
                         <i class="bi bi-arrow-left me-1"></i>Zurück zur Anmeldung
                     </a>
                 </div>

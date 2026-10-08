@@ -271,6 +271,7 @@ $recaptcha_site_key = $config['recaptcha']['site_key'] ?? '';
             .card-header-custom h1 { font-size: 1.2rem; }
         }
     </style>
+    <link rel="stylesheet" href="css/msv-oeffentlich.css?v=<?= @filemtime(__DIR__ . '/css/msv-oeffentlich.css') ?>">
 </head>
 <body>
 

@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.45.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Login, Registrierung und Fragebogen im neuen Erscheinungsbild",
+        "beschreibung": "Anmeldung, Registrierung (Mitglied und Jungschütze), «Passwort zurücksetzen» und der öffentliche Fragebogen laden ein gemeinsames Stylesheet (css/msv-oeffentlich.css): Schrift IBM Plex Sans, heller Grund, weisse Karte mit feinem Rand, flacher weisser Kopf mit Logo statt grauem bzw. blauem Verlauf, ein dunkelblauer Hauptknopf ohne Verlauf und Hüpf-Effekt, Hinweise und der Dialog «Passwort vergessen» wie im Admin-Bereich. Der Link «Passwort vergessen?» war hellgrau auf Weiss und ist jetzt blau. Abläufe und Formulare sind unverändert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.44.0",
     "datum": "2026-10-08",
     "aenderungen": [
