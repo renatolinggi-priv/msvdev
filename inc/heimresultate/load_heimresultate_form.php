@@ -68,7 +68,7 @@ function generateMemberRow($mitglied, $resultate, $year) {
         $html .= 'data-max="100" ';
         $html .= 'aria-label="' . $name . ' ' . $vorname . ', Passe ' . $i . '" ';
         $html .= 'pattern="[0-9]*" ';
-        $html .= 'data-tooltip="Nur Zahlen erlaubt">';
+        $html .= '>';
         $html .= '</td>';
     }
  

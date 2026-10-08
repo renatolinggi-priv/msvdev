@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.58.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Erfassung: keine Tastatur-Falle, sichtbarer Fokus",
+        "beschreibung": "Heimmeisterschaft und Kantonalstich: Die Tab-Taste bleibt die normale Tab-Taste, man kann das Raster also per Tastatur wieder verlassen (vorher hielt die Seite Tab im Raster fest); Enter springt wie bisher ins nächste Feld. Die Schnellerfassung setzt Werte über 100 nicht mehr still auf 100, sondern markiert sie rot, und beim Speichern nennt die Fehlerliste den Wert; ihre Felder haben Namen für Screenreader. Der Hinweis «Nur Zahlen erlaubt» erscheint nicht mehr an jeder Zelle und verdeckt beim Tippen nicht mehr die nächste Zeile. Endschiessen und Partnerinnen: Die Tabelle zeigt den Tastaturfokus wieder, und die mit den Pfeiltasten gewählte Zeile wird angesagt (gleiche Steuerung wie bei den Mitgliedern, dazu Pos1 und Ende).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.57.0",
     "datum": "2026-10-08",
     "aenderungen": [

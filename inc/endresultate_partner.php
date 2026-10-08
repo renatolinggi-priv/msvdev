@@ -10,7 +10,6 @@ try {
 // Seitenspezifische Styles: nur Aufbau und die Sie-und-Er-Punkte; Optik aus css/msv-ui.css
 $page_specific_css = "
 /* Fensterhöhe (.ui-vollhoehe, .ui-scroll) und Erfassungs-Panel (.ui-erfassen) kommen aus css/msv-ui.css */
-.ep-scroll { outline: none; }
 #partnerTabelle { margin: 0; border-collapse: separate; border-spacing: 0; }
 #partnerTabelle thead th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; white-space: nowrap; text-align: right; }
 #partnerTabelle tbody td { height: 40px; padding: 0 10px; white-space: nowrap; text-align: right; vertical-align: middle; border-bottom: 1px solid var(--ui-linie-zart); }
@@ -91,7 +90,7 @@ $csrf = csrf_token();
 
                     <!-- Desktop: Tabelle -->
                     <div class="desktop-table-container">
-                        <div class="ui-scroll ep-scroll" id="epScroll" tabindex="0" aria-label="Partnerinnen. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                        <div class="ui-scroll ep-scroll" id="epScroll" tabindex="0" data-zeilen-tastatur aria-label="Partnerinnen. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
                             <table class="table mb-0" id="partnerTabelle">
                                 <thead>
                                     <tr>
@@ -728,22 +727,7 @@ $(document).ready(function() {
         $('.ui-filter button[data-filter="alle"]').attr('aria-pressed', 'true');
         filterAnwenden();
     });
-    $('#epScroll').on('keydown', function(e) {
-        var zeilen = PartnerEditPanel.allRows.filter(function(r) { return r.tr.style.display !== 'none'; });
-        if (!zeilen.length) return;
-        var akt = zeilen.findIndex(function(r) { return r.tr.classList.contains('ui-markiert'); });
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            var neu = akt < 0 ? 0 : Math.max(0, Math.min(zeilen.length - 1, akt + (e.key === 'ArrowDown' ? 1 : -1)));
-            zeilen.forEach(function(r) { r.tr.classList.remove('ui-markiert'); });
-            zeilen[neu].tr.classList.add('ui-markiert');
-            zeilen[neu].tr.scrollIntoView({ block: 'nearest' });
-        } else if (e.key === 'Enter' && akt >= 0) {
-            e.preventDefault();
-            $(zeilen[akt].tr).trigger('click');
-        }
-    });
-    $('#epScroll').on('blur', function() { $('#partnerTabelle tr.ui-markiert').removeClass('ui-markiert'); });
+    // Tabelle per Tastatur: msv-panel-a11y.js ([data-zeilen-tastatur] an #epScroll) – Pfeile, Pos1/Ende, Enter, Ansage
     $(document).on('keydown', function(e) {
         if (!$('#editPanel').hasClass('open') || !(e.ctrlKey || e.metaKey)) return;
         if (e.key === 's' || e.key === 'S') { e.preventDefault(); PartnerEditPanel.save(); }

@@ -50,6 +50,7 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 .entry-passe-field input { width: 100%; height: 52px; padding: 0 4px; text-align: center; font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-radius: 8px; -moz-appearance: textfield; }
 .entry-passe-field input.filled { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
 .entry-passe-field input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
+.entry-passe-field input[aria-invalid=true] { background: var(--ui-fehler-bg); border-color: var(--ui-fehler); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
 
 /* Beste Passe in der Akzentfarbe (Raster, Panel, Handy) */
 #hkScroll #kantiresultateTabelle input.small-input.best-passe { background: var(--ui-akzent-hell); border-color: #9db8ea !important; color: var(--ui-akzent-dunkel); font-weight: 700; }
@@ -264,7 +265,7 @@ $(document).ready(function() {
         var $inputs = $('#kantiresultateTabelle input');
 
         $inputs.off('keydown.kanti').on('keydown.kanti', function(e) {
-            if (e.key === 'Enter' || e.key === 'Tab') {
+            if (e.key === 'Enter') { // Tab bleibt nativ, damit man das Raster verlassen kann
                 e.preventDefault();
                 var inputs = $('#kantiresultateTabelle tbody tr:visible input.small-input');
                 var currentIndex = inputs.index(this);
@@ -567,7 +568,7 @@ $(document).ready(function() {
 
             // Keyboard navigation (Enter/Tab)
             input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === 'Tab') {
+                if (e.key === 'Enter') { // Tab bleibt nativ, damit man das Raster verlassen kann
                     e.preventDefault();
                     const allInputs = Array.from(container.querySelectorAll('input[data-name]'));
                     const currentIndex = allInputs.indexOf(this);
@@ -710,7 +711,7 @@ $(document).ready(function() {
                 const $field = $(
                     '<div class="entry-passe-field" data-pi="' + i + '">' +
                     '<label>Passe ' + (i + 1) + '</label>' +
-                    '<input type="text" inputmode="numeric" autocomplete="off" maxlength="' + EntryPanel.maxLen + '">' +
+                    '<input type="text" inputmode="numeric" autocomplete="off" aria-label="Passe ' + (i + 1) + '" maxlength="' + EntryPanel.maxLen + '">' +
                     '</div>'
                 );
                 $field.find('input').val(v);
@@ -875,9 +876,8 @@ $(document).ready(function() {
     $(document).on('input', '#entryPassenGrid input', function(e) {
         let value = $(this).val().replace(/[^0-9]/g, '');
         if (value.length > EntryPanel.maxLen) value = value.substring(0, EntryPanel.maxLen);
-        if (EntryPanel.clampMax !== null && value !== '' && parseInt(value, 10) > EntryPanel.clampMax) {
-            value = String(EntryPanel.clampMax);
-        }
+        // Über dem Maximum nicht still kappen, sondern markieren; beim Speichern meldet die Fehlerliste den Wert
+        if (EntryPanel.clampMax !== null) this.setAttribute('aria-invalid', value !== '' && parseInt(value, 10) > EntryPanel.clampMax ? 'true' : 'false');
         $(this).val(value);
         const pi = parseInt($(this).closest('.entry-passe-field').data('pi'), 10);
         EntryPanel.syncField(pi, value);

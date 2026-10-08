@@ -10,7 +10,6 @@ try {
 // Seitenspezifische Styles: nur noch Aufbau dieser Seite; Optik kommt aus css/msv-ui.css
 $page_specific_css = "
 /* Fensterhöhe (.ui-vollhoehe, .ui-scroll) und Erfassungs-Panel (.ui-erfassen) kommen aus css/msv-ui.css */
-.end-scroll { outline: none; }
 #mitgliederTabelle { margin: 0; border-collapse: separate; border-spacing: 0; }
 #mitgliederTabelle thead th { position: sticky; top: 0; z-index: 2; padding: 8px 10px; white-space: nowrap; text-align: right; }
 #mitgliederTabelle tbody td { height: 40px; padding: 0 10px; white-space: nowrap; text-align: right; vertical-align: middle; border-bottom: 1px solid var(--ui-linie-zart); }
@@ -76,7 +75,7 @@ $csrf = csrf_token();
 
                     <!-- Desktop: Tabelle -->
                     <div class="desktop-table-container">
-                        <div class="ui-scroll end-scroll" id="endScroll" tabindex="0" aria-label="Mitglieder. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                        <div class="ui-scroll end-scroll" id="endScroll" tabindex="0" data-zeilen-tastatur aria-label="Mitglieder. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
                             <table class="table mb-0" id="mitgliederTabelle">
                                 <thead>
                                     <tr>
@@ -646,22 +645,7 @@ $(document).ready(function() {
     });
 
     // Tabelle per Tastatur: Pfeile wählen, Enter öffnet
-    $('#endScroll').on('keydown', function(e) {
-        var zeilen = EndEditPanel.allRows.filter(function(r) { return r.tr.style.display !== 'none'; });
-        if (!zeilen.length) return;
-        var akt = zeilen.findIndex(function(r) { return r.tr.classList.contains('ui-markiert'); });
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            var neu = akt < 0 ? 0 : Math.max(0, Math.min(zeilen.length - 1, akt + (e.key === 'ArrowDown' ? 1 : -1)));
-            zeilen.forEach(function(r) { r.tr.classList.remove('ui-markiert'); });
-            zeilen[neu].tr.classList.add('ui-markiert');
-            zeilen[neu].tr.scrollIntoView({ block: 'nearest' });
-        } else if (e.key === 'Enter' && akt >= 0) {
-            e.preventDefault();
-            EndEditPanel.open(zeilen[akt].id);
-        }
-    });
-    $('#endScroll').on('blur', function() { $('#mitgliederTabelle tr.ui-markiert').removeClass('ui-markiert'); });
+    // Tabelle per Tastatur: msv-panel-a11y.js ([data-zeilen-tastatur] an #endScroll) – Pfeile, Pos1/Ende, Enter, Ansage
 
     // Panel: Ctrl+S speichert, Ctrl+Enter speichert und öffnet das nächste offene Mitglied
     $(document).on('keydown', function(e) {
