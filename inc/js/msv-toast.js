@@ -129,11 +129,13 @@ function msvSuccess(message) {
 
 // Zentrale Lösch-Bestätigung mit spezifischem Namen (roter Button, Fokus auf Abbrechen).
 // opts optional: { html: eigener Text statt Standardsatz, title, confirmText }
+// itemName wird maskiert; schon mit msvEsc maskierte Namen bleiben, wie sie sind (kein «&amp;amp;»).
+// opts.html ist HTML und muss vom Aufrufer maskiert werden.
 function msvConfirmDelete(itemName, opts) {
     opts = opts || {};
     return msvSwal.fire({
         title: opts.title || 'Löschen bestätigen',
-        html: opts.html || ('Möchtest du <strong>' + itemName + '</strong> wirklich löschen?'),
+        html: opts.html || ('Möchtest du <strong>' + msvEscEinmal(itemName) + '</strong> wirklich löschen?'),
         icon: 'warning',
         showCancelButton: true,
         focusCancel: true,
@@ -235,6 +237,16 @@ function msvEsc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+}
+
+// Wie msvEsc, lässt aber bestehende Entitäten (&amp; &lt; &#39; …) stehen – wie PHP
+// htmlspecialchars(…, double_encode: false). Für Stellen, an denen Aufrufer teils schon maskieren.
+function msvEscEinmal(s) {
+    return String(s == null ? '' : s)
+        .replace(/&(?!(?:#\d+|#x[0-9a-f]+|[a-z][a-z0-9]*);)/gi, '&amp;')
+        .replace(/[<>"']/g, function (c) {
+            return { '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
 }
 
 // Lesbare Meldung aus einem fehlgeschlagenen jQuery-XHR: JSON-message des Servers,

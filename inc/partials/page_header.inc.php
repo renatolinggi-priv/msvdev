@@ -26,7 +26,7 @@ if ($ph_after === '' && preg_match('/^\s*(<button type="button" class="btn-help"
 ?>
 <header class="msv-kopf <?= $ph_vis ?>">
   <div class="msv-kopf-titel">
-    <h2 class="h4 mb-0 page-title"><?= $ph_title ?></h2>
+    <h1 class="h4 mb-0 page-title"><?= $ph_title ?></h1>
     <?php if ($ph_after !== ''): ?>
       <div class="msv-kopf-neben"><?= $ph_after ?></div>
     <?php endif; ?>

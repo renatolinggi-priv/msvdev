@@ -168,17 +168,17 @@ $csrf = csrf_token();
                 <div class="cup4-standcup-row">
                     <span class="cup4-standcup-label">MSV Wilen</span>
                     <input type="text" id="sc-name-1" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="MSV Wilen: Teilnehmer">
-                    <input type="number" id="sc-result-1" class="form-control cup4-standcup-res" placeholder="Res" aria-label="MSV Wilen: Resultat">
+                    <input type="number" id="sc-result-1" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="MSV Wilen: Resultat">
                 </div>
                 <div class="cup4-standcup-row">
                     <span class="cup4-standcup-label">SV Wollerau</span>
                     <input type="text" id="sc-name-2" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="SV Wollerau: Teilnehmer">
-                    <input type="number" id="sc-result-2" class="form-control cup4-standcup-res" placeholder="Res" aria-label="SV Wollerau: Resultat">
+                    <input type="number" id="sc-result-2" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="SV Wollerau: Resultat">
                 </div>
                 <div class="cup4-standcup-row">
                     <span class="cup4-standcup-label">SV Freienbach</span>
                     <input type="text" id="sc-name-3" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="SV Freienbach: Teilnehmer">
-                    <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Res" aria-label="SV Freienbach: Resultat">
+                    <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="SV Freienbach: Resultat">
                 </div>
                 <div class="text-end mt-2">
                     <button id="save-standcup" class="btn btn-outline-primary btn-sm">
@@ -954,8 +954,8 @@ $(document).ready(function() {
                 $list.append(
                     '<div class="cup4-final-item" data-live-preview="1">' +
                     '<span class="cup4-final-name" data-id="' + f.id + '">' + f.name + '</span>' +
-                    '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-                    '<input type="number" class="cup4-result form-control" min="0" max="100"></div>' +
+                    '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+                    '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte"></div>' +
                     '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                     '</div>'
                 );
@@ -1229,8 +1229,8 @@ $(document).ready(function() {
     function buildParticipantRow() {
         return '<div class="cup4-participant-row">' +
                '<div class="cup4-drop-zone"></div>' +
-               '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-               '<input type="number" class="cup4-result form-control" min="0" max="100"></div>' +
+               '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+               '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte"></div>' +
                '</div>';
     }
 
@@ -1276,8 +1276,8 @@ $(document).ready(function() {
                     // Participant 1
                     html += '<div class="cup4-participant-row">' +
                             dropZoneHtml(pair.Participant1, pair.Name1 + ' ' + pair.Vorname1) +
-                            '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (pair.Result1 || '') + '"></div>' +
+                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (pair.Result1 || '') + '"></div>' +
                             '</div>';
 
                     html += '<div class="cup4-vs">vs</div>';
@@ -1285,8 +1285,8 @@ $(document).ready(function() {
                     // Participant 2
                     html += '<div class="cup4-participant-row">' +
                             dropZoneHtml(pair.Participant2, pair.Name2 + ' ' + pair.Vorname2) +
-                            '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (pair.Result2 || '') + '"></div>' +
+                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (pair.Result2 || '') + '"></div>' +
                             '</div>';
 
                     // Participant 3 (3-way)
@@ -1294,8 +1294,8 @@ $(document).ready(function() {
                         html += '<div class="cup4-vs">vs</div>';
                         html += '<div class="cup4-participant-row">' +
                                 dropZoneHtml(pair.Participant3, pair.Name3 + ' ' + pair.Vorname3) +
-                                '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-                                '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (pair.Result3 || '') + '"></div>' +
+                                '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+                                '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (pair.Result3 || '') + '"></div>' +
                                 '</div>';
                         html += advancersToggle(advVal);
                     }
@@ -1428,8 +1428,8 @@ $(document).ready(function() {
                         $list.append(
                             '<div class="cup4-final-item">' +
                             '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
-                            '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (f.Result || '') + '"></div>' +
+                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (f.Result || '') + '"></div>' +
                             '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                             '</div>'
                         );
@@ -1468,8 +1468,8 @@ $(document).ready(function() {
                         $('#final-list').append(
                             '<div class="cup4-final-item">' +
                             '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
-                            '<div class="cup4-input-group"><span class="cup4-result-label">Res</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" value="' + (f.Result || '') + '"></div>' +
+                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
+                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (f.Result || '') + '"></div>' +
                             '<button class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
                             '</div>'
                         );
