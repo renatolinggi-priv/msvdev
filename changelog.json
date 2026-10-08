@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.39.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "JM erfassen: Meldungen werden nicht mehr ungeprüft bestätigt",
+        "beschreibung": "Der Knopf «Speichern» oben auf der Seite «Erfassung Jahresmeisterschaft» speicherte eine unsichtbare alte Eingabetabelle und setzte dabei alle Resultate des Jahres auf «bestätigt», auch die Meldungen, die Mitglieder im Portal selbst eingetragen und noch niemand geprüft hatte. Knopf und Tabelle sind entfernt; gespeichert wird nur noch im Erfassungs-Panel eines Anlasses, wo die Meldungen als «gemeldet» sichtbar sind. Ausserdem behoben: Speichern in einem früheren Jahr zählte die Änderung für «Veröffentlichen» im laufenden Jahr; die Endpunkte der JM-Erfassung und des PDF-Imports prüfen jetzt Anmeldung und Rolle.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "JM erfassen: neuer Aufbau",
+        "beschreibung": "Kopf-Karte mit Jahr, erfassten Resultaten, offenen Meldungen und den Knöpfen PDF importieren, Rangliste und Veröffentlichen. Die Anlass-Karten zeigen die Anzahl Resultate und, falls vorhanden, wie viele Mitglieder-Meldungen noch zu bestätigen sind. Im Erfassungs-Panel wechseln die Pfeiltasten auf und ab die Zeile; Schliessen mit ungespeicherten Eingaben fragt nach; nach dem Speichern erscheint «Veröffentlichen» sofort. Die Kontroll-Ranglisten Kat. A und B stehen in eigenen Karten. Braucht die Datenbank-Aktualisierung 074 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.38.0",
     "datum": "2026-10-08",
     "aenderungen": [

@@ -1,6 +1,8 @@
 <?php
 // load_jmresultate_form.php
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

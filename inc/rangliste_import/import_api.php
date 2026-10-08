@@ -15,6 +15,8 @@
 // $_SESSION['csrf_token']. Zugriff wird durch die Admin-Shell gewaehrleistet.
 
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../changelog_helper.php';
 require_once __DIR__ . '/pdf_rangliste_parser.php';
 require_once __DIR__ . '/fsa_teilnehmerliste_parser.php';

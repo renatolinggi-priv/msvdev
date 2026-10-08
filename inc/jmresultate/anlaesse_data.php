@@ -6,7 +6,8 @@
 
 if (!function_exists('getJmAnlaesse')) {
     /**
-     * Liefert die Anlaesse eines Jahres inkl. Fortschritt (filledCount/totalMembers).
+     * Liefert die Anlaesse eines Jahres inkl. Fortschritt (filledCount/totalMembers) und
+     * Anzahl Mitglied-Meldungen, die der Vorstand noch nicht bestaetigt hat (gemeldetCount).
      *
      * @param mysqli $conn
      * @param int    $year
@@ -45,17 +46,25 @@ if (!function_exists('getJmAnlaesse')) {
 
             if ($isReadonly) {
                 $filledCount = 0; // readonly, kein Fortschritt noetig
+                $gemeldetCount = 0;
             } elseif ($isSektionsmeisterschaft) {
-                $stmt2 = $conn->prepare("SELECT COUNT(DISTINCT mitgliederID) as cnt FROM jmresultate WHERE jmdefinitionID=? AND (Info='runde 1' OR Info='runde 2') AND Punkte > 0");
+                $stmt2 = $conn->prepare("SELECT COUNT(DISTINCT CASE WHEN Punkte > 0 THEN mitgliederID END) as cnt,
+                                                COUNT(DISTINCT CASE WHEN status = 'entwurf' THEN mitgliederID END) as gemeldet
+                                           FROM jmresultate WHERE jmdefinitionID=? AND (Info='runde 1' OR Info='runde 2')");
                 $stmt2->bind_param("i", $defID);
                 $stmt2->execute();
-                $filledCount = (int) $stmt2->get_result()->fetch_assoc()['cnt'];
+                $zahlen = $stmt2->get_result()->fetch_assoc();
+                $filledCount = (int) $zahlen['cnt'];
+                $gemeldetCount = (int) $zahlen['gemeldet'];
                 $stmt2->close();
             } else {
-                $stmt2 = $conn->prepare("SELECT COUNT(*) as cnt FROM jmresultate WHERE jmdefinitionID=? AND (Info='' OR Info IS NULL) AND Punkte > 0");
+                $stmt2 = $conn->prepare("SELECT SUM(Punkte > 0) as cnt, SUM(status = 'entwurf') as gemeldet
+                                           FROM jmresultate WHERE jmdefinitionID=? AND (Info='' OR Info IS NULL)");
                 $stmt2->bind_param("i", $defID);
                 $stmt2->execute();
-                $filledCount = (int) $stmt2->get_result()->fetch_assoc()['cnt'];
+                $zahlen = $stmt2->get_result()->fetch_assoc();
+                $filledCount = (int) $zahlen['cnt'];
+                $gemeldetCount = (int) $zahlen['gemeldet'];
                 $stmt2->close();
             }
 
@@ -67,6 +76,7 @@ if (!function_exists('getJmAnlaesse')) {
                 'isSektionsmeisterschaft' => $isSektionsmeisterschaft,
                 'isReadonly' => $isReadonly,
                 'filledCount' => $filledCount,
+                'gemeldetCount' => $gemeldetCount,
                 'totalMembers' => $totalMembers
             ];
         }

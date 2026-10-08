@@ -7,14 +7,12 @@
  *   - csrf_token: string
  */
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../changelog_helper.php';
 
-if (session_status() === PHP_SESSION_NONE) session_start();
-$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
-}
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -28,6 +26,13 @@ try {
         echo json_encode(['success' => false, 'message' => 'Ungültige Daten']);
         exit;
     }
+
+    // Jahr des Anlasses, nicht das Kalenderjahr: Änderungsprotokoll und «Veröffentlichen» zählen pro Jahr
+    $stJahr = $conn->prepare('SELECT year FROM JMDefinition WHERE ID = ?');
+    $stJahr->bind_param('i', $jmdefID);
+    $stJahr->execute();
+    $jahrAnlass = (int) $stJahr->get_result()->fetch_column() ?: (int) date('Y');
+    $stJahr->close();
 
     // Vorstand-User-ID fuer Freigabe-Audit (kann NULL sein, wenn Session fehlt).
     // Durch das Speichern bestaetigt der Vorstand implizit alle erfassten Resultate
@@ -51,7 +56,7 @@ try {
     }
 
     $conn->commit();
-    logChangelog('resultate', 'aktualisiert', "JM-Resultate aktualisiert", ['tabelle' => 'jmresultate', 'jahr' => date('Y'), 'sichtbar' => 0]);
+    logChangelog('resultate', 'aktualisiert', "JM-Resultate aktualisiert", ['tabelle' => 'jmresultate', 'jahr' => $jahrAnlass, 'sichtbar' => 0]);
     echo json_encode(['success' => true, 'message' => 'Anlass-Resultate gespeichert']);
 
 } catch (Throwable $e) {

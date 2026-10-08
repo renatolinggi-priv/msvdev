@@ -4,6 +4,8 @@
  * GET: year
  */
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../changelog_helper.php';
 
 header('Content-Type: application/json; charset=utf-8');
