@@ -6,14 +6,12 @@
  */
 
 include '../config.php';
+require_once __DIR__ . '/../admin_api_guard.inc.php';
+adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 
 // CSRF-Schutz
-if (session_status() === PHP_SESSION_NONE) session_start();
-$csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
-    http_response_code(403);
-    die(json_encode(['success' => false, 'message' => 'CSRF-Validierung fehlgeschlagen']));
-}
+require_once __DIR__ . '/../csrf.inc.php';
+csrf_require(true);
 
 // Header für JSON-Response
 header('Content-Type: application/json');

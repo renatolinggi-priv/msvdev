@@ -1,55 +1,40 @@
 <?php
-// cup.php - Turnierbaum UI
+// cup.php - Turnierbaum UI (Vereinscup: Runde 1, Runde 2, Finale, Standcup)
 include 'dbconnect.inc.php';
 
 $body_class = 'cup4-page';
 include 'header.inc.php';
-
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+require_once __DIR__ . '/csrf.inc.php';
+$csrf = csrf_token();
 ?>
 
 <link rel="stylesheet" href="../css/cup.css?v=<?php echo @filemtime(__DIR__ . '/../css/cup.css') ?: '1'; ?>">
 <script src="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/jquery-ui.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/themes/base/jquery-ui.min.css">
-<script>const CUP4_CSRF = '<?php echo $_SESSION['csrf_token']; ?>';</script>
+<script>const CUP4_CSRF = <?= json_encode($csrf) ?>;</script>
 
 <div class="container-fluid">
-    <div class="main-content-wrapper">
-
-    <!-- Titel (nur Desktop) -->
-    <div class="row mb-3 d-none d-md-flex">
-        <div class="col-auto">
-            <h2 class="h4 mb-0" style="color: var(--cup4-primary);">CUP Resultaterfassung
-                <button type="button" class="btn-help" data-help="cup.uebersicht" aria-label="Hilfe"></button>
-            </h2>
-        </div>
-    </div>
-
-    <!-- Inhalt in weisser Karte (einheitlich mit den uebrigen Seiten) -->
-    <div class="content-background">
-
-    <!-- Fortschrittsanzeige -->
-    <div class="cup4-progress" id="progress-section">
-        <div class="cup4-progress-steps" id="progress-steps">
-            <span class="cup4-step active" data-round="1">
-                <span class="cup4-step-dot"></span> Runde 1 <small id="step-r1-count"></small>
-            </span>
-            <span class="cup4-step-arrow"><i class="bi bi-chevron-right"></i></span>
-            <span class="cup4-step" data-round="2">
-                <span class="cup4-step-dot"></span> Runde 2 <small id="step-r2-count"></small>
-            </span>
-            <span class="cup4-step-arrow"><i class="bi bi-chevron-right"></i></span>
-            <span class="cup4-step" data-round="final">
-                <span class="cup4-step-dot"></span> Finale <small id="step-final-count"></small>
-            </span>
-        </div>
-        <div class="cup4-progress-bar">
-            <div class="cup4-progress-fill" id="progress-fill" style="width: 0%"></div>
-        </div>
-    </div>
-
+<div class="row">
+<div class="col-12 ps-0">
+    <div class="main-content-wrapper content-width-default">
+    <?php
+    $page_title = 'CUP Resultaterfassung';
+    $page_title_after = '<button type="button" class="btn-help" data-help="cup.uebersicht" aria-label="Hilfe"></button>'
+        . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
+        . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+    $page_extra = '<div class="cup4-progress" id="progress-section">'
+        . '<div class="cup4-progress-steps" id="progress-steps">'
+        . '<span class="cup4-step active" data-round="1"><span class="cup4-step-dot"></span> Runde 1 <small id="step-r1-count"></small></span>'
+        . '<span class="cup4-step-arrow"><i class="bi bi-chevron-right"></i></span>'
+        . '<span class="cup4-step" data-round="2"><span class="cup4-step-dot"></span> Runde 2 <small id="step-r2-count"></small></span>'
+        . '<span class="cup4-step-arrow"><i class="bi bi-chevron-right"></i></span>'
+        . '<span class="cup4-step" data-round="final"><span class="cup4-step-dot"></span> Finale <small id="step-final-count"></small></span>'
+        . '</div>'
+        . '<div class="cup4-progress-bar" aria-hidden="true"><div class="cup4-progress-fill" id="progress-fill" style="width: 0%"></div></div>'
+        . '</div>';
+    $page_show_mobile = true;
+    include 'partials/page_header.inc.php';
+    ?>
     <!-- Sticky Toolbar -->
     <div class="cup4-toolbar" id="cup4-toolbar">
         <!-- Mobile: Sticky Header mit Fortschritt + Toggle -->
@@ -72,11 +57,6 @@ if (empty($_SESSION['csrf_token'])) {
         <!-- Toolbar Body -->
         <div class="cup4-toolbar-body" id="toolbar-body">
             <div class="cup4-toolbar-group">
-                <label for="yearSelect">Jahr:</label>
-                <select id="yearSelect" class="form-select" style="width: 90px;"></select>
-            </div>
-            <div class="cup4-toolbar-divider"></div>
-            <div class="cup4-toolbar-group">
                 <label for="pair-count">Paarungen:</label>
                 <input type="number" id="pair-count" class="form-control" min="1" max="10" value="4">
             </div>
@@ -92,14 +72,11 @@ if (empty($_SESSION['csrf_token'])) {
             </button>
             <div class="cup4-toolbar-spacer"></div>
             <div class="cup4-toolbar-actions">
-                <button id="save-all" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-save me-1"></i>Speichern
-                </button>
-                <button class="btn btn-outline-info btn-sm pdf-btn">
+                <button class="btn btn-outline-info btn-sm pdf-btn" data-tooltip="Cup-Rangliste als PDF">
                     <i class="bi bi-file-pdf me-1"></i>PDF
                 </button>
-                <button id="delete-btn" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-trash me-1"></i>L&ouml;schen
+                <button id="save-all" class="btn btn-primary btn-sm" data-tooltip="Alle Runden speichern (Ctrl+S)">
+                    <i class="bi bi-save me-1"></i>Speichern
                 </button>
             </div>
         </div>
@@ -214,8 +191,9 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
     </div>
 
-    </div><!-- content-background -->
     </div><!-- main-content-wrapper -->
+</div>
+</div>
 </div>
 
 <script>
@@ -227,6 +205,14 @@ $(document).ready(function() {
             if (settings.type === 'POST') {
                 xhr.setRequestHeader('X-CSRF-TOKEN', CUP4_CSRF);
             }
+        }
+    });
+
+    /* ── Ctrl+S speichert alle Runden ─────── */
+    $(document).on('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+            e.preventDefault();
+            if (!$('#save-all').prop('disabled')) $('#save-all').trigger('click');
         }
     });
 
@@ -1617,27 +1603,6 @@ $(document).ready(function() {
             });
         });
     }
-
-    /* ── Delete All ───────────────────────── */
-    $('#delete-btn').click(async function() {
-        const result = await msvConfirm(
-            'Alle Resultate l&ouml;schen?',
-            'S&auml;mtliche Cup-Daten f&uuml;r dieses Jahr werden gel&ouml;scht.',
-            'L&ouml;schen',
-            'Abbrechen'
-        );
-        if (!result.isConfirmed) return;
-
-        $.ajax({
-            url: 'cup2/delete_cup.php',
-            method: 'POST',
-            success: function() {
-                msvToast('Alle Resultate gel&ouml;scht', 'success');
-                initializePage();
-            },
-            error: function() { msvToast('Fehler beim L&ouml;schen', 'error'); }
-        });
-    });
 
     /* ── Delete Single Pair ───────────────── */
     $(document).on('click', '.cup4-card-remove, .cup4-final-item .cup4-btn-sm.cup4-btn-remove', async function() {

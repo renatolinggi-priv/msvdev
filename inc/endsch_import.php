@@ -2,65 +2,26 @@
 // endsch_import.php – 3-Phasen CSV-Import für Endstich/Kunst/Glück/Zabig/Schwini
 include 'dbconnect.inc.php';
 
-// Session-Kontrolle
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
 // Lade Mitglieder für Dropdown
 $sql = "SELECT * FROM mitglieder ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
 
+$page_specific_css = "
+/* Upload-Bereich: Klick, Enter oder Datei ablegen */
+.upload-area { margin-bottom: 0; padding: 40px 24px; text-align: center; background: var(--ui-flaeche-2); border: 2px dashed var(--ui-feldrand); border-radius: var(--ui-rad-l); cursor: pointer; transition: border-color .2s, background-color .2s; }
+.upload-area:hover { background: var(--ui-flaeche); border-color: #9aa6b6; }
+.upload-area:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
+.upload-area.dragover { background: var(--ui-gewaehlt); border-color: var(--ui-akzent); }
+.upload-area > .bi { font-size: 2.5rem; color: var(--ui-text-3); }
+.upload-area h4 { margin: 10px 0 4px; font-size: 1.05rem; font-weight: 600; color: var(--ui-text); }
+.loading-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; background: rgba(26, 35, 50, .55); }
+.loading-spinner { padding: 2rem; text-align: center; color: var(--ui-text); background: var(--ui-flaeche); border-radius: var(--ui-rad-l); }
+.import-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+";
 include 'header.inc.php';
+require_once __DIR__ . '/csrf.inc.php';
+$csrf = csrf_token();
 ?>
-
-<style>
-    /* Inhaltsbreite begrenzen, damit die Seite auf grossen Bildschirmen nicht zu breit wird */
-    .main-content-wrapper { max-width: 980px; }
-
-    .upload-area {
-        border: 2px dashed #dee2e6;
-        border-radius: 0.75rem;
-        padding: 3rem;
-        text-align: center;
-        background-color: #f8f9fa;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        margin-bottom: 2rem;
-    }
-    
-    .upload-area:hover {
-        border-color: #6c757d;
-        background-color: #e9ecef;
-    }
-    
-    .upload-area.dragover {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
-    }
-    
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-    
-    .loading-spinner {
-        background: white;
-        padding: 2rem;
-        border-radius: 0.5rem;
-        text-align: center;
-        color: #333;
-    }
-    
-</style>
 
 <!-- 3-Phasen CSV Import Workflow -->
 <div class="container-fluid">
@@ -68,15 +29,15 @@ include 'header.inc.php';
         <div class="col-12 ps-0">
             <div class="main-content-wrapper content-width-default">
                 <!-- Header -->
-                <?php $page_title = 'CSV Import - Endschiessen'; $page_actions = '<button type="button" class="btn-help" data-help="endsch_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+                <?php $page_title = 'CSV Import - Endschiessen'; $page_title_after = '<button type="button" class="btn-help" data-help="endsch_import.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
                 
                 <div class="content-background">
                     
                     <!-- Phase 1: Upload -->
                     <div id="phase1" class="workflow-phase active">
-                        <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
-                            <h4 class="mt-3">CSV-Datei hier ablegen oder klicken zum Auswählen</h4>
+                        <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="CSV-Datei auswählen oder hier ablegen">
+                            <i class="bi bi-cloud-upload" aria-hidden="true"></i>
+                            <h4>CSV-Datei hier ablegen oder klicken zum Auswählen</h4>
                             <p class="text-muted mb-0">Unterstützte Formate: .csv</p>
                             <input type="file" id="fileInput" accept=".csv" style="display: none;">
                         </div>
@@ -155,7 +116,7 @@ include 'header.inc.php';
                             </div>
                             
                             <!-- Phase 2 Navigation -->
-                            <div class="text-center mt-4">
+                            <div class="import-nav">
                                 <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="WorkflowHelper.goToPhase(1)">
                                     <i class="bi bi-arrow-left me-2"></i>Zurück
                                 </button>
@@ -228,11 +189,8 @@ include 'header.inc.php';
 
 <!-- CSRF Token für JavaScript -->
 <script>
-const CSRF_TOKEN = '<?php echo $_SESSION['csrf_token']; ?>';
+const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 </script>
-
-<!-- jQuery einbinden falls nicht vorhanden -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- JavaScript Module einbinden -->
 <script src="endsch_import/ui_helper.js?v=<?php echo @filemtime(__DIR__ . '/endsch_import/ui_helper.js') ?: '1'; ?>"></script>
@@ -294,7 +252,6 @@ $(document).ready(function() {
         })
         .then(() => {
             console.log('[ENDSCH-MAIN] All modules initialized successfully');
-            UIHelper.showToast('Import-System bereit', 'success');
         })
         .catch(error => {
             console.error('[ENDSCH-MAIN] Module initialization failed:', error);
@@ -405,6 +362,11 @@ const WorkflowHelper = {
 
 // Globaler Zugriff für csv_handler.js
 window.WorkflowHelper = WorkflowHelper;
+
+// Upload-Bereich auch per Tastatur (Enter / Leertaste) öffnen
+$('#uploadArea').on('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#fileInput').trigger('click'); }
+});
 </script>
 
 <?php

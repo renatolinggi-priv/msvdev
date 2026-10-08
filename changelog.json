@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.41.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Cup erfassen: neuer Aufbau, kein Löschen des ganzen Jahres mehr",
+        "beschreibung": "Jahr und Fortschritt (Runde 1, Runde 2, Finale) stehen in der Kopf-Karte; die Leiste darunter enthält die Auslosung, PDF und Speichern (auch Ctrl+S). Farben wie im übrigen Admin-Bereich: abgeschlossene Paarungen grün umrandet, Gleichstand gelb hinterlegt, Nachnominierte blau, Kat.-B-Finalist violett, Finale und Standcup als neutrale Karten. Der Knopf «Löschen» ist entfernt: er löschte immer alle Paarungen und Finalresultate des laufenden Kalenderjahres, auch wenn ein anderes Jahr gewählt war, und ohne Sicherung. Einzelne Paarungen lassen sich weiterhin über das X auf der Karte entfernen. Die Cup-Endpunkte prüfen jetzt Anmeldung und Rolle. Braucht die Datenbank-Aktualisierung 076 (Hilfetext).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "CSV-Importe (Endschiessen, Heim/Kanti): neues Erscheinungsbild",
+        "beschreibung": "Beide Import-Seiten stehen in einer Inhalts-Karte; der Upload-Bereich lässt sich auch mit der Tastatur öffnen (Tab, dann Enter), Zurück und Weiter stehen rechts. Behoben: Der Endschiessen-Import lud jQuery ein zweites Mal und meldete bei jedem Öffnen «Import-System bereit»; beim Heim/Kanti-Import war das Seitenlayout durch ein überzähliges Element verschoben. Die Import-Endpunkte prüfen jetzt Anmeldung und Rolle (vorher waren z.B. die Stich-Definitionen ohne Anmeldung abrufbar).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.40.0",
     "datum": "2026-10-08",
     "aenderungen": [
