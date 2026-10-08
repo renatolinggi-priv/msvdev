@@ -9,8 +9,6 @@ $csrf = csrf_token();
 ?>
 
 <link rel="stylesheet" href="../css/cup.css?v=<?php echo @filemtime(__DIR__ . '/../css/cup.css') ?: '1'; ?>">
-<script src="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/jquery-ui.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-ui@1.13.2/dist/themes/base/jquery-ui.min.css">
 <script>const CUP4_CSRF = <?= json_encode($csrf) ?>;</script>
 
 <div class="container-fluid">
@@ -389,8 +387,16 @@ $(document).ready(function() {
         });
     }
 
+    /* ── Ungespeicherte Änderungen: Resultate, Zuordnungen, Gewinnerwahl, «weiter» ──
+       Hinweis neben «Speichern», Warnung beim Verlassen, Rückfrage beim Jahreswechsel. */
+    let cupGeaendert = false, cupJahr = null, cupJahrNachher = null;
+    function cupMarkieren(an) { cupGeaendert = !!an; msvPanelUngespeichert($('#save-all').parent(), cupGeaendert); }
+    $(document).on('input', '#bracket input:not(.cup4-standcup-name):not(.cup4-standcup-res)', function() { cupMarkieren(true); });
+    $(window).on('beforeunload', function() { if (cupGeaendert) return 'Nicht gespeicherte Eingaben'; });
+
     /* ── Teilnehmer auf einen Platz setzen (Ziehen, Tastatur, Klick) ── */
     function zuordnen($zone, newId, rohText) {
+                        cupMarkieren(true);
                         const newText = String(rohText).trim().replace(/\s*NR$/, '');
 
                         // Swap: if zone already occupied, return old participant to correct pool
@@ -466,6 +472,7 @@ $(document).ready(function() {
     /* ── Remove single participant from drop zone ── */
     $(document).on('click', '.cup4-zone-remove', function(e) {
         e.stopPropagation();
+        cupMarkieren(true);
         const $zone = $(this).closest('.cup4-drop-zone');
         const id = $zone.attr('data-id');
         const name = $zone.find('.cup4-zone-name').text().trim();
@@ -1025,6 +1032,7 @@ $(document).ready(function() {
     // Tie-Breaker: Klick auf Gewinner-Button
     $(document).on('click', '.cup4-tie-pick', function(e) {
         e.preventDefault();
+        cupMarkieren(true);
         const $card = $(this).closest('.cup4-pair-card');
         const pairId = $card.data('pair-id');
         const winnerId = $(this).data('winner-id');
@@ -1118,6 +1126,7 @@ $(document).ready(function() {
     // Dreier-Gruppe: Umschalten wie viele weiterkommen (1 oder 2)
     $(document).on('click', '.cup4-adv-btn', function(e) {
         e.preventDefault();
+        cupMarkieren(true);
         const $btn = $(this);
         const $card = $btn.closest('.cup4-pair-card');
         const adv = parseInt($btn.data('adv'), 10);
@@ -1535,22 +1544,26 @@ $(document).ready(function() {
         }
 
         $.when.apply($, promises).done(function() {
-            msvToast('Erfolgreich gespeichert!', 'success');
+            cupMarkieren(false);
+            msvToast('Gespeichert', 'success');
             $btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Gespeichert');
             setTimeout(function() {
                 $btn.html('<i class="bi bi-save me-1"></i>Speichern');
             }, 2000);
 
             // ManualWinner synchronisieren (sowohl neue als auch bestehende Paare)
+            const jahrNachher = cupJahrNachher;
+            cupJahrNachher = null;
+            const danach = jahrNachher ? function() { $('#yearSelect').val(jahrNachher).trigger('change'); } : refreshAfterSave;
             if (allManualWinners.length > 0) {
-                syncAllManualWinners(allManualWinners, year, function() {
-                    refreshAfterSave();
-                });
+                syncAllManualWinners(allManualWinners, year, danach);
             } else {
-                refreshAfterSave();
+                danach();
             }
-        }).fail(function() {
-            msvToast('Fehler beim Speichern!', 'error');
+        }).fail(function(xhr) {
+            cupJahrNachher = null;
+            // Teilerfolg möglich (Runde 1, Runde 2, Finale getrennt): klar sagen, dass nicht alles gespeichert ist
+            msvToast(msvXhrMessage(xhr, 'Nicht alles gespeichert') + ' – die Eingaben sind noch da, bitte noch einmal speichern.', 'error');
             $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Speichern');
         });
     });
@@ -1783,6 +1796,7 @@ $(document).ready(function() {
 
     /* ── Initialize ───────────────────────── */
     function initializePage() {
+        cupMarkieren(false);
         $('#r1-pairs, #r2-pairs, #final-list').empty();
         $('#r2-pool-list').empty();
         $('#katb-info').remove();
@@ -1821,7 +1835,14 @@ $(document).ready(function() {
         });
     });
 
-    $('#yearSelect').on('change', function() {
+    $('#yearSelect').on('change', async function() {
+        const neu = $(this).val();
+        if (cupGeaendert && cupJahr && neu !== cupJahr) {
+            const wahl = await msvUngespeichert({ wer: 'den Vereinscup ' + cupJahr });
+            if (wahl === 'zurueck') { $(this).val(cupJahr); return; }
+            if (wahl === 'speichern') { $(this).val(cupJahr); cupJahrNachher = neu; $('#save-all').trigger('click'); return; }
+        }
+        cupJahr = neu;
         loadCupSettings(function() {
             initializePage();
             checkKatBFinalist();
@@ -1829,6 +1850,7 @@ $(document).ready(function() {
     });
 
     initYearDropdown();
+    cupJahr = $('#yearSelect').val();
     loadCupSettings(function() {
         initializePage();
         checkKatBFinalist();

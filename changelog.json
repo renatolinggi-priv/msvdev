@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.59.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Vereinscup und Stiche lösen schützen Ungespeichertes; Absenden in Klartext",
+        "beschreibung": "Vereinscup: Neben «Speichern» steht «Nicht gespeichert», solange Resultate, Zuordnungen, Gewinnerwahl oder «weiter» offen sind; beim Jahreswechsel fragt die Seite «Speichern, Verwerfen oder Zurück» (gespeichert wird unter dem bisherigen Jahr, danach wechselt sie), beim Verlassen warnt der Browser. Schlägt ein Teil des Speicherns fehl, sagt die Meldung, dass nicht alles gespeichert ist und die Eingaben noch da sind. jQuery UI wird nicht mehr doppelt geladen. Stiche lösen: Ist eine Auswahl nicht gespeichert, fragt die Seite vor «Bearbeiten» in der Übersicht, vor dem Wählen eines anderen Mitglieds, beim Jahreswechsel und bei «Zurücksetzen» nach; vorher wurde die Auswahl still ersetzt. Endschiessen Rangliste: Die Meldungen nennen die Dokumente beim Namen («Gesamtrangliste 2026 heruntergeladen» statt «EndschiessenGesamtrangliste …»), pro Klick erscheint nur noch eine, und die Dateien heissen einheitlich «Endschiessen_Gesamtrangliste_2026.pdf». «Absenden vorbereiten» zeigt die Uhrzeit der Prüfung, prüft mit dem Pfeil neu und weist bei den Dokumenten auf offene Punkte hin. «Resultate bearbeiten» öffnet die Erfassung ohne Verzögerung. Braucht die Datenbank-Aktualisierung 086 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.58.0",
     "datum": "2026-10-08",
     "aenderungen": [

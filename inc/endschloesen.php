@@ -738,7 +738,32 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     return out;
   }
 
+  // ===== Ungespeicherte Auswahl (Entscheid 08.10.2026: nie still verwerfen) =====
+  // Stand der Auswahl nach dem Laden bzw. Zurücksetzen; weicht die aktuelle Auswahl davon ab, fragt die Seite
+  // vor einem Wechsel nach. var statt let: recalcTotals() läuft schon beim Aufbau der Seite.
+  var losenStand = null, losenJahr = null;
+  function losenSchluessel() {
+    return JSON.stringify([
+      [...document.querySelectorAll('.stich-check:checked')].map(cb => cb.value).sort(),
+      (document.querySelector('input[name="zahlungsmethode"]:checked') || {}).value || '',
+      !!($id('partner_zabig') && $id('partner_zabig').checked),
+      zusatzListe(), $id('waffeSelect').value
+    ]);
+  }
+  function losenGeaendert() { return losenStand !== null && losenSchluessel() !== losenStand; }
+  function losenAnzeigen() { msvPanelUngespeichert($id('btnSave').parentElement, losenGeaendert()); }
+  function losenMerken() { losenStand = losenSchluessel(); losenAnzeigen(); }
+  // Vor dem Wechsel zu einem anderen Eintrag. true = weitermachen (gespeichert oder verworfen)
+  async function losenSchutz() {
+    if (!losenGeaendert()) return true;
+    const wer = state.typ === 'mitglied' ? $('#mitgliedSelect option:selected').text().trim() : $id('gastName').value.trim();
+    const wahl = await msvUngespeichert({ wer });
+    if (wahl === 'speichern') return await speichern({ danachOeffnen: false });
+    return wahl === 'verwerfen';
+  }
+
   function recalcTotals() {
+    if (losenStand !== null) setTimeout(losenAnzeigen, 0); // Hinweis «Nicht gespeichert» nachführen
     const checked = [...document.querySelectorAll('.stich-check:checked')];
     const codes = checked.map(cb => cb.dataset.code);
     const shots = checked.reduce((s, cb) => s + (Number(cb.dataset.shots) || 0), 0);
@@ -795,6 +820,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     state.aktuelleEntity = null;
     markRow(null);
     setTyp(keepTyp ? state.typ : 'mitglied');
+    losenMerken();
   }
 
   function applySelection(j) {
@@ -815,6 +841,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     }
     setWaffeAusAuswahl(j);
     updateTiles(); recalcTotals();
+    losenMerken();
   }
 
   async function loadMitgliedSelection() {
@@ -852,6 +879,13 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     } catch (e) { /* still */ }
   }
 
+  $('#mitgliedSelect').on('select2:selecting', async function(e) {
+    if (!losenGeaendert()) return;
+    e.preventDefault();
+    const neu = e.params.args.data.id;
+    $('#mitgliedSelect').select2('close');
+    if (await losenSchutz()) $('#mitgliedSelect').val(neu).trigger('change');
+  });
   $('#mitgliedSelect').on('change', () => { if (state.typ === 'mitglied') loadMitgliedSelection(); });
   $id('gastName').addEventListener('input', () => {
     $id('gastId').value = '';
@@ -859,14 +893,31 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     state.gastLookupTimer = setTimeout(() => loadGastSelection(), 400);
     recalcTotals();
   });
-  $id('yearSelect').addEventListener('change', () => {
+  $id('yearSelect').addEventListener('change', async () => {
+    const neu = $id('yearSelect').value;
+    if (losenJahr && neu !== losenJahr && losenGeaendert()) {
+      $id('yearSelect').value = losenJahr;      // gespeichert wird unter dem bisherigen Jahr
+      if (!(await losenSchutz())) return;      // «Zurück»
+      $id('yearSelect').value = neu;
+    }
+    losenJahr = neu;
     if (state.typ === 'mitglied') loadMitgliedSelection(); else loadGastSelection({ byId: null });
     loadUebersicht();
   });
-  $id('btnReset').addEventListener('click', () => resetForm());
+  $id('btnReset').addEventListener('click', async () => {
+    if (losenGeaendert()) {
+      const wahl = await msvUngespeichert({});
+      if (wahl === 'zurueck') return;
+      if (wahl === 'speichern') { await speichern(); return; }
+    }
+    resetForm();
+  });
+  window.addEventListener('beforeunload', (e) => { if (losenGeaendert()) { e.preventDefault(); e.returnValue = ''; } });
 
-  $id('stichForm').addEventListener('submit', async (ev) => {
-    ev.preventDefault();
+  $id('stichForm').addEventListener('submit', (ev) => { ev.preventDefault(); speichern(); });
+
+  // Speichert die Auswahl; true bei Erfolg. danachOeffnen=false beim Wechsel (dann keine Mitgliederauswahl aufklappen)
+  async function speichern({ danachOeffnen = true } = {}) {
     const typ = state.typ;
     const body = {
       typ,
@@ -879,35 +930,38 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     };
     if (typ === 'mitglied') {
       body.mitglied_id = $id('mitgliedSelect').value;
-      if (!body.mitglied_id) { msvToast('Bitte ein Mitglied wählen', 'warning'); $('#mitgliedSelect').select2('open'); return; }
+      if (!body.mitglied_id) { msvToast('Bitte ein Mitglied wählen', 'warning'); $('#mitgliedSelect').select2('open'); return false; }
     } else {
       body.gast_name = $id('gastName').value.trim();
       body.gast_id = $id('gastId').value || undefined;
       body.gast_geburtsdatum = typ === 'js' ? $id('gastGeburtsdatum').value : '';
-      if (!body.gast_name) { msvToast('Bitte den Namen eingeben', 'warning'); $id('gastName').focus(); return; }
-      if (typ === 'js' && !body.gast_geburtsdatum) { msvToast('Bitte das Geburtsdatum eingeben', 'warning'); $id('gastGeburtsdatum').focus(); return; }
+      if (!body.gast_name) { msvToast('Bitte den Namen eingeben', 'warning'); $id('gastName').focus(); return false; }
+      if (typ === 'js' && !body.gast_geburtsdatum) { msvToast('Bitte das Geburtsdatum eingeben', 'warning'); $id('gastGeburtsdatum').focus(); return false; }
     }
-    if (body.stiche.length && !body.waffen_id) { msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus(); return; }
+    if (body.stiche.length && !body.waffen_id) { msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus(); return false; }
     if (!body.stiche.length && !body.zusatz_schuesse.length) {
       const r = await msvConfirm('Es ist kein Stich gewählt. Bestehende Auswahl dieses Teilnehmers wird geleert.', 'Auswahl leeren', 'Ja, leeren');
-      if (!r.isConfirmed) return;
+      if (!r.isConfirmed) return false;
     }
 
     const btn = $id('btnSave'), spin = $id('saveSpinner');
     btn.disabled = true; spin.classList.remove('d-none');
+    let ok = false;
     try {
       const j = await api('save_selection', { body });
-      if (!j.success) { msvToast(j.message || 'Fehler beim Speichern', 'error'); return; }
+      if (!j.success) { msvToast(j.message || 'Fehler beim Speichern', 'error'); return false; }
+      ok = true;
       msvToast((j.message || 'Gespeichert') + ' – ' + fmtCHF((j.data && j.data.preis_cents) || 0) + ' Stiche', 'success');
       await loadUebersicht();
       resetForm({ keepTyp: true });
-      if (state.typ === 'mitglied') $('#mitgliedSelect').select2('open'); else $id('gastName').focus();
+      if (danachOeffnen) { if (state.typ === 'mitglied') $('#mitgliedSelect').select2('open'); else $id('gastName').focus(); }
     } catch (e) {
       msvToast('Netzwerkfehler beim Speichern', 'error');
     } finally {
       btn.disabled = false; spin.classList.add('d-none');
     }
-  });
+    return ok;
+  }
 
   // =========================================================================
   //  Übersichtstabelle
@@ -1043,6 +1097,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     }
 
     if (edit) {
+      if (!(await losenSchutz())) return;
       if (typ === 'mitglied') {
         setTyp('mitglied');
         $('#mitgliedSelect').val(entityId).trigger('change.select2');
@@ -1411,6 +1466,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     await Promise.all([loadMitglieder(), loadWaffen(), loadSpezialpreise(), loadStiche()]);
     if (!state.stiche.length) msvToast('Keine aktiven Stiche definiert', 'warning');
     setTyp('mitglied');
+    losenMerken();
+    losenJahr = $id('yearSelect').value;
     await loadUebersicht();
     initPrint(); // Druck-Resolver + Status-Callback registrieren (QZ verbindet MsvDruck im Hintergrund)
   })();

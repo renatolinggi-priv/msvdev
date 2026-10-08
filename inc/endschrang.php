@@ -16,6 +16,8 @@ $page_specific_css = '
 .es-abs-liste a { font-weight: 600; white-space: nowrap; }
 .es-abs-doks { display: flex; flex-direction: column; gap: 8px; min-width: 16rem; }
 .es-abs-doks-titel { font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-text-2); }
+.es-abs-hinweis { margin: 0; font-size: .8rem; color: var(--ui-warn-fg); }
+.es-abs-zeit { margin-left: 8px; font-size: .75rem; color: var(--ui-text-2); white-space: nowrap; }
 .es-abs-doks .es-abs-dok { flex: 1 1 auto; display: flex; align-items: center; gap: 6px; text-align: left; }
 .es-abs-doks .es-abs-dok small { margin-left: auto; font-weight: 500; opacity: .8; }
 @media (max-width: 767.98px) { .es-abs-inhalt { grid-template-columns: 1fr; } .es-abs-doks { min-width: 0; } }
@@ -60,6 +62,7 @@ include 'header.inc.php';
                     <div class="ui-tab-kopf">
                         <span class="ui-tab-titel" id="absTitel"><i class="bi bi-flag me-1" aria-hidden="true"></i>Absenden vorbereiten <button type="button" class="btn-help" data-help="endschrang.absenden" aria-label="Hilfe"></button></span>
                         <span class="es-abs-stand" id="absStand" aria-live="polite"></span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="absNeu" aria-label="Prüfliste neu prüfen" data-tooltip="Neu prüfen"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
                     </div>
                     <div class="es-abs-inhalt">
                         <ul class="es-abs-liste" id="absListe" aria-label="Prüfliste">
@@ -69,6 +72,7 @@ include 'header.inc.php';
                         </ul>
                         <div class="es-abs-doks" role="group" aria-labelledby="absDoksTitel">
                             <div class="es-abs-doks-titel" id="absDoksTitel">Fürs Absenden</div>
+                            <p class="es-abs-hinweis" id="absDokHinweis" hidden></p>
                             <div class="d-flex gap-1">
                                 <button type="button" class="btn btn-sm btn-outline-info abs-btn es-abs-dok"><i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i><span>Absendenbuch</span><small>Word</small></button>
                             </div>
@@ -243,13 +247,7 @@ $(document).ready(function () {
     // Bearbeiten-Button → endresultate.php mit Jahresauswahl
     $('#redirect-btn').on('click', function(e) {
         e.preventDefault();
-        const $btn = $(this);
-        const year = $('#yearSelect').val();
-        $btn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Lade...');
-        setTimeout(() => {
-            window.location.href = 'endresultate.php?year=' + encodeURIComponent(year);
-        }, 300);
+        window.location.href = 'endresultate.php?year=' + encodeURIComponent($('#yearSelect').val());
     });
 
     // Automatischer Download
@@ -323,7 +321,6 @@ $(document).ready(function () {
                 '<span>' + buttonText + '</span>' +
                 '<i class="bi bi-hourglass-split ms-auto"></i>'
             );
-            msvToast(documentName + ' wird generiert...', 'info');
             $.ajax({
                 url: 'endschrang/' + scriptName,
                 type: 'GET',
@@ -337,11 +334,11 @@ $(document).ready(function () {
 
                         // PDF direkt herunterladen
                         const fullPath = 'endschrang/' + response.pdf_link;
-                        const filename = documentName + '_' + selectedYear + '.pdf';
+                        const filename = 'Endschiessen_' + documentName.replace(/\s+/g, '_') + '_' + selectedYear + '.pdf';
                         downloadFile(fullPath, filename);
-                        msvToast(documentName + ' erfolgreich erstellt und heruntergeladen', 'success');
+                        msvToast(documentName + ' ' + selectedYear + ' heruntergeladen', 'success');
                     } else if (response.error) {
-                        msvToast('Fehler: ' + response.error, 'error');
+                        msvToast(response.error, 'error');
                     }
                 },
                 error: function (xhr, status, error) {
@@ -373,7 +370,6 @@ $(document).ready(function () {
             '<span>' + buttonText + '</span>' +
             '<i class="bi bi-hourglass-split ms-auto"></i>'
         );
-        msvToast('Absendenbuch wird generiert...', 'info');
         $.ajax({
             url: 'absenden/generate_absendenbuch.php',
             type: 'GET',
@@ -388,9 +384,9 @@ $(document).ready(function () {
                     const fullPath = 'absenden/' + response.word_link;
                     const filename = response.display_name; // Hier den Namen vom Server verwenden
                     downloadFile(fullPath, filename);
-                    msvToast('Absendenbuch erfolgreich erstellt und heruntergeladen', 'success');
+                    msvToast('Absendenbuch ' + selectedYear + ' heruntergeladen', 'success');
                 } else {
-                    msvToast('Fehler beim Generieren des Absendenbuchs', 'error');
+                    msvToast(response.message || response.error || 'Das Absendenbuch konnte nicht erstellt werden', 'error');
                 }
             },
             error: function (xhr, status, error) {
@@ -407,17 +403,17 @@ $(document).ready(function () {
     });
 
     // Alle PDF-Buttons registrieren mit beschreibenden Namen
-    generatePDF('ges-btn', 'generate_pdf_gesamt.php', 'EndschiessenGesamtrangliste');
-    generatePDF('zwi-btn', 'generate_pdf_zwischenrangliste.php', 'EndschiessenZwischenrangliste');
-    generatePDF('end-btn', 'generate_pdf_end.php', 'EndschiessenEndstich');
-    generatePDF('sch-btn', 'generate_pdf_schwini.php', 'EndschiessenSchwini');
-    generatePDF('kun-btn', 'generate_pdf_kunst.php', 'EndschiessenKunst');
-    generatePDF('glu-btn', 'generate_pdf_glueck.php', 'EndschiessenGlück');
-    generatePDF('zab-btn', 'generate_pdf_zabig.php', 'EndschiessenZabig');
-    generatePDF('dif-btn', 'generate_pdf_diff.php', 'EndschiessenDifferenzler');
-    generatePDF('anm-btn', 'generate_pdf_anmeldung.php', 'EndschiessenAnmeldungen');
-    generatePDF('part-btn', 'generate_pdf_partner.php', 'EndschiessenPartner Rangliste');
-    generatePDF('sieer-btn', 'generate_pdf_sieer.php', 'EndschiessenSie und Er');
+    generatePDF('ges-btn', 'generate_pdf_gesamt.php', 'Gesamtrangliste');
+    generatePDF('zwi-btn', 'generate_pdf_zwischenrangliste.php', 'Zwischenrangliste');
+    generatePDF('end-btn', 'generate_pdf_end.php', 'Rangliste Endstich');
+    generatePDF('sch-btn', 'generate_pdf_schwini.php', 'Rangliste Schwini');
+    generatePDF('kun-btn', 'generate_pdf_kunst.php', 'Rangliste Kunst');
+    generatePDF('glu-btn', 'generate_pdf_glueck.php', 'Rangliste Glück');
+    generatePDF('zab-btn', 'generate_pdf_zabig.php', 'Rangliste Zabig');
+    generatePDF('dif-btn', 'generate_pdf_diff.php', 'Rangliste Differenzler');
+    generatePDF('anm-btn', 'generate_pdf_anmeldung.php', 'Anmeldungen');
+    generatePDF('part-btn', 'generate_pdf_partner.php', 'Rangliste Partner');
+    generatePDF('sieer-btn', 'generate_pdf_sieer.php', 'Rangliste Sie und Er');
 
     // ===== Absenden vorbereiten: Prüfliste =====
     // Offene Stiche und Partnerinnen zählt sie aus den Ladern der Erfassungsseiten (dieselbe Regel wie dort:
@@ -464,11 +460,16 @@ $(document).ready(function () {
             : w.vergeben >= w.total ? absZeile('wanderpreise', 'ok', 'Alle ' + w.total + ' Wanderpreise sind für ' + jahr + ' vergeben.')
             : absZeile('wanderpreise', 'offen', w.vergeben + ' von ' + w.total + ' Wanderpreisen sind für ' + jahr + ' vergeben.', { href: 'wanderpreise.php', text: 'Zu den Wanderpreisen' }));
         const offen = z.filter(s => s === 'offen').length, fehler = z.filter(s => s === 'fehler').length;
-        $('#absStand').html(offen
+        const zeit = new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+        $('#absStand').html((offen
             ? '<span class="ui-status offen"><span class="ui-punkt"></span>' + (offen === 1 ? '1 Punkt offen' : offen + ' Punkte offen') + '</span>'
             : fehler ? '<span class="ui-status"><span class="ui-punkt"></span>nicht alles geprüft</span>'
-            : '<span class="ui-status ok"><span class="ui-punkt"></span>bereit fürs Absenden</span>');
+            : '<span class="ui-status ok"><span class="ui-punkt"></span>bereit fürs Absenden</span>')
+            + '<span class="es-abs-zeit">Stand ' + zeit + '</span>');
+        // Die Dokumente lassen sich auch mit offenen Punkten erstellen; der Hinweis sagt, dass sie den heutigen Stand zeigen
+        $('#absDokHinweis').text(offen ? 'Noch ' + (offen === 1 ? '1 Punkt' : offen + ' Punkte') + ' offen – die Dokumente zeigen den heutigen Stand.' : '').prop('hidden', !offen);
     }
+    $('#absNeu').on('click', absendenPruefen);
     // Beim Ändern des Jahres im Dropdown beide Tabellen und die Prüfliste neu laden
     $('#yearSelect').on('change', function () {
         loadenda();
@@ -541,7 +542,6 @@ $(document).on('click', '.absbk-btn', async function () {
     const btn = this, orig = btn.innerHTML, jahr = document.getElementById('yearSelect').value;
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-arrow-repeat rotating-icon me-1"></i><span>Broschüre</span>';
-    msvToast('Broschüre wird erstellt…', 'info');
     try {
         const r = await fetch('absenden/generate_absendenbuch_pdf.php?year=' + encodeURIComponent(jahr), { credentials: 'same-origin' });
         let j = null;
