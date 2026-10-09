@@ -678,7 +678,7 @@ if (isAdmin()) {
     <!-- Portal Navigation -->
     <nav class="navbar navbar-expand-lg fixed-top portal-navbar">
         <div class="container-fluid" style="max-width: 1200px;">
-            <a class="navbar-brand" href="dashboard.php">
+            <a class="navbar-brand" href="<?php echo isJungschuetze() ? 'jsk_dashboard.php' : 'dashboard.php'; ?>">
                 <?php if ($portal_fahne): ?>
                 <img src="../icons/icon-96x96.png" alt="" width="36" height="36" class="portal-brand-logo"><span>MSV Wilen</span><span class="fahne-vorschau">Vorschau</span>
                 <?php else: ?>

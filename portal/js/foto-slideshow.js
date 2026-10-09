@@ -8,6 +8,8 @@
  * Bedienung: Pfeile/Wischen = Bild wechseln, Leertaste/Play = Pause, Tippen auf das Bild
  * blendet die Steuerung aus/ein, Tempo-Knopf wechselt das Intervall (wird im Browser gemerkt),
  * F/Vollbild-Knopf (nur wo der Browser Vollbild fuer Elemente kann – iPhone nicht).
+ * Tastatur: Fokus startet auf «Schliessen», Tab bleibt im Player, Esc schliesst und gibt den
+ * Fokus an das Element zurueck, das die Slideshow geoeffnet hat.
  */
 (function () {
   'use strict';
@@ -25,6 +27,7 @@
   var els = null;
   var errorStreak = 0;   // aufeinanderfolgende Ladefehler -> Endlosschleife verhindern
   var showToken = 0;     // verwirft veraltete onload-Callbacks bei schnellem Weiterklicken
+  var ausloeser = null;  // Element, das die Slideshow geoeffnet hat (Fokus-Rueckkehr)
 
   function loadInterval() {
     try {
@@ -52,22 +55,26 @@
     if (els) return els;
     var ov = document.createElement('div');
     ov.className = 'ss-overlay';
+    // Dialog fuer Screenreader; der Fokus wird in start()/close() gefuehrt
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', 'Slideshow');
     ov.innerHTML =
       '<div class="ss-stage"><div class="ss-layer ss-l0"></div><div class="ss-layer ss-l1"></div></div>' +
       '<div class="ss-top">' +
         '<div class="ss-day"><span></span></div>' +
         '<div class="ss-topright"><span class="ss-counter"></span>' +
-          '<button class="ss-btn ss-close" aria-label="Schliessen">&times;</button></div>' +
+          '<button type="button" class="ss-btn ss-close" aria-label="Schliessen"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>' +
       '</div>' +
       '<div class="ss-daytitle"><span></span></div>' +
       '<div class="ss-caption"><span></span></div>' +
       '<div class="ss-controls">' +
-        '<button class="ss-btn ss-add" aria-label="Fotos hinzufügen" style="display:none"><i class="bi bi-camera-fill"></i></button>' +
-        '<button class="ss-btn ss-prev" aria-label="Zurück"><i class="bi bi-chevron-left"></i></button>' +
-        '<button class="ss-btn ss-btn-lg ss-play" aria-label="Play/Pause"><i class="bi bi-pause-fill"></i></button>' +
-        '<button class="ss-btn ss-next" aria-label="Weiter"><i class="bi bi-chevron-right"></i></button>' +
-        '<button class="ss-btn ss-speed" aria-label="Tempo"><span></span></button>' +
-        '<button class="ss-btn ss-full" aria-label="Vollbild"><i class="bi bi-arrows-fullscreen"></i></button>' +
+        '<button type="button" class="ss-btn ss-add" aria-label="Fotos hinzufügen" style="display:none"><i class="bi bi-camera-fill" aria-hidden="true"></i></button>' +
+        '<button type="button" class="ss-btn ss-prev" aria-label="Zurück"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>' +
+        '<button type="button" class="ss-btn ss-btn-lg ss-play" aria-label="Pause"><i class="bi bi-pause-fill" aria-hidden="true"></i></button>' +
+        '<button type="button" class="ss-btn ss-next" aria-label="Weiter"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>' +
+        '<button type="button" class="ss-btn ss-speed" aria-label="Tempo"><span></span></button>' +
+        '<button type="button" class="ss-btn ss-full" aria-label="Vollbild"><i class="bi bi-arrows-fullscreen" aria-hidden="true"></i></button>' +
       '</div>';
     document.body.appendChild(ov);
 
@@ -80,6 +87,7 @@
       caption: ov.querySelector('.ss-caption'),
       captionSpan: ov.querySelector('.ss-caption span'),
       counter: ov.querySelector('.ss-counter'),
+      close: ov.querySelector('.ss-close'),
       day: ov.querySelector('.ss-day span'),
       play: ov.querySelector('.ss-play'),
       speed: ov.querySelector('.ss-speed'),
@@ -121,7 +129,10 @@
   function toggleUi() { els.ov.classList.toggle('ss-ui-hidden'); }
   function showUi() { els.ov.classList.remove('ss-ui-hidden'); }
 
-  function updateSpeedLabel() { els.speedLabel.textContent = (interval / 1000) + ' s'; }
+  function updateSpeedLabel() {
+    els.speedLabel.textContent = (interval / 1000) + ' s';
+    els.speed.setAttribute('aria-label', 'Tempo: ' + (interval / 1000) + ' s');
+  }
   function cycleSpeed() {
     var i = INTERVALS.indexOf(interval);
     interval = INTERVALS[(i + 1) % INTERVALS.length];
@@ -198,9 +209,14 @@
 
   function manual(dir) { show(idx + dir, true); startTimer(); }
 
+  // Play-Knopf: Symbol und Beschriftung folgen dem Zustand
+  function playKnopf() {
+    els.play.innerHTML = playing ? '<i class="bi bi-pause-fill" aria-hidden="true"></i>' : '<i class="bi bi-play-fill" aria-hidden="true"></i>';
+    els.play.setAttribute('aria-label', playing ? 'Pause' : 'Abspielen');
+  }
   function setPlaying(on) {
     playing = on;
-    els.play.innerHTML = playing ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
+    playKnopf();
     startTimer();
   }
   function togglePlay() { setPlaying(!playing); }
@@ -222,6 +238,19 @@
     else if (e.key === 'f' || e.key === 'F') { if (fullscreenAvailable()) toggleFull(); }
     else if (e.key === 'h' || e.key === 'H') toggleUi();
     else if (e.key === '+' ) cycleSpeed();
+    else if (e.key === 'Tab') fokusHalten(e);
+  }
+
+  // Tab/Umschalt+Tab kreisen in der sichtbaren Steuerung (aria-modal); Steuerung dabei einblenden
+  function fokusHalten(e) {
+    showUi();
+    var knoepfe = Array.prototype.filter.call(els.ov.querySelectorAll('button'), function (b) {
+      return !b.disabled && b.getClientRects().length > 0;
+    });
+    if (!knoepfe.length) return;
+    var pos = knoepfe.indexOf(document.activeElement);
+    if (e.shiftKey && pos <= 0) { e.preventDefault(); knoepfe[knoepfe.length - 1].focus(); }
+    else if (!e.shiftKey && (pos === -1 || pos === knoepfe.length - 1)) { e.preventDefault(); knoepfe[0].focus(); }
   }
 
   function close() {
@@ -235,6 +264,10 @@
     els.ov.classList.remove('show');
     showUi();
     document.body.style.overflow = '';
+    // Fokus zurueck zum Ausloeser (Foto, Cover oder Slideshow-Knopf)
+    var zurueck = ausloeser;
+    ausloeser = null;
+    if (zurueck && document.body.contains(zurueck)) { try { zurueck.focus({ preventScroll: true }); } catch (err) {} }
     // Speicher freigeben
     setTimeout(function () {
       if (els) { els.layers[0].style.backgroundImage = ''; els.layers[1].style.backgroundImage = ''; }
@@ -269,7 +302,7 @@
     els.caption.classList.remove('show');
     showUi();
     playing = true;
-    els.play.innerHTML = '<i class="bi bi-pause-fill"></i>';
+    playKnopf();
 
     // Optionaler „Fotos hinzufügen"-Knopf (vom Aufrufer übergeben -> pausiert + Callback)
     var addCb = opts && opts.onAddPhotos;
@@ -281,9 +314,15 @@
       } : null;
     }
 
+    // Ausloeser nur beim Oeffnen merken, nicht bei einem erneuten start() im offenen Player
+    if (!els.ov.classList.contains('show')) {
+      var aktiv = document.activeElement;
+      ausloeser = (aktiv && aktiv !== document.body && !els.ov.contains(aktiv)) ? aktiv : null;
+    }
     els.ov.classList.add('show');
     document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', onKey);
+    els.close.focus();
 
     show(startIdx, false);
     startTimer();

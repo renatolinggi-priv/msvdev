@@ -91,7 +91,7 @@
   box-shadow: 0 1px 5px rgba(0,0,0,.45);
 }
 .ss-btn:hover { background: rgba(0,0,0,.72); transform: scale(1.06); }
-.ss-btn.ss-close { width: 40px; height: 40px; font-size: 1.3rem; }
+.ss-btn.ss-close { width: 40px; height: 40px; font-size: 1rem; }   /* Symbol bi-x-lg (vorher Zeichen ×) */
 .ss-btn-lg { width: 54px; height: 54px; font-size: 1.4rem; background: rgba(0,0,0,.62); }
 
 @media (max-width: 575.98px) {

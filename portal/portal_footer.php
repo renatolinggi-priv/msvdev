@@ -52,7 +52,7 @@ if (!empty($_SESSION['user_id'])) {
         <div id="docViewerHeader" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; background:#1a1a2e; color:white; flex-shrink:0; min-height:52px; user-select:none;">
 
             <!-- SCHLIESSEN-BUTTON: Prominent, grosses Touch-Target -->
-            <button onclick="closePortalDoc()" id="docViewerCloseBtn" style="
+            <button type="button" onclick="closePortalDoc()" id="docViewerCloseBtn" style="
                 background: rgba(255,255,255,0.12);
                 border: none;
                 color: white;
@@ -75,28 +75,28 @@ if (!empty($_SESSION['user_id'])) {
 
             <!-- PDF-Seitennavigation (nur bei PDF sichtbar) -->
             <div id="pdfNavControls" style="display:none; align-items:center; gap:0.2rem; font-size:0.8rem; flex-shrink:0;">
-                <button onclick="pdfGoPage(-1)" style="background:transparent; border:none; color:white; font-size:1.3rem; padding:0.2rem 0.5rem; line-height:1; min-width:36px; min-height:36px;" aria-label="Vorherige Seite">
+                <button type="button" onclick="pdfGoPage(-1)" style="background:transparent; border:none; color:white; font-size:1.3rem; padding:0.2rem 0.5rem; line-height:1; min-width:36px; min-height:36px;" aria-label="Vorherige Seite">
                     <i class="bi bi-chevron-left"></i>
                 </button>
                 <span id="pdfPageInfo" style="min-width:50px; text-align:center; font-variant-numeric:tabular-nums;">1 / 1</span>
-                <button onclick="pdfGoPage(1)" style="background:transparent; border:none; color:white; font-size:1.3rem; padding:0.2rem 0.5rem; line-height:1; min-width:36px; min-height:36px;" aria-label="Nächste Seite">
+                <button type="button" onclick="pdfGoPage(1)" style="background:transparent; border:none; color:white; font-size:1.3rem; padding:0.2rem 0.5rem; line-height:1; min-width:36px; min-height:36px;" aria-label="Nächste Seite">
                     <i class="bi bi-chevron-right"></i>
                 </button>
             </div>
 
             <!-- PDF Zoom Controls (nur bei PDF sichtbar) -->
             <div id="pdfZoomControls" style="display:none; align-items:center; gap:0.1rem; flex-shrink:0;">
-                <button onclick="pdfZoom(-1)" style="background:transparent; border:none; color:white; font-size:1.1rem; padding:0.2rem 0.4rem; min-width:36px; min-height:36px;" aria-label="Verkleinern">
+                <button type="button" onclick="pdfZoom(-1)" style="background:transparent; border:none; color:white; font-size:1.1rem; padding:0.2rem 0.4rem; min-width:36px; min-height:36px;" aria-label="Verkleinern">
                     <i class="bi bi-dash-lg"></i>
                 </button>
-                <button onclick="pdfZoom(0)" style="background:transparent; border:none; color:white; font-size:0.7rem; padding:0.2rem 0.3rem; min-width:36px; min-height:36px;" aria-label="Zoom zurücksetzen" id="pdfZoomLevel">100%</button>
-                <button onclick="pdfZoom(1)" style="background:transparent; border:none; color:white; font-size:1.1rem; padding:0.2rem 0.4rem; min-width:36px; min-height:36px;" aria-label="Vergrössern">
+                <button type="button" onclick="pdfZoom(0)" style="background:transparent; border:none; color:white; font-size:0.7rem; padding:0.2rem 0.3rem; min-width:36px; min-height:36px;" aria-label="Zoom zurücksetzen" id="pdfZoomLevel">100%</button>
+                <button type="button" onclick="pdfZoom(1)" style="background:transparent; border:none; color:white; font-size:1.1rem; padding:0.2rem 0.4rem; min-width:36px; min-height:36px;" aria-label="Vergrössern">
                     <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
 
             <!-- Download / Share Button -->
-            <button id="docViewerDownload" onclick="downloadPortalDoc(currentDocId, currentDocFilename, this)" style="
+            <button type="button" id="docViewerDownload" onclick="downloadPortalDoc(currentDocId, currentDocFilename, this)" style="
                 background: transparent;
                 border: none;
                 color: white;
@@ -158,6 +158,7 @@ if (!empty($_SESSION['user_id'])) {
 
     var currentDocId = 0;
     var currentDocFilename = '';
+    var docViewerAusloeser = null;   // Element, das den Viewer geöffnet hat (Fokus-Rückkehr)
 
     // PDF.js State
     var pdfDoc = null;
@@ -190,6 +191,11 @@ if (!empty($_SESSION['user_id'])) {
         title.textContent = filename;
         overlay.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+
+        // Auslöser merken und Fokus auf «Schliessen» (Tastatur, Screenreader)
+        var aktiv = document.activeElement;
+        if (aktiv && aktiv !== document.body && !overlay.contains(aktiv)) docViewerAusloeser = aktiv;
+        document.getElementById('docViewerCloseBtn').focus();
 
         // Reset
         frame.style.display    = 'none';
@@ -319,6 +325,11 @@ if (!empty($_SESSION['user_id'])) {
 
         overlay.style.display = 'none';
         document.body.style.overflow = '';
+
+        // Fokus zurück zum Auslöser
+        var zurueck = docViewerAusloeser;
+        docViewerAusloeser = null;
+        if (zurueck && document.body.contains(zurueck)) { try { zurueck.focus({ preventScroll: true }); } catch (err) {} }
     }
 
     // ================================================================
@@ -371,6 +382,26 @@ if (!empty($_SESSION['user_id'])) {
     })();
 
     // ================================================================
+    // Fokus im Viewer halten (aria-modal)
+    // ================================================================
+    // Sichtbare, bedienbare Elemente im Viewer (für die Tab-Schleife)
+    function docViewerFokusziele() {
+        var ov = document.getElementById('docViewerOverlay');
+        return Array.prototype.filter.call(ov.querySelectorAll('button, [href], iframe, [tabindex]:not([tabindex="-1"])'), function (el) {
+            return !el.disabled && el.getClientRects().length > 0;
+        });
+    }
+    // Fokus, der den offenen Viewer verlässt (z.B. per Tab aus dem iframe heraus), zurückholen.
+    // Bootstrap-Modals und SweetAlert haben eine eigene Fokusführung: nicht dagegen arbeiten.
+    document.addEventListener('focusin', function (e) {
+        var ov = document.getElementById('docViewerOverlay');
+        if (!ov || ov.style.display === 'none' || ov.contains(e.target)) return;
+        if (e.target.closest && e.target.closest('.modal, .swal2-container')) return;
+        var zu = document.getElementById('docViewerCloseBtn');
+        if (zu) zu.focus();
+    });
+
+    // ================================================================
     // Keyboard Navigation
     // ================================================================
     document.addEventListener('keydown', function(e) {
@@ -378,6 +409,15 @@ if (!empty($_SESSION['user_id'])) {
         if (!overlay || overlay.style.display === 'none') return;
 
         if (e.key === 'Escape') { closePortalDoc(); }
+        // Tab bleibt im Viewer: vom letzten zum ersten Knopf und umgekehrt
+        if (e.key === 'Tab') {
+            var ziele = docViewerFokusziele();
+            if (!ziele.length) return;
+            var pos = ziele.indexOf(document.activeElement);
+            if (e.shiftKey && pos <= 0) { e.preventDefault(); ziele[ziele.length - 1].focus(); }
+            else if (!e.shiftKey && (pos === -1 || pos === ziele.length - 1)) { e.preventDefault(); ziele[0].focus(); }
+            return;
+        }
         if (!pdfDoc) return;
         if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); pdfGoPage(-1); }
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  { e.preventDefault(); pdfGoPage(1); }

@@ -73,11 +73,14 @@ $statusBadge = function ($s) {
 .jsk-card { border:1px solid #e2e8f0; border-radius:0.85rem; padding:1rem 1.25rem; margin-bottom:0.75rem; background:#fff; }
 .jsk-card .datum { font-size:1.1rem; font-weight:700; }
 .jsk-empty { text-align:center; color:#94a3b8; padding:2rem 1rem; }
+/* Vorschau «Vereinsfahne»: «Meine Anmeldungen» ist jetzt h2.h5 (portal-fahne-seiten.css zielt noch auf h5) */
+.portal-fahne .jsk-hero ~ .d-flex > h2.h5 { font-size:1rem; font-weight:700; color:var(--tinte); }
+.portal-fahne .jsk-hero ~ .d-flex > h2.h5 .bi { color:var(--tinte-2); }
 </style>
 
 <div class="container py-4" style="max-width:760px;">
   <div class="jsk-hero">
-    <h4 class="mb-1"><i class="bi bi-bullseye me-2"></i>Hallo <?= htmlspecialchars($portal_user_name) ?>!</h4>
+    <h1 class="h4 mb-1"><i class="bi bi-bullseye me-2" aria-hidden="true"></i>Hallo <?= htmlspecialchars($portal_user_name) ?>!</h1>
     <p class="mb-0">Melde dich für ein Schiesstraining an – ein Vereinsmitglied kümmert sich dann um dich.</p>
   </div>
 
@@ -110,7 +113,7 @@ $statusBadge = function ($s) {
     <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert. Bitte später erneut versuchen.</div>
   <?php else: ?>
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Meine Anmeldungen</h5>
+      <h2 class="h5 mb-0"><i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Meine Anmeldungen</h2>
       <a href="jsk_termin.php" class="btn btn-club btn-sm"><i class="bi bi-plus-lg me-1"></i>Termin melden</a>
     </div>
 
@@ -146,7 +149,7 @@ $statusBadge = function ($s) {
               <?php endif; ?>
             </div>
             <?php if ($kannAbsagen): ?>
-              <button class="btn btn-outline-danger btn-sm js-cancel" data-id="<?= (int) $a['id'] ?>"><i class="bi bi-x-lg"></i></button>
+              <button type="button" class="btn btn-outline-danger btn-sm js-cancel" data-id="<?= (int) $a['id'] ?>" aria-label="Anmeldung vom <?= $datumDe ?> absagen"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
             <?php endif; ?>
           </div>
         </div>

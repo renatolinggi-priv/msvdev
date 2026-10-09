@@ -23,7 +23,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 <link rel="stylesheet" href="css/foto-slideshow.css?v=<?php echo @filemtime(__DIR__ . '/css/foto-slideshow.css'); ?>">
 <style>
 .an-head { display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap; margin-bottom:0.85rem; }
-.an-title { font-weight:700; font-size:1.15rem; line-height:1.2; }
+.an-title { margin:0; font-weight:700; font-size:1.15rem; line-height:1.2; }  /* h1: Browser-Abstand und -Grösse neutralisiert */
 .an-sub { font-size:0.82rem; color:#64748b; margin-top:0.2rem; }
 .an-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
 .an-desc { font-size:0.88rem; color:#475569; background:#f8fafc; border:1px solid #eef2f7; border-radius:0.6rem; padding:0.6rem 0.8rem; margin-bottom:1rem; }
@@ -42,6 +42,11 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 .an-photo .an-titel { right:32px; }
 .an-photo:hover .an-del, .an-photo:hover .an-titel, .an-photo.mine .an-del, .an-photo.mine .an-titel { display:flex; }
 @media (hover:hover) { .an-photo.mine .an-del, .an-photo.mine .an-titel { display:none; } .an-photo.mine:hover .an-del, .an-photo.mine:hover .an-titel { display:flex; } }
+/* Foto-Knopf (Tastatur): sieht aus wie bisher das Bild allein */
+.an-photo .an-open { display:block; width:100%; height:100%; padding:0; margin:0; border:0; border-radius:0; background:none; color:inherit; font:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; }
+.an-photo .an-open:focus-visible { outline:3px solid var(--primary-color); outline-offset:-3px; }
+/* Tastatur: Stift und Papierkorb erscheinen, sobald die Kachel den Tastaturfokus hat (sonst nicht erreichbar) */
+.an-photo:has(:focus-visible) .an-del, .an-photo:has(:focus-visible) .an-titel { display:flex; }
 .an-photo .an-cap { position:absolute; left:0; right:0; bottom:0; padding:0.2rem 0.35rem; font-size:0.62rem; line-height:1.25; color:#fff; background:linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; }
 .an-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
 .an-uploadbar { display:none; align-items:center; gap:0.6rem; background:#eef6ff; border:1px solid #cfe2ff; border-radius:0.6rem; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.85rem; }
@@ -68,7 +73,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 
   <div class="an-head">
     <div>
-      <div class="an-title"><i class="bi bi-images me-2"></i><?= htmlspecialchars($g['anlass_name']) ?></div>
+      <h1 class="an-title"><i class="bi bi-images me-2" aria-hidden="true"></i><?= htmlspecialchars($g['anlass_name']) ?></h1>
       <div class="an-sub">
         <i class="bi bi-calendar3 me-1"></i><?= (int) $g['jahr'] ?>
         <?php if (!empty($g['Adresse'])): ?> &middot; <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($g['Adresse']) ?><?php endif; ?>
@@ -78,7 +83,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
       <?php if (!empty($g['programm_dateipfad'])): ?>
         <a class="btn btn-sm btn-outline-club" href="../api/foto_serve.php?programm=<?= (int) $g['id'] ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i>Programm</a>
       <?php endif; ?>
-      <button class="btn btn-sm btn-club" id="anSlideshowBtn" disabled><i class="bi bi-play-circle me-1"></i>Slideshow</button>
+      <button type="button" class="btn btn-sm btn-club" id="anSlideshowBtn" disabled><i class="bi bi-play-circle me-1"></i>Slideshow</button>
       <input type="file" id="anFileInput" accept="<?= htmlspecialchars(fotoAcceptAttribut()) ?>" multiple hidden>
     </div>
   </div>
@@ -90,15 +95,15 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   <div class="an-uploadbar" id="anUploadBar">
     <div class="spinner-border spinner-border-sm text-primary"></div>
     <span id="anUploadStatus">Lade hoch …</span>
-    <span class="text-muted ms-auto" style="font-size:0.78rem;"><i class="bi bi-phone me-1"></i>Bildschirm bleibt an – bitte App offen lassen</span>
+    <span class="text-muted ms-auto" style="font-size:0.8rem;"><i class="bi bi-phone me-1"></i>Bildschirm bleibt an – bitte App offen lassen</span>
   </div>
 
   <div id="anLoading" class="text-center py-4"><div class="spinner-border text-primary"></div></div>
   <div id="anContent"></div>
 </div>
 
-<button class="an-upload-fab d-none" id="anUploadFab" aria-label="Fotos hochladen" title="Fotos hochladen">
-  <i class="bi bi-camera-fill"></i>
+<button type="button" class="an-upload-fab d-none" id="anUploadFab" aria-label="Fotos hochladen" title="Fotos hochladen">
+  <i class="bi bi-camera-fill" aria-hidden="true"></i>
 </button>
 
 <script>
@@ -153,10 +158,10 @@ window.MSV_GALLERY = {
         html += '<div class="an-photo' + (f.status === 'rejected' ? ' is-rejected' : '') + (f.mine ? ' mine' : '') + '" data-gi="' + gi + '" data-fi="' + fi + '">' +
           (f.status === 'pending' ? '<span class="an-pending">wartet auf Freigabe</span>' : '') +
           (f.status === 'rejected' ? '<span class="an-rejected">abgelehnt</span>' : '') +
-          '<img src="' + f.thumb_url + '" loading="lazy" alt="">' +
+          '<button type="button" class="an-open" aria-label="Foto öffnen"><img src="' + f.thumb_url + '" loading="lazy" alt=""></button>' +
           (f.titel ? '<span class="an-cap">' + esc(f.titel) + '</span>' : '') +
-          (f.mine ? '<button class="an-titel" data-id="' + f.id + '" data-titel="' + esc(f.titel || '') + '" title="Bildunterschrift" aria-label="Bildunterschrift"><i class="bi bi-pencil"></i></button>' +
-                    '<button class="an-del" data-id="' + f.id + '" title="Löschen" aria-label="Löschen"><i class="bi bi-trash"></i></button>' : '') +
+          (f.mine ? '<button type="button" class="an-titel" data-id="' + f.id + '" data-titel="' + esc(f.titel || '') + '" title="Bildunterschrift" aria-label="Bildunterschrift bearbeiten"><i class="bi bi-pencil" aria-hidden="true"></i></button>' +
+                    '<button type="button" class="an-del" data-id="' + f.id + '" title="Löschen" aria-label="Foto löschen"><i class="bi bi-trash" aria-hidden="true"></i></button>' : '') +
           '</div>';
       });
       html += '</div></div>';
@@ -164,7 +169,7 @@ window.MSV_GALLERY = {
     $('#anContent').html(html);
   }
 
-  // Foto anklicken -> Slideshow ab diesem Bild (nur freigegebene Bilder in der Show)
+  // Foto anklicken (oder .an-open per Tastatur) -> Slideshow ab diesem Bild (nur freigegebene Bilder in der Show)
   $('#anContent').on('click', '.an-photo', function (e) {
     if ($(e.target).closest('.an-del, .an-titel').length) return;
     var gi = +$(this).data('gi'), fi = +$(this).data('fi');

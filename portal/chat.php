@@ -55,14 +55,21 @@ $csrf_token = ensureCsrfToken();
   <?php return; ?>
 <?php endif; ?>
 
+<style>
+/* Seitentitel als h1, sieht aus wie das bisherige <strong> */
+.chat-list-head > h1 { margin:0; font-size:inherit; font-weight:700; line-height:inherit; color:inherit; }
+/* Tastatur: Fokus auf einer Chat-Zeile sichtbar, nicht vom Scrollbereich abgeschnitten */
+.chat-row:focus-visible { outline:2px solid var(--primary-color); outline-offset:-2px; }
+</style>
+
 <div class="container-fluid py-3 chat-page" style="max-width:1100px;">
   <div class="chat-wrap" id="chatWrap">
     <!-- Linke Spalte: Unterhaltungen -->
     <div class="chat-list">
       <div class="chat-list-head">
-        <strong><i class="bi bi-chat-dots me-1"></i>Jungschützenchat</strong>
+        <h1><i class="bi bi-chat-dots me-1" aria-hidden="true"></i>Jungschützenchat</h1>
         <?php if ($istLeiter): ?>
-          <button class="btn btn-sm btn-outline-club" id="btnNewChat" data-tooltip="Jungschütze anschreiben"><i class="bi bi-pencil-square"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-club" id="btnNewChat" data-tooltip="Jungschütze anschreiben" aria-label="Jungschütze anschreiben"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
         <?php endif; ?>
       </div>
       <div class="chat-search"><i class="bi bi-search"></i><input type="search" id="chatSearch" placeholder="Chats durchsuchen" aria-label="Chats durchsuchen" autocomplete="off"></div>
@@ -128,11 +135,11 @@ $csrf_token = ensureCsrfToken();
 
 <!-- Modal: Neuer Chat (Leiter) -->
 <?php if ($istLeiter): ?>
-<div class="modal fade" id="newChatModal" tabindex="-1">
+<div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatTitel">
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h6 class="modal-title">Jungschütze anschreiben</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h6 class="modal-title" id="newChatTitel">Jungschütze anschreiben</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button></div>
       <div class="modal-body"><div id="newChatList" class="list-group"><div class="text-muted">Lädt…</div></div></div>
     </div>
   </div>
@@ -178,14 +185,18 @@ $csrf_token = ensureCsrfToken();
     let html = '';
     rows.forEach(c => {
       const av = c.readonly ? ' readonly' : (c.typ==='leiter' ? ' leiter' : '');
-      html += '<div class="chat-row' + (c.id===activeConv?' active':'') + '" data-id="' + c.id + '" data-typ="' + esc(c.typ) + '">'
+      html += '<div class="chat-row' + (c.id===activeConv?' active':'') + '" data-id="' + c.id + '" data-typ="' + esc(c.typ) + '" role="button" tabindex="0">'
         + '<div class="chat-av' + av + '">' + esc(c.initials) + '</div>'
         + '<div class="chat-row-body"><div class="chat-row-name"><span>' + esc(c.name) + '</span>'
         + '<span class="chat-row-time' + (c.unread>0 ? ' unread' : '') + '">' + fmtListTime(c.last_at) + '</span></div>'
         + '<div class="d-flex align-items-center"><span class="chat-row-last flex-grow-1">' + esc(c.last_text || '') + '</span>'
         + (c.unread>0 ? '<span class="chat-badge">' + c.unread + '</span>' : '') + '</div></div></div>';
     });
+    // Tastaturfokus über das Neuzeichnen retten (der Poller zeichnet die Liste regelmässig neu)
+    const fokus = document.activeElement;
+    const fokusId = (fokus && fokus.classList && fokus.classList.contains('chat-row')) ? fokus.dataset.id : null;
     sc.innerHTML = html;
+    if (fokusId) { const r = sc.querySelector('.chat-row[data-id="' + fokusId + '"]'); if (r) r.focus({ preventScroll: true }); }
   }
   document.getElementById('chatSearch').addEventListener('input', () => renderList(convCache));
 
@@ -420,6 +431,8 @@ $csrf_token = ensureCsrfToken();
 
   // ---------- Events ----------
   $(document).on('click', '.chat-row', function(){ openConv(parseInt(this.dataset.id,10)); });
+  // Tastatur: Enter und Leertaste wie ein Klick (derselbe Handler)
+  $(document).on('keydown', '.chat-row', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } });
   document.getElementById('chatForm').addEventListener('submit', e => { e.preventDefault(); sendMsg(); });
   const ta = document.getElementById('chatText');
   ta.addEventListener('keydown', e => { if (e.key==='Enter' && !e.shiftKey && !TOUCH) { e.preventDefault(); sendMsg(); } });

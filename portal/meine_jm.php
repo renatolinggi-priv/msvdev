@@ -267,7 +267,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
         <p class="subtitle mb-0"><?php echo $selected_year; ?> &mdash; Alle Schiessen mit Streicher-Berechnung</p>
     </div>
     <form method="get" class="d-flex align-items-center gap-2 ms-auto">
-        <select name="year" class="form-select form-select-sm year-select" onchange="this.form.submit()">
+        <select name="year" class="form-select form-select-sm year-select" aria-label="Jahr" onchange="this.form.submit()">
             <?php foreach ($available_years as $y): ?>
             <option value="<?php echo $y; ?>" <?php echo $y == $selected_year ? 'selected' : ''; ?>><?php echo $y; ?></option>
             <?php endforeach; ?>
@@ -347,7 +347,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
         $detail_id   = 'jmr-' . $s['_idx'];
     ?>
     <div class="jm-row<?php echo ($is_future && !$geschossen) ? ' future' : ''; ?>"<?php if ($has_details): ?> onclick="toggleJmDetail('<?php echo $detail_id; ?>', this)" style="cursor:pointer"<?php endif; ?>>
-        <div class="jm-row-main">
+        <div class="jm-row-main"<?php if ($has_details): ?> role="button" tabindex="0" aria-expanded="false" aria-controls="<?php echo $detail_id; ?>"<?php endif; ?>>
             <div class="jm-row-info">
                 <div class="jm-row-title">
                     <span><?php echo htmlspecialchars($s['Bezeichnung']); ?></span>
@@ -377,23 +377,23 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
                     }
                 } elseif ($geschossen) {
                     if ($is_teilnahme) {
-                        echo '<span class="jm-row-points ' . ($is_streicher ? 'streicher' : 'ok') . '" title="Teilgenommen"><i class="bi bi-check-circle-fill"></i></span>';
+                        echo '<span class="jm-row-points ' . ($is_streicher ? 'streicher' : 'ok') . '" title="Teilgenommen"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span class="visually-hidden">Teilgenommen' . ($is_streicher ? ', Streicher' : '') . '</span></span>';
                     } else {
                         $disp = ($punkte_norm == (int)$punkte_norm) ? (string)(int)$punkte_norm : number_format($punkte_norm, 2, '.', '');
                         echo '<span class="jm-row-points ' . ($is_streicher ? 'streicher' : '') . '" title="Bereinigte Punkte">' . $disp . '</span>';
-                        echo '<i class="bi bi-check-circle-fill jm-row-status ok" title="Geschossen"></i>';
+                        echo '<i class="bi bi-check-circle-fill jm-row-status ok" title="Geschossen" aria-hidden="true"></i><span class="visually-hidden">Geschossen' . ($is_streicher ? ', Streicher' : '') . '</span>';
                     }
                 } elseif ($is_future) {
                     // noch nicht stattgefunden (oder Datum unbekannt) -> KEIN rotes X
-                    echo '<span class="jm-row-points muted">&ndash;</span>';
-                    echo '<i class="bi bi-clock jm-row-status future" title="Noch nicht stattgefunden"></i>';
+                    echo '<span class="jm-row-points muted" aria-hidden="true">&ndash;</span>';
+                    echo '<i class="bi bi-clock jm-row-status future" title="Noch nicht stattgefunden" aria-hidden="true"></i><span class="visually-hidden">Noch nicht stattgefunden</span>';
                 } else {
                     // vergangen und nicht absolviert
-                    echo '<span class="jm-row-points no">&ndash;</span>';
-                    echo '<i class="bi bi-x-circle-fill jm-row-status no" title="Nicht teilgenommen"></i>';
+                    echo '<span class="jm-row-points no" aria-hidden="true">&ndash;</span>';
+                    echo '<i class="bi bi-x-circle-fill jm-row-status no" title="Nicht teilgenommen" aria-hidden="true"></i><span class="visually-hidden">Nicht teilgenommen</span>';
                 }
                 ?>
-                <?php if ($has_details): ?><span class="jm-expand-btn"><i class="bi bi-chevron-down"></i></span><?php endif; ?>
+                <?php if ($has_details): ?><span class="jm-expand-btn" aria-hidden="true"><i class="bi bi-chevron-down"></i></span><?php endif; ?>
             </div>
         </div>
         <?php if ($has_details): ?>
@@ -437,6 +437,9 @@ function toggleJmDetail(id, triggerEl) {
     if (!el) return;
     const isOpen = el.style.display !== 'none' && el.style.display !== '';
     el.style.display = isOpen ? 'none' : (el.tagName === 'TR' ? 'table-row' : 'block');
+    // Zustand für Screenreader am Zeilen-Knopf (.jm-row-main) nachführen
+    const knopf = triggerEl.querySelector?.('[aria-controls="' + id + '"]');
+    if (knopf) knopf.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
     // Chevron rotieren
     const chevron = triggerEl.classList.contains('jm-expand-btn')
         ? triggerEl
@@ -446,6 +449,16 @@ function toggleJmDetail(id, triggerEl) {
     const meta = triggerEl.querySelector?.('.card-meta');
     if (meta) meta.style.display = isOpen ? '' : 'none';
 }
+
+// Tastatur: Enter und Leertaste auf dem Zeilen-Knopf wirken wie ein Klick auf die Zeile.
+// Nur wenn der Knopf selbst den Fokus hat, nie aus einem Feld der Details heraus.
+document.querySelectorAll('.jm-row-main[aria-controls]').forEach(function (k) {
+    k.addEventListener('keydown', function (e) {
+        if ((e.key !== 'Enter' && e.key !== ' ') || e.target !== k) return;
+        e.preventDefault();
+        k.click();
+    });
+});
 
 (function() {
     'use strict';

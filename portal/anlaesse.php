@@ -41,6 +41,9 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 .ga-card { position:relative; border:1px solid #e2e8f0; border-radius:0.6rem; overflow:hidden; background:#fff; transition:transform .15s, box-shadow .15s; cursor:pointer; }
 .ga-card:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,0.10); }
 .ga-cover { position:relative; aspect-ratio:4/3; background:#eef2f7; display:flex; align-items:center; justify-content:center; }
+/* Cover ist ein Knopf (Tastatur): Knopf-Vorgaben neutralisieren, Optik wie bisher */
+button.ga-cover { width:100%; padding:0; margin:0; border:0; border-radius:0; color:inherit; font:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; }
+.ga-cover:focus-visible { outline:3px solid var(--primary-color); outline-offset:-3px; }
 .ga-cover img { width:100%; height:100%; object-fit:cover; object-position:center center; display:block; }
 .ga-cover .ph { color:#cbd5e1; font-size:2rem; }
 .ga-play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
@@ -64,7 +67,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   <div class="ga-uploadbar" id="gaUploadBar">
     <div class="spinner-border spinner-border-sm text-primary"></div>
     <span id="gaUploadStatus">Lade hoch …</span>
-    <span class="text-muted ms-auto" style="font-size:0.78rem;"><i class="bi bi-phone me-1"></i>Bildschirm bleibt an – bitte App offen lassen</span>
+    <span class="text-muted ms-auto" style="font-size:0.8rem;"><i class="bi bi-phone me-1"></i>Bildschirm bleibt an – bitte App offen lassen</span>
   </div>
 
   <?php if (!$galerien): ?>
@@ -78,14 +81,14 @@ $csrf = $_SESSION['csrf_token'] ?? '';
     <div class="ga-grid">
       <?php foreach ($galerien as $g): ?>
         <div class="ga-card" data-id="<?= (int) $g['id'] ?>">
-          <div class="ga-cover">
+          <button type="button" class="ga-cover" aria-label="Slideshow «<?= htmlspecialchars($g['name']) ?>» starten">
             <?php if (!empty($g['cover_id'])): ?>
               <img src="../api/foto_serve.php?id=<?= (int) $g['cover_id'] ?>&size=medium" loading="lazy" alt="">
-              <span class="ga-play"><i class="bi bi-play-fill"></i></span>
+              <span class="ga-play" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
             <?php else: ?>
-              <i class="bi bi-camera ph"></i>
+              <i class="bi bi-camera ph" aria-hidden="true"></i>
             <?php endif; ?>
-          </div>
+          </button>
           <div class="ga-body">
             <div class="ga-name"><?= htmlspecialchars($g['name']) ?></div>
             <div class="ga-meta"><i class="bi bi-calendar3 me-1"></i><?= (int) $g['jahr'] ?> &middot; <?= (int) $g['total'] ?> Foto<?= ((int) $g['total'] === 1 ? '' : 's') ?></div>
@@ -109,7 +112,8 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   var CSRF = window.MSV_FOTO.csrf;
   var uploadGid = null;
 
-  // Cover/Karte antippen -> Slideshow (ausser auf dem „Hinzufügen"-Knopf)
+  // Cover/Karte antippen -> Slideshow (ausser auf dem „Hinzufügen"-Knopf).
+  // Das Cover ist ein Knopf: Enter/Leertaste lösen dort einen Klick aus, der hierher aufsteigt.
   $('.ga-card').on('click', function (e) {
     if ($(e.target).closest('.ga-add').length) return;
     startSlideshow($(this).data('id'));

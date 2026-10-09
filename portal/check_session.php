@@ -16,11 +16,14 @@ if (isset($_SESSION['user_id'])) {
     header('Location: ' . $goto);
     exit;
 }
+
+// Vorschau «Vereinsfahne»: das Cookie setzt portal_header.php nur für Admins
+$portal_fahne = (($_COOKIE['msv_portal_fahne'] ?? '') === '1');
 ?><!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH"<?php echo $portal_fahne ? ' class="portal-fahne"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSV Wilen</title>
     <style>
         body {
@@ -47,11 +50,14 @@ if (isset($_SESSION['user_id'])) {
         }
         .loader p { font-size: 0.9rem; margin: 0; }
     </style>
+    <?php if ($portal_fahne): ?>
+    <link rel="stylesheet" href="../css/portal-fahne.css?v=<?php echo @filemtime(__DIR__ . '/../css/portal-fahne.css') ?: '1'; ?>">
+    <?php endif; ?>
 </head>
 <body>
 <div class="loader">
-    <img src="../icons/icon-32x32.png" alt="MSV">
-    <p>Bitte warten…</p>
+    <img src="../icons/icon-96x96.png" alt="" width="48" height="48">
+    <p role="status">Bitte warten…</p>
 </div>
 <script>
 (function () {
