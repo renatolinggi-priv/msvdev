@@ -45,6 +45,8 @@ foreach ($termine as $t) {
 $vergangene = array_reverse($vergangene); // neueste vergangene zuerst
 
 include 'portal_header.php';
+// Vorschau «Vereinsfahne»: Termine nach Tag (JM-Anlässe, Vereinstermine, eigene Einsätze)
+if (!empty($portal_fahne)) { include __DIR__ . '/termine_fahne.inc.php'; include 'portal_footer.php'; return; }
 ?>
 
 <style>

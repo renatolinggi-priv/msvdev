@@ -88,7 +88,7 @@ if (isAdmin()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="<?php echo $portal_fahne ? '#c00000' : '#3b5998'; ?>">
+    <meta name="theme-color" content="<?php echo $portal_fahne ? '#ffffff' : '#3b5998'; ?>">
     <title><?php echo htmlspecialchars($portal_page_title); ?> - MSV Wilen</title>
 
     <!-- iOS PWA: Remember-Token in localStorage sichern (persistiert nach App-Neustart) -->
@@ -964,26 +964,6 @@ if (isAdmin()) {
         });
     });
     </script>
-
-    <?php if ($portal_fahne):
-        // Untere Navigation (nur Vorschau «Vereinsfahne», am Handy): vier Hauptbereiche in der Daumenzone
-        $__unten = isJungschuetze()
-            ? [['jsk_dashboard.php', 'bi-house', 'Start', ['jsk_dashboard.php']],
-               ['chat.php', 'bi-chat-dots', 'Chat', ['chat.php']],
-               ['jsk_termine.php', 'bi-calendar3', 'Termine', ['jsk_termine.php', 'jsk_termin.php']],
-               ['jsk_resultate.php', 'bi-trophy', 'Resultate', ['jsk_resultate.php']]]
-            : [['dashboard.php', 'bi-house', 'Start', ['dashboard.php']],
-               ['meine_jm.php', 'bi-trophy', 'Resultate', ['meine_jm.php', 'meine_heim.php', 'meine_kanti.php', 'meine_wanderpreise.php']],
-               ['termine.php', 'bi-calendar3', 'Termine', ['termine.php']],
-               ['anlaesse.php', 'bi-images', 'Fotos', ['anlaesse.php', 'anlass.php']]];
-    ?>
-    <nav class="fahne-unten" aria-label="Hauptbereiche">
-        <?php foreach ($__unten as [$__href, $__icon, $__text, $__seiten]):
-            $__cur = ($current_page === $__href) ? ' aria-current="page"' : (in_array($current_page, $__seiten, true) ? ' aria-current="true"' : ''); ?>
-        <a href="<?php echo $__href; ?>"<?php echo $__cur; ?>><i class="bi <?php echo $__icon; ?>" aria-hidden="true"></i><span><?php echo $__text; ?></span></a>
-        <?php endforeach; ?>
-    </nav>
-    <?php endif; ?>
 
     <!-- Portal Content -->
     <div class="portal-content">

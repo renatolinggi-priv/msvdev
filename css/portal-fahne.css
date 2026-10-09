@@ -4,11 +4,11 @@
    (<html class="portal-fahne">). Alle Regeln haengen an html.portal-fahne:
    ohne Vorschau aendert diese Datei nichts.
 
-   Welt: Die Fahne aus dem Vereinslogo traegt den Kopf jeder Seite (Fahnenrot),
-   darunter ruhiger Inhalt. Koenigsblau aus der Zielscheibe fuer Knoepfe, Links
-   und Daten, Loewengold nur fuer Ehre (Kranz, Rang, Wanderpreis, naechster Anlass).
-   Flach: keine Schatten, keine Verlaeufe. Grundschrift 16px, nichts unter 12px,
-   Text >= 4.5:1, Tippflaechen >= 44px.
+   3. Fassung (nach Mockups 09.10.2026): weisser Kopf mit dem Logo in voller
+   Farbe und einem schmalen roten Fahnenband; Rot nur als Akzent. Kompakt wie im
+   Admin-Bereich: Grundschrift 15px, nichts unter 12px, Text >= 4.5:1.
+   Koenigsblau aus der Zielscheibe fuer Knoepfe, Links und Daten, Loewengold nur
+   fuer Ehre und «als Naechstes». Startseite Variante B, Termine nach Tag.
 
    Vereins-Schicht (--verein*, --akzent*, --ehre*): pro Verein austauschbar
    (PRODUCT.md Prinzip 5). Die alten Portal-Tokens (--primary-color, --p-text …)
@@ -35,7 +35,7 @@
 /* ---- Tokens -------------------------------------------------------- */
 html.portal-fahne {
     /* Vereins-Schicht (aus dem Logo gemessen) */
-    --verein:        #c00000;   /* Fahnenrot, weisse Schrift 6.5:1 */
+    --verein:        #c00000;   /* Fahnenrot, 6.5:1 auf Weiss */
     --verein-tief:   #9a0000;
     --verein-hell:   #fbeaea;
     --akzent:        #0052a0;   /* Koenigsblau der Zielscheibe, 7.7:1 auf Weiss */
@@ -56,8 +56,6 @@ html.portal-fahne {
     --gefahr-hell:   #fef3f2;
     --gut:           #1f7a4d;
     --gut-hell:      #e8f4ed;
-    --warn-hell:     #fff4d6;
-    --warn-text:     #7a4a00;
     --radius:        10px;
     --radius-sm:     8px;
 
@@ -92,7 +90,7 @@ html.portal-fahne {
     --bs-focus-ring-color: rgba(0, 82, 160, .5);
     --bs-body-font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-    font-size: 16px;
+    font-size: 15px;
     caret-color: var(--akzent);
     accent-color: var(--akzent);
     scrollbar-color: var(--linie-stark) transparent;
@@ -107,66 +105,49 @@ html.portal-fahne body {
 .portal-fahne ::selection { background: #cfe0f3; color: var(--tinte); }
 .portal-fahne a { text-underline-offset: .18em; }
 .portal-fahne :focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
-.portal-fahne .portal-navbar :focus-visible,
-.portal-fahne .offcanvas-header :focus-visible { outline-color: #fff; }
 .portal-fahne .text-muted { color: var(--tinte-2) !important; }
 
-/* ---- Fahnenkopf ---------------------------------------------------- */
+/* ---- Kopf: weiss, Logo in voller Farbe, rotes Fahnenband ----------- */
 .portal-fahne .portal-navbar {
-    background: var(--verein);
-    border-bottom: 0;
+    background: var(--flaeche);
+    border-bottom: 4px solid var(--verein);
     box-shadow: none;
-    --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 .portal-fahne .portal-navbar .navbar-brand {
     display: inline-flex;
     align-items: center;
-    gap: .6rem;
-    color: #fff;
+    gap: .55rem;
+    color: var(--tinte);
     font-weight: 700;
-    font-size: 1.05rem;
-    letter-spacing: .06em;
+    font-size: .95rem;
+    letter-spacing: .05em;
     text-transform: uppercase;
 }
-.portal-fahne .portal-brand-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    background: #fff;
-    vertical-align: middle;
-}
+.portal-fahne .portal-brand-logo { width: 32px; height: 32px; vertical-align: middle; }
 .portal-fahne .fahne-vorschau {
-    font-size: .75rem;
+    font-size: .8rem;
     font-weight: 600;
-    letter-spacing: .02em;
+    letter-spacing: 0;
     text-transform: none;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, .7);
+    color: var(--verein);
+    border: 1px solid var(--verein);
     border-radius: 999px;
-    padding: .05rem .5rem;
+    padding: 0 .45rem;
 }
-.portal-fahne .portal-navbar .nav-link {
-    color: #fff;
-    font-size: .875rem;
-}
+.portal-fahne .portal-navbar .nav-link { color: var(--tinte); font-size: .875rem; }
 .portal-fahne .portal-navbar .nav-link:hover,
-.portal-fahne .portal-navbar .nav-link:focus { background: rgba(255, 255, 255, .14); color: #fff; }
-.portal-fahne .portal-navbar .nav-link.active { background: rgba(255, 255, 255, .16); color: #fff; font-weight: 700; }
-.portal-fahne .portal-navbar .nav-link.active::after { background: #fff; height: 3px; bottom: -3px; }
-.portal-fahne .portal-user-badge {
-    background: rgba(255, 255, 255, .16);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, .55);
-}
+.portal-fahne .portal-navbar .nav-link:focus { background: var(--grund); color: var(--tinte); }
+.portal-fahne .portal-navbar .nav-link.active { background: transparent; color: var(--verein); font-weight: 700; }
+.portal-fahne .portal-navbar .nav-link.active::after { background: var(--verein); height: 3px; }
+.portal-fahne .portal-user-badge { background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); }
 .portal-fahne .portal-bell .portal-bell-btn,
-.portal-fahne .portal-bell .portal-bell-btn:hover { color: #fff; min-width: 44px; min-height: 44px; }
-.portal-fahne .portal-bell .bn-badge { background-color: #fff !important; color: var(--verein-tief); font-weight: 700; }
-.portal-fahne .navbar-toggler { color: #fff; }
-.portal-fahne .navbar-toggler:focus { box-shadow: none; }
+.portal-fahne .portal-bell .portal-bell-btn:hover { color: var(--tinte); }
+.portal-fahne .portal-bell .portal-bell-btn i { font-size: 1.35rem; }
+.portal-fahne .portal-bell .bn-badge { background-color: var(--verein) !important; color: #fff; }
 
 /* Aufklappmenues (Desktop-Navigation, Benutzermenue, Glocke) */
 .portal-fahne .portal-navbar .dropdown-menu { border-color: var(--linie); box-shadow: 0 6px 18px rgba(26, 26, 36, .12); }
-.portal-fahne .portal-navbar .dropdown-item { color: var(--tinte); font-size: .9375rem; padding-top: .55rem; padding-bottom: .55rem; }
+.portal-fahne .portal-navbar .dropdown-item { color: var(--tinte); }
 .portal-fahne .portal-navbar .dropdown-item i { color: var(--tinte-2); }
 .portal-fahne .portal-navbar .dropdown-item:hover,
 .portal-fahne .portal-navbar .dropdown-item:focus { background: var(--akzent-hell); color: var(--akzent-tief); }
@@ -175,73 +156,68 @@ html.portal-fahne body {
 .portal-fahne .portal-navbar .dropdown-item.active i,
 .portal-fahne .portal-navbar .dropdown-item:hover i { color: var(--akzent); }
 .portal-fahne .bn-dd-head { color: var(--tinte); border-color: var(--linie); }
-.portal-fahne .bn-dd-head .bn-mark-all { color: var(--akzent); font-size: .8125rem; padding: .5rem .25rem; }
+.portal-fahne .bn-dd-head .bn-mark-all { color: var(--akzent); font-size: .8125rem; padding: .4rem .25rem; }
 .portal-fahne .bn-item { border-color: var(--linie); }
 .portal-fahne .bn-item.unread { background: var(--akzent-hell); }
 .portal-fahne .bn-item-icon { color: var(--akzent); }
-.portal-fahne .bn-item-title { color: var(--tinte); font-size: .9rem; }
+.portal-fahne .bn-item-title { color: var(--tinte); }
 .portal-fahne .bn-item-text { color: var(--tinte-2); font-size: .8125rem; }
-.portal-fahne .bn-item-time { color: var(--tinte-2); font-size: .75rem; }
-.portal-fahne .bn-dd-foot { color: var(--akzent); border-color: var(--linie); font-size: .875rem; }
+.portal-fahne .bn-item-time { color: var(--tinte-2); font-size: .8rem; }
+.portal-fahne .bn-dd-foot { color: var(--akzent); border-color: var(--linie); }
 
 /* ---- Menue am Handy ------------------------------------------------ */
 @media (max-width: 991.98px) {
     .portal-fahne .offcanvas-nav { box-shadow: 4px 0 18px rgba(26, 26, 36, .18); }
-    .portal-fahne .offcanvas-header { background: var(--verein); border-bottom: 0; min-height: var(--nav-height); }
+    .portal-fahne .offcanvas-header { background: var(--flaeche); border-bottom: 4px solid var(--verein); }
     .portal-fahne .offcanvas-title {
         display: flex;
         align-items: center;
-        gap: .6rem;
-        color: #fff;
+        gap: .55rem;
+        color: var(--tinte);
         font-size: .95rem;
         font-weight: 700;
         letter-spacing: .05em;
         text-transform: uppercase;
     }
-    .portal-fahne .offcanvas-title .portal-brand-logo { width: 32px; height: 32px; margin: 0 !important; }
-    .portal-fahne .offcanvas-close { color: #fff; min-width: 44px; min-height: 44px; }
-    .portal-fahne .offcanvas-close:active { background: rgba(255, 255, 255, .16); }
+    .portal-fahne .offcanvas-title .portal-brand-logo { width: 30px; height: 30px; }
+    .portal-fahne .offcanvas-close { color: var(--tinte); min-width: 44px; min-height: 44px; }
     .portal-fahne .mobile-nav-item { border-color: var(--linie); }
-    .portal-fahne .mobile-nav-link { color: var(--tinte); font-size: 1rem; min-height: 48px; padding: .6rem 1rem; }
-    .portal-fahne .mobile-nav-link i { color: var(--tinte-2); font-size: 1.05rem; width: 24px; margin-right: .75rem; }
+    .portal-fahne .mobile-nav-link { color: var(--tinte); min-height: 44px; }
+    .portal-fahne .mobile-nav-link i { color: var(--tinte-2); }
     .portal-fahne .mobile-nav-link:active { background: var(--grund); }
     .portal-fahne .mobile-nav-link.active {
         background: var(--akzent-hell);
         color: var(--akzent-tief);
         font-weight: 700;
         border-left: 0;
-        padding-left: 1rem;
+        padding-left: 16px;
     }
     .portal-fahne .mobile-nav-link.active i { color: var(--akzent); }
     .portal-fahne .mobile-nav-link.text-danger,
     .portal-fahne .mobile-nav-link.text-danger i { color: var(--gefahr) !important; }
     .portal-fahne .mobile-user-section { background: var(--grund); border-top: 1px solid var(--linie); }
     .portal-fahne .mobile-user-icon { background: var(--verein); }
-    .portal-fahne .mobile-user-name { color: var(--tinte); font-size: 1rem; }
-    .portal-fahne .mobile-user-role { color: var(--tinte-2); font-size: .8125rem; }
+    .portal-fahne .mobile-user-name { color: var(--tinte); }
+    .portal-fahne .mobile-user-role { color: var(--tinte-2); }
 }
 
-/* ---- Seitentitel --------------------------------------------------- */
-.portal-fahne .portal-page-header h1 {
-    font-size: 1.375rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    text-transform: uppercase;
-    color: var(--tinte);
-    -webkit-hyphens: auto;
-    hyphens: auto;
-    overflow-wrap: break-word;
-}
+/* ---- Seitentitel und Weg zurueck ----------------------------------- */
+.portal-fahne .portal-page-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--tinte); }
 @media (max-width: 767.98px) {
-    .portal-fahne .portal-page-header h1 { font-size: 1.25rem; }
+    .portal-fahne .portal-page-header h1 { font-size: 1.15rem; }
 }
-.portal-fahne .portal-back-link { color: var(--tinte-2); font-size: .9375rem; min-height: 44px; }
-.portal-fahne .portal-back-link:hover { color: var(--akzent); }
-@media (max-width: 767.98px) {
-    .portal-fahne .portal-back-fab { background: var(--akzent); box-shadow: 0 3px 10px rgba(26, 26, 36, .25); }
-    .portal-fahne .portal-back-fab:hover,
-    .portal-fahne .portal-back-fab:active { background: var(--akzent-tief); transform: none; }
+/* «‹ Start» oben statt rundem Home-Knopf, auch am Handy */
+.portal-fahne .portal-back-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    margin-bottom: .35rem;
+    color: var(--akzent);
+    font-weight: 600;
+    font-size: .9375rem;
 }
+.portal-fahne .portal-back-link:hover { color: var(--akzent-tief); }
+.portal-fahne .portal-back-fab { display: none !important; }
 
 /* ---- Flaechen: flach, feiner Rand, kein Anheben -------------------- */
 .portal-fahne .p-card,
@@ -262,23 +238,13 @@ html.portal-fahne body {
     box-shadow: none;
     border-color: var(--linie-stark);
 }
-.portal-fahne .p-section-title {
-    font-size: .8125rem;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--tinte);
-}
-.portal-fahne .p-eyebrow { font-size: .75rem; color: var(--tinte-2); }
-.portal-fahne .p-info-row { font-size: .9375rem; }
-.portal-fahne .p-list-title { font-size: 1rem; }
-.portal-fahne .p-list-meta { font-size: .8125rem; color: var(--tinte-2); }
-
-/* Zahlen gross, Beschriftung klein und lesbar */
+.portal-fahne .p-section-title { color: var(--tinte); }
+.portal-fahne .p-field > label,
+.portal-fahne .p-eyebrow,
 .portal-fahne .p-stat .label,
-.portal-fahne .result-summary .rs-lbl { font-size: .75rem; color: var(--tinte-2); }
-.portal-fahne .result-summary .rs-num { font-size: 1.5rem; }
-.portal-fahne .passe-row .passe-score { font-size: 1.25rem; }
-.portal-fahne .passe-row .passe-status { font-size: .75rem; color: var(--tinte-2); }
+.portal-fahne .result-summary .rs-lbl,
+.portal-fahne .passe-row .passe-status { font-size: .8rem; color: var(--tinte-2); }
+.portal-fahne .p-list-meta { font-size: .8125rem; color: var(--tinte-2); }
 .portal-fahne .p-stat.total { border-top: 1px solid var(--linie); background: var(--akzent-hell); }
 .portal-fahne .p-stat.total .number,
 .portal-fahne .result-summary .rs-item.total .rs-num { color: var(--akzent-tief); }
@@ -346,15 +312,16 @@ html.portal-fahne body {
     --bs-btn-hover-bg: #ececea; --bs-btn-hover-color: var(--tinte); --bs-btn-hover-border-color: var(--linie-stark);
     --bs-btn-active-bg: #e2e2dd; --bs-btn-active-color: var(--tinte); --bs-btn-active-border-color: var(--linie-stark);
 }
+/* Knopfbeschriftungen bleiben auf einer Zeile, Knopfreihen umbrechen stattdessen */
+.portal-fahne .btn { white-space: nowrap; }
 
-/* Tippflaechen am Touchscreen: mindestens 44px */
+/* Tippflaechen am Touchscreen: kompakt, aber gut treffbar */
 @media (pointer: coarse) {
     .portal-fahne .btn,
     .portal-fahne .p-btn,
     .portal-fahne .form-select-sm,
-    .portal-fahne .form-control-sm { min-height: 44px; }
-    .portal-fahne .btn-sm { padding-left: .75rem; padding-right: .75rem; font-size: .875rem; }
-    .portal-fahne .btn:has(> .bi:only-child) { min-width: 44px; }
+    .portal-fahne .form-control-sm { min-height: 38px; }
+    .portal-fahne .btn:has(> .bi:only-child) { min-width: 38px; }
 }
 
 /* ---- Formulare: 16px gegen iOS-Zoom, deutlicher Rand und Fokus ----- */
@@ -363,7 +330,6 @@ html.portal-fahne body {
 .portal-fahne .p-field input,
 .portal-fahne .p-field select,
 .portal-fahne .p-field textarea { border-color: var(--linie-stark); color: var(--tinte); }
-.portal-fahne .p-field > label,
 .portal-fahne .form-label { font-size: .8125rem; color: var(--tinte-2); font-weight: 600; }
 .portal-fahne input:focus,
 .portal-fahne select:focus,
@@ -384,240 +350,235 @@ html.portal-fahne body {
 /* ---- Fusszeile ----------------------------------------------------- */
 html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .8125rem !important; }
 
-/* ---- Untere Navigation (Handy): vier Hauptbereiche in der Daumenzone - */
-.portal-fahne .fahne-unten { display: none; }
-@media (max-width: 991.98px) {
-    .portal-fahne .fahne-unten {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 1030;
-        background: var(--flaeche);
-        border-top: 1px solid var(--linie);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    .portal-fahne .fahne-unten a {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: .15rem;
-        min-height: 3.5rem;
-        color: var(--tinte-2);
-        text-decoration: none;
-        font-size: .75rem;
-        font-weight: 600;
-    }
-    .portal-fahne .fahne-unten a .bi { font-size: 1.35rem; line-height: 1; }
-    .portal-fahne .fahne-unten a[aria-current] { color: var(--verein); }
-    .portal-fahne .fahne-unten a[aria-current]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 25%;
-        right: 25%;
-        height: 3px;
-        border-radius: 0 0 3px 3px;
-        background: var(--verein);
-    }
-    html.portal-fahne body { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
-    .portal-fahne .portal-back-fab { display: none !important; }
-    .portal-fahne body.page-chat .fahne-unten { display: none; }
-    html.portal-fahne body.page-chat { padding-bottom: 0; }
-    .portal-fahne .an-upload-fab { bottom: calc(1.25rem + 3.5rem + env(safe-area-inset-bottom, 0px)) !important; }
+/* ---- Startseite (Variante B): Begruessung, Jetzt-Liste, Kacheln ----- */
+.portal-fahne .fs-gruss {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .8rem;
 }
-
-/* ---- Startseite: Fahnenband mit Begruessung und Saisonband ---------- */
-.portal-fahne .fs-fahne {
-    background: var(--verein);
-    color: #fff;
-    margin: calc(-1 * var(--p-4)) calc(-1 * var(--p-4)) var(--p-4);
-    padding: 1rem 1rem 1.25rem;
-}
-@media (min-width: 768px) {
-    .portal-fahne .fs-fahne { margin-left: 0; margin-right: 0; border-radius: 0 0 var(--radius) var(--radius); }
-}
-@media (max-width: 767.98px) {
-    .portal-fahne .fs-fahne { margin: calc(-1 * var(--p-3)) -.7rem var(--p-4); padding: .85rem .85rem 1.1rem; }
-}
-.portal-fahne .fs-gruss { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.portal-fahne .fs-gruss h1 { margin: 0; font-size: 1.625rem; font-weight: 700; letter-spacing: -.01em; color: #fff; }
-.portal-fahne .fs-heute { margin: .15rem 0 0; font-size: .9375rem; color: rgba(255, 255, 255, .92); }
-.portal-fahne .fs-barcode {
+.portal-fahne .fs-gruss h1 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .fs-gruss p { margin: .1rem 0 0; font-size: .875rem; color: var(--tinte-2); }
+.portal-fahne .fs-lizenz {
     flex-shrink: 0;
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--akzent);
+    border-radius: var(--radius-sm);
+    background: var(--flaeche);
+    color: var(--akzent);
+    font-size: 1.15rem;
+}
+.portal-fahne .fs-lizenz:hover { background: var(--akzent); color: #fff; }
+
+.portal-fahne .fs-jetzt {
+    list-style: none;
+    margin: 0 0 .8rem;
+    padding: 0;
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.portal-fahne .fs-jetzt:empty { display: none; }
+.portal-fahne .fs-jetzt li + li { border-top: 1px solid var(--linie); }
+.portal-fahne .fs-jetzt a {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .6rem .8rem;
+    color: var(--tinte);
+    text-decoration: none;
+}
+.portal-fahne .fs-jetzt a:hover { background: var(--grund); color: var(--tinte); }
+.portal-fahne .fs-chip {
+    flex-shrink: 0;
+    align-self: flex-start;
+    width: 2.65rem;
+    height: 2.65rem;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: .1rem;
-    min-width: 3.5rem;
-    min-height: 3.5rem;
-    padding: .35rem .5rem;
-    border: 1px solid rgba(255, 255, 255, .75);
+    line-height: 1;
     border-radius: var(--radius-sm);
-    background: transparent;
-    color: #fff;
-    font-size: .75rem;
-    font-weight: 600;
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+    font-size: 1.1rem;
 }
-.portal-fahne .fs-barcode .bi { font-size: 1.5rem; line-height: 1; }
-.portal-fahne .fs-barcode:hover { background: rgba(255, 255, 255, .12); }
-
-.portal-fahne .fs-saison { margin-top: 1rem; }
-.portal-fahne .fs-saison-kopf { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.portal-fahne .fs-saison-kopf h2 { margin: 0; font-size: .875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
-.portal-fahne .fs-saison-kopf a {
-    display: inline-flex;
-    align-items: center;
-    gap: .2rem;
-    min-height: 44px;
-    color: #fff;
-    font-size: .875rem;
-    font-weight: 600;
-    text-decoration: none;
-}
-.portal-fahne .fs-saison-kopf a:hover { text-decoration: underline; }
-/* Saisonband: ein Feld pro JM-Anlass, echte Reihenfolge und Anzahl */
-.portal-fahne .fs-band {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr));
-    gap: .375rem;
-}
-.portal-fahne .fs-feld {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: .25rem;
-    min-height: 4.25rem;
-    padding: .4rem .45rem;
-    border: 1.5px solid rgba(255, 255, 255, .8);
-    border-radius: var(--radius-sm);
-    color: #fff;
-}
-.portal-fahne .fs-feld.is-geschossen { background: #fff; border-color: #fff; color: var(--verein-tief); }
-.portal-fahne .fs-feld.is-vorbei { border-style: dashed; border-color: rgba(255, 255, 255, .6); }
-.portal-fahne .fs-feld.is-naechster { border: 3px solid var(--ehre); padding: .3rem .35rem; }
-.portal-fahne .fs-wert { font-size: 1.125rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.portal-fahne .fs-feld.is-offen .fs-wert,
-.portal-fahne .fs-feld.is-vorbei .fs-wert { font-size: 1rem; }
-.portal-fahne .fs-feld.is-streicher .fs-wert { text-decoration: line-through; text-decoration-thickness: 2px; }
-.portal-fahne .fs-name {
-    font-size: .75rem;
-    line-height: 1.2;
+.portal-fahne .fs-chip b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.portal-fahne .fs-chip small { margin-top: 2px; font-size: .75rem; font-weight: 600; }
+.portal-fahne .fs-chip.is-gold { background: var(--ehre); color: var(--ehre-text); }
+.portal-fahne .fs-txt { flex: 1; min-width: 0; }
+.portal-fahne .fs-txt strong { display: block; font-size: .9375rem; line-height: 1.3; }
+.portal-fahne .fs-wann { display: block; font-size: .8125rem; color: var(--tinte-2); line-height: 1.35; }
+.portal-fahne .fs-unter {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    margin-top: .1rem;
+    font-size: .8125rem;
+    color: var(--tinte);
+    line-height: 1.35;
+}
+.portal-fahne .fs-naehe {
+    display: inline-block;
+    margin-left: .25rem;
+    padding: 0 .45rem;
+    border-radius: 999px;
+    background: var(--ehre-hell);
+    color: var(--ehre-text);
+    font-size: .75rem;
+    font-weight: 700;
+    vertical-align: 1px;
+}
+.portal-fahne .fs-pfeil { flex-shrink: 0; color: var(--tinte-2); }
+
+.portal-fahne .fs-bereiche-titel { margin: .2rem 0 .45rem; font-size: .8125rem; font-weight: 700; color: var(--tinte-2); }
+.portal-fahne .fs-kacheln {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: .45rem;
+    margin-bottom: 1rem;
+}
+.portal-fahne .fs-kacheln a {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    min-width: 0;
+    min-height: 2.9rem;
+    padding: .45rem .6rem;
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+    color: var(--tinte);
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+}
+.portal-fahne .fs-kacheln a:hover { border-color: var(--linie-stark); color: var(--tinte); }
+.portal-fahne .fs-kacheln a span {
+    min-width: 0;
+    overflow-wrap: anywhere;
     -webkit-hyphens: auto;
     hyphens: auto;
 }
-.portal-fahne .fs-saison-text { margin: .65rem 0 0; font-size: .9375rem; color: #fff; }
-
-/* Jetzt: JM-Stand, naechster Anlass, naechster Einsatz */
-.portal-fahne .fs-jetzt {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    gap: .75rem;
-    margin-bottom: var(--p-4);
-}
-.portal-fahne .fs-karte {
-    display: flex;
-    flex-direction: column;
-    gap: .2rem;
-    padding: 1rem;
-    background: var(--flaeche);
-    border: 1px solid var(--linie);
-    border-radius: var(--radius);
-    color: var(--tinte);
-    text-decoration: none;
-}
-.portal-fahne a.fs-karte:hover { border-color: var(--linie-stark); color: var(--tinte); }
-.portal-fahne .fs-karte h2 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--tinte); }
-.portal-fahne .fs-stand { margin: .3rem 0 0; font-size: 1rem; color: var(--tinte-2); }
-.portal-fahne .fs-gross { margin-right: .2rem; font-size: 2.5rem; font-weight: 700; line-height: 1; color: var(--tinte); font-variant-numeric: tabular-nums; }
-.portal-fahne .fs-meta { margin: 0; font-size: .9375rem; color: var(--tinte-2); }
-.portal-fahne .fs-anlass { flex-direction: row; align-items: flex-start; gap: .9rem; }
-.portal-fahne .fs-anlass-text { min-width: 0; }
-.portal-fahne .fs-datumblock {
+.portal-fahne .fs-kacheln .bi {
     flex-shrink: 0;
-    width: 3.75rem;
-    padding: .45rem 0;
-    border-radius: var(--radius-sm);
-    background: var(--ehre);
-    color: var(--ehre-text);
-    text-align: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    background: var(--akzent-hell);
+    color: var(--akzent);
 }
-.portal-fahne .fs-datumblock.is-einsatz { background: var(--akzent-hell); color: var(--akzent-tief); }
-.portal-fahne .fs-tag { display: block; font-size: 1.625rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-.portal-fahne .fs-monat { display: block; margin-top: .15rem; font-size: .75rem; font-weight: 600; }
-.portal-fahne .fs-titel { margin: .1rem 0; font-size: 1.125rem; font-weight: 700; color: var(--tinte); }
 
-/* Bloecke: offene Punkte, Termine, alle Bereiche */
-.portal-fahne .fs-block {
-    margin-bottom: var(--p-4);
-    padding: .25rem 0 .5rem;
+/* ---- Termine nach Tag ---------------------------------------------- */
+.portal-fahne .tf-kopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: .6rem;
+}
+.portal-fahne .tf-kopf h1 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .tf-aktionen { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.portal-fahne .tf-jahr { display: inline-flex; align-items: center; gap: .35rem; margin: 0; font-size: .875rem; color: var(--tinte-2); }
+.portal-fahne .tf-jahr select {
+    min-height: 34px;
+    padding: .15rem 1.6rem .15rem .5rem;
+    border: 1px solid var(--linie-stark);
+    border-radius: var(--radius-sm);
+    background-color: var(--flaeche);
+    color: var(--tinte);
+}
+.portal-fahne .tf-monat { margin: .9rem .1rem .4rem; font-size: .8125rem; font-weight: 700; color: var(--tinte-2); }
+.portal-fahne .tf-monat:first-of-type { margin-top: .2rem; }
+.portal-fahne .tf-tag {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    margin-bottom: .45rem;
+    padding: .6rem .75rem;
     background: var(--flaeche);
     border: 1px solid var(--linie);
     border-radius: var(--radius);
-}
-.portal-fahne .fs-block h2 { margin: .85rem 1rem .3rem; font-size: 1rem; font-weight: 700; color: var(--tinte); }
-.portal-fahne .fs-links { list-style: none; margin: 0; padding: 0; }
-.portal-fahne .fs-links a {
-    display: flex;
-    align-items: center;
-    gap: .85rem;
-    min-height: 3rem;
-    padding: .5rem 1rem;
-    border-top: 1px solid var(--linie);
     color: var(--tinte);
-    font-size: 1rem;
     text-decoration: none;
 }
-.portal-fahne .fs-links li:first-child a { border-top: 0; }
-.portal-fahne .fs-links a:hover { background: var(--grund); color: var(--tinte); }
-.portal-fahne .fs-links a > .bi:first-child { width: 1.5rem; font-size: 1.15rem; color: var(--akzent); text-align: center; }
-.portal-fahne .fs-links span { flex: 1; min-width: 0; }
-.portal-fahne .fs-pfeil { color: var(--tinte-2); }
-.portal-fahne .fs-termine { list-style: none; margin: 0; padding: 0 1rem; }
-.portal-fahne .fs-termine li { display: flex; align-items: baseline; gap: .75rem; padding: .55rem 0; border-top: 1px solid var(--linie); font-size: 1rem; }
-.portal-fahne .fs-termine li:first-child { border-top: 0; }
-.portal-fahne .fs-termin-datum { flex-shrink: 0; width: 4.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.portal-fahne .fs-termin-name { flex: 1; min-width: 0; }
-.portal-fahne .fs-termin-zeit { color: var(--tinte-2); font-variant-numeric: tabular-nums; }
-.portal-fahne .fs-mehr {
-    display: inline-flex;
+.portal-fahne .tf-tag:hover { border-color: var(--linie-stark); color: var(--tinte); }
+.portal-fahne .tf-datum {
+    flex-shrink: 0;
+    width: 2.8rem;
+    padding: .2rem 0;
+    text-align: center;
+    line-height: 1.05;
+    border: 1px solid var(--linie-stark);
+    border-radius: var(--radius-sm);
+}
+.portal-fahne .tf-datum small { display: block; font-size: .75rem; font-weight: 600; color: var(--tinte-2); }
+.portal-fahne .tf-datum b { display: block; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.portal-fahne .tf-tag.is-naechster .tf-datum { background: var(--ehre); border-color: var(--ehre); color: var(--ehre-text); }
+.portal-fahne .tf-tag.is-naechster .tf-datum small { color: var(--ehre-text); }
+.portal-fahne .tf-inhalt { flex: 1; min-width: 0; }
+.portal-fahne .tf-eintrag { display: block; }
+.portal-fahne .tf-eintrag + .tf-eintrag { margin-top: .35rem; padding-top: .35rem; border-top: 1px dashed var(--linie); }
+.portal-fahne .tf-name { display: block; font-size: .9375rem; font-weight: 600; line-height: 1.3; }
+.portal-fahne .tf-meta { display: block; font-size: .8125rem; color: var(--tinte-2); line-height: 1.35; }
+.portal-fahne .tf-eintrag.art-info .tf-name { font-weight: 500; color: var(--tinte-2); }
+.portal-fahne .tf-eigen { display: block; font-size: .8125rem; font-weight: 700; color: var(--akzent-tief); }
+.portal-fahne .tf-jsk {
+    display: inline-block;
+    padding: 0 .4rem;
+    border-radius: 999px;
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+    font-size: .75rem;
+    font-weight: 600;
+}
+.portal-fahne .tf-hinweis {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 0 .45rem;
+    border-radius: 999px;
+    background: var(--ehre-hell);
+    color: var(--ehre-text);
+    font-size: .75rem;
+    font-weight: 700;
+}
+.portal-fahne .tf-vorbei { margin-top: .8rem; }
+.portal-fahne .tf-vorbei summary {
+    display: flex;
     align-items: center;
-    gap: .2rem;
-    min-height: 44px;
-    margin: 0 1rem;
+    justify-content: center;
+    min-height: 2.75rem;
+    margin-bottom: .45rem;
+    border: 1px dashed var(--linie-stark);
+    border-radius: var(--radius);
     color: var(--akzent);
     font-weight: 600;
-    text-decoration: none;
+    cursor: pointer;
+    list-style: none;
 }
-.portal-fahne .fs-mehr:hover { text-decoration: underline; }
-
-/* Fotos vom letzten Anlass: das Bild traegt, der Text steht darunter */
-.portal-fahne .fs-foto {
-    display: block;
-    margin-bottom: var(--p-4);
-    overflow: hidden;
+.portal-fahne .tf-vorbei summary::-webkit-details-marker { display: none; }
+.portal-fahne .tf-vorbei .tf-tag { color: var(--tinte-2); }
+.portal-fahne .tf-leer {
+    padding: 1.5rem 1rem;
+    text-align: center;
     background: var(--flaeche);
     border: 1px solid var(--linie);
     border-radius: var(--radius);
-    color: var(--tinte);
-    text-decoration: none;
+    color: var(--tinte-2);
 }
-.portal-fahne .fs-foto img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--grund); }
-.portal-fahne .fs-foto-text { display: flex; flex-direction: column; gap: .1rem; padding: .75rem 1rem .85rem; }
-.portal-fahne .fs-foto-text strong { font-size: 1.0625rem; color: var(--tinte); }
-.portal-fahne .fs-foto-text span { font-size: .9375rem; font-weight: 600; color: var(--akzent); }
 
 /* ---- Weniger Bewegung, wenn gewuenscht ----------------------------- */
 @media (prefers-reduced-motion: reduce) {
