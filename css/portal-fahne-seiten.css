@@ -1,0 +1,1639 @@
+/* ============================================================
+   Mitgliederportal «Vereinsfahne» – Seitenregeln (Okt 2026)
+   Laedt nur mit Vorschau, nach css/portal-fahne.css. Alle Regeln haengen an
+   .portal-fahne. Pro Seite die eigenen Klassen auf die Welt gebracht: Farben
+   ueber Tokens, flach, nichts unter 12px. Inline-Styles und Bootstrap-Utilities
+   sind wo noetig mit !important uebersteuert; das faellt weg, sobald das Markup
+   aufgeraeumt ist (Liste der Markup-Vorschlaege in der Sitzung vom 09.10.2026).
+   ============================================================ */
+
+/* ==== Globale Ergaenzungen (aus den Seitenanalysen) ================== */
+/* Bootstrap-Radien auf die Welt: Bedienelemente 8px, grosse Flaechen 10px */
+html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-border-radius-lg: 10px; }
+.portal-fahne .btn { --bs-btn-border-radius: var(--radius-sm); }
+
+/* Hinweisboxen: ruhig, Gefahr nur fuer echte Fehler */
+.portal-fahne .alert { --bs-alert-border-radius: var(--radius); font-size: .9375rem; }
+.portal-fahne .alert-info {
+    --bs-alert-bg: var(--akzent-hell); --bs-alert-color: var(--akzent-tief);
+    --bs-alert-border-color: var(--akzent-hell); --bs-alert-link-color: var(--akzent-tief);
+}
+.portal-fahne .alert-warning {
+    --bs-alert-bg: var(--flaeche); --bs-alert-color: var(--tinte);
+    --bs-alert-border-color: var(--linie-stark); --bs-alert-link-color: var(--akzent);
+}
+.portal-fahne .alert-danger {
+    --bs-alert-bg: var(--gefahr-hell); --bs-alert-color: var(--gefahr);
+    --bs-alert-border-color: var(--gefahr); --bs-alert-link-color: var(--gefahr);
+}
+.portal-fahne .alert-success {
+    --bs-alert-bg: var(--gut-hell); --bs-alert-color: var(--gut);
+    --bs-alert-border-color: var(--gut-hell); --bs-alert-link-color: var(--gut);
+}
+.portal-fahne .alert-light,
+.portal-fahne .alert-secondary {
+    --bs-alert-bg: var(--grund); --bs-alert-color: var(--tinte);
+    --bs-alert-border-color: var(--linie); --bs-alert-link-color: var(--akzent);
+}
+
+/* Modale: weisse Flaeche, feiner Rand, Schatten als schwebende Ebene */
+.portal-fahne .modal {
+    --bs-modal-border-radius: var(--radius);
+    --bs-modal-border-color: var(--linie);
+    --bs-modal-header-border-color: var(--linie);
+    --bs-modal-footer-border-color: var(--linie);
+}
+.portal-fahne .modal-content { box-shadow: 0 6px 18px rgba(26, 26, 36, .12); }
+.portal-fahne .modal-title { font-size: 1.0625rem; font-weight: 700; color: var(--tinte); }
+
+/* Abzeichen und Tabellen */
+.portal-fahne .badge { font-weight: 600; }
+.portal-fahne .portal-bell .bn-badge { font-size: .8rem; }
+.portal-fahne .table { --bs-table-color: var(--tinte); --bs-table-border-color: var(--linie); }
+.portal-fahne .table > thead { color: var(--tinte-2); font-size: .8125rem; }
+
+/* Listen und kleine Titel */
+.portal-fahne .p-list-title { font-size: .9375rem; }
+.portal-fahne .p-eyebrow { text-transform: none; letter-spacing: 0; font-size: .8125rem; font-weight: 700; color: var(--tinte-2); }
+
+/* Knopf-Inhalt am Touchscreen mittig (min-height allein zentriert nicht) */
+@media (pointer: coarse) {
+    .portal-fahne .btn { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; }
+}
+
+/* Fokusring auf dunklen Flaechen weiss (Overlays) */
+.portal-fahne .chat-overlay :focus-visible,
+.portal-fahne .ss-overlay :focus-visible,
+.portal-fahne #docViewerOverlay :focus-visible { outline-color: #fff; }
+
+
+/* ---- meine_jm.php ---- */
+.portal-fahne .jm-list { background: var(--flaeche); }
+.portal-fahne .jm-row-title { font-size: .9375rem; }
+.portal-fahne .jm-row-meta { font-size: .8125rem; }
+.portal-fahne .jm-expand-btn { font-size: .875rem; }
+/* Streicher zaehlt nicht und ist keine Ehre: neutral statt Gold, Durchstreichung bleibt */
+.portal-fahne .jm-row-points.streicher { color: var(--tinte-2); }
+/* Vorbei ohne Resultat: neutral statt Rot */
+.portal-fahne .jm-row-points.no,
+.portal-fahne .jm-row-status.no { color: var(--tinte-2); }
+.portal-fahne .jm-dates-detail { font-size: .8125rem; }
+/* Maps-Link ist ein Link: Koenigsblau (.text-muted ist !important, darum hier auch) */
+.portal-fahne .jm-dates-detail .addr-line a.text-muted { color: var(--akzent) !important; }
+.portal-fahne .jm-dates-detail .addr-line a.text-muted:hover { color: var(--akzent-tief) !important; }
+
+/* Selbsteingabe im aufgeklappten Anlass */
+.portal-fahne .jm-eingabe { background: var(--flaeche); font-size: .9375rem; }
+.portal-fahne .jm-punkte-input {
+    min-height: 38px;
+    border-color: var(--linie-stark);
+    background: var(--flaeche);
+    color: var(--tinte);
+}
+.portal-fahne .jm-punkte-input:disabled { background: var(--grund); color: var(--tinte-2); }
+.portal-fahne .jm-punkte-input[aria-invalid=true] { border-color: var(--gefahr); box-shadow: none; }
+.portal-fahne .jm-punkte-input[aria-invalid=true]:focus { outline-color: var(--gefahr); }
+.portal-fahne .jm-eingabe-max,
+.portal-fahne .jm-save-ok { font-size: .8125rem; }
+.portal-fahne .jm-status-badge { font-size: .8rem; }
+.portal-fahne .jm-status-leer { background: #ececea; }
+.portal-fahne .jm-status-entwurf { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .jm-status-cup { background: #ececea; color: var(--tinte-2); }
+
+/* ---- meine_heim.php ---- */
+/* «Naechste Moeglichkeit» = als Naechstes: Gold, flach */
+.portal-fahne .heim-hint {
+    background: var(--ehre-hell);
+    border-color: var(--ehre);
+    color: var(--ehre-text);
+    font-size: .9375rem;
+}
+.portal-fahne .heim-hint i,
+.portal-fahne .heim-hint strong { color: var(--ehre-text); }
+/* Passen-Liste (gilt auch fuer meine_kanti.php; .passe-row gibt es nur dort) */
+.portal-fahne .passe-row .passe-label { font-size: .9375rem; }
+
+/* ---- meine_kanti.php ---- */
+.portal-fahne .kranz-info {
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    color: var(--tinte);
+    font-size: .9375rem;
+}
+.portal-fahne .kranz-info .bi { color: var(--akzent); }
+/* Beste Passe ohne Kranz = Bestwert: Gold als Pille, Zahl in Tinte (Kranz-Zeile regelt die globale Datei) */
+.portal-fahne .passe-row.best .passe-score { color: var(--tinte); }
+.portal-fahne .passe-row.best .passe-status {
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--ehre-hell);
+    color: var(--ehre-text);
+}
+
+/* ---- meine_wanderpreise.php ---- */
+/* Wanderpreis = Ehre: Gold statt Orange-Verlauf */
+.portal-fahne .wp-alert {
+    background: var(--ehre-hell);
+    border-color: var(--ehre);
+}
+.portal-fahne .wp-alert-icon,
+.portal-fahne .wp-alert h3,
+.portal-fahne .wp-alert p { color: var(--ehre-text); }
+.portal-fahne .wp-alert h3 { font-size: 1rem; }
+.portal-fahne .wp-alert p { font-size: .9375rem; }
+/* Kein orangener Seitenstreifen: der Gold-Chip traegt die Bedeutung */
+.portal-fahne .wp-item { border-left: 1px solid var(--linie); }
+.portal-fahne .wp-item-year { font-size: .8125rem; color: var(--tinte-2); }
+/* Leerer Zustand als Flaeche wie .tf-leer */
+.portal-fahne .wp-empty {
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+    color: var(--tinte-2);
+}
+
+/* ---- jsk_resultate.php ---- */
+.portal-fahne .res-card {
+    padding: .85rem 1rem;
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+}
+.portal-fahne .res-card.res-empty { padding: 1.5rem 1rem; color: var(--tinte-2); }
+.portal-fahne .res-total {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--akzent-tief);
+    font-variant-numeric: tabular-nums;
+}
+.portal-fahne .shot {
+    min-width: 2.25rem;
+    background: var(--grund);
+    border-radius: var(--radius-sm);
+    color: var(--tinte);
+}
+
+
+/* ==== Gruppe «Einsaetze und Dokumente» ================================ */
+
+/* ---- meine_einsaetze.php ---- */
+/* Chips kommender Einsaetze blau; Gold nur fuer den naechsten Einsatz («als Naechstes») */
+.portal-fahne .p-list-row:has(.einsatz-datum) .p-chip.orange { background: var(--akzent-hell); color: var(--akzent); }
+.portal-fahne .p-list-row:has(.naechster-badge) .p-chip.orange { background: var(--ehre); color: var(--ehre-text); }
+.portal-fahne .p-list-row .einsatz-name { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .einsatz-datum,
+.portal-fahne .einsatz-funktion { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .einsatz-funktion a { font-weight: 600; }
+.portal-fahne .einsatz-time-badge {
+    padding: .1rem .55rem;
+    border-radius: 999px;
+    background: #ececea;
+    color: var(--tinte-2);
+    font-size: .8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.portal-fahne .p-list-row:not(.vergangen) .einsatz-time-badge { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .naechster-badge {
+    margin-left: .4rem;
+    padding: 0 .5rem;
+    border-radius: 999px;
+    background: var(--ehre);
+    color: var(--ehre-text);
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    vertical-align: 1px;
+}
+/* Vergangene: gedaempft ueber Farbe statt opacity */
+.portal-fahne .p-list-row.vergangen { background: transparent; border-color: var(--linie); opacity: 1; }
+.portal-fahne .p-list-row.vergangen .einsatz-name { color: var(--tinte-2); }
+/* JS setzt die Liste auf display:block, dadurch faellt der Flex-gap weg */
+.portal-fahne #vergangene-list > .p-list-row + .p-list-row { margin-top: .5rem; }
+.portal-fahne .vergangene-toggle {
+    min-height: 38px;
+    padding: 0 .4rem;
+    border-radius: var(--radius-sm);
+    color: var(--akzent);
+    font-size: .875rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+.portal-fahne .vergangene-toggle:hover { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .p-list-row .einsatz-tausch-btn { min-width: 38px; min-height: 38px; }
+
+/* Zusammenfassung: schlichte Zeile statt Verlaufs-Box */
+.portal-fahne .summary-bar { background: none; border: 0; border-radius: 0; padding: 0 .1rem; margin-bottom: .75rem; }
+.portal-fahne .summary-bar .stat { font-size: .9375rem; color: var(--tinte-2); }
+.portal-fahne .summary-bar .stat strong { color: var(--tinte); }
+.portal-fahne .summary-bar .stat[style] { color: var(--tinte-2) !important; }  /* Inline color:#a0907a */
+
+/* Hinweis «30 Minuten vorher» */
+.portal-fahne .p-eyebrow + .alert-info {
+    --bs-alert-bg: var(--akzent-hell);
+    --bs-alert-color: var(--akzent-tief);
+    --bs-alert-border-color: var(--akzent-hell);
+    --bs-alert-border-radius: var(--radius);
+    font-size: .9375rem;
+}
+
+/* Leere Zustaende */
+.portal-fahne .empty-state {
+    padding: 1.5rem 1rem;
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+    color: var(--tinte-2);
+    font-size: .9375rem;
+}
+.portal-fahne .empty-state i { font-size: 1.75rem; color: var(--tinte-2); margin-bottom: .5rem; }
+.portal-fahne .empty-state[style] { color: var(--tinte-2) !important; font-size: .9375rem !important; }  /* Inline #a0aec0 / .85rem */
+
+/* Tausch-Anfragen: eingehend = offen (Handlungsbedarf), ausgehend = neutral */
+.portal-fahne .tausch-card {
+    padding: .75rem .9rem;
+    background: var(--ehre-hell);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+}
+.portal-fahne .tausch-card.ausgehend { background: var(--flaeche); border-color: var(--linie); }
+.portal-fahne .tausch-card-head { font-size: .9375rem; font-weight: 700; color: var(--ehre-text); }
+.portal-fahne .tausch-card.ausgehend .tausch-card-head { color: var(--tinte-2); }
+.portal-fahne .tausch-line { margin: .3rem 0; font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .tausch-tag {
+    padding: .05rem .5rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.portal-fahne .tausch-tag.du-bekommst { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .tausch-tag.du-gibst { background: #ececea; color: var(--tinte); }
+.portal-fahne .tausch-meta,
+.portal-fahne .tausch-typ-hint { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .tausch-nachricht { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .tausch-card-actions { flex-wrap: wrap; }
+.portal-fahne .tausch-card-actions .btn { min-height: 38px; }
+/* «Ablehnen» ist kein Loeschen: neutral statt --gefahr */
+.portal-fahne .tausch-card-actions .tausch-decline {
+    --bs-btn-color: var(--tinte-2); --bs-btn-border-color: var(--linie-stark);
+    --bs-btn-hover-bg: #ececea; --bs-btn-hover-color: var(--tinte); --bs-btn-hover-border-color: var(--linie-stark);
+    --bs-btn-active-bg: #e2e2dd; --bs-btn-active-color: var(--tinte); --bs-btn-active-border-color: var(--linie-stark);
+}
+.portal-fahne #tauschModal .modal-title { font-size: 1.0625rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne #tauschModal .btn { min-height: 38px; }
+.portal-fahne #tauschModal .btn-group > .btn { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ---- einsatzplaene.php / protokolle.php / jsk_dokumente.php: Dokumentzeilen (id="doc-N") ---- */
+.portal-fahne .p-list-row[id^="doc-"] .p-chip { background: var(--akzent-hell); color: var(--akzent); }  /* PDF nicht rot */
+.portal-fahne .p-list-row[id^="doc-"] .p-list-title { font-size: .9375rem; }
+.portal-fahne .p-list-row[id^="doc-"] .p-list-actions .btn { min-width: 38px; min-height: 38px; }
+.portal-fahne .p-list-title .visibility-badge {
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    vertical-align: 1px;
+}
+.portal-fahne .p-list-title .visibility-badge.bg-success { background-color: #ececea !important; color: var(--tinte-2) !important; }
+.portal-fahne .p-list-title .visibility-badge.bg-warning,
+.portal-fahne .p-list-title .visibility-badge.bg-danger { background-color: var(--akzent-hell) !important; color: var(--akzent-tief) !important; }
+/* Leerer Zustand «Keine … vorhanden» als Karte */
+.portal-fahne .portal-content > .text-center.py-5:has(> .bi-folder2-open) {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+}
+.portal-fahne .portal-content > .text-center.py-5:has(> .bi-folder2-open) p { margin-bottom: 0; }
+.portal-fahne .text-center > .bi-folder2-open[style] { font-size: 2rem !important; color: var(--linie-stark) !important; }  /* Inline #dee2e6 / 3rem */
+
+/* nur einsatzplaene.php: strukturierte Plaene */
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] { color: var(--tinte); }
+.portal-fahne a.p-list-row[href^="einsatzplan.php"]:hover { border-color: var(--linie-stark); }
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] .p-chip.orange { background: var(--akzent-hell); color: var(--akzent); }
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] .p-list-title { font-size: .9375rem; }
+/* Status: «Entwurf» = offen, «Freigegeben» = dezent blau (statt text-danger / text-primary) */
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] .p-list-meta .text-danger,
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] .p-list-meta .text-primary { padding: 0 .45rem; border-radius: 999px; font-weight: 600; }
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] .p-list-meta .text-danger { background: var(--ehre-hell); color: var(--ehre-text) !important; }
+.portal-fahne a.p-list-row[href^="einsatzplan.php"] .p-list-meta .text-primary { background: var(--akzent-hell); color: var(--akzent-tief) !important; }
+
+/* ---- einsatzplan.php ---- */
+.portal-fahne .epp-wrap { background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--radius); }
+.portal-fahne .epp-grid { font-size: .875rem; background: var(--flaeche); color: var(--tinte); }
+/* einfache 1px-Linien statt doppelter Zellraender */
+.portal-fahne .epp-grid th,
+.portal-fahne .epp-grid td { border: 0; border-right: 1px solid var(--linie); border-bottom: 1px solid var(--linie); }
+.portal-fahne .epp-grid tr > :last-child { border-right: 0; }
+.portal-fahne .epp-grid tbody tr:last-child > * { border-bottom: 0; }
+.portal-fahne .epp-grid thead th {
+    background: var(--grund);
+    color: var(--tinte-2);
+    font-size: .8125rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.portal-fahne .epp-grid thead th.epp-fn { background: var(--grund); }
+.portal-fahne .epp-grid thead th .epp-bez { font-size: .875rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .epp-grid thead th .epp-datum { font-size: .8125rem; font-weight: 600; color: var(--tinte); }
+.portal-fahne .epp-grid thead th .epp-zeit { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .epp-grid .epp-fn { background: var(--flaeche); color: var(--tinte); }
+.portal-fahne .epp-grid .epp-gruppe td {
+    background: #ececea;
+    color: var(--tinte-2);
+    font-size: .8125rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.portal-fahne .epp-slot.ph { color: var(--tinte-2); }
+.portal-fahne .epp-slot.fb { color: var(--akzent-tief); }
+.portal-fahne .epp-slot.wo { color: var(--gut); }
+.portal-fahne .epp-slot.me { background: var(--akzent-hell); color: var(--akzent-tief); border-radius: var(--radius-sm); }
+.portal-fahne .epp-legend { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .epp-legend .fb { color: var(--akzent-tief); }
+.portal-fahne .epp-legend .wo { color: var(--gut); }
+.portal-fahne .epp-legend .ph { font-style: italic; }
+.portal-fahne .epp-card-head { background: var(--grund); }
+.portal-fahne .epp-card-head strong { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .epp-row { font-size: .9375rem; border-bottom-color: var(--linie); }
+.portal-fahne .epp-row .epp-row-fn { color: var(--tinte-2); }
+.portal-fahne .epp-fuss { font-size: .9375rem; color: var(--tinte); }
+
+/* ---- einsatz_anwesenheit.php ---- */
+.portal-fahne .an-termine a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: .3rem .85rem;
+    background: var(--flaeche);
+    border-color: var(--linie-stark);
+    color: var(--tinte);
+    font-size: .875rem;
+}
+.portal-fahne .an-termine a:hover { background: #ececea; color: var(--tinte); }
+.portal-fahne .an-termine a.aktiv { background: var(--akzent); border-color: var(--akzent); color: #fff; font-weight: 600; }
+/* Zaehler: offen = Handlungsbedarf (Gold-hell), da = gut, nicht da = neutral */
+.portal-fahne .an-stat span {
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    background: var(--ehre-hell);
+    color: var(--ehre-text);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.portal-fahne .an-stat .da { background: var(--gut-hell); color: var(--gut); }
+.portal-fahne .an-stat .nein { background: #ececea; color: var(--tinte); }
+.portal-fahne .an-fn { font-size: .8125rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--tinte-2); }
+.portal-fahne .an-row { background: var(--flaeche); border-color: var(--linie); border-radius: var(--radius); }
+.portal-fahne .an-row.da { background: var(--gut-hell); border-color: var(--gut); }
+.portal-fahne .an-row.nein { background: #ececea; border-color: var(--linie-stark); }
+.portal-fahne .an-name { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .an-name small { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .an-dot { background: var(--verein); }   /* MSV = Marke */
+.portal-fahne .an-dot.freienbach { background: var(--akzent-tief); }
+.portal-fahne .an-dot.wollerau { background: var(--gut); }
+.portal-fahne .an-btn { background: var(--flaeche); border-color: var(--linie-stark); border-radius: var(--radius-sm); color: var(--tinte-2); }
+.portal-fahne .an-row.da .an-btn.ja { background: var(--gut); border-color: var(--gut); color: #fff; }
+.portal-fahne .an-row.nein .an-btn.no { background: var(--tinte-2); border-color: var(--tinte-2); color: #fff; }
+.portal-fahne .an-alle .btn { min-height: 38px; }
+
+
+/* ============================================================
+   Gruppe «Persönlich und Kommunikation» (Vereinsfahne)
+   meine_daten, benachrichtigungen, mitteilungen, kalender_abo,
+   changelog, mein_fragebogen
+   ============================================================ */
+
+/* ---- gemeinsam: Formular-Lücken (meine_daten, benachrichtigungen, mein_fragebogen) ----
+   Gehört eigentlich in den globalen Abschnitt «Formulare» (siehe C). */
+/* Häkchen, Optionsfelder, Schalter: sichtbarer Rand (die Brücke setzt --bs-border-color
+   auf --linie, 1.2:1) und «an» in Königsblau statt Bootstrap-#0d6efd */
+.portal-fahne .form-check-input { border-color: var(--linie-stark); }
+.portal-fahne .form-check-input:checked {
+    background-color: var(--akzent);
+    border-color: var(--akzent);
+}
+/* Schalter «aus»: Knopf in --linie-stark statt 25 % Schwarz bzw. Bootstrap-Hellblau beim Fokus.
+   %238b8c85 ist --linie-stark ausgeschrieben, ein Daten-URI kann keine Variable lesen. */
+.portal-fahne .form-switch .form-check-input:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%238b8c85'/%3e%3c/svg%3e");
+}
+/* .p-field-Fehler: der globale Feldrand (gleich spezifisch, später geladen) schluckte das Rot */
+.portal-fahne .p-field input.is-invalid,
+.portal-fahne .p-field select.is-invalid,
+.portal-fahne .p-field textarea.is-invalid { border-color: var(--gefahr); }
+.portal-fahne .p-field .invalid-feedback { font-size: .8125rem; color: var(--gefahr); }
+
+/* ---- meine_daten.php ---- */
+/* Abschnitts-Symbole einheitlich blau: Gold und Rot wären hier nur Dekor */
+.portal-fahne .p-narrow:has(#mdSaveBtn) .p-chip:is(.green, .orange, .red) {
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+}
+/* Platzhalter beim Laden: flach statt Verlauf */
+.portal-fahne .md-skeleton { background: #ececea; animation: none; }
+
+/* Login-Daten */
+.portal-fahne .md-login-display { gap: .75rem; }
+.portal-fahne .md-change-link {
+    min-height: 38px;
+    padding: 0 .65rem;
+    border-radius: var(--radius-sm);
+    color: var(--akzent);
+    font-size: .8125rem;
+}
+.portal-fahne .md-change-link:hover { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .md-change-form { border-top-color: var(--linie); }
+/* Trennlinie und Sternchen der Passwort-Zeile stehen inline (Z. 219, 222; #718096 = 4.0:1) */
+.portal-fahne .md-change-form + .md-login-display { border-top-color: var(--linie) !important; }
+.portal-fahne .md-change-form + .md-login-display .p-info-value { color: var(--tinte-2) !important; }
+
+.portal-fahne .md-btn-sm {
+    min-height: 38px;
+    padding: 0 1rem;
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+}
+.portal-fahne .md-btn-sm.primary:hover { background: var(--akzent-tief); }
+.portal-fahne .md-btn-sm.secondary { background: #ececea; color: var(--tinte); }
+.portal-fahne .md-btn-sm.secondary:hover { background: #e2e2dd; }
+/* gesperrt während des Speicherns: grau statt halbtransparenter Schrift */
+.portal-fahne .md-btn-sm:disabled,
+.portal-fahne .md-btn-sm:disabled:hover { opacity: 1; background: #ececea; color: var(--tinte-2); }
+
+/* Auge zum Passwort-Zeigen: am Eingabefeld statt an Feld + Beschriftung zentriert, 38px Tippfläche */
+.portal-fahne .md-pw-toggle input { padding-right: 2.75rem; }
+.portal-fahne .md-pw-toggle button {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    transform: none;
+    width: 40px;
+    height: 38px;
+    padding: 0;
+    color: var(--tinte-2);
+}
+.portal-fahne .md-pw-toggle button:hover { color: var(--tinte); }
+@media (max-width: 767.98px) {
+    .portal-fahne .md-pw-toggle button { height: 44px; }   /* portal.css: Felder 44px am Handy */
+}
+
+/* ---- benachrichtigungen.php ---- */
+.portal-fahne .p-narrow:has(#bnStatus) .p-chip.orange {
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+}
+/* Jungschützen-Betreuung: Türkis steht inline (Z. 244, 249) */
+.portal-fahne .p-narrow:has(#bnStatus) .p-chip[style] {
+    background: var(--akzent-hell) !important;
+    color: var(--akzent-tief) !important;
+}
+.portal-fahne .bn-toggle-label .ti[style] {
+    background: var(--akzent-hell) !important;
+    color: var(--akzent) !important;
+}
+
+/* Gerätestatus: Punkt grün = an, grau = aus («aus» ist kein Fehler) */
+.portal-fahne .bn-status { font-size: .9375rem; }
+.portal-fahne .bn-status.on .dot { background: var(--gut); }
+.portal-fahne .bn-status.off .dot { background: var(--linie-stark); }
+.portal-fahne .bn-hint {
+    background: var(--grund);
+    border-color: var(--linie);
+    color: var(--tinte);
+    font-size: .8125rem;
+}
+.portal-fahne .bn-hint i { color: var(--akzent); }
+.portal-fahne #bnDeviceArea .p-btn { min-height: 38px; }
+/* «Deaktivieren» schaltet Push ab und löscht nichts: neutral statt Gefahrenrot */
+.portal-fahne #bnDeviceArea .p-btn.danger-outline {
+    background: var(--flaeche);
+    border: 1px solid var(--linie-stark);
+    color: var(--tinte);
+}
+.portal-fahne #bnDeviceArea .p-btn.danger-outline:hover { background: #ececea; color: var(--tinte); }
+.portal-fahne .bn-devices li { font-size: .8125rem; }
+.portal-fahne .bn-devices li i { color: var(--tinte-2); }
+
+/* Themen-Schalter */
+.portal-fahne .bn-toggle { gap: .75rem; }
+/* Trennlinien: keine direkt unter dem Abschnittskopf, keine doppelte unter dem Hauptschalter,
+   dafür eine über dem ersten Thema (fehlte, weil dort :first-of-type greift) */
+.portal-fahne .p-section-header + .bn-toggle,
+.portal-fahne .bn-master + .bn-toggle { border-top: 0; }
+.portal-fahne .bn-topics > .bn-toggle:first-child { border-top: 1px solid var(--linie); }
+.portal-fahne .bn-toggle-label .ti,
+.portal-fahne .bn-lead .ti { background: var(--akzent-hell); color: var(--akzent); }
+.portal-fahne .bn-toggle-text .t1 { font-size: .9375rem; }
+.portal-fahne .bn-toggle-text .t2 { font-size: .8125rem; line-height: 1.35; color: var(--tinte-2); }
+/* Schalter grösser (45 x 25px), ohne Bootstrap-Einzug */
+.portal-fahne .bn-toggle .form-switch { flex-shrink: 0; padding-left: 0; min-height: 0; }
+.portal-fahne .bn-toggle .form-switch .form-check-input {
+    float: none;
+    width: 3rem;
+    height: 1.65rem;
+    margin: 0;
+}
+.portal-fahne .bn-lead-select {
+    min-height: 38px;
+    border-color: var(--linie-stark);
+    background-color: var(--flaeche);
+    color: var(--tinte);
+    font-size: .875rem;
+}
+/* Hauptschalter aus: Themen ruhen sichtbar, die Schrift bleibt deckend */
+.portal-fahne .bn-topics.disabled { opacity: 1; }
+.portal-fahne .bn-topics.disabled .t1 { color: var(--tinte-2); }
+.portal-fahne .bn-topics.disabled .ti { background: #ececea; color: var(--tinte-2); }
+.portal-fahne .bn-topics.disabled .form-check-input { border-color: var(--linie); }
+.portal-fahne .bn-topics.disabled .form-check-input:checked {
+    background-color: var(--linie-stark);
+    border-color: var(--linie-stark);
+}
+.portal-fahne .bn-topics.disabled .bn-lead-select {
+    background-color: var(--grund);
+    border-color: var(--linie);
+    color: var(--tinte-2);
+}
+
+/* ---- mitteilungen.php ---- */
+.portal-fahne .p-narrow:has(#mtList) .p-chip.orange {
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+}
+.portal-fahne .mt-compose-head { color: var(--tinte); }
+.portal-fahne .mt-compose-caret { color: var(--tinte-2); }
+/* Empfänger-Chips: Pillen mit sichtbarem Rand, gewählt = hellblau mit Häkchen */
+.portal-fahne .mt-role-chip {
+    min-height: 38px;
+    padding: .35rem .95rem;
+    border-color: var(--linie-stark);
+    border-radius: 999px;
+    background: var(--flaeche);
+    color: var(--tinte);
+    font-size: .875rem;
+}
+.portal-fahne .mt-role-chip:hover { background: var(--grund); }
+.portal-fahne .mt-role-chip.active {
+    background: var(--akzent-hell);
+    border-color: var(--akzent);
+    color: var(--akzent-tief);
+    font-weight: 600;
+}
+.portal-fahne .mt-hint { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .mt-toolbar button {
+    min-height: 38px;
+    padding: 0 .55rem;
+    border-radius: var(--radius-sm);
+    color: var(--akzent);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.portal-fahne .mt-toolbar button:hover { background: var(--akzent-hell); color: var(--akzent-tief); text-decoration: none; }
+/* Verlauf: ungelesen wie in der Glocke (hellblau + fett) */
+.portal-fahne .mt-item { padding: .7rem .6rem; }
+.portal-fahne .mt-item.unread { background: var(--akzent-hell); border-radius: var(--radius-sm); }
+.portal-fahne a.mt-item:not(.unread):hover { background: var(--grund); border-radius: var(--radius-sm); }
+.portal-fahne .mt-item-icon { color: var(--akzent); }
+.portal-fahne .mt-item-title { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .mt-item-text { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .mt-item-time { font-size: .8rem; color: var(--tinte-2); }
+
+/* ---- kalender_abo.php ---- */
+/* Stil steht im body nach portal-fahne.css: alle Selektoren hier eine Klasse schwerer */
+.portal-fahne .p-narrow:has(#aboAnleitungen) .p-chip.orange {
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+}
+.portal-fahne .abo-card-subtitle { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .abo-url-row { gap: .4rem; }
+.portal-fahne .abo-url-row code {
+    padding: .5rem .65rem;
+    background: var(--grund);
+    border-color: var(--linie);
+    color: var(--tinte);
+    font-size: .8125rem;
+}
+.portal-fahne .abo-copy-btn {
+    min-width: 38px;
+    min-height: 38px;
+    background: #ececea;
+    color: var(--tinte);
+    font-size: .95rem;
+}
+.portal-fahne .abo-copy-btn:hover { background: #e2e2dd; color: var(--tinte); }
+.portal-fahne .abo-copy-btn.copied { background: var(--gut-hell); color: var(--gut); }
+.portal-fahne .abo-regen-row { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .abo-regen-row button {
+    min-height: 38px;
+    padding: 0 .25rem;
+    color: var(--akzent);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.portal-fahne .abo-regen-row button:hover { color: var(--akzent-tief); }
+/* Anleitungen: flach statt Schatten (inline, Z. 212/228), Kopf beim Öffnen neutral statt Bootstrap-Blau */
+.portal-fahne #aboAnleitungen {
+    --bs-accordion-active-bg: var(--grund);
+    --bs-accordion-active-color: var(--tinte);
+    --bs-accordion-btn-active-icon: var(--bs-accordion-btn-icon);
+    --bs-accordion-btn-focus-box-shadow: none;
+    --bs-accordion-border-color: var(--linie);
+}
+.portal-fahne #aboAnleitungen .accordion-item {
+    border: 1px solid var(--linie) !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: none !important;
+}
+.portal-fahne #aboAnleitungen .accordion-button { min-height: 44px; }
+.portal-fahne #aboAnleitungen .accordion-button:focus-visible { outline-offset: -3px; }   /* sonst vom overflow:hidden abgeschnitten */
+.portal-fahne #aboAnleitungen .accordion-body { font-size: .9375rem !important; }       /* inline .81rem */
+
+/* ---- changelog.php ---- */
+/* Stil steht im body nach portal-fahne.css: alle Selektoren hier eine Klasse schwerer */
+.portal-fahne .version-tag {
+    padding: .15rem .6rem;
+    border-radius: 999px;
+    background: #ececea;
+    color: var(--tinte);
+    font-family: inherit;
+    font-size: .8125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.portal-fahne .version-date { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .version-card-header .badge {
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+/* Typen dezent; «Fix» ist kein Fehler mehr, darum nicht rot (Bootstrap setzt bg-* mit !important) */
+.portal-fahne .version-badges .badge.bg-primary { background-color: var(--akzent-hell) !important; color: var(--akzent-tief); }
+.portal-fahne .version-badges .badge.bg-success { background-color: var(--gut-hell) !important; color: var(--gut); }
+.portal-fahne .version-badges .badge.bg-danger,
+.portal-fahne .version-badges .badge.bg-secondary { background-color: #ececea !important; color: var(--tinte); }
+.portal-fahne .cl-entry + .cl-entry { border-top-color: var(--linie); }
+.portal-fahne .cl-entry-title { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .cl-entry-desc { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .changelog-empty { color: var(--tinte-2); }
+
+/* ---- mein_fragebogen.php ---- */
+/* Bootstrap-Felder, -Knöpfe, -Hinweise auf der Seite und in beiden Modalen: 8px statt 6px/4px */
+.portal-fahne #fragebogenAccordion,
+.portal-fahne #builderModal,
+.portal-fahne #resultsModal {
+    --bs-border-radius: var(--radius-sm);
+    --bs-border-radius-sm: var(--radius-sm);
+}
+
+/* Umfragen-Liste: flache Karten ohne farbigen Seitenstreifen, die Art zeigt das Symbol */
+.portal-fahne .umfrage-accordion { --bs-accordion-btn-active-icon: var(--bs-accordion-btn-icon); }
+.portal-fahne .umfrage-accordion .accordion-button {
+    min-height: 3rem;
+    border-left: 0;
+    border-bottom-color: var(--linie);
+    font-size: .9375rem;
+}
+.portal-fahne .umfrage-accordion .accordion-button.collapsed { border-bottom-color: transparent; }   /* sonst 2px unten */
+.portal-fahne .umfrage-accordion .accordion-button:not(.collapsed) { background: var(--grund); }
+.portal-fahne .umfrage-accordion .accordion-button:focus-visible { outline-offset: -3px; }
+.portal-fahne .umfrage-accordion .accordion-button > .bi:first-child { color: var(--akzent); }
+.portal-fahne .umfrage-accordion .accordion-body { padding: 1rem 1.1rem 1.15rem; }
+.portal-fahne .umfrage-accordion .year-badge {
+    border-radius: 999px;
+    background: #ececea;
+    color: var(--tinte);
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+}
+.portal-fahne .umfrage-accordion .status-badge {
+    padding: .1rem .55rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+/* «Offen» = für dich als Nächstes zu tun (Gold), erledigt dezent grün, geschlossen grau, Entwurf gestrichelt */
+.portal-fahne .umfrage-accordion .status-badge.offen { background: var(--ehre-hell); color: var(--ehre-text); }
+.portal-fahne .umfrage-accordion .status-badge.beantwortet { background: var(--gut-hell); color: var(--gut); }
+.portal-fahne .umfrage-accordion .status-badge.geschlossen { background: #ececea; color: var(--tinte-2); }
+.portal-fahne .umfrage-accordion .status-badge.entwurf {
+    background: var(--flaeche);
+    border: 1px dashed var(--linie-stark);
+    color: var(--tinte);
+}
+.portal-fahne .umfrage-accordion .alert-danger,
+.portal-fahne #resultsBody .alert-danger {
+    --bs-alert-bg: var(--gefahr-hell);
+    --bs-alert-color: var(--gefahr);
+    --bs-alert-border-color: var(--gefahr-hell);
+}
+.portal-fahne .loading-placeholder { color: var(--tinte-2); }
+.portal-fahne .spinner-custom { border-color: var(--linie); border-top-color: var(--akzent); }
+
+/* Fragen: flache Felder auf --grund ohne Seitenstreifen */
+.portal-fahne .question-group { background: var(--grund); border-left: 0; }
+.portal-fahne .question-group > label { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .question-group .form-select,
+.portal-fahne .question-group .form-control { border-width: 1px; font-size: .9375rem; }
+/* JM-Antworten: nur Zusagen grün, «nicht»/«nein» neutral (kein Fehler), «nur wenn Gruppe füllt»
+   mit grünem Rand. Die Seite setzt die Farben mit !important, darum hier ebenso. */
+.portal-fahne .question-group .select-teil,
+.portal-fahne .question-group .select-ja {
+    background-color: var(--gut-hell) !important;
+    border-color: var(--gut) !important;
+    color: var(--tinte) !important;
+}
+.portal-fahne .question-group .select-evtl {
+    background-color: var(--flaeche) !important;
+    border-color: var(--gut) !important;
+    color: var(--tinte) !important;
+}
+.portal-fahne .question-group .select-nicht,
+.portal-fahne .question-group .select-nein {
+    background-color: var(--flaeche) !important;
+    border-color: var(--linie-stark) !important;
+    color: var(--tinte) !important;
+}
+/* Antwortoptionen: ganze Zeile antippbar (Label hat for), Optionstext normal statt fett */
+.portal-fahne .question-group .form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    min-height: 0;
+    margin: 0;
+    padding-left: 0;
+}
+.portal-fahne .question-group .form-check-input {
+    float: none;
+    flex-shrink: 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin: .68rem 0 0;
+}
+.portal-fahne .question-group .form-check-label {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: .55rem 0;
+    font-size: .9375rem;
+    font-weight: 400;
+    color: var(--tinte);
+    cursor: pointer;
+}
+.portal-fahne .question-group .form-check-input:disabled ~ .form-check-label {
+    opacity: 1;
+    color: var(--tinte-2);
+    cursor: default;
+}
+/* Autosave-Anzeige: >= 12px, Farben aus der Welt; Grund verdeckt überlappenden Fragetext sauber */
+.portal-fahne .question-group .autosave-indicator {
+    top: .55rem;
+    right: .6rem;
+    padding: .05rem .5rem;
+    border-radius: 999px;
+    background: var(--grund);
+    font-size: .8rem;
+    font-weight: 600;
+}
+.portal-fahne .autosave-indicator.saving { color: var(--tinte-2); }
+.portal-fahne .autosave-indicator.saved { color: var(--gut); }
+.portal-fahne .autosave-indicator.error { color: var(--gefahr); }
+.portal-fahne .min-auswahl-warning {
+    background: var(--gefahr-hell);
+    border-color: var(--gefahr-hell);
+    border-radius: var(--radius-sm);
+    color: var(--gefahr);
+    font-size: .8125rem;
+}
+
+/* Modale (Fragen-Editor, Auswertung): schwebende Ebene mit dem erlaubten Schatten */
+.portal-fahne #builderModal,
+.portal-fahne #resultsModal {
+    --bs-modal-border-color: var(--linie);
+    --bs-modal-border-radius: var(--radius);
+    --bs-modal-inner-border-radius: calc(var(--radius) - 1px);
+}
+.portal-fahne #builderModal .modal-content,
+.portal-fahne #resultsModal .modal-content { box-shadow: 0 6px 18px rgba(26, 26, 36, .12); }
+.portal-fahne #builderModal .modal-title,
+.portal-fahne #resultsModal .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--tinte); }
+/* «Abbrechen»/«Schliessen» (btn-secondary): grau-flach wie .p-btn.ghost statt Bootstrap-Grau */
+.portal-fahne #builderModal .btn-secondary,
+.portal-fahne #resultsModal .btn-secondary {
+    --bs-btn-color: var(--tinte);
+    --bs-btn-bg: #ececea;
+    --bs-btn-border-color: #ececea;
+    --bs-btn-hover-color: var(--tinte);
+    --bs-btn-hover-bg: #e2e2dd;
+    --bs-btn-hover-border-color: #e2e2dd;
+    --bs-btn-active-color: var(--tinte);
+    --bs-btn-active-bg: #e2e2dd;
+    --bs-btn-active-border-color: #e2e2dd;
+    --bs-btn-focus-shadow-rgb: 0, 82, 160;
+}
+.portal-fahne #builderModal .frage-card {
+    background: var(--grund);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+}
+.portal-fahne #builderModal .frage-card .drag-handle { color: var(--tinte-2); }
+/* «Mind.» steht inline mit .75rem (Z. 1019) */
+.portal-fahne #builderModal .min-auswahl-wrap .input-group-text {
+    background: #ececea;
+    border-color: var(--linie-stark);
+    color: var(--tinte-2);
+    font-size: .8rem !important;
+}
+
+/* Auswertung */
+.portal-fahne #resultsModal .result-bar-label { font-size: .875rem; color: var(--tinte); }
+.portal-fahne #resultsModal .result-bar-label span:last-child { color: var(--tinte-2); font-variant-numeric: tabular-nums; }
+.portal-fahne #resultsModal .result-bar { height: .75rem; border-radius: 999px; background: #ececea; }
+.portal-fahne #resultsModal .result-bar-fill { border-radius: 999px; background: var(--akzent); }   /* statt Verlauf */
+.portal-fahne #resultsModal .result-name-tag {
+    border-color: var(--linie);
+    border-radius: 999px;
+    background: var(--grund);
+    color: var(--tinte);
+    font-size: .8rem;
+}
+.portal-fahne #resultsModal .text-antwort {
+    border-left: 0;
+    border-radius: var(--radius-sm);
+    background: var(--grund);
+    font-size: .875rem;
+}
+.portal-fahne #resultsModal .beantwortet-tag {
+    min-height: 38px;
+    padding: 0 0 0 .75rem;
+    border-radius: 999px;
+    background: #ececea;
+    color: var(--tinte);
+    font-size: .8125rem;
+}
+.portal-fahne #resultsModal .btn-tag-delete {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    opacity: 1;
+    color: var(--tinte-2);
+    font-size: 1.05rem;
+}
+.portal-fahne #resultsModal .btn-tag-delete:hover { background: var(--gefahr-hell); color: var(--gefahr); }
+/* Antwort-Marken aus jmBadge() (Z. 1380-1385, komplett inline): Übergang, bis Klassen kommen.
+   >= 12px, «Nein» nicht mehr rot, Zusage dezent grün, «Evtl.» mit grünem Rand */
+.portal-fahne #resultsBody span[style*="border-radius:4px;font-size:0.75rem"] {
+    padding: .05rem .5rem !important;
+    border: 1px solid transparent;
+    border-radius: 999px !important;
+    background: #ececea !important;
+    color: var(--tinte) !important;
+    font-size: .8rem !important;
+}
+.portal-fahne #resultsBody span[style*="background:#d4edda"] {
+    background: var(--gut-hell) !important;
+    color: var(--gut) !important;
+}
+.portal-fahne #resultsBody span[style*="background:#fff3cd"] {
+    background: var(--flaeche) !important;
+    border-color: var(--gut);
+}
+
+
+/* ==== Jungschuetzen und Chat: dieselbe Optik wie die Mitglieder ===== */
+
+/* ---- JSK-Familie (gemeinsam) ---- */
+/* Haken: class="container py-4" gibt es nur auf den jsk_*-Seiten und der
+   Chat-Sperrseite. py-4 traegt !important, deshalb hier auch. */
+.portal-fahne .portal-content > .container.py-4 { padding: 0 !important; }
+.portal-fahne .portal-content > .container.py-4 .btn { --bs-btn-border-radius: var(--radius-sm); }
+.portal-fahne .portal-content > .container.py-4 .alert { --bs-alert-border-radius: var(--radius); }
+.portal-fahne .portal-content > .container.py-4 .alert-info {
+    --bs-alert-bg: var(--akzent-hell); --bs-alert-color: var(--akzent-tief);
+    --bs-alert-border-color: var(--akzent-hell); --bs-alert-link-color: var(--akzent-tief);
+}
+.portal-fahne .portal-content > .container.py-4 .alert-warning {
+    --bs-alert-bg: var(--flaeche); --bs-alert-color: var(--tinte);
+    --bs-alert-border-color: var(--linie-stark); --bs-alert-link-color: var(--akzent);
+}
+.portal-fahne .portal-content > .container.py-4 .alert-danger {
+    --bs-alert-bg: var(--gefahr-hell); --bs-alert-color: var(--gefahr);
+    --bs-alert-border-color: var(--gefahr); --bs-alert-link-color: var(--gefahr);
+}
+.portal-fahne .portal-content > .container.py-4 .alert-light {
+    --bs-alert-bg: var(--grund); --bs-alert-color: var(--tinte);
+    --bs-alert-border-color: var(--linie); --bs-alert-link-color: var(--akzent);
+}
+
+/* ---- jsk_dashboard.php ---- */
+/* Hero wird zur ruhigen Begruessung wie .fs-gruss auf der Mitglieder-Startseite */
+.portal-fahne .jsk-hero {
+    background: none;
+    color: var(--tinte);
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: .8rem;
+}
+.portal-fahne .jsk-hero h1,
+.portal-fahne .jsk-hero h4 { font-size: 1.25rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .jsk-hero h1 > .bi,
+.portal-fahne .jsk-hero h4 > .bi { display: none; }
+.portal-fahne .jsk-hero p { margin-top: .1rem; font-size: .9375rem; color: var(--tinte-2); }
+
+.portal-fahne .jsk-card {
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    padding: .75rem .9rem;
+    margin-bottom: .6rem;
+    font-size: .9375rem;
+}
+/* Info-Block: Inline-Seitenstreifen (4px #3b5998) neutralisieren */
+.portal-fahne .jsk-card[style*="border-left"] { border-left: 1px solid var(--linie) !important; }
+.portal-fahne .jsk-card > .fw-bold { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .jsk-card .datum { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.portal-fahne .jsk-card .datum .bi { color: var(--tinte-2); }
+.portal-fahne .jsk-card.jsk-empty { padding: 1.5rem 1rem; color: var(--tinte-2); }
+
+/* «Meine Anmeldungen» */
+.portal-fahne .jsk-hero ~ .d-flex > h5 { font-size: 1rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .jsk-hero ~ .d-flex > h5 .bi { color: var(--tinte-2); }
+
+/* Status dezent statt Bootstrap-Gelb/-Cyan (Utilities tragen !important) */
+.portal-fahne #anfragenList .badge {
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .2em .65em;
+    border-radius: 999px;
+}
+.portal-fahne #anfragenList .badge.bg-warning { background-color: var(--akzent-hell) !important; color: var(--akzent-tief) !important; }
+.portal-fahne #anfragenList .badge.bg-success { background-color: var(--gut-hell) !important; color: var(--gut) !important; }
+.portal-fahne #anfragenList .badge.bg-secondary { background-color: transparent !important; color: var(--tinte-2) !important; border: 1px solid var(--linie-stark); }
+.portal-fahne #anfragenList .badge.bg-info,
+.portal-fahne #anfragenList .badge.bg-light { background-color: #ececea !important; color: var(--tinte) !important; }
+
+/* ---- jsk_betreuung.php ---- */
+.portal-fahne .jsk-refresh { font-size: .8rem; color: var(--tinte-2); }
+.portal-fahne .jsk-grid { gap: .75rem; }
+.portal-fahne .jsk-tile {
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    padding: .85rem 1rem;
+    box-shadow: none;
+    transition: none;
+    font-size: .9375rem;
+}
+.portal-fahne .jsk-tile:hover { box-shadow: none; }
+.portal-fahne .jsk-tile .name { font-size: 1rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .jsk-tile .name .bi { color: var(--tinte-2); }
+.portal-fahne .jsk-tile .datum { font-size: .9375rem; font-weight: 600; color: var(--akzent); font-variant-numeric: tabular-nums; }
+.portal-fahne .jsk-tile .termin,
+.portal-fahne .jsk-tile .bem { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .jsk-tile .same-day { font-size: .8125rem; font-weight: 600; color: var(--tinte); }
+/* vergeben: ausgegraut ohne Transparenz */
+.portal-fahne .jsk-tile.vergeben { opacity: 1; background: var(--grund); border-color: var(--linie); }
+.portal-fahne .jsk-tile.vergeben .name,
+.portal-fahne .jsk-tile.vergeben .datum { color: var(--tinte-2); }
+/* eigene Betreuung (hat «Freigeben») bleibt hell und blau umrandet */
+.portal-fahne .jsk-tile.vergeben:has(.js-release) { background: var(--flaeche); border-color: var(--akzent); }
+.portal-fahne .jsk-tile.vergeben:has(.js-release) .name { color: var(--tinte); }
+.portal-fahne .jsk-tile.vergeben:has(.js-release) .datum { color: var(--akzent); }
+.portal-fahne .jsk-tile.jsk-empty { padding: 1.5rem 1rem; color: var(--tinte-2); }
+
+/* ---- jsk_profil.php ---- */
+.portal-fahne .profil-card {
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    padding: .85rem 1rem;
+    margin-bottom: .75rem;
+    font-size: .9375rem;
+}
+.portal-fahne .profil-card h6 { font-size: .9375rem; font-weight: 700; color: var(--tinte); }
+
+/* ---- jsk_termin.php ---- */
+.portal-fahne .termin-card {
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    padding: 1rem;
+    font-size: .9375rem;
+}
+/* «(Begleitung zusaetzlich anfragen)» waere sonst .875em von .8125rem = 10.7px */
+.portal-fahne .termin-card .form-label .small { font-size: inherit; }
+.portal-fahne .wd-quick .btn { border-radius: 999px; }
+/* Termin-Knoepfe sind Listeneintraege: lange Namen umbrechen statt ueberlaufen */
+.portal-fahne #quickTermine .btn { white-space: normal; }
+/* gewaehlter Tag: .btn.active setzte bisher transparente Fuellung */
+.portal-fahne .termin-card .quick-date.active {
+    background: var(--akzent);
+    border-color: var(--akzent);
+    color: #fff;
+}
+
+/* ---- jsk_termine.php ---- */
+/* (.tm-* gibt es auch in termine.php, das unter .portal-fahne aber termine_fahne.inc.php rendert) */
+.portal-fahne .tm-list .tm-card {
+    gap: .7rem;
+    padding: .6rem .75rem;
+    margin-bottom: .45rem;
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+}
+.portal-fahne .tm-list .tm-date {
+    width: 3.4rem;
+    padding: .2rem 0;
+    line-height: 1.1;
+    background: var(--flaeche);
+    color: var(--tinte);
+    border: 1px solid var(--linie-stark);
+    border-radius: var(--radius-sm);
+}
+.portal-fahne .tm-list .tm-date .d { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.portal-fahne .tm-list .tm-date .wd { font-size: .8rem; font-weight: 600; text-transform: none; opacity: 1; color: var(--tinte-2); }
+/* als Naechstes: erster kommender Termin in Loewengold (wie .tf-tag.is-naechster) */
+.portal-fahne .tm-list > .tm-card:first-child:not(.tm-card--past) .tm-date { background: var(--ehre); border-color: var(--ehre); color: var(--ehre-text); }
+.portal-fahne .tm-list > .tm-card:first-child:not(.tm-card--past) .tm-date .wd { color: var(--ehre-text); }
+.portal-fahne .tm-list .tm-name { font-size: .9375rem; font-weight: 600; line-height: 1.3; color: var(--tinte); }
+.portal-fahne .tm-list .tm-time { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .tm-list .tm-rsvp .form-switch { padding-left: 0; min-height: 0; }
+.portal-fahne .tm-list .tm-rsvp .form-check-input {
+    float: none;
+    width: 2.75rem;
+    height: 1.5rem;
+    margin: 0;
+    border-color: var(--linie-stark);
+}
+.portal-fahne .tm-list .tm-rsvp .form-check-input:checked { background-color: var(--akzent); border-color: var(--akzent); }
+.portal-fahne .tm-list .tm-rsvp-label { margin-top: .2rem; font-size: .8125rem; color: var(--tinte-2); }
+/* vergangen: ohne Transparenz, nur zurueckgenommen */
+.portal-fahne .tm-list .tm-card--past { opacity: 1; }
+.portal-fahne .tm-list .tm-card--past .tm-date { background: var(--flaeche); border-color: var(--linie); color: var(--tinte-2); }
+.portal-fahne .tm-list .tm-card--past .tm-name { font-weight: 500; color: var(--tinte-2); }
+.portal-fahne .tm-list .tm-empty {
+    padding: 1.5rem 1rem;
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    color: var(--tinte-2);
+}
+
+/* ---- chat (portal.css) ---- */
+/* Chat-Tokens auf die Welt abbilden (alle Verwender liegen in .chat-wrap) */
+.portal-fahne .chat-wrap {
+    --chat-bg: var(--grund);
+    --chat-me: var(--akzent-hell);
+    --chat-them: var(--flaeche);
+    --chat-bar: var(--flaeche);
+    --chat-tick: var(--tinte-2);
+    --chat-tick-read: var(--akzent);
+    border-radius: var(--radius);
+    box-shadow: none;
+}
+
+/* Ungelesen-Zaehler im Menue (portal_footer.php erzeugt .badge.bg-danger) */
+.portal-fahne .chat-navbadge.badge.bg-danger { background-color: var(--verein) !important; color: #fff; font-size: .8rem; }
+
+/* Liste */
+.portal-fahne .chat-list-head { color: var(--tinte); font-size: .9375rem; }
+.portal-fahne #btnNewChat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: var(--radius-sm);
+}
+.portal-fahne .chat-search .bi { color: var(--tinte-2); }
+/* Rand als Innenlinie: kein Layout-Sprung gegenueber border:none */
+.portal-fahne .chat-search input {
+    min-height: 38px;
+    background: var(--flaeche);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 0 1px var(--linie-stark);
+    font-size: .9375rem;
+    color: var(--tinte);
+}
+.portal-fahne .chat-row { border-bottom-color: var(--linie); }
+.portal-fahne .chat-row:hover { background: var(--grund); }
+.portal-fahne .chat-row.active { background: var(--akzent-hell); }
+.portal-fahne .chat-av.leiter { background: var(--akzent-tief); }
+.portal-fahne .chat-row-name { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .chat-row-last { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .chat-row-time { font-size: .8rem; color: var(--tinte-2); }
+.portal-fahne .chat-row-time.unread { color: var(--tinte); font-weight: 700; }
+.portal-fahne .chat-badge {
+    background: var(--verein);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    min-width: 22px;
+    padding: 1px 7px;
+}
+
+/* Thread */
+.portal-fahne .chat-thread { background-image: none; }
+.portal-fahne .chat-thread.dragging::after {
+    background: var(--akzent-hell);
+    border-color: var(--akzent);
+    color: var(--akzent-tief);
+}
+.portal-fahne .chat-thread-head {
+    background: var(--flaeche);
+    color: var(--tinte);
+    border-bottom: 1px solid var(--linie);
+    box-shadow: none;
+}
+.portal-fahne .chat-thread-head .chat-av { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .chat-thread-name { font-size: .9375rem; font-weight: 700; }
+.portal-fahne .chat-thread-sub { font-size: .8125rem; opacity: 1; color: var(--tinte-2); }
+/* display bleibt bei portal.css (none / am Handy inline-flex) */
+.portal-fahne .chat-back {
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    margin-left: -.5rem;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    color: var(--tinte);
+}
+.portal-fahne .chat-back:hover { background: var(--grund); }
+.portal-fahne .chat-hinweis {
+    font-size: .8125rem;
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+    border-bottom-color: var(--linie);
+}
+.portal-fahne .chat-empty { color: var(--tinte-2); }
+.portal-fahne .chat-empty--start .bi { color: var(--linie-stark); }
+
+/* Blasen: Schwaenzchen und feine Schattenkante bleiben (Lesbarkeit auf --grund) */
+.portal-fahne .chat-bubble { font-size: .9375rem; }
+.portal-fahne .chat-bubble.them,
+.portal-fahne .chat-bubble.me { color: var(--tinte); }
+.portal-fahne .chat-bubble .t { font-size: .75rem; }
+.portal-fahne .chat-bubble .s { font-size: .8125rem; }
+.portal-fahne .chat-bubble.deleted .del { color: var(--tinte-2); }
+.portal-fahne .chat-bubble a { color: var(--akzent); }
+.portal-fahne .chat-day {
+    background: var(--flaeche);
+    color: var(--tinte-2);
+    border: 1px solid var(--linie);
+    border-radius: 999px;
+    box-shadow: none;
+    font-size: .8rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.portal-fahne .chat-img { background: var(--linie); border-radius: 4px; }
+/* Haekchen auf dem Foto: weiss, gelesen = Doppelhaken (Form traegt die Bedeutung) */
+.portal-fahne .chat-bubble.has-img .cap--only .t .tick.read { color: #fff; }
+
+/* Nach-unten-Knopf schwebt: einziger Schatten im Thread */
+.portal-fahne .chat-scroll-down {
+    background: var(--flaeche);
+    color: var(--tinte-2);
+    border: 1px solid var(--linie);
+    box-shadow: 0 6px 18px rgba(26, 26, 36, .12);
+}
+.portal-fahne .chat-scroll-down .n { background: var(--verein); font-size: .8rem; min-width: 20px; }
+
+/* Eingabeleiste */
+.portal-fahne .chat-input { border-top: 1px solid var(--linie); }
+/* Innenlinie statt border: die Hoehen-Automatik (scrollHeight) rechnet ohne Rand */
+.portal-fahne .chat-input textarea {
+    background: var(--flaeche);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 0 1px var(--linie-stark);
+    font-size: .9375rem;
+    color: var(--tinte);
+}
+.portal-fahne .chat-icon-btn {
+    min-width: 40px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    color: var(--tinte-2);
+}
+.portal-fahne .chat-icon-btn:hover { background: var(--grund); color: var(--akzent); }
+.portal-fahne .chat-send:hover,
+.portal-fahne .chat-send:focus-visible { background: var(--akzent-tief); color: #fff; }
+.portal-fahne .chat-emoji-panel {
+    max-height: 214px;
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 18px rgba(26, 26, 36, .12);
+}
+.portal-fahne .chat-emoji-panel span { padding: 0; line-height: 38px; border-radius: var(--radius-sm); }
+.portal-fahne .chat-emoji-panel span:hover { background: var(--grund); }
+
+/* Overlays: Bild-Vorschau und Lightbox */
+.portal-fahne .chat-overlay { background: rgba(26, 26, 36, .96); }
+.portal-fahne .chat-overlay :focus-visible { outline-color: #fff; }
+.portal-fahne .chat-overlay-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: var(--radius-sm);
+}
+.portal-fahne .chat-overlay-close:hover { color: var(--akzent-hell); }
+.portal-fahne .chat-overlay-foot .form-control {
+    border-radius: 999px;
+    background: #33343d;
+    border-color: var(--linie-stark);
+    color: #fff;
+}
+.portal-fahne .chat-overlay-foot .form-control::placeholder { color: #b9bac0; }
+.portal-fahne .chat-overlay-foot .form-control:focus {
+    background: #33343d;
+    color: #fff;
+    border-color: var(--linie-stark);
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+/* Modal «Jungschütze anschreiben» (Leitung) */
+.portal-fahne #newChatModal .modal-content {
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 18px rgba(26, 26, 36, .12);
+}
+.portal-fahne #newChatModal .modal-title { font-size: 1rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne #newChatModal .list-group { --bs-list-group-border-radius: var(--radius-sm); --bs-list-group-border-color: var(--linie); }
+.portal-fahne #newChatModal .nc-item { min-height: 44px; font-size: .9375rem; color: var(--tinte); }
+.portal-fahne #newChatModal .nc-item:hover,
+.portal-fahne #newChatModal .nc-item:focus { background: var(--akzent-hell); color: var(--akzent-tief); }
+
+@media (max-width: 767.98px) {
+    /* randlos wie bisher; der Desktop-Radius oben darf hier nicht greifen */
+    .portal-fahne .chat-wrap {
+        border: 0;
+        border-radius: 0;
+        height: calc(100dvh - var(--nav-height) - 2.5rem);
+    }
+    /* «‹ Start» steht unter .portal-fahne auch am Handy oben: Platz dafuer abziehen */
+    .portal-fahne body.page-chat .portal-back-link {
+        display: flex;
+        width: fit-content;
+        min-height: 2.5rem;
+        margin: 0 .75rem;
+    }
+    /* Im Thread fuehrt der Pfeil im Kopf zurueck: Start-Link weg, Thread volle Hoehe
+       (gleiches Muster wie bisher body.chat-in-thread .portal-back-fab) */
+    .portal-fahne body.page-chat.chat-in-thread .portal-back-link { display: none; }
+    .portal-fahne body.chat-in-thread .chat-wrap { height: calc(100dvh - var(--nav-height)); }
+    /* Sperrseite ohne Chat-Zugriff: page-chat nimmt das Seiten-Padding weg */
+    .portal-fahne body.page-chat .portal-content > .container.py-4 { padding: 0 .75rem !important; }
+}
+
+
+/* ---- anlaesse.php ---- */
+.portal-fahne .ga-card {
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    background: var(--flaeche);
+    transition: border-color .15s;
+}
+.portal-fahne .ga-card:hover { transform: none; box-shadow: none; border-color: var(--linie-stark); }
+.portal-fahne .ga-cover { background: var(--grund); }
+.portal-fahne .ga-cover .ph { color: var(--linie-stark); }
+/* Play-Zeichen klein in die Ecke: die Bildmitte bleibt frei */
+.portal-fahne .ga-play { align-items: flex-end; justify-content: flex-end; padding: .5rem; }
+.portal-fahne .ga-play i {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background: rgba(17, 17, 17, .72);
+    font-size: 1.2rem;
+}
+.portal-fahne .ga-body { padding: .6rem .75rem .65rem; }
+.portal-fahne .ga-name { font-size: .9375rem; font-weight: 600; line-height: 1.3; color: var(--tinte); }
+.portal-fahne .ga-meta { margin-top: .15rem; font-size: .8125rem; color: var(--tinte-2); font-variant-numeric: tabular-nums; }
+.portal-fahne .ga-add {
+    min-height: 40px;
+    border-top: 1px solid var(--linie);
+    background: var(--flaeche);
+    color: var(--akzent);
+    font-size: .875rem;
+}
+.portal-fahne .ga-add:hover { background: var(--akzent-hell); color: var(--akzent-tief); }
+.portal-fahne .ga-add:focus-visible { outline-offset: -3px; }  /* die Karte schneidet mit overflow:hidden ab */
+
+/* Leerzustand und Upload-Leiste, gleich gebaut in anlass.php (.an-…) */
+.portal-fahne .ga-empty,
+.portal-fahne .an-empty {
+    padding: 1.5rem 1rem;
+    border-color: var(--linie);
+    border-radius: var(--radius);
+    background: var(--flaeche);
+    color: var(--tinte-2);
+    font-size: .9375rem;
+}
+.portal-fahne .ga-empty .bi,
+.portal-fahne .an-empty .bi { color: var(--linie-stark); }
+.portal-fahne .ga-uploadbar,
+.portal-fahne .an-uploadbar {
+    flex-wrap: wrap;
+    gap: .35rem .6rem;
+    padding: .55rem .8rem;
+    border-color: var(--akzent-hell);
+    border-radius: var(--radius);
+    background: var(--akzent-hell);
+    color: var(--akzent-tief);
+    font-size: .875rem;
+    font-weight: 600;
+}
+.portal-fahne #gaUploadStatus,
+.portal-fahne #anUploadStatus { font-variant-numeric: tabular-nums; }
+/* Hinweis «Bildschirm bleibt an»: inline 0.78rem liegt unter 12px */
+.portal-fahne .ga-uploadbar > .text-muted,
+.portal-fahne .an-uploadbar > .text-muted { font-size: .8125rem !important; font-weight: 400; }
+
+/* ---- anlass.php ---- */
+.portal-fahne .an-title { font-size: 1.25rem; line-height: 1.25; color: var(--tinte); }
+.portal-fahne .an-title .bi { display: none; }  /* wie alle Seitentitel (portal.css) */
+@media (max-width: 767.98px) {
+    .portal-fahne .an-title { font-size: 1.15rem; }
+}
+.portal-fahne .an-sub { font-size: .8125rem; color: var(--tinte-2); }
+.portal-fahne .an-desc {
+    font-size: .9375rem;
+    line-height: 1.5;
+    color: var(--tinte);
+    background: var(--flaeche);
+    border-color: var(--linie);
+    border-radius: var(--radius);
+}
+/* Tagestitel wie die Monatstitel der Termine (.tf-monat) */
+.portal-fahne .an-daytitle {
+    margin-bottom: .45rem;
+    padding-bottom: 0;
+    border-bottom: 0;
+    font-size: .8125rem;
+    font-weight: 700;
+    color: var(--tinte-2);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Foto-Kachel: das Bild bleibt ruhig, Rückmeldung nur am Rahmen */
+.portal-fahne .an-photo { border-radius: var(--radius-sm); background: var(--linie); }
+.portal-fahne .an-photo img { transition: none; }
+.portal-fahne .an-photo:hover img { transform: none; }
+@media (hover: hover) {
+    .portal-fahne .an-photo:hover { outline: 2px solid var(--linie-stark); outline-offset: 2px; }
+}
+
+/* Status unten links (oben rechts sitzen die Aktionen), dezent */
+.portal-fahne .an-photo .an-pending,
+.portal-fahne .an-photo .an-rejected {
+    top: auto;
+    bottom: 4px;
+    left: 4px;
+    max-width: calc(100% - 8px);
+    padding: .1rem .45rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.portal-fahne .an-photo .an-pending { background: var(--ehre-hell); color: var(--ehre-text); }
+.portal-fahne .an-photo .an-rejected { background: var(--flaeche); color: var(--tinte-2); }
+/* mit Bildunterschrift über den Scrim heben */
+.portal-fahne .an-photo:has(.an-cap) .an-pending,
+.portal-fahne .an-photo:has(.an-cap) .an-rejected { bottom: 1.75rem; }
+
+/* Stift und Papierkorb: 36px, 8px Abstand, Papierkorb in --gefahr */
+.portal-fahne .an-photo .an-del,
+.portal-fahne .an-photo .an-titel {
+    top: 4px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--linie);
+    border-radius: var(--radius-sm);
+    background: var(--flaeche);
+    color: var(--tinte);
+    font-size: 1rem;
+}
+.portal-fahne .an-photo .an-del { right: 4px; color: var(--gefahr); }
+.portal-fahne .an-photo .an-titel { right: 48px; }
+.portal-fahne .an-photo .an-titel:hover { background: var(--akzent-hell); border-color: var(--akzent); color: var(--akzent-tief); }
+.portal-fahne .an-photo .an-del:hover { background: var(--gefahr); border-color: var(--gefahr); color: #fff; }
+.portal-fahne .an-photo .an-del:focus-visible,
+.portal-fahne .an-photo .an-titel:focus-visible { outline-offset: 1px; }  /* nicht von overflow:hidden abschneiden */
+/* Tastatur: Aktionen auch bei Fokus in der Kachel zeigen (wirkt erst mit Markup B7) */
+.portal-fahne .an-photo:focus-within .an-del,
+.portal-fahne .an-photo:focus-within .an-titel { display: flex; }
+
+/* Bildunterschrift: der einzige Verlauf, ein Scrim für lesbaren Text */
+.portal-fahne .an-photo .an-cap {
+    padding: 1rem .4rem .3rem;
+    font-size: .8rem;
+    line-height: 1.25;
+    background: linear-gradient(to top, rgba(17, 17, 17, .75), rgba(17, 17, 17, 0));
+}
+
+/* Upload-FAB: flach, Schatten nur als schwebende Ebene */
+.portal-fahne .an-upload-fab {
+    background: var(--akzent);
+    box-shadow: 0 3px 10px rgba(26, 26, 36, .25);
+    transition: background-color .15s;
+}
+.portal-fahne .an-upload-fab:hover,
+.portal-fahne .an-upload-fab:focus { background: var(--akzent-tief); color: #fff; transform: none; }
+.portal-fahne .an-upload-fab:disabled { background: var(--akzent); cursor: progress; }
+@media (max-width: 767.98px) {
+    /* Die Vorschau hat keinen Zurück-FAB mehr: unten rechts statt 60px höher */
+    .portal-fahne .an-upload-fab { right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---- foto-slideshow.css / foto-slideshow.js: Slideshow-Overlay ---- */
+/* Das Bild trägt: kein Verlauf oben und unten, kein Glas-Blur. Pillen und Knöpfe
+   bringen ihren eigenen dunklen Grund mit und bleiben auf jedem Foto lesbar. */
+.portal-fahne .ss-top,
+.portal-fahne .ss-controls { background: none; }
+.portal-fahne .ss-day span,
+.portal-fahne .ss-counter,
+.portal-fahne .ss-caption span,
+.portal-fahne .ss-daytitle span {
+    background: rgba(17, 17, 17, .72);
+    color: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+.portal-fahne .ss-day span { font-size: .8125rem; font-weight: 600; }
+.portal-fahne .ss-counter { font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.portal-fahne .ss-caption span { font-size: clamp(.9375rem, 2.4vw, 1.15rem); line-height: 1.35; }
+.portal-fahne .ss-daytitle span { letter-spacing: 0; }
+.portal-fahne .ss-btn {
+    background: rgba(17, 17, 17, .72);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 999px;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition: background-color .15s;
+}
+.portal-fahne .ss-btn-lg { background: rgba(17, 17, 17, .85); }
+.portal-fahne .ss-btn:hover { background: rgba(17, 17, 17, .92); transform: none; }
+.portal-fahne .ss-speed span { font-size: .8125rem; font-variant-numeric: tabular-nums; }
+/* Blauer Fokusring hat auf Schwarz nur 2.2:1, hier weiss */
+.portal-fahne .ss-overlay :focus-visible { outline-color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+    /* Ken-Burns aus. Die globale Regel kürzt die Animation nur auf .01ms; mit «forwards»
+       bliebe das Bild dann um 10 % gezoomt und verschoben stehen. */
+    .portal-fahne .ss-layer.kb { animation: none !important; }
+}
+
+/* ---- portal_footer.php: «Was ist neu?» ---- */
+.portal-fahne #whatsNewModal {
+    --bs-modal-border-radius: var(--radius);
+    --bs-modal-border-color: var(--linie);
+    --bs-modal-header-border-color: var(--linie);
+    --bs-modal-footer-border-color: var(--linie);
+    --bs-modal-header-padding: .85rem 1rem;
+}
+.portal-fahne #whatsNewModal .modal-content { box-shadow: 0 6px 18px rgba(26, 26, 36, .12); }
+/* Inline-Verlauf (Blau) ersetzen: weisser Kopf wie der Seitenkopf */
+.portal-fahne #whatsNewModal .modal-header { background: var(--flaeche) !important; color: var(--tinte) !important; }
+.portal-fahne #whatsNewModal .modal-title { font-size: 1.1rem; font-weight: 700; }
+.portal-fahne #whatsNewModal .modal-title .bi { color: var(--akzent); }
+/* vorbereitet für das X aus Markup B1: Tippfläche 38px */
+.portal-fahne #whatsNewModal .btn-close { box-sizing: border-box; width: 38px; height: 38px; padding: 0; }
+.portal-fahne .whatsnew-release + .whatsnew-release { border-top-color: var(--linie); }
+.portal-fahne .whatsnew-version {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--tinte-2);
+    font-family: inherit;
+    font-size: .8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.portal-fahne .whatsnew-date { color: var(--tinte-2); font-size: .8125rem; }
+.portal-fahne .whatsnew-entry { gap: .6rem; padding: .5rem 0; }
+.portal-fahne .whatsnew-entry + .whatsnew-entry { border-top-color: var(--linie); }
+.portal-fahne .whatsnew-entry .badge {
+    margin-top: .1rem;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+/* Typen dezent statt Signalfarben; !important nur gegen Bootstraps bg-*-Utilities */
+.portal-fahne .whatsnew-entry .badge.bg-primary   { background-color: var(--akzent-hell) !important; color: var(--akzent-tief); }
+.portal-fahne .whatsnew-entry .badge.bg-success   { background-color: var(--gut-hell) !important; color: var(--gut); }
+.portal-fahne .whatsnew-entry .badge.bg-danger    { background-color: var(--flaeche) !important; color: var(--tinte-2); box-shadow: inset 0 0 0 1px var(--linie-stark); }
+.portal-fahne .whatsnew-entry .badge.bg-secondary { background-color: #ececea !important; color: var(--tinte-2); }
+.portal-fahne .whatsnew-entry-title { font-size: .9375rem; line-height: 1.35; color: var(--tinte); }
+.portal-fahne .whatsnew-entry-desc { margin-top: .15rem; font-size: .875rem; line-height: 1.45; color: var(--tinte-2); }
+
+/* ---- portal_footer.php: Dokument-Viewer ---- */
+/* Fast alles steht inline: nur Farbe, Schrift und Tippfläche mit !important
+   übersteuern. display bleibt unberührt, das schaltet das Skript. */
+.portal-fahne #docViewerHeader {
+    background: var(--tinte) !important;  /* statt Marineblau */
+    border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+.portal-fahne #docViewerTitle { font-size: .9375rem !important; }
+.portal-fahne #docViewerHeader button {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: var(--radius-sm) !important;
+}
+@media (hover: hover) {
+    .portal-fahne #docViewerHeader button:hover { background: rgba(255, 255, 255, .18) !important; }
+}
+.portal-fahne #docViewerHeader button:active { background: rgba(255, 255, 255, .24) !important; }
+.portal-fahne #docViewerHeader button:disabled { cursor: progress; }
+.portal-fahne #pdfPageInfo { font-size: .8125rem; }
+.portal-fahne #pdfZoomLevel { font-size: .8125rem !important; font-variant-numeric: tabular-nums; }
+.portal-fahne #docViewerOverlay :focus-visible { outline-color: #fff; }
+/* Fehlermeldung als helle Karte mitten im dunklen Bereich, --gefahr nur hier */
+.portal-fahne .pdf-error-msg {
+    align-self: flex-start;
+    max-width: 24rem;
+    margin: 2rem auto;
+    padding: 1.25rem 1rem;
+    border-radius: var(--radius);
+    background: var(--gefahr-hell);
+    color: var(--gefahr);
+    font-size: .9375rem;
+    font-weight: 600;
+}
+.portal-fahne .pdf-error-msg i { font-size: 1.75rem; margin-bottom: .5rem; }
+.portal-fahne .pdf-error-msg small { display: block; margin-top: .35rem; font-size: .8125rem; font-weight: 400; color: var(--tinte); }
+/* Handy: Kopf zweizeilig. Oben Schliessen, Titel, Teilen; darunter Seiten und Zoom.
+   Mit 40px-Knöpfen passt sonst alles nur auf Kosten des Titels (0px bei 360px). */
+@media (max-width: 575.98px) {
+    .portal-fahne #docViewerHeader { flex-wrap: wrap; }
+    .portal-fahne #docViewerTitle { order: 1; flex: 1 1 calc(100% - 7rem) !important; min-width: 0; }
+    .portal-fahne #docViewerDownload { order: 2; }
+    .portal-fahne #pdfNavControls { order: 3; }
+    .portal-fahne #pdfZoomControls { order: 4; margin-left: auto; }
+}
+
+/* ---- portal_footer.php: Fusszeile ---- */
+/* Farbe und Grösse sind global gelöst (html.portal-fahne body > footer).
+   Der Ungelesen-Zähler am Chat-Link entsteht per Skript in dieser Datei und folgt der Glocke. */
+.portal-fahne .chat-navbadge { background-color: var(--verein) !important; font-size: .8rem; }
+
+/* ---- inc_pwa_install.php ---- */
+.portal-fahne .pwa-install {
+    gap: .75rem;
+    padding: .8rem .9rem;
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+}
+.portal-fahne .pwa-install[data-dismissible="1"] .pwa-install-body { padding-right: 2rem; }  /* Platz für das grössere X */
+.portal-fahne .pwa-install-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--akzent-hell);
+    color: var(--akzent);
+    font-size: 1.15rem;
+}
+.portal-fahne .pwa-install-title { font-size: .9375rem; color: var(--tinte); }
+.portal-fahne .pwa-install-text { font-size: .875rem; line-height: 1.5; color: var(--tinte-2); }
+.portal-fahne .pwa-install-text strong { color: var(--tinte); }
+.portal-fahne .pwa-ios-share { background: var(--akzent); color: #fff; }
+.portal-fahne .pwa-install-close {
+    top: .25rem;
+    right: .25rem;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    color: var(--tinte-2);
+    font-size: .9rem;
+}
+.portal-fahne .pwa-install-close:hover,
+.portal-fahne .pwa-install-close:active { background: var(--grund); color: var(--tinte); }
+
+/* ---- check_session.php ---- */
+/* Wirkt erst mit Markup B14 (Klasse portal-fahne + diese Datei). Grund und Schrift
+   kommen dann aus der globalen Regel für body. */
+html.portal-fahne body > .loader { color: var(--tinte-2); }
+html.portal-fahne body > .loader img { border-radius: var(--radius); }
+html.portal-fahne body > .loader p { font-size: .9375rem; }
+
+

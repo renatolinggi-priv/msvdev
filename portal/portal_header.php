@@ -595,6 +595,7 @@ if (isAdmin()) {
     </style>
     <?php if ($portal_fahne): ?>
     <link rel="stylesheet" href="../css/portal-fahne.css?v=<?php echo @filemtime(__DIR__ . '/../css/portal-fahne.css') ?: '1'; ?>">
+    <link rel="stylesheet" href="../css/portal-fahne-seiten.css?v=<?php echo @filemtime(__DIR__ . '/../css/portal-fahne-seiten.css') ?: '1'; ?>">
     <?php endif; ?>
 </head>
 <body class="<?php echo htmlspecialchars($portal_body_class ?? '', ENT_QUOTES, 'UTF-8'); ?>">
