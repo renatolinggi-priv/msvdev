@@ -47,8 +47,8 @@ $csrf_token = ensureCsrfToken();
 <?php if (!$chatAccess): ?>
   <div class="container py-4" style="max-width:620px;">
     <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span><i class="bi bi-chat-dots me-2"></i>Der Jungschützenchat ist nur aktiv, wenn du „Jungschützen betreuen" aktiviert hast.</span>
-      <a href="benachrichtigungen.php" class="btn btn-outline-primary btn-sm">Einstellungen</a>
+      <span><i class="bi bi-chat-dots me-2"></i>Der Jungschützenchat ist nur aktiv, wenn du «Jungschützen betreuen» aktiviert hast.</span>
+      <a href="benachrichtigungen.php" class="btn btn-outline-primary btn-sm">Benachrichtigungen einstellen</a>
     </div>
   </div>
   <?php include 'portal_footer.php'; ?>
@@ -118,7 +118,7 @@ $csrf_token = ensureCsrfToken();
   </div>
   <div class="chat-overlay-body"><img id="imgPreviewImg" alt="Vorschau"></div>
   <form class="chat-overlay-foot" id="imgPreviewForm">
-    <input type="text" id="imgCaption" class="form-control" maxlength="500" placeholder="Bildunterschrift hinzufügen…" autocomplete="off">
+    <input type="text" id="imgCaption" class="form-control" aria-label="Bildunterschrift" maxlength="500" placeholder="Bildunterschrift hinzufügen…" autocomplete="off">
     <button class="chat-send" type="submit" id="imgPreviewSend" aria-label="Senden"><i class="bi bi-send-fill"></i></button>
   </form>
 </div>
@@ -279,23 +279,36 @@ $csrf_token = ensureCsrfToken();
   }
 
   // ---------- Ein Poller für alles ----------
+  // Scheitert das erste Laden, steht ein Hinweis da; der Poller versucht es weiter, der nächste Erfolg ersetzt ihn
+  const LADEFEHLER = 'Die Nachrichten konnten nicht geladen werden. Prüfe die Verbindung – es wird automatisch nochmals versucht.';
+  let listeGeladen = false, threadFehlt = 0;
+  function ladeFehler(withList, conv, initial) {
+    if (withList && !listeGeladen) document.getElementById('chatListScroll').innerHTML = '<div class="chat-empty">' + LADEFEHLER + '</div>';
+    if (initial && conv && conv === activeConv) {
+      threadFehlt = conv;
+      const hw = document.getElementById('threadHinweis');
+      hw.textContent = LADEFEHLER; hw.style.display = '';
+    }
+  }
   function sync(withList, initial) {
     let url = API + '?action=sync';
     if (activeConv) url += '&c=' + activeConv + '&after=' + lastMsgId;
     if (withList) url += '&list=1';
     const conv = activeConv;
+    if (conv && conv === threadFehlt) initial = true;   // erstes Laden war gescheitert: jetzt nachholen (Name, Scrollen, gelesen)
     return fetch(url).then(r => r.json()).then(d => {
-      if (!d || !d.success) return;
+      if (!d || !d.success) { ladeFehler(withList, conv, initial); return; }
       if (typeof d.unread === 'number') setBadge(d.unread);
       if (d.thread && conv === activeConv) {
+        if (conv === threadFehlt) threadFehlt = 0;
         applyThreadMeta(d.thread, initial);
         const fremde = renderMessages(d.thread.messages);
         if (initial) scrollBottom();
         if (d.thread.messages.length) { idleSince = Date.now(); if (!withList) loadList(); }
         if (fremde > 0 || initial) markRead();
       }
-      if (d.conversations) renderList(d.conversations);
-    }).catch(()=>{});
+      if (d.conversations) { renderList(d.conversations); listeGeladen = true; }
+    }).catch(() => ladeFehler(withList, conv, initial));
   }
   function loadList() { return sync(true, false); }
 
@@ -338,8 +351,8 @@ $csrf_token = ensureCsrfToken();
     if (!text || !activeConv || readonly) return;
     ta.value = ''; ta.style.height = '';
     post({ action:'send', c:activeConv, text:text })
-      .then(d => { if (d.success) { idleSince = Date.now(); sync(true, false).then(scrollBottom); } else { msvToast(d.message||'Fehler','error'); ta.value=text; } })
-      .catch(() => { msvToast('Senden fehlgeschlagen','error'); ta.value=text; });
+      .then(d => { if (d.success) { idleSince = Date.now(); sync(true, false).then(scrollBottom); } else { msvToast(d.message || 'Die Nachricht wurde nicht gesendet. Sie steht noch im Feld – sende sie nochmals.', 'error'); ta.value=text; } })
+      .catch(() => { msvToast('Keine Verbindung – die Nachricht wurde nicht gesendet. Prüfe die Verbindung und sende sie nochmals.', 'error'); ta.value=text; });
   }
 
   // ---------- Bilder ----------
@@ -371,9 +384,9 @@ $csrf_token = ensureCsrfToken();
       .then(r => r.json())
       .then(d => {
         if (d.success) { closePreview(); idleSince = Date.now(); sync(true, false).then(scrollBottom); }
-        else msvToast(d.message || 'Fehler beim Senden', 'error');
+        else msvToast(d.message || 'Das Bild wurde nicht gesendet. Prüfe die Verbindung und versuche es nochmals.', 'error');
       })
-      .catch(() => msvToast('Bild konnte nicht gesendet werden', 'error'))
+      .catch(() => msvToast('Das Bild wurde nicht gesendet. Prüfe die Verbindung und versuche es nochmals.', 'error'))
       .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send-fill"></i>'; });
   }
   if (BILDER) {
@@ -416,12 +429,12 @@ $csrf_token = ensureCsrfToken();
     msvConfirm('Nachricht zurücknehmen?').then(r => {
       if (!r.isConfirmed) return;
       post({ action:'delete', id:id }).then(d => {
-        if (!d.success) { msvToast(d.message || 'Fehler', 'error'); return; }
+        if (!d.success) { msvToast(d.message || 'Die Nachricht konnte nicht zurückgenommen werden. Lade den Chat neu und versuche es nochmals.', 'error'); return; }
         const t = el.querySelector('.t');
         const time = t ? t.textContent.trim() : '';
         el.classList.add('deleted'); el.classList.remove('can-del', 'has-img');
         el.innerHTML = '<span class="del"><i class="bi bi-slash-circle me-1"></i>Nachricht zurückgenommen</span><span class="t">' + esc(time) + '</span>';
-      }).catch(() => msvToast('Fehler', 'error'));
+      }).catch(() => msvToast('Die Nachricht konnte nicht zurückgenommen werden. Lade den Chat neu und versuche es nochmals.', 'error'));
     });
   }
   let pressTimer = null;
@@ -475,8 +488,8 @@ $csrf_token = ensureCsrfToken();
     post({ action:'open', typ:'leiter', jungschuetze_id:jsid }).then(d=>{
       bootstrap.Modal.getInstance(document.getElementById('newChatModal')).hide();
       if (d.success && d.conversation_id) { loadList().then(() => openConv(d.conversation_id)); }
-      else msvToast(d.message||'Fehler','error');
-    }).catch(() => msvToast('Keine Verbindung zum Server', 'error'));
+      else msvToast(d.message || 'Der Chat konnte nicht geöffnet werden. Prüfe die Verbindung und versuche es nochmals.', 'error');
+    }).catch(() => msvToast('Der Chat konnte nicht geöffnet werden. Prüfe die Verbindung und versuche es nochmals.', 'error'));
   });
   <?php endif; ?>
 

@@ -49,7 +49,7 @@ $csrf_token = ensureCsrfToken();
   </div>
 
   <?php if (!$featureAktiv): ?>
-    <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert.</div>
+    <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert. Bei Fragen wende dich an den Jungschützenleiter.</div>
     <a href="jsk_dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Zurück</a>
   <?php else: ?>
     <div class="termin-card">
@@ -146,11 +146,11 @@ $csrf_token = ensureCsrfToken();
         msvToast(data.message, 'success');
         setTimeout(function () { location.href = 'jsk_dashboard.php'; }, 900);
       } else {
-        msvToast(data.message || 'Fehler', 'error');
+        msvToast(data.message || 'Die Anfrage wurde nicht gesendet. Tippe nochmals auf «Anfrage senden».', 'error');
         btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Anfrage senden';
       }
     }).catch(function () {
-      msvToast('Fehler bei der Verarbeitung', 'error');
+      msvToast('Keine Verbindung – die Anfrage wurde nicht gesendet. Prüfe die Verbindung und tippe nochmals auf «Anfrage senden».', 'error');
       btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Anfrage senden';
     });
   });

@@ -64,7 +64,7 @@ $istVorstand = isVorstand();
 
     <div class="portal-page-header">
         <h1><i class="bi bi-megaphone me-2"></i>Mitteilungen</h1>
-        <p class="subtitle">Mitteilungen senden und empfangen</p>
+        <p class="subtitle"><?php echo $istVorstand ? 'Mitteilungen senden und empfangen' : 'Mitteilungen vom Verein'; ?></p>
     </div>
 
     <?php if ($istVorstand): ?>
@@ -185,12 +185,12 @@ $istVorstand = isVorstand();
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d || !d.success) {
-                    if (offset === 0) elList.innerHTML = '<li class="mt-empty">' + esc((d && d.message) || 'Benachrichtigungen konnten nicht geladen werden.') + '</li>';
-                    else toast((d && d.message) || 'Konnte nicht weiterladen.', 'error');
+                    if (offset === 0) elList.innerHTML = '<li class="mt-empty">' + esc((d && d.message) || 'Die Mitteilungen konnten nicht geladen werden. Lade die Seite neu.') + '</li>';
+                    else toast((d && d.message) || 'Weitere Mitteilungen konnten nicht geladen werden. Tippe nochmals auf «Mehr anzeigen».', 'error');
                     return;
                 }
                 if (offset === 0 && (!d.items || !d.items.length)) {
-                    elList.innerHTML = '<li class="mt-empty">Keine Benachrichtigungen.</li>';
+                    elList.innerHTML = '<li class="mt-empty">Keine Mitteilungen.</li>';
                     elMore.hidden = true;
                     return;
                 }
@@ -198,8 +198,8 @@ $istVorstand = isVorstand();
                 offset += d.items.length;
                 elMore.hidden = (d.items.length < PAGE);
             }).catch(function () {
-                if (offset === 0) elList.innerHTML = '<li class="mt-empty">Benachrichtigungen konnten nicht geladen werden.</li>';
-                else toast('Keine Verbindung zum Server', 'error');
+                if (offset === 0) elList.innerHTML = '<li class="mt-empty">Die Mitteilungen konnten nicht geladen werden. Lade die Seite neu.</li>';
+                else toast('Weitere Mitteilungen konnten nicht geladen werden. Tippe nochmals auf «Mehr anzeigen».', 'error');
             });
     }
 
@@ -222,9 +222,9 @@ $istVorstand = isVorstand();
                 });
                 toast('Alle als gelesen markiert.', 'success');
             } else {
-                toast((d && d.message) || 'Konnte nicht als gelesen markieren.', 'error');
+                toast((d && d.message) || 'Die Mitteilungen konnten nicht als gelesen markiert werden. Versuche es nochmals.', 'error');
             }
-        }).catch(function () { toast('Konnte nicht als gelesen markieren.', 'error'); });
+        }).catch(function () { toast('Die Mitteilungen konnten nicht als gelesen markiert werden. Versuche es nochmals.', 'error'); });
     });
 
     elMore.addEventListener('click', function () { load(false); });
@@ -271,9 +271,9 @@ $istVorstand = isVorstand();
                         document.getElementById('mtText').value = '';
                         load(true);
                     } else {
-                        toast((d && d.message) || 'Senden fehlgeschlagen.', 'error');
+                        toast((d && d.message) || 'Die Mitteilung wurde nicht gesendet. Der Text bleibt stehen – versuche es nochmals.', 'error');
                     }
-                }).catch(function () { elSend.disabled = false; toast('Senden fehlgeschlagen.', 'error'); });
+                }).catch(function () { elSend.disabled = false; toast('Die Mitteilung wurde nicht gesendet. Der Text bleibt stehen – versuche es nochmals.', 'error'); });
             };
 
             if (typeof msvConfirm === 'function') {

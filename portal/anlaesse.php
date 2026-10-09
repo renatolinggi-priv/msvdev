@@ -125,12 +125,12 @@ button.ga-cover { width:100%; padding:0; margin:0; border:0; border-radius:0; co
 
   function startSlideshow(id) {
     $.getJSON('../api/foto_list.php?id=' + id, function (r) {
-      if (!r.success) { msvToast(r.message || 'Fehler', 'error'); return; }
+      if (!r.success) { msvToast(r.message || 'Die Fotos konnten nicht geladen werden. Lade die Seite neu.', 'error'); return; }
       var total = 0;
       r.gruppen.forEach(function (g) { g.fotos.forEach(function (f) { if (!f.status || f.status === 'approved') total++; }); });
       if (!total) { msvToast('Noch keine Fotos – füge welche hinzu!', 'info'); return; }
       MSVSlideshow.start(r.gruppen, 0, 0, { galerieId: id, onAddPhotos: r.can_upload ? startUpload : null });
-    }).fail(function () { msvToast('Fehler beim Laden', 'error'); });
+    }).fail(function (xhr) { msvToast(msvXhrMessage(xhr, 'Die Fotos konnten nicht geladen werden. Prüfe die Verbindung und versuche es nochmals.'), 'error'); });
   }
 
   function startUpload(id) { uploadGid = id; $('#gaFileInput').trigger('click'); }

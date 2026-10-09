@@ -310,11 +310,11 @@ async function _doGenerateEinsatzToken() {
 
             msvToast('Abo-Link erfolgreich erstellt!', 'success');
         } else {
-            msvToast(data.message || 'Fehler beim Erstellen des Links', 'error');
+            msvToast(data.message || 'Der Abo-Link konnte nicht erstellt werden. Versuche es nochmals.', 'error');
             if (data.csrf_expired) location.reload();
         }
     } catch (e) {
-        msvToast('Verbindungsfehler. Bitte versuche es erneut.', 'error');
+        msvToast('Keine Verbindung zum Server. Prüfe die Verbindung und versuche es nochmals.', 'error');
     }
 }
 </script>

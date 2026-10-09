@@ -45,11 +45,11 @@ $csrf_token = ensureCsrfToken();
   </div>
 
   <?php if (!$featureAktiv): ?>
-    <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert.</div>
+    <div class="alert alert-warning"><i class="bi bi-info-circle me-2"></i>Die Jungschützen-Betreuung ist derzeit deaktiviert. Bei Fragen wende dich an den Jungschützenleiter.</div>
   <?php elseif (!$istBetreuer): ?>
     <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span><i class="bi bi-bell me-2"></i>Aktiviere „Jungschützen-Betreuung" in deinen Einstellungen, um Anfragen zu sehen und zu übernehmen.</span>
-      <a href="benachrichtigungen.php" class="btn btn-outline-primary btn-sm">Einstellungen</a>
+      <span><i class="bi bi-bell me-2"></i>Aktiviere «Jungschützen-Betreuung» in deinen Einstellungen, um Anfragen zu sehen und zu übernehmen.</span>
+      <a href="benachrichtigungen.php" class="btn btn-outline-primary btn-sm">Benachrichtigungen einstellen</a>
     </div>
   <?php else: ?>
     <p class="text-muted">Wer zuerst übernimmt, betreut den Jungschützen. Bereits vergebene Termine sind ausgegraut. Die Liste aktualisiert sich automatisch.</p>
@@ -107,9 +107,9 @@ $csrf_token = ensureCsrfToken();
     return fetch(API + '?action=list').then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.success) render(d.anfragen || [], d.ts);
-        else if (melden) msvToast((d && d.message) || 'Anfragen konnten nicht geladen werden', 'error');
+        else if (melden) msvToast((d && d.message) || 'Anfragen konnten nicht geladen werden. Lade die Seite neu.', 'error');
       })
-      .catch(function () { if (melden) msvToast('Anfragen konnten nicht geladen werden', 'error'); });
+      .catch(function () { if (melden) msvToast('Anfragen konnten nicht geladen werden. Lade die Seite neu.', 'error'); });
   }
   function schedule() { clearTimeout(timer); timer = setTimeout(function () { if (document.visibilityState === 'visible') load().finally(schedule); else schedule(); }, 30000); }
 
@@ -122,8 +122,8 @@ $csrf_token = ensureCsrfToken();
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
         body: JSON.stringify({ action: act, id: id, csrf_token: csrf })
       }).then(function (r) { return r.json(); }).then(function (data) {
-        msvToast(data.message || (data.success ? 'OK' : 'Fehler'), data.success ? 'success' : 'error');
-      }).catch(function () { msvToast('Fehler bei der Verarbeitung', 'error'); })
+        msvToast(data.message || (data.success ? 'Erledigt.' : 'Das hat nicht geklappt. Lade die Seite neu und versuche es nochmals.'), data.success ? 'success' : 'error');
+      }).catch(function () { msvToast('Keine Verbindung zum Server. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
         .finally(function () { busy = false; load(); });
     };
     if (confirmMsg) { msvConfirm(confirmMsg).then(function (r) { if (r.isConfirmed) go(); }); }

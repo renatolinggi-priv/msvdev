@@ -140,8 +140,8 @@ include 'portal_header.php';
   function senden(data, ok) {
     const body = new URLSearchParams(Object.assign({ csrf_token: csrf }, data));
     fetch('../api/einsatz_anwesenheit.php', { method: 'POST', body, credentials: 'same-origin' })
-      .then(r => r.json()).then(r => { if (r && r.success) ok(r); else msvToast((r && (r.message || r.error)) || 'Fehler', 'error'); })
-      .catch(() => msvToast('Keine Verbindung', 'error'));
+      .then(r => r.json()).then(r => { if (r && r.success) ok(r); else msvToast((r && (r.message || r.error)) || 'Die Anwesenheit wurde nicht gespeichert. Tippe nochmals.', 'error'); })
+      .catch(() => msvToast('Keine Verbindung – die Anwesenheit wurde nicht gespeichert. Prüfe die Verbindung und tippe nochmals.', 'error'));
   }
   document.querySelectorAll('.an-row .an-btn').forEach(btn => {
     btn.addEventListener('click', function () {

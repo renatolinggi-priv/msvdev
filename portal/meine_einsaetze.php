@@ -328,7 +328,7 @@ if (!$mitglied_id): ?>
     <!-- Summary -->
     <div class="summary-bar">
         <?php if (count($einsaetze_kommend) > 0): ?>
-        <span class="stat"><strong><?php echo count($einsaetze_kommend); ?></strong> kommende<?php echo count($einsaetze_kommend) === 1 ? 'r' : ''; ?> Einsatz<?php echo count($einsaetze_kommend) !== 1 ? 'ätze' : ''; ?></span>
+        <span class="stat"><strong><?php echo count($einsaetze_kommend); ?></strong> kommende<?php echo count($einsaetze_kommend) === 1 ? 'r' : ''; ?> <?php echo count($einsaetze_kommend) === 1 ? 'Einsatz' : 'Einsätze'; ?></span>
         <?php endif; ?>
         <?php if (count($einsaetze_vergangen) > 0): ?>
         <span class="stat" style="color:#a0907a"><strong><?php echo count($einsaetze_vergangen); ?></strong> vergangene<?php echo count($einsaetze_vergangen) !== 1 ? '' : 'r'; ?></span>
@@ -515,7 +515,7 @@ function toggleVergangene(btn) {
     function loadPartners() {
         if (partnersLoaded) return;
         tauschGet({ action: 'partner_kandidaten' }).then(function (d) {
-            if (!d.success) { msvToast(d.message || 'Mitglieder konnten nicht geladen werden', 'error'); return; }
+            if (!d.success) { msvToast(d.message || 'Mitglieder konnten nicht geladen werden. Schliesse das Fenster und öffne es nochmals.', 'error'); return; }
             var sel = el('tauschPartner');
             d.data.forEach(function (m) {
                 var o = document.createElement('option');
@@ -524,7 +524,7 @@ function toggleVergangene(btn) {
                 sel.appendChild(o);
             });
             partnersLoaded = true;
-        }).catch(function () { msvToast('Mitglieder konnten nicht geladen werden', 'error'); });
+        }).catch(function () { msvToast('Mitglieder konnten nicht geladen werden. Schliesse das Fenster und öffne es nochmals.', 'error'); });
     }
 
     function loadPartnerEinsaetze() {
@@ -539,8 +539,9 @@ function toggleVergangene(btn) {
         tauschGet({ action: 'partner_einsaetze', mitglied_id: b }).then(function (d) {
             sel.innerHTML = '';
             if (!d.success) {
-                sel.innerHTML = '<option value="">– Fehler beim Laden –</option>';
-                el('tauschGegenHint').textContent = d.message || 'Einsätze konnten nicht geladen werden.';
+                sel.innerHTML = '<option value="">– nicht geladen –</option>';
+                el('tauschGegenHint').textContent = d.message || 'Die Einsätze dieses Mitglieds konnten nicht geladen werden. Wähle das Mitglied nochmals.';
+                el('tauschPartner').value = '';   // erneutes Wählen löst das Laden wieder aus
                 return;
             }
             if (!d.data.length) {
@@ -561,7 +562,9 @@ function toggleVergangene(btn) {
             });
             el('tauschGegenHint').textContent = '';
         }).catch(function () {
-            sel.innerHTML = '<option value="">– Fehler beim Laden –</option>';
+            sel.innerHTML = '<option value="">– nicht geladen –</option>';
+            el('tauschGegenHint').textContent = 'Die Einsätze dieses Mitglieds konnten nicht geladen werden. Wähle das Mitglied nochmals.';
+            el('tauschPartner').value = '';   // erneutes Wählen löst das Laden wieder aus
         });
     }
 
@@ -599,9 +602,9 @@ function toggleVergangene(btn) {
             einsatz_b_id: gegen || '',
             nachricht: el('tauschNachricht').value
         }).then(function (d) {
-            toast(d.message || (d.success ? 'Gesendet' : 'Fehler'), d.success ? 'success' : 'error');
+            toast(d.message || (d.success ? 'Gesendet' : 'Die Anfrage wurde nicht gesendet. Prüfe die Verbindung und versuche es nochmals.'), d.success ? 'success' : 'error');
             if (d.success) { modal().hide(); setTimeout(function () { location.reload(); }, 800); }
-        }).catch(function () { toast('Verbindungsfehler', 'error'); })
+        }).catch(function () { toast('Die Anfrage wurde nicht gesendet. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
           .finally(function () { btn.disabled = false; });
     });
 
@@ -610,9 +613,9 @@ function toggleVergangene(btn) {
         msvConfirm(message, title, confirmText).then(function (res) {
             if (!res || !res.isConfirmed) return;
             tauschPost({ action: action, id: id }).then(function (d) {
-                toast(d.message || (d.success ? 'OK' : 'Fehler'), d.success ? 'success' : 'error');
+                toast(d.message || (d.success ? 'Erledigt.' : 'Das hat nicht geklappt. Lade die Seite neu und versuche es nochmals.'), d.success ? 'success' : 'error');
                 if (d.success) setTimeout(function () { location.reload(); }, 700);
-            }).catch(function () { toast('Verbindungsfehler', 'error'); });
+            }).catch(function () { toast('Keine Verbindung zum Server. Prüfe die Verbindung und versuche es nochmals.', 'error'); });
         });
     }
 

@@ -51,7 +51,7 @@
       $bar.hide();
       if (ok)        msvToast(ok + ' Foto' + (ok === 1 ? '' : 's') + ' hochgeladen.' + (pending ? ' Wartet auf Freigabe durch den Vorstand.' : ''), 'success');
       if (duplikate) msvToast(duplikate + ' Foto' + (duplikate === 1 ? ' war' : 's waren') + ' schon in der Galerie – übersprungen.', 'info');
-      if (fail)      msvToast(fail + ' Foto' + (fail === 1 ? '' : 's') + ' fehlgeschlagen.', 'error');
+      if (fail)      msvToast(fail + (fail === 1 ? ' Foto konnte' : ' Fotos konnten') + ' nicht hochgeladen werden. Prüfe die Verbindung und wähle ' + (fail === 1 ? 'es' : 'sie') + ' nochmals aus.', 'error');
       if (opts.onDone) opts.onDone({ ok: ok, fail: fail, pending: pending, duplikate: duplikate, total: total });
     }
 

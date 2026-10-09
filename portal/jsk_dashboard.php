@@ -165,7 +165,7 @@ $statusBadge = function ($s) {
 
     <div class="alert alert-info mt-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
       <span><i class="bi bi-bell me-2"></i>Aktiviere Push-Benachrichtigungen, damit du erfährst, wenn dich jemand betreut.</span>
-      <a href="benachrichtigungen.php" class="btn btn-outline-primary btn-sm">Einstellungen</a>
+      <a href="benachrichtigungen.php" class="btn btn-outline-primary btn-sm">Benachrichtigungen einstellen</a>
     </div>
   <?php endif; ?>
 </div>
@@ -184,8 +184,8 @@ $statusBadge = function ($s) {
           body: JSON.stringify({ action: 'cancel', id: id, csrf_token: csrf })
         }).then(function (res) { return res.json(); }).then(function (data) {
           if (data.success) { msvToast(data.message, 'success'); setTimeout(function(){ location.reload(); }, 700); }
-          else msvToast(data.message || 'Fehler', 'error');
-        }).catch(function () { msvToast('Fehler bei der Verarbeitung', 'error'); });
+          else msvToast(data.message || 'Das Training konnte nicht abgesagt werden. Bitte versuche es nochmals.', 'error');
+        }).catch(function () { msvToast('Das Training konnte nicht abgesagt werden. Prüfe die Verbindung und versuche es nochmals.', 'error'); });
       });
     });
   });

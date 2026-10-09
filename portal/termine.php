@@ -80,7 +80,7 @@ if (!empty($portal_fahne)) { include __DIR__ . '/termine_fahne.inc.php'; include
     </div>
     <div class="d-flex align-items-center gap-2 ms-auto">
       <?php if (count($jahre) > 1): ?>
-      <select class="form-select form-select-sm tm-year-select" onchange="location.href='termine.php?year=' + this.value">
+      <select class="form-select form-select-sm tm-year-select" aria-label="Jahr" onchange="location.href='termine.php?year=' + this.value">
         <?php foreach ($jahre as $y): ?>
           <option value="<?= $y ?>" <?= $y === $jahr ? 'selected' : '' ?>><?= $y ?></option>
         <?php endforeach; ?>

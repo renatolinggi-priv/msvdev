@@ -79,7 +79,7 @@ $csrf_token = ensureCsrfToken();
 <div class="p-narrow">
 
     <div class="portal-page-header">
-        <h1><i class="bi bi-bell me-2"></i>Benachrichtigungen</h1>
+        <h1><i class="bi bi-sliders me-2"></i>Benachrichtigungen</h1>
         <p class="subtitle">Push-Einstellungen für dieses Gerät</p>
     </div>
 
@@ -290,7 +290,7 @@ $csrf_token = ensureCsrfToken();
 
     function loadPrefs() {
         fetch(PREFS_API).then(function (r) { return r.json(); }).then(function (data) {
-            if (!data.success) { msvToast(data.message || 'Einstellungen konnten nicht geladen werden', 'error'); return; }
+            if (!data.success) { msvToast(data.message || 'Einstellungen konnten nicht geladen werden. Lade die Seite neu.', 'error'); return; }
             var p = data.prefs;
             function setChk(id, v) { var e = document.getElementById(id); if (e) e.checked = !!v; }
             elMaster.checked = !!p.push_aktiv;
@@ -309,13 +309,27 @@ $csrf_token = ensureCsrfToken();
                 var lead = (p.lead_tage === null || typeof p.lead_tage === 'undefined') ? 3 : p.lead_tage;
                 leadSel.value = String(lead);
                 if (leadSel.selectedIndex < 0) leadSel.value = '3';
+                leadSel.dataset.gespeichert = leadSel.value;
             }
 
             applyMasterState();
-        }).catch(function () { msvToast('Einstellungen konnten nicht geladen werden', 'error'); });
+        }).catch(function () { msvToast('Einstellungen konnten nicht geladen werden. Lade die Seite neu.', 'error'); });
     }
 
-    function savePrefs() {
+    // Scheitert das Speichern, springt das geänderte Feld zurück – es soll zeigen, was gespeichert ist
+    function zuruecksetzen(feld) {
+        if (!feld) return;
+        if (feld.type === 'checkbox') {
+            feld.checked = !feld.checked;
+            if (feld === elMaster) applyMasterState();
+        } else if (feld.tagName === 'SELECT' && feld.dataset.gespeichert !== undefined) {
+            feld.value = feld.dataset.gespeichert;
+        }
+    }
+
+    // quelle: das geänderte Feld oder sein change-Event
+    function savePrefs(quelle) {
+        var feld = (quelle instanceof Event) ? quelle.target : quelle;
         function chk(id) { var e = document.getElementById(id); return (e && e.checked) ? 1 : 0; }
         var payload = {
             csrf_token: csrfToken,
@@ -341,13 +355,22 @@ $csrf_token = ensureCsrfToken();
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         }).then(function (r) { return r.json(); }).then(function (data) {
-            if (data.success) { toast('Gespeichert', 'success'); }
-            else { toast(data.message || 'Fehler beim Speichern', 'error'); }
+            if (data.success) {
+                toast('Gespeichert', 'success');
+                if (feld && feld.tagName === 'SELECT') feld.dataset.gespeichert = feld.value;
+            } else {
+                zuruecksetzen(feld);
+                toast(data.message || 'Die Einstellung wurde nicht gespeichert. Schalte sie nochmals um.', 'error');
+            }
             return data;
-        }).catch(function () { toast('Verbindungsfehler', 'error'); return { success: false }; });
+        }).catch(function () {
+            zuruecksetzen(feld);
+            toast('Keine Verbindung – die Einstellung wurde nicht gespeichert. Prüfe die Verbindung und schalte sie nochmals um.', 'error');
+            return { success: false };
+        });
     }
 
-    elMaster.addEventListener('change', function () { applyMasterState(); savePrefs(); });
+    elMaster.addEventListener('change', function () { applyMasterState(); savePrefs(elMaster); });
     topicInputs.forEach(function (inp) { inp.addEventListener('change', savePrefs); });
     var elLeadSel = document.getElementById('prefLead');
     if (elLeadSel) elLeadSel.addEventListener('change', savePrefs);
@@ -355,7 +378,7 @@ $csrf_token = ensureCsrfToken();
     if (elJskToggle) elJskToggle.addEventListener('change', function () {
         // Das Menü (Jungschützenchat + Board) hängt serverseitig an "Jungschützen betreuen".
         // Nach dem Speichern neu laden, damit die Einträge sofort erscheinen bzw. verschwinden.
-        savePrefs().then(function (data) {
+        savePrefs(elJskToggle).then(function (data) {
             if (data && data.success) { location.reload(); }
         });
     });
@@ -372,7 +395,7 @@ $csrf_token = ensureCsrfToken();
     function loadDevices() {
         fetch(PUSH_API + '?action=list').then(function (r) { return r.json(); }).then(function (data) {
             elDevices.innerHTML = '';
-            if (!data.success) { msvToast(data.message || 'Geräteliste konnte nicht geladen werden', 'error'); return; }
+            if (!data.success) { msvToast(data.message || 'Geräteliste konnte nicht geladen werden. Lade die Seite neu.', 'error'); return; }
             if (!data.geraete || !data.geraete.length) return;
             data.geraete.forEach(function (g) {
                 var li = document.createElement('li');
@@ -381,7 +404,7 @@ $csrf_token = ensureCsrfToken();
                 li.querySelector('span').textContent = name + (g.erstellt_am ? '  ·  seit ' + (g.erstellt_am.substring(0, 10)) : '');
                 elDevices.appendChild(li);
             });
-        }).catch(function () { msvToast('Geräteliste konnte nicht geladen werden', 'error'); });
+        }).catch(function () { msvToast('Geräteliste konnte nicht geladen werden. Lade die Seite neu.', 'error'); });
     }
 
     function renderDevice(status) {
@@ -452,12 +475,14 @@ $csrf_token = ensureCsrfToken();
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Aktiviere…'; }
         MSVPush.subscribe(csrfToken).then(function (res) {
             if (res && res.success) { toast(res.message || 'Aktiviert', 'success'); }
-            else { toast((res && res.message) || 'Aktivierung fehlgeschlagen', 'error'); }
+            else { toast((res && res.message) || 'Push konnte auf diesem Gerät nicht eingeschaltet werden. Lade die Seite neu und versuche es nochmals.', 'error'); }
         }).catch(function (err) {
             var m = String(err && err.message || '');
-            if (m.indexOf('permission-denied') === 0) toast('Du hast Benachrichtigungen abgelehnt.', 'error');
-            else if (m.indexOf('permission-') === 0)   toast('Benachrichtigungen wurden nicht erlaubt.', 'error');
-            else toast('Aktivierung fehlgeschlagen.', 'error');
+            var erlauben = ' Erlaube sie in den Website-Einstellungen des Browsers (Schloss neben der Adresse) und versuche es nochmals.';
+            if (m.indexOf('permission-denied') === 0) toast('Du hast Benachrichtigungen abgelehnt.' + erlauben, 'error');
+            else if (m.indexOf('permission-') === 0)   toast('Benachrichtigungen wurden nicht erlaubt.' + erlauben, 'error');
+            else if (m === 'unsupported')              toast('Dieser Browser unterstützt keine Push-Benachrichtigungen. Nutze Chrome, Edge oder Firefox – auf dem iPhone die installierte App.', 'error');
+            else toast('Push konnte auf diesem Gerät nicht eingeschaltet werden. Lade die Seite neu und versuche es nochmals.', 'error');
         }).finally(refresh);
     }
 
@@ -466,7 +491,7 @@ $csrf_token = ensureCsrfToken();
         if (btn) { btn.disabled = true; }
         MSVPush.unsubscribe(csrfToken).then(function (res) {
             toast((res && res.message) || 'Deaktiviert', 'info');
-        }).catch(function () { toast('Fehler beim Deaktivieren', 'error'); })
+        }).catch(function () { toast('Push konnte nicht ausgeschaltet werden. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
           .finally(refresh);
     }
 
@@ -475,8 +500,8 @@ $csrf_token = ensureCsrfToken();
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Senden…'; }
         MSVPush.test(csrfToken).then(function (res) {
             if (res && res.success) toast(res.message || 'Test gesendet', 'success');
-            else toast((res && res.message) || 'Test fehlgeschlagen', 'error');
-        }).catch(function () { toast('Test fehlgeschlagen', 'error'); })
+            else toast((res && res.message) || 'Die Test-Benachrichtigung wurde nicht gesendet. Prüfe die Verbindung und versuche es nochmals.', 'error');
+        }).catch(function () { toast('Die Test-Benachrichtigung wurde nicht gesendet. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
           .finally(function () { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Test senden'; } });
     }
 

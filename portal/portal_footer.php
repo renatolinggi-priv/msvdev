@@ -340,7 +340,7 @@ if (!empty($_SESSION['user_id'])) {
         if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
         try {
             var resp = await fetch('../api/dokument_download.php?id=' + id + '&force_download=1');
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            if (!resp.ok) { var fehler = new Error('HTTP ' + resp.status); fehler.status = resp.status; throw fehler; }
             var blob = await resp.blob();
             var file = new File([blob], filename, { type: blob.type });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -354,7 +354,9 @@ if (!empty($_SESSION['user_id'])) {
             }
         } catch(e) {
             if (e.name !== 'AbortError' && typeof msvToast === 'function') {
-                msvToast('Download fehlgeschlagen', 'error');
+                msvToast(e.status === 404
+                    ? 'Die Datei ist nicht mehr vorhanden. Melde das dem Vorstand.'
+                    : 'Die Datei konnte nicht heruntergeladen werden. Prüfe die Verbindung und versuche es nochmals.', 'error');
             }
         } finally {
             if (btnEl && origHtml) { btnEl.disabled = false; btnEl.innerHTML = origHtml; }
@@ -546,10 +548,10 @@ if (!empty($_SESSION['user_id'])) {
             fetch(API + '?action=list&limit=8&offset=0')
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
-                    if (!d || !d.success) { list.innerHTML = '<div class="bn-dd-empty text-muted">Fehler beim Laden.</div>'; return; }
+                    if (!d || !d.success) { list.innerHTML = '<div class="bn-dd-empty text-muted">' + esc((d && d.message) || 'Mitteilungen konnten nicht geladen werden. Öffne die Glocke nochmals.') + '</div>'; return; }
                     renderBadge(d.unread);
                     if (!d.items || !d.items.length) {
-                        list.innerHTML = '<div class="bn-dd-empty text-muted">Keine Benachrichtigungen.</div>';
+                        list.innerHTML = '<div class="bn-dd-empty text-muted">Keine Mitteilungen.</div>';
                         return;
                     }
                     list.innerHTML = '';
@@ -576,7 +578,7 @@ if (!empty($_SESSION['user_id'])) {
                         }
                         list.appendChild(a);
                     });
-                }).catch(function () { list.innerHTML = '<div class="bn-dd-empty text-muted">Fehler beim Laden.</div>'; });
+                }).catch(function () { list.innerHTML = '<div class="bn-dd-empty text-muted">Mitteilungen konnten nicht geladen werden. Öffne die Glocke nochmals.</div>'; });
         }
 
         // Dropdown oeffnet -> Liste laden
@@ -594,9 +596,9 @@ if (!empty($_SESSION['user_id'])) {
                         renderBadge(0);
                         Array.prototype.forEach.call(list.querySelectorAll('.bn-item.unread'), function (el) { el.classList.remove('unread'); });
                     } else if (typeof msvToast === 'function') {
-                        msvToast((d && d.message) || 'Konnte nicht als gelesen markieren.', 'error');
+                        msvToast((d && d.message) || 'Die Mitteilungen konnten nicht als gelesen markiert werden. Versuche es nochmals.', 'error');
                     }
-                }).catch(function () { if (typeof msvToast === 'function') msvToast('Konnte nicht als gelesen markieren.', 'error'); });
+                }).catch(function () { if (typeof msvToast === 'function') msvToast('Die Mitteilungen konnten nicht als gelesen markiert werden. Versuche es nochmals.', 'error'); });
             });
         }
 

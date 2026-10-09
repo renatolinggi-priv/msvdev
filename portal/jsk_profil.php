@@ -76,22 +76,22 @@ $csrf_token = ensureCsrfToken();
     if (name.length < 2) { msvToast('Bitte einen gültigen Namen angeben', 'warning'); return; }
     var b = this; b.disabled = true;
     post({ action: 'save_name', full_name: name })
-      .then(function (d) { msvToast(d.message || (d.success ? 'Gespeichert' : 'Fehler'), d.success ? 'success' : 'error'); })
-      .catch(function () { msvToast('Fehler beim Speichern', 'error'); })
+      .then(function (d) { msvToast(d.message || (d.success ? 'Gespeichert' : 'Der Name wurde nicht gespeichert. Prüfe die Verbindung und versuche es nochmals.'), d.success ? 'success' : 'error'); })
+      .catch(function () { msvToast('Der Name wurde nicht gespeichert. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
       .finally(function () { b.disabled = false; });
   });
 
   document.getElementById('savePwBtn').addEventListener('click', function () {
     var cur = document.getElementById('pwCurrent').value;
     var neu = document.getElementById('pwNew').value;
-    if (neu.length < 8) { msvToast('Neues Passwort min. 8 Zeichen', 'warning'); return; }
+    if (neu.length < 8) { msvToast('Das neue Passwort braucht mindestens 8 Zeichen.', 'warning'); return; }
     var b = this; b.disabled = true;
     post({ action: 'change_password', current: cur, neu: neu })
       .then(function (d) {
-        msvToast(d.message || (d.success ? 'Geändert' : 'Fehler'), d.success ? 'success' : 'error');
+        msvToast(d.message || (d.success ? 'Geändert' : 'Das Passwort wurde nicht geändert. Prüfe die Verbindung und versuche es nochmals.'), d.success ? 'success' : 'error');
         if (d.success) { document.getElementById('pwCurrent').value = ''; document.getElementById('pwNew').value = ''; }
       })
-      .catch(function () { msvToast('Fehler', 'error'); })
+      .catch(function () { msvToast('Das Passwort wurde nicht geändert. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
       .finally(function () { b.disabled = false; });
   });
 })();

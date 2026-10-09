@@ -56,6 +56,10 @@ $csrf_token = ensureCsrfToken();
 .tm-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
 .tm-card--past { opacity:0.55; }
 .tm-card--past .tm-date { background:#94a3b8; }
+/* Jahr nur, wenn es nicht das laufende ist – eigene Zeile, der Chip ist für «Mo · 2025» zu schmal */
+.tm-date .tm-jahr { display:block; }
+.tm-past { margin-top:1rem; }
+.tm-past > summary { cursor:pointer; font-size:0.9rem; font-weight:600; color:#64748b; padding:0.35rem 0; margin-bottom:0.5rem; }
 </style>
 
 <div class="container py-4">
@@ -70,8 +74,23 @@ $csrf_token = ensureCsrfToken();
         <i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;"></i>
         Es sind keine Termine ausgeschrieben.
       </div>
-    <?php else: ?>
-      <?php foreach ($termine as $t):
+    <?php else:
+      // Kommende oben, vergangene darunter eingeklappt ($termine: kommende aufsteigend, dann vergangene absteigend)
+      $teile = ['kommend' => [], 'vergangen' => []];
+      foreach ($termine as $t) $teile[strtotime($t['date']) < $heute ? 'vergangen' : 'kommend'][] = $t;
+    ?>
+      <?php if (!$teile['kommend']): ?>
+      <div class="tm-empty">
+        <i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;"></i>
+        Es sind keine kommenden Termine ausgeschrieben.
+      </div>
+      <?php endif; ?>
+      <?php foreach ($teile as $teil => $liste): if (!$liste) continue; ?>
+      <?php if ($teil === 'vergangen'): ?>
+      <details class="tm-past">
+        <summary>Vergangene Termine (<?= count($liste) ?>)</summary>
+      <?php endif; ?>
+      <?php foreach ($liste as $t):
         $ts = strtotime($t['date']);
         $past = $ts < $heute;
         $tid = (int) $t['ID'];
@@ -80,7 +99,7 @@ $csrf_token = ensureCsrfToken();
         <div class="tm-card<?= $past ? ' tm-card--past' : '' ?>">
           <div class="tm-date">
             <div class="d"><?= date('d.m', $ts) ?></div>
-            <div class="wd"><?= $wochentage[(int) date('w', $ts)] ?> <?= date('y', $ts) ?></div>
+            <div class="wd"><?= $wochentage[(int) date('w', $ts)] ?><?php if (date('Y', $ts) !== date('Y', $heute)): ?> <span class="tm-jahr"><?= date('Y', $ts) ?></span><?php endif; ?></div>
           </div>
           <div class="tm-body">
             <div class="tm-name"><?= htmlspecialchars($t['name']) ?></div>
@@ -95,6 +114,10 @@ $csrf_token = ensureCsrfToken();
             </div>
           <?php endif; ?>
         </div>
+      <?php endforeach; ?>
+      <?php if ($teil === 'vergangen'): ?>
+      </details>
+      <?php endif; ?>
       <?php endforeach; ?>
     <?php endif; ?>
 
@@ -115,8 +138,8 @@ $csrf_token = ensureCsrfToken();
         body: JSON.stringify({ action: 'set', termin_id: self.getAttribute('data-termin'), teilnahme: val, csrf_token: csrf })
       }).then(function (r) { return r.json(); }).then(function (d) {
         if (d.success) { label.textContent = val ? 'Ich nehme teil' : 'Nicht dabei'; msvToast(val ? 'Du nimmst teil' : 'Abgemeldet', 'success'); }
-        else { msvToast(d.message || 'Fehler', 'error'); self.checked = !self.checked; }
-      }).catch(function () { msvToast('Fehler bei der Verarbeitung', 'error'); self.checked = !self.checked; });
+        else { msvToast(d.message || 'Deine Teilnahme wurde nicht gespeichert. Tippe nochmals auf den Schalter.', 'error'); self.checked = !self.checked; }
+      }).catch(function () { msvToast('Keine Verbindung – deine Teilnahme wurde nicht gespeichert. Prüfe die Verbindung und tippe nochmals auf den Schalter.', 'error'); self.checked = !self.checked; });
     });
   });
 })();

@@ -692,19 +692,19 @@ if (isAdmin()) {
                 <div class="dropdown portal-bell">
                     <button class="btn btn-link nav-link position-relative portal-bell-btn" type="button"
                             id="portalBellBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                            data-bs-display="static" aria-expanded="false" aria-label="Benachrichtigungen">
+                            data-bs-display="static" aria-expanded="false" aria-label="Mitteilungen">
                         <i class="bi bi-bell"></i>
                         <span class="bn-badge badge rounded-pill bg-danger"<?php echo $bnUnread > 0 ? '' : ' hidden'; ?>><?php echo $bnUnread > 99 ? '99+' : (int) $bnUnread; ?></span>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end bn-dropdown" aria-labelledby="portalBellBtn">
                         <div class="bn-dd-head">
-                            <span>Benachrichtigungen</span>
-                            <button type="button" class="bn-mark-all" id="bnMarkAll">Alle gelesen</button>
+                            <span>Mitteilungen</span>
+                            <button type="button" class="bn-mark-all" id="bnMarkAll">Alle als gelesen</button>
                         </div>
                         <div class="bn-dd-list" id="bnDropdownList">
                             <div class="bn-dd-empty text-muted">Wird geladen…</div>
                         </div>
-                        <a class="bn-dd-foot" href="mitteilungen.php">Alle anzeigen</a>
+                        <a class="bn-dd-foot" href="mitteilungen.php">Alle Mitteilungen</a>
                     </div>
                 </div>
 
@@ -783,7 +783,7 @@ if (isAdmin()) {
                             <?php endif; ?>
                             <li>
                                 <a class="dropdown-item <?php echo $current_page == 'benachrichtigungen.php' ? 'active' : ''; ?>" href="benachrichtigungen.php">
-                                    <i class="bi bi-bell me-2 text-muted"></i>Benachrichtigungen
+                                    <i class="bi bi-sliders me-2 text-muted"></i>Benachrichtigungen
                                 </a>
                             </li>
                             <li>
@@ -870,7 +870,7 @@ if (isAdmin()) {
                     <?php endif; ?>
                     <li class="mobile-nav-item">
                         <a class="mobile-nav-link <?php echo $current_page == 'benachrichtigungen.php' ? 'active' : ''; ?>" href="benachrichtigungen.php">
-                            <i class="bi bi-bell"></i>
+                            <i class="bi bi-sliders"></i>
                             Benachrichtigungen
                         </a>
                     </li>

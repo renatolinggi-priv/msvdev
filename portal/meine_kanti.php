@@ -110,7 +110,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
 </div>
 
 <?php if (!$mitglied_id): ?>
-<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Dein Account ist noch nicht mit einem Mitglied verknüpft.</div>
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand, damit er es verknüpft.</div>
 <?php else: ?>
 
 <?php if ($kranzlimite !== null): ?>

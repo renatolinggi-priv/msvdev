@@ -75,8 +75,8 @@ include 'portal_header.php';
     </div>
     <?php if (count($jahre) > 0): ?>
     <form method="get" class="d-flex align-items-center gap-2">
-      <label class="text-muted small mb-0">Jahr</label>
-      <select name="jahr" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+      <label class="text-muted small mb-0" for="jskJahr">Jahr</label>
+      <select name="jahr" id="jskJahr" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
         <?php foreach ($jahre as $y): ?>
           <option value="<?= $y ?>" <?= $y === $jahr ? 'selected' : '' ?>><?= $y ?></option>
         <?php endforeach; ?>
@@ -86,7 +86,7 @@ include 'portal_header.php';
   </div>
 
   <?php if ($jsId <= 0): ?>
-    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Dein Konto ist keinem Jungschützen zugeordnet.</div>
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Dein Konto ist keinem Jungschützen zugeordnet. Bitte wende dich an den Jungschützenleiter.</div>
   <?php elseif (!$hatResultate): ?>
     <div class="res-card res-empty">
       <i class="bi bi-clipboard-x d-block mb-2" style="font-size:2rem;"></i>

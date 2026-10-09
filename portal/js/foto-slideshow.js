@@ -156,7 +156,13 @@
       // Kaputtes/geloeschtes Bild ueberspringen statt schwarze Flaeche zeigen
       errorStreak++;
       if (errorStreak < slides.length) { show(idx + 1, fade); }
-      else { errorStreak = 0; els.counter.textContent = 'Bilder nicht ladbar'; }
+      else {
+        errorStreak = 0;
+        els.counter.textContent = 'Nicht ladbar';
+        // Der ganze Satz passt nicht in den Zähler oben rechts (würde «Schliessen» wegdrücken): als Bildunterschrift
+        els.captionSpan.textContent = 'Die Fotos können nicht angezeigt werden. Schliesse die Ansicht und versuche es später nochmals.';
+        els.caption.classList.add('show');
+      }
     };
     img.src = slide.url;
 

@@ -267,7 +267,7 @@ $csrf_token = ensureCsrfToken();
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success) {
-                    msvToast(data.message || 'Fehler beim Laden', 'error');
+                    msvToast(data.message || 'Deine Daten konnten nicht geladen werden. Prüfe die Verbindung und lade die Seite neu.', 'error');
                     clearSkeletons();
                     return;
                 }
@@ -287,7 +287,7 @@ $csrf_token = ensureCsrfToken();
                 document.getElementById('mdUsername').textContent = d.username;
             })
             .catch(function() {
-                msvToast('Verbindungsfehler beim Laden der Daten.', 'error');
+                msvToast('Deine Daten konnten nicht geladen werden. Prüfe die Verbindung und lade die Seite neu.', 'error');
                 clearSkeletons();
             });
     }
@@ -370,7 +370,7 @@ $csrf_token = ensureCsrfToken();
             if (data.success) {
                 msvToast(data.message, 'success');
             } else {
-                msvToast(data.message || 'Fehler beim Speichern', 'error');
+                msvToast(data.message || 'Deine Änderungen wurden nicht gespeichert. Prüfe die markierten Felder und speichere nochmals.', 'error');
                 // Feld-Fehler markieren
                 if (data.errors) {
                     var fieldMap = { strasse: 'mdStrasse', plz: 'mdPLZ', ort: 'mdOrt', email: 'mdEmail', telefon: 'mdTelefon', mobile: 'mdMobile' };
@@ -476,10 +476,10 @@ $csrf_token = ensureCsrfToken();
                 if (data.new_username) document.getElementById('mdUsername').textContent = data.new_username;
                 toggleForm('username');
             } else {
-                msvToast(data.message, 'error');
+                msvToast(data.message || 'Das hat nicht geklappt. Versuche es nochmals.', 'error');
             }
         })
-        .catch(function() { msvToast('Verbindungsfehler.', 'error'); })
+        .catch(function() { msvToast('Keine Verbindung – nichts wurde geändert. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
         .finally(function() { btn.disabled = false; });
     };
 
@@ -509,10 +509,10 @@ $csrf_token = ensureCsrfToken();
                 msvToast(data.message, 'success');
                 toggleForm('password');
             } else {
-                msvToast(data.message, 'error');
+                msvToast(data.message || 'Das hat nicht geklappt. Versuche es nochmals.', 'error');
             }
         })
-        .catch(function() { msvToast('Verbindungsfehler.', 'error'); })
+        .catch(function() { msvToast('Keine Verbindung – nichts wurde geändert. Prüfe die Verbindung und versuche es nochmals.', 'error'); })
         .finally(function() { btn.disabled = false; });
     };
 

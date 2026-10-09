@@ -468,7 +468,7 @@ include 'portal_header.php';
         </p>
     </div>
     <?php if ($mitglied_id): ?>
-    <button class="barcode-icon-btn" id="barcodeBtn" title="SSV Lizenz-Barcode"><i class="bi bi-upc-scan"></i></button>
+    <button type="button" class="barcode-icon-btn" id="barcodeBtn" title="SSV Lizenz-Barcode" aria-label="SSV-Lizenz als Barcode zeigen"><i class="bi bi-upc-scan" aria-hidden="true"></i></button>
     <?php endif; ?>
 </div>
 <?php endif; ?>

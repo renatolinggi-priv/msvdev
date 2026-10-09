@@ -131,11 +131,11 @@ window.MSV_GALLERY = {
     $('#anLoading').show();
     $.getJSON('../api/foto_list.php?id=' + GID, function (r) {
       $('#anLoading').hide();
-      if (!r.success) { $('#anContent').html('<div class="an-empty">' + esc(r.message || 'Fehler') + '</div>'); return; }
+      if (!r.success) { $('#anContent').html('<div class="an-empty">' + esc(r.message || 'Die Fotos konnten nicht geladen werden. Lade die Seite neu.') + '</div>'); return; }
       data = r;
       $('#anUploadFab').toggleClass('d-none', !r.can_upload);
       render();
-    }).fail(function () { $('#anLoading').hide(); $('#anContent').html('<div class="an-empty">Fehler beim Laden.</div>'); });
+    }).fail(function (xhr) { $('#anLoading').hide(); $('#anContent').html('<div class="an-empty">' + esc(msvXhrMessage(xhr, 'Die Fotos konnten nicht geladen werden. Prüfe die Verbindung und versuche es nochmals.')) + '</div>'); });
   }
 
   function totalPhotos() {
@@ -188,10 +188,9 @@ window.MSV_GALLERY = {
     var id = $(this).data('id');
     anConfirm('Möchtest du <strong>dieses Foto</strong> wirklich löschen?').then(function (res) {
       if (!res.isConfirmed) return;
-      $.post('../api/foto_delete.php', { id: id, csrf_token: CSRF }, function (r) {
-        if (r.success) { msvToast(r.message, 'success'); load(); }
-        else { msvToast(r.message, 'error'); }
-      }, 'json');
+      msvPost('../api/foto_delete.php', { id: id }, function (r) {
+        msvToast(r.message, 'success'); load();
+      }, { csrf: CSRF, failMsg: 'Das Foto konnte nicht gelöscht werden. Lade die Seite neu und versuche es nochmals.' });
     });
   });
 
@@ -200,7 +199,7 @@ window.MSV_GALLERY = {
     e.stopPropagation();
     var id = $(this).data('id'), alt = $(this).attr('data-titel') || '';
     msvSwal.fire({
-      title: 'Bildunterschrift', input: 'text', inputValue: alt, inputAttributes: { maxlength: 120 },
+      title: 'Bildunterschrift', input: 'text', inputValue: alt, inputAttributes: { maxlength: 120, 'aria-label': 'Bildunterschrift' },
       inputPlaceholder: 'z.B. Siegerehrung am Sonntag', showCancelButton: true,
       confirmButtonText: 'Speichern', cancelButtonText: 'Abbrechen'
     }).then(function (res) {
