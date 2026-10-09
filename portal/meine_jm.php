@@ -104,6 +104,7 @@ function renderCupInfo(array $s): string {
 
 // Daten, Streicher und Total: gemeinsam mit der Startseite (portal/inc_jm_stand.php)
 require_once __DIR__ . '/inc_jm_stand.php';
+require_once __DIR__ . '/inc_termine.php';   // Datums- und Zeithelfer für «Als Nächstes» (Vorschau)
 
 include 'portal_header.php';
 include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderpreise (nur Vorschau)
@@ -295,59 +296,82 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
     </div>
 </div>
 
-<!-- Schiessen-Liste (Desktop + Mobile gleich) -->
-<div class="jm-list">
-    <?php
-    foreach ($schiessen_list as $s):
-        $is_streicher = in_array($s['_idx'], $all_streicher_idxs);
-        $geschossen   = ($s['PunkteNorm'] !== null);
-        $punkte_norm  = $s['PunkteNorm'];
-        $is_teilnahme = jmIsTeilnahme($s);  // Maxpunkte==20: nur Ja/Nein statt Wert
+<?php
+// Zeilen vorbereiten: Zustand und Schiesstage pro Anlass (bisherige Liste und Vorschau gleich)
+$today_str = date('Y-m-d');
+$jm_zeilen = [];
+foreach ($schiessen_list as $s) {
+    $is_streicher = in_array($s['_idx'], $all_streicher_idxs);
+    $geschossen   = ($s['PunkteNorm'] !== null);
+    $punkte_norm  = $s['PunkteNorm'];
+    $is_teilnahme = jmIsTeilnahme($s);  // Maxpunkte==20: nur Ja/Nein statt Wert
 
-        // Schiesstage zerlegen. Pro Zeile: Datum + (Zeit nur, wenn nicht mehr als 1 Woche her).
-        // Spaetestes Datum bestimmt, ob der Anlass wirklich vorbei ist.
-        $all_lines = [];
-        if (!empty($s['Schiesstage'])) {
-            $all_lines = array_filter(array_map('trim', explode("\n", trim($s['Schiesstage']))));
+    // Schiesstage zerlegen. Pro Zeile: Datum + (Zeit nur, wenn nicht mehr als 1 Woche her).
+    // Spaetestes Datum bestimmt, ob der Anlass wirklich vorbei ist.
+    $all_lines = [];
+    if (!empty($s['Schiesstage'])) {
+        $all_lines = array_filter(array_map('trim', explode("\n", trim($s['Schiesstage']))));
+    }
+    $event_last_date = null;
+    $line_parts      = [];   // ['date' => ..., 'time' => ..., 'ymd' => Y-m-d|null]
+    foreach ($all_lines as $line) {
+        $dt = splitSchiessDatum($line);
+        $d  = jmParseDatum($dt['date'], $months_de, $selected_year);
+        if ($d !== null && ($event_last_date === null || $d > $event_last_date)) {
+            $event_last_date = $d;
         }
-        $today_str       = date('Y-m-d');
-        $event_last_date = null;
-        $line_parts      = [];   // ['date' => ..., 'time' => ...]
-        foreach ($all_lines as $line) {
-            $dt = splitSchiessDatum($line);
-            $d  = jmParseDatum($dt['date'], $months_de, $selected_year);
-            if ($d !== null && ($event_last_date === null || $d > $event_last_date)) {
-                $event_last_date = $d;
-            }
-            $line_parts[] = $dt;
-        }
+        $dt['ymd'] = $d;
+        $line_parts[] = $dt;
+    }
 
-        // "vorbei" = letzter Tag liegt vor heute (unbekanntes Datum -> nicht als vorbei werten).
-        // Vergangene Anlaesse: komplette Terminangabe (Datum + Uhrzeit) ausblenden.
-        $is_past    = ($event_last_date !== null && $event_last_date < $today_str);
-        $is_future  = !$is_past;
-        $show_dates = !$is_past;
+    // "vorbei" = letzter Tag liegt vor heute (unbekanntes Datum -> nicht als vorbei werten).
+    // Vergangene Anlaesse: komplette Terminangabe (Datum + Uhrzeit) ausblenden.
+    $is_past    = ($event_last_date !== null && $event_last_date < $today_str);
+    $is_future  = !$is_past;
+    $show_dates = !$is_past;
 
-        $datum_kurz = '';
-        if ($show_dates) {
-            $datum_kurz = implode(', ', array_map(function($p) {
-                return $p['date'] . ($p['time'] !== '' ? ' ' . $p['time'] : '');
-            }, $line_parts));
-        }
+    $datum_kurz = '';
+    if ($show_dates) {
+        $datum_kurz = implode(', ', array_map(function($p) {
+            return $p['date'] . ($p['time'] !== '' ? ' ' . $p['time'] : '');
+        }, $line_parts));
+    }
 
-        $is_editable = jmIsEditable($s, $selected_year, $current_year, $mitglied_id, $NON_EDITABLE_BEZ);
-        $is_cup        = jmIsVereinscup($s);   // Resultat aus cup.php, read-only
-        // Resultat ist erfassbar, solange der Vorstand es noch nicht freigegeben hat.
-        $result_locked = (($s['jr_status'] ?? null) === 'freigegeben');
-        $can_enter     = $is_editable && !$result_locked;
-        // Aufklappbar: nicht-vergangene wegen Terminen/Adresse; vergangene nur, solange
-        // das Resultat noch erfassbar ist (Vorstand hat noch nicht freigegeben). Der
-        // Vereinscup ist immer aufklappbar (zeigt den read-only Cup-Hinweis).
-        $has_details = ($show_dates && (count($all_lines) > 1 || !empty($s['Adresse']))) || $can_enter || $is_cup;
-        $detail_id   = 'jmr-' . $s['_idx'];
+    $is_editable = jmIsEditable($s, $selected_year, $current_year, $mitglied_id, $NON_EDITABLE_BEZ);
+    $is_cup        = jmIsVereinscup($s);   // Resultat aus cup.php, read-only
+    // Resultat ist erfassbar, solange der Vorstand es noch nicht freigegeben hat.
+    $result_locked = (($s['jr_status'] ?? null) === 'freigegeben');
+    $can_enter     = $is_editable && !$result_locked;
+    // Aufklappbar: nicht-vergangene wegen Terminen/Adresse; vergangene nur, solange
+    // das Resultat noch erfassbar ist (Vorstand hat noch nicht freigegeben). Der
+    // Vereinscup ist immer aufklappbar (zeigt den read-only Cup-Hinweis).
+    $has_details = ($show_dates && (count($all_lines) > 1 || !empty($s['Adresse']))) || $can_enter || $is_cup;
+    $detail_id   = 'jmr-' . $s['_idx'];
+
+    // Für die Vorschau: kommende Schiesstage (ab heute) und der nächste davon
+    $kommend = array_values(array_filter($line_parts, fn($p) => $p['ymd'] !== null && $p['ymd'] >= $today_str));
+    usort($kommend, fn($a, $b) => $a['ymd'] <=> $b['ymd']);
+    $naechster = $kommend[0]['ymd'] ?? null;
+    $begonnen  = false;   // ein Schiesstag liegt schon zurück, weitere folgen
+    foreach ($line_parts as $p) if ($p['ymd'] !== null && $p['ymd'] < $today_str) $begonnen = true;
+    $undatiert = ($event_last_date === null);
+
+    $jm_zeilen[] = compact('s', 'is_streicher', 'geschossen', 'punkte_norm', 'is_teilnahme', 'line_parts', 'is_future',
+                           'show_dates', 'datum_kurz', 'is_editable', 'is_cup', 'can_enter', 'has_details', 'detail_id',
+                           'kommend', 'naechster', 'begonnen', 'undatiert', 'event_last_date');
+}
+
+// Eine Zeile der Liste. $datumSpalte (Vorschau, Gruppe «Danach»): Datum vorne statt Terminzeile, ohne Resultatspalte.
+// $metaVorschau (Vorschau, Gruppe «Ohne Resultat»): ersetzt die Terminzeile.
+$jmZeile = function (array $z, string $datumSpalte = '', string $metaVorschau = '') use ($portal_fahne): string {
+    extract($z);
+    if ($metaVorschau !== '') $datum_kurz = $metaVorschau;
+    if ($datumSpalte !== '') $datum_kurz = '';
+    ob_start();
     ?>
     <div class="jm-row<?php echo ($is_future && !$geschossen) ? ' future' : ''; ?>"<?php if ($has_details): ?> onclick="toggleJmDetail('<?php echo $detail_id; ?>', this)" style="cursor:pointer"<?php endif; ?>>
         <div class="jm-row-main"<?php if ($has_details): ?> role="button" tabindex="0" aria-expanded="false" aria-controls="<?php echo $detail_id; ?>"<?php endif; ?>>
+            <?php echo $datumSpalte; ?>
             <div class="jm-row-info">
                 <div class="jm-row-title">
                     <span><?php echo htmlspecialchars($s['Bezeichnung']); ?></span>
@@ -370,6 +394,9 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
                             echo '<span class="jm-row-points' . ($is_streicher ? ' streicher' : '') . '">' . $disp . '</span>';
                         }
                         if ($is_streicher) echo '<span class="jm-row-tag">Streicher</span>';
+                        if (($s['jr_status'] ?? null) === 'entwurf') echo '<span class="jm-row-tag is-entwurf">noch nicht freigegeben</span>';
+                    } elseif ($datumSpalte !== '') {
+                        // Gruppe «Danach»: kommt noch, kein Resultat zu zeigen
                     } elseif ($is_future) {
                         echo '<span class="jm-row-points muted" aria-hidden="true">&ndash;</span><span class="visually-hidden">noch kein Resultat</span>';
                     } else {
@@ -426,8 +453,128 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
         </div>
         <?php endif; ?>
     </div>
-    <?php endforeach; ?>
+    <?php
+    return ob_get_clean();
+};
+?>
+
+<?php if (empty($portal_fahne)): ?>
+<!-- Schiessen-Liste (Desktop + Mobile gleich) -->
+<div class="jm-list">
+    <?php foreach ($jm_zeilen as $z) echo $jmZeile($z); ?>
 </div>
+<?php else:
+    // Vorschau «Vereinsfahne» (Entscheid B, 09.10.2026): der nächste Anlass oben, darunter nach Stand gruppiert.
+    // «Danach» = kommt noch (nach Datum, ohne Datum am Schluss als «übers Jahr»), «Geschossen» in Programm-
+    // Reihenfolge und immer vollständig, «Ohne Resultat» = vorbei ohne Resultat.
+    $g_danach = []; $g_jahr = []; $g_geschossen = []; $g_ohne = [];
+    foreach ($jm_zeilen as $z) {
+        if ($z['geschossen'])             $g_geschossen[] = $z;
+        elseif ($z['naechster'] !== null) $g_danach[] = $z;
+        elseif ($z['undatiert'])          $g_jahr[] = $z;
+        else                              $g_ohne[] = $z;
+    }
+    usort($g_danach, fn($a, $b) => $a['naechster'] <=> $b['naechster']);
+    $g_naechst = array_shift($g_danach);
+    $g_danach  = array_merge($g_danach, $g_jahr);
+
+    // Liste natürlich verbinden: «a, b und c»
+    $jmUnd = fn(array $t): string => count($t) > 1 ? implode(', ', array_slice($t, 0, -1)) . ' und ' . end($t) : (string) ($t[0] ?? '');
+    // Zeitfenster aus «09:00 - 11:30, 13:00 - 16:00» als «09:00–11:30 und 13:00–16:00»
+    $jmZeiten = function (string $zeit) use ($jmUnd): string {
+        $f = ptZeitfenster($zeit);
+        if (!$f) return trim($zeit);
+        return $jmUnd(array_map(fn($x) => $x[0] . ($x[1] !== '' ? '–' . $x[1] : ''), $f));
+    };
+    $jmGruppe = fn(string $titel, int $n): string => '<h2 class="jm-gruppe">' . $titel . ' <span class="jm-gruppe-zahl">' . $n . '</span></h2>';
+
+    if ($g_naechst):
+        $z  = $g_naechst;
+        $s  = $z['s'];
+        $nd = $z['naechster'];
+        $naehe = ptNaehe($nd);
+        $zeiten = $jmUnd(array_values(array_filter(array_map(fn($p) => $jmZeiten((string) $p['time']), array_filter($z['kommend'], fn($p) => $p['ymd'] === $nd)))));
+        // Weitere Schiesstage: Monat nur, wenn der nächste Tag in einem anderen Monat liegt (oder am Schluss)
+        $weitere = array_values(array_unique(array_filter(array_column($z['kommend'], 'ymd'), fn($d) => $d !== $nd)));
+        $weitereText = [];
+        foreach ($weitere as $i => $d) {
+            $folgt = $weitere[$i + 1] ?? null;
+            $weitereText[] = ptTagKurz($d, $folgt === null || substr($folgt, 0, 7) !== substr($d, 0, 7));
+        }
+        // Info-Anlässe am selben Tag (z.B. gemeinsames Mittagessen), wie im Tagesplan
+        $amTag = [];
+        foreach (portalTermineLaden($db, (int) substr($nd, 0, 4), (int) substr($nd, 0, 4)) as $t) {
+            if ($t['datum'] === $nd && $t['art'] === 'info') $amTag[] = $t['name'] . ($t['fenster'] ? ' ' . $jmUnd(array_map(fn($x) => $x[0] . ($x[1] !== '' ? '–' . $x[1] : ''), $t['fenster'])) : '');
+        }
+        $ort = trim((string) ($s['Adresse'] ?? ''));
+        $ts  = strtotime($nd);
+    ?>
+<section class="jm-naechst" aria-labelledby="jmNaechstTitel">
+    <span class="jm-naechst-chip" aria-hidden="true"><b><?php echo (int) date('j', $ts); ?></b><small><?php echo htmlspecialchars(PT_MONAT_KURZ[(int) date('n', $ts)]); ?></small></span>
+    <div class="jm-naechst-txt">
+        <span class="jm-naechst-kopf">Als Nächstes<?php echo $naehe !== '' ? ' · ' . $naehe : ''; ?></span>
+        <h2 id="jmNaechstTitel"><?php echo htmlspecialchars($s['Bezeichnung']); ?></h2>
+        <p><?php echo htmlspecialchars(ptTagLang($nd, false) . ($zeiten !== '' ? ', ' . $zeiten : '')); ?></p>
+        <?php if ($weitereText): ?><p>auch <?php echo htmlspecialchars($jmUnd($weitereText)); ?></p><?php endif; ?>
+        <?php foreach ($amTag as $info): ?><p><?php echo htmlspecialchars($info); ?></p><?php endforeach; ?>
+        <?php if ($ort !== ''): ?>
+        <p><?php if (!ptIstKoordinate($ort)): ?><?php echo htmlspecialchars(str_replace("\n", ', ', $ort)); ?> · <?php endif; ?><a href="<?php echo htmlspecialchars(ptKartenLink(str_replace("\n", ', ', $ort))); ?>" target="_blank" rel="noopener">Karte</a></p>
+        <?php endif; ?>
+        <?php if ($z['begonnen'] && $z['is_editable']) echo renderJmEingabe($s); /* läuft schon: Resultat melden */ ?>
+    </div>
+</section>
+    <?php endif; ?>
+
+    <?php if ($g_danach): ?>
+<?php echo $jmGruppe('Danach', count($g_danach)); ?>
+<div class="jm-list">
+    <?php foreach ($g_danach as $i => $z):
+        if ($z['naechster'] !== null) {
+            $ts = strtotime($z['naechster']);
+            $spalte = '<span class="jm-dat">' . (int) date('j', $ts) . '. ' . htmlspecialchars(PT_MONAT_KURZ[(int) date('n', $ts)]) . '<small>' . PT_TAGE_KURZ[(int) date('w', $ts)] . '</small></span>';
+        } else {
+            $spalte = '<span class="jm-dat is-jahr">übers Jahr</span>';
+        }
+        $html = $jmZeile($z, $spalte);
+        if ($i >= 6) $html = preg_replace('/^(\s*<div class="jm-row)/', '$1 jm-mehr d-none', $html, 1);
+        echo $html;
+    endforeach; ?>
+    <?php if (count($g_danach) > 6): ?>
+    <button type="button" class="jm-mehr-knopf" aria-expanded="false"><i class="bi bi-chevron-down" aria-hidden="true"></i>Alle <?php echo count($g_danach); ?> anzeigen</button>
+    <?php endif; ?>
+</div>
+    <?php endif; ?>
+
+    <?php if ($g_geschossen): ?>
+<?php echo $jmGruppe('Geschossen', count($g_geschossen)); ?>
+<div class="jm-list">
+    <?php foreach ($g_geschossen as $z) echo $jmZeile($z); ?>
+</div>
+    <?php endif; ?>
+
+    <?php if ($g_ohne): ?>
+<?php echo $jmGruppe('Ohne Resultat', count($g_ohne)); ?>
+<div class="jm-list">
+    <?php foreach ($g_ohne as $z):
+        $erster = null;
+        foreach ($z['line_parts'] as $p) if ($p['ymd'] !== null && ($erster === null || $p['ymd'] < $erster)) $erster = $p['ymd'];
+        $meta = trim(($erster ? ptTagKurz($erster, true) : '') . ($z['is_streicher'] ? ($erster ? ' · ' : '') . 'zählt als Streicher' : ''));
+        echo $jmZeile($z, '', $meta);
+    endforeach; ?>
+</div>
+    <?php endif; ?>
+
+<script>
+// «Alle anzeigen» in der Gruppe «Danach»
+document.querySelectorAll('.jm-mehr-knopf').forEach(function (k) {
+    k.addEventListener('click', function () {
+        k.closest('.jm-list').querySelectorAll('.jm-mehr').forEach(function (r) { r.classList.remove('d-none'); });
+        k.setAttribute('aria-expanded', 'true');
+        k.hidden = true;
+    });
+});
+</script>
+<?php endif; ?>
 
 <?php endif; ?>
 
