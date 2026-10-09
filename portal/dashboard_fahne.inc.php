@@ -71,8 +71,6 @@ $fs_pfeil = '<i class="bi bi-chevron-right fs-pfeil" aria-hidden="true"></i>';
     <?php endif; ?>
 </ul>
 
-<?php if (empty($portal_hide_pwa_install)) include __DIR__ . '/inc_pwa_install.php'; /* «Als App installieren», nur wenn noch nicht installiert */ ?>
-
 <h2 class="fs-bereiche-titel">Alles im Portal</h2>
 <nav class="fs-kacheln" aria-label="Alle Bereiche">
     <a href="meine_jm.php"><i class="bi bi-bullseye" aria-hidden="true"></i><span>Jahresmeisterschaft</span></a>
@@ -86,3 +84,5 @@ $fs_pfeil = '<i class="bi bi-chevron-right fs-pfeil" aria-hidden="true"></i>';
     <a href="einsatzplaene.php"><i class="bi bi-calendar-check" aria-hidden="true"></i><span>Einsatzpläne</span></a>
     <a href="protokolle.php"><i class="bi bi-file-text" aria-hidden="true"></i><span>Protokolle</span></a>
 </nav>
+
+<?php if (empty($portal_hide_pwa_install)) include __DIR__ . '/inc_pwa_install.php'; /* «Als App installieren» ganz unten, nur wenn noch nicht installiert */ ?>
