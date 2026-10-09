@@ -1012,8 +1012,9 @@ $(function() {
         html += '<div class="row g-2 mt-1">';
         html += '<div class="col-12 col-md-5"><input type="text" class="form-control form-control-sm frage-text" placeholder="Fragetext *" value="' + escapeHtml(text) + '"' + disabled + '></div>';
         html += '<div class="col-4 col-md-2"><select class="form-select form-select-sm frage-typ"' + disabled + '>';
+        const typNamen = { radio: 'Eine Antwort', checkbox: 'Mehrere Antworten', dropdown: 'Auswahlliste', text: 'Freitext' };
         ['radio', 'checkbox', 'dropdown', 'text'].forEach(function(t) {
-            html += '<option value="' + t + '"' + (typ === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>';
+            html += '<option value="' + t + '"' + (typ === t ? ' selected' : '') + '>' + typNamen[t] + '</option>';
         });
         html += '</select></div>';
         html += '<div class="col-4 col-md-2"><div class="form-check mt-1"><input type="checkbox" class="form-check-input frage-pflicht"' + (pflicht ? ' checked' : '') + disabled + '><label class="form-check-label" style="font-size:0.8rem;">Pflicht</label></div></div>';

@@ -100,7 +100,7 @@ $csrf_token = ensureCsrfToken();
 
       <div class="d-flex gap-2">
         <a href="jsk_dashboard.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Zurück</a>
-        <button type="button" class="btn btn-club flex-grow-1" id="submitBtn"><i class="bi bi-send me-1"></i>Anmelden</button>
+        <button type="button" class="btn btn-club flex-grow-1" id="submitBtn"><i class="bi bi-send me-1"></i>Anfrage senden</button>
       </div>
     </div>
   <?php endif; ?>
@@ -147,11 +147,11 @@ $csrf_token = ensureCsrfToken();
         setTimeout(function () { location.href = 'jsk_dashboard.php'; }, 900);
       } else {
         msvToast(data.message || 'Fehler', 'error');
-        btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Anmelden';
+        btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Anfrage senden';
       }
     }).catch(function () {
       msvToast('Fehler bei der Verarbeitung', 'error');
-      btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Anmelden';
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Anfrage senden';
     });
   });
 })();

@@ -102,7 +102,7 @@ $istVorstand = isVorstand();
     <div class="p-section">
         <div class="p-section-header">
             <div class="p-chip orange"><i class="bi bi-bell"></i></div>
-            <div class="p-section-title">Deine Benachrichtigungen</div>
+            <div class="p-section-title">Deine Mitteilungen</div>
         </div>
         <div class="mt-toolbar">
             <button type="button" id="mtMarkAll"><i class="bi bi-check2-all me-1"></i>Alle als gelesen</button>

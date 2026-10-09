@@ -65,7 +65,7 @@ $csrf_token = ensureCsrfToken();
           <button class="btn btn-sm btn-outline-club" id="btnNewChat" data-tooltip="Jungschütze anschreiben"><i class="bi bi-pencil-square"></i></button>
         <?php endif; ?>
       </div>
-      <div class="chat-search"><i class="bi bi-search"></i><input type="search" id="chatSearch" placeholder="Suchen oder neuen Chat beginnen" autocomplete="off"></div>
+      <div class="chat-search"><i class="bi bi-search"></i><input type="search" id="chatSearch" placeholder="Chats durchsuchen" aria-label="Chats durchsuchen" autocomplete="off"></div>
       <div class="chat-list-scroll" id="chatListScroll">
         <div class="chat-empty">Lädt…</div>
       </div>
@@ -96,7 +96,7 @@ $csrf_token = ensureCsrfToken();
           <button type="button" class="chat-icon-btn" id="attachBtn" aria-label="Bild anhängen" data-tooltip="Bild senden"><i class="bi bi-paperclip"></i></button>
           <input type="file" id="chatFile" accept="<?= htmlspecialchars(fotoAcceptAttribut(), ENT_QUOTES) ?>" style="display:none;">
         <?php endif; ?>
-        <textarea id="chatText" rows="1" placeholder="Nachricht" maxlength="2000"></textarea>
+        <textarea id="chatText" rows="1" placeholder="Nachricht" aria-label="Nachricht" maxlength="2000"></textarea>
         <button class="chat-send" type="submit" aria-label="Senden"><i class="bi bi-send-fill"></i></button>
       </form>
     </div>

@@ -106,8 +106,8 @@ if (!empty($_SESSION['user_id'])) {
                 line-height: 1;
                 min-width: 36px;
                 min-height: 36px;
-            " title="Speichern / Teilen">
-                <i class="bi bi-share"></i>
+            " title="Speichern / Teilen" aria-label="Datei speichern oder teilen">
+                <i class="bi bi-share" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -222,7 +222,7 @@ if (!empty($_SESSION['user_id'])) {
             }).catch(function(err) {
                 console.error('PDF.js Fehler:', err);
                 loading.style.display = 'none';
-                pdfCont.innerHTML = '<div class="pdf-error-msg"><i class="bi bi-exclamation-triangle"></i>PDF konnte nicht geladen werden.<br><small>Versuche es über den Download-Button.</small></div>';
+                pdfCont.innerHTML = '<div class="pdf-error-msg"><i class="bi bi-exclamation-triangle"></i>PDF konnte nicht angezeigt werden.<br><small>Oben rechts auf das Teilen-Symbol tippen, um die Datei zu speichern oder in einer anderen App zu öffnen.</small></div>';
             });
         } else {
             // === Fallback: iframe ===
@@ -572,23 +572,25 @@ if (!empty($_SESSION['user_id'])) {
     <?php if (!empty($cl_new_entries)):
         $cl_csrf = ensureCsrfToken();
         $cl_badges = [
-            'feature'      => ['class' => 'bg-primary',   'label' => 'Feature'],
-            'fix'          => ['class' => 'bg-danger',     'label' => 'Fix'],
-            'verbesserung' => ['class' => 'bg-success',    'label' => 'Verbesserung'],
-            'info'         => ['class' => 'bg-secondary',  'label' => 'Info'],
+            // Sprache der Mitglieder statt Entwicklersprache; «Behoben» ist kein Fehler, darum nicht rot
+            'feature'      => ['class' => 'bg-primary',   'label' => 'Neu'],
+            'fix'          => ['class' => 'bg-secondary', 'label' => 'Behoben'],
+            'verbesserung' => ['class' => 'bg-success',   'label' => 'Verbessert'],
+            'info'         => ['class' => 'bg-secondary', 'label' => 'Hinweis'],
         ];
         $cl_monate = ['','Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
     ?>
     <!-- ============================================================
          "Was ist neu"-Modal: zeigt seit dem letzten Bestaetigen neue Eintraege.
-         Statischer Backdrop, kein X -> nur "Verstanden" schliesst & persistiert.
+         Schliessen mit X, Esc, Klick daneben oder «Verstanden»; jedes Schliessen merkt sich «gesehen».
          ============================================================ -->
     <div class="modal fade" id="whatsNewModal" tabindex="-1" aria-labelledby="whatsNewLabel"
-         aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+         aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header" style="background:linear-gradient(135deg,#3b5bdb,#5c7cfa);color:#fff;">
             <h5 class="modal-title" id="whatsNewLabel"><i class="bi bi-stars me-2"></i>Was ist neu?</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schliessen"></button>
           </div>
           <div class="modal-body whatsnew-body">
             <?php foreach ($cl_new_entries as $rel):
@@ -631,7 +633,6 @@ if (!empty($_SESSION['user_id'])) {
       </div>
     </div>
     <style>
-    #whatsNewModal .modal-header .btn-close { display: none; }
     .whatsnew-release + .whatsnew-release { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid #e9ecef; }
     .whatsnew-rel-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
     .whatsnew-version { background: #343a40; color: #fff; padding: .15rem .55rem; border-radius: 6px;
@@ -650,17 +651,24 @@ if (!empty($_SESSION['user_id'])) {
         var modal = new bootstrap.Modal(el);
         modal.show();
         var ack = document.getElementById('whatsNewAck');
-        ack.addEventListener('click', function () {
-            ack.disabled = true;
+        var gemerkt = false;
+        function alsGesehenMerken() {
+            if (gemerkt) return;
+            gemerkt = true;
             fetch('../api/changelog_seen.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': <?php echo json_encode($cl_csrf); ?>
                 }
-            }).then(function (r) { return r.json(); })
-              .then(function () { modal.hide(); })
-              .catch(function () { modal.hide(); });
+            }).catch(function () {});
+        }
+        // X, Esc, Klick daneben und «Verstanden» schliessen gleichwertig
+        el.addEventListener('hidden.bs.modal', alsGesehenMerken);
+        ack.addEventListener('click', function () {
+            ack.disabled = true;
+            alsGesehenMerken();
+            modal.hide();
         });
     })();
     </script>

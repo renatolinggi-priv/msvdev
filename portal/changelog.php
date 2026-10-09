@@ -14,10 +14,11 @@ $changelog = getPortalChangelog($show_intern);
 
 // Typ-Badge Mapping
 $typ_badges = [
-    'feature'      => ['class' => 'bg-primary',   'label' => 'Feature'],
-    'fix'          => ['class' => 'bg-danger',     'label' => 'Fix'],
-    'verbesserung' => ['class' => 'bg-success',    'label' => 'Verbesserung'],
-    'info'         => ['class' => 'bg-secondary',  'label' => 'Info'],
+    // Sprache der Mitglieder statt Entwicklersprache; «Behoben» ist kein Fehler, darum nicht rot
+    'feature'      => ['class' => 'bg-primary',   'label' => 'Neu'],
+    'fix'          => ['class' => 'bg-secondary', 'label' => 'Behoben'],
+    'verbesserung' => ['class' => 'bg-success',   'label' => 'Verbessert'],
+    'info'         => ['class' => 'bg-secondary', 'label' => 'Hinweis'],
 ];
 
 // Deutsche Monatsnamen

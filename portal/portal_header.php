@@ -51,6 +51,7 @@ if (isJungschuetze()) {
 
 $portal_user_name = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'Mitglied';
 $portal_user_role = $_SESSION['user_role'] ?? 'mitglied';
+$portal_rolle_text = ['admin' => 'Admin', 'vorstand' => 'Vorstand', 'mitglied' => 'Mitglied', 'jungschuetze' => 'Jungschütze'][$portal_user_role] ?? ucfirst($portal_user_role);
 $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
 
 // Vorschau «Vereinsfahne» (neue Mitglieder-Optik, Okt 2026): nur Admins sehen sie, per Schalter im
@@ -755,7 +756,7 @@ if (isAdmin()) {
                             </span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><span class="dropdown-item-text text-muted small"><?php echo ucfirst($portal_user_role); ?></span></li>
+                            <li><span class="dropdown-item-text text-muted small"><?php echo htmlspecialchars($portal_rolle_text); ?></span></li>
                             <li><hr class="dropdown-divider"></li>
                             <?php if (isVorstand()): ?>
                             <li>
@@ -847,7 +848,7 @@ if (isAdmin()) {
                     <div class="mobile-user-icon"><i class="bi bi-person-fill"></i></div>
                     <div class="mobile-user-info">
                         <div class="mobile-user-name"><?php echo htmlspecialchars($portal_user_name); ?></div>
-                        <div class="mobile-user-role"><?php echo ucfirst($portal_user_role); ?></div>
+                        <div class="mobile-user-role"><?php echo htmlspecialchars($portal_rolle_text); ?></div>
                     </div>
                 </div>
                 <ul class="mobile-nav-list">
