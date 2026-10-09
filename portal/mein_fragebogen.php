@@ -435,7 +435,7 @@ include 'portal_header.php';
             </div>
         </div>
         <div id="builderFragen"></div>
-        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addBuilderFrage()">
+        <button type="button" class="btn btn-outline-primary btn-sm mt-2 btn-add-frage" onclick="addBuilderFrage()">
             <i class="bi bi-plus-lg me-1"></i>Frage hinzufügen
         </button>
     </div>
@@ -959,6 +959,7 @@ $(function() {
         $('#builderZielgruppe').val('alle').prop('disabled', false);
         $('#builderKategorie').val('umfrage').prop('disabled', false);
         $('#builderFragen').empty();
+        $('.btn-add-frage').show();   // nach einer geschlossenen Umfrage wieder anzeigen
         $('#builderTitle').text(id ? 'Umfrage bearbeiten' : 'Neue Umfrage');
 
         if (id) {

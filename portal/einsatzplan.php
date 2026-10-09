@@ -52,6 +52,7 @@ include 'portal_header.php';
 .epp-legend { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; font-size: 0.75rem; color: #64748b; margin-top: 0.6rem; }
 .epp-fuss { font-size: 0.85rem; color: #475569; margin-top: 1rem; }
 .epp-fuss p { margin-bottom: 0.2rem; }
+.ep-hinweis { margin: -.5rem 0 .75rem; font-size: .85rem; color: var(--p-text-muted); }
 </style>
 
 <div class="portal-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -61,6 +62,7 @@ include 'portal_header.php';
   </div>
   <a href="einsatzplaene.php<?= $plan ? '?year=' . (int)$plan['jahr'] : '' ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Einsatzpläne</a>
 </div>
+<?php if ($plan && $plan['status'] === 'entwurf'): ?><p class="ep-hinweis"><strong>Entwurf</strong> – nur für den Vorstand sichtbar.</p><?php elseif ($plan && $plan['status'] === 'freigegeben'): ?><p class="ep-hinweis">Namen der anderen Vereine können noch folgen.</p><?php endif; ?>
 
 <?php if (!$plan): ?>
   <div class="p-card"><div class="p-card-body text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5"></i>Dieser Einsatzplan ist nicht verfügbar.</div></div>

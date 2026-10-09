@@ -354,9 +354,9 @@ if (!$mitglied_id): ?>
                 <?php if ($i === 0): ?><span class="naechster-badge">Nächster</span><?php endif; ?>
             </div>
             <div class="p-list-title einsatz-name"><?php echo htmlspecialchars($e['bezeichnung']); ?></div>
-            <?php if (!empty($e['funktion'])): ?>
-            <div class="einsatz-funktion"><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($e['funktion']); ?>
-                <?php if (isset($plan_links[(int) $e['id']])): ?> · <a href="einsatzplan.php?id=<?php echo $plan_links[(int) $e['id']]; ?>" class="text-decoration-none"><i class="bi bi-table me-1"></i>Ganzer Plan</a><?php endif; ?>
+            <?php $hatPlan = isset($plan_links[(int) $e['id']]); if (!empty($e['funktion']) || $hatPlan): ?>
+            <div class="einsatz-funktion"><?php if (!empty($e['funktion'])): ?><i class="bi bi-wrench me-1"></i><?php echo htmlspecialchars($e['funktion']); ?><?php endif; ?>
+                <?php if ($hatPlan): ?><?php echo !empty($e['funktion']) ? ' · ' : ''; ?><a href="einsatzplan.php?id=<?php echo $plan_links[(int) $e['id']]; ?>" class="text-decoration-none"><i class="bi bi-table me-1"></i>Ganzer Plan</a><?php endif; ?>
             </div>
             <?php endif; ?>
         </div>

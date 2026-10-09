@@ -281,6 +281,9 @@ $csrf_token = ensureCsrfToken();
     function applyMasterState() {
         var on = elMaster.checked;
         elTopics.classList.toggle('disabled', !on);
+        // Nicht nur für die Maus sperren: Felder deaktivieren (gespeichert wird über .checked, das bleibt lesbar)
+        elTopics.querySelectorAll('input, select').forEach(function (el) { el.disabled = !on; });
+        elTopics.setAttribute('aria-disabled', on ? 'false' : 'true');
     }
 
     function loadPrefs() {

@@ -402,7 +402,7 @@ $csrf_token = ensureCsrfToken();
     // ================================================================
     // Input-Fehler bei Eingabe entfernen
     // ================================================================
-    document.querySelectorAll('.md-field input').forEach(function(input) {
+    document.querySelectorAll('.p-field input').forEach(function(input) {
         input.addEventListener('input', function() {
             this.classList.remove('is-invalid');
             var fb = this.parentElement.querySelector('.invalid-feedback');
