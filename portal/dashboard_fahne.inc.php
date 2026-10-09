@@ -73,10 +73,7 @@ $fs_pfeil = '<i class="bi bi-chevron-right fs-pfeil" aria-hidden="true"></i>';
 
 <h2 class="fs-bereiche-titel">Alles im Portal</h2>
 <nav class="fs-kacheln" aria-label="Alle Bereiche">
-    <a href="meine_jm.php"><i class="bi bi-bullseye" aria-hidden="true"></i><span>Jahresmeisterschaft</span></a>
-    <a href="meine_heim.php"><i class="bi bi-house-heart" aria-hidden="true"></i><span>Heimmeisterschaft</span></a>
-    <a href="meine_kanti.php"><i class="bi bi-shield" aria-hidden="true"></i><span>Kantonalstich</span></a>
-    <a href="meine_wanderpreise.php"><i class="bi bi-trophy" aria-hidden="true"></i><span>Wanderpreise</span></a>
+    <a href="meine_jm.php"><i class="bi bi-trophy" aria-hidden="true"></i><span>Resultate</span></a><?php /* JM, Heim, Kanti, Wanderpreise als Reiter auf der Seite */ ?>
     <a href="termine.php"><i class="bi bi-calendar3" aria-hidden="true"></i><span>Termine</span></a>
     <a href="anlaesse.php"><i class="bi bi-images" aria-hidden="true"></i><span>Fotos</span></a>
     <a href="meine_einsaetze.php"><i class="bi bi-person-badge" aria-hidden="true"></i><span>Meine Einsätze</span></a>

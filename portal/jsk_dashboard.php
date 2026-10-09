@@ -57,6 +57,12 @@ try { $leiterAnzahl = chatLeiterAnzahl($db); } catch (Throwable $e) { $leiterAnz
 include 'portal_header.php';
 $csrf_token = ensureCsrfToken();
 
+if (!empty($portal_fahne)) {   // Vorschau «Vereinsfahne»: gleicher Aufbau wie die Mitglieder-Startseite
+    include __DIR__ . '/jsk_dashboard_fahne.inc.php';
+    include 'portal_footer.php';
+    return;
+}
+
 $statusBadge = function ($s) {
     switch ($s) {
         case 'offen':    return '<span class="badge bg-warning text-dark">Sucht Betreuer</span>';

@@ -438,6 +438,21 @@ html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .
     vertical-align: 1px;
 }
 .portal-fahne .fs-pfeil { flex-shrink: 0; color: var(--tinte-2); }
+/* Jetzt-Zeile ohne Link, mit eigenen Knöpfen (Jungschützen: Training mit Chat/Absagen) */
+.portal-fahne .fs-jetzt .fs-zeile { display: flex; align-items: center; gap: .7rem; padding: .6rem .8rem; }
+.portal-fahne .fs-aktionen { flex-shrink: 0; display: flex; gap: .35rem; }
+.portal-fahne .fs-aktionen .btn { min-width: 38px; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; }
+/* Hinweis der Leitung (Jungschützen-Startseite) */
+.portal-fahne .fs-hinweis { margin: 0 0 .8rem; padding: .65rem .8rem; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--radius); }
+.portal-fahne .fs-hinweis strong { display: block; font-size: .9375rem; color: var(--tinte); line-height: 1.3; }
+.portal-fahne .fs-hinweis p { margin: .15rem 0 0; font-size: .875rem; color: var(--tinte-2); }
+/* Frühere Anmeldungen, zugeklappt */
+.portal-fahne .fs-frueher { margin: 0 0 .8rem; }
+.portal-fahne .fs-frueher summary { padding: .4rem 0; color: var(--akzent); font-size: .875rem; font-weight: 600; cursor: pointer; }
+.portal-fahne .fs-frueher ul { list-style: none; margin: .2rem 0 0; padding: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--radius); }
+.portal-fahne .fs-frueher li { display: flex; justify-content: space-between; gap: .75rem; padding: .5rem .8rem; font-size: .875rem; }
+.portal-fahne .fs-frueher li + li { border-top: 1px solid var(--linie); }
+.portal-fahne .fs-frueher li > span:last-child { color: var(--tinte-2); text-align: right; }
 
 .portal-fahne .fs-bereiche-titel { margin: .2rem 0 .45rem; font-size: .8125rem; font-weight: 700; color: var(--tinte-2); }
 .portal-fahne .fs-kacheln {
