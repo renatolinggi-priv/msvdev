@@ -236,6 +236,21 @@ a.p-card:hover {
     gap: var(--p-2);
     flex-shrink: 0;
 }
+/* Dokumentzeile (portal/inc_dokumente.php): die ganze Zeile öffnet, Schloss nur bei eingeschränkter Sichtbarkeit */
+.p-list-row.doc-zeile:hover { border-color: #c5cfdc; }
+.doc-schloss {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    margin-left: .3rem;
+    padding: 0 .45rem;
+    border-radius: 999px;
+    background: #eef0f3;
+    color: #475569;
+    font-size: .75rem;
+    font-weight: 600;
+    vertical-align: 1px;
+}
 
 /* ---- Eyebrow / kleiner Sektionstitel ------------------------------- */
 .p-eyebrow {

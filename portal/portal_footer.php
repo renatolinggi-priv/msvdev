@@ -174,9 +174,9 @@ if (!empty($_SESSION['user_id'])) {
     }
 
     // ================================================================
-    // Dokument öffnen (Signatur bleibt identisch!)
+    // Dokument öffnen; titel (optional) steht oben statt des Dateinamens
     // ================================================================
-    function openPortalDoc(id, filename) {
+    function openPortalDoc(id, filename, titel) {
         currentDocId = id;
         currentDocFilename = filename;
 
@@ -188,7 +188,7 @@ if (!empty($_SESSION['user_id'])) {
         var pdfZoomC = document.getElementById('pdfZoomControls');
         var loading  = document.getElementById('pdfLoading');
 
-        title.textContent = filename;
+        title.textContent = titel || filename;
         overlay.style.display = 'flex';
         document.body.style.overflow = 'hidden';
 

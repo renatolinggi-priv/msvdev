@@ -290,16 +290,8 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
 .portal-fahne .p-list-row[id^="doc-"] .p-chip { background: var(--akzent-hell); color: var(--akzent); }  /* PDF nicht rot */
 .portal-fahne .p-list-row[id^="doc-"] .p-list-title { font-size: .9375rem; }
 .portal-fahne .p-list-row[id^="doc-"] .p-list-actions .btn { min-width: 38px; min-height: 38px; }
-.portal-fahne .p-list-title .visibility-badge {
-    padding: .1rem .5rem;
-    border-radius: 999px;
-    font-size: .8rem;
-    font-weight: 600;
-    vertical-align: 1px;
-}
-.portal-fahne .p-list-title .visibility-badge.bg-success { background-color: #ececea !important; color: var(--tinte-2) !important; }
-.portal-fahne .p-list-title .visibility-badge.bg-warning,
-.portal-fahne .p-list-title .visibility-badge.bg-danger { background-color: var(--akzent-hell) !important; color: var(--akzent-tief) !important; }
+.portal-fahne .doc-schloss { background: var(--akzent-hell); color: var(--akzent-tief); font-size: .8rem; }
+.portal-fahne .p-list-row.doc-zeile:hover { border-color: var(--linie-stark); }
 /* Leerer Zustand «Keine … vorhanden» als Karte */
 .portal-fahne .portal-content > .text-center.py-5:has(> .bi-folder2-open) {
     padding-top: 2rem !important;
