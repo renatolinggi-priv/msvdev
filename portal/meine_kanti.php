@@ -101,7 +101,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
         <p class="subtitle mb-0"><?php echo $selected_year; ?> &mdash; 5 Passen</p>
     </div>
     <form method="get" class="d-flex align-items-center gap-2">
-        <select name="year" class="form-select form-select-sm" style="max-width:140px;" onchange="this.form.submit()">
+        <select name="year" class="form-select form-select-sm" style="max-width:140px;" aria-label="Jahr" onchange="this.form.submit()">
             <?php foreach ($available_years as $y): ?>
             <option value="<?php echo $y; ?>" <?php echo $y == $selected_year ? 'selected' : ''; ?>><?php echo $y; ?></option>
             <?php endforeach; ?>

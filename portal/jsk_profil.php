@@ -37,9 +37,10 @@ $csrf_token = ensureCsrfToken();
 
   <div class="profil-card">
     <h6 class="mb-1"><i class="bi bi-person me-1 text-club"></i>Anzeigename</h6>
-    <p class="text-muted small mb-2">Dieser Name gilt für die Begrüssung im Portal. Im Jungschützenchat und auf dem Betreuer-Board erscheint immer dein Name aus den Kursdaten.</p>
+    <p class="text-muted small mb-2" id="fullNameHinweis">Dieser Name gilt für die Begrüssung im Portal. Im Jungschützenchat und auf dem Betreuer-Board erscheint immer dein Name aus den Kursdaten.</p>
     <div class="mb-2">
-      <input type="text" class="form-control" id="fullName" maxlength="100" value="<?= htmlspecialchars($me['full_name'], ENT_QUOTES, 'UTF-8') ?>">
+      <label class="form-label visually-hidden" for="fullName">Anzeigename</label>
+      <input type="text" class="form-control" id="fullName" aria-describedby="fullNameHinweis" maxlength="100" value="<?= htmlspecialchars($me['full_name'], ENT_QUOTES, 'UTF-8') ?>">
     </div>
     <button type="button" class="btn btn-club btn-sm" id="saveNameBtn"><i class="bi bi-save me-1"></i>Name speichern</button>
     <div class="small text-muted mt-2">Benutzername: <strong><?= htmlspecialchars($me['username']) ?></strong><?= $me['email'] ? ' · ' . htmlspecialchars($me['email']) : '' ?></div>
@@ -48,9 +49,11 @@ $csrf_token = ensureCsrfToken();
   <div class="profil-card">
     <h6 class="mb-2"><i class="bi bi-key me-1 text-club"></i>Passwort ändern</h6>
     <div class="mb-2">
+      <label class="form-label visually-hidden" for="pwCurrent">Aktuelles Passwort</label>
       <input type="password" class="form-control" id="pwCurrent" placeholder="Aktuelles Passwort" autocomplete="current-password">
     </div>
     <div class="mb-2">
+      <label class="form-label visually-hidden" for="pwNew">Neues Passwort (mindestens 8 Zeichen)</label>
       <input type="password" class="form-control" id="pwNew" placeholder="Neues Passwort (min. 8 Zeichen)" autocomplete="new-password">
     </div>
     <button type="button" class="btn btn-outline-club btn-sm" id="savePwBtn"><i class="bi bi-shield-lock me-1"></i>Passwort ändern</button>

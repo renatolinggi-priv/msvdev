@@ -155,7 +155,7 @@ include 'portal_header.php';
     </div>
     <form method="get" class="d-flex align-items-center gap-2">
         <?php if (isAdmin() || isVorstand()): ?><a href="einsatz_anwesenheit.php" class="btn btn-sm btn-outline-primary" title="Anwesenheit bei Einsätzen erfassen"><i class="bi bi-person-check me-1"></i>Anwesenheit</a><?php endif; ?>
-        <select name="year" class="form-select form-select-sm" style="max-width:140px;" onchange="this.form.submit()">
+        <select name="year" class="form-select form-select-sm" style="max-width:140px;" aria-label="Jahr" onchange="this.form.submit()">
             <?php foreach ($available_years as $y): ?>
             <option value="<?php echo $y; ?>" <?php echo $y == $selected_year ? 'selected' : ''; ?>><?php echo $y; ?></option>
             <?php endforeach; ?>

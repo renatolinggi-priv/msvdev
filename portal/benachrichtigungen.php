@@ -39,7 +39,9 @@ $portal_page_css = '
     padding: var(--p-2) 0; border-top: 1px solid var(--p-border);
 }
 .bn-toggle:first-of-type { border-top: none; }
-.bn-toggle-label { display: flex; align-items: center; gap: var(--p-2); }
+/* Zeile ist ein <label for> (Name, ganze Zeile antippbar); Textteile sind span, darum Block wie bisher */
+.bn-toggle-label { display: flex; align-items: center; gap: var(--p-2); cursor: pointer; }
+.bn-toggle-text, .bn-toggle-text .t1, .bn-toggle-text .t2 { display: block; }
 .bn-toggle-label .ti {
     width: 30px; height: 30px; border-radius: var(--p-radius-sm); display: flex;
     align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0;
@@ -107,120 +109,120 @@ $csrf_token = ensureCsrfToken();
 
         <!-- Haupt-Schalter -->
         <div class="bn-toggle bn-master">
-            <div class="bn-toggle-label">
-                <div class="bn-toggle-text">
-                    <div class="t1">Benachrichtigungen aktiv</div>
-                    <div class="t2">Haupt-Schalter – schaltet alle Themen ein/aus</div>
-                </div>
-            </div>
+            <label class="bn-toggle-label" for="prefMaster">
+                <span class="bn-toggle-text">
+                    <span class="t1" id="prefMasterTitel">Benachrichtigungen aktiv</span>
+                    <span class="t2" id="prefMasterInfo">Haupt-Schalter – schaltet alle Themen ein/aus</span>
+                </span>
+            </label>
             <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" id="prefMaster">
+                <input class="form-check-input" type="checkbox" role="switch" id="prefMaster" aria-labelledby="prefMasterTitel" aria-describedby="prefMasterInfo">
             </div>
         </div>
 
         <!-- Chat-Push (für alle relevant, auch Jungschützen) -->
         <div class="bn-toggle">
-            <div class="bn-toggle-label">
-                <div class="ti"><i class="bi bi-chat-dots"></i></div>
-                <div class="bn-toggle-text">
-                    <div class="t1">Chat-Nachrichten</div>
-                    <div class="t2">Benachrichtigung, wenn dir jemand schreibt</div>
-                </div>
-            </div>
+            <label class="bn-toggle-label" for="prefChat">
+                <span class="ti" aria-hidden="true"><i class="bi bi-chat-dots"></i></span>
+                <span class="bn-toggle-text">
+                    <span class="t1" id="prefChatTitel">Chat-Nachrichten</span>
+                    <span class="t2" id="prefChatInfo">Benachrichtigung, wenn dir jemand schreibt</span>
+                </span>
+            </label>
             <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" id="prefChat">
+                <input class="form-check-input" type="checkbox" role="switch" id="prefChat" aria-labelledby="prefChatTitel" aria-describedby="prefChatInfo">
             </div>
         </div>
 
         <div class="bn-topics" id="bnTopics">
             <?php if (!isJungschuetze()): ?>
             <div class="bn-toggle">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-person-badge"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Kommende Einsätze</div>
-                        <div class="t2">Erinnerung an deine zugewiesenen Einsätze</div>
-                    </div>
-                </div>
+                <label class="bn-toggle-label" for="prefEinsaetze">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefEinsaetzeTitel">Kommende Einsätze</span>
+                        <span class="t2" id="prefEinsaetzeInfo">Erinnerung an deine zugewiesenen Einsätze</span>
+                    </span>
+                </label>
                 <div class="form-check form-switch m-0">
-                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefEinsaetze" data-field="einsaetze">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefEinsaetze" aria-labelledby="prefEinsaetzeTitel" aria-describedby="prefEinsaetzeInfo" data-field="einsaetze">
                 </div>
             </div>
 
             <div class="bn-toggle">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-arrow-left-right"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Einsatz-Tausch</div>
-                        <div class="t2">Anfragen & Bestätigungen, wenn Einsätze getauscht werden</div>
-                    </div>
-                </div>
+                <label class="bn-toggle-label" for="prefEinsatzTausch">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-arrow-left-right"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefEinsatzTauschTitel">Einsatz-Tausch</span>
+                        <span class="t2" id="prefEinsatzTauschInfo">Anfragen & Bestätigungen, wenn Einsätze getauscht werden</span>
+                    </span>
+                </label>
                 <div class="form-check form-switch m-0">
-                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefEinsatzTausch" data-field="einsatz_tausch">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefEinsatzTausch" aria-labelledby="prefEinsatzTauschTitel" aria-describedby="prefEinsatzTauschInfo" data-field="einsatz_tausch">
                 </div>
             </div>
 
             <div class="bn-toggle">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-bullseye"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Jahresmeisterschaft</div>
-                        <div class="t2">Erinnerung an kommende JM-Schiesstage</div>
-                    </div>
-                </div>
+                <label class="bn-toggle-label" for="prefJm">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-bullseye"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefJmTitel">Jahresmeisterschaft</span>
+                        <span class="t2" id="prefJmInfo">Erinnerung an kommende JM-Schiesstage</span>
+                    </span>
+                </label>
                 <div class="form-check form-switch m-0">
-                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefJm" data-field="jm">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefJm" aria-labelledby="prefJmTitel" aria-describedby="prefJmInfo" data-field="jm">
                 </div>
             </div>
 
             <div class="bn-toggle">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-clipboard-check"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Umfrage-Fristen</div>
-                        <div class="t2">Erinnerung, bevor eine Umfrage abläuft</div>
-                    </div>
-                </div>
+                <label class="bn-toggle-label" for="prefUmfragen">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefUmfragenTitel">Umfrage-Fristen</span>
+                        <span class="t2" id="prefUmfragenInfo">Erinnerung, bevor eine Umfrage abläuft</span>
+                    </span>
+                </label>
                 <div class="form-check form-switch m-0">
-                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefUmfragen" data-field="umfragen">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefUmfragen" aria-labelledby="prefUmfragenTitel" aria-describedby="prefUmfragenInfo" data-field="umfragen">
                 </div>
             </div>
 
             <div class="bn-toggle">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-calendar-event"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Vereinstermine & Training</div>
-                        <div class="t2">Erinnerung an Anlässe und Trainings</div>
-                    </div>
-                </div>
+                <label class="bn-toggle-label" for="prefTermine">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-calendar-event"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefTermineTitel">Vereinstermine & Training</span>
+                        <span class="t2" id="prefTermineInfo">Erinnerung an Anlässe und Trainings</span>
+                    </span>
+                </label>
                 <div class="form-check form-switch m-0">
-                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefTermine" data-field="termine">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefTermine" aria-labelledby="prefTermineTitel" aria-describedby="prefTermineInfo" data-field="termine">
                 </div>
             </div>
 
             <div class="bn-toggle">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-images"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Foto-Galerien</div>
-                        <div class="t2">Hinweis, wenn zu einem Anlass eine Galerie freigeschaltet wird</div>
-                    </div>
-                </div>
+                <label class="bn-toggle-label" for="prefFotos">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-images"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefFotosTitel">Foto-Galerien</span>
+                        <span class="t2" id="prefFotosInfo">Hinweis, wenn zu einem Anlass eine Galerie freigeschaltet wird</span>
+                    </span>
+                </label>
                 <div class="form-check form-switch m-0">
-                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefFotos" data-field="fotos">
+                    <input class="form-check-input pref-topic" type="checkbox" role="switch" id="prefFotos" aria-labelledby="prefFotosTitel" aria-describedby="prefFotosInfo" data-field="fotos">
                 </div>
             </div>
 
             <div class="bn-toggle bn-lead">
-                <div class="bn-toggle-label">
-                    <div class="ti"><i class="bi bi-clock-history"></i></div>
-                    <div class="bn-toggle-text">
-                        <div class="t1">Wie viele Tage vorher?</div>
-                        <div class="t2">Vorlauf der einmaligen Erinnerung – gilt für alle Themen</div>
-                    </div>
-                </div>
-                <select id="prefLead" class="bn-lead-select" aria-label="Vorlaufzeit in Tagen">
+                <label class="bn-toggle-label" for="prefLead">
+                    <span class="ti" aria-hidden="true"><i class="bi bi-clock-history"></i></span>
+                    <span class="bn-toggle-text">
+                        <span class="t1" id="prefLeadTitel">Wie viele Tage vorher?</span>
+                        <span class="t2" id="prefLeadInfo">Vorlauf der einmaligen Erinnerung – gilt für alle Themen</span>
+                    </span>
+                </label>
+                <select id="prefLead" class="bn-lead-select" aria-labelledby="prefLeadTitel" aria-describedby="prefLeadInfo">
                     <option value="0">am selben Tag</option>
                     <option value="1">1 Tag vorher</option>
                     <option value="2">2 Tage vorher</option>
@@ -245,15 +247,15 @@ $csrf_token = ensureCsrfToken();
             <div class="p-section-title">Jungschützen-Betreuung</div>
         </div>
         <div class="bn-toggle">
-            <div class="bn-toggle-label">
-                <div class="ti" style="background:#ccfbf1;color:#0d9488;"><i class="bi bi-person-hearts"></i></div>
-                <div class="bn-toggle-text">
-                    <div class="t1">Jungschützen betreuen</div>
-                    <div class="t2">Board anzeigen & benachrichtigt werden, wenn ein Jungschütze einen Schiess-Termin sucht</div>
-                </div>
-            </div>
+            <label class="bn-toggle-label" for="prefJsk">
+                <span class="ti" aria-hidden="true" style="background:#ccfbf1;color:#0d9488;"><i class="bi bi-person-hearts"></i></span>
+                <span class="bn-toggle-text">
+                    <span class="t1" id="prefJskTitel">Jungschützen betreuen</span>
+                    <span class="t2" id="prefJskInfo">Board anzeigen & benachrichtigt werden, wenn ein Jungschütze einen Schiess-Termin sucht</span>
+                </span>
+            </label>
             <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" role="switch" id="prefJsk">
+                <input class="form-check-input" type="checkbox" role="switch" id="prefJsk" aria-labelledby="prefJskTitel" aria-describedby="prefJskInfo">
             </div>
         </div>
     </div>

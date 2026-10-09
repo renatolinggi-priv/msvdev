@@ -207,7 +207,7 @@ $csrf_token = ensureCsrfToken();
             <div class="p-field md-pw-toggle">
                 <label for="mdUsernamePw">Aktuelles Passwort</label>
                 <input type="password" id="mdUsernamePw" autocomplete="current-password">
-                <button type="button" onclick="togglePw(this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                <button type="button" onclick="togglePw(this)" aria-label="Passwort anzeigen" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
             </div>
             <div class="md-btn-row">
                 <button type="button" class="md-btn-sm primary" id="mdSaveUsername" onclick="changeUsername()">Speichern</button>
@@ -227,17 +227,17 @@ $csrf_token = ensureCsrfToken();
             <div class="p-field md-pw-toggle">
                 <label for="mdCurrentPw">Aktuelles Passwort</label>
                 <input type="password" id="mdCurrentPw" autocomplete="current-password">
-                <button type="button" onclick="togglePw(this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                <button type="button" onclick="togglePw(this)" aria-label="Passwort anzeigen" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
             </div>
             <div class="p-field md-pw-toggle">
                 <label for="mdNewPw">Neues Passwort</label>
                 <input type="password" id="mdNewPw" autocomplete="new-password">
-                <button type="button" onclick="togglePw(this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                <button type="button" onclick="togglePw(this)" aria-label="Passwort anzeigen" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
             </div>
             <div class="p-field md-pw-toggle">
                 <label for="mdConfirmPw">Neues Passwort bestätigen</label>
                 <input type="password" id="mdConfirmPw" autocomplete="new-password">
-                <button type="button" onclick="togglePw(this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                <button type="button" onclick="togglePw(this)" aria-label="Passwort anzeigen" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button>
             </div>
             <div class="md-btn-row">
                 <button type="button" class="md-btn-sm primary" id="mdSavePw" onclick="changePassword()">Speichern</button>
@@ -446,6 +446,8 @@ $csrf_token = ensureCsrfToken();
             input.type = 'password';
             icon.className = 'bi bi-eye';
         }
+        // Umschalter: Name bleibt «Passwort anzeigen», gedrückt = Passwort sichtbar
+        btn.setAttribute('aria-pressed', input.type === 'text' ? 'true' : 'false');
     };
 
     // ================================================================

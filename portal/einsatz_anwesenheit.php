@@ -89,19 +89,19 @@ include 'portal_header.php';
   <div class="p-card"><div class="p-card-body text-muted text-center py-4">Keine freigegebenen Einsatzpläne vorhanden.</div></div>
 <?php else: ?>
   <form method="get" class="an-select">
-    <select name="id" class="form-select" onchange="this.form.submit()">
+    <select name="id" class="form-select" aria-label="Einsatzplan" onchange="this.form.submit()">
       <?php foreach ($plaene as $p): ?><option value="<?= (int)$p['id'] ?>" <?= (int)$p['id'] === $planId ? 'selected' : '' ?>><?= htmlspecialchars($p['titel']) ?> (<?= (int)$p['jahr'] ?>)<?= $p['status'] === 'entwurf' ? ' · Entwurf' : '' ?></option><?php endforeach; ?>
     </select>
   </form>
   <?php if ($plan): ?>
   <div class="an-termine">
     <?php foreach ($plan['termine'] as $t): ?>
-      <a href="einsatz_anwesenheit.php?id=<?= $planId ?>&termin=<?= (int)$t['id'] ?>" class="<?= $termin && (int)$t['id'] === (int)$termin['id'] ? 'aktiv' : '' ?>"><?= htmlspecialchars(ep_datum_kurz($t['datum'])) ?> <?= htmlspecialchars(ep_zeit_text($t)) ?><?= $t['datum'] === $heute ? ' · heute' : '' ?></a>
+      <a href="einsatz_anwesenheit.php?id=<?= $planId ?>&termin=<?= (int)$t['id'] ?>" class="<?= $termin && (int)$t['id'] === (int)$termin['id'] ? 'aktiv' : '' ?>"<?= $termin && (int)$t['id'] === (int)$termin['id'] ? ' aria-current="true"' : '' ?>><?= htmlspecialchars(ep_datum_kurz($t['datum'])) ?> <?= htmlspecialchars(ep_zeit_text($t)) ?><?= $t['datum'] === $heute ? ' · heute' : '' ?></a>
     <?php endforeach; ?>
   </div>
   <?php if ($termin): ?>
     <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($csrf) ?>">
-    <div class="an-stat"><span class="da"><i class="bi bi-check-lg"></i> <b id="anDa"><?= $stat['da'] ?></b> da</span><span class="nein"><i class="bi bi-x-lg"></i> <b id="anNein"><?= $stat['nein'] ?></b> nicht da</span><span><b id="anOffen"><?= $stat['offen'] ?></b> offen</span></div>
+    <div class="an-stat"><span class="da"><i class="bi bi-check-lg"></i> <b id="anDa"><?= $stat['da'] ?></b> da</span><span class="nein"><i class="bi bi-x-lg"></i> <b id="anNein"><?= $stat['nein'] ?></b> nicht da</span><span class="offen"><b id="anOffen"><?= $stat['offen'] ?></b> offen</span></div>
     <?php if (!$zeilen): ?>
       <div class="p-card"><div class="p-card-body text-muted text-center py-4">In dieser Schicht ist niemand eingeteilt.</div></div>
     <?php else: $letzteFn = null; foreach ($zeilen as $z): $s = $z['slot']; $f = $z['funktion']; $cls = $s['anwesend'] === null ? '' : ((int)$s['anwesend'] === 1 ? 'da' : 'nein'); ?>
@@ -109,8 +109,8 @@ include 'portal_header.php';
       <div class="an-row <?= $cls ?>" data-slot="<?= (int)$s['id'] ?>">
         <span class="an-dot <?= htmlspecialchars($s['verein']) ?>"></span>
         <div class="an-name"><?= htmlspecialchars($z['name']) ?><small><?= htmlspecialchars(EP_VEREINE[$s['verein']] ?? '') ?><?= trim((string)$s['bemerkung']) !== '' ? ' · ' . htmlspecialchars($s['bemerkung']) : '' ?></small></div>
-        <button type="button" class="an-btn ja" data-wert="1" aria-label="da"><i class="bi bi-check-lg"></i></button>
-        <button type="button" class="an-btn no" data-wert="0" aria-label="nicht da"><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="an-btn ja" data-wert="1" aria-label="<?= htmlspecialchars($z['name']) ?>: da" aria-pressed="<?= $cls === 'da' ? 'true' : 'false' ?>"><i class="bi bi-check-lg" aria-hidden="true"></i></button>
+        <button type="button" class="an-btn no" data-wert="0" aria-label="<?= htmlspecialchars($z['name']) ?>: nicht da" aria-pressed="<?= $cls === 'nein' ? 'true' : 'false' ?>"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
       </div>
     <?php endforeach; ?>
       <div class="an-alle">
@@ -131,6 +131,11 @@ include 'portal_header.php';
     document.getElementById('anDa').textContent = document.querySelectorAll('.an-row.da').length;
     document.getElementById('anNein').textContent = document.querySelectorAll('.an-row.nein').length;
     document.getElementById('anOffen').textContent = document.querySelectorAll('.an-row:not(.da):not(.nein)').length;
+    // aria-pressed der Tasten mit dem Zeilenzustand abgleichen (läuft nach jeder Änderung)
+    document.querySelectorAll('.an-row').forEach(row => {
+      row.querySelector('.an-btn.ja').setAttribute('aria-pressed', row.classList.contains('da') ? 'true' : 'false');
+      row.querySelector('.an-btn.no').setAttribute('aria-pressed', row.classList.contains('nein') ? 'true' : 'false');
+    });
   }
   function senden(data, ok) {
     const body = new URLSearchParams(Object.assign({ csrf_token: csrf }, data));

@@ -129,7 +129,7 @@ include 'portal_header.php';
     <!-- URL für Android/Desktop -->
     <div class="abo-url-row">
         <code id="calUrl"><?php echo htmlspecialchars($calendarUrl); ?></code>
-        <button class="abo-copy-btn" onclick="copyUrl(this)" type="button">
+        <button class="abo-copy-btn" onclick="copyUrl(this)" type="button" aria-label="Link zum Vereinskalender kopieren">
             <i class="bi bi-clipboard"></i>
         </button>
     </div>
@@ -157,7 +157,7 @@ include 'portal_header.php';
         <!-- Sekundär: URL für Android/Desktop -->
         <div class="abo-url-row">
             <code id="einsatzFeedUrl"><?php echo htmlspecialchars($einsatz_feed_url); ?></code>
-            <button class="abo-copy-btn" onclick="copyEinsatzUrl(this)" type="button">
+            <button class="abo-copy-btn" onclick="copyEinsatzUrl(this)" type="button" aria-label="Link zu deinen Einsätzen kopieren">
                 <i class="bi bi-clipboard"></i>
             </button>
         </div>
@@ -182,7 +182,7 @@ include 'portal_header.php';
             </a>
             <div class="abo-url-row">
                 <code id="einsatzFeedUrl"></code>
-                <button class="abo-copy-btn" onclick="copyEinsatzUrl(this)" type="button">
+                <button class="abo-copy-btn" onclick="copyEinsatzUrl(this)" type="button" aria-label="Link zu deinen Einsätzen kopieren">
                     <i class="bi bi-clipboard"></i>
                 </button>
             </div>
@@ -218,8 +218,8 @@ include 'portal_header.php';
             <div id="anleitungIos" class="accordion-collapse collapse" data-bs-parent="#aboAnleitungen">
                 <div class="accordion-body" style="font-size:0.81rem; padding:0.65rem 0.9rem;">
                     <ol class="mb-0 ps-3">
-                        <li>Den Button <strong>"Kalender abonnieren"</strong> antippen</li>
-                        <li>Im Dialog auf <strong>"Abonnieren"</strong> tippen</li>
+                        <li>Den Button <strong>«Kalender abonnieren»</strong> antippen</li>
+                        <li>Im Dialog auf <strong>«Abonnieren»</strong> tippen</li>
                         <li>Der Kalender erscheint automatisch in deiner Kalender-App</li>
                     </ol>
                 </div>
@@ -234,8 +234,8 @@ include 'portal_header.php';
             <div id="anleitungAndroid" class="accordion-collapse collapse" data-bs-parent="#aboAnleitungen">
                 <div class="accordion-body" style="font-size:0.81rem; padding:0.65rem 0.9rem;">
                     <ol class="mb-0 ps-3">
-                        <li>URL mit dem <strong>Kopieren</strong>-Button kopieren</li>
-                        <li>Google Kalender App &rarr; <strong>Einstellungen</strong> &rarr; <strong>"Kalender hinzufügen"</strong> &rarr; <strong>"Über URL"</strong></li>
+                        <li>URL mit dem <strong>Kopier-Symbol</strong> kopieren</li>
+                        <li>Google Kalender App &rarr; <strong>Einstellungen</strong> &rarr; <strong>«Kalender hinzufügen»</strong> &rarr; <strong>«Über URL»</strong></li>
                         <li>URL einfügen und bestätigen</li>
                     </ol>
                 </div>

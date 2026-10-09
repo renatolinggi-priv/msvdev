@@ -89,7 +89,7 @@ $csrf_token = ensureCsrfToken();
           <?php if (!$past && $jsId > 0): ?>
             <div class="tm-rsvp">
               <div class="form-check form-switch m-0 d-flex justify-content-end">
-                <input class="form-check-input tm-teilnahme" type="checkbox" data-termin="<?= $tid ?>" <?= $teilnimmt ? 'checked' : '' ?>>
+                <input class="form-check-input tm-teilnahme" type="checkbox" role="switch" data-termin="<?= $tid ?>" aria-label="Teilnahme: <?= htmlspecialchars($t['name']) ?>, <?= date('d.m.Y', $ts) ?>" <?= $teilnimmt ? 'checked' : '' ?>>
               </div>
               <span class="tm-rsvp-label"><?= $teilnimmt ? 'Ich nehme teil' : 'Nicht dabei' ?></span>
             </div>

@@ -158,6 +158,8 @@ $portal_page_css = "
     align-items: center;
 }
 .option-row input { flex: 1; }
+/* Excel-Import: Dateifeld unsichtbar, aber per Tastatur erreichbar; den Fokus zeigt der Knopf */
+#builderModal label.btn:has(+ #excelImportFile:focus-visible) { box-shadow: var(--bs-btn-focus-box-shadow); }
 
 /* === Auswertung === */
 .result-bar-container { margin-bottom: 0.5rem; }
@@ -384,38 +386,38 @@ include 'portal_header.php';
 <?php endif; ?>
 
 <!-- ============ FRAGEN-BUILDER MODAL ============ -->
-<div class="modal fade" id="builderModal" tabindex="-1">
+<div class="modal fade" id="builderModal" tabindex="-1" aria-labelledby="builderTitle">
 <div class="modal-dialog modal-xl modal-dialog-scrollable">
 <div class="modal-content">
     <div class="modal-header">
         <h5 class="modal-title" id="builderTitle">Neue Umfrage</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
     </div>
     <div class="modal-body">
         <input type="hidden" id="builderUmfrageId" value="0">
 
         <div class="row g-3 mb-3">
             <div class="col-12">
-                <label class="form-label fw-bold">Titel *</label>
+                <label class="form-label fw-bold" for="builderTitel">Titel <span aria-hidden="true">*</span></label>
                 <input type="text" class="form-control" id="builderTitel" maxlength="255" required>
             </div>
             <div class="col-12">
-                <label class="form-label fw-bold">Beschreibung <span class="text-muted fw-normal">(optional)</span></label>
+                <label class="form-label fw-bold" for="builderBeschreibung">Beschreibung <span class="text-muted fw-normal">(optional)</span></label>
                 <textarea class="form-control" id="builderBeschreibung" rows="2"></textarea>
             </div>
             <div class="col-6 col-md-4">
-                <label class="form-label fw-bold">Gültig bis</label>
+                <label class="form-label fw-bold" for="builderGueltigBis">Gültig bis</label>
                 <input type="date" class="form-control" id="builderGueltigBis" style="text-align:left;">
             </div>
             <div class="col-6 col-md-4">
-                <label class="form-label fw-bold">Zielgruppe</label>
+                <label class="form-label fw-bold" for="builderZielgruppe">Zielgruppe</label>
                 <select class="form-select" id="builderZielgruppe">
                     <option value="alle">Alle Mitglieder</option>
                     <option value="vorstand">Nur Vorstand</option>
                 </select>
             </div>
             <div class="col-6 col-md-4">
-                <label class="form-label fw-bold">Kategorie</label>
+                <label class="form-label fw-bold" for="builderKategorie">Kategorie</label>
                 <select class="form-select" id="builderKategorie">
                     <option value="umfrage">Umfrage</option>
                     <option value="arbeitseinsatz">Arbeitseinsatz</option>
@@ -429,9 +431,9 @@ include 'portal_header.php';
             <h6 class="fw-bold mb-0"><i class="bi bi-list-ol me-1"></i>Fragen</h6>
             <div>
                 <label class="btn btn-outline-secondary btn-sm mb-0" for="excelImportFile" style="cursor:pointer;">
-                    <i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel importieren
+                    <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i>Excel importieren
                 </label>
-                <input type="file" id="excelImportFile" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(this)">
+                <input type="file" id="excelImportFile" class="visually-hidden" accept=".xlsx,.xls" onchange="importExcel(this)">
             </div>
         </div>
         <div id="builderFragen"></div>
@@ -453,12 +455,12 @@ include 'portal_header.php';
 </div>
 
 <!-- ============ AUSWERTUNGS-MODAL ============ -->
-<div class="modal fade" id="resultsModal" tabindex="-1">
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-labelledby="resultsTitle">
 <div class="modal-dialog modal-xl modal-dialog-scrollable">
 <div class="modal-content">
     <div class="modal-header">
         <h5 class="modal-title" id="resultsTitle">Auswertung</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
     </div>
     <div class="modal-body" id="resultsBody">
         <div class="loading-placeholder">
@@ -501,8 +503,8 @@ $(function() {
     function buildJmForm(waffen, defs, existing) {
         let html = '';
         html += '<div class="question-group">';
-        html += '<label><i class="bi bi-crosshair me-1"></i>Mit welcher Waffe nimmst du an der Jahresmeisterschaft teil?</label>';
-        html += '<select name="waffenID" class="form-select">';
+        html += '<label for="jm_waffenID"><i class="bi bi-crosshair me-1" aria-hidden="true"></i>Mit welcher Waffe nimmst du an der Jahresmeisterschaft teil?</label>';
+        html += '<select name="waffenID" id="jm_waffenID" class="form-select">';
         html += '<option value="0"' + (existing.waffenID === 0 ? ' selected' : '') + '>Nehme nicht teil</option>';
         waffen.forEach(function(w) {
             const sel = (w.id === existing.waffenID) ? 'selected' : '';
@@ -511,12 +513,12 @@ $(function() {
         html += '</select></div>';
 
         html += '<div class="question-group">';
-        html += '<label><i class="bi bi-people me-1"></i>Zentralschweizer Mannschaftsmeisterschaft (ZSMM)</label>';
+        html += '<label for="jm_mannschaft"><i class="bi bi-people me-1" aria-hidden="true"></i>Zentralschweizer Mannschaftsmeisterschaft (ZSMM)</label>';
         html += buildParticipationSelect('mannschaft', existing.mannschaft || 'nicht');
         html += '</div>';
 
         html += '<div class="question-group">';
-        html += '<label><i class="bi bi-people-fill me-1"></i>Gruppenmeisterschaft (GM)</label>';
+        html += '<label for="jm_gruppen"><i class="bi bi-people-fill me-1" aria-hidden="true"></i>Gruppenmeisterschaft (GM)</label>';
         html += buildParticipationSelect('gruppen', existing.gruppen || 'nicht');
         html += '</div>';
 
@@ -526,8 +528,8 @@ $(function() {
             defs.forEach(function(d) {
                 const currentVal = existing.erweitert[d.id] || 'nein';
                 html += '<div class="question-group">';
-                html += '<label>' + escapeHtml(d.bezeichnung) + '</label>';
-                html += '<select name="erweitert[' + d.id + ']" class="form-select erweitert-select">';
+                html += '<label for="jm_erw' + d.id + '">' + escapeHtml(d.bezeichnung) + '</label>';
+                html += '<select name="erweitert[' + d.id + ']" id="jm_erw' + d.id + '" class="form-select erweitert-select">';
                 html += '<option value="nein"' + (currentVal === 'nein' ? ' selected' : '') + '>Nein</option>';
                 html += '<option value="ja"' + (currentVal === 'ja' ? ' selected' : '') + '>Ja</option>';
                 html += '</select></div>';
@@ -539,7 +541,7 @@ $(function() {
     }
 
     function buildParticipationSelect(name, currentVal) {
-        let html = '<select name="' + name + '" class="form-select participation-select">';
+        let html = '<select name="' + name + '" id="jm_' + name + '" class="form-select participation-select">';
         html += '<option value="teil"' + (currentVal === 'teil' ? ' selected' : '') + '>Ich nehme teil</option>';
         html += '<option value="nicht"' + (currentVal === 'nicht' ? ' selected' : '') + '>Ich nehme nicht teil</option>';
         html += '<option value="evtl"' + (currentVal === 'evtl' ? ' selected' : '') + '>Nur wenn Gruppe füllt</option>';
@@ -705,12 +707,15 @@ $(function() {
             const minAttr = (f.frage_typ === 'checkbox' && f.min_auswahl) ? '" data-min-auswahl="' + f.min_auswahl : '';
             html += '<div class="question-group" data-frage-id="' + f.id + '" data-frage-typ="' + f.frage_typ + minAttr + '">';
             html += '<div class="autosave-indicator" id="autosave-' + f.id + '"></div>';
-            html += '<label>' + escapeHtml(f.frage_text);
-            if (f.pflichtfeld) html += ' <span class="text-danger">*</span>';
+            // Name der Frage: Label mit id; Auswahlliste und Freitext zusätzlich per for verknüpft
+            const feldId = 'uFrage' + f.id;
+            const einFeld = (f.frage_typ === 'dropdown' || f.frage_typ === 'text');
+            html += '<label id="' + feldId + 'Label"' + (einFeld ? ' for="' + feldId + '"' : '') + '>' + escapeHtml(f.frage_text);
+            if (f.pflichtfeld) html += ' <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden">(Pflichtfeld)</span>';
             html += '</label>';
 
             if (f.frage_typ === 'radio') {
-                html += '<div class="umfrage-radio-group">';
+                html += '<div class="umfrage-radio-group" role="radiogroup" aria-labelledby="' + feldId + 'Label">';
                 (f.optionen || []).forEach(function(opt, idx) {
                     const checked = existing === opt ? ' checked' : '';
                     const disabled = readonly ? ' disabled' : '';
@@ -723,7 +728,7 @@ $(function() {
             } else if (f.frage_typ === 'checkbox') {
                 let existingArr = [];
                 try { existingArr = existing ? JSON.parse(existing) : []; } catch(e) {}
-                html += '<div class="umfrage-check-group">';
+                html += '<div class="umfrage-check-group" role="group" aria-labelledby="' + feldId + 'Label">';
                 (f.optionen || []).forEach(function(opt, idx) {
                     const checked = existingArr.includes(opt) ? ' checked' : '';
                     const disabled = readonly ? ' disabled' : '';
@@ -740,7 +745,7 @@ $(function() {
                     html += '<div class="min-auswahl-warning" id="minwarn-' + f.id + '" style="' + (showWarn ? '' : 'display:none;') + '"><i class="bi bi-exclamation-triangle"></i> Bitte mindestens ' + f.min_auswahl + ' Optionen auswählen (aktuell: <span class="minwarn-count">' + selectedCount + '</span>)</div>';
                 }
             } else if (f.frage_typ === 'dropdown') {
-                html += '<select class="form-select autosave-input" data-frage-id="' + f.id + '"' + (readonly ? ' disabled' : '') + '>';
+                html += '<select class="form-select autosave-input" id="' + feldId + '" data-frage-id="' + f.id + '"' + (readonly ? ' disabled' : '') + '>';
                 html += '<option value="">-- Bitte wählen --</option>';
                 (f.optionen || []).forEach(function(opt) {
                     const sel = existing === opt ? ' selected' : '';
@@ -748,7 +753,7 @@ $(function() {
                 });
                 html += '</select>';
             } else if (f.frage_typ === 'text') {
-                html += '<textarea class="form-control autosave-input autosave-text" data-frage-id="' + f.id + '" rows="2"' + (readonly ? ' disabled' : '') + '>' + escapeHtml(existing) + '</textarea>';
+                html += '<textarea class="form-control autosave-input autosave-text" id="' + feldId + '" data-frage-id="' + f.id + '" rows="2"' + (readonly ? ' disabled' : '') + '>' + escapeHtml(existing) + '</textarea>';
             }
 
             html += '</div>';
@@ -1007,17 +1012,17 @@ $(function() {
         let html = '<div class="frage-card" data-idx="' + idx + '" draggable="' + (!readonly) + '">';
         html += '<span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>';
         html += '<strong>' + (idx + 1) + '.</strong>';
-        if (!readonly) html += '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-frage" onclick="$(this).closest(\'.frage-card\').remove(); renumberFragen();"><i class="bi bi-trash"></i></button>';
+        if (!readonly) html += '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-frage" aria-label="Frage entfernen" onclick="$(this).closest(\'.frage-card\').remove(); renumberFragen();"><i class="bi bi-trash" aria-hidden="true"></i></button>';
 
         html += '<div class="row g-2 mt-1">';
-        html += '<div class="col-12 col-md-5"><input type="text" class="form-control form-control-sm frage-text" placeholder="Fragetext *" value="' + escapeHtml(text) + '"' + disabled + '></div>';
-        html += '<div class="col-4 col-md-2"><select class="form-select form-select-sm frage-typ"' + disabled + '>';
+        html += '<div class="col-12 col-md-5"><input type="text" class="form-control form-control-sm frage-text" placeholder="Fragetext *" aria-label="Fragetext" aria-required="true" value="' + escapeHtml(text) + '"' + disabled + '></div>';
+        html += '<div class="col-4 col-md-2"><select class="form-select form-select-sm frage-typ" aria-label="Antwortart"' + disabled + '>';
         const typNamen = { radio: 'Eine Antwort', checkbox: 'Mehrere Antworten', dropdown: 'Auswahlliste', text: 'Freitext' };
         ['radio', 'checkbox', 'dropdown', 'text'].forEach(function(t) {
             html += '<option value="' + t + '"' + (typ === t ? ' selected' : '') + '>' + typNamen[t] + '</option>';
         });
         html += '</select></div>';
-        html += '<div class="col-4 col-md-2"><div class="form-check mt-1"><input type="checkbox" class="form-check-input frage-pflicht"' + (pflicht ? ' checked' : '') + disabled + '><label class="form-check-label" style="font-size:0.8rem;">Pflicht</label></div></div>';
+        html += '<div class="col-4 col-md-2"><div class="form-check mt-1"><input type="checkbox" class="form-check-input frage-pflicht" id="bfPflicht' + idx + '"' + (pflicht ? ' checked' : '') + disabled + '><label class="form-check-label" for="bfPflicht' + idx + '" style="font-size:0.8rem;">Pflicht</label></div></div>';
         html += '<div class="col-4 col-md-3 min-auswahl-wrap" style="' + (typ === 'checkbox' ? '' : 'display:none;') + '"><div class="input-group input-group-sm"><span class="input-group-text" style="font-size:0.75rem;">Mind.</span><input type="number" class="form-control form-control-sm frage-min-auswahl" placeholder="0" min="0" value="' + escapeHtml(String(minAuswahl)) + '" title="Empfohlene Mindestauswahl (Warnung, nicht blockierend)"' + disabled + '></div></div>';
         html += '</div>';
 
@@ -1057,8 +1062,8 @@ $(function() {
     function buildOptionRow(val, readonly) {
         const disabled = readonly ? ' disabled' : '';
         let html = '<div class="option-row">';
-        html += '<input type="text" class="form-control form-control-sm option-text" placeholder="Option..." value="' + escapeHtml(val || '') + '"' + disabled + '>';
-        if (!readonly) html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOption(this)"><i class="bi bi-x"></i></button>';
+        html += '<input type="text" class="form-control form-control-sm option-text" placeholder="Option..." aria-label="Antwortoption" value="' + escapeHtml(val || '') + '"' + disabled + '>';
+        if (!readonly) html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOption(this)" aria-label="Option entfernen"><i class="bi bi-x" aria-hidden="true"></i></button>';
         html += '</div>';
         return html;
     }
@@ -1465,7 +1470,7 @@ $(function() {
             html += '<div class="beantwortet-list">';
             data.beantwortet.forEach(function(b) {
                 html += '<span class="beantwortet-tag">' + escapeHtml(b.name);
-                html += '<button type="button" class="btn-tag-delete" title="Rückmeldung löschen" onclick="deleteAntwort(' + data.umfrage.id + ', ' + b.mitglied_id + ', \'' + escapeHtml(b.name).replace(/'/g, "\\'") + '\')"><i class="bi bi-x"></i></button>';
+                html += '<button type="button" class="btn-tag-delete" title="Rückmeldung löschen" aria-label="Rückmeldung von ' + escapeHtml(b.name).replace(/"/g, '&quot;') + ' löschen" onclick="deleteAntwort(' + data.umfrage.id + ', ' + b.mitglied_id + ', \'' + escapeHtml(b.name).replace(/'/g, "\\'") + '\')"><i class="bi bi-x"></i></button>';
                 html += '</span>';
             });
             html += '</div>';

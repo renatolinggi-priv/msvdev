@@ -38,7 +38,9 @@ $portal_page_css = '
     display: flex; gap: .7rem; padding: .7rem .2rem; border-top: 1px solid var(--p-border);
     text-decoration: none; color: inherit;
 }
-.mt-item:first-child { border-top: none; }
+/* Einträge stecken in <li>: Trennlinie weg beim ersten Eintrag wie bisher */
+.mt-list > li { list-style: none; }
+.mt-list > li:first-child > .mt-item { border-top: none; }
 .mt-item.unread { background: rgba(59,89,152,.05); border-radius: var(--p-radius-sm); }
 .mt-item.unread .mt-item-title { font-weight: 700; }
 .mt-item-icon { color: var(--primary-color); font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
@@ -73,7 +75,7 @@ $istVorstand = isVorstand();
             <span class="p-section-title">Mitteilung senden</span>
             <i class="bi bi-chevron-down mt-compose-caret"></i>
         </button>
-        <div class="mt-compose-body" id="mtComposeBody">
+        <div class="mt-compose-body" id="mtComposeBody" inert>
             <div class="p-field">
                 <label for="mtTitel">Titel</label>
                 <input type="text" id="mtTitel" maxlength="150" placeholder="z. B. Wichtige Info zum Vereinsabend">
@@ -83,11 +85,11 @@ $istVorstand = isVorstand();
                 <textarea id="mtText" maxlength="500" placeholder="Deine Mitteilung an die Mitglieder…"></textarea>
             </div>
             <div class="p-field">
-                <label>Empfänger</label>
-                <div class="mt-roles" id="mtRoles">
-                    <button type="button" class="mt-role-chip active" data-role="mitglied"><i class="bi bi-check2"></i>Mitglieder</button>
-                    <button type="button" class="mt-role-chip active" data-role="vorstand"><i class="bi bi-check2"></i>Vorstand</button>
-                    <button type="button" class="mt-role-chip" data-role="jungschuetze"><i class="bi bi-check2"></i>Jungschützen</button>
+                <label id="mtRolesLabel">Empfänger</label>
+                <div class="mt-roles" id="mtRoles" role="group" aria-labelledby="mtRolesLabel">
+                    <button type="button" class="mt-role-chip active" data-role="mitglied" aria-pressed="true"><i class="bi bi-check2" aria-hidden="true"></i>Mitglieder</button>
+                    <button type="button" class="mt-role-chip active" data-role="vorstand" aria-pressed="true"><i class="bi bi-check2" aria-hidden="true"></i>Vorstand</button>
+                    <button type="button" class="mt-role-chip" data-role="jungschuetze" aria-pressed="false"><i class="bi bi-check2" aria-hidden="true"></i>Jungschützen</button>
                 </div>
                 <div class="mt-hint">Keine Auswahl = an alle freigegebenen Benutzer.</div>
             </div>
@@ -171,7 +173,10 @@ $istVorstand = isVorstand();
                 li.classList.remove('unread');
             });
         }
-        return li;
+        // In einer <ul> sind nur <li> erlaubt: Eintrag einpacken
+        var eintrag = document.createElement('li');
+        eintrag.appendChild(li);
+        return eintrag;
     }
 
     function load(reset) {
@@ -234,12 +239,14 @@ $istVorstand = isVorstand();
             elToggle.addEventListener('click', function () {
                 var collapsed = elCompose.classList.toggle('collapsed');
                 elToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                // Eingeklappt: Felder nicht per Tastatur erreichbar
+                document.getElementById('mtComposeBody').toggleAttribute('inert', collapsed);
             });
         }
 
         // Empfänger-Chips umschalten
         Array.prototype.forEach.call(document.querySelectorAll('.mt-role-chip'), function (chip) {
-            chip.addEventListener('click', function () { chip.classList.toggle('active'); });
+            chip.addEventListener('click', function () { chip.setAttribute('aria-pressed', chip.classList.toggle('active') ? 'true' : 'false'); });
         });
 
         elSend.addEventListener('click', function () {
