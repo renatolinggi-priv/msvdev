@@ -11,6 +11,9 @@ requireRoleJson(['admin', 'vorstand']);
 
 $db = getDB();
 
+/** Abbruch beim Speichern mit Klartext für den Vorstand (Rollback, Meldung unverändert anzeigen) */
+class UmfrageAbbruch extends RuntimeException {}
+
 // GET-Requests (list, get)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $action = $_GET['action'] ?? '';
@@ -68,7 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 echo json_encode(['success' => false, 'message' => 'Umfrage nicht gefunden']);
                 break;
             }
-            $stmtF = $db->prepare("SELECT * FROM umfragen_fragen WHERE umfrage_id = ? ORDER BY reihenfolge");
+            // Mit Anzahl Antworten: beantwortete Fragen behalten im Editor ihre Antwortart und lassen sich nicht entfernen
+            $stmtF = $db->prepare("SELECT f.*, (SELECT COUNT(*) FROM umfragen_antworten a WHERE a.frage_id = f.id) AS antworten
+                                     FROM umfragen_fragen f WHERE f.umfrage_id = ? ORDER BY f.reihenfolge");
             $stmtF->execute([$id]);
             $fragen = $stmtF->fetchAll();
             // JSON-Optionen dekodieren
@@ -152,6 +157,7 @@ switch ($action) {
 
         try {
             $db->beginTransaction();
+            $behalten = [];   // Fragen-IDs, die beim Bearbeiten erhalten bleiben (die Antworten hängen daran)
 
             if ($umfrage_id > 0) {
                 // Bearbeiten: prüfen ob Umfrage existiert
@@ -177,8 +183,28 @@ switch ($action) {
                 $stmt = $db->prepare("UPDATE umfragen SET titel = ?, beschreibung = ?, gueltig_bis = ?, zielgruppe = ?, kategorie = ? WHERE id = ?");
                 $stmt->execute([$titel, $beschreibung, $gueltig_bis, $zielgruppe, $kategorie, $umfrage_id]);
 
-                // Alte Fragen löschen und neu einfügen
-                $db->prepare("DELETE FROM umfragen_fragen WHERE umfrage_id = ?")->execute([$umfrage_id]);
+                // Fragen per ID abgleichen statt löschen und neu einfügen: umfragen_antworten hängt mit
+                // ON DELETE CASCADE an der Frage – neu einfügen hätte alle Antworten der Mitglieder gelöscht.
+                $bestehend = [];
+                $stB = $db->prepare("SELECT f.id, f.frage_text, f.frage_typ, (SELECT COUNT(*) FROM umfragen_antworten a WHERE a.frage_id = f.id) AS antworten
+                                       FROM umfragen_fragen f WHERE f.umfrage_id = ?");
+                $stB->execute([$umfrage_id]);
+                foreach ($stB->fetchAll() as $r) $bestehend[(int) $r['id']] = $r;
+                foreach ($fragen as $i => $frage) {
+                    $fid = (int) ($frage['id'] ?? 0);
+                    if (!$fid || !isset($bestehend[$fid])) continue;
+                    if ((int) $bestehend[$fid]['antworten'] > 0 && $bestehend[$fid]['frage_typ'] !== $frage['frage_typ']) {
+                        throw new UmfrageAbbruch('Frage ' . ($i + 1) . ' hat schon Antworten, ihre Antwortart lässt sich nicht mehr ändern. Lege für eine andere Antwortart eine neue Frage an.');
+                    }
+                    $behalten[$fid] = true;
+                }
+                foreach ($bestehend as $fid => $r) {
+                    if (isset($behalten[$fid])) continue;
+                    if ((int) $r['antworten'] > 0) {
+                        throw new UmfrageAbbruch('Die Frage «' . $r['frage_text'] . '» hat schon ' . (int) $r['antworten'] . ' Antworten und lässt sich nicht entfernen.');
+                    }
+                    $db->prepare("DELETE FROM umfragen_fragen WHERE id = ? AND umfrage_id = ?")->execute([$fid, $umfrage_id]);
+                }
             } else {
                 // Neue Umfrage erstellen
                 $stmt = $db->prepare("INSERT INTO umfragen (titel, beschreibung, gueltig_bis, zielgruppe, kategorie, erstellt_von) VALUES (?, ?, ?, ?, ?, ?)");
@@ -186,8 +212,9 @@ switch ($action) {
                 $umfrage_id = (int)$db->lastInsertId();
             }
 
-            // Fragen einfügen
+            // Fragen einfügen bzw. bestehende (mit ihren Antworten) nachführen
             $stmtF = $db->prepare("INSERT INTO umfragen_fragen (umfrage_id, frage_text, frage_typ, pflichtfeld, min_auswahl, reihenfolge, optionen) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmtU = $db->prepare("UPDATE umfragen_fragen SET frage_text = ?, frage_typ = ?, pflichtfeld = ?, min_auswahl = ?, reihenfolge = ?, optionen = ? WHERE id = ? AND umfrage_id = ?");
             foreach ($fragen as $i => $frage) {
                 $optionen = null;
                 if (in_array($frage['frage_typ'], ['radio', 'checkbox', 'dropdown'])) {
@@ -199,15 +226,13 @@ switch ($action) {
                     $min_auswahl = intval($frage['min_auswahl']);
                     if ($min_auswahl < 1) $min_auswahl = null;
                 }
-                $stmtF->execute([
-                    $umfrage_id,
-                    trim($frage['frage_text']),
-                    $frage['frage_typ'],
-                    !empty($frage['pflichtfeld']) ? 1 : 0,
-                    $min_auswahl,
-                    $i,
-                    $optionen
-                ]);
+                $werte = [trim($frage['frage_text']), $frage['frage_typ'], !empty($frage['pflichtfeld']) ? 1 : 0, $min_auswahl, $i, $optionen];
+                $fid = (int) ($frage['id'] ?? 0);
+                if ($fid && isset($behalten[$fid])) {
+                    $stmtU->execute(array_merge($werte, [$fid, $umfrage_id]));
+                } else {
+                    $stmtF->execute(array_merge([$umfrage_id], $werte));
+                }
             }
 
             // Optional: direkt aktivieren
@@ -219,6 +244,9 @@ switch ($action) {
             $msg = $activate ? 'Umfrage erstellt und aktiviert' : 'Umfrage gespeichert';
             echo json_encode(['success' => true, 'message' => $msg, 'id' => $umfrage_id]);
 
+        } catch (UmfrageAbbruch $e) {
+            $db->rollBack();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         } catch (Exception $e) {
             $db->rollBack();
             error_log('umfrage_admin: ' . $e->getMessage());

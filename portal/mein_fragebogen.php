@@ -141,10 +141,11 @@ $portal_page_css = "
     margin-bottom: var(--p-3);
     position: relative;
 }
-.frage-card .drag-handle {
-    cursor: grab;
-    color: #adb5bd;
-    margin-right: var(--p-2);
+/* Beantwortete Frage: Antwortart fest, nicht entfernbar */
+.frage-card .frage-hinweis {
+    margin-left: var(--p-2);
+    font-size: 0.8rem;
+    color: var(--p-text-muted);
 }
 .frage-card .btn-remove-frage {
     position: absolute;
@@ -1009,21 +1010,23 @@ $(function() {
         const optionen = (data && data.optionen) || ['', ''];
         const disabled = readonly ? ' disabled' : '';
 
-        let html = '<div class="frage-card" data-idx="' + idx + '" draggable="' + (!readonly) + '">';
-        html += '<span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>';
+        // Beantwortete Fragen behalten ihre Antwortart und lassen sich nicht entfernen (die Antworten hängen an der Frage)
+        const antworten = (data && parseInt(data.antworten, 10)) || 0;
+        let html = '<div class="frage-card" data-idx="' + idx + '" data-frage-id="' + ((data && data.id) || '') + '">';
         html += '<strong>' + (idx + 1) + '.</strong>';
-        if (!readonly) html += '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-frage" aria-label="Frage entfernen" onclick="$(this).closest(\'.frage-card\').remove(); renumberFragen();"><i class="bi bi-trash" aria-hidden="true"></i></button>';
+        if (antworten) html += '<span class="frage-hinweis">' + antworten + (antworten === 1 ? ' Antwort' : ' Antworten') + ' · Antwortart fest</span>';
+        if (!readonly && !antworten) html += '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-frage" aria-label="Frage entfernen" onclick="$(this).closest(\'.frage-card\').remove(); renumberFragen();"><i class="bi bi-trash" aria-hidden="true"></i></button>';
 
         html += '<div class="row g-2 mt-1">';
         html += '<div class="col-12 col-md-5"><input type="text" class="form-control form-control-sm frage-text" placeholder="Fragetext *" aria-label="Fragetext" aria-required="true" value="' + escapeHtml(text) + '"' + disabled + '></div>';
-        html += '<div class="col-4 col-md-2"><select class="form-select form-select-sm frage-typ" aria-label="Antwortart"' + disabled + '>';
+        html += '<div class="col-4 col-md-2"><select class="form-select form-select-sm frage-typ" aria-label="Antwortart"' + ((readonly || antworten) ? ' disabled' : '') + '>';
         const typNamen = { radio: 'Eine Antwort', checkbox: 'Mehrere Antworten', dropdown: 'Auswahlliste', text: 'Freitext' };
         ['radio', 'checkbox', 'dropdown', 'text'].forEach(function(t) {
             html += '<option value="' + t + '"' + (typ === t ? ' selected' : '') + '>' + typNamen[t] + '</option>';
         });
         html += '</select></div>';
         html += '<div class="col-4 col-md-2"><div class="form-check mt-1"><input type="checkbox" class="form-check-input frage-pflicht" id="bfPflicht' + idx + '"' + (pflicht ? ' checked' : '') + disabled + '><label class="form-check-label" for="bfPflicht' + idx + '" style="font-size:0.8rem;">Pflicht</label></div></div>';
-        html += '<div class="col-4 col-md-3 min-auswahl-wrap" style="' + (typ === 'checkbox' ? '' : 'display:none;') + '"><div class="input-group input-group-sm"><span class="input-group-text" style="font-size:0.75rem;">Mind.</span><input type="number" class="form-control form-control-sm frage-min-auswahl" placeholder="0" min="0" value="' + escapeHtml(String(minAuswahl)) + '" title="Empfohlene Mindestauswahl (Warnung, nicht blockierend)"' + disabled + '></div></div>';
+        html += '<div class="col-4 col-md-3 min-auswahl-wrap" style="' + (typ === 'checkbox' ? '' : 'display:none;') + '"><div class="input-group input-group-sm"><span class="input-group-text" style="font-size:0.75rem;">Mind.</span><input type="number" class="form-control form-control-sm frage-min-auswahl" aria-label="Mindestens anzukreuzen" placeholder="0" min="0" value="' + escapeHtml(String(minAuswahl)) + '" title="Empfohlene Mindestauswahl (Warnung, nicht blockierend)"' + disabled + '></div></div>';
         html += '</div>';
 
         // Optionen-Bereich (nur für radio/checkbox/dropdown)
@@ -1223,6 +1226,7 @@ $(function() {
         $('#builderFragen .frage-card').each(function() {
             const $card = $(this);
             const f = {
+                id: parseInt($card.data('frage-id'), 10) || 0,   // bestehende Frage: Antworten bleiben erhalten
                 frage_text: $card.find('.frage-text').val().trim(),
                 frage_typ: $card.find('.frage-typ').val(),
                 pflichtfeld: $card.find('.frage-pflicht').is(':checked'),

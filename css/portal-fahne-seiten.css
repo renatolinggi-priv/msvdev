@@ -889,7 +889,7 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
     border-color: var(--linie);
     border-radius: var(--radius);
 }
-.portal-fahne #builderModal .frage-card .drag-handle { color: var(--tinte-2); }
+.portal-fahne #builderModal .frage-card .frage-hinweis { color: var(--tinte-2); }
 /* «Mind.» steht inline mit .75rem (Z. 1019) */
 .portal-fahne #builderModal .min-auswahl-wrap .input-group-text {
     background: #ececea;
