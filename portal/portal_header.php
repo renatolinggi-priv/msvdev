@@ -54,11 +54,10 @@ $portal_user_role = $_SESSION['user_role'] ?? 'mitglied';
 $portal_rolle_text = ['admin' => 'Admin', 'vorstand' => 'Vorstand', 'mitglied' => 'Mitglied', 'jungschuetze' => 'Jungschütze'][$portal_user_role] ?? ucfirst($portal_user_role);
 $portal_page_title = $portal_page_title ?? 'Mitgliederportal';
 
-// Vorschau «Vereinsfahne» (neue Mitglieder-Optik, Okt 2026): nur Admins sehen sie, per Schalter im
-// Benutzermenü (?vorschau=an|aus, Cookie 30 Tage). Alle anderen sehen das bisherige Portal, bis der
-// Benutzer die neue Optik freigibt. Stil: css/portal-fahne.css, alle Regeln unter html.portal-fahne.
-$portal_fahne = false;
-$portal_vorschau_link = '';
+// Optik «Vereinsfahne» (freigegeben 09.10.2026, für alle): css/portal-fahne.css + portal-fahne-seiten.css,
+// alle Regeln unter html.portal-fahne. Zum Vergleich können Admins vorübergehend die bisherige Ansicht
+// öffnen: ?vorschau=aus (Cookie 30 Tage), ?vorschau=an wieder zurück. Kein Menüeintrag mehr.
+$portal_fahne = true;
 if (isAdmin()) {
     $__seite = basename($_SERVER['PHP_SELF']);
     if (isset($_GET['vorschau']) && in_array($_GET['vorschau'], ['an', 'aus'], true)) {
@@ -66,8 +65,8 @@ if (isAdmin()) {
         $__q = $_GET;
         unset($__q['vorschau']);
         if (!headers_sent()) {
-            setcookie('msv_portal_fahne', $__an ? '1' : '', [
-                'expires'  => $__an ? time() + 30 * 86400 : time() - 3600,
+            setcookie('msv_portal_fahne', $__an ? '' : '0', [
+                'expires'  => $__an ? time() - 3600 : time() + 30 * 86400,
                 'path'     => '/',
                 'secure'   => !empty($_SERVER['HTTPS']),
                 'httponly' => true,
@@ -76,12 +75,9 @@ if (isAdmin()) {
             header('Location: ' . $__seite . ($__q ? '?' . http_build_query($__q) : ''));
             exit;
         }
-        $_COOKIE['msv_portal_fahne'] = $__an ? '1' : '';
+        $_COOKIE['msv_portal_fahne'] = $__an ? '' : '0';
     }
-    $portal_fahne = (($_COOKIE['msv_portal_fahne'] ?? '') === '1');
-    $__q = $_GET;
-    $__q['vorschau'] = $portal_fahne ? 'aus' : 'an';
-    $portal_vorschau_link = htmlspecialchars($__seite . '?' . http_build_query($__q), ENT_QUOTES, 'UTF-8');
+    $portal_fahne = (($_COOKIE['msv_portal_fahne'] ?? '') !== '0');
 }
 ?>
 <!DOCTYPE html>
@@ -680,7 +676,7 @@ if (isAdmin()) {
         <div class="container-fluid" style="max-width: 1200px;">
             <a class="navbar-brand" href="<?php echo isJungschuetze() ? 'jsk_dashboard.php' : 'dashboard.php'; ?>">
                 <?php if ($portal_fahne): ?>
-                <img src="../icons/icon-96x96.png" alt="" width="36" height="36" class="portal-brand-logo"><span>MSV Wilen</span><span class="fahne-vorschau">Vorschau</span>
+                <img src="../icons/icon-96x96.png" alt="" width="36" height="36" class="portal-brand-logo"><span>MSV Wilen</span>
                 <?php else: ?>
                 <img src="../icons/icon-32x32.png" alt="MSV" width="22" height="22" style="border-radius:4px; vertical-align:-3px;"> MSV Wilen
                 <?php endif; ?>
@@ -766,14 +762,6 @@ if (isAdmin()) {
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
-                            <?php if (isAdmin()): ?>
-                            <li>
-                                <a class="dropdown-item" href="<?php echo $portal_vorschau_link; ?>">
-                                    <i class="bi bi-flag me-2 text-muted"></i><?php echo $portal_fahne ? 'Vorschau «Vereinsfahne» aus' : 'Vorschau «Vereinsfahne» an'; ?>
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <?php endif; ?>
                             <?php if (!isJungschuetze()): ?>
                             <li>
                                 <a class="dropdown-item <?php echo $current_page == 'meine_daten.php' ? 'active' : ''; ?>" href="meine_daten.php">
@@ -852,14 +840,6 @@ if (isAdmin()) {
                     </div>
                 </div>
                 <ul class="mobile-nav-list">
-                    <?php if (isAdmin()): ?>
-                    <li class="mobile-nav-item">
-                        <a class="mobile-nav-link" href="<?php echo $portal_vorschau_link; ?>">
-                            <i class="bi bi-flag"></i>
-                            <?php echo $portal_fahne ? 'Vorschau «Vereinsfahne» aus' : 'Vorschau «Vereinsfahne» an'; ?>
-                        </a>
-                    </li>
-                    <?php endif; ?>
                     <?php if (!isJungschuetze()): ?>
                     <li class="mobile-nav-item">
                         <a class="mobile-nav-link <?php echo $current_page == 'meine_daten.php' ? 'active' : ''; ?>" href="meine_daten.php">

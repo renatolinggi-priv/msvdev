@@ -1,5 +1,58 @@
 [
   {
+    "version": "1.67.0",
+    "datum": "2026-10-09",
+    "aenderungen": [
+      {
+        "titel": "Neue Optik in den Vereinsfarben",
+        "beschreibung": "Das Portal trägt jetzt die Farben des Vereins: weisser Kopf mit rotem Band und Wappen, Knöpfe in Königsblau, Gold für den nächsten Anlass. Die Schrift ist grösser und ruhiger, die Seiten sind aufgeräumter. «‹ Start» oben führt immer zurück zur Startseite.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Startseite: was jetzt ansteht",
+        "beschreibung": "Oben steht, was als Nächstes kommt: der nächste Anlass (ein Wochenende ist ein Eintrag, antippen zeigt den Tagesplan mit allen Zeiten und Orten), dein nächster Einsatz, offene Tausch-Anfragen und Umfragen. Darunter findest du alle Bereiche als Kacheln.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Jahresmeisterschaft: «Als Nächstes» oben",
+        "beschreibung": "Der nächste JM-Anlass steht oben mit Tag, Schiesszeiten, weiteren Schiesstagen und Ort mit Karte. Darunter siehst du, was noch kommt, was du geschossen hast und wo ein Resultat fehlt. Oben wechselst du mit einem Tipp zwischen JM, Heimmeisterschaft, Kantonalstich und Wanderpreisen.",
+        "typ": "feature",
+        "portal": true
+      },
+      {
+        "titel": "Termine nach Tagen",
+        "beschreibung": "Die Termine sind nach Monat und Tag geordnet; Anlässe am selben Tag stehen zusammen, der nächste Tag ist hervorgehoben. Vergangene Tage sind eingeklappt.",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Umfragen: Offenes zuerst",
+        "beschreibung": "Die Umfrage, die auf deine Antwort wartet, steht oben und ist schon aufgeklappt. Die Angaben zur Jahresmeisterschaft zeigen richtig an, ob du sie schon gemacht hast.",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Dokumente und Meldungen einfacher",
+        "beschreibung": "Einsatzpläne, Protokolle und JSK-Dokumente zeigen nur noch Titel, Datum und Beschreibung; die ganze Zeile öffnet das Dokument. Klappt etwas nicht, steht da, was passiert ist und was du tun kannst. Die Glocke heisst «Mitteilungen», die Push-Einstellungen «Benachrichtigungen».",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Für Jungschützen dieselbe Startseite",
+        "beschreibung": "Jungschützen sehen oben ihre kommenden Trainings mit Betreuer und Chat, den nächsten Jungschützen-Termin und neue Nachrichten; vergangene Kurse sind auf der Terminseite eingeklappt.",
+        "typ": "verbesserung",
+        "portal": true
+      },
+      {
+        "titel": "Umfragen bearbeiten: Antworten bleiben erhalten",
+        "beschreibung": "Wer eine aktive Umfrage bearbeitete und speicherte, löschte dabei alle Antworten der Mitglieder. Jetzt bleiben sie erhalten. Beantwortete Fragen behalten ihre Antwortart und lassen sich nicht entfernen; der Editor zeigt das mit «n Antworten · Antwortart fest» an. Abgelaufene Umfragen nehmen keine Antworten mehr an.",
+        "typ": "fix"
+      }
+    ]
+  },
+  {
     "version": "1.66.0",
     "datum": "2026-10-09",
     "aenderungen": [
