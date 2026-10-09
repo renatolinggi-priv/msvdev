@@ -35,12 +35,15 @@ if ($umfrage_id < 1 || $frage_id < 1) {
 $db = getDB();
 
 // Umfrage prüfen
-$stmt = $db->prepare("SELECT id, status, zielgruppe FROM umfragen WHERE id = ?");
+$stmt = $db->prepare("SELECT id, status, zielgruppe, gueltig_bis FROM umfragen WHERE id = ?");
 $stmt->execute([$umfrage_id]);
 $umfrage = $stmt->fetch();
 
 if (!$umfrage || $umfrage['status'] !== 'aktiv') {
     json_error('Diese Umfrage ist nicht mehr aktiv.');
+}
+if (!empty($umfrage['gueltig_bis']) && $umfrage['gueltig_bis'] < date('Y-m-d')) {
+    json_error('Diese Umfrage ist abgelaufen, Antworten sind nicht mehr möglich.');
 }
 // Zielgruppen-Check: Vorstand-interne Umfragen nur für Vorstand/Admin beantwortbar
 if (($umfrage['zielgruppe'] ?? 'alle') === 'vorstand'

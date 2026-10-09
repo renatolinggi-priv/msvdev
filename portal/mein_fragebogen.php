@@ -348,8 +348,8 @@ include 'portal_header.php';
     <!-- JM-Fragebogen (bestehend) -->
     <div class="accordion-item" id="jmFragebogenItem">
         <h2 class="accordion-header">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#jmCollapse">
-                <i class="bi bi-pencil-square me-2"></i>Jahresmeisterschaft
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#jmCollapse" aria-expanded="false" aria-controls="jmCollapse">
+                <i class="bi bi-pencil-square me-2" aria-hidden="true"></i>Jahresmeisterschaft
                 <span class="year-badge" id="yearBadge">...</span>
                 <span class="status-badge" id="jmStatusBadge"></span>
             </button>
@@ -364,7 +364,8 @@ include 'portal_header.php';
                     <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
                     <input type="hidden" name="year" id="formYear" value="">
                     <div id="fragebogenFields"></div>
-                    <div class="d-flex flex-wrap gap-2 mt-3">
+                    <p class="text-muted small mt-3 mb-0">Diese Angaben gelten erst mit «Speichern», weil sie auch deine Waffe in den Mitgliederdaten festlegen. Die Umfragen darunter speichern sich selbst.</p>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
                         <button type="submit" class="btn btn-success" id="btnSaveJm">
                             <i class="bi bi-save me-2"></i>Speichern
                         </button>
@@ -386,6 +387,7 @@ include 'portal_header.php';
 
 <?php endif; ?>
 
+<?php if ($ist_vorstand): /* Editor, Auswertung und Excel-Import nur für den Vorstand */ ?>
 <!-- ============ FRAGEN-BUILDER MODAL ============ -->
 <div class="modal fade" id="builderModal" tabindex="-1" aria-labelledby="builderTitle">
 <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -480,12 +482,14 @@ include 'portal_header.php';
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<?php endif; ?>
 <script>
 $(function() {
     <?php if (!$mitglied_id): ?>return;<?php endif; ?>
 
     const csrfToken = '<?= $csrf_token ?>';
     const istVorstand = <?= $ist_vorstand ? 'true' : 'false' ?>;
+    const KEINE_VERBINDUNG = 'Keine Verbindung zum Server. Prüfe das Internet und versuche es nochmals.';
 
     // ========== JM-FRAGEBOGEN (bestehend, unverändert) ==========
     let currentYear = 0;
@@ -552,10 +556,14 @@ $(function() {
 
     // JM laden
     let jmBeantwortet = false;
+    let jmGeladen = false, umfragenGeladen = false;
+    function jmLadefehler(text) {
+        $('#jmLoadingState').html('<i class="bi bi-exclamation-circle me-2" aria-hidden="true"></i>' + msvEsc(text));
+    }
     $.getJSON('../api/portal_fragebogen_data.php')
         .done(function(resp) {
             if (!resp.success) {
-                msvToast(resp.message || 'Fehler beim Laden.', 'error');
+                jmLadefehler(resp.message || 'Der Fragebogen zur Jahresmeisterschaft konnte nicht geladen werden. Lade die Seite neu.');
                 return;
             }
             currentYear = resp.year;
@@ -565,14 +573,14 @@ $(function() {
             $('#jmLoadingState').hide();
             $('#fragebogenForm').show();
 
-            // Status: prüfen ob bereits beantwortet (mannschaft !== default)
-            jmBeantwortet = resp.existing.mannschaft && resp.existing.mannschaft !== '';
+            // Status: gibt es für dieses Jahr schon Angaben? (existing enthält sonst nur Vorgaben)
+            jmBeantwortet = !!resp.beantwortet;
             updateJmBadge();
         })
-        .fail(function() {
-            msvToast('Verbindungsfehler beim Laden des Fragebogens.', 'error');
-            $('#jmLoadingState').html('<i class="bi bi-exclamation-circle text-danger me-2"></i>Fehler beim Laden.');
-        });
+        .fail(function(xhr) {
+            jmLadefehler(msvXhrMessage(xhr, 'Der Fragebogen zur Jahresmeisterschaft konnte nicht geladen werden. Prüfe die Verbindung und lade die Seite neu.'));
+        })
+        .always(function() { jmGeladen = true; oeffneNaechste(); });
 
     function updateJmBadge() {
         const $badge = $('#jmStatusBadge');
@@ -600,10 +608,10 @@ $(function() {
                 jmBeantwortet = true;
                 updateJmBadge();
             } else {
-                msvToast(resp.message || 'Fehler beim Speichern.', 'error');
+                msvToast(resp.message || 'Deine Angaben konnten nicht gespeichert werden. Versuche es nochmals.', 'error');
             }
         })
-        .fail(function() { msvToast('Verbindungsfehler. Bitte erneut versuchen.', 'error'); })
+        .fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Nicht gespeichert: ' + KEINE_VERBINDUNG), 'error'); })
         .always(function() { $btn.prop('disabled', false).html(origHtml); });
     });
 
@@ -614,7 +622,26 @@ $(function() {
                 if (!resp.success) { msvToast(resp.message || 'Umfragen konnten nicht geladen werden', 'error'); return; }
                 renderUmfragenAccordion(resp.umfragen);
             })
-            .fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Umfragen konnten nicht geladen werden'), 'error'); });
+            .fail(function(xhr) { msvToast(msvXhrMessage(xhr, 'Die Umfragen konnten nicht geladen werden. Prüfe die Verbindung und lade die Seite neu.'), 'error'); })
+            .always(function() { umfragenGeladen = true; oeffneNaechste(); });
+    }
+
+    // Was noch eine Antwort braucht, steht oben und ist aufgeklappt – auch beim Sprung von der Startseite.
+    // Reihenfolge: ?umfrage=ID, sonst die erste offene Umfrage, sonst die JM-Angaben, falls noch keine da sind.
+    // Erledigte JM-Angaben rücken ans Ende, wenn Umfragen offen sind. Nur einmal nach dem ersten Laden.
+    let schonGeoeffnet = false;
+    function oeffneNaechste() {
+        if (!jmGeladen || !umfragenGeladen || schonGeoeffnet) return;
+        schonGeoeffnet = true;
+        const $offen = $('#umfragenAccordionItems .accordion-item[data-offen="1"]');
+        if (jmBeantwortet && $offen.length) $('#jmFragebogenItem').insertAfter('#umfragenAccordionItems');   // ausserhalb: der Container wird neu aufgebaut
+        const gewuenscht = parseInt(new URLSearchParams(location.search).get('umfrage'), 10);
+        let $ziel = gewuenscht ? $('#umfrageCollapse' + gewuenscht) : $();
+        if (!$ziel.length) $ziel = $offen.first().find('.accordion-collapse');
+        if (!$ziel.length && !jmBeantwortet && $('#fragebogenForm').is(':visible')) $ziel = $('#jmCollapse');
+        if (!$ziel.length) return;
+        bootstrap.Collapse.getOrCreateInstance($ziel[0], { toggle: false }).show();
+        if (gewuenscht) $ziel[0].closest('.accordion-item').scrollIntoView({ block: 'start' });
     }
 
     const KATEGORIE_CONFIG = {
@@ -650,10 +677,11 @@ $(function() {
 
             const kat = KATEGORIE_CONFIG[u.kategorie] || KATEGORIE_CONFIG.umfrage;
 
-            let html = '<div class="accordion-item" data-kategorie="' + (u.kategorie || 'umfrage') + '">';
+            const offen = (badgeClass === 'offen');
+            let html = '<div class="accordion-item" data-kategorie="' + (u.kategorie || 'umfrage') + '" data-offen="' + (offen ? 1 : 0) + '">';
             html += '<h2 class="accordion-header">';
-            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#umfrageCollapse' + u.id + '">';
-            html += '<i class="bi ' + kat.icon + ' me-2"></i><span class="btn-title">' + escapeHtml(u.titel) + '</span>';
+            html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#umfrageCollapse' + u.id + '" aria-expanded="false" aria-controls="umfrageCollapse' + u.id + '">';
+            html += '<i class="bi ' + kat.icon + ' me-2" aria-hidden="true"></i><span class="btn-title">' + escapeHtml(u.titel) + '</span>';
             html += '<span class="status-badge ' + badgeClass + '">' + badgeText + '</span>';
             html += '</button></h2>';
             html += '<div id="umfrageCollapse' + u.id + '" class="accordion-collapse collapse" data-bs-parent="#fragebogenAccordion">';
@@ -684,8 +712,8 @@ $(function() {
                 $body.data('loaded', true);
                 renderUmfrageForm($body, resp);
             })
-            .fail(function() {
-                $body.html('<div class="alert alert-danger">Verbindungsfehler</div>');
+            .fail(function(xhr) {
+                $body.html('<div class="alert alert-danger">' + msvEsc(msvXhrMessage(xhr, 'Die Umfrage konnte nicht geladen werden. Prüfe die Verbindung und lade die Seite neu.')) + '</div>');
             });
     }
 
@@ -789,7 +817,7 @@ $(function() {
     // ========== AUTO-SAVE LOGIK ==========
     const autosaveTimers = {};
 
-    function showAutosaveIndicator(frageId, state) {
+    function showAutosaveIndicator(frageId, state, text) {
         const $ind = $('#autosave-' + frageId);
         $ind.removeClass('saving saved error visible');
 
@@ -799,8 +827,8 @@ $(function() {
             $ind.addClass('saved visible').html('<i class="bi bi-check-circle"></i> Gespeichert');
             setTimeout(function() { $ind.removeClass('visible'); }, 2000);
         } else if (state === 'error') {
-            $ind.addClass('error visible').html('<i class="bi bi-exclamation-circle"></i> Fehler');
-            setTimeout(function() { $ind.removeClass('visible'); }, 4000);
+            // bleibt stehen, bis das nächste Speichern klappt
+            $ind.addClass('error visible').html('<i class="bi bi-exclamation-circle" aria-hidden="true"></i> ' + msvEsc(text || 'Nicht gespeichert.'));
         }
     }
 
@@ -841,15 +869,22 @@ $(function() {
         .done(function(resp) {
             if (resp.success) {
                 showAutosaveIndicator(frageId, 'saved');
-                // Badge aktualisieren
-                const $item = $('#umfrageCollapse' + umfrageId).closest('.accordion-item');
-                $item.find('.status-badge').removeClass('offen').addClass('beantwortet').html('<i class="bi bi-check-lg me-1"></i>Erledigt');
+                // Status nach dem, was jetzt wirklich beantwortet ist (geleerte Antworten löscht der Server)
+                const $form = $('#umfrageCollapse' + umfrageId + ' .umfrage-autosave-form');
+                const hatAntwort = $form.find('input:checked').length > 0
+                    || $form.find('select').filter(function() { return !!$(this).val(); }).length > 0
+                    || $form.find('textarea').filter(function() { return $(this).val().trim() !== ''; }).length > 0;
+                const $item = $form.closest('.accordion-item');
+                $item.attr('data-offen', hatAntwort ? 0 : 1);
+                const $badge = $item.find('.status-badge').removeClass('offen beantwortet');
+                if (hatAntwort) $badge.addClass('beantwortet').html('<i class="bi bi-check-lg me-1" aria-hidden="true"></i>Erledigt');
+                else $badge.addClass('offen').text('Offen');
             } else {
-                showAutosaveIndicator(frageId, 'error');
+                showAutosaveIndicator(frageId, 'error', 'Nicht gespeichert: ' + (resp.message || 'unbekannter Grund.'));
             }
         })
-        .fail(function() {
-            showAutosaveIndicator(frageId, 'error');
+        .fail(function(xhr) {
+            showAutosaveIndicator(frageId, 'error', 'Nicht gespeichert: ' + msvXhrMessage(xhr, KEINE_VERBINDUNG));
         });
     }
 
@@ -902,10 +937,9 @@ $(function() {
     $(document).on('blur', '.autosave-text', function() {
         const $this = $(this);
         const frageId = $this.data('frage-id');
-        if (autosaveTimers[frageId]) {
-            clearTimeout(autosaveTimers[frageId]);
-            delete autosaveTimers[frageId];
-        }
+        if (!autosaveTimers[frageId]) return;   // nichts Ungespeichertes (Feld nur betreten und verlassen)
+        clearTimeout(autosaveTimers[frageId]);
+        delete autosaveTimers[frageId];
         const $container = $this.closest('.question-group');
         const frageTyp = $container.data('frage-typ');
         const umfrageId = $this.closest('.umfrage-autosave-form').data('umfrage-id');
@@ -929,7 +963,7 @@ $(function() {
                 msvToast(resp.message, resp.success ? 'success' : 'error');
                 if (resp.success) loadUmfragen();
             })
-            .fail(function() { msvToast('Verbindungsfehler', 'error'); });
+            .fail(function(xhr) { msvToast(msvXhrMessage(xhr, KEINE_VERBINDUNG), 'error'); });
     };
 
     window.deleteUmfrage = async function(id) {
@@ -941,16 +975,7 @@ $(function() {
                 msvToast(resp.message, resp.success ? 'success' : 'error');
                 if (resp.success) loadUmfragen();
             })
-            .fail(function() { msvToast('Verbindungsfehler', 'error'); });
-    };
-
-    window.copyUmfrage = function(id) {
-        $.post('../api/umfrage_admin.php', { action: 'copy', id: id, csrf_token: csrfToken }, null, 'json')
-            .done(function(resp) {
-                msvToast(resp.message, resp.success ? 'success' : 'error');
-                if (resp.success) loadUmfragen();
-            })
-            .fail(function() { msvToast('Verbindungsfehler', 'error'); });
+            .fail(function(xhr) { msvToast(msvXhrMessage(xhr, KEINE_VERBINDUNG), 'error'); });
     };
 
     // ========== FRAGEN-BUILDER ==========
@@ -1269,7 +1294,7 @@ $(function() {
                 loadUmfragen();
             }
         })
-        .fail(function() { msvToast('Verbindungsfehler', 'error'); });
+        .fail(function(xhr) { msvToast(msvXhrMessage(xhr, KEINE_VERBINDUNG), 'error'); });
     };
 
     // ========== JM-FRAGEBOGEN AUSWERTUNG ==========
@@ -1289,7 +1314,7 @@ $(function() {
                 renderJmResults(resp);
             })
             .fail(function() {
-                $('#resultsBody').html('<div class="alert alert-danger">Verbindungsfehler</div>');
+                $('#resultsBody').html('<div class="alert alert-danger">Die Auswertung konnte nicht geladen werden. Prüfe die Verbindung und versuche es nochmals.</div>');
             });
     };
 
@@ -1411,7 +1436,7 @@ $(function() {
                 renderResults(resp);
             })
             .fail(function() {
-                $('#resultsBody').html('<div class="alert alert-danger">Verbindungsfehler</div>');
+                $('#resultsBody').html('<div class="alert alert-danger">Die Auswertung konnte nicht geladen werden. Prüfe die Verbindung und versuche es nochmals.</div>');
             });
     };
 
@@ -1474,7 +1499,7 @@ $(function() {
             html += '<div class="beantwortet-list">';
             data.beantwortet.forEach(function(b) {
                 html += '<span class="beantwortet-tag">' + escapeHtml(b.name);
-                html += '<button type="button" class="btn-tag-delete" title="Rückmeldung löschen" aria-label="Rückmeldung von ' + escapeHtml(b.name).replace(/"/g, '&quot;') + ' löschen" onclick="deleteAntwort(' + data.umfrage.id + ', ' + b.mitglied_id + ', \'' + escapeHtml(b.name).replace(/'/g, "\\'") + '\')"><i class="bi bi-x"></i></button>';
+                html += '<button type="button" class="btn-tag-delete" aria-label="Rückmeldung von ' + msvEsc(b.name) + ' löschen" data-umfrage="' + data.umfrage.id + '" data-mitglied="' + b.mitglied_id + '" data-name="' + msvEsc(b.name) + '"><i class="bi bi-x" aria-hidden="true"></i></button>';
                 html += '</span>';
             });
             html += '</div>';
@@ -1503,8 +1528,12 @@ $(function() {
         });
     }
 
+    $(document).on('click', '.btn-tag-delete', function() {
+        deleteAntwort($(this).data('umfrage'), $(this).data('mitglied'), String($(this).data('name')));
+    });
+
     window.deleteAntwort = async function(umfrageId, mitgliedId, name) {
-        const r = await msvConfirm('Rückmeldung von <b>' + name + '</b> wirklich löschen?');
+        const r = await msvConfirm('Rückmeldung von <b>' + msvEsc(name) + '</b> wirklich löschen?');
         if (!r.isConfirmed) return;
 
         $.post('../api/umfrage_admin.php', {
@@ -1520,7 +1549,7 @@ $(function() {
                 loadUmfragen();
             }
         })
-        .fail(function() { msvToast('Verbindungsfehler', 'error'); });
+        .fail(function(xhr) { msvToast(msvXhrMessage(xhr, KEINE_VERBINDUNG), 'error'); });
     };
 
     window.deleteAlleAntworten = async function(umfrageId) {
@@ -1539,24 +1568,15 @@ $(function() {
                 loadUmfragen();
             }
         })
-        .fail(function() { msvToast('Verbindungsfehler', 'error'); });
+        .fail(function(xhr) { msvToast(msvXhrMessage(xhr, KEINE_VERBINDUNG), 'error'); });
     };
 
     <?php endif; ?>
 
     // ========== HILFSFUNKTIONEN ==========
+    // Zentral (msv-toast.js): maskiert auch Anführungszeichen, damit Werte in value="…" heil bleiben
     function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const d = new Date(dateStr);
-        if (isNaN(d)) return dateStr;
-        return d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear();
+        return text ? msvEsc(text) : '';
     }
 });
 </script>

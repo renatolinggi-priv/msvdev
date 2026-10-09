@@ -74,4 +74,5 @@ echo json_encode([
     'waffen'   => $waffen,
     'defs'     => $defs,
     'existing' => $existing,
+    'beantwortet' => (bool) $fbRow,   // gibt es für dieses Jahr schon Angaben? (existing hat Vorgaben)
 ]);
