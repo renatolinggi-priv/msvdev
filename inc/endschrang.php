@@ -48,7 +48,7 @@ $page_specific_css = '
 #EndA tbody td, #EndB tbody td { text-align: center; }
 #EndA thead th:nth-child(2), #EndB thead th:nth-child(2),
 #EndA tbody td:nth-child(2), #EndB tbody td:nth-child(2) { text-align: left; font-weight: 500; }
-#EndA tbody tr:not(.msv-empty-row) td:last-child, #EndB tbody tr:not(.msv-empty-row) td:last-child { font-weight: 700; color: var(--ui-text); background-color: var(--ui-flaeche-2); font-variant-numeric: tabular-nums; }
+#EndA tbody td:last-child:where(:not([colspan])), #EndB tbody td:last-child:where(:not([colspan])) { font-weight: 700; color: var(--ui-text); background-color: var(--ui-flaeche-2); font-variant-numeric: tabular-nums; }
 /* Podium: Top 3 leicht in Gold, Silber und Bronze getönt, Rang fett */
 #EndA tbody tr.rank-1 td, #EndB tbody tr.rank-1 td { background-color: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
 #EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
@@ -71,7 +71,7 @@ include 'header.inc.php';
                 $page_title_after = '<button type="button" class="btn-help" data-help="endschrang.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-                $page_actions = '<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten</button>';
+                $page_actions = '<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Resultate bearbeiten</button>';
                 $page_show_mobile = true;
                 include 'partials/page_header.inc.php'; ?>
                 <div class="es-seite"><div class="es-raster">
@@ -199,8 +199,8 @@ include 'header.inc.php';
                     <div class="mobile-cards-container" id="mobileCardsEndA">
                         <div class="mobile-search">
                             <div class="position-relative">
-                                <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control" placeholder="Suchen..."
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="text" class="form-control" placeholder="Suchen..." aria-label="Rangliste Kat. A durchsuchen"
                                        oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCardsEndA')">
                             </div>
                         </div>
@@ -238,8 +238,8 @@ include 'header.inc.php';
                     <div class="mobile-cards-container" id="mobileCardsEndB">
                         <div class="mobile-search">
                             <div class="position-relative">
-                                <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control" placeholder="Suchen..."
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="text" class="form-control" placeholder="Suchen..." aria-label="Rangliste Kat. B durchsuchen"
                                        oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCardsEndB')">
                             </div>
                         </div>
@@ -269,45 +269,36 @@ $(document).ready(function () {
         msvJahrAuswahl('#yearSelect');
     }
 
-    // Endschiessen A laden
-    function loadenda() {
-        var selectedYear = $('#yearSelect').val();
+    // Rangliste einer Kategorie laden. Während des Ladens und bei einem Fehler steht eine Hinweiszeile in der
+    // Tabelle (Klasse msv-empty-row: zählt nicht als Daten, auch nicht in den Handy-Karten), damit nie die
+    // Zahlen des vorher gewählten Jahres stehen bleiben.
+    function hinweisZeile(text, fehler) {
+        return '<tr class="msv-empty-row"><td colspan="9" class="text-center py-4 ' + (fehler ? 'text-danger' : 'text-muted') + '">'
+            + (fehler ? '<i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>'
+                      : '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>')
+            + msvEsc(text) + '</td></tr>';
+    }
+    function ladeRangliste(kat) {
+        const jahr = $('#yearSelect').val();
+        const $tbody = $('#End' + kat + ' tbody');
+        $tbody.html(hinweisZeile('Rangliste Kat. ' + kat + ' wird geladen …'));
+        baueKarten(kat);
         $.ajax({
             url: basePath + 'endschrang/load_endsch.php',
             type: 'GET',
-            data: {
-                kat: 'A',
-                year: selectedYear
-            },
-            success: function (response) {
-                $('#EndA tbody').html(response);
-                buildMobileCardsEndA();
-            },
-            error: function(xhr, status, error) {
-                msvToast(msvXhrMessage(xhr, 'Die Rangliste Kat. A konnte nicht geladen werden'), 'error');
-            }
+            data: { kat: kat, year: jahr }
+        }).done(function (response) {
+            if (jahr !== $('#yearSelect').val()) return; // inzwischen ein anderes Jahr gewählt
+            $tbody.html(response);
+            baueKarten(kat);
+        }).fail(function (xhr) {
+            if (jahr !== $('#yearSelect').val()) return;
+            $tbody.html(hinweisZeile(msvXhrMessage(xhr, 'Die Rangliste Kat. ' + kat + ' konnte nicht geladen werden. Bitte die Seite neu laden.'), true));
+            baueKarten(kat);
         });
     }
-
-    // Endschiessen B laden
-    function loadendb() {
-        var selectedYear = $('#yearSelect').val();
-        $.ajax({
-            url: basePath + 'endschrang/load_endsch.php',
-            type: 'GET',
-            data: {
-                kat: 'B',
-                year: selectedYear
-            },
-            success: function (response) {
-                $('#EndB tbody').html(response);
-                buildMobileCardsEndB();
-            },
-            error: function(xhr, status, error) {
-                msvToast(msvXhrMessage(xhr, 'Die Rangliste Kat. B konnte nicht geladen werden'), 'error');
-            }
-        });
-    }
+    function loadenda() { ladeRangliste('A'); }
+    function loadendb() { ladeRangliste('B'); }
 
     // Ranglisten als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, ein Toast).
     // Die Generatoren liefern 'dat/…' relativ zu endschrang/ → linkPrefix.
@@ -374,6 +365,11 @@ $(document).ready(function () {
     async function absendenPruefen() {
         const jahr = $('#yearSelect').val();
         if (!jahr) return;
+        $('#absNeu').prop('disabled', true).attr('aria-busy', 'true');
+        try { await absendenPruefenJahr(jahr); }
+        finally { $('#absNeu').prop('disabled', false).removeAttr('aria-busy'); }
+    }
+    async function absendenPruefenJahr(jahr) {
         $('#absStand').html('<span class="ui-status"><span class="ui-punkt"></span>wird geprüft …</span>');
         const q = { year: jahr };
         const [end, part, wp] = await Promise.allSettled([
@@ -426,21 +422,10 @@ $(document).ready(function () {
 });
 
 
-    // Mobile Cards Builder für Kategorie A
-    function buildMobileCardsEndA() {
+    // Handy-Karten einer Kategorie aus der Tabelle bauen (Rang und Name als Titel, Total in der Zusammenfassung)
+    function baueKarten(kat) {
         MSVMobileCards.initResponsive(function() {
-            MSVMobileCards.buildCards('#EndA', '#mobileCardsEndA', {
-                titleColumns: [0, 1],
-                summaryColumns: [8],
-                rankColumn: 0
-            });
-        });
-    }
-
-    // Mobile Cards Builder für Kategorie B
-    function buildMobileCardsEndB() {
-        MSVMobileCards.initResponsive(function() {
-            MSVMobileCards.buildCards('#EndB', '#mobileCardsEndB', {
+            MSVMobileCards.buildCards('#End' + kat, '#mobileCardsEnd' + kat, {
                 titleColumns: [0, 1],
                 summaryColumns: [8],
                 rankColumn: 0

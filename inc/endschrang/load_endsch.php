@@ -1,7 +1,7 @@
 <?php
 // load_endsch.php
 
-// Fehleranzeige aktivieren
+// Fehler nur ins Log, nie in die Antwort
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
@@ -14,7 +14,8 @@ include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    http_response_code(500);
+    exit(msvFehler('Die Rangliste konnte nicht geladen werden, die Datenbank ist nicht erreichbar. Bitte später die Seite neu laden.', $conn->connect_error));
 }
 
 /**
@@ -99,29 +100,26 @@ $i = 1;
 $fehlt = '<span class="es-fehlt" data-tooltip="Noch nicht erfasst">–</span>';
 if ($result && $result->num_rows > 0) {
     foreach ($result as $row) {
-        // Nur Zeilen mit einem Endstichwert > 0 ausgeben
-        //if ($row['EndstichTotal'] > 0) {
-            $rankClass = $i <= 3 ? ' class="rank-' . $i . '"' : '';
-            echo '<tr' . $rankClass . '>';
-            echo '<td>' . $i . ".</td>";
-            echo '<td>' . htmlspecialchars($row["Name"] . " " . $row["Vorname"]) . '</td>';
-            echo '<td>' . $row["EndstichTotal"] . '</td>';
-            echo '<td>' . ($row["hatSchwini"] ? $row["MaxSchwini"] . ' (' . $row["MinSchwini"] . ')' : $fehlt) . '</td>';
-            echo '<td>' . ($row["hatKunst"] ? $row["KunstTotal"] : $fehlt) . '</td>';
-            echo '<td>' . ($row["hatGlueck"] ? $row["GlueckTotal"] : $fehlt) . '</td>';
-            echo '<td>' . ($row["hatZabig"] ? $row["ZabigTotal"] : $fehlt) . '</td>';
-            echo '<td>' . ($row["hatZabig"] && $row["Ansage"] !== null ? ($row["Ansage"] - $row["ZabigTotalDiff"]) : $fehlt) . '</td>';
-            echo '<td>' . $row["GesamtTotal"] . '</td>';
-            echo '</tr>';
-            $i++;
-        //}
+        // Die Abfrage liefert nur Mitglieder mit Endstich-Eintrag im Jahr (WHERE e.Jahr = ?)
+        $rankClass = $i <= 3 ? ' class="rank-' . $i . '"' : '';
+        echo '<tr' . $rankClass . '>';
+        echo '<td>' . $i . ".</td>";
+        echo '<td>' . htmlspecialchars($row["Name"] . " " . $row["Vorname"]) . '</td>';
+        echo '<td>' . $row["EndstichTotal"] . '</td>';
+        echo '<td>' . ($row["hatSchwini"] ? $row["MaxSchwini"] . ' (' . $row["MinSchwini"] . ')' : $fehlt) . '</td>';
+        echo '<td>' . ($row["hatKunst"] ? $row["KunstTotal"] : $fehlt) . '</td>';
+        echo '<td>' . ($row["hatGlueck"] ? $row["GlueckTotal"] : $fehlt) . '</td>';
+        echo '<td>' . ($row["hatZabig"] ? $row["ZabigTotal"] : $fehlt) . '</td>';
+        echo '<td>' . ($row["hatZabig"] && $row["Ansage"] !== null ? ($row["Ansage"] - $row["ZabigTotalDiff"]) : $fehlt) . '</td>';
+        echo '<td>' . $row["GesamtTotal"] . '</td>';
+        echo '</tr>';
+        $i++;
     }
 } else {
     require_once __DIR__ . '/../partials/empty_state.inc.php';
     echo msv_empty_row(9, 'Keine Resultate in Kat. ' . ($kat === 'B' ? 'B' : 'A') . ' für ' . $selectedYear);
 }
 
-echo '</div>';
 $conn->close();
 exit();
 ?>

@@ -34,13 +34,16 @@ const MSVMobileCards = {
         }
 
         const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-        const rows = table.querySelectorAll('tbody tr');
+        // Hinweiszeilen (msv_empty_row: leer, lädt, Fehler) sind keine Daten: Ihr Text erscheint im Leerzustand
+        const hinweis = table.querySelector('tbody tr.msv-empty-row');
+        const rows = Array.from(table.querySelectorAll('tbody tr')).filter(tr => !tr.classList.contains('msv-empty-row'));
 
         if (rows.length === 0) {
+            const text = (hinweis && hinweis.textContent.trim()) || 'Keine Daten gefunden';
             scrollContainer.innerHTML = `
                 <div class="mobile-cards-empty">
                     <i class="bi bi-inbox"></i>
-                    <div>Keine Daten gefunden</div>
+                    <div>${typeof msvEsc === 'function' ? msvEsc(text) : 'Keine Daten gefunden'}</div>
                 </div>`;
             return;
         }

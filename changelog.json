@@ -8,6 +8,12 @@
         "beschreibung": "Die Rangliste beginnt jetzt direkt unter der Prüfliste «Absenden vorbereiten», statt erst nach zwei Blöcken mit Knöpfen. Alle 13 Dokumente stehen rechts in der Karte «Dokumente»: zuoberst die drei fürs Absenden, darunter Übersicht, Einzelwettbewerbe und Partner, jedes in einer eigenen Zeile mit dem Drucker gleich breit am rechten Rand. Auf schmalen Bildschirmen steht die Karte zwischen Prüfliste und Rangliste. Eine leere Kategorie zeigt «Keine Resultate in Kat. B für 2026». Braucht die Datenbank-Aktualisierung 093 (Hilfetexte).",
         "typ": "verbesserung",
         "admin_only": true
+      },
+      {
+        "titel": "Endschiessen Rangliste: Laden und Fehler in der Tabelle",
+        "beschreibung": "Beim Wechsel des Jahres steht «Rangliste Kat. A wird geladen …» in der Tabelle, statt kurz noch die Zahlen des alten Jahres zu zeigen; klappt das Laden nicht, steht der Fehler rot in der Tabelle. Der Knopf «Neu prüfen» ist gesperrt, solange die Prüfung läuft. Die Totale der ersten drei sind wieder in Gold, Silber und Bronze hinterlegt. Auf dem Handy erscheint eine leere Kategorie als Hinweis statt als leere Karte; das gilt für alle Tabellen mit diesem Hinweis.",
+        "typ": "verbesserung",
+        "admin_only": true
       }
     ]
   },
