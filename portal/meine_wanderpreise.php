@@ -1,5 +1,5 @@
 <?php
-// portal/meine_wanderpreise.php - Wanderpreise-Rückgabe
+// portal/meine_wanderpreise.php - Wanderpreise, die gerade beim Mitglied stehen (Rückgabe am Endschiessen)
 $portal_page_title = 'Wanderpreise';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
 require_once __DIR__ . '/../auth.php';
@@ -59,31 +59,35 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
     padding: var(--p-5) var(--p-4);
     color: var(--p-text-muted);
 }
-.wp-empty i { font-size: 2.5rem; margin-bottom: var(--p-3); display: block; color: var(--success-color); }
+.wp-empty i { font-size: 2.5rem; margin-bottom: var(--p-3); display: block; color: var(--p-text-muted); }
 .wp-empty p { margin-bottom: 0; }
 </style>
 
 <div class="portal-page-header">
     <h1><i class="bi bi-award me-2"></i>Wanderpreise</h1>
-    <p class="subtitle">Rückgabe am Endschiessen</p>
+    <p class="subtitle">Bei dir bis zum Endschiessen</p>
 </div>
 
 <div class="p-narrow">
 <?php if (!$mitglied_id): ?>
-<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Dein Account ist noch nicht mit einem Mitglied verknüpft.</div>
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand, damit er es verknüpft.</div>
 <?php elseif (empty($zurueckbringen)): ?>
 <div class="wp-empty">
-    <i class="bi bi-check-circle-fill"></i>
-    <p>Du hast keine Wanderpreise zurückzugeben.</p>
+    <i class="bi bi-award" aria-hidden="true"></i>
+    <p>Zurzeit steht kein Wanderpreis bei dir.</p>
 </div>
 <?php else: ?>
 
 <div class="wp-alert">
     <div class="d-flex align-items-start gap-3">
-        <div class="wp-alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div class="wp-alert-icon"><i class="bi bi-calendar-event" aria-hidden="true"></i></div>
         <div>
-            <h3>Bitte am Endschiessen mitbringen</h3>
-            <p>Du hast <?php echo count($zurueckbringen); ?> Wanderpreis<?php echo count($zurueckbringen) > 1 ? 'e' : ''; ?>, <?php echo count($zurueckbringen) > 1 ? 'die' : 'der'; ?> zurückgebracht werden <?php echo count($zurueckbringen) > 1 ? 'müssen' : 'muss'; ?>.</p>
+            <h3>Ans Endschiessen mitbringen</h3>
+            <?php if (count($zurueckbringen) === 1): ?>
+            <p>Dieser Wanderpreis steht bis zum Endschiessen bei dir. Bring ihn dort mit, damit er weiterwandern kann.</p>
+            <?php else: ?>
+            <p>Diese <?php echo count($zurueckbringen); ?> Wanderpreise stehen bis zum Endschiessen bei dir. Bring sie dort mit, damit sie weiterwandern können.</p>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -91,7 +95,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
 <div class="p-list">
     <?php foreach ($zurueckbringen as $wp): ?>
     <div class="p-list-row wp-item">
-        <div class="p-chip orange"><i class="bi bi-award"></i></div>
+        <div class="p-chip orange" aria-hidden="true"><i class="bi bi-award"></i></div>
         <div class="p-list-body">
             <div class="p-list-title"><?php echo htmlspecialchars($wp['bezeichnung']); ?></div>
             <?php if (!empty($wp['hersteller'])): ?>

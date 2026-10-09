@@ -700,7 +700,7 @@ include 'portal_header.php';
             <i class="bi bi-award"></i>
         </div>
         <div class="dash-card-title">Wanderpreise</div>
-        <div class="dash-card-desc">Deine Wanderpreise &amp; Rückgaben</div>
+        <div class="dash-card-desc">Deine Wanderpreise</div>
     </a>
 
     <a href="kalender_abo.php" class="dash-card">
