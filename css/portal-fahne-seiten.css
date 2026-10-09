@@ -964,8 +964,8 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
 .portal-fahne .jsk-card.jsk-empty { padding: 1.5rem 1rem; color: var(--tinte-2); }
 
 /* «Meine Anmeldungen» */
-.portal-fahne .jsk-hero ~ .d-flex > h5 { font-size: 1rem; font-weight: 700; color: var(--tinte); }
-.portal-fahne .jsk-hero ~ .d-flex > h5 .bi { color: var(--tinte-2); }
+.portal-fahne .jsk-hero ~ .d-flex > :is(h2, h5) { font-size: 1rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .jsk-hero ~ .d-flex > :is(h2, h5) .bi { color: var(--tinte-2); }
 
 /* Status dezent statt Bootstrap-Gelb/-Cyan (Utilities tragen !important) */
 .portal-fahne #anfragenList .badge {

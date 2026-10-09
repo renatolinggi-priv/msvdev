@@ -371,7 +371,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
                         }
                         if ($is_streicher) echo '<span class="jm-row-tag">Streicher</span>';
                     } elseif ($is_future) {
-                        echo '<span class="jm-row-points muted" aria-label="noch kein Resultat">&ndash;</span>';
+                        echo '<span class="jm-row-points muted" aria-hidden="true">&ndash;</span><span class="visually-hidden">noch kein Resultat</span>';
                     } else {
                         echo '<span class="jm-row-tag">ohne Resultat</span>';
                     }

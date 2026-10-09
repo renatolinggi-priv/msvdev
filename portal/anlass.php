@@ -16,6 +16,8 @@ if (!$g || (empty($g['freigeschaltet']) && !isVorstand()) || !fotoFeatureAktiv()
 }
 
 $portal_page_title = $g['anlass_name'];
+$portal_back_href = 'anlaesse.php';
+$portal_back_label = 'Fotos';
 include 'portal_header.php';
 $csrf = $_SESSION['csrf_token'] ?? '';
 ?>
@@ -69,7 +71,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 
 <div class="container py-2">
 
-  <a href="anlaesse.php" class="text-decoration-none small text-muted d-inline-block mb-2"><i class="bi bi-arrow-left me-1"></i>Alle Galerien</a>
+  <?php if (empty($portal_fahne)): ?><a href="anlaesse.php" class="text-decoration-none small text-muted d-inline-block mb-2"><i class="bi bi-arrow-left me-1"></i>Alle Galerien</a><?php endif; ?>
 
   <div class="an-head">
     <div>

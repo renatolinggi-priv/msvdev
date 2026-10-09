@@ -970,8 +970,11 @@ if (isAdmin()) {
     <!-- Portal Content -->
     <div class="portal-content">
     <?php $__start = isJungschuetze() ? 'jsk_dashboard.php' : 'dashboard.php';
+    // Seiten können den Weg zurück selbst setzen (z.B. Galerie → «Fotos»), sonst zur Startseite
+    $__zurueckHref = $portal_back_href ?? $__start;
+    $__zurueckText = $portal_back_label ?? ($portal_fahne ? 'Start' : 'Dashboard');
     if ($current_page !== $__start): ?>
-    <a href="<?php echo $__start; ?>" class="portal-back-link"><i class="bi bi-arrow-left me-1"></i><span class="back-label"><?php echo $portal_fahne ? 'Start' : 'Dashboard'; ?></span></a>
+    <a href="<?php echo htmlspecialchars($__zurueckHref, ENT_QUOTES, 'UTF-8'); ?>" class="portal-back-link"><i class="bi bi-arrow-left me-1"></i><span class="back-label"><?php echo htmlspecialchars($__zurueckText, ENT_QUOTES, 'UTF-8'); ?></span></a>
     <a href="<?php echo $__start; ?>" class="portal-back-fab" aria-label="Zur Startseite"><i class="bi bi-house" aria-hidden="true"></i></a>
     <?php endif; ?>
 
