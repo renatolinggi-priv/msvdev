@@ -64,7 +64,7 @@ if ($method === 'GET') {
 // ===== ab hier: POST (verändernd) ============================================
 if ($method !== 'POST') json_error('Methode nicht erlaubt.', 405);
 if (!validateCsrfRequest()) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.', 403);
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 }
 
 // ---- create -----------------------------------------------------------------
@@ -209,7 +209,7 @@ if ($action === 'accept') {
         $db->commit();
     } catch (Throwable $e) {
         if ($db->inTransaction()) $db->rollBack();
-        json_error($e->getMessage(), 409);
+        json_error(msvFehler('Der Tausch konnte nicht abgeschlossen werden. Lade die Seite neu und versuche es nochmals.', $e), 409);
     }
 
     // === Benachrichtigungen (best effort, ausserhalb der Transaktion) =========

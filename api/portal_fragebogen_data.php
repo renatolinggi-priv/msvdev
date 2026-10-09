@@ -9,7 +9,7 @@ requireLogin();
 
 $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 if (!$mitglied_id) {
-    echo json_encode(['success' => false, 'message' => 'Kein Mitglied mit diesem Konto verknüpft.']);
+    echo json_encode(['success' => false, 'message' => 'Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand.']);
     exit;
 }
 
@@ -20,7 +20,7 @@ $stmtM = $db->prepare("SELECT WaffenID FROM mitglieder WHERE ID = ?");
 $stmtM->execute([$mitglied_id]);
 $memberRow = $stmtM->fetch();
 if (!$memberRow) {
-    echo json_encode(['success' => false, 'message' => 'Mitglied nicht gefunden (ID: ' . (int)$mitglied_id . ').']);
+    echo json_encode(['success' => false, 'message' => 'Zu deinem Konto wurde kein Mitglied gefunden. Melde dich beim Vorstand.']);
     exit;
 }
 $defaultWaffenID = (int)($memberRow['WaffenID'] ?? 0);

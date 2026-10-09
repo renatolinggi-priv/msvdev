@@ -34,7 +34,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) $input = [];
 $csrf = $input['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
 if (!validateCsrf($csrf)) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.', 403);
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 }
 if (!jskFeatureAktiv()) {
     json_error('Die Jungschützen-Betreuung ist derzeit deaktiviert.', 403);

@@ -14,7 +14,7 @@ require_once __DIR__ . '/../inc/einsatzplanung/plan_helpers.inc.php';
 header('Content-Type: application/json; charset=utf-8');
 requireRoleJson(['admin', 'vorstand']);
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_error('Methode nicht erlaubt', 405);
-validateCsrfRequest();
+if (!validateCsrfRequest()) json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 
 $db     = getDB();
 $uid    = (int)($_SESSION['user_id'] ?? 0);
@@ -36,11 +36,10 @@ try {
     $slotId = (int)($_POST['slot_id'] ?? 0);
     $st = $db->prepare("SELECT id FROM einsatz_plan_slots WHERE id = ?");
     $st->execute([$slotId]);
-    if (!$st->fetch()) json_error('Position nicht gefunden', 404);
+    if (!$st->fetch()) json_error('Diese Position gibt es nicht mehr. Lade die Seite neu.', 404);
     $db->prepare("UPDATE einsatz_plan_slots SET anwesend = ?, anwesend_am = ?, anwesend_von = ? WHERE id = ?")
        ->execute([$anw, $anw === null ? null : date('Y-m-d H:i:s'), $anw === null ? null : $uid, $slotId]);
     echo json_encode(['success' => true, 'message' => $anw === null ? 'zurückgesetzt' : ($anw ? 'da' : 'nicht da'), 'anwesend' => $anw]);
 } catch (Throwable $e) {
-    error_log('[einsatz_anwesenheit] ' . $e->getMessage());
-    json_error('Anwesenheit konnte nicht gespeichert werden (Migration 054 ausgeführt?)', 500);
+    json_error(msvFehler('Die Anwesenheit wurde nicht gespeichert. Lade die Seite neu und versuche es nochmals.', $e), 500);
 }

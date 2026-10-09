@@ -16,12 +16,12 @@ requireLogin();
 
 // CSRF prüfen
 if (!validateCsrfRequest()) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.');
 }
 
 $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 if (!$mitglied_id) {
-    json_error('Kein Mitglied mit diesem Konto verknüpft.');
+    json_error('Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand.');
 }
 
 $umfrage_id = intval($_POST['umfrage_id'] ?? 0);
@@ -79,6 +79,5 @@ try {
     echo json_encode(['success' => true]);
 
 } catch (Exception $e) {
-    error_log('portal_umfrage_autosave: ' . $e->getMessage());
-    json_error('Fehler beim Speichern. Bitte versuche es erneut.', 500);
+    json_error(msvFehler('Deine Antwort wurde nicht gespeichert. Versuche es nochmals.', $e), 500);
 }

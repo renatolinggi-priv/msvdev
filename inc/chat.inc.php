@@ -246,7 +246,7 @@ if (!function_exists('chatBilderAktiv')) {
         } catch (Throwable $e) {
             foreach ([$full, $thumb] as $p) { if (is_file($p)) @unlink($p); }
             error_log('[chat] Bildverarbeitung fehlgeschlagen: ' . $e->getMessage());
-            throw new RuntimeException('Bild konnte nicht verarbeitet werden.');
+            throw new RuntimeException('Dieses Bild kann nicht verarbeitet werden. Versuche es mit einem Foto im Format JPG.');
         }
         return ['datei' => $name, 'breite' => (int) $w, 'hoehe' => (int) $h];
     }

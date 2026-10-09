@@ -9,7 +9,7 @@ header('Content-Type: application/json; charset=utf-8');
 requireRoleJson(['admin', 'vorstand']);
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_error('Methode nicht erlaubt', 405);
-if (!validateCsrf($_POST['csrf_token'] ?? '')) json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.', 403);
+if (!validateCsrf($_POST['csrf_token'] ?? '')) json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 
 $db     = getDB();
 $userId = (int) ($_SESSION['user_id'] ?? 0);

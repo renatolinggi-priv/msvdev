@@ -208,6 +208,5 @@ echo json_encode([
 ]);
 
 } catch (Exception $e) {
-    error_log('portal_jm_fragebogen_results: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten.']);
+    echo json_encode(['success' => false, 'message' => msvFehler('Die Auswertung konnte nicht geladen werden. Schliesse das Fenster und öffne es nochmals.', $e)]);
 }

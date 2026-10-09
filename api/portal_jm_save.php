@@ -21,13 +21,13 @@ requireLogin();
 
 // CSRF (POST-Feld oder X-CSRF-TOKEN-Header)
 if (!validateCsrfRequest()) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.', 403);
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 }
 
 $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 $user_id     = $_SESSION['user_id'] ?? null;
 if (!$mitglied_id) {
-    json_error('Kein Mitglied mit diesem Konto verknüpft.');
+    json_error('Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand.');
 }
 
 $year             = isset($_POST['year']) ? (int)$_POST['year'] : (int)date('Y');
@@ -174,6 +174,5 @@ try {
         'punkte'  => $punkte,
     ]);
 } catch (Throwable $e) {
-    error_log('[portal_jm_save] ' . $e->getMessage());
-    json_error('Fehler beim Speichern.', 500);
+    json_error(msvFehler('Der Server hat das Resultat nicht übernommen.', $e), 500);
 }

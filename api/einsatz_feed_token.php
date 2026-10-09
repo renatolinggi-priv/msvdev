@@ -31,7 +31,7 @@ if ($action !== 'generate') {
 $user_id = $_SESSION['user_id'] ?? 0;
 if (!$user_id) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt']);
+    echo json_encode(['success' => false, 'message' => 'Du bist nicht mehr angemeldet. Lade die Seite neu und melde dich nochmals an.']);
     exit;
 }
 
@@ -43,7 +43,7 @@ $stmt->execute([$token, $user_id]);
 
 if ($stmt->rowCount() === 0) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Token konnte nicht gespeichert werden']);
+    echo json_encode(['success' => false, 'message' => 'Der Abo-Link konnte nicht erstellt werden. Versuche es nochmals.']);
     exit;
 }
 

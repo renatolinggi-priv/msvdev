@@ -8,7 +8,7 @@ requireLogin();
 
 $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 if (!$mitglied_id) {
-    echo json_encode(['success' => false, 'message' => 'Kein Mitglied verknüpft']);
+    echo json_encode(['success' => false, 'message' => 'Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand.']);
     exit;
 }
 

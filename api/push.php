@@ -27,7 +27,7 @@ if ($action === 'public_key') {
     $stmt->execute(['vapid_public_key']);
     $pub = $stmt->fetchColumn();
     if (!$pub) {
-        json_error('Push ist noch nicht eingerichtet (kein VAPID-Key vorhanden).', 503);
+        json_error('Push-Benachrichtigungen sind noch nicht eingerichtet. Bitte melde das dem Vorstand.', 503);
     }
     echo json_encode(['success' => true, 'public_key' => $pub]);
     exit;
@@ -54,7 +54,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) $input = [];
 $csrf = $input['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
 if (!validateCsrf($csrf)) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.');
 }
 
 switch ($action) {

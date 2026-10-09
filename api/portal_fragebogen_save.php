@@ -15,12 +15,12 @@ requireLogin();
 
 // CSRF-Token prüfen
 if (!validateCsrfRequest()) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.');
 }
 
 $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 if (!$mitglied_id) {
-    json_error('Kein Mitglied mit diesem Konto verknüpft.');
+    json_error('Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand.');
 }
 
 // Eingaben validieren
@@ -53,7 +53,7 @@ if ($waffenID !== 0) {
 $stmtM = $db->prepare("SELECT ID FROM mitglieder WHERE ID = ?");
 $stmtM->execute([$mitglied_id]);
 if (!$stmtM->fetch()) {
-    json_error('Mitglied nicht gefunden (ID: ' . (int)$mitglied_id . ').');
+    json_error('Zu deinem Konto wurde kein Mitglied gefunden. Melde dich beim Vorstand.');
 }
 
 // Speichern (Transaction)
@@ -104,6 +104,5 @@ try {
 
 } catch (Exception $e) {
     $db->rollBack();
-    error_log('portal_fragebogen_save: ' . $e->getMessage());
-    json_error('Fehler beim Speichern. Bitte versuche es erneut.', 500);
+    json_error(msvFehler('Deine Angaben wurden nicht gespeichert. Tippe nochmals auf «Speichern».', $e), 500);
 }

@@ -11,13 +11,13 @@ header('Content-Type: application/json; charset=utf-8');
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
     && empty($_POST) && empty($_FILES)
     && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-    json_error('Datei zu gross (Server-Limit).', 413);
+    json_error('Das Foto ist zu gross. Wähle ein kleineres Foto.', 413);
 }
 
 requireRoleJson(['admin', 'vorstand', 'mitglied']);
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_error('Methode nicht erlaubt', 405);
-if (!validateCsrfRequest()) json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.', 403);
+if (!validateCsrfRequest()) json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 if (!fotoFeatureAktiv()) json_error('Die Foto-Galerie ist deaktiviert.', 403);
 
 $db       = getDB();
@@ -33,19 +33,19 @@ if (empty($g['upload_offen']) && !$istVorst) json_error('Der Upload für diesen 
 // Upload-Fehler pruefen
 if (!isset($_FILES['datei']) || $_FILES['datei']['error'] !== UPLOAD_ERR_OK) {
     $map = [
-        UPLOAD_ERR_INI_SIZE  => 'Datei zu gross (Server-Limit)',
-        UPLOAD_ERR_FORM_SIZE => 'Datei zu gross',
-        UPLOAD_ERR_PARTIAL   => 'Upload unvollständig',
+        UPLOAD_ERR_INI_SIZE  => 'Das Foto ist zu gross. Wähle ein kleineres Foto.',
+        UPLOAD_ERR_FORM_SIZE => 'Das Foto ist zu gross. Wähle ein kleineres Foto.',
+        UPLOAD_ERR_PARTIAL   => 'Das Foto kam nicht vollständig an. Prüfe die Verbindung und lade es nochmals hoch.',
         UPLOAD_ERR_NO_FILE   => 'Keine Datei ausgewählt',
     ];
     $code = $_FILES['datei']['error'] ?? UPLOAD_ERR_NO_FILE;
-    json_error($map[$code] ?? 'Upload-Fehler');
+    json_error($map[$code] ?? 'Das Foto konnte nicht hochgeladen werden. Versuche es nochmals.');
 }
 
 $file = $_FILES['datei'];
 
 if ($file['size'] > FOTO_MAX_BYTES) {
-    json_error('Datei zu gross (max. ' . (int) (FOTO_MAX_BYTES / 1024 / 1024) . ' MB).');
+    json_error('Das Foto ist zu gross (max. ' . (int) (FOTO_MAX_BYTES / 1024 / 1024) . ' MB). Wähle ein kleineres Foto.');
 }
 
 // MIME echt pruefen (Whitelist). HEIC nur, wenn der Server es lesen kann (Imagick).
@@ -80,7 +80,7 @@ $tag = fotoTagInfo($aufnahme, $segmente);
 try {
     $bild = fotoSpeichereBild($file['tmp_name'], $galerieId, $file['name']);
 } catch (Throwable $e) {
-    json_error('Bild konnte nicht verarbeitet werden. Ist es ein gültiges Foto?');
+    json_error('Dieses Foto kann nicht gelesen werden. Speichere es als JPG und lade es nochmals hoch.');
 }
 
 // Duplikat? Hash der verarbeiteten Full-Version (deterministisch fuer dasselbe Original).

@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!validateCsrfRequest()) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.');
 }
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);

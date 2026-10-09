@@ -880,11 +880,11 @@ $(function() {
                 if (hatAntwort) $badge.addClass('beantwortet').html('<i class="bi bi-check-lg me-1" aria-hidden="true"></i>Erledigt');
                 else $badge.addClass('offen').text('Offen');
             } else {
-                showAutosaveIndicator(frageId, 'error', 'Nicht gespeichert: ' + (resp.message || 'unbekannter Grund.'));
+                showAutosaveIndicator(frageId, 'error', resp.message || 'Nicht gespeichert. Wähle die Antwort nochmals.');
             }
         })
         .fail(function(xhr) {
-            showAutosaveIndicator(frageId, 'error', 'Nicht gespeichert: ' + msvXhrMessage(xhr, KEINE_VERBINDUNG));
+            showAutosaveIndicator(frageId, 'error', msvXhrMessage(xhr, 'Nicht gespeichert: ' + KEINE_VERBINDUNG));
         });
     }
 

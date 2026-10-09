@@ -318,8 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
     } catch (Exception $e) {
         $db->rollBack();
-        error_log("meine_daten_api.php save error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Fehler beim Speichern. Bitte versuche es erneut.']);
+        echo json_encode(['success' => false, 'message' => msvFehler('Deine Daten wurden nicht gespeichert. Tippe nochmals auf «Änderungen speichern».', $e)]);
     }
     exit;
 }

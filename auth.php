@@ -161,17 +161,17 @@ function requireRoleJson($roles) {
     }
     if (!isset($_SESSION['user_id'])) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt']);
+        echo json_encode(['success' => false, 'message' => 'Du bist nicht mehr angemeldet. Lade die Seite neu und melde dich nochmals an.']);
         exit;
     }
     if (!empty($_SESSION['user_status']) && $_SESSION['user_status'] != 'approved') {
         http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Konto nicht freigegeben']);
+        echo json_encode(['success' => false, 'message' => 'Dein Konto ist nicht freigegeben. Bei Fragen melde dich beim Vorstand.']);
         exit;
     }
     if (!in_array($_SESSION['user_role'] ?? '', (array) $roles)) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Zugriff verweigert']);
+        echo json_encode(['success' => false, 'message' => 'Diese Funktion steht dir nicht zur Verfügung.']);
         exit;
     }
     // Aktivitaets-Zeitstempel auffrischen (AJAX-Requests halten den Timeout wach).

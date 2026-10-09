@@ -282,7 +282,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) $input = [];
 $csrf = $input['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? ''));
 if (!validateCsrf($csrf)) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.', 403);
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.', 403);
 }
 $action = $input['action'] ?? $action;
 
@@ -320,7 +320,7 @@ if ($action === 'read') {
 if ($action === 'delete') {
     $msgId = (int) ($input['id'] ?? 0);
     if (!jskDbHatSpalte($db, 'chat_nachrichten', 'geloescht_am')) {
-        json_error('Zurücknehmen ist erst nach der Datenbank-Aktualisierung 064 möglich.');
+        json_error('Zurücknehmen ist im Moment nicht möglich. Bitte melde das dem Vorstand.');
     }
     $bildCol = chatBilderAktiv($db) ? 'bild' : 'NULL AS bild';
     $st = $db->prepare("SELECT conversation_id, sender_user_id, erstellt_am, geloescht_am, $bildCol FROM chat_nachrichten WHERE id = ?");
@@ -339,7 +339,7 @@ if ($action === 'delete') {
 
 // ---------------------------------------------------------------- POST: upload (Bild, multipart)
 if ($action === 'upload') {
-    if (!chatBilderAktiv($db)) json_error('Bilder sind erst nach der Datenbank-Aktualisierung 065 möglich.');
+    if (!chatBilderAktiv($db)) json_error('Bilder senden ist im Moment nicht möglich. Bitte melde das dem Vorstand.');
     $convId = (int) ($_POST['c'] ?? 0);
     $text   = trim((string) ($_POST['text'] ?? ''));
     $conv = chatGetConversation($db, $convId);
@@ -358,7 +358,7 @@ if ($action === 'upload') {
     try {
         $bild = chatBildSpeichern((string) $f['tmp_name'], $convId);
     } catch (RuntimeException $e) {
-        json_error($e->getMessage());
+        json_error(msvFehler('Das Bild konnte nicht gesendet werden. Versuche es mit einem anderen Bild.', $e));
     }
     $ins = $db->prepare("INSERT INTO chat_nachrichten (conversation_id, sender_user_id, text, bild, bild_breite, bild_hoehe) VALUES (?, ?, ?, ?, ?, ?)");
     $ins->execute([$convId, $userId, $text, $bild['datei'], $bild['breite'], $bild['hoehe']]);

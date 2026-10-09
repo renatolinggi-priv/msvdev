@@ -16,12 +16,12 @@ requireLogin();
 
 // CSRF prüfen
 if (!validateCsrfRequest()) {
-    json_error('Ungültiges Sicherheits-Token. Bitte Seite neu laden.');
+    json_error('Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es nochmals.');
 }
 
 $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 if (!$mitglied_id) {
-    json_error('Kein Mitglied mit diesem Konto verknüpft.');
+    json_error('Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand.');
 }
 
 $umfrage_id = intval($_POST['umfrage_id'] ?? 0);

@@ -196,6 +196,5 @@ echo json_encode([
 
 } catch (Exception $e) {
     header('Content-Type: application/json; charset=utf-8');
-    error_log('umfrage_results: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Ein Fehler ist aufgetreten.']);
+    echo json_encode(['success' => false, 'message' => msvFehler('Die Auswertung konnte nicht geladen werden. Schliesse das Fenster und öffne es nochmals.', $e)]);
 }

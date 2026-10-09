@@ -61,6 +61,5 @@ try {
 
     echo json_encode(['success' => true, 'umfragen' => $umfragen]);
 } catch (Exception $e) {
-    // Tabelle existiert evtl. noch nicht
-    echo json_encode(['success' => true, 'umfragen' => [], 'count' => 0]);
+    echo json_encode(['success' => false, 'message' => msvFehler('Die Umfragen konnten nicht geladen werden. Lade die Seite neu.', $e)]);
 }
