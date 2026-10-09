@@ -454,6 +454,21 @@ html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .
 .portal-fahne .fs-frueher li + li { border-top: 1px solid var(--linie); }
 .portal-fahne .fs-frueher li > span:last-child { color: var(--tinte-2); text-align: right; }
 
+/* Fotos vom letzten Anlass: das Bild trägt die Startseite */
+.portal-fahne .fs-fotos {
+    display: block;
+    margin: 0 0 .8rem;
+    overflow: hidden;
+    background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
+    color: var(--tinte);
+    text-decoration: none;
+}
+.portal-fahne .fs-fotos:hover { border-color: var(--linie-stark); color: var(--tinte); }
+.portal-fahne .fs-fotos img { display: block; width: 100%; aspect-ratio: 16 / 7; object-fit: cover; background: var(--grund); }
+.portal-fahne .fs-fotos-zeile { display: flex; align-items: center; gap: .7rem; padding: .6rem .8rem; }
+
 .portal-fahne .fs-bereiche-titel { margin: .2rem 0 .45rem; font-size: .8125rem; font-weight: 700; color: var(--tinte-2); }
 .portal-fahne .fs-kacheln {
     display: grid;

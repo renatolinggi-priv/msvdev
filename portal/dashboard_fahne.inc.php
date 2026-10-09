@@ -19,6 +19,31 @@ $fs_chip = function (string $ymd): string {
     return '<b>' . (int) date('j', $ts) . '</b><small>' . htmlspecialchars(PT_MONAT_KURZ[(int) date('n', $ts)]) . '</small>';
 };
 $fs_pfeil = '<i class="bi bi-chevron-right fs-pfeil" aria-hidden="true"></i>';
+
+// Fotos vom letzten Anlass: neueste freigeschaltete Galerie des laufenden Jahres mit Fotos (Regeln wie anlaesse.php)
+require_once __DIR__ . '/../inc/fotogalerie.inc.php';
+$fs_fotos = null;
+if (fotoFeatureAktiv()) {
+    try {
+        $st = $db->prepare(
+            "SELECT g.id, d.Bezeichnung AS name,
+                    (SELECT COUNT(*) FROM anlass_fotos f WHERE f.galerie_id = g.id AND f.status = 'approved') AS total,
+                    COALESCE(
+                      (SELECT f.id FROM anlass_fotos f WHERE f.id = g.cover_foto_id AND f.galerie_id = g.id AND f.status = 'approved'),
+                      (SELECT f.id FROM anlass_fotos f WHERE f.galerie_id = g.id AND f.status = 'approved'
+                         ORDER BY " . fotoOrderBySql('f.') . " LIMIT 1)
+                    ) AS cover_id
+               FROM anlass_galerie g
+               JOIN JMDefinition d ON d.ID = g.jmdefinition_id
+              WHERE g.freigeschaltet = 1 AND d.year = ?
+              ORDER BY d.Reihenfolge DESC"
+        );
+        $st->execute([(int) date('Y')]);
+        foreach ($st->fetchAll() as $g) {
+            if ((int) $g['total'] > 0 && !empty($g['cover_id'])) { $fs_fotos = $g; break; }
+        }
+    } catch (Throwable $e) { $fs_fotos = null; }
+}
 ?>
 
 <div class="fs-gruss">
@@ -70,6 +95,15 @@ $fs_pfeil = '<i class="bi bi-chevron-right fs-pfeil" aria-hidden="true"></i>';
         <span class="fs-txt"><strong>Benachrichtigungen einschalten</strong><span class="fs-wann">auf diesem Gerät, damit sie ankommen</span></span><?php echo $fs_pfeil; ?></a></li>
     <?php endif; ?>
 </ul>
+
+<?php if ($fs_fotos): ?>
+<a class="fs-fotos" href="anlass.php?id=<?php echo (int) $fs_fotos['id']; ?>">
+    <img src="../api/foto_serve.php?id=<?php echo (int) $fs_fotos['cover_id']; ?>&amp;size=medium" alt="" loading="lazy">
+    <span class="fs-fotos-zeile">
+        <span class="fs-txt"><strong>Fotos: <?php echo htmlspecialchars($fs_fotos['name']); ?></strong><span class="fs-wann"><?php echo (int) $fs_fotos['total'] === 1 ? '1 Foto' : (int) $fs_fotos['total'] . ' Fotos'; ?></span></span><?php echo $fs_pfeil; ?>
+    </span>
+</a>
+<?php endif; ?>
 
 <h2 class="fs-bereiche-titel">Alles im Portal</h2>
 <nav class="fs-kacheln" aria-label="Alle Bereiche">
