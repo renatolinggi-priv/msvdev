@@ -641,7 +641,7 @@ try {
                 msvToast('Nicht gespeichert: ' + (resp.message || 'unbekannter Fehler') + '. Die Eingaben sind noch da.', 'error');
             }
         })
-        .fail(function(xhr) { msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler') + '. Die Eingaben sind noch da.', 'error'); })
+        .fail(function(xhr) { msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler').replace(/\.?$/, '.') + ' Die Eingaben sind noch da.', 'error'); })
         .always(function() { $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Speichern'); });
     });
 

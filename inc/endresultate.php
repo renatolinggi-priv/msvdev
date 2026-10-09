@@ -503,7 +503,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(xhr) {
-                    msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler') + '. Die Eingaben sind noch da.', 'error');
+                    msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler').replace(/\.?$/, '.') + ' Die Eingaben sind noch da.', 'error');
                 },
                 complete: function() {
                     $saveBtn.prop('disabled', false).html(originalSave);

@@ -1568,7 +1568,7 @@ $(document).ready(function() {
         }).fail(function(xhr) {
             cupJahrNachher = null;
             // Teilerfolg möglich (Runde 1, Runde 2, Finale getrennt): klar sagen, dass nicht alles gespeichert ist
-            msvToast(msvXhrMessage(xhr, 'Nicht alles gespeichert') + ' – die Eingaben sind noch da, bitte noch einmal speichern.', 'error');
+            msvToast(msvXhrMessage(xhr, 'Nicht alles gespeichert').replace(/\.$/, '') + ' – die Eingaben sind noch da, bitte noch einmal speichern.', 'error');
             $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Speichern');
         });
     });
