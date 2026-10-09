@@ -241,7 +241,7 @@ components:
 
 # Design System: MSV Wilen – Admin
 
-<!-- Erfasst am 08.10.2026 aus dem ausgelieferten Code (css/msv-ui.css, css/msv-oeffentlich.css, Partials, Musterseiten). Gilt für den Admin-Bereich und die öffentlichen Seiten; das Mitgliederportal ist ausdrücklich ausgenommen (siehe «Noch nicht migriert»). Normativ sind die Tokens oben; die Quelle der Wahrheit im Code ist :root in css/msv-ui.css. -->
+<!-- Erfasst am 08.10.2026 aus dem ausgelieferten Code (css/msv-ui.css, css/msv-oeffentlich.css, Partials, Musterseiten). Gilt für den Admin-Bereich und die öffentlichen Seiten; das Mitgliederportal hat seit 09.10.2026 ein eigenes System (siehe «Mitgliederportal («Vereinsfahne»)» weiter unten); die Tokens oben gelten dort nicht. Normativ sind die Tokens oben; die Quelle der Wahrheit im Code ist :root in css/msv-ui.css. -->
 
 ## Overview
 
@@ -493,9 +493,82 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 - **Don't** neue Optik in `css/msv-styles.css` oder `css/fixes/resultate-unified.css` ablegen; Aussehen gehört nach `msv-ui.css`.
 - **Don't** eine zweite Schrift oder externe Schriftserver einbinden.
 
+## Mitgliederportal («Vereinsfahne»)
+
+<!-- Erfasst am 09.10.2026 aus dem ausgelieferten Code (css/portal-fahne.css, css/portal-fahne-seiten.css, portal/portal_header.php, Startseite, Termine, Tagesplan, Resultate, Dokumente). Seit 09.10.2026 für alle Mitglieder und Jungschützen. Die Tokens im YAML-Kopf gelten für den Admin; die Portal-Tokens stehen hier, Quelle der Wahrheit ist html.portal-fahne in css/portal-fahne.css. -->
+
+### Overview
+
+**Creative North Star: «Die Vereinsfahne»**
+
+Das Portal ist das Telefon in der Hosentasche eines Mitglieds: Was steht als Nächstes an, wo muss ich hin, was habe ich geschossen. Die Farben kommen aus dem Vereinslogo, aber sparsam: ein weisser Kopf mit dem Logo in voller Farbe und einem 4px-Fahnenband in Rot, darunter ein warmer, heller Grund mit weissen, flachen Flächen. Königsblau führt, Löwengold zeichnet aus. Kompakt wie der Admin, aber mit Tippflächen fürs Handy.
+
+**Mechanik:** `portal/portal_header.php` setzt `<html class="portal-fahne">`, `theme-color` `#ffffff` und lädt nach `css/portal.css` und dem Inline-`<style>` des Headers `css/portal-fahne.css` (global) und `css/portal-fahne-seiten.css` (pro Seite), beide mit `?v=filemtime`. Alle Regeln hängen an `.portal-fahne`. Die alten Portal-Tokens (`--primary-color`, `--secondary-color`, `--p-text`, `--p-text-muted`, `--p-border`, `--p-radius`, `--p-shadow: none` …) und die Bootstrap-Variablen (`--bs-primary`, `--bs-link-color`, `--bs-border-color`, `--bs-body-font-family`, Radien 8/8/10px, Knopf- und Alert-Variablen) sind auf die Vereins-Tokens abgebildet, damit Seiten ohne eigene Regel mitziehen. Admins öffnen zum Vergleich die alte Ansicht mit `?vorschau=aus` (Cookie `msv_portal_fahne`, 30 Tage), `?vorschau=an` zurück; für alle anderen gilt die Fahne immer.
+
+**Abweichung vom Richtungsvertrag:** Geplant waren roter Kopf mit weisser Schrift, weisser Grund, Linien in Damastgrau `#bcbdb6` und Titel in Versalien. Ausgeliefert sind weisser Kopf mit rotem Band, Grund `#f2f2f0`, Linie `#e2e2dd` und Titel in normaler Schreibung; Versalien nur im Markennamen im Kopf. Es gilt das Ausgelieferte.
+
+### Farben und Tokens
+
+- **Fahnenrot** (`--verein` #c00000, 6.5:1; `--verein-tief` #9a0000; `--verein-hell` #fbeaea): 4px-Band unter Kopf und Handymenü-Kopf, aktiver Navigationseintrag am Desktop (700 und 3px-Unterstrich), Zähler an der Glocke, Benutzerkreis im Handymenü, Markenpunkt MSV in der Anwesenheit. Nie Knopf, nie Gefahr.
+- **Königsblau** (`--akzent` #0052a0, 7.7:1; `--akzent-tief` #003f7d; `--akzent-hell` #e6eef8): Knöpfe, Links, Weg zurück, Fokusring, `caret-color`, `accent-color`, Häkchen und Schalter «an», Kachel-Symbole, gewöhnliche Datums-Chips, Dokument-Chips, aktiver Eintrag im Handymenü (hellblau), ungelesene Mitteilungen. Textauswahl `#cfe0f3`.
+- **Löwengold** (`--ehre` #ffe707, nur mit `--ehre-text` #3d3200; `--ehre-hell` #fff6bf): Ehre (Kranz, Bestpasse, Wanderpreis) und «als Nächstes» (nächster Tag, nächster Einsatz, «heute»/«morgen», offene Umfrage, eingehende Tausch-Anfrage).
+- **Neutral:** `--tinte` #1a1a24, `--tinte-2` #5f636d (Nebentext, 5.8:1), `--grund` #f2f2f0, `--flaeche` #ffffff, `--linie` #e2e2dd, `--linie-stark` #8b8c85 (Feldrand 3.4:1, Hover-Rand von Karten, neutrale Knöpfe). Ruhige Füllung für Neutrales und Ghost-Knöpfe `#ececea`, Hover `#e2e2dd` (stehen noch als Hex).
+- **Zustände:** `--gefahr` #b42318 / `--gefahr-hell` #fef3f2 nur für echte Fehler und Löschen, immer mit Text; `--gut` #1f7a4d / `--gut-hell` #e8f4ed für Zusage, «da», kopiert, Gerät an.
+- **Radien:** `--radius` 10px (Flächen, Hinweise, Modale), `--radius-sm` 8px (Knöpfe, Felder, Chips), Pillen 999px.
+
+**The Rot-ist-Fahne Rule.** Fahnenrot markiert Verein und Ort (Band, aktive Navigation, Zähler), nie eine Aktion und nie Gefahr. PDF-Symbole, «Ablehnen», «Deaktivieren», «Nein» und «vorbei ohne Resultat» sind darum nicht rot.
+
+**The Ein-Gold Rule.** Gold heisst Ehre oder «als Nächstes». In einer Liste ist höchstens ein Eintrag golden; die übrigen Datums-Chips sind hellblau. Gold nie als Dekor oder Abschnittssymbol.
+
+### Typografie
+
+- **Schrift:** IBM Plex Sans, lokal aus `css/fonts/ibm-plex-sans/` (`@font-face` in `portal-fahne.css`, variabel 400–700, latin und latin-ext), Fallback `system-ui`. Wurzel `font-size: 15px`, 1rem = 15px.
+- **Titel:** Seitentitel und Begrüssung `h1` 1.25rem/700 (unter 768px 1.15rem); «Als Nächstes» 1rem/700; Modaltitel 1.0625rem/700.
+- **Text:** Listentitel und Hinweise 0.9375rem; Meta 0.8125rem in `--tinte-2`; Pillen, Chip-Monat, Status 0.8rem/600–700. **0.8rem (12px) ist die Untergrenze.**
+- **Gruppentitel** (`.fs-bereiche-titel`, `.tf-monat`, `.jm-gruppe`, `.p-eyebrow`): 0.8125–0.875rem/700, normale Schreibung, kein Sperrsatz. Datumszahlen und Punkte mit `tabular-nums`. Formularfelder unter 992px 16px (gegen den iOS-Zoom).
+
+### Layout
+
+- **Gerüst:** fester weisser Kopf (max. 1200px), Navigation am Desktop im Kopf, unter 992px Off-Canvas von links mit 44px-Zeilen; die Glocke bleibt sichtbar. Keine Navigationsleiste unten.
+- **Weg zurück:** jede Seite ausser der Startseite beginnt mit `.portal-back-link` (Pfeil plus «Start», Königsblau 600, 2.25rem hoch). Seiten setzen ein anderes Ziel über `$portal_back_href` / `$portal_back_label` (Galerie → «Fotos»). Der runde Home-Knopf `.portal-back-fab` ist ausgeblendet.
+- **Stapel:** einspaltig, 0.8rem zwischen Blöcken. Listen sind eine weisse Fläche mit 1px-Trennern statt einzelner Karten.
+- **Tippflächen:** bei `pointer: coarse` Knöpfe und kleine Felder mindestens 38px, Icon-Knöpfe 38px breit; Knopfbeschriftungen `nowrap`, Knopfreihen brechen um.
+- **Tiefe:** Flächen flach (kein Schatten, kein Anheben, Hover nur Rand `--linie-stark`). Schatten nur für schwebende Ebenen: Dropdowns und Modale `0 6px 18px rgba(26, 26, 36, .12)`, Off-Canvas, Upload-Knopf der Galerie, aktiver Reiter `0 1px 2px`.
+- **Bewegung:** `prefers-reduced-motion` setzt Animationen und Übergänge auf 0.01ms.
+
+### Komponenten
+
+- **Kopf:** weiss, `border-bottom: 4px solid var(--verein)`, Logo 32px, Markenname «MSV Wilen» 0.95rem/700 in Versalien (0.05em); Links 0.875rem in Tinte, Hover `--grund`.
+- **Begrüssung** (`.fs-gruss`): «Hallo Vorname» als `h1`, darunter das Datum; rechts der Lizenz-Knopf 40px mit Rand in Königsblau.
+- **Jetzt-Liste** (`.fs-jetzt`): eine Fläche, Zeilen 0.6rem 0.8rem: Chip 2.65rem (Tag fett, Monat kurz, oder Symbol), Titel 0.9375rem, Zeit `.fs-wann`, Zusatz `.fs-unter` (max. 2 Zeilen), Chevron. Ein Tag oder ein Wochenende (Fr–So, `portalNaechsterBlock()`) ist ein Eintrag mit Link auf den Tagesplan; nur dieser Chip ist golden (`.fs-chip.is-gold`), dazu die Pille `.fs-naehe` «heute»/«morgen». Danach nächster Einsatz, offene Tausch-Anfragen, offene Umfragen, Push einschalten. Ohne Einträge verschwindet die Liste. Jungschützen: Zeilen mit eigenen Knöpfen (`.fs-zeile`, `.fs-aktionen`), Hinweis der Leitung `.fs-hinweis`, frühere Anmeldungen zugeklappt `.fs-frueher`.
+- **Fotokarte** (`.fs-fotos`): neueste freigeschaltete Galerie des Jahres, Titelbild 16:7 (`object-fit: cover`), darunter «Fotos: Anlass» mit Anzahl.
+- **Kacheln** (`.fs-kacheln` unter «Alles im Portal»): Raster `repeat(auto-fill, minmax(9.5rem, 1fr))`, Abstand 0.45rem, Kachel min. 2.9rem, Symbol 1.9rem auf `--akzent-hell`, Text 0.875rem/600; Hover nur Rand.
+- **Termine nach Tag** (`.tf-*`): Monatstitel, pro Tag eine Karte mit Datumsblock 2.8rem (Wochentag 0.8rem, Tag 1.15rem) und Einträgen mit gestricheltem Trenner; der nächste Tag (`.is-naechster`) mit goldenem Datumsblock und Pille «heute»/«morgen»/«als Nächstes». Vergangene Tage zugeklappt hinter einem gestrichelten Knopf.
+- **Tagesplan** (`portal/tag.php`, Stil in der Seite): Titel, Datum, Pille; Liste Zeit (3.4rem, Beginn fett, Ende klein) | Was (Name, Schiessfenster, Ort mit «Karte öffnen», «auch …» für weitere Daten). Am Wochenende ein Untertitel pro Tag; eigene Einsätze als «Dein Einsatz: …» in `--akzent-tief`.
+- **Als Nächstes** (`.jm-naechst`, `meine_jm.php`): Karte mit goldenem Datums-Chip, «Als Nächstes: Anlass», Pille, Selbsteingabe darin. Darunter Gruppen `.jm-gruppe` mit Zähler: «Danach» (Datum vorne `.jm-dat`, «Alle anzeigen»), «Geschossen», «Ohne Resultat».
+- **Zustand in Worten** (`.jm-row-tag`, 0.8rem/600, `--tinte-2`): «teilgenommen», «Streicher», «ohne Resultat», «noch nicht freigegeben» (hellblaue Pille). Kein rotes X; Streicher und «vorbei ohne Resultat» neutral.
+- **Resultat-Reiter** (`inc_resultate_reiter.php`, `.fr-reiter`): Segment JM | Heim | Kanti | Wanderpreise, Träger `#e6e6e1` mit Radius 9px, Reiter 34px 0.8125rem/600, aktiv über `aria-current="page"` weiss mit Segment-Schatten.
+- **Dokumentzeilen** (`inc_dokumente.php`): Titel, Datum («12. März 2026»), Beschreibung; die ganze Zeile öffnet das Dokument im Viewer (Knopf «Öffnen» als `stretched-link`). Chip immer hellblau. Schloss `.doc-schloss` «Nur Vorstand»/«Nur Admin» nur bei eingeschränkter Sichtbarkeit.
+- **Hinweise und Leerzustände:** Info hellblau, Warnung weiss mit Rand `--linie-stark`, Gefahr `--gefahr-hell` mit Rand `--gefahr`, Erfolg `--gut-hell`; Radius 10px, 0.9375rem. Leer als weisse Fläche mit Rand (`.tf-leer`, `.empty-state`, `.wp-empty`).
+- **Knöpfe und Fokus:** Bootstrap über Variablen: primary und outline-primary Königsblau, success `--gut`, danger nur Löschen, secondary neutral mit Rand `--linie-stark`; Radius 8px. Fokus global 3px `--akzent` mit 2px Abstand (auf dunklen Overlays weiss), Felder 2px `--akzent` ohne Glow.
+
+### Do's and Don'ts
+
+- **Do** Portal-Optik nur unter `.portal-fahne` ablegen: Global in `portal-fahne.css`, Seitenregeln in `portal-fahne-seiten.css`, Farben über die Tokens.
+- **Do** Termine eines Tags oder Wochenendes zu einem Eintrag bündeln und auf `tag.php` verlinken.
+- **Do** Zustand in Worten zeigen (Pille oder `.jm-row-tag`); Symbole nur zusätzlich und `aria-hidden`.
+- **Do** Zeilen mit genau einer Aktion ganz klickbar machen.
+- **Do** Meldungen mit Problem und nächstem Schritt formulieren; im Client die Servermeldung ohne eigenen Vorspann zeigen (`r.message || 'Klartext'`).
+- **Don't** Rot für Knöpfe, Dateitypen oder Ablehnen; Gefahr nie nur über Farbe.
+- **Don't** Gold als Dekor oder mehr als ein Gold pro Liste.
+- **Don't** farbige Seitenstreifen über 1px, Kicker oder Eyebrow über Titeln, Versalien ausserhalb des Markennamens.
+- **Don't** Verläufe (einzige Ausnahme: der Lesbarkeits-Scrim unter Bildunterschriften der Galerie), Anheben beim Hover, Schatten auf Karten.
+- **Don't** Schrift unter 0.8rem (12px).
+- **Don't** runder Home-Knopf oder Navigationsleiste unten; der Weg zurück steht oben.
+
 ## Noch nicht migriert (bewusst)
 
-- **Mitgliederportal** (`portal/`, `css/portal.css`): behält sein eigenes Erscheinungsbild und folgt später. Dieses Dokument gilt dort nicht.
+- **Mitgliederportal, Altbestand unter der Fahne:** `css/portal.css` (556 Zeilen), der Inline-`<style>` in `portal/portal_header.php` und Seiten-`<style>`-Blöcke mit Hex-Werten in 24 Portal-Dateien laden weiter unter der Fahne und werden von `portal-fahne*.css` überschrieben, teils mit `!important` gegen Inline-Styles; kein Muster für neue Arbeit. Die alten Zweige ohne Fahne (`$portal_fahne` leer in `dashboard.php`, `meine_jm.php`, `termine.php`, `jsk_dashboard.php`, `anlass.php`, `inc_resultate_reiter.php`, dazu `.portal-back-fab`) erreichen nur noch Admins über `?vorschau=aus`; sie fallen mit dem Vergleichsschalter weg. Die JSK-Seiten und der Chat stecken noch in `container py-4` (von der Fahne auf Padding 0 gesetzt). Gültig ist der Abschnitt «Mitgliederportal («Vereinsfahne»)».
 - **`css/msv-styles.css`** (rund 1410 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip) und alte Optik, die `msv-ui.css` überschreibt, wo sie sichtbar wird. Wo nicht überschrieben, ist der alte Stil noch sichtbar; das ist kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso; ebenso `.info-card` (ohne Seitenstreifen). Die Einblend-Animation aller `.table-wrapper` und das Anheben von `#pdf-link` sind entfernt.
 - **Seiten mit eigenem Slide-Panel** statt `partials/side_panel.inc.php`: Einzel- und Sektionsrangierungen (`.edit-panel`, fast identische Kopien), Navigation (`.nav-edit-panel`). Umbau gehört zusammen mit einem gemeinsamen Panel-Verhalten (Esc, Ungespeichertes) gemacht.
 - **Restliche Seiten-Hex-Werte** (Stand 08.10.2026, nach der Polish-Runde): Die Seiten selbst sind auf Tokens; übrig sind Einzelwerte in Navigation-Editor (4), Hilfetexte (2), Foto-Galerie, Einzel- und Sektionsrangierungen, JM-Definition und Gruppen (je 1). Der Rest steckt in `msv-styles.css` (siehe oben). Ebenfalls offen: 2px-Ränder an einzelnen Karten, Karte in Karte im Navigation-Editor, Skeleton mit Verlauf, Fortschrittsbalken animieren `width` statt `transform`.
