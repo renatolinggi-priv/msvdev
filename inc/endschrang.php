@@ -4,29 +4,51 @@ include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
 $page_specific_css = '
-/* Absenden vorbereiten: Prüfliste links, die drei Dokumente fürs Absenden rechts */
-.es-absenden { margin-bottom: 14px; }
+/* Aufbau: links lesen (Prüfliste, Rangliste), rechts ausgeben (alle Dokumente in einer Leiste).
+   Erst ab 1040px Inhaltsbreite zweispaltig, damit die neun Spalten der Rangliste Platz behalten. */
+.es-seite { container-type: inline-size; margin-bottom: 14px; }
+.es-raster { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "pruef" "doks" "rang"; gap: 14px 16px; align-items: start; }
+.es-absenden { grid-area: pruef; }
+.es-doks { grid-area: doks; }
+.main-content-wrapper .es-raster > .es-rangliste { grid-area: rang; margin-bottom: 0 !important; }
+@container (min-width: 1040px) {
+    /* Zeile 2 nimmt den Überhang der Dokumenten-Leiste auf, sonst entstünde eine Lücke unter der Prüfliste */
+    .es-raster { grid-template-columns: minmax(0, 1fr) 17rem; grid-template-rows: auto 1fr; grid-template-areas: "pruef doks" "rang doks"; }
+}
+
+/* Absenden vorbereiten: die Prüfliste */
 .es-abs-stand { margin-left: auto; }
-.es-abs-inhalt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 40px; padding: 14px var(--ui-pad) 16px; align-items: start; }
-.es-abs-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.es-abs-liste { list-style: none; margin: 0; padding: 14px var(--ui-pad) 16px; display: grid; gap: 10px; }
 .es-abs-liste li { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; }
 .es-abs-liste .ui-status { min-width: 6.5rem; }
 .es-abs-liste .ui-status:not(.ok):not(.offen) { color: var(--ui-text-2); }
 .es-abs-liste .ui-status:not(.ok):not(.offen) .ui-punkt { background: var(--ui-text-3); }
 .es-abs-liste a { font-weight: 600; white-space: nowrap; }
-.es-abs-doks { display: flex; flex-direction: column; gap: 8px; min-width: 16rem; }
-.es-abs-doks-titel { font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-text-2); }
-.es-abs-hinweis { margin: 0; font-size: .8rem; color: var(--ui-warn-fg); }
 .es-abs-zeit { margin-left: 8px; font-size: .75rem; color: var(--ui-text-2); white-space: nowrap; }
-.es-abs-doks .es-abs-dok { flex: 1 1 auto; display: flex; align-items: center; gap: 6px; text-align: left; }
-@media (max-width: 767.98px) { .es-abs-inhalt { grid-template-columns: 1fr; } .es-abs-doks { min-width: 0; } }
+
+/* Dokumente: ein Dokument pro Zeile, Drucker immer gleich breit am rechten Rand.
+   Einspaltig (schmal) fliessen die Knöpfe nebeneinander wie in der Export-Toolbar. */
+.es-doks-inhalt { display: grid; gap: 16px; padding: 14px 16px 16px; }
+.es-dok-label { margin: 0 0 6px; font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-text-2); }
+.es-abs-hinweis { margin: -2px 0 8px; font-size: .8rem; line-height: 1.35; color: var(--ui-warn-fg); }
+.es-dok-liste { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.es-dok-liste > .btn-group > .btn:first-child { text-align: left; }
+.es-dok-liste > .btn-group > .msv-druck { flex: 0 0 2.25rem; }
+@container (min-width: 1040px) {
+    .es-dok-liste { flex-direction: column; flex-wrap: nowrap; }
+    .es-dok-liste > .btn-group { width: 100%; }
+    .es-dok-liste > .btn-group > .btn:first-child { flex: 1 1 auto; }
+}
+
+/* Noch nicht erfasster Stich in der Rangliste */
+.es-fehlt { color: var(--ui-leer); }
 
 /* Ranglisten Kat. A / B: Zahlen zentriert, Name links, Total betont */
 #EndA thead th, #EndB thead th,
 #EndA tbody td, #EndB tbody td { text-align: center; }
 #EndA thead th:nth-child(2), #EndB thead th:nth-child(2),
 #EndA tbody td:nth-child(2), #EndB tbody td:nth-child(2) { text-align: left; font-weight: 500; }
-#EndA tbody td:last-child, #EndB tbody td:last-child { font-weight: 700; color: var(--ui-text); background-color: var(--ui-flaeche-2); font-variant-numeric: tabular-nums; }
+#EndA tbody tr:not(.msv-empty-row) td:last-child, #EndB tbody tr:not(.msv-empty-row) td:last-child { font-weight: 700; color: var(--ui-text); background-color: var(--ui-flaeche-2); font-variant-numeric: tabular-nums; }
 /* Podium: Top 3 leicht in Gold, Silber und Bronze getönt, Rang fett */
 #EndA tbody tr.rank-1 td, #EndB tbody tr.rank-1 td { background-color: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
 #EndA tbody tr.rank-2 td, #EndB tbody tr.rank-2 td { background-color: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
@@ -52,50 +74,46 @@ include 'header.inc.php';
                 $page_actions = '<button id="redirect-btn" type="button" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square me-1"></i>Resultate bearbeiten</button>';
                 $page_show_mobile = true;
                 include 'partials/page_header.inc.php'; ?>
-                <!-- Absenden vorbereiten: Prüfliste und die drei Dokumente fürs Absenden (eigene Karte, nicht in der Inhalts-Card) -->
+                <div class="es-seite"><div class="es-raster">
+                <!-- Absenden vorbereiten: Prüfliste (links oben) -->
                 <section class="ui-karte es-absenden" aria-labelledby="absTitel">
                     <div class="ui-tab-kopf">
                         <span class="ui-tab-titel" id="absTitel"><i class="bi bi-flag me-1" aria-hidden="true"></i>Absenden vorbereiten <button type="button" class="btn-help" data-help="endschrang.absenden" aria-label="Hilfe"></button></span>
                         <span class="es-abs-stand" id="absStand" aria-live="polite"></span>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="absNeu" aria-label="Prüfliste neu prüfen" data-tooltip="Neu prüfen"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
                     </div>
-                    <div class="es-abs-inhalt">
-                        <ul class="es-abs-liste" id="absListe" aria-label="Prüfliste">
-                            <li data-pruefung="stiche"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Stiche werden geprüft</span></li>
-                            <li data-pruefung="partner"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Partnerinnen werden geprüft</span></li>
-                            <li data-pruefung="wanderpreise"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Wanderpreise werden geprüft</span></li>
-                        </ul>
-                        <div class="es-abs-doks" role="group" aria-labelledby="absDoksTitel">
-                            <div class="es-abs-doks-titel" id="absDoksTitel">Fürs Absenden</div>
+                    <ul class="es-abs-liste" id="absListe" aria-label="Prüfliste">
+                        <li data-pruefung="stiche"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Stiche werden geprüft</span></li>
+                        <li data-pruefung="partner"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Partnerinnen werden geprüft</span></li>
+                        <li data-pruefung="wanderpreise"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Wanderpreise werden geprüft</span></li>
+                    </ul>
+                </section>
+                <!-- Dokumente: alle Ausgaben der Seite in einer Leiste (rechts, über die ganze Höhe) -->
+                <aside class="ui-karte es-doks" aria-labelledby="doksTitel">
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel" id="doksTitel"><i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Dokumente <button type="button" class="btn-help" data-help="endschrang.dokumente" aria-label="Hilfe"></button></span>
+                    </div>
+                    <div class="es-doks-inhalt">
+                        <div role="group" aria-labelledby="dokAbsenden">
+                            <p class="es-dok-label" id="dokAbsenden">Fürs Absenden</p>
                             <p class="es-abs-hinweis" id="absDokHinweis" hidden></p>
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Word)">
-                                <button type="button" class="btn btn-outline-info abs-btn es-abs-dok"><i class="bi bi-file-earmark-word" aria-hidden="true"></i><span>Absendenbuch (Word)</span></button>
-                            </div>
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Broschüre">
-                                <button type="button" class="btn btn-outline-info absbk-btn es-abs-dok" data-tooltip="Absendenbuch als Broschüre: A5-Seiten paarweise auf A4 quer, in der Reihenfolge zum Falten"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span>Broschüre</span></button>
-                                <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Broschüre direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
-                            </div>
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Gesamtrangliste">
-                                <button type="button" class="btn btn-outline-info ges-btn es-abs-dok"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span>Gesamtrangliste</span></button>
-                                <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                            <div class="es-dok-liste">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Word)">
+                                    <button type="button" class="btn btn-outline-info abs-btn"><i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Absendenbuch (Word)</span></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Broschüre">
+                                    <button type="button" class="btn btn-outline-info absbk-btn" data-tooltip="Absendenbuch als Broschüre: A5-Seiten paarweise auf A4 quer, in der Reihenfolge zum Falten"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Broschüre</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Broschüre direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Gesamtrangliste">
+                                    <button type="button" class="btn btn-outline-info ges-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Gesamtrangliste</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
-                <!-- Weisser Container für den Rest -->
-                <div class="content-background">
-                <!-- Dokumente erstellen (gruppiert); Jahr und «Resultate bearbeiten» stehen in der Kopf-Card -->
-                <div class="export-toolbar mb-3">
-                    <div class="export-toolbar-head">
-                        <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
-                        <span>Weitere Ranglisten und Listen</span>
-                        <button type="button" class="btn-help" data-help="endschrang.dokumente" aria-label="Hilfe"></button>
-                    </div>
-                    <div class="export-groups">
-                        <!-- Gruppe: Ranglisten / Übersicht -->
-                        <div class="export-group">
-                            <div class="export-group-label">Übersicht</div>
-                            <div class="export-group-btns">
+                        <div role="group" aria-labelledby="dokUebersicht">
+                            <p class="es-dok-label" id="dokUebersicht">Übersicht</p>
+                            <div class="es-dok-liste">
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Zwischenrangliste">
                                     <button type="button" class="btn btn-outline-info zwi-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Zwischenrangliste</span></button>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_zwischenrangliste.php" data-druck-job="Endschiessen Zwischenrangliste" aria-label="Zwischenrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
@@ -106,10 +124,9 @@ include 'header.inc.php';
                                 </div>
                             </div>
                         </div>
-                        <!-- Gruppe: Einzelwettbewerbe -->
-                        <div class="export-group">
-                            <div class="export-group-label">Einzelwettbewerbe</div>
-                            <div class="export-group-btns">
+                        <div role="group" aria-labelledby="dokEinzel">
+                            <p class="es-dok-label" id="dokEinzel">Einzelwettbewerbe</p>
+                            <div class="es-dok-liste">
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Endstich">
                                     <button type="button" class="btn btn-outline-info end-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Endstich</span></button>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_end.php" data-druck-job="Endschiessen Endstich" aria-label="Endstich direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
@@ -136,10 +153,9 @@ include 'header.inc.php';
                                 </div>
                             </div>
                         </div>
-                        <!-- Gruppe: Partner-Wettbewerbe -->
-                        <div class="export-group">
-                            <div class="export-group-label">Partner</div>
-                            <div class="export-group-btns">
+                        <div role="group" aria-labelledby="dokPartner">
+                            <p class="es-dok-label" id="dokPartner">Partner</p>
+                            <div class="es-dok-liste">
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Partner">
                                     <button type="button" class="btn btn-outline-info part-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Partner</span></button>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_partner.php" data-druck-job="Endschiessen Partner" aria-label="Partner direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
@@ -151,7 +167,9 @@ include 'header.inc.php';
                             </div>
                         </div>
                     </div>
-                </div>
+                </aside>
+                <!-- Rangliste Kat. A und B (links unter der Prüfliste) -->
+                <div class="content-background es-rangliste">
                 <!-- Tabellenbereich Kat. A -->
                 <div class="table-wrapper mb-4">
                     <h5 class="table-title">Endschiessen Kat. A <button type="button" class="btn-help" data-help="endschrang.wertung" aria-label="Hilfe"></button></h5>
@@ -230,7 +248,8 @@ include 'header.inc.php';
                         </div>
                     </div>
                 </div>
-                </div><!-- /content-background -->
+                </div><!-- /es-rangliste -->
+                </div></div><!-- /es-raster, /es-seite -->
             </div><!-- /main-content-wrapper -->
         </div>
     </div>

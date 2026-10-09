@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.66.0",
+    "datum": "2026-10-09",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Rangliste: Rangliste oben, Dokumente in einer Leiste",
+        "beschreibung": "Die Rangliste beginnt jetzt direkt unter der Prüfliste «Absenden vorbereiten», statt erst nach zwei Blöcken mit Knöpfen. Alle 13 Dokumente stehen rechts in der Karte «Dokumente»: zuoberst die drei fürs Absenden, darunter Übersicht, Einzelwettbewerbe und Partner, jedes in einer eigenen Zeile mit dem Drucker gleich breit am rechten Rand. Auf schmalen Bildschirmen steht die Karte zwischen Prüfliste und Rangliste. Eine leere Kategorie zeigt «Keine Resultate in Kat. B für 2026». Braucht die Datenbank-Aktualisierung 093 (Hilfetexte).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.65.0",
     "datum": "2026-10-08",
     "aenderungen": [

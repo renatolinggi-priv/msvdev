@@ -96,7 +96,7 @@ function getResults($kat, $selectedYear) {
 $result = getResults($kat, $selectedYear);
 
 $i = 1;
-$fehlt = '<span class="text-muted" data-tooltip="Noch nicht erfasst">–</span>';
+$fehlt = '<span class="es-fehlt" data-tooltip="Noch nicht erfasst">–</span>';
 if ($result && $result->num_rows > 0) {
     foreach ($result as $row) {
         // Nur Zeilen mit einem Endstichwert > 0 ausgeben
@@ -117,7 +117,8 @@ if ($result && $result->num_rows > 0) {
         //}
     }
 } else {
-    echo '<tr><td colspan="9">Keine Ergebnisse gefunden.</td></tr>';
+    require_once __DIR__ . '/../partials/empty_state.inc.php';
+    echo msv_empty_row(9, 'Keine Resultate in Kat. ' . ($kat === 'B' ? 'B' : 'A') . ' für ' . $selectedYear);
 }
 
 echo '</div>';
