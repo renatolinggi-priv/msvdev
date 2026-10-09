@@ -76,6 +76,7 @@ function heimFormatDatum(string $date): string {
 }
 
 include 'portal_header.php';
+include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderpreise (nur Vorschau)
 ?>
 
 <style>

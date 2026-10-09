@@ -106,6 +106,7 @@ function renderCupInfo(array $s): string {
 require_once __DIR__ . '/inc_jm_stand.php';
 
 include 'portal_header.php';
+include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderpreise (nur Vorschau)
 ?>
 
 <style>
@@ -359,7 +360,22 @@ include 'portal_header.php';
                 <?php
                 // Reihenfolge: erst "geschossen", dann "kommend", sonst "vergangen & verpasst".
                 // Teilnahme-Anlaesse (Maxpunkte==20): Haken statt Zahl.
-                if ($geschossen) {
+                if (!empty($portal_fahne)) {
+                    // Vorschau «Vereinsfahne»: Zustand in Worten statt Symbolen (kein rotes X, Streicher als Wort)
+                    if ($geschossen) {
+                        if ($is_teilnahme) {
+                            echo '<span class="jm-row-points' . ($is_streicher ? ' streicher' : ' ok') . '"><i class="bi bi-check-lg" aria-hidden="true"></i> <span class="jm-row-tag">teilgenommen</span></span>';
+                        } else {
+                            $disp = ($punkte_norm == (int)$punkte_norm) ? (string)(int)$punkte_norm : number_format($punkte_norm, 2, '.', '');
+                            echo '<span class="jm-row-points' . ($is_streicher ? ' streicher' : '') . '">' . $disp . '</span>';
+                        }
+                        if ($is_streicher) echo '<span class="jm-row-tag">Streicher</span>';
+                    } elseif ($is_future) {
+                        echo '<span class="jm-row-points muted" aria-label="noch kein Resultat">&ndash;</span>';
+                    } else {
+                        echo '<span class="jm-row-tag">ohne Resultat</span>';
+                    }
+                } elseif ($geschossen) {
                     if ($is_teilnahme) {
                         echo '<span class="jm-row-points ' . ($is_streicher ? 'streicher' : 'ok') . '" title="Teilgenommen"><i class="bi bi-check-circle-fill"></i></span>';
                     } else {

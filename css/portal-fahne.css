@@ -580,6 +580,33 @@ html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .
     color: var(--tinte-2);
 }
 
+/* ---- Resultatseiten: Reiter und Zustand in Worten ------------------ */
+.portal-fahne .fr-reiter {
+    display: flex;
+    gap: .25rem;
+    margin-bottom: .75rem;
+    padding: .2rem;
+    background: #e6e6e1;
+    border-radius: 9px;
+}
+.portal-fahne .fr-reiter a {
+    flex: 1;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .3rem .25rem;
+    border-radius: 7px;
+    color: var(--tinte-2);
+    font-size: .8125rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.portal-fahne .fr-reiter a:hover { color: var(--tinte); }
+.portal-fahne .fr-reiter a[aria-current="page"] { background: var(--flaeche); color: var(--tinte); box-shadow: 0 1px 2px rgba(26, 26, 36, .08); }
+.portal-fahne .jm-row-tag { font-size: .8rem; font-weight: 600; color: var(--tinte-2); white-space: nowrap; }
+.portal-fahne .jm-row-points .jm-row-tag { font-weight: 600; }
+
 /* ---- Weniger Bewegung, wenn gewuenscht ----------------------------- */
 @media (prefers-reduced-motion: reduce) {
     .portal-fahne *,
