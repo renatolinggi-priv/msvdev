@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.65.0",
+    "datum": "2026-10-08",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: fehlende Stiche und Rangfolge",
+        "beschreibung": "Fehlt bei einem Mitglied noch ein Stich, zeigt die Endschiessen-Rangliste einen Strich statt «()» oder 0, und das Total zählt die erfassten Stiche zusammen, statt leer zu bleiben. Die Gesamtrangliste als PDF rechnet gleich. Im Absendenbuch und in der Schützenabrechnung werden Totale, die weniger als einen Punkt auseinanderliegen (z.B. 260.9 und 260.5), wieder richtig rangiert; vorher galten sie als gleich und das Alter entschied.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.64.0",
     "datum": "2026-10-08",
     "aenderungen": [

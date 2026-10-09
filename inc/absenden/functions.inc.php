@@ -770,10 +770,10 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
     // Sortiere nach GesamtTotal DESC, EndstichTotal DESC, Geburtsdatum ASC
     usort($data, function($a, $b) {
         if ($a['GesamtTotal'] != $b['GesamtTotal']) {
-            return $b['GesamtTotal'] - $a['GesamtTotal'];
+            return $b['GesamtTotal'] <=> $a['GesamtTotal'];   // <=>, nicht Minus: usort schneidet 0.4 sonst auf 0 ab
         }
         if ($a['EndstichTotal'] != $b['EndstichTotal']) {
-            return $b['EndstichTotal'] - $a['EndstichTotal'];
+            return $b['EndstichTotal'] <=> $a['EndstichTotal'];
         }
         return strcmp($a['Geburtsdatum'], $b['Geburtsdatum']);
     });
@@ -945,10 +945,10 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     // Sortierung
     usort($data, function($a, $b) {
         if ($a['GesamtTotal'] != $b['GesamtTotal']) {
-            return $b['GesamtTotal'] - $a['GesamtTotal'];
+            return $b['GesamtTotal'] <=> $a['GesamtTotal'];
         }
         if ($a['EndstichTotal'] != $b['EndstichTotal']) {
-            return $b['EndstichTotal'] - $a['EndstichTotal'];
+            return $b['EndstichTotal'] <=> $a['EndstichTotal'];
         }
         return strcmp($a['geburtsdatum'], $b['geburtsdatum']);
     });

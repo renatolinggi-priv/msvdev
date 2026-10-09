@@ -16,7 +16,7 @@ abstract class MultiKategorieReport extends PDFGenerator {
             m.Vorname,
             m.Geburtsdatum,
             {$zabigCalculation} AS ZabigTotal,
-            COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1)) AS GlueckTotal,
+            COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) AS GlueckTotal,
             COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 +
                         e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS EndstichTotal,
             COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS KunstTotal,
@@ -24,11 +24,11 @@ abstract class MultiKategorieReport extends PDFGenerator {
                     s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) as MaxSchwini,
             (COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 +
                          e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) +
-             COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1)) +
+             COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) +
              {$zabigCalculation} +
              COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) +
-             GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
-                     s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6)
+             COALESCE(GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                     s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0)
             ) AS GesamtTotal
         FROM mitglieder m
         LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
@@ -100,7 +100,7 @@ abstract class MultiKategorieReport extends PDFGenerator {
             $html .= "<td align=\"left\" $bold>$rang.</td>";
             $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
             $html .= "<td align=\"center\" $bold>{$row['EndstichTotal']}</td>";
-            $html .= "<td align=\"center\" $bold>{$row['MaxSchwini']}</td>";
+            $html .= "<td align=\"center\" $bold>" . ($row['MaxSchwini'] ?? '–') . "</td>";
             $html .= "<td align=\"center\" $bold>{$row['KunstTotal']}</td>";
             $html .= "<td align=\"center\" $bold>{$row['GlueckTotal']}</td>";
             

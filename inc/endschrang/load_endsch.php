@@ -65,9 +65,15 @@ function getResults($kat, $selectedYear) {
                 CASE WHEN z.ZSchuss6 >= 91 THEN 10 WHEN z.ZSchuss6 >= 81 THEN 9 WHEN z.ZSchuss6 >= 71 THEN 8 WHEN z.ZSchuss6 >= 61 THEN 7 WHEN z.ZSchuss6 >= 51 THEN 6 WHEN z.ZSchuss6 >= 41 THEN 5 WHEN z.ZSchuss6 >= 31 THEN 4 WHEN z.ZSchuss6 >= 21 THEN 3 WHEN z.ZSchuss6 >= 11 THEN 2 WHEN z.ZSchuss6 >= 1 THEN 1 ELSE 0 END
             )
             + COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5)/10,1), 0)
-            + GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
-                      s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6)
-        ) AS GesamtTotal
+            + COALESCE(GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                      s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0)
+        ) AS GesamtTotal,
+        -- Welche Stiche sind erfasst? Fehlende zählen im Total als 0 (wie im Absendenbuch),
+        -- in der Tabelle steht ein Strich statt einer Null.
+        MAX(s.MitgliedID) IS NOT NULL AS hatSchwini,
+        MAX(k.MitgliedID) IS NOT NULL AS hatKunst,
+        MAX(g.MitgliedID) IS NOT NULL AS hatGlueck,
+        MAX(z.MitgliedID) IS NOT NULL AS hatZabig
     FROM mitglieder m
     LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
     LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
@@ -90,6 +96,7 @@ function getResults($kat, $selectedYear) {
 $result = getResults($kat, $selectedYear);
 
 $i = 1;
+$fehlt = '<span class="text-muted" data-tooltip="Noch nicht erfasst">–</span>';
 if ($result && $result->num_rows > 0) {
     foreach ($result as $row) {
         // Nur Zeilen mit einem Endstichwert > 0 ausgeben
@@ -99,11 +106,11 @@ if ($result && $result->num_rows > 0) {
             echo '<td>' . $i . ".</td>";
             echo '<td>' . htmlspecialchars($row["Name"] . " " . $row["Vorname"]) . '</td>';
             echo '<td>' . $row["EndstichTotal"] . '</td>';
-            echo '<td>' . $row["MaxSchwini"] . ' (' . $row["MinSchwini"] . ')</td>';
-            echo '<td>' . $row["KunstTotal"] . '</td>';
-            echo '<td>' . $row["GlueckTotal"] . '</td>';
-            echo '<td>' . $row["ZabigTotal"] . '</td>';
-            echo '<td>' . ($row["Ansage"] - $row["ZabigTotalDiff"]) . '</td>';
+            echo '<td>' . ($row["hatSchwini"] ? $row["MaxSchwini"] . ' (' . $row["MinSchwini"] . ')' : $fehlt) . '</td>';
+            echo '<td>' . ($row["hatKunst"] ? $row["KunstTotal"] : $fehlt) . '</td>';
+            echo '<td>' . ($row["hatGlueck"] ? $row["GlueckTotal"] : $fehlt) . '</td>';
+            echo '<td>' . ($row["hatZabig"] ? $row["ZabigTotal"] : $fehlt) . '</td>';
+            echo '<td>' . ($row["hatZabig"] && $row["Ansage"] !== null ? ($row["Ansage"] - $row["ZabigTotalDiff"]) : $fehlt) . '</td>';
             echo '<td>' . $row["GesamtTotal"] . '</td>';
             echo '</tr>';
             $i++;
