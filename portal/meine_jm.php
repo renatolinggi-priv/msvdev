@@ -512,8 +512,7 @@ $jmZeile = function (array $z, string $datumSpalte = '', string $metaVorschau = 
 <section class="jm-naechst" aria-labelledby="jmNaechstTitel">
     <span class="jm-naechst-chip" aria-hidden="true"><b><?php echo (int) date('j', $ts); ?></b><small><?php echo htmlspecialchars(PT_MONAT_KURZ[(int) date('n', $ts)]); ?></small></span>
     <div class="jm-naechst-txt">
-        <span class="jm-naechst-kopf">Als Nächstes<?php echo $naehe !== '' ? ' · ' . $naehe : ''; ?></span>
-        <h2 id="jmNaechstTitel"><?php echo htmlspecialchars($s['Bezeichnung']); ?></h2>
+        <h2 id="jmNaechstTitel">Als Nächstes: <?php echo htmlspecialchars($s['Bezeichnung']); ?><?php if ($naehe !== ''): ?> <span class="fs-naehe"><?php echo $naehe; ?></span><?php endif; ?></h2>
         <p><?php echo htmlspecialchars(ptTagLang($nd, false) . ($zeiten !== '' ? ', ' . $zeiten : '')); ?></p>
         <?php if ($weitereText): ?><p>auch <?php echo htmlspecialchars($jmUnd($weitereText)); ?></p><?php endif; ?>
         <?php foreach ($amTag as $info): ?><p><?php echo htmlspecialchars($info); ?></p><?php endforeach; ?>

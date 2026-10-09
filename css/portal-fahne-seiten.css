@@ -78,7 +78,6 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
     padding: .7rem .8rem;
     background: var(--flaeche);
     border: 1px solid var(--linie);
-    border-left: 4px solid var(--ehre);
     border-radius: var(--radius);
 }
 .portal-fahne .jm-naechst-chip {
@@ -97,8 +96,7 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
 .portal-fahne .jm-naechst-chip b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .portal-fahne .jm-naechst-chip small { margin-top: 2px; font-size: .8rem; font-weight: 600; }
 .portal-fahne .jm-naechst-txt { flex: 1; min-width: 0; }
-.portal-fahne .jm-naechst-kopf { display: block; font-size: .8rem; font-weight: 700; color: var(--tinte-2); text-transform: uppercase; letter-spacing: .03em; }
-.portal-fahne .jm-naechst h2 { margin: .05rem 0 .15rem; font-size: 1rem; font-weight: 700; color: var(--tinte); line-height: 1.3; }
+.portal-fahne .jm-naechst h2 { margin: 0 0 .15rem; font-size: 1rem; font-weight: 700; color: var(--tinte); line-height: 1.3; }
 .portal-fahne .jm-naechst p { margin: 0; font-size: .875rem; color: var(--tinte-2); line-height: 1.45; }
 .portal-fahne .jm-naechst a { color: var(--akzent); font-weight: 600; }
 .portal-fahne .jm-naechst .jm-eingabe { margin-top: .55rem; }
@@ -1229,7 +1227,7 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
 .portal-fahne .chat-bubble { font-size: .9375rem; }
 .portal-fahne .chat-bubble.them,
 .portal-fahne .chat-bubble.me { color: var(--tinte); }
-.portal-fahne .chat-bubble .t { font-size: .75rem; }
+.portal-fahne .chat-bubble .t { font-size: .8rem; }   /* Minimum 12px */
 .portal-fahne .chat-bubble .s { font-size: .8125rem; }
 .portal-fahne .chat-bubble.deleted .del { color: var(--tinte-2); }
 .portal-fahne .chat-bubble a { color: var(--akzent); }
