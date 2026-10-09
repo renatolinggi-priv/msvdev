@@ -10,7 +10,8 @@
 // activate-Cleanup ausgenommen.
 
 // Versionierten Cache bei jeder relevanten SW-/Asset-Aenderung hochzaehlen (v1 -> v2 ...).
-var RUNTIME_CACHE = 'msv-rt-v1';
+// v2 (Okt 2026): einmaliges Aufräumen der angesammelten alten Asset-Versionen.
+var RUNTIME_CACHE = 'msv-rt-v2';
 
 // Best-effort vorgecachte App-Shell (relativ zum Scope = App-Root). Fehlende
 // Eintraege brechen die Installation NICHT ab (jeweils .catch).
@@ -227,13 +228,35 @@ function cacheFirst(req) {
             return fetch(req).then(function(resp) {
                 if (resp && (resp.ok || resp.type === 'opaque')) {
                     try { cache.put(req, resp.clone()); } catch (e) {}
+                    alteVersionenEntfernen(cache, req);
                 }
                 return resp;
             }).catch(function() {
-                return new Response('', { status: 504, statusText: 'Offline' });
+                // Offline: notfalls eine aeltere Version derselben Datei (anderes ?v=) oder die
+                // vorgecachte ohne ?v= – besser als gar kein Stil/Skript.
+                return cache.match(req, { ignoreSearch: true }).then(function(alt) {
+                    return alt || new Response('', { status: 504, statusText: 'Offline' });
+                });
             });
         });
     });
+}
+
+// Versionierte Assets (?v=filemtime): aeltere Versionen derselben Datei entfernen, sonst
+// waechst der Cache mit jedem Deploy um eine Kopie.
+function alteVersionenEntfernen(cache, req) {
+    var u;
+    try { u = new URL(req.url); } catch (e) { return; }
+    // nur eigene Dateien mit ?v= (bei CDN-Adressen wie Google Fonts meint der Query-Teil eine andere Datei)
+    if (u.origin !== self.location.origin || !/[?&]v=/.test(u.search)) return;
+    cache.keys().then(function(keys) {
+        keys.forEach(function(k) {
+            try {
+                var ku = new URL(k.url);
+                if (ku.origin === u.origin && ku.pathname === u.pathname && ku.search !== u.search) cache.delete(k);
+            } catch (e) {}
+        });
+    }).catch(function() {});
 }
 
 function networkFirst(req) {
@@ -253,7 +276,6 @@ function offlineFallback() {
         '<meta name="viewport" content="width=device-width,initial-scale=1">' +
         '<title>Offline</title>' +
         '<div style="font-family:system-ui,-apple-system,sans-serif;max-width:420px;margin:18vh auto;padding:0 1.5rem;text-align:center;color:#334">' +
-        '<div style="font-size:3rem">📡</div>' +
         '<h1 style="font-size:1.2rem;margin:.5rem 0">Keine Verbindung</h1>' +
         '<p style="color:#667">Diese Seite ist offline nicht verfügbar. Sobald du wieder online bist, lädt sie normal.</p>' +
         '<p><a href="javascript:location.reload()" style="color:#3b5998;font-weight:600">Erneut versuchen</a></p></div>',
