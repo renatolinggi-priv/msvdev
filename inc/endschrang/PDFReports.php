@@ -523,9 +523,14 @@ class ZabigReport extends PDFGenerator
             // Punkte für die Anzeige sortieren (absteigend)
             rsort($points, SORT_NUMERIC);
 
+            // Hunderterwerte gleich sortieren: die Punkte sind monoton, so steht jeder Rohwert unter seinem Punkt
+            $rawSortiert = $raw;
+            rsort($rawSortiert, SORT_NUMERIC);
+
             // im Row-Array ablegen
             for ($i = 0; $i < 6; $i++) {
                 $row['PShot' . ($i + 1)] = $points[$i];
+                $row['RShot' . ($i + 1)] = $rawSortiert[$i];
             }
             $row['Total'] = array_sum($points);
         }
@@ -572,9 +577,13 @@ class ZabigReport extends PDFGenerator
             $html .= "<td align=\"left\" $bold>{$rang}.</td>";
             $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
 
-            // 6 bereits umgerechnete Punkt-Schüsse
+            // 6 bereits umgerechnete Punkt-Schüsse; bei den ersten drei darunter die Hunderterwertung
             for ($i = 1; $i <= 6; $i++) {
                 $p = isset($row['PShot' . $i]) ? $row['PShot' . $i] : '';
+                if ($rang <= 3 && isset($row['RShot' . $i])) {
+                    $r = (string) (function_exists('fmtNoTrailingZero') ? fmtNoTrailingZero($row['RShot' . $i]) : $row['RShot' . $i]);
+                    $p .= '<br><span style="font-size: 8px; font-weight: normal; color: #666;">' . $r . '</span>';
+                }
                 $html .= "<td align=\"right\" $bold>$p</td>";
             }
 

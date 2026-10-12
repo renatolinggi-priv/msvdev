@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.1",
+    "datum": "2026-10-12",
+    "aenderungen": [
+      {
+        "titel": "Zabigstich-Rangliste: Hunderterwertung bei den ersten drei",
+        "beschreibung": "In der Zabigstich-Rangliste (PDF) steht bei den ersten drei Rängen unter jedem Punkt der Zehnerwertung klein die Hunderterwertung des Schusses.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.0",
     "datum": "2026-10-12",
     "aenderungen": [
