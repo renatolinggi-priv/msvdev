@@ -10,7 +10,7 @@ Snapshot der Critique: `.impeccable/critique/2026-10-12T14-28-10Z__inc-endschran
 | Schritt | Stand |
 |---|---|
 | 1 Marken in der Vorlage | **erledigt 12.10.2026** (1.68.2): neue Vorlage `Resultatbuch_Template20261012.docx`, alte bleibt als Rückfall |
-| 2 Prüfliste prüft das Buch | offen (`/impeccable harden inc/endschrang/absenden_bereit.php`) |
+| 2 Prüfliste prüft das Buch | **erledigt 12.10.2026** (1.68.3, Migration 097 Hilfetext): neue Zeilen «Siegerlisten» und «Weitere Teile des Absendenbuchs» (JM, Heim, Kanti je Kat. A/B, Cup); `absenden_bereit.php` prüft jeden Teil einzeln |
 | 3 Keine stillen Lücken | **erledigt 12.10.2026** (1.68.2) |
 | 4 Ehrliche Beschriftung | offen (`/impeccable clarify inc/endschrang.php`) |
 

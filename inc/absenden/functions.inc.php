@@ -89,6 +89,19 @@ function absendenAbschnittWeglassen($templateProcessor, string $block, string $r
     absendenHinweis('keine Resultate, aber der leere Abschnitt liess sich nicht entfernen (Vorlage ohne Blockmarken). Bitte dem Admin melden.');
 }
 
+// Lesbarer Name einer Siegerliste (Tabelle siegerdef, Spalte Bezeichnung) für Hinweise und die Prüfliste
+// «Absenden vorbereiten» (endschrang/absenden_bereit.php).
+function absendenSiegerlisteName(string $bezeichnung): string {
+    static $namen = [
+        'Kunst' => 'Kunststich', 'Glück' => 'Glückstich', 'Zabigstich' => 'Zabigstich', 'Endstich' => 'Endstich',
+        'Schwini' => 'Schwinistich', 'EndschiessenA' => 'Endschiessen Kat. A', 'EndschiessenB' => 'Endschiessen Kat. B',
+        'HeimmeisterschaftA' => 'Heimmeisterschaft Kat. A', 'HeimmeisterschaftB' => 'Heimmeisterschaft Kat. B',
+        'KantonalstichA' => 'Kantonalstich Kat. A', 'KantonalstichB' => 'Kantonalstich Kat. B',
+        'JahresmeisterschaftA' => 'Jahresmeisterschaft Kat. A', 'JahresmeisterschaftB' => 'Jahresmeisterschaft Kat. B',
+    ];
+    return $namen[$bezeichnung] ?? $bezeichnung;
+}
+
 // ========================================
 // HAUPTFUNKTIONEN
 
@@ -1243,13 +1256,6 @@ function getSieger($templateProcessor, $conn)
     }
     // Die Siegerlisten werden von Hand geführt (Seite «Sieger der letzten Jahre»). Nur Jahre bis zum Buchjahr
     // zeigen (ein Buch für 2024 ohne spätere Sieger) und melden, welchen Listen das Buchjahr noch fehlt.
-    $listenNamen = [
-        'Kunst' => 'Kunststich', 'Glück' => 'Glückstich', 'Zabigstich' => 'Zabigstich', 'Endstich' => 'Endstich',
-        'Schwini' => 'Schwinistich', 'EndschiessenA' => 'Endschiessen Kat. A', 'EndschiessenB' => 'Endschiessen Kat. B',
-        'HeimmeisterschaftA' => 'Heimmeisterschaft Kat. A', 'HeimmeisterschaftB' => 'Heimmeisterschaft Kat. B',
-        'KantonalstichA' => 'Kantonalstich Kat. A', 'KantonalstichB' => 'Kantonalstich Kat. B',
-        'JahresmeisterschaftA' => 'Jahresmeisterschaft Kat. A', 'JahresmeisterschaftB' => 'Jahresmeisterschaft Kat. B',
-    ];
     $ohneBuchjahr = [];
     while ($rowdef = $result->fetch_assoc()) {
         $countSieger = getCountSieger($conn, $rowdef['Bezeichnung'], (int)$selectedYear);
@@ -1278,7 +1284,7 @@ function getSieger($templateProcessor, $conn)
             $siegers[] = $row;
         }
         if (!in_array((int)$selectedYear, array_map('intval', array_column($siegers, 'year')), true)) {
-            $ohneBuchjahr[] = $listenNamen[$siegerdef] ?? $siegerdef;
+            $ohneBuchjahr[] = absendenSiegerlisteName($siegerdef);
         }
 
         // Verarbeite die Sieger paarweise

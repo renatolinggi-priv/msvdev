@@ -86,6 +86,8 @@ include 'header.inc.php';
                         <li data-pruefung="stiche"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Stiche werden geprüft</span></li>
                         <li data-pruefung="partner"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Sie und Er wird geprüft</span></li>
                         <li data-pruefung="wanderpreise"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Wanderpreise werden geprüft</span></li>
+                        <li data-pruefung="siegerlisten"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Siegerlisten werden geprüft</span></li>
+                        <li data-pruefung="buch"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Weitere Teile des Absendenbuchs werden geprüft</span></li>
                     </ul>
                 </section>
                 <!-- Dokumente: alle Ausgaben der Seite in einer Leiste (rechts, über die ganze Höhe) -->
@@ -351,7 +353,8 @@ $(document).ready(function () {
     // ===== Absenden vorbereiten: Prüfliste =====
     // Offene Stiche und Sie-und-Er-Paare zählt sie aus dem Lader der Erfassungsseite (dieselbe Regel wie dort:
     // «offen», solange ein gelöster Stich kein Resultat hat; Sie und Er braucht eine verknüpfte Partnerin bzw. einen
-    // verknüpften Partner, data-su="ohne-partner"), die Wanderpreise aus endschrang/absenden_bereit.php.
+    // verknüpften Partner, data-su="ohne-partner"). Wanderpreise, Siegerlisten und die übrigen Teile des Absendenbuchs
+    // (JM, Heim, Kanti, Cup) kommen aus endschrang/absenden_bereit.php, jeder Teil einzeln (null = nicht geprüft).
     function absZeile(key, zustand, text, link) {
         const label = { ok: 'erledigt', offen: 'offen', leer: 'nichts zu tun', fehler: 'nicht geprüft' }[zustand];
         $('#absListe li[data-pruefung="' + key + '"]').html(
@@ -359,6 +362,16 @@ $(document).ready(function () {
             + '<span>' + msvEsc(text) + '</span>'
             + (link ? '<a href="' + link.href + '">' + msvEsc(link.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>' : ''));
         return zustand;
+    }
+    // «A, B und C»
+    function absAufzaehlen(liste) {
+        return liste.length < 2 ? liste.join('') : liste.slice(0, -1).join(', ') + ' und ' + liste[liste.length - 1];
+    }
+    // «Heimmeisterschaft Kat. A» + «Heimmeisterschaft Kat. B» → «Heimmeisterschaft (Kat. A und B)»
+    function absKatZusammen(teile) {
+        const basis = t => t.replace(/ Kat\. [AB]$/, '');
+        return teile.filter((t, i) => teile.findIndex(u => basis(u) === basis(t)) === i)
+            .map(t => teile.filter(u => basis(u) === basis(t)).length > 1 ? basis(t) + ' (Kat. A und B)' : t);
     }
     function zeilenZaehlen(html) {
         const doc = new DOMParser().parseFromString('<table><tbody>' + html + '</tbody></table>', 'text/html');
@@ -392,11 +405,28 @@ $(document).ready(function () {
             z.push(absZeile('stiche', 'fehler', 'Die Stiche konnten nicht geprüft werden.'));
             z.push(absZeile('partner', 'fehler', 'Sie und Er konnte nicht geprüft werden.'));
         }
-        const w = wp.status === 'fulfilled' && wp.value && wp.value.success ? wp.value.wanderpreise : null;
+        const bereit = wp.status === 'fulfilled' && wp.value && wp.value.success ? wp.value : {};
+        const w = bereit.wanderpreise;
         z.push(!w ? absZeile('wanderpreise', 'fehler', 'Die Wanderpreise konnten nicht geprüft werden.')
             : w.total === 0 ? absZeile('wanderpreise', 'leer', 'Keine Wanderpreise im Umlauf.')
             : w.vergeben >= w.total ? absZeile('wanderpreise', 'ok', 'Alle ' + w.total + ' Wanderpreise sind für ' + jahr + ' vergeben.')
             : absZeile('wanderpreise', 'offen', w.vergeben + ' von ' + w.total + ' Wanderpreisen sind für ' + jahr + ' vergeben.', { href: 'wanderpreise.php', text: 'Zu den Wanderpreisen' }));
+        // Siegerlisten «… Sieger seit» im Absendenbuch: von Hand geführt, das Jahr fehlt sonst im Buch
+        const s = bereit.siegerlisten;
+        z.push(!s ? absZeile('siegerlisten', 'fehler', 'Die Siegerlisten konnten nicht geprüft werden.')
+            : s.total === 0 ? absZeile('siegerlisten', 'leer', 'Keine Siegerlisten eingerichtet.')
+            : s.ohne.length === 0 ? absZeile('siegerlisten', 'ok', 'Alle ' + s.total + ' Siegerlisten enthalten ' + jahr + '.')
+            : absZeile('siegerlisten', 'offen', (s.ohne.length === s.total ? 'Allen ' + s.total + ' Siegerlisten fehlt ' + jahr + '.'
+                : s.ohne.length + ' von ' + s.total + ' Siegerlisten fehlt ' + jahr + ': ' + absAufzaehlen(s.ohne) + '.'),
+                { href: 'sieger.php', text: 'Zu den Siegerlisten' }));
+        // Übrige Teile des Buchs mit eigener Erfassung: ohne Resultate bliebe ihre Tabelle im Buch leer
+        const b = bereit.buchteile;
+        const fehlt = b ? b.filter(t => !t.vorhanden) : [];
+        z.push(!b ? absZeile('buch', 'fehler', 'Die übrigen Teile des Absendenbuchs konnten nicht geprüft werden.')
+            : !fehlt.length ? absZeile('buch', 'ok', 'Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup haben Resultate für ' + jahr + '.')
+            : absZeile('buch', 'offen', 'Noch ohne Resultate für ' + jahr + ': ' + absAufzaehlen(absKatZusammen(fehlt.map(t => t.teil)))
+                + (fehlt.length === 1 ? '. Im Buch bliebe diese Tabelle leer.' : '. Im Buch blieben diese Tabellen leer.'),
+                { href: fehlt[0].link, text: 'Zur Erfassung' }));
         const offen = z.filter(s => s === 'offen').length, fehler = z.filter(s => s === 'fehler').length;
         const zeit = new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
         $('#absStand').html((offen

@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.3",
+    "datum": "2026-10-12",
+    "aenderungen": [
+      {
+        "titel": "Absenden vorbereiten: prüft auch, was ins Absendenbuch kommt",
+        "beschreibung": "Die Prüfliste auf «Endschiessen Rangliste» hat zwei neue Punkte. «Siegerlisten» zeigt, welchen der von Hand geführten Listen «… Sieger seit» das gewählte Jahr noch fehlt, mit Link auf «Sieger der letzten Jahre». «Weitere Teile des Absendenbuchs» prüft, ob Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich (je Kat. A und B) und Vereinscup Resultate haben; sonst bliebe ihre Tabelle im Buch leer. «Bereit fürs Absenden» heisst damit auch: Das Buch ist vollständig. Kann ein Teil nicht geprüft werden, steht nur bei ihm «nicht geprüft».",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.2",
     "datum": "2026-10-12",
     "aenderungen": [
