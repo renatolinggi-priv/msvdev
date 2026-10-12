@@ -5,6 +5,8 @@ include 'dbconnect.inc.php';
 // Lade Mitglieder für Dropdown
 $sql = "SELECT * FROM mitglieder ORDER BY Name, Vorname";
 $mitglieder_result = connect_db($sql);
+// Gäste und Jungschützen aus «Stiche lösen» (Migration 094); sie gelten nur für ihr Jahr, Wert «g<ID>»
+$gaeste_result = connect_db("SELECT id, name, jahr, geburtsdatum FROM endstich_gaeste WHERE jahr >= YEAR(CURDATE()) - 1 ORDER BY jahr DESC, name");
 
 $page_specific_css = "
 /* Upload-Fläche (.upload-area) und Lade-Overlay kommen aus css/msv-ui.css */
@@ -53,7 +55,7 @@ $csrf = csrf_token();
                                     <div class="row">
                                         <div class="col-md-6">
                                             <label for="mitgliedSelect" class="form-label">
-                                                <strong>Mitglied auswählen:</strong>
+                                                <strong>Teilnehmer auswählen:</strong>
                                             </label>
                                             <select id="mitgliedSelect" class="form-select">
                                                 <option value="">Bitte wählen...</option>
@@ -66,6 +68,13 @@ $csrf = csrf_token();
                                                     }
                                                     echo '<option value="' . $row['ID'] . '"' . $dataAttrs . '>' .
                                                          htmlspecialchars($row['Name'] . ' ' . $row['Vorname']) . '</option>';
+                                                }
+                                                if ($gaeste_result && $gaeste_result->num_rows > 0) {
+                                                    echo '<optgroup label="Gäste und Jungschützen">';
+                                                    while ($g = $gaeste_result->fetch_assoc()) {
+                                                        echo '<option value="g' . (int)$g['id'] . '">' . htmlspecialchars($g['name'] . ' (' . ($g['geburtsdatum'] ? 'JS' : 'Gast') . ' ' . $g['jahr'] . ')') . '</option>';
+                                                    }
+                                                    echo '</optgroup>';
                                                 }
                                                 ?>
                                             </select>

@@ -57,7 +57,7 @@ const ImportManagerSingle = {
     
     // Prüfe ob Mitglied ausgewählt
     if (!mitgliedId) {
-      UIHelper.showToast('Bitte zuerst ein Mitglied wählen.', 'warning');
+      UIHelper.showToast('Bitte zuerst den Teilnehmer wählen.', 'warning');
       return;
     }
     
@@ -72,7 +72,7 @@ const ImportManagerSingle = {
     const jahr = this.jahr || new Date().getFullYear();
 
     if (!mitgliedId) {
-      UIHelper.showToast('Bitte zuerst ein Mitglied wählen.', 'warning');
+      UIHelper.showToast('Bitte zuerst den Teilnehmer wählen.', 'warning');
       return;
     }
 
@@ -880,7 +880,7 @@ const ImportManagerSingle = {
             if (newValue === String(response.member_id)) {
               console.log('[ENDSCH-DEBUG] Successfully set member, triggering change event');
               $select.trigger('change');
-              UIHelper.showToast(`Mitglied ${response.member_name} wurde anhand der Lizenznummer vorselektiert`, 'success');
+              UIHelper.showToast(`${response.member_name} wurde anhand der Lizenznummer vorselektiert`, 'success');
             } else {
               console.log('[ENDSCH-DEBUG] Failed to set member value. Looking for option...');
               const $option = $select.find(`option[value="${response.member_id}"]`);
@@ -890,7 +890,7 @@ const ImportManagerSingle = {
                 console.log('[ENDSCH-DEBUG] Option not found, will try to add it');
                 $select.append(`<option value="${response.member_id}">${response.member_name}</option>`);
                 $select.val(response.member_id).trigger('change');
-                UIHelper.showToast(`Mitglied ${response.member_name} wurde anhand der Lizenznummer vorselektiert`, 'success');
+                UIHelper.showToast(`${response.member_name} wurde anhand der Lizenznummer vorselektiert`, 'success');
               } else {
                 console.log('[ENDSCH-DEBUG] Option exists but setting failed - possible interference');
                 UIHelper.showToast('Vorselektion nicht möglich (Dropdown wird möglicherweise überschrieben)', 'warning');
@@ -899,7 +899,7 @@ const ImportManagerSingle = {
           }, 500);
         } else {
           console.log('[ENDSCH-DEBUG] No member found for license:', lizenzNr);
-          UIHelper.showToast(`Kein Mitglied mit Lizenznummer ${lizenzNr} gefunden`, 'warning');
+          UIHelper.showToast(`Niemand mit Lizenznummer ${lizenzNr} gefunden (Mitglied oder Gast aus «Stiche lösen»)`, 'warning');
         }
       },
       error: (xhr, status, error) => {

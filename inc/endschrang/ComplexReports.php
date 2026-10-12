@@ -2,6 +2,7 @@
 // ComplexReports.php - Gesamt- und Zwischenrangliste
 
 require_once 'PDFGenerator.php';
+require_once __DIR__ . '/../endschresultate/teilnehmer.inc.php';
 
 /**
  * Basis-Klasse für Ranglisten mit mehreren Kategorien
@@ -11,9 +12,10 @@ abstract class MultiKategorieReport extends PDFGenerator {
     protected function getGesamtSQL($kat, $includeZabig = true) {
         $zabigCalculation = $includeZabig ? $this->getZabigCalculation() : '0';
 
-        $sql = "SELECT
-            m.Name,
-            m.Vorname,
+        $sql = "(SELECT
+            'mitglied' AS TeilnehmerTyp,
+            CONVERT(m.Name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+            CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
             m.Geburtsdatum,
             {$zabigCalculation} AS ZabigTotal,
             COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) AS GlueckTotal,
@@ -38,10 +40,52 @@ abstract class MultiKategorieReport extends PDFGenerator {
         LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
         LEFT JOIN Waffen w ON w.ID = m.WaffenID
         WHERE w.Kategorie = ? AND e.Schuss1 != 0
-        GROUP BY m.ID, m.Vorname, m.Name
-        ORDER BY GesamtTotal DESC, EndstichTotal DESC, m.Geburtsdatum ASC";
+        GROUP BY m.ID, m.Vorname, m.Name)";
+        $types = 'iiiiis';
+        $y = (int)$this->selectedYear;
+        $params = [$y, $y, $y, $y, $y, $kat];
 
-        return ['sql' => $sql, 'types' => 'iiiiis', 'params' => [$this->selectedYear, $this->selectedYear, $this->selectedYear, $this->selectedYear, $this->selectedYear, $kat]];
+        // Gäste (ohne Jungschützen) nur in Kat. B und nur, wenn sie alle gewerteten Stiche geschossen haben
+        if ($kat === 'Kat. B') {
+            $zabigJoin = $includeZabig
+                ? "INNER JOIN zabig z ON z.GastID = ga.id AND z.Jahr = ? AND (z.ZSchuss1 + z.ZSchuss2 + z.ZSchuss3 + z.ZSchuss4 + z.ZSchuss5 + z.ZSchuss6) > 0"
+                : "LEFT JOIN zabig z ON z.GastID = ga.id AND z.Jahr = ?";
+            $sql .= "
+        UNION ALL
+        (SELECT
+            'gast' AS TeilnehmerTyp,
+            CONVERT(ga.name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+            CONVERT('' USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
+            DATE('2100-01-01') AS Geburtsdatum,
+            {$zabigCalculation} AS ZabigTotal,
+            COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) AS GlueckTotal,
+            (e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10) AS EndstichTotal,
+            ROUND((k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1) AS KunstTotal,
+            GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                    s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) AS MaxSchwini,
+            ((e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10) +
+             COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) +
+             {$zabigCalculation} +
+             ROUND((k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1) +
+             GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                     s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6)
+            ) AS GesamtTotal
+        FROM endstich_gaeste ga
+        INNER JOIN endstich e ON e.GastID = ga.id AND e.Jahr = ? AND e.Schuss1 != 0
+        INNER JOIN schwini s ON s.GastID = ga.id AND s.Jahr = ?
+            AND GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                         s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) > 0
+        INNER JOIN kunst k ON k.GastID = ga.id AND k.Jahr = ? AND (k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) > 0
+        INNER JOIN glueck g ON g.GastID = ga.id AND g.Jahr = ? AND GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3) > 0
+        {$zabigJoin}
+        WHERE ga.jahr = ? AND ga.geburtsdatum IS NULL)";
+            $types .= 'iiiiii';
+            array_push($params, $y, $y, $y, $y, $y, $y);
+        }
+        $sql .= "
+        ORDER BY GesamtTotal DESC, EndstichTotal DESC, Geburtsdatum ASC";
+
+        return ['sql' => $sql, 'types' => $types, 'params' => $params];
     }
     
     protected function getZabigCalculation() {
@@ -86,14 +130,18 @@ abstract class MultiKategorieReport extends PDFGenerator {
                   </tr></thead><tbody>';
         
         $rang = 1;
-        foreach ($data as $row) {
+        $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder (Gäste können in Kat. B vorne stehen)
+        foreach ($data as $i => $row) {
             $bold = ($rang <= 3) ? 'class="bold"' : '';
             $kk = '';
-            
+
             if ($rang == 1) {
-                $kk = '3KK + WP';
+                $kk = '3KK';
             } elseif ($rang <= 3) {
                 $kk = 'KK';
+            }
+            if ($i === $wp) {
+                $kk = $kk !== '' ? $kk . ' + WP' : 'WP';
             }
             
             $html .= "<tr>";

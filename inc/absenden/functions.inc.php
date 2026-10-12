@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../debug_log.inc.php';
+require_once __DIR__ . '/../endschresultate/teilnehmer.inc.php'; // Teilnehmer-Quelle (Migration 094)
 //functions.inc.php - Überarbeitete Version
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Style\Cell;
@@ -58,9 +59,11 @@ function getEndstich($templateProcessor, $conn)
 {
     global $selectedYear;
     logDebug("Starte getEndstich für Jahr: " . $selectedYear);
+    // Mitglieder, Gäste und Jungschützen (Migration 094: alle in endstich, Gäste über GastID)
     $sql = "
     SELECT
-        u.ID,
+        u.Schluessel AS ID,
+        u.TeilnehmerTyp,
         u.Name,
         u.Vorname,
         u.Geburtsdatum,
@@ -68,94 +71,18 @@ function getEndstich($templateProcessor, $conn)
         u.Schuss6, u.Schuss7, u.Schuss8, u.Schuss9, u.Schuss10,
         u.Tiefschuss,
         u.Kranz_Endstich,
-        u.Endstich_Summe,
-        u.Anzahl_10
-    FROM (
-
-        /* Mitglieder */
-        SELECT
-            m.ID,
-            CONVERT(m.Name    USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Name,
-            CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Vorname,
-            m.Geburtsdatum,
-            e.Schuss1, e.Schuss2, e.Schuss3, e.Schuss4, e.Schuss5,
-            e.Schuss6, e.Schuss7, e.Schuss8, e.Schuss9, e.Schuss10,
-            e.Tiefschuss,
-            w.Kranz_Endstich,
-            COALESCE(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5
-                   + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10, 0) AS Endstich_Summe,
-            ((e.Schuss1 = 10) + (e.Schuss2 = 10) + (e.Schuss3 = 10) + (e.Schuss4 = 10) + (e.Schuss5 = 10)
-           + (e.Schuss6 = 10) + (e.Schuss7 = 10) + (e.Schuss8 = 10) + (e.Schuss9 = 10) + (e.Schuss10 = 10)) AS Anzahl_10
-        FROM mitglieder m
-        LEFT JOIN endstich e
-          ON m.ID = e.MitgliedID AND e.Jahr = ?
-        LEFT JOIN Waffen w
-          ON w.ID = m.WaffenID
-        WHERE COALESCE(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5
-                     + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10, 0) != 0
-        UNION ALL
-
-        /* JS-Gäste (Stammdaten aus endstich_gaeste, Resultate aus endstich_jung) */
-        SELECT
-            g.id AS ID,
-            CONVERT(COALESCE(g.Nachname, g.Name) USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
-            CONVERT(COALESCE(g.Vorname, '')      USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
-            COALESCE(g.Geburtsdatum, DATE('2100-01-01')) AS Geburtsdatum,
-            ej.Schuss1, ej.Schuss2, ej.Schuss3, ej.Schuss4, ej.Schuss5,
-            ej.Schuss6, ej.Schuss7, ej.Schuss8, ej.Schuss9, ej.Schuss10,
-            ej.Tiefschuss,
-            NULL AS Kranz_Endstich,
-            COALESCE(ej.Schuss1 + ej.Schuss2 + ej.Schuss3 + ej.Schuss4 + ej.Schuss5
-                   + ej.Schuss6 + ej.Schuss7 + ej.Schuss8 + ej.Schuss9 + ej.Schuss10, 0) AS Endstich_Summe,
-            ((ej.Schuss1 = 10) + (ej.Schuss2 = 10) + (ej.Schuss3 = 10) + (ej.Schuss4 = 10) + (ej.Schuss5 = 10)
-           + (ej.Schuss6 = 10) + (ej.Schuss7 = 10) + (ej.Schuss8 = 10) + (ej.Schuss9 = 10) + (ej.Schuss10 = 10)) AS Anzahl_10
-        FROM endstich_gaeste g
-        INNER JOIN endstich_jung ej
-          ON g.id = ej.JungschuetzeID AND ej.Jahr = ?
-        WHERE (g.Jahr = ? OR g.Jahr IS NULL)
-          AND COALESCE(ej.Schuss1 + ej.Schuss2 + ej.Schuss3 + ej.Schuss4 + ej.Schuss5
-                     + ej.Schuss6 + ej.Schuss7 + ej.Schuss8 + ej.Schuss9 + ej.Schuss10, 0) != 0
-        UNION ALL
-
-        /* Normale Gäste (Partner) â€“ Endstich aus endresultate_partner */
-        SELECT
-            ep.ID AS ID,
-            CONVERT(ep.PartnerName USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
-            CAST('' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
-            DATE('2100-01-01') AS Geburtsdatum, -- kein Datum -> nach hinten
-            ep.EndstichSchuss1  AS Schuss1,
-            ep.EndstichSchuss2  AS Schuss2,
-            ep.EndstichSchuss3  AS Schuss3,
-            ep.EndstichSchuss4  AS Schuss4,
-            ep.EndstichSchuss5  AS Schuss5,
-            ep.EndstichSchuss6  AS Schuss6,
-            ep.EndstichSchuss7  AS Schuss7,
-            ep.EndstichSchuss8  AS Schuss8,
-            ep.EndstichSchuss9  AS Schuss9,
-            ep.EndstichSchuss10 AS Schuss10,
-            LEAST(
-                ep.EndstichSchuss1, ep.EndstichSchuss2, ep.EndstichSchuss3, ep.EndstichSchuss4, ep.EndstichSchuss5,
-                ep.EndstichSchuss6, ep.EndstichSchuss7, ep.EndstichSchuss8, ep.EndstichSchuss9, ep.EndstichSchuss10
-            ) AS Tiefschuss,
-            NULL AS Kranz_Endstich,
-            COALESCE(
-                ep.EndstichSchuss1 + ep.EndstichSchuss2 + ep.EndstichSchuss3 + ep.EndstichSchuss4 + ep.EndstichSchuss5 +
-                ep.EndstichSchuss6 + ep.EndstichSchuss7 + ep.EndstichSchuss8 + ep.EndstichSchuss9 + ep.EndstichSchuss10
-            , 0) AS Endstich_Summe,
-            ((ep.EndstichSchuss1 = 10) + (ep.EndstichSchuss2 = 10) + (ep.EndstichSchuss3 = 10) + (ep.EndstichSchuss4 = 10) + (ep.EndstichSchuss5 = 10) +
-             (ep.EndstichSchuss6 = 10) + (ep.EndstichSchuss7 = 10) + (ep.EndstichSchuss8 = 10) + (ep.EndstichSchuss9 = 10) + (ep.EndstichSchuss10 = 10)) AS Anzahl_10
-        FROM endresultate_partner ep
-        WHERE ep.Jahr = ?
-          AND COALESCE(
-                ep.EndstichSchuss1 + ep.EndstichSchuss2 + ep.EndstichSchuss3 + ep.EndstichSchuss4 + ep.EndstichSchuss5 +
-                ep.EndstichSchuss6 + ep.EndstichSchuss7 + ep.EndstichSchuss8 + ep.EndstichSchuss9 + ep.EndstichSchuss10
-              , 0) != 0
-    ) u
+        COALESCE(u.Schuss1 + u.Schuss2 + u.Schuss3 + u.Schuss4 + u.Schuss5
+               + u.Schuss6 + u.Schuss7 + u.Schuss8 + u.Schuss9 + u.Schuss10, 0) AS Endstich_Summe,
+        ((u.Schuss1 = 10) + (u.Schuss2 = 10) + (u.Schuss3 = 10) + (u.Schuss4 = 10) + (u.Schuss5 = 10)
+       + (u.Schuss6 = 10) + (u.Schuss7 = 10) + (u.Schuss8 = 10) + (u.Schuss9 = 10) + (u.Schuss10 = 10)) AS Anzahl_10
+    FROM " . endschQuelle('endstich', ENDSCH_TYPEN_ALLE) . " u
+    WHERE COALESCE(u.Schuss1 + u.Schuss2 + u.Schuss3 + u.Schuss4 + u.Schuss5
+                 + u.Schuss6 + u.Schuss7 + u.Schuss8 + u.Schuss9 + u.Schuss10, 0) != 0
     ORDER BY
-        u.Endstich_Summe DESC,
+        Endstich_Summe DESC,
         u.Tiefschuss DESC,
-        u.Anzahl_10 DESC,
-        u.Geburtsdatum ASC
+        Anzahl_10 DESC,
+        u.Geburtsdatum ASC, u.Name ASC
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -164,8 +91,7 @@ function getEndstich($templateProcessor, $conn)
         return;
     }
 
-    // 3x Jahr: Mitglieder.endstich, Gäste.endstich_jung, Gäste.endstich_gaeste (optional via OR IS NULL abgefangen)
-$stmt->bind_param("iiii", $selectedYear, $selectedYear, $selectedYear, $selectedYear);
+    $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -263,9 +189,11 @@ function getSchwini($templateProcessor, $conn)
 {
     global $selectedYear;
     logDebug("Starte getSchwini für Jahr: " . $selectedYear);
+    // Mitglieder, Gäste und Jungschützen (Migration 094: alle in schwini, Gäste über GastID)
     $sql = "
     SELECT
         u.ID,
+        u.TeilnehmerTyp,
         u.Name,
         u.Vorname,
         u.Geburtsdatum,
@@ -278,70 +206,19 @@ function getSchwini($templateProcessor, $conn)
         CASE WHEN u.Schwini1_Summe > u.Schwini2_Summe THEN 'Passe 1' ELSE 'Passe 2' END AS Hoehere_Passe,
         CASE WHEN u.Schwini1_Summe < u.Schwini2_Summe THEN 'Passe 1' ELSE 'Passe 2' END AS Kleinere_Passe
     FROM (
-
-        /* Mitglieder */
         SELECT
-            m.ID,
-            CONVERT(m.Name    USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Name,
-            CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Vorname,
-            m.Geburtsdatum,
-            s.P1Schuss1, s.P1Schuss2, s.P1Schuss3, s.P1Schuss4, s.P1Schuss5, s.P1Schuss6,
-            s.P2Schuss1, s.P2Schuss2, s.P2Schuss3, s.P2Schuss4, s.P2Schuss5, s.P2Schuss6,
-            COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0) AS Schwini1_Summe,
-            COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0) AS Schwini2_Summe
-        FROM mitglieder m
-        LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
-        WHERE COALESCE(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6, 0) != 0
-           OR COALESCE(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6, 0) != 0
-        UNION ALL
-
-        /* Jungschützen/Gäste aus endstich_gaeste + schwini_jung */
-        SELECT
-            g.id AS ID,
-            CONVERT(g.Name    USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Name,
-            CONVERT(g.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci  AS Vorname,
-            g.Geburtsdatum,
-            sj.P1Schuss1, sj.P1Schuss2, sj.P1Schuss3, sj.P1Schuss4, sj.P1Schuss5, sj.P1Schuss6,
-            sj.P2Schuss1, sj.P2Schuss2, sj.P2Schuss3, sj.P2Schuss4, sj.P2Schuss5, sj.P2Schuss6,
-            COALESCE(sj.P1Schuss1 + sj.P1Schuss2 + sj.P1Schuss3 + sj.P1Schuss4 + sj.P1Schuss5 + sj.P1Schuss6, 0) AS Schwini1_Summe,
-            COALESCE(sj.P2Schuss1 + sj.P2Schuss2 + sj.P2Schuss3 + sj.P2Schuss4 + sj.P2Schuss5 + sj.P2Schuss6, 0) AS Schwini2_Summe
-        FROM endstich_gaeste g
-        INNER JOIN schwini_jung sj ON g.id = sj.JungschuetzeID AND sj.Jahr = ?
-        WHERE COALESCE(sj.P1Schuss1 + sj.P1Schuss2 + sj.P1Schuss3 + sj.P1Schuss4 + sj.P1Schuss5 + sj.P1Schuss6, 0) != 0
-           OR COALESCE(sj.P2Schuss1 + sj.P2Schuss2 + sj.P2Schuss3 + sj.P2Schuss4 + sj.P2Schuss5 + sj.P2Schuss6, 0) != 0
-        UNION ALL
-
-        /* Partner (12 Schüsse = 2 Passen Ã  6) */
-        SELECT
-            ep.ID AS ID,
-            CONVERT(ep.PartnerName USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
-            CAST('' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
-            '2100-01-01' AS Geburtsdatum, /* kein Geburtsdatum -> hinten einsortieren */
-            ep.PartnerSchwiniSchuss1  AS P1Schuss1,
-            ep.PartnerSchwiniSchuss2  AS P1Schuss2,
-            ep.PartnerSchwiniSchuss3  AS P1Schuss3,
-            ep.PartnerSchwiniSchuss4  AS P1Schuss4,
-            ep.PartnerSchwiniSchuss5  AS P1Schuss5,
-            ep.PartnerSchwiniSchuss6  AS P1Schuss6,
-            ep.PartnerSchwiniSchuss7  AS P2Schuss1,
-            ep.PartnerSchwiniSchuss8  AS P2Schuss2,
-            ep.PartnerSchwiniSchuss9  AS P2Schuss3,
-            ep.PartnerSchwiniSchuss10 AS P2Schuss4,
-            ep.PartnerSchwiniSchuss11 AS P2Schuss5,
-            ep.PartnerSchwiniSchuss12 AS P2Schuss6,
-            COALESCE(ep.PartnerSchwiniSchuss1 + ep.PartnerSchwiniSchuss2 + ep.PartnerSchwiniSchuss3 + ep.PartnerSchwiniSchuss4 + ep.PartnerSchwiniSchuss5 + ep.PartnerSchwiniSchuss6, 0) AS Schwini1_Summe,
-            COALESCE(ep.PartnerSchwiniSchuss7 + ep.PartnerSchwiniSchuss8 + ep.PartnerSchwiniSchuss9 + ep.PartnerSchwiniSchuss10 + ep.PartnerSchwiniSchuss11 + ep.PartnerSchwiniSchuss12, 0) AS Schwini2_Summe
-        FROM endresultate_partner ep
-        WHERE ep.Jahr = ?
-          AND (
-                COALESCE(ep.PartnerSchwiniSchuss1 + ep.PartnerSchwiniSchuss2 + ep.PartnerSchwiniSchuss3 + ep.PartnerSchwiniSchuss4 + ep.PartnerSchwiniSchuss5 + ep.PartnerSchwiniSchuss6, 0) != 0
-             OR COALESCE(ep.PartnerSchwiniSchuss7 + ep.PartnerSchwiniSchuss8 + ep.PartnerSchwiniSchuss9 + ep.PartnerSchwiniSchuss10 + ep.PartnerSchwiniSchuss11 + ep.PartnerSchwiniSchuss12, 0) != 0
-          )
+            q.Schluessel AS ID, q.TeilnehmerTyp, q.Name, q.Vorname, q.Geburtsdatum,
+            q.P1Schuss1, q.P1Schuss2, q.P1Schuss3, q.P1Schuss4, q.P1Schuss5, q.P1Schuss6,
+            q.P2Schuss1, q.P2Schuss2, q.P2Schuss3, q.P2Schuss4, q.P2Schuss5, q.P2Schuss6,
+            COALESCE(q.P1Schuss1 + q.P1Schuss2 + q.P1Schuss3 + q.P1Schuss4 + q.P1Schuss5 + q.P1Schuss6, 0) AS Schwini1_Summe,
+            COALESCE(q.P2Schuss1 + q.P2Schuss2 + q.P2Schuss3 + q.P2Schuss4 + q.P2Schuss5 + q.P2Schuss6, 0) AS Schwini2_Summe
+        FROM " . endschQuelle('schwini', ENDSCH_TYPEN_ALLE) . " q
     ) u
+    WHERE u.Schwini1_Summe != 0 OR u.Schwini2_Summe != 0
     ORDER BY
         Hoechste_Summe DESC,
         Tiefste_Summe ASC,
-        u.Geburtsdatum ASC
+        u.Geburtsdatum ASC, u.Name ASC
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -350,8 +227,7 @@ function getSchwini($templateProcessor, $conn)
         return;
     }
 
-    // drei Jahres-Parameter: Mitglieder, Gäste/Jungschützen, Partner
-    $stmt->bind_param("iii", $selectedYear, $selectedYear, $selectedYear);
+    $stmt->bind_param("i", $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -411,35 +287,32 @@ function getZabig($templateProcessor, $conn)
     logDebug("Starte getZabig für Jahr: " . $selectedYear);
 
     // Vereinfachte SQL ohne die langen CASE-Statements
+    // Mitglieder und Gäste (Migration 094: Gäste über GastID; Jungschützen stehen in ihrer eigenen Liste)
     $sql = "
         SELECT
-            m.ID,
-            m.Name,
-            m.Vorname,
-            m.Geburtsdatum,
-            z.ZSchuss1,
-            z.ZSchuss2,
-            z.ZSchuss3,
-            z.ZSchuss4,
-            z.ZSchuss5,
-            z.ZSchuss6,
+            u.Schluessel AS ID,
+            u.TeilnehmerTyp,
+            u.Name,
+            u.Vorname,
+            u.Geburtsdatum,
+            u.ZSchuss1,
+            u.ZSchuss2,
+            u.ZSchuss3,
+            u.ZSchuss4,
+            u.ZSchuss5,
+            u.ZSchuss6,
             GREATEST(
-                COALESCE(z.ZSchuss1, 0),
-                COALESCE(z.ZSchuss2, 0),
-                COALESCE(z.ZSchuss3, 0),
-                COALESCE(z.ZSchuss4, 0),
-                COALESCE(z.ZSchuss5, 0),
-                COALESCE(z.ZSchuss6, 0)
+                COALESCE(u.ZSchuss1, 0),
+                COALESCE(u.ZSchuss2, 0),
+                COALESCE(u.ZSchuss3, 0),
+                COALESCE(u.ZSchuss4, 0),
+                COALESCE(u.ZSchuss5, 0),
+                COALESCE(u.ZSchuss6, 0)
             ) AS TS
-        FROM
-            mitglieder m
-        LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
-        LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE z.ZSchuss1 != 0
-        GROUP BY
-            m.ID, m.Vorname, m.Name, m.Geburtsdatum
+        FROM " . endschQuelle('zabig', ENDSCH_TYPEN_MITGLIED_GAST) . " u
+        WHERE u.ZSchuss1 != 0
         ORDER BY
-            m.Geburtsdatum ASC
+            u.Geburtsdatum ASC
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -524,34 +397,31 @@ function getGlueck($templateProcessor, $conn, $textRun)
 {
     global $selectedYear;
     logDebug("Starte getGlueck für Jahr: " . $selectedYear);
+    // Mitglieder und Gäste (Migration 094: Gäste über GastID)
     $sql = "
         SELECT
-            m.ID,
-            m.Name,
-            m.Vorname,
-            m.Geburtsdatum,
-            g.GSchuss1,
-            g.GSchuss2,
-            g.GSchuss3,
-            GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3) AS MaxGlueck,
+            u.Schluessel AS ID,
+            u.TeilnehmerTyp,
+            u.Name,
+            u.Vorname,
+            u.Geburtsdatum,
+            u.GSchuss1,
+            u.GSchuss2,
+            u.GSchuss3,
+            GREATEST(u.GSchuss1, u.GSchuss2, u.GSchuss3) AS MaxGlueck,
             LEAST(
-                GREATEST(g.GSchuss1, g.GSchuss2),
-                GREATEST(g.GSchuss1, g.GSchuss3),
-                GREATEST(g.GSchuss2, g.GSchuss3)
+                GREATEST(u.GSchuss1, u.GSchuss2),
+                GREATEST(u.GSchuss1, u.GSchuss3),
+                GREATEST(u.GSchuss2, u.GSchuss3)
             ) AS Zwei,
-            LEAST(g.GSchuss1, g.GSchuss2, g.GSchuss3) AS Drei
-        FROM
-            mitglieder m
-        LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = ?
-        LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE g.GSchuss1 != 0
-        GROUP BY
-            m.ID, m.Vorname, m.Name, m.Geburtsdatum
+            LEAST(u.GSchuss1, u.GSchuss2, u.GSchuss3) AS Drei
+        FROM " . endschQuelle('glueck', ENDSCH_TYPEN_MITGLIED_GAST) . " u
+        WHERE u.GSchuss1 != 0
         ORDER BY
             MaxGlueck DESC,
             Zwei DESC,
             Drei DESC,
-            m.Geburtsdatum ASC
+            u.Geburtsdatum ASC, u.Name ASC
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -597,40 +467,37 @@ function getKunst($templateProcessor, $conn)
 {
     global $selectedYear;
     logDebug("Starte getKunst für Jahr: " . $selectedYear);
+    // Mitglieder und Gäste (Migration 094: Gäste über GastID, Kranzlimite nach ihrer Waffe)
     $sql = "
         SELECT
-            m.ID,
-            m.Name,
-            m.Vorname,
-            m.Geburtsdatum,
-            k.KSchuss1,
-            k.KSchuss2,
-            k.KSchuss3,
-            k.KSchuss4,
-            k.KSchuss5,
-            w.Kranz_Kunst,
+            u.Schluessel AS ID,
+            u.TeilnehmerTyp,
+            u.Name,
+            u.Vorname,
+            u.Geburtsdatum,
+            u.KSchuss1,
+            u.KSchuss2,
+            u.KSchuss3,
+            u.KSchuss4,
+            u.KSchuss5,
+            u.Kranz_Kunst,
             COALESCE(
-                k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5, 
+                u.KSchuss1 + u.KSchuss2 + u.KSchuss3 + u.KSchuss4 + u.KSchuss5, 
                 0
             ) AS Kunst_Summe,
             GREATEST(
-                COALESCE(k.KSchuss1, 0),
-                COALESCE(k.KSchuss2, 0),
-                COALESCE(k.KSchuss3, 0),
-                COALESCE(k.KSchuss4, 0),
-                COALESCE(k.KSchuss5, 0)
+                COALESCE(u.KSchuss1, 0),
+                COALESCE(u.KSchuss2, 0),
+                COALESCE(u.KSchuss3, 0),
+                COALESCE(u.KSchuss4, 0),
+                COALESCE(u.KSchuss5, 0)
             ) AS TS
-        FROM
-            mitglieder m
-        LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = ?
-        LEFT JOIN Waffen w ON w.ID = m.WaffenID
-        WHERE k.KSchuss1 IS NOT NULL AND k.KSchuss1 != 0
-        GROUP BY
-            m.ID, m.Name, m.Vorname, m.Geburtsdatum, k.KSchuss1, k.KSchuss2, k.KSchuss3, k.KSchuss4, k.KSchuss5, w.Kranz_Kunst
+        FROM " . endschQuelle('kunst', ENDSCH_TYPEN_MITGLIED_GAST) . " u
+        WHERE u.KSchuss1 IS NOT NULL AND u.KSchuss1 != 0
         ORDER BY
             Kunst_Summe DESC,
             TS DESC,
-            m.Geburtsdatum ASC
+            u.Geburtsdatum ASC, u.Name ASC
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -658,10 +525,12 @@ function getKunst($templateProcessor, $conn)
     }
     $templateProcessor->cloneRow('KRang', $rowCount);
     $currentRow = 1;
-    foreach ($data as $row) {
+    $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder
+    foreach ($data as $idx => $row) {
         $keys = array_keys($row);
         $schussKeys = preg_grep('/^KSchuss\d+$/', $keys);
         $scount = count($schussKeys);
+        $mitWp = fn(string $kk) => $idx === $wp ? ($kk !== '' ? $kk . ' + WP' : 'WP') : $kk;
         if ($currentRow <= 3) {
             $templateProcessor->setValue("KRang#{$currentRow}", formatBold($currentRow . '.'));
             $templateProcessor->setValue("KName#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
@@ -671,11 +540,7 @@ function getKunst($templateProcessor, $conn)
                 $templateProcessor->setValue("KS$i#{$currentRow}", formatBold($value));
             }
             $templateProcessor->setValue("KT#{$currentRow}", formatBold($row['Kunst_Summe']));
-            if ($currentRow == 1) {
-                $templateProcessor->setValue("KKK#{$currentRow}", formatBold('KK + WP'));
-            } else {
-                $templateProcessor->setValue("KKK#{$currentRow}", formatBold('KK'));
-            }
+            $templateProcessor->setValue("KKK#{$currentRow}", formatBold($mitWp('KK')));
         } else {
             $templateProcessor->setValue("KRang#{$currentRow}", $currentRow . ".");
             $templateProcessor->setValue("KName#{$currentRow}", $row['Name'] . " " . $row['Vorname']);
@@ -685,11 +550,7 @@ function getKunst($templateProcessor, $conn)
                 $templateProcessor->setValue("KS$i#{$currentRow}", $value);
             }
             $templateProcessor->setValue("KT#{$currentRow}", $row['Kunst_Summe']);
-            if ($row['Kunst_Summe'] >= $row['Kranz_Kunst']) {
-                $templateProcessor->setValue("KKK#{$currentRow}", "KK");
-            } else {
-                $templateProcessor->setValue("KKK#{$currentRow}", "");
-            }
+            $templateProcessor->setValue("KKK#{$currentRow}", $mitWp($row['Kunst_Summe'] >= $row['Kranz_Kunst'] ? 'KK' : ''));
         }
         $currentRow++;
     }
@@ -767,6 +628,49 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
         }
     }
 
+    // Gäste (ohne Jungschützen) nur in Kat. B und nur, wenn sie alle fünf Stiche geschossen haben (Migration 094)
+    if ($kat === 'Kat. B') {
+        $sqlGast = "
+            SELECT
+                'gast' AS TeilnehmerTyp,
+                ga.name AS Name,
+                '' AS Vorname,
+                '2100-01-01' AS Geburtsdatum,
+                COALESCE(ROUND(GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3)/10,1), 0) AS GlueckTotal,
+                (e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10) AS EndstichTotal,
+                ROUND((k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1) AS KunstTotal,
+                GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                        s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) AS MaxSchwini,
+                z.ZSchuss1, z.ZSchuss2, z.ZSchuss3, z.ZSchuss4, z.ZSchuss5, z.ZSchuss6
+            FROM endstich_gaeste ga
+            INNER JOIN endstich e ON e.GastID = ga.id AND e.Jahr = ga.jahr AND e.Schuss1 != 0
+            INNER JOIN schwini s ON s.GastID = ga.id AND s.Jahr = ga.jahr
+            INNER JOIN kunst k ON k.GastID = ga.id AND k.Jahr = ga.jahr AND (k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) > 0
+            INNER JOIN glueck g ON g.GastID = ga.id AND g.Jahr = ga.jahr AND GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3) > 0
+            INNER JOIN zabig z ON z.GastID = ga.id AND z.Jahr = ga.jahr AND (z.ZSchuss1 + z.ZSchuss2 + z.ZSchuss3 + z.ZSchuss4 + z.ZSchuss5 + z.ZSchuss6) > 0
+            WHERE ga.jahr = ? AND ga.geburtsdatum IS NULL
+              AND GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                           s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) > 0
+        ";
+        $stGast = $conn->prepare($sqlGast);
+        if ($stGast) {
+            $stGast->bind_param("i", $selectedYear);
+            $stGast->execute();
+            foreach ($stGast->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+                $zabigTotal = 0;
+                for ($i = 1; $i <= 6; $i++) {
+                    $zabigTotal += calculatePoints($row['ZSchuss' . $i] ?? 0);
+                }
+                $row['ZabigTotal'] = $zabigTotal;
+                $row['GesamtTotal'] = $row['EndstichTotal'] + $row['GlueckTotal'] + $zabigTotal + $row['KunstTotal'] + $row['MaxSchwini'];
+                $data[] = $row;
+            }
+            $stGast->close();
+        } else {
+            logFehler("SQL-Fehler in getEndschGesamt (Gäste) prepare: " . $conn->error);
+        }
+    }
+
     // Sortiere nach GesamtTotal DESC, EndstichTotal DESC, Geburtsdatum ASC
     usort($data, function($a, $b) {
         if ($a['GesamtTotal'] != $b['GesamtTotal']) {
@@ -775,7 +679,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
         if ($a['EndstichTotal'] != $b['EndstichTotal']) {
             return $b['EndstichTotal'] <=> $a['EndstichTotal'];
         }
-        return strcmp($a['Geburtsdatum'], $b['Geburtsdatum']);
+        return strcmp((string)$a['Geburtsdatum'], (string)$b['Geburtsdatum']);
     });
     $rowCount = count($data);
     $kategorie = "E" . trim(strrchr($kat, ' '));
@@ -786,7 +690,8 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
     }
     $templateProcessor->cloneRow($kategorie . 'Rang', $rowCount);
     $currentRow = 1;
-    foreach ($data as $row) {
+    $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder
+    foreach ($data as $idx => $row) {
         if ($currentRow <= 3) {
             $templateProcessor->setValue($kategorie . "Rang#{$currentRow}", formatBold($currentRow . '.'));
             $templateProcessor->setValue($kategorie . "Name#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
@@ -796,11 +701,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
             $templateProcessor->setValue($kategorie . "G#{$currentRow}", formatBold($row['GlueckTotal']));
             $templateProcessor->setValue($kategorie . "K#{$currentRow}", formatBold($row['KunstTotal']));
             $templateProcessor->setValue($kategorie . "T#{$currentRow}", formatBold(fmt1($row['GesamtTotal'])));
-            if ($currentRow == 1) {
-                $templateProcessor->setValue($kategorie . "KK#{$currentRow}", formatBold('WP + KK'));
-            } else {
-                $templateProcessor->setValue($kategorie . "KK#{$currentRow}", formatBold('KK'));
-            }
+            $templateProcessor->setValue($kategorie . "KK#{$currentRow}", formatBold($idx === $wp ? 'WP + KK' : 'KK'));
         } else {
             $templateProcessor->setValue($kategorie . "Rang#{$currentRow}", $currentRow . ".");
             $templateProcessor->setValue($kategorie . "Name#{$currentRow}", $row['Name'] . " " . $row['Vorname']);
@@ -810,7 +711,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
             $templateProcessor->setValue($kategorie . "G#{$currentRow}", $row['GlueckTotal']);
             $templateProcessor->setValue($kategorie . "K#{$currentRow}", $row['KunstTotal']);
             $templateProcessor->setValue($kategorie . "T#{$currentRow}", fmt1($row['GesamtTotal']));
-            $templateProcessor->setValue($kategorie . "KK#{$currentRow}", '');
+            $templateProcessor->setValue($kategorie . "KK#{$currentRow}", $idx === $wp ? 'WP' : '');
         }
         $currentRow++;
     }
@@ -827,7 +728,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     $checkSql = "
         SELECT COUNT(*) as count
         FROM endstich_gaeste g
-        LEFT JOIN endstich_jung e ON g.id = e.JungschuetzeID AND e.Jahr = ?
+        LEFT JOIN endstich e ON g.id = e.GastID AND e.Jahr = ?   -- Migration 094: Resultate über GastID
         WHERE g.geburtsdatum IS NOT NULL
           AND g.jahr = ?
           AND e.Schuss1 != 0 AND e.Schuss1 IS NOT NULL
@@ -897,9 +798,9 @@ function getJungschuetzenResultate($templateProcessor, $conn)
             z.ZSchuss1, z.ZSchuss2, z.ZSchuss3, z.ZSchuss4, z.ZSchuss5, z.ZSchuss6
         FROM
             endstich_gaeste g
-        LEFT JOIN endstich_jung e ON g.id = e.JungschuetzeID AND e.Jahr = ?
-        LEFT JOIN schwini_jung s ON g.id = s.JungschuetzeID AND s.Jahr = ?
-        LEFT JOIN zabig_jung z ON g.id = z.JungschuetzeID AND z.Jahr = ?
+        LEFT JOIN endstich e ON g.id = e.GastID AND e.Jahr = ?
+        LEFT JOIN schwini s ON g.id = s.GastID AND s.Jahr = ?
+        LEFT JOIN zabig z ON g.id = z.GastID AND z.Jahr = ?
         WHERE
             g.geburtsdatum IS NOT NULL
             AND g.jahr = ?
@@ -1017,28 +918,14 @@ function getPartnerResultate($templateProcessor, $conn)
     global $selectedYear;
     logDebug("Starte getPartnerResultate für Jahr: " . $selectedYear);
 
+    // Partnerinnen = Gäste ohne Geburtsdatum und als Partner markierte Mitglieder (zentral, Migration 094/096)
+    $partnerQuelle = endschPartnerQuelle();
+
     // Erst prüfen ob überhaupt Partner-Daten vorhanden sind
-    $checkSql = "
-        SELECT COUNT(*) as count
-        FROM mitglieder m
-        INNER JOIN endresultate_partner ep ON m.ID = ep.MitgliedID
-        WHERE ep.Jahr = ?
-          AND ((COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
-                COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
-                COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
-                COALESCE(ep.EndstichSchuss10, 0)) > 0
-               OR GREATEST(
-                   (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
-                   (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
-               ) > 0)
-    ";
+    $checkSql = "SELECT COUNT(*) as count FROM ($partnerQuelle) p WHERE p.Endstich_Summe > 0 OR p.Schwini_Passe1 > 0 OR p.Schwini_Passe2 > 0";
     $checkStmt = $conn->prepare($checkSql);
     if ($checkStmt) {
-        $checkStmt->bind_param("i", $selectedYear);
+        $checkStmt->bind_param("ii", $selectedYear, $selectedYear);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
         $checkRow = $checkResult->fetch_assoc();
@@ -1075,57 +962,11 @@ function getPartnerResultate($templateProcessor, $conn)
 
     // Ab hier der normale Code wenn Daten vorhanden sind
     $sql = "
-        SELECT
-            m.ID,
-            m.Name,
-            m.Vorname,
-            ep.PartnerName,
-            ep.EndstichSchuss1, ep.EndstichSchuss2, ep.EndstichSchuss3, ep.EndstichSchuss4, ep.EndstichSchuss5,
-            ep.EndstichSchuss6, ep.EndstichSchuss7, ep.EndstichSchuss8, ep.EndstichSchuss9, ep.EndstichSchuss10,
-            ep.PartnerSchwiniSchuss1, ep.PartnerSchwiniSchuss2, ep.PartnerSchwiniSchuss3,
-            ep.PartnerSchwiniSchuss4, ep.PartnerSchwiniSchuss5, ep.PartnerSchwiniSchuss6,
-            ep.PartnerSchwiniSchuss7, ep.PartnerSchwiniSchuss8, ep.PartnerSchwiniSchuss9,
-            ep.PartnerSchwiniSchuss10, ep.PartnerSchwiniSchuss11, ep.PartnerSchwiniSchuss12,
-            (COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
-             COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
-             COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
-             COALESCE(ep.EndstichSchuss10, 0)) AS Endstich_Summe,
-            GREATEST(
-                (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-                 COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-                 COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
-                (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
-                 COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
-                 COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
-            ) AS PartnerSchwini_Summe,
-            ((COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
-              COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
-              COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
-              COALESCE(ep.EndstichSchuss10, 0)) +
-             GREATEST(
-                 (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-                  COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-                  COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
-                 (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
-                  COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
-                  COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
-             )) AS Total_Summe
-        FROM mitglieder m
-        INNER JOIN endresultate_partner ep ON m.ID = ep.MitgliedID
-        WHERE ep.Jahr = ?
-          AND ((COALESCE(ep.EndstichSchuss1, 0) + COALESCE(ep.EndstichSchuss2, 0) + COALESCE(ep.EndstichSchuss3, 0) +
-                COALESCE(ep.EndstichSchuss4, 0) + COALESCE(ep.EndstichSchuss5, 0) + COALESCE(ep.EndstichSchuss6, 0) +
-                COALESCE(ep.EndstichSchuss7, 0) + COALESCE(ep.EndstichSchuss8, 0) + COALESCE(ep.EndstichSchuss9, 0) +
-                COALESCE(ep.EndstichSchuss10, 0)) > 0
-               OR GREATEST(
-                   (COALESCE(ep.PartnerSchwiniSchuss1, 0) + COALESCE(ep.PartnerSchwiniSchuss2, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss3, 0) + COALESCE(ep.PartnerSchwiniSchuss4, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss5, 0) + COALESCE(ep.PartnerSchwiniSchuss6, 0)),
-                   (COALESCE(ep.PartnerSchwiniSchuss7, 0) + COALESCE(ep.PartnerSchwiniSchuss8, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss9, 0) + COALESCE(ep.PartnerSchwiniSchuss10, 0) +
-                    COALESCE(ep.PartnerSchwiniSchuss11, 0) + COALESCE(ep.PartnerSchwiniSchuss12, 0))
-               ) > 0)
-        ORDER BY Total_Summe DESC, Endstich_Summe DESC, m.Name ASC, m.Vorname ASC
+        SELECT p.*, GREATEST(p.Schwini_Passe1, p.Schwini_Passe2) AS PartnerSchwini_Summe,
+               p.Endstich_Summe + GREATEST(p.Schwini_Passe1, p.Schwini_Passe2) AS Total_Summe
+        FROM ($partnerQuelle) p
+        WHERE p.Endstich_Summe > 0 OR p.Schwini_Passe1 > 0 OR p.Schwini_Passe2 > 0
+        ORDER BY Total_Summe DESC, p.Endstich_Summe DESC, p.PartnerName ASC
     ";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -1133,7 +974,7 @@ function getPartnerResultate($templateProcessor, $conn)
         $templateProcessor->cloneRow('PRang', 0);
         return;
     }
-    $stmt->bind_param("i", $selectedYear);
+    $stmt->bind_param("ii", $selectedYear, $selectedYear);
     $stmt->execute();
     $result = $stmt->get_result();
 

@@ -84,7 +84,7 @@ include 'header.inc.php';
                     </div>
                     <ul class="es-abs-liste" id="absListe" aria-label="Prüfliste">
                         <li data-pruefung="stiche"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Stiche werden geprüft</span></li>
-                        <li data-pruefung="partner"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Partnerinnen werden geprüft</span></li>
+                        <li data-pruefung="partner"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Sie und Er wird geprüft</span></li>
                         <li data-pruefung="wanderpreise"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Wanderpreise werden geprüft</span></li>
                     </ul>
                 </section>
@@ -348,8 +348,9 @@ $(document).ready(function () {
     generatePDF('sieer-btn', 'generate_pdf_sieer.php', 'Rangliste Sie und Er');
 
     // ===== Absenden vorbereiten: Prüfliste =====
-    // Offene Stiche und Partnerinnen zählt sie aus den Ladern der Erfassungsseiten (dieselbe Regel wie dort:
-    // «offen», solange ein gelöster Stich kein Resultat hat), die Wanderpreise aus endschrang/absenden_bereit.php.
+    // Offene Stiche und Sie-und-Er-Paare zählt sie aus dem Lader der Erfassungsseite (dieselbe Regel wie dort:
+    // «offen», solange ein gelöster Stich kein Resultat hat; Sie und Er braucht eine verknüpfte Partnerin bzw. einen
+    // verknüpften Partner, data-su="ohne-partner"), die Wanderpreise aus endschrang/absenden_bereit.php.
     function absZeile(key, zustand, text, link) {
         const label = { ok: 'erledigt', offen: 'offen', leer: 'nichts zu tun', fehler: 'nicht geprüft' }[zustand];
         $('#absListe li[data-pruefung="' + key + '"]').html(
@@ -360,7 +361,8 @@ $(document).ready(function () {
     }
     function zeilenZaehlen(html) {
         const doc = new DOMParser().parseFromString('<table><tbody>' + html + '</tbody></table>', 'text/html');
-        return { total: doc.querySelectorAll('tr[data-stand]').length, offen: doc.querySelectorAll('tr[data-stand="offen"]').length };
+        return { total: doc.querySelectorAll('tr[data-stand]').length, offen: doc.querySelectorAll('tr[data-stand="offen"]').length,
+                 ohnePartner: doc.querySelectorAll('tr[data-su="ohne-partner"]').length };
     }
     async function absendenPruefen() {
         const jahr = $('#yearSelect').val();
@@ -372,9 +374,8 @@ $(document).ready(function () {
     async function absendenPruefenJahr(jahr) {
         $('#absStand').html('<span class="ui-status"><span class="ui-punkt"></span>wird geprüft …</span>');
         const q = { year: jahr };
-        const [end, part, wp] = await Promise.allSettled([
+        const [end, wp] = await Promise.allSettled([
             $.get('endschresultate/load_endschresultate.php', q),
-            $.get('endresultate_partner/load_partner_resultate.php', q),
             $.getJSON('endschrang/absenden_bereit.php', q)
         ]);
         if (jahr !== $('#yearSelect').val()) return; // inzwischen ein anderes Jahr gewählt
@@ -382,15 +383,14 @@ $(document).ready(function () {
         if (end.status === 'fulfilled') {
             const n = zeilenZaehlen(end.value);
             z.push(n.total === 0 ? absZeile('stiche', 'leer', 'Für ' + jahr + ' sind keine Stiche gelöst.')
-                : n.offen === 0 ? absZeile('stiche', 'ok', 'Alle gelösten Stiche sind erfasst (' + n.total + ' Mitglieder).')
-                : absZeile('stiche', 'offen', n.offen + ' von ' + n.total + ' Mitgliedern haben noch offene Stiche.', { href: 'endresultate.php?year=' + jahr, text: 'Zur Erfassung' }));
-        } else z.push(absZeile('stiche', 'fehler', 'Die Stiche konnten nicht geprüft werden.'));
-        if (part.status === 'fulfilled') {
-            const n = zeilenZaehlen(part.value);
-            z.push(n.total === 0 ? absZeile('partner', 'leer', 'Für ' + jahr + ' sind keine Partnerinnen gemeldet.')
-                : n.offen === 0 ? absZeile('partner', 'ok', 'Alle Partnerinnen sind erfasst (' + n.total + ').')
-                : absZeile('partner', 'offen', n.offen + ' von ' + n.total + ' Partnerinnen haben noch kein Resultat.', { href: 'endresultate_partner.php?year=' + jahr, text: 'Zu den Partnerinnen' }));
-        } else z.push(absZeile('partner', 'fehler', 'Die Partnerinnen konnten nicht geprüft werden.'));
+                : n.offen === 0 ? absZeile('stiche', 'ok', 'Alle gelösten Stiche sind erfasst (' + n.total + ' Teilnehmer).')
+                : absZeile('stiche', 'offen', n.offen + ' von ' + n.total + ' Teilnehmern haben noch offene Stiche.', { href: 'endresultate.php?year=' + jahr, text: 'Zur Erfassung' }));
+            z.push(n.ohnePartner === 0 ? absZeile('partner', 'ok', 'Alle Sie-und-Er-Schützen sind mit ihrer Partnerin bzw. ihrem Partner verknüpft.')
+                : absZeile('partner', 'offen', (n.ohnePartner === 1 ? '1 Person mit Sie und Er ist' : n.ohnePartner + ' Personen mit Sie und Er sind') + ' noch mit niemandem verknüpft.', { href: 'endresultate.php?year=' + jahr, text: 'Zur Erfassung' }));
+        } else {
+            z.push(absZeile('stiche', 'fehler', 'Die Stiche konnten nicht geprüft werden.'));
+            z.push(absZeile('partner', 'fehler', 'Sie und Er konnte nicht geprüft werden.'));
+        }
         const w = wp.status === 'fulfilled' && wp.value && wp.value.success ? wp.value.wanderpreise : null;
         z.push(!w ? absZeile('wanderpreise', 'fehler', 'Die Wanderpreise konnten nicht geprüft werden.')
             : w.total === 0 ? absZeile('wanderpreise', 'leer', 'Keine Wanderpreise im Umlauf.')

@@ -19,6 +19,16 @@ $page_specific_css = "
 #mitgliederTabelle tbody tr.hybrid-row { cursor: pointer; }
 #mitgliederTabelle tbody tr.hybrid-row:hover > td { background: var(--ui-flaeche-2); }
 #mitgliederTabelle tbody tr.ui-leer td { height: auto; padding: 32px 16px; text-align: center; color: var(--ui-text-2); white-space: normal; cursor: default; }
+/* Gäste und Jungschützen (seit Migration 094 in derselben Liste) – gleiche Marke wie auf «Stiche lösen» */
+.typ-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); color: var(--ui-text-2); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: middle; }
+.typ-badge.js { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
+/* Sie und Er: Partnerwahl und Schüsse der Partnerin/des Partners (nur Anzeige) */
+#sieunderSchuesse .su-partner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+#sieunderSchuesse .su-partner label { margin: 0; font-size: .85rem; color: var(--ui-text-2); }
+#sieunderSchuesse .su-partner select { width: auto; min-width: 220px; max-width: 100%; }
+#sieunderSchuesse .su-partner-schuesse { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: .85rem; color: var(--ui-text-2); }
+#sieunderSchuesse .su-schuss { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 26px; padding: 0 6px; border: 1px solid var(--ui-linie); border-radius: 6px; background: var(--ui-flaeche-2); color: var(--ui-text); font-weight: 600; }
+#sieunderSchuesse .su-schuss.is-dup { text-decoration: line-through; color: var(--ui-fehler); }
 
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
@@ -60,7 +70,7 @@ $csrf = csrf_token();
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="ui-tab-kopf">
-                        <span class="ui-tab-titel">Mitglieder</span>
+                        <span class="ui-tab-titel">Teilnehmer</span>
                         <div class="ui-filter" role="group" aria-label="Nach Stand filtern">
                             <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="nAlle">0</span></button>
                             <button type="button" data-filter="offen" aria-pressed="false">Offen <span id="nOffen">0</span></button>
@@ -68,18 +78,18 @@ $csrf = csrf_token();
                         </div>
                         <label class="ui-suche d-none d-md-flex">
                             <i class="bi bi-search" aria-hidden="true"></i>
-                            <span class="visually-hidden">Mitglied suchen</span>
-                            <input type="search" id="endSuche" placeholder="Mitglied suchen" autocomplete="off">
+                            <span class="visually-hidden">Name suchen</span>
+                            <input type="search" id="endSuche" placeholder="Name suchen" autocomplete="off">
                         </label>
                     </div>
 
                     <!-- Desktop: Tabelle -->
                     <div class="desktop-table-container">
-                        <div class="ui-scroll end-scroll" id="endScroll" tabindex="0" data-zeilen-tastatur aria-label="Mitglieder. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
+                        <div class="ui-scroll end-scroll" id="endScroll" tabindex="0" data-zeilen-tastatur aria-label="Teilnehmer. Mit den Pfeiltasten wählen, Enter öffnet die Erfassung.">
                             <table class="table mb-0" id="mitgliederTabelle">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Mitglied</th>
+                                        <th scope="col">Teilnehmer</th>
                                         <th scope="col">Endstich</th>
                                         <th scope="col">Schwini</th>
                                         <th scope="col">Kunst</th>
@@ -104,7 +114,7 @@ $csrf = csrf_token();
                         <div class="mobile-search">
                             <div class="position-relative">
                                 <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control" placeholder="Mitglied suchen..."
+                                <input type="text" class="form-control" placeholder="Name suchen..."
                                        oninput="filterMobileEnd(this)">
                             </div>
                         </div>
@@ -137,10 +147,10 @@ $csrf = csrf_token();
             <small class="panel-pos" id="panelSubtitle"></small>
         </div>
         <div class="d-flex align-items-center gap-1 ms-auto">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorheriges Mitglied" aria-label="Vorheriges Mitglied">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelPrev" data-tooltip="Vorherige Person" aria-label="Vorherige Person">
                 <i class="bi bi-chevron-up" aria-hidden="true"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächstes Mitglied" aria-label="Nächstes Mitglied">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="panelNext" data-tooltip="Nächste Person" aria-label="Nächste Person">
                 <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary" id="panelClose" data-tooltip="Schliessen (Esc)" aria-label="Schliessen (Esc)">
@@ -150,7 +160,7 @@ $csrf = csrf_token();
     </div>
 
     <div class="panel-body" id="panelBody">
-        <input type="hidden" id="mitgliedID" name="mitgliedID">
+        <input type="hidden" id="teilnehmer" name="teilnehmer">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
         <!-- Endstich -->
@@ -255,25 +265,31 @@ $csrf = csrf_token();
         <!-- Sie und Er -->
         <div class="shot-section" id="sieunderSchuesse" data-stich="SIEUNDER">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">Schüsse 6–10, Mitglied</span> <button type="button" class="btn-help" data-help="endresultate.sieunder" aria-label="Hilfe"></button></span>
+                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">fünf eigene Schüsse</span> <button type="button" class="btn-help" data-help="endresultate.sieunder" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
-                <span class="shot-total" id="uniqueTotal" data-tooltip="Total der eindeutigen Werte">0</span>
+                <span class="shot-total" id="uniqueTotal" data-tooltip="Total des Paars: jeder Wert zählt einmal">0</span>
             </div>
             <div class="shot-section-body">
                 <div class="shot-grid">
-                    <?php for ($i=6; $i<=10; $i++): ?>
+                    <?php for ($i=1; $i<=5; $i++): ?>
                     <input type="number"
                            class="shot-input shot-input-dec sie-er-schuss sie-er-mitglied focusable-input"
                            id="SieErSchuss<?= $i ?>"
                            name="SieErSchuss<?= $i ?>" aria-label="Sie und Er Schuss <?= $i ?>"
                            data-position="<?= $i ?>"
-                           data-source="mitglied"
                            min="0" max="10"
                            placeholder="<?= $i ?>"
                            inputmode="numeric">
                     <?php endfor; ?>
                 </div>
-                <div class="shot-hint mt-2">Zusammen mit den Schüssen 1–5 der Partnerin. Jeder Wert zählt nur einmal, Doppelte sind rot durchgestrichen.</div>
+                <div class="su-partner">
+                    <label for="SieUnderPartner">Partnerin / Partner</label>
+                    <select class="form-select form-select-sm focusable-input" id="SieUnderPartner" name="SieUnderPartner">
+                        <option value="">– noch nicht gewählt –</option>
+                    </select>
+                </div>
+                <div class="su-partner-schuesse" id="suPartnerSchuesse" hidden></div>
+                <div class="shot-hint mt-2">Zur Auswahl steht, wer Sie und Er gelöst hat – Mitglied oder Gast. Die Verknüpfung gilt für beide. Jeder Wert zählt im Paar nur einmal, Doppelte sind rot durchgestrichen.</div>
             </div>
         </div>
 
@@ -297,11 +313,24 @@ $csrf = csrf_token();
                 </div>
             </div>
         </div>
+
+        <!-- Partner-Rangliste: Mitglied zusätzlich aufführen (nur Mitglieder, Migration 096) -->
+        <div class="shot-section" id="partnerrangSection" hidden>
+            <div class="shot-section-head">
+                <span class="shot-section-title"><i class="bi bi-person-heart"></i>Partner-Rangliste <button type="button" class="btn-help" data-help="endresultate.partnerrang" aria-label="Hilfe"></button></span>
+            </div>
+            <div class="shot-section-body">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="Partnerrang" name="Partnerrang" value="1">
+                    <label class="form-check-label" for="Partnerrang">Als Partnerin bzw. Partner zusätzlich in der Partner-Rangliste aufführen</label>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="panel-footer">
         <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler" id="panelFehler" role="alert" hidden></div>
         <div class="d-flex gap-2 w-100 align-items-center">
-            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn" data-tooltip="Resultate dieses Mitglieds löschen" aria-label="Resultate dieses Mitglieds löschen">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="panelDeleteBtn" data-tooltip="Resultate dieser Person löschen" aria-label="Resultate dieser Person löschen">
                 <i class="bi bi-trash" aria-hidden="true"></i>
             </button>
             <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> nächstes offenes</span>
@@ -322,7 +351,8 @@ $(document).ready(function() {
     //  EndEditPanel – Slide-Panel Steuerung
     // =========================================
     const EndEditPanel = {
-        currentMitgliedId: null,
+        currentKey: null,          // Teilnehmer-Schlüssel m<ID> (Mitglied) bzw. g<ID> (Gast/Jungschütze)
+        sieUnder: null,            // Kandidaten und Schüsse für Sie und Er (aus load_schussdaten)
         allRows: [],
         currentIndex: -1,
         _loadingXhr: null,
@@ -345,9 +375,9 @@ $(document).ready(function() {
 
         versucheSchliessen() { this.schuetze(() => this.close()); },
 
-        open(mitgliedId) {
-            this.currentMitgliedId = mitgliedId;
-            this.currentIndex = this.allRows.findIndex(r => r.id == mitgliedId);
+        open(key) {
+            this.currentKey = key;
+            this.currentIndex = this.allRows.findIndex(r => r.id === key);
 
             // Zeile markieren
             $('.hybrid-row').removeClass('selected');
@@ -358,18 +388,18 @@ $(document).ready(function() {
             }
 
             // Titel setzen
-            const name = this.currentIndex >= 0
-                ? $(this.allRows[this.currentIndex].tr).find('td:first').text().trim()
-                : '';
+            const zeile = this.currentIndex >= 0 ? this.allRows[this.currentIndex] : null;
+            const name = zeile ? $(zeile.tr).find('.tn-name').text().trim() : '';
+            const typText = zeile && zeile.typ === 'gast' ? 'Gast · ' : (zeile && zeile.typ === 'js' ? 'Jungschütze/-in · ' : '');
             $('#panelTitle').text(name || 'Erfassen');
-            $('#panelSubtitle').text((this.currentIndex + 1) + ' von ' + this.allRows.length);
+            $('#panelSubtitle').text(typText + (this.currentIndex + 1) + ' von ' + this.allRows.length);
 
             // Navigation
             $('#panelPrev').prop('disabled', this.currentIndex <= 0);
             $('#panelNext').prop('disabled', this.currentIndex >= this.allRows.length - 1);
 
             // Hidden Field
-            $('#mitgliedID').val(mitgliedId);
+            $('#teilnehmer').val(key);
 
             // Form zurücksetzen
             this.resetForm();
@@ -382,7 +412,7 @@ $(document).ready(function() {
             $('#panelBody').scrollTop(0);
 
             // Daten laden
-            this.loadSchussdaten(mitgliedId);
+            this.loadSchussdaten(key);
         },
 
         close() {
@@ -391,7 +421,7 @@ $(document).ready(function() {
             $('#editPanel').removeClass('open');
             $('#panelOverlay').removeClass('show');
             $('.hybrid-row').removeClass('selected');
-            this.currentMitgliedId = null;
+            this.currentKey = null;
             this.currentIndex = -1;
             if (this._loadingXhr) {
                 this._loadingXhr.abort();
@@ -407,6 +437,11 @@ $(document).ready(function() {
             $('#editPanel .focusable-input').val('');
             $('#editPanel .shot-input').val('').removeClass('filled is-unique is-dup');
             $('#editPanel .shot-total').text('0');
+            this.sieUnder = null;
+            $('#Partnerrang').prop('checked', false);
+            $('#partnerrangSection').prop('hidden', true);
+            $('#SieUnderPartner').find('option:not(:first)').remove();
+            $('#suPartnerSchuesse').prop('hidden', true).empty();
             $('.schwini-passe-1, .schwini-passe-2').removeClass('schwini-pass-disabled');
 
             // Alle Stiche deaktivieren
@@ -420,7 +455,7 @@ $(document).ready(function() {
             $('#AbsendenAnmeldung').prop('disabled', false);
         },
 
-        loadSchussdaten(mitgliedId) {
+        loadSchussdaten(key) {
             const year = $('#yearSelect').val();
 
             // Vorherigen Request abbrechen
@@ -429,19 +464,21 @@ $(document).ready(function() {
             this._loadingXhr = $.ajax({
                 url: 'endschresultate/load_schussdaten.php',
                 type: 'GET',
-                data: { mitgliedID: mitgliedId, year: year },
+                data: { teilnehmer: key, year: year },
                 dataType: 'json',
                 success: function(data) {
-                    if (data.geloesteStiche && data.geloesteStiche.length > 0) {
-                        updateStichAvailability(data.geloesteStiche);
-                    }
+                    // Immer aufrufen: ohne gelöste Stiche bleibt nur Absenden offen, die Enter-Navigation braucht es trotzdem
+                    updateStichAvailability(data.geloesteStiche || []);
 
-                    for (var key in data) {
-                        if (key !== 'geloesteStiche') {
-                            var $field = $('#' + key);
-                            if ($field.length) $field.val(data[key]);
+                    $('#partnerrangSection').prop('hidden', data.teilnehmerTyp !== 'mitglied');
+                    $('#Partnerrang').prop('checked', String(data.Partnerrang) === '1');
+                    for (var feld in data) {
+                        if (['geloesteStiche', 'sieUnder', 'teilnehmer', 'teilnehmerTyp', 'Partnerrang'].indexOf(feld) === -1) {
+                            var $field = $('#' + feld);
+                            if ($field.length) $field.val(data[feld]);
                         }
                     }
+                    sieUnderAnzeigen(data.sieUnder || null);
 
                     calculateAllSums();
                     updateSieErUniqueVisualization();
@@ -513,11 +550,11 @@ $(document).ready(function() {
         },
 
         saveAndNext() {
-            const gespeichert = this.currentMitgliedId;
+            const gespeichert = this.currentKey;
             this.save(function() {
                 // Nach dem Neuladen: nächstes Mitglied mit offenen Stichen, nach dem gespeicherten beginnend
                 const rows = EndEditPanel.allRows;
-                const i = rows.findIndex(r => r.id == gespeichert);
+                const i = rows.findIndex(r => r.id === gespeichert);
                 const reihe = i >= 0 ? rows.slice(i + 1).concat(rows.slice(0, i)) : rows;
                 const naechstes = reihe.find(r => r.stand === 'offen');
                 if (naechstes) {
@@ -531,17 +568,20 @@ $(document).ready(function() {
 
         collectFormData() {
             const data = {
-                mitgliedID: $('#mitgliedID').val(),
+                teilnehmer: $('#teilnehmer').val(),
                 jahr: $('#yearSelect').val(),
                 csrf_token: $('#editPanel input[name="csrf_token"]').val()
             };
 
             // Alle benannten Inputs aus dem Panel sammeln
-            $('#editPanel input[name]:not([type="hidden"])').each(function() {
+            $('#editPanel input[name]:not([type="hidden"]):not([type="checkbox"]), #editPanel select[name]').each(function() {
                 if (!this.disabled) {
                     data[this.name] = $(this).val() || '';
                 }
             });
+            if (!$('#partnerrangSection').prop('hidden')) {
+                data.Partnerrang = $('#Partnerrang').is(':checked') ? 1 : 0;
+            }
 
             return data;
         },
@@ -551,7 +591,8 @@ $(document).ready(function() {
             $('#mitgliederTabelle tbody tr.hybrid-row').each((_, tr) => {
                 const hasData = String($(tr).data('has-data')) === '1';
                 this.allRows.push({
-                    id: $(tr).data('mitglied-id'),
+                    id: String($(tr).attr('data-teilnehmer')),
+                    typ: $(tr).attr('data-typ') || 'mitglied',
                     hasData: hasData,
                     stand: $(tr).attr('data-stand') || (hasData ? 'ok' : 'offen'),
                     tr: tr
@@ -567,7 +608,7 @@ $(document).ready(function() {
             $('#progressText').html(ok + ' von ' + total + ' <span>vollständig erfasst</span>');
             $('#progressBar').css('width', pct + '%');
             $('#progressChips').html(
-                '<span class="ui-chip"><b>' + total + '</b> Mitglieder mit gelösten Stichen</span>' +
+                '<span class="ui-chip"><b>' + total + '</b> Teilnehmer mit gelösten Stichen</span>' +
                 (offen ? '<span class="ui-chip"><span class="ui-punkt"></span><b>' + offen + '</b> mit offenen Stichen</span>' : '')
             );
             $('#nAlle').text(total);
@@ -772,55 +813,66 @@ $(document).ready(function() {
     }
 
     // =========================================
-    //  Sie und Er Unique Visualisierung
+    //  Sie und Er: Partnerwahl und Paar-Total (Migration 094)
     // =========================================
-    function updateSieErUniqueVisualization() {
-        var valuePositions = {};
-
-        $('.sie-er-mitglied').each(function() {
-            var value = parseFloat($(this).val() || 0);
-            var position = $(this).data('position');
-
-            if (value > 0) {
-                var intValue = Math.floor(value);
-                if (!valuePositions[intValue]) valuePositions[intValue] = [];
-                valuePositions[intValue].push({
-                    position: position,
-                    element: $(this),
-                    value: value
-                });
-            }
+    // Partnerwahl aus load_schussdaten füllen: wer im Jahr Sie und Er gelöst hat, mit seinen Schüssen
+    function sieUnderAnzeigen(su) {
+        EndEditPanel.sieUnder = su;
+        const $sel = $('#SieUnderPartner');
+        $sel.find('option:not(:first)').remove();
+        if (!su) { updateSieErUniqueVisualization(); return; }
+        const namen = {};
+        (su.kandidaten || []).forEach(k => { namen[k.key] = k.name; });
+        let gruppe = null, $og = null;
+        (su.kandidaten || []).forEach(k => {
+            const g = k.typ === 'gast' ? 'Gäste' : 'Mitglieder';
+            if (g !== gruppe) { gruppe = g; $og = $('<optgroup>').attr('label', g).appendTo($sel); }
+            // Schon mit jemand anderem verknüpft: dazuschreiben, die Wahl löst die alte Verknüpfung
+            const mit = k.gepaartMit && k.gepaartMit !== EndEditPanel.currentKey ? ' – mit ' + (namen[k.gepaartMit] || 'jemand anderem') : '';
+            $('<option>').val(k.key).text(k.name + mit).appendTo($og);
         });
-
-        // Reset
-        $('.sie-er-schuss').removeClass('is-unique is-dup');
-
-        var uniqueValues = [];
-        var processedValues = {};
-
-        Object.keys(valuePositions).forEach(function(value) {
-            var positions = valuePositions[value];
-            if (positions.length === 1) {
-                positions[0].element.addClass('is-unique');
-                uniqueValues.push(parseInt(value));
-            } else {
-                positions.forEach(function(pos, index) {
-                    if (index === 0) {
-                        pos.element.addClass('is-unique');
-                        if (!processedValues[value]) {
-                            uniqueValues.push(parseInt(value));
-                            processedValues[value] = true;
-                        }
-                    } else {
-                        pos.element.addClass('is-dup');
-                    }
-                });
-            }
-        });
-
-        var uniqueSum = uniqueValues.reduce(function(sum, val) { return sum + val; }, 0);
-        $('#uniqueTotal').text(uniqueSum);
+        $sel.val(su.partner || '');
+        updateSieErUniqueVisualization();
     }
+
+    // Schüsse der gewählten Partnerin bzw. des Partners (gespeicherter Stand)
+    function partnerSchuesse() {
+        const su = EndEditPanel.sieUnder;
+        const key = $('#SieUnderPartner').val();
+        if (!su || !key) return [];
+        const k = (su.kandidaten || []).find(x => x.key === key);
+        return ((k && k.schuesse) || []).filter(v => v !== null && v !== '' && Number(v) > 0).map(Number);
+    }
+
+    // Jeder Wert zählt im Paar nur einmal: Partner-Schüsse zuerst, dann die eigenen; Doppelte durchgestrichen
+    function updateSieErUniqueVisualization() {
+        const gesehen = {};
+        const $anzeige = $('#suPartnerSchuesse').empty();
+        const partner = partnerSchuesse();
+        const key = $('#SieUnderPartner').val();
+        if (key) {
+            const name = $('#SieUnderPartner option:selected').text().replace(/ – mit .*$/, '');
+            $anzeige.append($('<span>').text(partner.length ? name + ':' : name + ' hat noch keine Schüsse erfasst.'));
+            partner.forEach(v => {
+                const dup = !!gesehen[v];
+                gesehen[v] = true;
+                $anzeige.append($('<span class="su-schuss">').toggleClass('is-dup', dup).text(v));
+            });
+        }
+        $anzeige.prop('hidden', !key);
+
+        $('.sie-er-schuss').removeClass('is-unique is-dup');
+        $('.sie-er-mitglied').each(function() {
+            const v = Math.floor(parseFloat($(this).val() || 0));
+            if (!(v > 0)) return;
+            $(this).addClass(gesehen[v] ? 'is-dup' : 'is-unique');
+            gesehen[v] = true;
+        });
+
+        const total = Object.keys(gesehen).reduce((s, v) => s + Number(v), 0);
+        $('#uniqueTotal').text(total);
+    }
+    $(document).on('change', '#SieUnderPartner', updateSieErUniqueVisualization);
 
     // =========================================
     //  Event-Handler
@@ -837,8 +889,8 @@ $(document).ready(function() {
 
     // Klick auf Tabellenzeile → Panel öffnen
     $(document).on('click', '.hybrid-row', function() {
-        const mitgliedId = $(this).data('mitglied-id');
-        if (mitgliedId) EndEditPanel.open(mitgliedId);
+        const key = $(this).attr('data-teilnehmer');
+        if (key) EndEditPanel.open(key);
     });
 
     // Panel schliessen
@@ -864,15 +916,15 @@ $(document).ready(function() {
 
     // Löschen aus Panel
     $('#panelDeleteBtn').on('click', async function() {
-        const mitgliedId = EndEditPanel.currentMitgliedId;
-        if (!mitgliedId) return;
+        const key = EndEditPanel.currentKey;
+        if (!key) return;
 
         const name = $('#panelTitle').text().trim();
         const jahr = $('#yearSelect').val();
         const csrf = $('#editPanel input[name="csrf_token"]').val();
         // Erst fragen, was gelöscht würde (auch Partnerin und JM-Endstich), dann bestätigen; der Server sichert vorher
         let p;
-        try { p = await $.post('endschresultate/delete_endschresultat.php', { mitgliedID: mitgliedId, jahr, aktion: 'pruefen', csrf_token: csrf }, null, 'json'); }
+        try { p = await $.post('endschresultate/delete_endschresultat.php', { teilnehmer: key, jahr, aktion: 'pruefen', csrf_token: csrf }, null, 'json'); }
         catch (xhr) { msvToast(msvXhrMessage(xhr, 'Prüfen hat nicht geklappt'), 'error'); return; }
         const b = (p && p.bezuege) || {};
         const liste = Object.keys(b).map(k => '<li>' + msvEsc(k) + ': ' + msvEsc(b[k]) + '</li>').join('');
@@ -888,7 +940,7 @@ $(document).ready(function() {
             url: 'endschresultate/delete_endschresultat.php',
             method: 'POST',
             data: {
-                mitgliedID: mitgliedId,
+                teilnehmer: key,
                 jahr: jahr,
                 aktion: 'loeschen',
                 csrf_token: csrf
@@ -920,7 +972,7 @@ $(document).ready(function() {
         if (this.type === 'number') msvPruefeZahl(this);
         if (!$('#panelFehler').prop('hidden')) msvEingabeFehler('#panelFehler', msvPruefeFelder('#editPanel'), false);
     });
-    $(document).on('change', '#editPanel select', function(e) { if (e.originalEvent) EndEditPanel.setGeaendert(true); });
+    $(document).on('change', '#editPanel select, #Partnerrang', function(e) { if (e.originalEvent) EndEditPanel.setGeaendert(true); });
 
     // Seite verlassen mit offenen Eingaben: der Browser fragt nach
     $(window).on('beforeunload', function() { if (EndEditPanel.geaendert) return 'Nicht gespeicherte Eingaben'; });
@@ -958,9 +1010,10 @@ $(document).ready(function() {
             const cells = Array.from(row.querySelectorAll('td'));
             if (cells.length < 8) return;
 
-            const mitgliedId = row.dataset.mitgliedId;
+            const key = row.dataset.teilnehmer;
             const hasData = row.dataset.hasData === '1';
-            const memberName = cells[0]?.textContent?.trim() || 'Unbekannt';
+            const memberName = row.querySelector('.tn-name')?.textContent?.trim() || 'Unbekannt';
+            const typMarke = row.dataset.typ === 'js' ? ' (JS)' : (row.dataset.typ === 'gast' ? ' (Gast)' : '');
             const endstich = cells[1]?.textContent?.trim() || '-';
             const schwini = cells[2]?.textContent?.trim() || '-';
             const kunst = cells[3]?.textContent?.trim() || '-';
@@ -977,7 +1030,7 @@ $(document).ready(function() {
             <div class="mobile-card" data-index="${idx}">
                 <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
-                        <div class="fw-bold">${statusDot}${memberName}</div>
+                        <div class="fw-bold">${statusDot}${msvEsc(memberName)}${typMarke}</div>
                         <small class="text-muted">Endstich: ${endstich} | Schwini: ${schwini}</small>
                     </div>
                     <i class="bi bi-chevron-down"></i>
@@ -1012,7 +1065,7 @@ $(document).ready(function() {
                         <span class="mobile-card-detail-value"><strong>${ansage}</strong></span>
                     </div>
                     <button type="button" class="btn btn-outline-primary w-100 mt-3"
-                            onclick="EndEditPanel.open(${mitgliedId})"
+                            onclick="EndEditPanel.open('${key}')"
                             style="min-height: 48px;">
                         <i class="bi bi-pencil me-2"></i>Bearbeiten
                     </button>

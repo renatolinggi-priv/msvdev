@@ -92,8 +92,10 @@ function generateResultRow($row) {
         [['GLUECK'],  'gelöst', ($row['max_glueck'] ?? 0) > 0
                                   ? $row['max_glueck'] . ' (' . $row['GSchuss1'] . ',' . $row['GSchuss2'] . ',' . $row['GSchuss3'] . ')' : null],
         [['ZABIG'],   'gelöst', ($zabigErfasst && $zabig > 0) ? (string)$zabig : null],
-        [['SIEUNDER'],'gelöst', ($row['SieUndEr_Summe'] ?? 0) > 0 ? (string)$row['SieUndEr_Summe'] : null],
-        [['DIFF'],    'gelöst', ($row['Ansage'] ?? '') !== '' && $row['Ansage'] !== null ? (string)$row['Ansage'] : null],
+        [['SIEUNDER'],'gelöst', ($row['SieUndEr_Summe'] ?? 0) > 0
+                                  ? $row['SieUndEr_Summe'] . (empty($row['su_partner']) ? ' · ohne Partner' : '') : null],
+        // Ansage 0 heisst «keine» (Spalte ist NOT NULL): bei gelöstem Differenzler bleibt sie offen
+        [['DIFF'],    'gelöst', (int)($row['Ansage'] ?? 0) > 0 ? (string)$row['Ansage'] : null],
     ];
 
     $hatDaten = false;
@@ -105,22 +107,30 @@ function generateResultRow($row) {
         if ($geloest && $wert === null) $offen = true;
         $zellen .= stichZelle($geloest, $wert, $label);
     }
+    // Sie und Er zählt erst mit verknüpfter Partnerin bzw. verknüpftem Partner (Migration 094)
+    $suOhnePartner = $hat(['SIEUNDER']) && empty($row['su_partner']);
+    if ($suOhnePartner) $offen = true;
     $stand = $offen ? 'offen' : 'ok';
     $standZelle = $offen
         ? "<td><span class='ui-status offen'><span class='ui-punkt'></span>offen</span></td>"
         : "<td><span class='ui-status ok'><span class='ui-punkt'></span>vollständig</span></td>";
 
-    $id = htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');
-    $name = htmlspecialchars($row['Name'] . " " . $row['Vorname'], ENT_QUOTES, 'UTF-8');
+    $key = htmlspecialchars($row['Schluessel'], ENT_QUOTES, 'UTF-8');
+    $name = htmlspecialchars(trim($row['Name'] . " " . $row['Vorname']), ENT_QUOTES, 'UTF-8');
+    $typ = $row['TeilnehmerTyp'] ?? 'mitglied';
+    $marke = $typ === 'js' ? " <span class='typ-badge js'>JS</span>" : ($typ === 'gast' ? " <span class='typ-badge'>Gast</span>" : '');
+    // Mitglied zusätzlich in der Partner-Rangliste (Migration 096)
+    if (!empty($row['Partnerrang'])) $marke .= " <span class='typ-badge' data-tooltip='Steht zusätzlich in der Partner-Rangliste'>Partner</span>";
     $klasse = 'hybrid-row' . ($offen ? ' ui-offen' : '');
 
-    return "<tr class='{$klasse}' data-mitglied-id='{$id}' data-has-data='" . ($hatDaten ? '1' : '0') . "'"
-         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'>"
-         . "<td>{$name}</td>{$zellen}{$standZelle}</tr>";
+    return "<tr class='{$klasse}' data-teilnehmer='{$key}' data-typ='{$typ}' data-has-data='" . ($hatDaten ? '1' : '0') . "'"
+         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'" . ($suOhnePartner ? " data-su='ohne-partner'" : '') . ">"
+         . "<td><span class='tn-name'>{$name}</span>{$marke}</td>{$zellen}{$standZelle}</tr>";
 }
 
 // Include database configuration
 include '../config.php';
+require_once __DIR__ . '/teilnehmer.inc.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('html'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../partials/empty_state.inc.php';
@@ -139,49 +149,38 @@ if (!validateYear($year)) {
     $year = date('Y'); // Fallback to current year
 }
 
-// Prepare SQL statement to prevent SQL injection
-$sql = "
-SELECT
-    m.ID,
-    m.Name,
-    m.Vorname,
-    g.MitgliedID,
-    g.GSchuss1,
-    g.GSchuss2,
-    g.GSchuss3,
-    z.ZSchuss1,
-    z.ZSchuss2,
-    z.ZSchuss3,
-    z.ZSchuss4,
-    z.ZSchuss5,
-    z.ZSchuss6,
+// Teilnehmer des Jahres: Mitglieder sowie Gäste und Jungschützen aus «Stiche lösen» (Migration 094), je eine Zeile
+// mit Summen und gelösten Codes. Die Spalten sind für beide Teile gleich, nur Personentabelle und Schlüssel ändern.
+$spaltenSql = function (string $p, array $k): string {
+    return "
+    g.GSchuss1, g.GSchuss2, g.GSchuss3,
+    z.ZSchuss1, z.ZSchuss2, z.ZSchuss3, z.ZSchuss4, z.ZSchuss5, z.ZSchuss6,
     z.Ansage,
     GREATEST(COALESCE(g.GSchuss1, 0), COALESCE(g.GSchuss2, 0), COALESCE(g.GSchuss3, 0)) AS max_glueck,
     COALESCE(SUM(e.Schuss1 + e.Schuss2 + e.Schuss3 + e.Schuss4 + e.Schuss5 + e.Schuss6 + e.Schuss7 + e.Schuss8 + e.Schuss9 + e.Schuss10), 0) AS Endstich_Summe,
     COALESCE(SUM(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6), 0) AS Schwini_Summe1,
     COALESCE(SUM(s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6), 0) AS Schwini_Summe2,
     COALESCE(ROUND(SUM(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) / 10, 1), 0) AS Kunst_Summe,
-    COALESCE(ep.SieErSchuss6 + ep.SieErSchuss7 + ep.SieErSchuss8 + ep.SieErSchuss9 + ep.SieErSchuss10, 0) AS SieUndEr_Summe,
-    MAX(sel.mitglied_id IS NOT NULL) AS geloest,
+    COALESCE(su.Schuss1, 0) + COALESCE(su.Schuss2, 0) + COALESCE(su.Schuss3, 0) + COALESCE(su.Schuss4, 0) + COALESCE(su.Schuss5, 0) AS SieUndEr_Summe,
+    MAX(su.PartnerMitgliedID IS NOT NULL OR su.PartnerGastID IS NOT NULL) AS su_partner,
+    MAX(sel.person IS NOT NULL) AS geloest,
     MAX(sel.codes) AS geloeste_codes
-FROM
-    mitglieder m
--- Geloeste Schuetzen des Jahres (1 Zeile pro Mitglied, damit die SUMs nicht vervielfacht werden)
+FROM $p
 LEFT JOIN (
-    SELECT es.mitglied_id, GROUP_CONCAT(DISTINCT ed.code) AS codes
+    SELECT es.{$k['sel']} AS person, GROUP_CONCAT(DISTINCT ed.code) AS codes
     FROM endstich_selection es
     INNER JOIN endstich_definition ed ON ed.id = es.stich_id
-    WHERE es.jahr = ? AND es.mitglied_id IS NOT NULL
-    GROUP BY es.mitglied_id
-) sel ON sel.mitglied_id = m.ID
-LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
-LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
-LEFT JOIN kunst k ON m.ID = k.MitgliedID AND k.Jahr = ?
-LEFT JOIN glueck g ON m.ID = g.MitgliedID AND g.Jahr = ?
-LEFT JOIN zabig z ON m.ID = z.MitgliedID AND z.Jahr = ?
-LEFT JOIN endresultate_partner ep ON m.ID = ep.MitgliedID AND ep.Jahr = ?
-GROUP BY
-    m.ID, m.Vorname, m.Name
+    WHERE es.jahr = ? AND es.{$k['sel']} IS NOT NULL
+    GROUP BY es.{$k['sel']}
+) sel ON sel.person = {$k['id']}
+LEFT JOIN endstich e ON {$k['id']} = e.{$k['spalte']} AND e.Jahr = ?
+LEFT JOIN schwini s ON {$k['id']} = s.{$k['spalte']} AND s.Jahr = ?
+LEFT JOIN kunst k ON {$k['id']} = k.{$k['spalte']} AND k.Jahr = ?
+LEFT JOIN glueck g ON {$k['id']} = g.{$k['spalte']} AND g.Jahr = ?
+LEFT JOIN zabig z ON {$k['id']} = z.{$k['spalte']} AND z.Jahr = ?
+LEFT JOIN endstich_sieunder su ON {$k['id']} = su.{$k['spalte']} AND su.Jahr = ?";
+};
+$having = "
 HAVING
     geloest = 1
     OR Endstich_Summe > 0
@@ -190,9 +189,28 @@ HAVING
     OR Kunst_Summe > 0
     OR max_glueck > 0
     OR SieUndEr_Summe > 0
-    OR z.Ansage IS NOT NULL
-ORDER BY
-    m.Name, m.Vorname
+    OR z.Ansage IS NOT NULL";
+
+$sql = "(SELECT
+    'mitglied' AS TeilnehmerTyp, CONCAT('m', m.ID) AS Schluessel, 1 AS Gruppe,
+    EXISTS(SELECT 1 FROM endstich_partnerrang pr WHERE pr.MitgliedID = m.ID AND pr.Jahr = ?) AS Partnerrang,
+    CONVERT(m.Name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+    CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,"
+    . $spaltenSql('mitglieder m', ['sel' => 'mitglied_id', 'id' => 'm.ID', 'spalte' => 'MitgliedID']) . "
+GROUP BY m.ID, m.Vorname, m.Name
+$having)
+UNION ALL
+(SELECT
+    IF(ga.geburtsdatum IS NULL, 'gast', 'js') AS TeilnehmerTyp, CONCAT('g', ga.id) AS Schluessel,
+    IF(ga.geburtsdatum IS NULL, 2, 3) AS Gruppe,
+    0 AS Partnerrang,
+    CONVERT(ga.name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+    CONVERT('' USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,"
+    . $spaltenSql('endstich_gaeste ga', ['sel' => 'gast_id', 'id' => 'ga.id', 'spalte' => 'GastID']) . "
+WHERE ga.jahr = ?
+GROUP BY ga.id, ga.name, ga.geburtsdatum
+$having)
+ORDER BY Gruppe, Name, Vorname
 ";
 
 try {
@@ -202,8 +220,8 @@ try {
         throw new Exception("Prepare failed: " . $conn->error);
     }
     
-    // Bind parameters to prevent SQL injection
-    $stmt->bind_param("iiiiiii", $year, $year, $year, $year, $year, $year, $year);
+    // 1 + 7 Jahre für die Mitglieder (Partner-Rangliste, Stiche), 7 + 1 für Gäste und Jungschützen
+    $stmt->bind_param(str_repeat('i', 16), ...array_fill(0, 16, $year));
     $stmt->execute();
     $result = $stmt->get_result();
     

@@ -1,17 +1,18 @@
 <?php
-// delete_endschresultat.php – Endschiessen-Resultate eines Mitglieds für ein Jahr löschen.
+// delete_endschresultat.php – Endschiessen-Resultate eines Teilnehmers für ein Jahr löschen.
 //
-// POST mitgliedID, jahr, aktion:
+// POST teilnehmer (m<ID> = Mitglied, g<ID> = Gast/Jungschütze; seit Migration 094) oder mitgliedID (alt), jahr, aktion:
 //   pruefen  → {success, bezuege{Bereich: Anzahl}} – was gelöscht würde, für den Dialog
 //   loeschen → nach Sicherung der Datenbank in einer Transaktion: Endstich, Schwini, Kunst, Glück, Zabig,
-//              der Partnerinnen-Eintrag (samt Sie-und-Er-Schüssen 6–10 des Mitglieds) und das JM-Resultat
-//              «Endstich» → {success, sicherung}
+//              die eigenen Sie-und-Er-Schüsse (die Partnerin behält ihre, die Verknüpfung wird gelöst) und bei
+//              Mitgliedern das JM-Resultat «Endstich» → {success, sicherung}
 // Seit 08.10.2026 (Critique): Der Dialog nennt, was gelöscht wird, und vorher wird gesichert.
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
 require_once __DIR__ . '/../loesch_sperre.inc.php';
 require_once __DIR__ . '/../backup_dump.inc.php';
+require_once __DIR__ . '/teilnehmer.inc.php';
 
 // CSRF-Schutz
 $csrf = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
@@ -19,39 +20,36 @@ if (empty($_SESSION['csrf_token']) || empty($csrf) || !hash_equals($_SESSION['cs
     msvLoeschAntwort(['success' => false, 'message' => 'Sitzung abgelaufen – bitte die Seite neu laden und nochmals versuchen.'], 403);
 }
 
-$mitgliedID = isset($_POST['mitgliedID']) ? intval($_POST['mitgliedID']) : 0;
+$t = endschTeilnehmer($_POST['teilnehmer'] ?? (isset($_POST['mitgliedID']) ? 'm' . (int)$_POST['mitgliedID'] : ''));
 $jahr = isset($_POST['jahr']) ? intval($_POST['jahr']) : (int)date('Y');
 $aktion = (string)($_POST['aktion'] ?? 'loeschen');
-if ($mitgliedID <= 0) {
-    msvLoeschAntwort(['success' => false, 'message' => 'Ungültige Mitglied-ID'], 400);
+if (!$t) {
+    msvLoeschAntwort(['success' => false, 'message' => 'Kein Teilnehmer gewählt. Bitte die Liste neu laden.'], 400);
 }
+$spalte = $t['spalte'];   // MitgliedID | GastID – fester Wert aus endschTeilnehmer()
+$personID = $t['id'];
+// Das JM-Resultat gibt es nur bei Mitgliedern
+$mitgliedID = $spalte === 'MitgliedID' ? $personID : 0;
 
-$tabellen = ['endstich' => 'Endstich', 'schwini' => 'Schwini', 'kunst' => 'Kunst', 'glueck' => 'Glück', 'zabig' => 'Zabig'];
+$tabellen = ['endstich' => 'Endstich', 'schwini' => 'Schwini', 'kunst' => 'Kunst', 'glueck' => 'Glück', 'zabig' => 'Zabig', 'endstich_sieunder' => 'Sie und Er'];
 
 // JM-Definition «Endstich» des Jahres (das JM-Resultat geht mit)
 $endstichId = null;
 $st = $conn->prepare("SELECT ID FROM JMDefinition WHERE Bezeichnung = 'Endstich' AND year = ?");
 $st->bind_param('i', $jahr);
 $st->execute();
-if ($row = $st->get_result()->fetch_assoc()) $endstichId = (int)$row['ID'];
+if (($row = $st->get_result()->fetch_assoc()) && $mitgliedID) $endstichId = (int)$row['ID'];
 $st->close();
 
 if ($aktion === 'pruefen') {
     $bezuege = [];
-    foreach ($tabellen as $t => $label) {
-        $q = $conn->prepare("SELECT COUNT(*) FROM `$t` WHERE Jahr = ? AND MitgliedID = ?");
-        $q->bind_param('ii', $jahr, $mitgliedID);
+    foreach ($tabellen as $tab => $label) {
+        $q = $conn->prepare("SELECT COUNT(*) FROM `$tab` WHERE Jahr = ? AND $spalte = ?");
+        $q->bind_param('ii', $jahr, $personID);
         $q->execute();
-        if ((int)$q->get_result()->fetch_row()[0] > 0) $bezuege[$label] = 'Resultate';
+        if ((int)$q->get_result()->fetch_row()[0] > 0) $bezuege[$label] = $tab === 'endstich_sieunder' ? 'eigene Schüsse, die Verknüpfung wird gelöst' : 'Resultate';
         $q->close();
     }
-    $q = $conn->prepare('SELECT PartnerName FROM endresultate_partner WHERE Jahr = ? AND MitgliedID = ? LIMIT 1');
-    $q->bind_param('ii', $jahr, $mitgliedID);
-    $q->execute();
-    if ($p = $q->get_result()->fetch_assoc()) {
-        $bezuege['Partnerin «' . trim((string)$p['PartnerName']) . '»'] = 'ganzer Eintrag samt Sie und Er';
-    }
-    $q->close();
     if ($endstichId) {
         $q = $conn->prepare('SELECT COUNT(*) FROM jmresultate WHERE jmdefinitionID = ? AND mitgliederID = ?');
         $q->bind_param('ii', $endstichId, $mitgliedID);
@@ -64,7 +62,7 @@ if ($aktion === 'pruefen') {
 
 if ($aktion !== 'loeschen') msvLoeschAntwort(['success' => false, 'message' => 'Unbekannte Aktion'], 400);
 
-$sicherung = msvBackupVorher('endschiessen-loeschen-' . $mitgliedID . '-' . $jahr);
+$sicherung = msvBackupVorher('endschiessen-loeschen-' . $t['schluessel'] . '-' . $jahr);
 if (!$sicherung['ok']) {
     error_log('[delete_endschresultat] Sicherung fehlgeschlagen: ' . $sicherung['meldung']);
     msvLoeschAntwort(['success' => false, 'message' => 'Die Sicherung vor dem Löschen hat nicht geklappt. Es wurde nichts gelöscht.'], 500);
@@ -73,11 +71,24 @@ if (!$sicherung['ok']) {
 $conn->begin_transaction();
 try {
     $deletedTotal = 0;
-    foreach (array_merge(array_keys($tabellen), ['endresultate_partner']) as $t) {
-        $stmt = $conn->prepare("DELETE FROM `$t` WHERE Jahr = ? AND MitgliedID = ?");
-        if (!$stmt) throw new Exception("Löschen vorbereiten ($t): " . $conn->error);
-        $stmt->bind_param('ii', $jahr, $mitgliedID);
-        if (!$stmt->execute()) throw new Exception("Löschen aus $t: " . $stmt->error);
+    // Markierung «Partner-Rangliste» (nur Mitglieder, Migration 096)
+    if ($spalte === 'MitgliedID') {
+        $stmt = $conn->prepare('DELETE FROM endstich_partnerrang WHERE Jahr = ? AND MitgliedID = ?');
+        $stmt->bind_param('ii', $jahr, $personID);
+        $stmt->execute();
+        $stmt->close();
+    }
+    // Wer mit dieser Person ein Sie-und-Er-Paar bildet, behält seine Schüsse, nur der Verweis fällt weg
+    $verweis = $spalte === 'GastID' ? 'PartnerGastID' : 'PartnerMitgliedID';
+    $stmt = $conn->prepare("UPDATE endstich_sieunder SET PartnerMitgliedID = NULL, PartnerGastID = NULL WHERE Jahr = ? AND $verweis = ?");
+    $stmt->bind_param('ii', $jahr, $personID);
+    $stmt->execute();
+    $stmt->close();
+    foreach (array_keys($tabellen) as $tab) {
+        $stmt = $conn->prepare("DELETE FROM `$tab` WHERE Jahr = ? AND $spalte = ?");
+        if (!$stmt) throw new Exception("Löschen vorbereiten ($tab): " . $conn->error);
+        $stmt->bind_param('ii', $jahr, $personID);
+        if (!$stmt->execute()) throw new Exception("Löschen aus $tab: " . $stmt->error);
         $deletedTotal += $stmt->affected_rows;
         $stmt->close();
     }

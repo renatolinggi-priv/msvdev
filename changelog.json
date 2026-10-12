@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.68.0",
+    "datum": "2026-10-12",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: Gäste und Jungschützen unter «Resultate erfassen»",
+        "beschreibung": "«Endschiessen Resultate erfassen» zeigt neben den Mitgliedern auch die Gäste (Marke «Gast») und die Jungschützen (Marke «JS») aus «Stiche lösen». Gäste können alle gelösten Stiche erfassen, also auch Kunst, Glück, Zabig und Differenzler, Jungschützen ihr Paket. Gäste stehen in allen Einzelstich-Ranglisten, in der Gesamtrangliste in Kat. B, wenn sie alle fünf Stiche geschossen haben; Jungschützen in Endstich, Schwini, Zabig und ihrer eigenen Liste. Kranz nach der Limite der Waffe, den Wanderpreis erhält das bestplatzierte Mitglied. Die Seite «Partnerinnen erfassen» entfällt, ihre Daten sind übernommen. Der CSV-Import erkennt Gäste über ihre Nummer 999…",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Sie und Er: Paar frei verknüpfen",
+        "beschreibung": "Jede Person erfasst ihre fünf Sie-und-Er-Schüsse im eigenen Panel und wählt die Partnerin bzw. den Partner aus allen, die Sie und Er gelöst haben – Mitglied oder Gast, also auch zwei Mitglieder. Die Verknüpfung gilt für beide, das Panel zeigt das Total des Paars. Ohne Verknüpfung steht «ohne Partner» und der Stich gilt als offen; «Absenden vorbereiten» zählt solche Personen.",
+        "typ": "feature",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitglieder in der Partner-Rangliste",
+        "beschreibung": "Ist eine Partnerin bzw. ein Partner selbst Mitglied, lässt sich das Mitglied im Erfassungs-Panel unter «Partner-Rangliste» markieren. Es erscheint dann im gewählten Jahr zusätzlich in der Partner-Rangliste (PDF und Absendenbuch), in der Liste steht die Marke «Partner».",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.67.1",
+    "datum": "2026-10-10",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen lösen: Munition beim Karabiner",
+        "beschreibung": "Wer mit dem Karabiner schiesst, sieht in der Übersicht wieder die Munition (GP11) zu den gelösten Stichen und zur zusätzlichen Munition. Vorher blieb die Spalte «Munition» leer, weil nur «Karabiner 31» erkannt wurde.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.67.0",
     "datum": "2026-10-09",
     "aenderungen": [

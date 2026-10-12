@@ -6,6 +6,22 @@ adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet di
 
 $dbconnect_path = file_exists('../dbconnect.inc.php') ? '../dbconnect.inc.php' : 'dbconnect.inc.php';
 require_once $dbconnect_path;
+require_once __DIR__ . '/../endschresultate/teilnehmer.inc.php'; // Teilnehmer m<ID>/g<ID> (Migration 094)
+
+/** Teilnehmer aus mitglied_id (Zahl = Mitglied, «g45» = Gast/Jungschütze) und Jahr; Gäste gelten nur für ihr Jahr. */
+function importTeilnehmer(mysqli $db, string $roh, int $jahr): ?array {
+    $t = endschTeilnehmer(ctype_digit($roh) ? 'm' . $roh : $roh);
+    if (!$t) return null;
+    if ($t['spalte'] === 'GastID') {
+        $st = $db->prepare('SELECT id FROM endstich_gaeste WHERE id = ? AND jahr = ?');
+        $st->bind_param('ii', $t['id'], $jahr);
+        $st->execute();
+        $ok = (bool)$st->get_result()->fetch_row();
+        $st->close();
+        if (!$ok) return null;
+    }
+    return $t;
+}
 
 function db_mysqli() {
     if (function_exists('connect_db_mysqli')) return connect_db_mysqli();
@@ -68,24 +84,35 @@ try {
             json_ok(['member_id'=>(int)$row['ID'], 'member_name'=>$row['Vollname']]);
         }
         
+        // Gäste und Jungschützen tragen im CSV-Export die Nummer 999000 + id (endstich_gaeste.mitgliedernr)
+        $stmt = $db->prepare("SELECT id, name FROM endstich_gaeste WHERE mitgliedernr = ? ORDER BY jahr DESC LIMIT 1");
+        $stmt->bind_param('s', $license);
+        $stmt->execute();
+        $gast = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($gast) {
+            json_ok(['member_id' => 'g' . (int)$gast['id'], 'member_name' => $gast['name']]);
+        }
+
         error_log("[ENDSCH-DEBUG] No member found for license: " . $license);
         json_ok(['member_id'=>null]);
     }
 
     if ($action === 'check_existing_data') {
-        $mitglied_id = (int)($_GET['mitglied_id'] ?? 0);
         $jahr = (int)($_GET['jahr'] ?? date('Y'));
-        if (!$mitglied_id || !$jahr) json_err('Parameter fehlen');
-        
         $db = db_mysqli();
+        $tn = importTeilnehmer($db, trim((string)($_GET['mitglied_id'] ?? '')), $jahr);
+        if (!$tn || !$jahr) json_err('Parameter fehlen');
+        $spalte = $tn['spalte'];   // MitgliedID | GastID – fester Wert
+        $pid = $tn['id'];
         
         // Prüfe alle 5 Stiche auf bestehende Daten mit Details
         $existing_data = [];
         $detailed_data = [];
         
         // Endstich
-        $stmt = $db->prepare("SELECT Schuss1,Schuss2,Schuss3,Schuss4,Schuss5,Schuss6,Schuss7,Schuss8,Schuss9,Schuss10,Tiefschuss,AbsendenAnmeldung FROM endstich WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        $stmt = $db->prepare("SELECT Schuss1,Schuss2,Schuss3,Schuss4,Schuss5,Schuss6,Schuss7,Schuss8,Schuss9,Schuss10,Tiefschuss,AbsendenAnmeldung FROM endstich WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $endstich = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -105,8 +132,8 @@ try {
         }
         
         // Kunst
-        $stmt = $db->prepare("SELECT KSchuss1,KSchuss2,KSchuss3,KSchuss4,KSchuss5 FROM kunst WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        $stmt = $db->prepare("SELECT KSchuss1,KSchuss2,KSchuss3,KSchuss4,KSchuss5 FROM kunst WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $kunst = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -123,8 +150,8 @@ try {
         }
         
         // Glück
-        $stmt = $db->prepare("SELECT GSchuss1,GSchuss2,GSchuss3 FROM glueck WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        $stmt = $db->prepare("SELECT GSchuss1,GSchuss2,GSchuss3 FROM glueck WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $glueck = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -141,8 +168,8 @@ try {
         }
         
         // Zabig
-        $stmt = $db->prepare("SELECT ZSchuss1,ZSchuss2,ZSchuss3,ZSchuss4,ZSchuss5,ZSchuss6,Ansage FROM zabig WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        $stmt = $db->prepare("SELECT ZSchuss1,ZSchuss2,ZSchuss3,ZSchuss4,ZSchuss5,ZSchuss6,Ansage FROM zabig WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $zabig = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -160,8 +187,8 @@ try {
         }
         
         // Schwini
-        $stmt = $db->prepare("SELECT P1Schuss1,P1Schuss2,P1Schuss3,P1Schuss4,P1Schuss5,P1Schuss6,P2Schuss1,P2Schuss2,P2Schuss3,P2Schuss4,P2Schuss5,P2Schuss6 FROM schwini WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        $stmt = $db->prepare("SELECT P1Schuss1,P1Schuss2,P1Schuss3,P1Schuss4,P1Schuss5,P1Schuss6,P2Schuss1,P2Schuss2,P2Schuss3,P2Schuss4,P2Schuss5,P2Schuss6 FROM schwini WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $schwini = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -194,9 +221,9 @@ try {
             }
         }
         
-        // Sie und Er (aus endresultate_partner Tabelle)
-        $stmt = $db->prepare("SELECT SieErSchuss1,SieErSchuss2,SieErSchuss3,SieErSchuss4,SieErSchuss5,SieErSchuss6,SieErSchuss7,SieErSchuss8,SieErSchuss9,SieErSchuss10 FROM endresultate_partner WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        // Sie und Er: eigene fünf Schüsse (endstich_sieunder, Migration 094)
+        $stmt = $db->prepare("SELECT Schuss1 AS SieErSchuss6, Schuss2 AS SieErSchuss7, Schuss3 AS SieErSchuss8, Schuss4 AS SieErSchuss9, Schuss5 AS SieErSchuss10 FROM endstich_sieunder WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $sieunder = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -243,8 +270,11 @@ try {
     if ($action === 'import_stich_shots') {
         if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) json_err('CSRF ungültig');
 
-        $mitglied_id = (int)($_POST['mitglied_id'] ?? 0);
         $jahr = (int)($_POST['jahr'] ?? date('Y'));
+        $tn = importTeilnehmer(db_mysqli(), trim((string)($_POST['mitglied_id'] ?? '')), $jahr);
+        if (!$tn) json_err('Teilnehmer unbekannt oder nicht in diesem Jahr gelöst');
+        $spalte = $tn['spalte'];   // MitgliedID | GastID – fester Wert
+        $pid = $tn['id'];
         $program_number = trim($_POST['program_number'] ?? '');
         $shots = json_decode($_POST['shots'] ?? '[]', true);
         $tiefschuss_werte = json_decode($_POST['tiefschuss_werte'] ?? '[]', true);
@@ -253,7 +283,7 @@ try {
         $zabig_ansage = isset($_POST['zabig_ansage']) ? (int)$_POST['zabig_ansage'] : null;
         $endstich_absenden_anmeldung = isset($_POST['endstich_absenden_anmeldung']) ? (int)$_POST['endstich_absenden_anmeldung'] : null;
         
-        if (!$mitglied_id || !$jahr || !$program_number || empty($shots)) json_err('Parameter unvollständig');
+        if (!$pid || !$jahr || !$program_number || empty($shots)) json_err('Parameter unvollständig');
 
         $db = db_mysqli();
 
@@ -271,9 +301,10 @@ try {
         $restable = $def['restable'];
         $stich = $def['stich'];
 
-        // existiert schon?
-        $stmt = $db->prepare("SELECT ID FROM `$restable` WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-        $stmt->bind_param('ii', $mitglied_id, $jahr);
+        // existiert schon? (Sie und Er: endstich_sieunder statt endresultate_partner, Migration 094)
+        $zielTabelle = $restable === 'endresultate_partner' ? 'endstich_sieunder' : $restable;
+        $stmt = $db->prepare("SELECT ID FROM `$zielTabelle` WHERE {$spalte}=? AND Jahr=? LIMIT 1");
+        $stmt->bind_param('ii', $pid, $jahr);
         $stmt->execute();
         $existing = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -309,17 +340,17 @@ try {
                     $absenden_anmeldung = $endstich_absenden_anmeldung !== null ? $endstich_absenden_anmeldung : 0;
                     
                     if ($existing) {
-                        $sql = "UPDATE endstich SET Schuss1=?,Schuss2=?,Schuss3=?,Schuss4=?,Schuss5=?,Schuss6=?,Schuss7=?,Schuss8=?,Schuss9=?,Schuss10=?,Tiefschuss=?,AbsendenAnmeldung=? WHERE MitgliedID=? AND Jahr=?";
+                        $sql = "UPDATE endstich SET Schuss1=?,Schuss2=?,Schuss3=?,Schuss4=?,Schuss5=?,Schuss6=?,Schuss7=?,Schuss8=?,Schuss9=?,Schuss10=?,Tiefschuss=?,AbsendenAnmeldung=? WHERE {$spalte}=? AND Jahr=?";
                         $stmt = $db->prepare($sql);
                         $stmt->bind_param('iiiiiiiiiiiiii', // 14 Parameter: 10 Schüsse + Tiefschuss + AbsendenAnmeldung + MitgliedID + Jahr
                             $arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5],$arr[6],$arr[7],$arr[8],$arr[9],
-                            $tief, $absenden_anmeldung, $mitglied_id, $jahr
+                            $tief, $absenden_anmeldung, $pid, $jahr
                         );
                     } else {
-                        $sql = "INSERT INTO endstich (MitgliedID,Schuss1,Schuss2,Schuss3,Schuss4,Schuss5,Schuss6,Schuss7,Schuss8,Schuss9,Schuss10,Tiefschuss,Jahr,AbsendenAnmeldung) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                        $sql = "INSERT INTO endstich ({$spalte},Schuss1,Schuss2,Schuss3,Schuss4,Schuss5,Schuss6,Schuss7,Schuss8,Schuss9,Schuss10,Tiefschuss,Jahr,AbsendenAnmeldung) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                         $stmt = $db->prepare($sql);
                         $stmt->bind_param('iiiiiiiiiiiiii', // 14 Parameter: MitgliedID + 10 Schüsse + Tiefschuss + Jahr + AbsendenAnmeldung
-                            $mitglied_id,$arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5],$arr[6],$arr[7],$arr[8],$arr[9],$tief,$jahr,$absenden_anmeldung
+                            $pid,$arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5],$arr[6],$arr[7],$arr[8],$arr[9],$tief,$jahr,$absenden_anmeldung
                         );
                     }
                     $ok = $stmt->execute(); $stmt->close();
@@ -328,13 +359,13 @@ try {
                 case 'kunst': {
                     $arr = array_pad(array_slice($clean, 0, 5), 5, null);
                     if ($existing) {
-                        $sql = "UPDATE kunst SET KSchuss1=?,KSchuss2=?,KSchuss3=?,KSchuss4=?,KSchuss5=? WHERE MitgliedID=? AND Jahr=?";
+                        $sql = "UPDATE kunst SET KSchuss1=?,KSchuss2=?,KSchuss3=?,KSchuss4=?,KSchuss5=? WHERE {$spalte}=? AND Jahr=?";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4], $mitglied_id, $jahr);
+                        $stmt->bind_param('iiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4], $pid, $jahr);
                     } else {
-                        $sql = "INSERT INTO kunst (KSchuss1,KSchuss2,KSchuss3,KSchuss4,KSchuss5,MitgliedID,Jahr) VALUES (?,?,?,?,?,?,?)";
+                        $sql = "INSERT INTO kunst (KSchuss1,KSchuss2,KSchuss3,KSchuss4,KSchuss5,{$spalte},Jahr) VALUES (?,?,?,?,?,?,?)";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4], $mitglied_id, $jahr);
+                        $stmt->bind_param('iiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4], $pid, $jahr);
                     }
                     $ok = $stmt->execute(); $stmt->close();
                     break;
@@ -342,13 +373,13 @@ try {
                 case 'glueck': {
                     $arr = array_pad(array_slice($clean, 0, 3), 3, null);
                     if ($existing) {
-                        $sql = "UPDATE glueck SET GSchuss1=?,GSchuss2=?,GSchuss3=? WHERE MitgliedID=? AND Jahr=?";
+                        $sql = "UPDATE glueck SET GSchuss1=?,GSchuss2=?,GSchuss3=? WHERE {$spalte}=? AND Jahr=?";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiii', $arr[0],$arr[1],$arr[2], $mitglied_id, $jahr);
+                        $stmt->bind_param('iiiii', $arr[0],$arr[1],$arr[2], $pid, $jahr);
                     } else {
-                        $sql = "INSERT INTO glueck (MitgliedID,GSchuss1,GSchuss2,GSchuss3,Jahr) VALUES (?,?,?,?,?)";
+                        $sql = "INSERT INTO glueck ({$spalte},GSchuss1,GSchuss2,GSchuss3,Jahr) VALUES (?,?,?,?,?)";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiii', $mitglied_id, $arr[0],$arr[1],$arr[2], $jahr);
+                        $stmt->bind_param('iiiii', $pid, $arr[0],$arr[1],$arr[2], $jahr);
                     }
                     $ok = $stmt->execute(); $stmt->close();
                     break;
@@ -357,13 +388,13 @@ try {
                     $arr = array_pad(array_slice($clean, 0, 6), 6, null);
                     $ansage = $zabig_ansage !== null ? $zabig_ansage : 0;
                     if ($existing) {
-                        $sql = "UPDATE zabig SET ZSchuss1=?,ZSchuss2=?,ZSchuss3=?,ZSchuss4=?,ZSchuss5=?,ZSchuss6=?,Ansage=? WHERE MitgliedID=? AND Jahr=?";
+                        $sql = "UPDATE zabig SET ZSchuss1=?,ZSchuss2=?,ZSchuss3=?,ZSchuss4=?,ZSchuss5=?,ZSchuss6=?,Ansage=? WHERE {$spalte}=? AND Jahr=?";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5], $ansage, $mitglied_id, $jahr);
+                        $stmt->bind_param('iiiiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5], $ansage, $pid, $jahr);
                     } else {
-                        $sql = "INSERT INTO zabig (MitgliedID,ZSchuss1,ZSchuss2,ZSchuss3,ZSchuss4,ZSchuss5,ZSchuss6,Ansage,Jahr) VALUES (?,?,?,?,?,?,?,?,?)";
+                        $sql = "INSERT INTO zabig ({$spalte},ZSchuss1,ZSchuss2,ZSchuss3,ZSchuss4,ZSchuss5,ZSchuss6,Ansage,Jahr) VALUES (?,?,?,?,?,?,?,?,?)";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiiiiiii', $mitglied_id,$arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5], $ansage, $jahr);
+                        $stmt->bind_param('iiiiiiiii', $pid,$arr[0],$arr[1],$arr[2],$arr[3],$arr[4],$arr[5], $ansage, $jahr);
                     }
                     $ok = $stmt->execute(); $stmt->close();
                     break;
@@ -375,56 +406,42 @@ try {
                     
                     if ($existing) {
                         // Prüfe ob P1 leer ist (erste Passe) oder schon gefüllt (zweite Passe)
-                        $check_sql = "SELECT P1Schuss1 FROM schwini WHERE MitgliedID=? AND Jahr=? LIMIT 1";
+                        $check_sql = "SELECT P1Schuss1 FROM schwini WHERE {$spalte}=? AND Jahr=? LIMIT 1";
                         $check_stmt = $db->prepare($check_sql);
-                        $check_stmt->bind_param('ii', $mitglied_id, $jahr);
+                        $check_stmt->bind_param('ii', $pid, $jahr);
                         $check_stmt->execute();
                         $result = $check_stmt->get_result()->fetch_assoc();
                         $check_stmt->close();
                         
                         if ($result && $result['P1Schuss1'] === null) {
                             // P1 ist leer â†’ erste Passe speichern
-                            $sql = "UPDATE schwini SET P1Schuss1=?,P1Schuss2=?,P1Schuss3=?,P1Schuss4=?,P1Schuss5=?,P1Schuss6=? WHERE MitgliedID=? AND Jahr=?";
+                            $sql = "UPDATE schwini SET P1Schuss1=?,P1Schuss2=?,P1Schuss3=?,P1Schuss4=?,P1Schuss5=?,P1Schuss6=? WHERE {$spalte}=? AND Jahr=?";
                             $stmt = $db->prepare($sql);
-                            $stmt->bind_param('iiiiiiii', $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $mitglied_id, $jahr);
+                            $stmt->bind_param('iiiiiiii', $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $pid, $jahr);
                         } else {
                             // P1 ist gefüllt â†’ zweite Passe speichern
-                            $sql = "UPDATE schwini SET P2Schuss1=?,P2Schuss2=?,P2Schuss3=?,P2Schuss4=?,P2Schuss5=?,P2Schuss6=? WHERE MitgliedID=? AND Jahr=?";
+                            $sql = "UPDATE schwini SET P2Schuss1=?,P2Schuss2=?,P2Schuss3=?,P2Schuss4=?,P2Schuss5=?,P2Schuss6=? WHERE {$spalte}=? AND Jahr=?";
                             $stmt = $db->prepare($sql);
-                            $stmt->bind_param('iiiiiiii', $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $mitglied_id, $jahr);
+                            $stmt->bind_param('iiiiiiii', $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $pid, $jahr);
                         }
                     } else {
                         // Neuer Eintrag â†’ erste Passe speichern
-                        $sql = "INSERT INTO schwini (MitgliedID, P1Schuss1,P1Schuss2,P1Schuss3,P1Schuss4,P1Schuss5,P1Schuss6, Jahr) VALUES (?,?,?,?,?,?,?,?)";
+                        $sql = "INSERT INTO schwini ({$spalte}, P1Schuss1,P1Schuss2,P1Schuss3,P1Schuss4,P1Schuss5,P1Schuss6, Jahr) VALUES (?,?,?,?,?,?,?,?)";
                         $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiiiiii', $mitglied_id, $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $jahr);
+                        $stmt->bind_param('iiiiiiii', $pid, $current_shots[0],$current_shots[1],$current_shots[2],$current_shots[3],$current_shots[4],$current_shots[5], $jahr);
                     }
                     $ok = $stmt->execute(); $stmt->close();
                     break;
                 }
                 case 'endresultate_partner': {
-                    // Sie und Er: 5 Schüsse in SieErSchuss6-10 speichern
+                    // Sie und Er: die fünf eigenen Schüsse (endstich_sieunder, Migration 094). Die Partnerin bzw.
+                    // den Partner verknüpft «Endschiessen Resultate erfassen»; eine bestehende Verknüpfung bleibt.
                     $arr = array_pad(array_slice($clean, 0, 5), 5, null);
-                    
-                    // Prüfe ob bereits ein Eintrag existiert
-                    $check_stmt = $db->prepare("SELECT ID FROM endresultate_partner WHERE MitgliedID=? AND Jahr=? LIMIT 1");
-                    $check_stmt->bind_param('ii', $mitglied_id, $jahr);
-                    $check_stmt->execute();
-                    $partner_exists = $check_stmt->get_result()->fetch_assoc();
-                    $check_stmt->close();
-                    
-                    if ($partner_exists) {
-                        // Update bestehenden Eintrag - nur Sie und Er Schüsse
-                        $sql = "UPDATE endresultate_partner SET SieErSchuss6=?,SieErSchuss7=?,SieErSchuss8=?,SieErSchuss9=?,SieErSchuss10=? WHERE MitgliedID=? AND Jahr=?";
-                        $stmt = $db->prepare($sql);
-                        $stmt->bind_param('iiiiiii', $arr[0],$arr[1],$arr[2],$arr[3],$arr[4], $mitglied_id, $jahr);
-                    } else {
-                        // Neuer Eintrag mit PartnerName als Platzhalter
-                        $sql = "INSERT INTO endresultate_partner (MitgliedID,Jahr,PartnerName,SieErSchuss6,SieErSchuss7,SieErSchuss8,SieErSchuss9,SieErSchuss10) VALUES (?,?,?,?,?,?,?,?)";
-                        $stmt = $db->prepare($sql);
-                        $partner_name = 'Partner'; // Default Partner Name
-                        $stmt->bind_param('iisiiiiii', $mitglied_id, $jahr, $partner_name, $arr[0],$arr[1],$arr[2],$arr[3],$arr[4]);
-                    }
+                    $sql = "INSERT INTO endstich_sieunder ({$spalte}, Jahr, Schuss1, Schuss2, Schuss3, Schuss4, Schuss5) VALUES (?,?,?,?,?,?,?)
+                            ON DUPLICATE KEY UPDATE Schuss1 = VALUES(Schuss1), Schuss2 = VALUES(Schuss2), Schuss3 = VALUES(Schuss3),
+                                                    Schuss4 = VALUES(Schuss4), Schuss5 = VALUES(Schuss5)";
+                    $stmt = $db->prepare($sql);
+                    $stmt->bind_param('iiiiiii', $pid, $jahr, $arr[0],$arr[1],$arr[2],$arr[3],$arr[4]);
                     $ok = $stmt->execute(); $stmt->close();
                     break;
                 }

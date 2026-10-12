@@ -31,9 +31,8 @@ function getResults($kat, $selectedYear) {
     $katValue = 'Kat. ' . $kat;
 
     // Hier folgt die komplexe SQL-Abfrage.
-    $sql = "SELECT
-        m.Name,
-        m.Vorname,
+    // Auswahlliste für Mitglieder und Gäste gleich; die hat*-Flags zählen die Zeilen der Stich-Tabellen
+    $auswahl = "
         z.Ansage,
         (
             CASE WHEN z.ZSchuss1 >= 91 THEN 10 WHEN z.ZSchuss1 >= 81 THEN 9 WHEN z.ZSchuss1 >= 71 THEN 8 WHEN z.ZSchuss1 >= 61 THEN 7 WHEN z.ZSchuss1 >= 51 THEN 6 WHEN z.ZSchuss1 >= 41 THEN 5 WHEN z.ZSchuss1 >= 31 THEN 4 WHEN z.ZSchuss1 >= 21 THEN 3 WHEN z.ZSchuss1 >= 11 THEN 2 WHEN z.ZSchuss1 >= 1 THEN 1 ELSE 0 END +
@@ -71,10 +70,16 @@ function getResults($kat, $selectedYear) {
         ) AS GesamtTotal,
         -- Welche Stiche sind erfasst? Fehlende zählen im Total als 0 (wie im Absendenbuch),
         -- in der Tabelle steht ein Strich statt einer Null.
-        MAX(s.MitgliedID) IS NOT NULL AS hatSchwini,
-        MAX(k.MitgliedID) IS NOT NULL AS hatKunst,
-        MAX(g.MitgliedID) IS NOT NULL AS hatGlueck,
-        MAX(z.MitgliedID) IS NOT NULL AS hatZabig
+        MAX(s.ID) IS NOT NULL AS hatSchwini,
+        MAX(k.ID) IS NOT NULL AS hatKunst,
+        MAX(g.ID) IS NOT NULL AS hatGlueck,
+        MAX(z.ID) IS NOT NULL AS hatZabig";
+
+    $sql = "(SELECT
+        CONVERT(m.Name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+        CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
+        m.Geburtsdatum,
+        $auswahl
     FROM mitglieder m
     LEFT JOIN endstich e ON m.ID = e.MitgliedID AND e.Jahr = ?
     LEFT JOIN schwini s ON m.ID = s.MitgliedID AND s.Jahr = ?
@@ -84,11 +89,37 @@ function getResults($kat, $selectedYear) {
     LEFT JOIN Waffen w ON w.ID = m.WaffenID
     WHERE w.Kategorie = ?
       AND e.Jahr = ?
-    GROUP BY m.ID, m.Vorname, m.Name
-    ORDER BY GesamtTotal DESC, EndstichTotal DESC, m.Geburtsdatum ASC";
-    
+    GROUP BY m.ID, m.Vorname, m.Name)";
+    $types = "iiiiisi";
+    $params = [$selectedYear, $selectedYear, $selectedYear, $selectedYear, $selectedYear, $katValue, $selectedYear];
+
+    // Gäste (ohne Jungschützen) nur in Kat. B und nur, wenn sie alle fünf Stiche geschossen haben (Migration 094)
+    if ($kat === 'B') {
+        $sql .= "
+    UNION ALL
+    (SELECT
+        CONVERT(ga.name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
+        CONVERT('' USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
+        DATE('2100-01-01') AS Geburtsdatum,
+        $auswahl
+    FROM endstich_gaeste ga
+    INNER JOIN endstich e ON e.GastID = ga.id AND e.Jahr = ga.jahr AND e.Schuss1 != 0
+    INNER JOIN schwini s ON s.GastID = ga.id AND s.Jahr = ga.jahr
+    INNER JOIN kunst k ON k.GastID = ga.id AND k.Jahr = ga.jahr AND (k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5) > 0
+    INNER JOIN glueck g ON g.GastID = ga.id AND g.Jahr = ga.jahr AND GREATEST(g.GSchuss1, g.GSchuss2, g.GSchuss3) > 0
+    INNER JOIN zabig z ON z.GastID = ga.id AND z.Jahr = ga.jahr AND (z.ZSchuss1 + z.ZSchuss2 + z.ZSchuss3 + z.ZSchuss4 + z.ZSchuss5 + z.ZSchuss6) > 0
+    WHERE ga.jahr = ? AND ga.geburtsdatum IS NULL
+      AND GREATEST(s.P1Schuss1 + s.P1Schuss2 + s.P1Schuss3 + s.P1Schuss4 + s.P1Schuss5 + s.P1Schuss6,
+                   s.P2Schuss1 + s.P2Schuss2 + s.P2Schuss3 + s.P2Schuss4 + s.P2Schuss5 + s.P2Schuss6) > 0
+    GROUP BY ga.id, ga.name)";
+        $types .= "i";
+        $params[] = $selectedYear;
+    }
+    $sql .= "
+    ORDER BY GesamtTotal DESC, EndstichTotal DESC, Geburtsdatum ASC";
+
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iiiiisi", $selectedYear, $selectedYear, $selectedYear, $selectedYear, $selectedYear, $katValue, $selectedYear);
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
     return $result;

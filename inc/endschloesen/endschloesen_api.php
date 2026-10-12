@@ -98,7 +98,7 @@ function endschAmmoPref(?int $waffeId, ?string $bez, ?string $kat): ?string
     if (preg_match('/\b(stgw|stg)\s*90\b|\bpe\s*90\b|\b(sg|sig)\s*550\b|\bgp\s*90\b|\b5\.56\b|\b\.?223\b/', $text)) {
         return 'GP90';
     }
-    if (preg_match('/\b(stgw|stg)\s*57\b|\bk[\s-]?31\b|\bkarabiner\s*31\b|\bk[\s-]?11\b|\bg[\s-]?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp\s*11\b|\bstandardgewehr\b|\bstdg\b/', $text)) {
+    if (preg_match('/\b(stgw|stg)\s*57\b|\bk[\s-]?31\b|\bkarabiner\b|\bk[\s-]?11\b|\bg[\s-]?11\b|\bmousqueton\b|\bordonn?anz\b|\bgp\s*11\b|\bstandardgewehr\b|\bstdg\b/', $text)) {
         return 'GP11';
     }
     return null;
@@ -466,6 +466,16 @@ try {
                 jsonResponse(false, null, 'Fehlende Parameter');
             }
             $spalte = $typ === 'mitglied' ? 'mitglied_id' : 'gast_id';
+            // Gäste und Jungschützen mit Resultaten bleiben (Migration 094: Resultate hängen über GastID am Gast)
+            if ($spalte === 'gast_id') {
+                $mitResultaten = 0;
+                foreach (['endstich', 'schwini', 'kunst', 'glueck', 'zabig', 'endstich_sieunder'] as $tab) {
+                    $mitResultaten += (int)(rows(q($conn, "SELECT COUNT(*) AS n FROM `$tab` WHERE GastID = ? AND Jahr = ?", 'ii', [$entityId, $jahr]))[0]['n'] ?? 0);
+                }
+                if ($mitResultaten > 0) {
+                    jsonResponse(false, null, 'Für diese Person sind schon Resultate erfasst. Zuerst unter «Endschiessen Resultate erfassen» die Resultate löschen, dann hier.');
+                }
+            }
             $conn->begin_transaction();
             try {
                 q($conn, "DELETE FROM endstich_selection WHERE $spalte = ? AND jahr = ?", 'ii', [$entityId, $jahr]);
