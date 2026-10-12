@@ -103,9 +103,9 @@ include 'header.inc.php';
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Word)">
                                     <button type="button" class="btn btn-outline-info abs-btn"><i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Absendenbuch (Word)</span></button>
                                 </div>
-                                <div class="btn-group btn-group-sm" role="group" aria-label="Broschüre">
-                                    <button type="button" class="btn btn-outline-info absbk-btn" data-tooltip="Absendenbuch als Broschüre: A5-Seiten paarweise auf A4 quer, in der Reihenfolge zum Falten"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Broschüre</span></button>
-                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Broschüre direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Broschüre)">
+                                    <button type="button" class="btn btn-outline-info absbk-btn" data-tooltip="Das Absendenbuch als PDF zum Falten: je zwei A5-Seiten auf A4 quer. Beidseitig drucken, an der kurzen Kante wenden."><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Absendenbuch (Broschüre)</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Absendenbuch (Broschüre) direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Gesamtrangliste">
                                     <button type="button" class="btn btn-outline-info ges-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Gesamtrangliste</span></button>
@@ -317,7 +317,7 @@ $(document).ready(function () {
                 linkPrefix: 'endschrang/',
                 titel: documentName + ' ' + jahr,
                 name: 'Endschiessen_' + documentName.replace(/\s+/g, '_') + '_' + jahr,
-                fehler: documentName + ' konnte nicht erstellt werden'
+                fehler: '«' + documentName + '» konnte nicht erstellt werden. Bitte nochmals versuchen und sonst dem Admin melden.'
             });
         });
     }
@@ -332,7 +332,7 @@ $(document).ready(function () {
             linkPrefix: 'absenden/',
             titel: 'Absendenbuch ' + jahr + ' (Word)',
             name: 'Absendenbuch_' + jahr,
-            fehler: 'Das Absendenbuch konnte nicht erstellt werden',
+            fehler: 'Das Absendenbuch konnte nicht erstellt werden. Bitte nochmals versuchen und sonst dem Admin melden.',
             erfolg: j => absendenbuchErfolg(j, 'Absendenbuch ' + jahr + ' (Word) heruntergeladen.')
         });
     });
@@ -511,12 +511,15 @@ function absendenbuchErfolg(j, text) {
 // Broschüren-PDF herunterladen (gleicher Endpunkt, zum Prüfen der Seitenfolge oder für die Druckerei)
 $(document).on('click', '.absbk-btn', function () {
     const jahr = document.getElementById('yearSelect').value;
+    // Die Umwandlung in PDF läuft über einen externen Dienst und dauert spürbar: vorher sagen, damit niemand
+    // nach einer halben Minute Spinner nochmals klickt oder zum Drucker greift
+    if (!this.disabled) msvToast('Das Absendenbuch wird als Broschüre erstellt. Das kann bis zu einer Minute dauern.', 'info');
     msvAusgabe(this, {
         url: 'absenden/generate_absendenbuch_pdf.php',
         data: { year: jahr },
         titel: 'Absendenbuch ' + jahr + ' (Broschüre)',
         name: 'Absendenbuch_' + jahr + '_Broschuere',
-        fehler: 'Die Broschüre konnte nicht erstellt werden',
+        fehler: 'Die Broschüre konnte nicht erstellt werden. Bitte nochmals versuchen; bis dahin geht «Absendenbuch (Word)».',
         erfolg: j => absendenbuchErfolg(j, j && j.pages
             ? 'Broschüre heruntergeladen: ' + j.pages + ' Seiten auf ' + j.sheets + ' Blatt A4 (beidseitig, Wenden an der kurzen Kante).'
             : 'Broschüre heruntergeladen.')

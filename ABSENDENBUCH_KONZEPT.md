@@ -12,7 +12,7 @@ Snapshot der Critique: `.impeccable/critique/2026-10-12T14-28-10Z__inc-endschran
 | 1 Marken in der Vorlage | **erledigt 12.10.2026** (1.68.2): neue Vorlage `Resultatbuch_Template20261012.docx`, alte bleibt als Rückfall |
 | 2 Prüfliste prüft das Buch | **erledigt 12.10.2026** (1.68.3, Migration 097 Hilfetext): neue Zeilen «Siegerlisten» und «Weitere Teile des Absendenbuchs» (JM, Heim, Kanti je Kat. A/B, Cup); `absenden_bereit.php` prüft jeden Teil einzeln |
 | 3 Keine stillen Lücken | **erledigt 12.10.2026** (1.68.2) |
-| 4 Ehrliche Beschriftung | offen (`/impeccable clarify inc/endschrang.php`) |
+| 4 Ehrliche Beschriftung | **erledigt 12.10.2026** (1.68.4): Knopf «Absendenbuch (Broschüre)», Tooltip mit Druckanweisung, Start-Hinweis «bis zu einer Minute», Fehlertexte mit nächstem Schritt; Hilfetext «Absenden vorbereiten» in Migration 097. «Bereit fürs Absenden» deckt seit Schritt 2 auch den Buchinhalt ab und bleibt darum so stehen |
 
 Sicherungspunkt vor der Umsetzung: Commit `743370b`.
 

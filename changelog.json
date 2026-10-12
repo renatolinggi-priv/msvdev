@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.4",
+    "datum": "2026-10-12",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Rangliste: klarere Knöpfe und Meldungen fürs Absendenbuch",
+        "beschreibung": "Der Knopf heisst jetzt «Absendenbuch (Broschüre)» statt nur «Broschüre», damit klar ist, dass beide Knöpfe dasselbe Buch liefern; der Tooltip sagt, wie gedruckt wird (beidseitig, an der kurzen Kante wenden). Beim Erstellen der Broschüre sagt ein Hinweis vorab, dass es bis zu einer Minute dauern kann. Schlägt ein Dokument fehl, nennt die Meldung den nächsten Schritt; bei der Broschüre den Ausweg über «Absendenbuch (Word)».",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.3",
     "datum": "2026-10-12",
     "aenderungen": [
