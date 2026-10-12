@@ -4,7 +4,8 @@
  *
  * GET:  year        Jahr
  *       booklet=0   optional: nur das A5-PDF ohne Ausschiessen (z.B. für die Druckerei)
- * Antwort: JSON {pdf_link: 'absenden/dat/…pdf', pages, sheets} (relativ zu inc/) bzw. {error} mit HTTP 500
+ * Antwort: JSON {success, pdf_link: 'absenden/dat/…pdf', pages, sheets, hinweise: [Klartext …]} (Link relativ zu inc/)
+ *          bzw. {success:false, leer:true, message} ohne Endstich-Resultate, {success:false, message} mit HTTP 500
  *
  * Ablauf:
  *   1. Word-Vorlage füllen (absendenbuch_docx.inc.php) → temporäres DOCX
@@ -27,7 +28,7 @@ require_once __DIR__ . '/../config.php';        // $conn + zentraler dat/-Cleanu
 require_once __DIR__ . '/absendenbuch_docx.inc.php';
 require_once __DIR__ . '/../lib/convertapi_helper.php';
 
-$year    = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+$year    = absendenbuchJahr();
 $booklet = !isset($_GET['booklet']) || $_GET['booklet'] !== '0';
 $datDir  = __DIR__ . '/dat';
 $ts      = (new DateTime())->format('Y-m-d_H-i-s');
@@ -61,18 +62,32 @@ function absendenShellEnv(): string
     return 'HOME=' . escapeshellarg($home) . ' PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=' . escapeshellarg(sys_get_temp_dir()) . ' ';
 }
 
+// Klartext je Schritt: beim Füllen bleiben eigene Meldungen sichtbar (z.B. fehlende Vorlage); was der
+// Umwandlungsdienst oder pdfjam melden, ist technisch und geht nur ins Log.
+$schritt  = 'fuellen';
+$klartext = [
+    'fuellen'      => 'Das Absendenbuch konnte nicht erstellt werden. Bitte in ein paar Minuten nochmals versuchen und sonst dem Admin melden.',
+    'umwandeln'    => 'Die Umwandlung in PDF hat nicht geklappt. Bitte in ein paar Minuten nochmals versuchen; bis dahin geht «Absendenbuch (Word)».',
+    'ausschiessen' => 'Das PDF ist erstellt, aber die Broschüre liess sich nicht ausschiessen. Bitte nochmals versuchen und sonst dem Admin melden.',
+];
+
 try {
+    if (!absendenbuchHatEndstich($conn, $year)) {
+        msvAusgabeLeer('Für ' . $year . ' sind noch keine Endstich-Resultate erfasst. Ohne sie gibt es kein Absendenbuch.');
+    }
     if (!is_dir($datDir) && !mkdir($datDir, 0755, true)) {
-        throw new RuntimeException('dat/-Verzeichnis nicht beschreibbar');
+        throw new RuntimeException('Der Ablageordner des Absendenbuchs ist auf dem Server nicht beschreibbar. Bitte dem Admin melden.');
     }
 
     // 1) Vorlage füllen → temporäres DOCX
-    $tp = absendenbuchTemplateFuellen($year, $conn);
+    $hinweise = [];
+    $tp = absendenbuchTemplateFuellen($year, $conn, $hinweise);
     $tmpDocx = tempnam(sys_get_temp_dir(), 'absenden_');
     rename($tmpDocx, $tmpDocx . '.docx'); $tmpDocx .= '.docx';
     $tp->saveAs($tmpDocx);
 
     // 2) DOCX → PDF (A5-Seiten)
+    $schritt = 'umwandeln';
     $tmpPdf = convertToPdf($tmpDocx, 'docx');
     $pages  = absendenPdfSeiten($tmpPdf);
 
@@ -81,34 +96,36 @@ try {
         if (!copy($tmpPdf, $ziel)) {
             throw new RuntimeException('PDF konnte nicht gespeichert werden');
         }
-        echo json_encode(['pdf_link' => 'absenden/dat/' . basename($ziel), 'pages' => $pages, 'sheets' => null]);
-        exit;
+        $antwort = ['pdf_link' => 'absenden/dat/' . basename($ziel), 'pages' => $pages, 'sheets' => null];
+    } else {
+        // 3) Broschüre: eine Lage (signature) = alle Seiten, aufgerundet auf ein Vielfaches von 4
+        $schritt = 'ausschiessen';
+        $signature = max(4, (int)(ceil($pages / 4) * 4));
+        $ziel = $datDir . '/Resultatbuechlein_Broschuere_' . $ts . '.pdf';
+        $cmd = absendenShellEnv()
+            . 'pdfjam --booklet true --landscape --paper a4paper --signature ' . $signature . ' --quiet '
+            . escapeshellarg($tmpPdf) . ' -o ' . escapeshellarg($ziel) . ' 2>&1';
+        $out = [];
+        $rc  = 0;
+        exec($cmd, $out, $rc);
+        if ($rc !== 0 || !is_file($ziel) || filesize($ziel) < 1000) {
+            @unlink($ziel);
+            throw new RuntimeException('Ausschiessen fehlgeschlagen (pdfjam rc=' . $rc . '): ' . trim(implode(' ', array_slice($out, -3))));
+        }
+        $antwort = [
+            'pdf_link'  => 'absenden/dat/' . basename($ziel),
+            'pages'     => $pages,              // Seiten im A5-Dokument
+            'signature' => $signature,          // Seiten nach Auffüllen
+            'sheets'    => (int)($signature / 4), // A4-Blätter beidseitig
+        ];
     }
 
-    // 3) Broschüre: eine Lage (signature) = alle Seiten, aufgerundet auf ein Vielfaches von 4
-    $signature = max(4, (int)(ceil($pages / 4) * 4));
-    $ziel = $datDir . '/Resultatbuechlein_Broschuere_' . $ts . '.pdf';
-    $cmd = absendenShellEnv()
-        . 'pdfjam --booklet true --landscape --paper a4paper --signature ' . $signature . ' --quiet '
-        . escapeshellarg($tmpPdf) . ' -o ' . escapeshellarg($ziel) . ' 2>&1';
-    $out = [];
-    $rc  = 0;
-    exec($cmd, $out, $rc);
-    if ($rc !== 0 || !is_file($ziel) || filesize($ziel) < 1000) {
-        @unlink($ziel);
-        throw new RuntimeException('Ausschiessen fehlgeschlagen (pdfjam rc=' . $rc . '): ' . trim(implode(' ', array_slice($out, -3))));
-    }
-
-    echo json_encode([
-        'pdf_link'  => 'absenden/dat/' . basename($ziel),
-        'pages'     => $pages,              // Seiten im A5-Dokument
-        'signature' => $signature,          // Seiten nach Auffüllen
-        'sheets'    => (int)($signature / 4), // A4-Blätter beidseitig
-    ]);
+    echo json_encode(['success' => true] + $antwort + ['hinweise' => $hinweise], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
-    error_log('[absendenbuch_pdf] ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e)]);
+    $meldung = msvFehler($klartext[$schritt], $e); // loggt die Technik
+    echo json_encode(['success' => false, 'message' => $schritt === 'fuellen' ? $meldung : $klartext[$schritt]],
+        JSON_UNESCAPED_UNICODE);
 } finally {
     if ($tmpDocx && file_exists($tmpDocx)) @unlink($tmpDocx);
     if ($tmpPdf && file_exists($tmpPdf)) @unlink($tmpPdf);

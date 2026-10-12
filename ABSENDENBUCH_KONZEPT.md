@@ -1,9 +1,46 @@
 # Absendenbuch-Generierung: Befund und Plan
 
 Stand 12.10.2026. Design-Critique (Impeccable, zwei getrennte Prüfungen: Design-Review und Detektor) der
-Absendenbuch-Generierung, dazu der Plan für die erste Runde «Verlässlichkeit». **Noch nichts umgesetzt.**
+Absendenbuch-Generierung, dazu der Plan für die erste Runde «Verlässlichkeit».
 
 Snapshot der Critique: `.impeccable/critique/2026-10-12T14-28-10Z__inc-endschrang-php.md`
+
+## Umsetzungsstand
+
+| Schritt | Stand |
+|---|---|
+| 1 Marken in der Vorlage | **erledigt 12.10.2026** (1.68.2): neue Vorlage `Resultatbuch_Template20261012.docx`, alte bleibt als Rückfall |
+| 2 Prüfliste prüft das Buch | offen (`/impeccable harden inc/endschrang/absenden_bereit.php`) |
+| 3 Keine stillen Lücken | **erledigt 12.10.2026** (1.68.2) |
+| 4 Ehrliche Beschriftung | offen (`/impeccable clarify inc/endschrang.php`) |
+
+Sicherungspunkt vor der Umsetzung: Commit `743370b`.
+
+Was Schritt 1 und 3 konkret geändert haben:
+
+- **Vorlage:** Blockmarken `${JUNGSCHUETZEN_BLOCK}` und `${PARTNER_BLOCK}`, je in einem eigenen weissen
+  Absatz. Tippfehler korrigiert.
+- **Blöcke auflösen:** über die Unterklasse `AbsendenbuchVorlage::blockAufloesen()` (String-Suche).
+  `cloneBlock()` von PhpWord fand fehlende Marken nicht, meldete aber keinen Fehler.
+- **Abschnitte einzeln:** Jeder Abschnitt läuft für sich. Fehler, leere Tabellen und Siegerlisten ohne
+  Buchjahr kommen als `hinweise` in die JSON-Antwort. Platzhalter-Reste werden am Schluss geleert und gemeldet.
+- **Siegerlisten:** nur noch Jahre bis zum Buchjahr.
+- **Endpunkte:**
+  - Jahr wird geprüft.
+  - `leer` ohne Endstich-Resultate.
+  - try/catch mit Klartext je Schritt (füllen / umwandeln / ausschiessen).
+  - `success`/`message` statt `error`.
+  - Temporäre Dateien werden auch beim A5-PDF aufgeräumt.
+- **Oberfläche:**
+  - `msvAusgabe` kennt `erfolg: { dialog }`. Mit Hinweisen erscheint ein Dialog statt eines Toasts.
+  - Der Direktdruck fragt bei Hinweisen nach, liest `message || error` und zeigt Servermeldungen ohne
+    «Druckfehler:».
+
+**Korrektur zu Befund 1** (Vorher/Nachher-Test mit der Prod-Kopie):
+- Die Endmarke `${/Partner_BLOCK}` ist in der alten Vorlage weiss formatiert und im Druck unsichtbar.
+- Sichtbar war dagegen etwas Schlimmeres: In jedem Jahr **ohne Jungschützen** standen rohe Platzhalter
+  `${JRang} ${JName} ${JE} …` im Heft, bei 2024 zusätzlich `${PRang} …`, weil der leere Abschnitt nie
+  entfernt wurde.
 
 ## Was geprüft wurde
 

@@ -49,6 +49,44 @@ function logDebug($message) {
 // waeren sie unsichtbar geworden.
 function logFehler($message) {
     error_log("[JM Fehler] " . date('Y-m-d H:i:s') . " - " . $message);
+    // Im Absendenbuch fehlt dann ein Teil: dem Vorstand melden statt still weglassen
+    absendenHinweis('Daten konnten nicht geladen werden, der Abschnitt ist unvollständig.');
+}
+
+/**
+ * Hinweis fürs Absendenbuch: was leer bleibt oder fehlt, in Klartext für den Vorstand.
+ * absendenbuchTemplateFuellen() (absendenbuch_docx.inc.php) setzt den laufenden Abschnitt als Vorspann
+ * und liefert die Liste mit dem Buch; die Oberfläche zeigt sie nach dem Erstellen und vor dem Direktdruck.
+ */
+function absendenHinweis(string $text): void {
+    $abschnitt = $GLOBALS['absendenAbschnitt'] ?? '';
+    $eintrag = ($abschnitt !== '' ? $abschnitt . ': ' : '') . $text;
+    if (!in_array($eintrag, $GLOBALS['absendenHinweise'] ?? [], true)) {
+        $GLOBALS['absendenHinweise'][] = $eintrag;
+    }
+}
+
+/**
+ * Optionalen Abschnitt der Vorlage auflösen (${NAME} … ${/NAME}, je in einem eigenen Absatz).
+ * Behalten: nur die Marken verschwinden; sonst fällt der ganze Abschnitt weg (Titel und Tabelle).
+ * false, wenn die Marken fehlen (z.B. ältere Vorlage) – dann bleibt der Abschnitt stehen.
+ */
+function absendenBlock($templateProcessor, string $name, bool $behalten): bool {
+    if (method_exists($templateProcessor, 'blockAufloesen')) {
+        return $templateProcessor->blockAufloesen($name, $behalten);
+    }
+    $templateProcessor->cloneBlock($name, $behalten ? 1 : 0);
+    return !in_array($name, $templateProcessor->getVariables(), true);
+}
+
+// Optionaler Abschnitt ohne Daten (Jungschützen, Partner): ganz weglassen. Fehlen die Marken, bleibt
+// wenigstens die Tabelle ohne Zeilen, und der Vorstand erfährt, warum Titel und Kopf im Buch stehen.
+function absendenAbschnittWeglassen($templateProcessor, string $block, string $rangVariable): void {
+    if (absendenBlock($templateProcessor, $block, false)) {
+        return;
+    }
+    $templateProcessor->cloneRow($rangVariable, 0);
+    absendenHinweis('keine Resultate, aber der leere Abschnitt liess sich nicht entfernen (Vorlage ohne Blockmarken). Bitte dem Admin melden.');
 }
 
 // ========================================
@@ -105,6 +143,7 @@ function getEndstich($templateProcessor, $conn)
     $rowCount = count($rows);
     if ($rowCount === 0) {
         logDebug("Keine Endstich-Daten gefunden");
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('ESRang', 0);
         return;
     }
@@ -244,6 +283,7 @@ function getSchwini($templateProcessor, $conn)
     }
     if ($rowCount == 0) {
         logDebug("Keine Schwini-Daten gefunden");
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('SRang', 0);
         return;
     }
@@ -357,6 +397,7 @@ function getZabig($templateProcessor, $conn)
     $rowCount = count($data);
     if ($rowCount == 0) {
         logDebug("Keine Zabig-Daten gefunden");
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('ZRang', 0);
         return;
     }
@@ -444,6 +485,7 @@ function getGlueck($templateProcessor, $conn, $textRun)
     }
     if ($rowCount == 0) {
         logDebug("Keine Glück-Daten gefunden");
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('GRang', 0);
         return;
     }
@@ -520,6 +562,7 @@ function getKunst($templateProcessor, $conn)
     }
     if ($rowCount == 0) {
         logDebug("Keine Kunst-Daten gefunden");
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('KRang', 0);
         return;
     }
@@ -685,6 +728,7 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
     $kategorie = "E" . trim(strrchr($kat, ' '));
     if ($rowCount == 0) {
         logDebug("Keine Endsch-Gesamt-Daten gefunden für Kategorie: " . $kat);
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow($kategorie . 'Rang', 0);
         return;
     }
@@ -743,39 +787,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
         $checkStmt->close();
         if (!$hasData) {
             logDebug("Keine Jungschützen-Daten vorhanden - entferne Sektion");
-
-            // Methode 1: cloneBlock mit 0 (entfernt den Block)
-            try {
-                $templateProcessor->cloneBlock('JUNGSCHUETZEN_BLOCK', 0);
-                logDebug("Jungschützen-Block mit cloneBlock entfernt");
-                return;
-            } catch (Exception $e) {
-                logDebug("cloneBlock fehlgeschlagen: " . $e->getMessage());
-            }
-
-            // Methode 2: replaceBlock mit leerem String
-            try {
-                $templateProcessor->replaceBlock('JUNGSCHUETZEN_BLOCK', '');
-                logDebug("Jungschützen-Block mit replaceBlock entfernt");
-                return;
-            } catch (Exception $e) {
-                logDebug("replaceBlock fehlgeschlagen: " . $e->getMessage());
-            }
-
-            // Methode 3: Alle Platzhalter leer setzen
-            // Titel und Überschriften entfernen
-            $templateProcessor->setValue('JUNGSCHUETZEN_TITEL', '');
-            $templateProcessor->setValue('JUNGSCHUETZEN_SUBTITLE', '');
-
-            // Tabelle ohne Zeilen (= unsichtbar machen)
-            $templateProcessor->cloneRow('JRang', 0);
-
-            // Weitere mögliche Platzhalter
-            $placeholders = ['JName', 'JE', 'JZ', 'JS', 'JT'];
-            foreach ($placeholders as $ph) {
-                $templateProcessor->setValue($ph, '');
-            }
-            logDebug("Jungschützen-Platzhalter geleert");
+            absendenAbschnittWeglassen($templateProcessor, 'JUNGSCHUETZEN_BLOCK', 'JRang');
             return;
         }
     }
@@ -813,7 +825,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         logFehler("SQL-Fehler in getJungschuetzenResultate prepare: " . $conn->error);
-        $templateProcessor->cloneRow('JRang', 0);
+        absendenAbschnittWeglassen($templateProcessor, 'JUNGSCHUETZEN_BLOCK', 'JRang');
         return;
     }
     $stmt->bind_param("iiii", $selectedYear, $selectedYear, $selectedYear, $selectedYear);
@@ -856,7 +868,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     $rowCount = count($data);
     if ($rowCount == 0) {
         logDebug("Keine Jungschützen-Daten mit Resultaten gefunden");
-        $templateProcessor->cloneRow('JRang', 0);
+        absendenAbschnittWeglassen($templateProcessor, 'JUNGSCHUETZEN_BLOCK', 'JRang');
         $stmt->close();
         return;
     }
@@ -896,20 +908,8 @@ function getJungschuetzenResultate($templateProcessor, $conn)
     }
     $stmt->close();
 
-    // Block-Marker entfernen nach dem Einfügen der Daten
-    try {
-
-        // Entferne den Start-Marker
-        $templateProcessor->setValue('JUNGSCHUETZEN_BLOCK', '');
-
-        // Entferne den End-Marker  
-        $templateProcessor->setValue('/JUNGSCHUETZEN_BLOCK', '');
-        logDebug("Block-Marker entfernt");
-    } catch (Exception $e) {
-
-        // Falls die Marker nicht als Variablen erkannt werden, ist das OK
-        logDebug("Block-Marker konnten nicht entfernt werden (vermutlich schon weg): " . $e->getMessage());
-    }
+    // Abschnitt bleibt, nur die Blockmarken verschwinden
+    absendenBlock($templateProcessor, 'JUNGSCHUETZEN_BLOCK', true);
     logDebug("getJungschuetzenResultate erfolgreich abgeschlossen");
 }
 
@@ -933,29 +933,7 @@ function getPartnerResultate($templateProcessor, $conn)
         $checkStmt->close();
         if (!$hasData) {
             logDebug("Keine Partner-Daten vorhanden - entferne Sektion");
-
-            // Methode 1: cloneBlock mit 0 (entfernt den Block)
-            try {
-                $templateProcessor->cloneBlock('PARTNER_BLOCK', 0);
-                logDebug("Partner-Block mit cloneBlock entfernt");
-                return;
-            } catch (Exception $e) {
-                logDebug("cloneBlock fehlgeschlagen: " . $e->getMessage());
-            }
-
-            // Methode 2: replaceBlock mit leerem String
-            try {
-                $templateProcessor->replaceBlock('PARTNER_BLOCK', '');
-                logDebug("Partner-Block mit replaceBlock entfernt");
-                return;
-            } catch (Exception $e) {
-                logDebug("replaceBlock fehlgeschlagen: " . $e->getMessage());
-            }
-
-            // Methode 3: Alle Platzhalter leer setzen
-            // Tabelle ohne Zeilen (= unsichtbar machen)
-            $templateProcessor->cloneRow('PRang', 0);
-            logDebug("Partner-Platzhalter geleert");
+            absendenAbschnittWeglassen($templateProcessor, 'PARTNER_BLOCK', 'PRang');
             return;
         }
     }
@@ -971,7 +949,7 @@ function getPartnerResultate($templateProcessor, $conn)
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         logFehler("SQL-Fehler in getPartnerResultate prepare: " . $conn->error);
-        $templateProcessor->cloneRow('PRang', 0);
+        absendenAbschnittWeglassen($templateProcessor, 'PARTNER_BLOCK', 'PRang');
         return;
     }
     $stmt->bind_param("ii", $selectedYear, $selectedYear);
@@ -990,7 +968,7 @@ function getPartnerResultate($templateProcessor, $conn)
     $rowCount = count($data);
     if ($rowCount == 0) {
         logDebug("Keine Partner-Daten mit Resultaten gefunden");
-        $templateProcessor->cloneRow('PRang', 0);
+        absendenAbschnittWeglassen($templateProcessor, 'PARTNER_BLOCK', 'PRang');
         $stmt->close();
         return;
     }
@@ -1023,20 +1001,8 @@ function getPartnerResultate($templateProcessor, $conn)
     }
     $stmt->close();
 
-    // Block-Marker entfernen nach dem Einfügen der Daten
-    try {
-
-        // Entferne den Start-Marker
-        $templateProcessor->setValue('PARTNER_BLOCK', '');
-
-        // Entferne den End-Marker  
-        $templateProcessor->setValue('/PARTNER_BLOCK', '');
-        logDebug("Partner Block-Marker entfernt");
-    } catch (Exception $e) {
-
-        // Falls die Marker nicht als Variablen erkannt werden, ist das OK
-        logDebug("Partner Block-Marker konnten nicht entfernt werden (vermutlich schon weg): " . $e->getMessage());
-    }
+    // Abschnitt bleibt, nur die Blockmarken verschwinden
+    absendenBlock($templateProcessor, 'PARTNER_BLOCK', true);
     logDebug("getPartnerResultate erfolgreich abgeschlossen");
 }
 
@@ -1079,6 +1045,7 @@ function getHeim($templateProcessor, $conn, $kat)
     $kategorie = "H" . trim(strrchr($kat, ' '));
     if ($rowCount == 0) {
         logDebug("Keine Heim-Daten gefunden für Kategorie: " . $kat);
+        absendenHinweis('keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow($kategorie . 'Rang', 0);
         return;
     }
@@ -1158,6 +1125,7 @@ function getKanti($templateProcessor, $conn)
     }
     if ($rowCount == 0) {
         logDebug("Keine Kanti-Daten gefunden für Kat. A");
+        absendenHinweis('Kat. A: keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('aRang', 0);
     } else {
         $templateProcessor->cloneRow('aRang', $rowCount);
@@ -1225,6 +1193,7 @@ function getKanti($templateProcessor, $conn)
     }
     if ($rowCount == 0) {
         logDebug("Keine Kanti-Daten gefunden für Kat. B");
+        absendenHinweis('Kat. B: keine Resultate für ' . $selectedYear . ', die Tabelle bleibt leer.');
         $templateProcessor->cloneRow('bRang', 0);
     } else {
         $templateProcessor->cloneRow('bRang', $rowCount);
@@ -1272,23 +1241,33 @@ function getSieger($templateProcessor, $conn)
         logFehler("SQL-Fehler in getSieger: " . $conn->error);
         return;
     }
+    // Die Siegerlisten werden von Hand geführt (Seite «Sieger der letzten Jahre»). Nur Jahre bis zum Buchjahr
+    // zeigen (ein Buch für 2024 ohne spätere Sieger) und melden, welchen Listen das Buchjahr noch fehlt.
+    $listenNamen = [
+        'Kunst' => 'Kunststich', 'Glück' => 'Glückstich', 'Zabigstich' => 'Zabigstich', 'Endstich' => 'Endstich',
+        'Schwini' => 'Schwinistich', 'EndschiessenA' => 'Endschiessen Kat. A', 'EndschiessenB' => 'Endschiessen Kat. B',
+        'HeimmeisterschaftA' => 'Heimmeisterschaft Kat. A', 'HeimmeisterschaftB' => 'Heimmeisterschaft Kat. B',
+        'KantonalstichA' => 'Kantonalstich Kat. A', 'KantonalstichB' => 'Kantonalstich Kat. B',
+        'JahresmeisterschaftA' => 'Jahresmeisterschaft Kat. A', 'JahresmeisterschaftB' => 'Jahresmeisterschaft Kat. B',
+    ];
+    $ohneBuchjahr = [];
     while ($rowdef = $result->fetch_assoc()) {
-        $countSieger = getCountSieger($conn, $rowdef['Bezeichnung']);
+        $countSieger = getCountSieger($conn, $rowdef['Bezeichnung'], (int)$selectedYear);
 
         // Klone die Zeilen basierend auf der Anzahl der Sieger
         $row = $rowdef['PlatzhalterWord'] . "Y";
         $templateProcessor->cloneRow($row, $countSieger);
         $siegerdef = $rowdef['Bezeichnung'];
         $sqlSiegerDef = "SELECT * FROM sieger s
-                         JOIN siegerdef sd ON sd.ID = s.siegerdef 
-                         WHERE sd.Bezeichnung = ? 
+                         JOIN siegerdef sd ON sd.ID = s.siegerdef
+                         WHERE sd.Bezeichnung = ? AND s.year <= ?
                          ORDER BY s.year ASC";
         $stmt = $conn->prepare($sqlSiegerDef);
         if (!$stmt) {
             logFehler("SQL-Fehler in getSieger prepare: " . $conn->error);
             continue;
         }
-        $stmt->bind_param("s", $siegerdef);
+        $stmt->bind_param("si", $siegerdef, $selectedYear);
         $stmt->execute();
         $resultsieger = $stmt->get_result();
         $currentRow = 1;
@@ -1297,6 +1276,9 @@ function getSieger($templateProcessor, $conn)
         // Sammle alle Sieger in ein Array
         while ($row = $resultsieger->fetch_assoc()) {
             $siegers[] = $row;
+        }
+        if (!in_array((int)$selectedYear, array_map('intval', array_column($siegers, 'year')), true)) {
+            $ohneBuchjahr[] = $listenNamen[$siegerdef] ?? $siegerdef;
         }
 
         // Verarbeite die Sieger paarweise
@@ -1334,6 +1316,12 @@ function getSieger($templateProcessor, $conn)
             $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "P2#{$i}", "");
         }
         $stmt->close();
+    }
+    if ($ohneBuchjahr) {
+        $welche = count($ohneBuchjahr) === $result->num_rows
+            ? 'Allen ' . $result->num_rows . ' Listen fehlt ' . $selectedYear
+            : count($ohneBuchjahr) . ' von ' . $result->num_rows . ' Listen fehlt ' . $selectedYear . ' (' . implode(', ', $ohneBuchjahr) . ')';
+        absendenHinweis($welche . '. Auf der Seite «Sieger der letzten Jahre» nachtragen und das Buch neu erstellen.');
     }
     logDebug("getSieger erfolgreich abgeschlossen");
 }
@@ -1669,6 +1657,7 @@ function getJMA($templateProcessor, $conn)
     $stmt->close();
     if (empty($jmDefs)) {
         logDebug("GetJMA: keine JMDefinition-Zeilen gefunden");
+        absendenHinweis('für ' . $selectedYear . ' sind keine Anlässe definiert, die Seiten bleiben leer.');
         $templateProcessor->setValue('JMA1', '');
         $templateProcessor->setValue('JMA2', '');
         return;
@@ -1913,6 +1902,7 @@ function getJMB($templateProcessor, $conn)
     $stmt->close();
     if (empty($jmDefs)) {
         logDebug("GetJMB: keine JMDefinition-Zeilen gefunden");
+        absendenHinweis('für ' . $selectedYear . ' sind keine Anlässe definiert, die Seiten bleiben leer.');
         $templateProcessor->setValue('JMB1', '');
         $templateProcessor->setValue('JMB2', '');
         return;
@@ -2127,16 +2117,16 @@ function calculatePoints($value) {
     return 0;
 }
 
-function getCountSieger($conn, $def) {
+function getCountSieger($conn, $def, int $bisJahr) {
     $countSieger = 0;
     $sqlSiegerDef = "SELECT COUNT(*) as count FROM sieger s
-                     JOIN siegerdef sd ON sd.ID = s.siegerdef 
-                     WHERE sd.Bezeichnung = ?";
+                     JOIN siegerdef sd ON sd.ID = s.siegerdef
+                     WHERE sd.Bezeichnung = ? AND s.year <= ?";
     $stmt = $conn->prepare($sqlSiegerDef);
     if (!$stmt) {
         return 0;
     }
-    $stmt->bind_param("s", $def);
+    $stmt->bind_param("si", $def, $bisJahr);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();

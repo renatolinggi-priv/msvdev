@@ -330,7 +330,8 @@ $(document).ready(function () {
             linkPrefix: 'absenden/',
             titel: 'Absendenbuch ' + jahr + ' (Word)',
             name: 'Absendenbuch_' + jahr,
-            fehler: 'Das Absendenbuch konnte nicht erstellt werden'
+            fehler: 'Das Absendenbuch konnte nicht erstellt werden',
+            erfolg: j => absendenbuchErfolg(j, 'Absendenbuch ' + jahr + ' (Word) heruntergeladen.')
         });
     });
 
@@ -463,6 +464,20 @@ MsvDruck.resolve('absendenbuch', () => {
     };
 });
 
+// Erfolg beim Absendenbuch: ohne Hinweise ein Toast; mit Hinweisen (leere Abschnitte, fehlende Sieger …)
+// ein Dialog, der stehen bleibt, bis man ihn gelesen hat – sonst fällt es erst im gedruckten Heft auf.
+function absendenbuchErfolg(j, text) {
+    const hinweise = (j && Array.isArray(j.hinweise)) ? j.hinweise : [];
+    if (!hinweise.length) return text;
+    return { dialog: {
+        icon: 'warning',
+        title: hinweise.length === 1 ? 'Absendenbuch mit 1 Hinweis' : 'Absendenbuch mit ' + hinweise.length + ' Hinweisen',
+        html: '<div class="text-start"><p class="mb-2">' + msvEsc(text) + ' Vor dem Druck bitte prüfen:</p><ul class="mb-0">'
+            + hinweise.map(h => '<li>' + msvEsc(h) + '</li>').join('') + '</ul></div>',
+        confirmButtonText: 'Verstanden'
+    } };
+}
+
 // Broschüren-PDF herunterladen (gleicher Endpunkt, zum Prüfen der Seitenfolge oder für die Druckerei)
 $(document).on('click', '.absbk-btn', function () {
     const jahr = document.getElementById('yearSelect').value;
@@ -472,7 +487,9 @@ $(document).on('click', '.absbk-btn', function () {
         titel: 'Absendenbuch ' + jahr + ' (Broschüre)',
         name: 'Absendenbuch_' + jahr + '_Broschuere',
         fehler: 'Die Broschüre konnte nicht erstellt werden',
-        erfolg: j => j && j.pages ? 'Broschüre heruntergeladen: ' + j.pages + ' Seiten auf ' + j.sheets + ' Blatt A4 (beidseitig, Wenden an der kurzen Kante)' : ''
+        erfolg: j => absendenbuchErfolg(j, j && j.pages
+            ? 'Broschüre heruntergeladen: ' + j.pages + ' Seiten auf ' + j.sheets + ' Blatt A4 (beidseitig, Wenden an der kurzen Kante).'
+            : 'Broschüre heruntergeladen.')
     });
 });
 </script>

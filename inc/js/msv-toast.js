@@ -362,6 +362,7 @@ function msvDownload(url, filename) {
 //     fehler: 'Die Rangliste konnte nicht erstellt werden.',
 //     erfolg: (j, res) => 'Broschüre: ' + j.pages + ' Seiten', // optional: eigener Erfolgstext (j = JSON-Antwort
 //                                                  // oder null, res = fetch-Response); auch { text, typ: 'warning' }
+//                                                  // oder { dialog: {…msvSwal-Optionen} } statt eines Toasts
 //     still:  true,                                // optional: kein Erfolgs-Toast (Sammel-Downloads), Fehler schon
 //     ladeKnopf: el                                // optional: Spinner an einem anderen Element (Dropdown-Toggle)
 //   });
@@ -441,7 +442,8 @@ async function msvAusgabe(btn, opts) {
             msvDownload(link, msvAusgabeDateiname(opts.name, j.filename || linkName, ''));
         }
         var erfolg = typeof opts.erfolg === 'function' ? opts.erfolg(j, res) : '';
-        if (erfolg && typeof erfolg === 'object') msvToast(erfolg.text, erfolg.typ || 'success');
+        if (erfolg && erfolg.dialog) msvSwal.fire(erfolg.dialog); // z.B. Hinweise, die man lesen muss
+        else if (erfolg && typeof erfolg === 'object') msvToast(erfolg.text, erfolg.typ || 'success');
         else if (!opts.still) msvToast(erfolg || ('«' + titel + '» heruntergeladen'), 'success');
         return true;
     } catch (err) {

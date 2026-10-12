@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.2",
+    "datum": "2026-10-12",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: nichts fehlt mehr still",
+        "beschreibung": "Nach dem Erstellen zeigt ein Dialog, was vor dem Druck zu prüfen ist: leere Tabellen, Abschnitte, die nicht geladen werden konnten, und Siegerlisten, denen das Buchjahr noch fehlt (nachtragen unter «Sieger der letzten Jahre»). Der Direktdruck fragt in diesem Fall nach, bevor er druckt. Leere Abschnitte für Jungschützen und Partner fallen ganz weg, statt mit leeren Platzhaltern im Heft zu stehen. Ein Buch für ein früheres Jahr zeigt keine späteren Sieger mehr. Ohne Endstich-Resultate entsteht kein leeres Buch, sondern ein Hinweis; schlägt das PDF fehl, nennt die Meldung den Ausweg über «Absendenbuch (Word)». In der Vorlage korrigiert: «Schwinistich», «Ordonnanzwaffen».",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.1",
     "datum": "2026-10-12",
     "aenderungen": [

@@ -268,10 +268,12 @@
       } catch (err) {
         // Generator ohne Daten (msvAusgabeLeer): nichts drucken, nur Hinweis – kein Eintrag «fehler» im Protokoll
         if (err && err.leer) { this._toast(err.message, 'warning'); return false; }
+        // Nach Hinweisen des Generators bewusst nicht gedruckt: kein Fehler
+        if (err && err.abgebrochen) return false;
         console.error('[MsvDruck] Druckfehler:', err);
         const msg = err && err.message ? err.message : String(err);
         if (this.pm) await this.pm.logJob(docType, p.printer_name, name, 'fehler', copies, msg);
-        this._toast('Druckfehler: ' + msg, 'error');
+        this._toast(err && err.server ? msg : 'Druckfehler: ' + msg, 'error'); // Servermeldungen ohne Vorspann
         return false;
       }
     },
@@ -302,14 +304,31 @@
       const ct = (r.headers.get('Content-Type') || '').toLowerCase();
       if (!r.ok) {
         let text = '';
-        try { text = ct.includes('json') ? (JSON.parse(await r.text()).message || '') : (await r.text()).replace(/<[^>]+>/g, ' ').trim().slice(0, 200); } catch (e) { /* egal */ }
-        throw new Error(text || ('HTTP ' + r.status));
+        try {
+          if (ct.includes('json')) { const jf = JSON.parse(await r.text()); text = jf.message || jf.error || ''; }
+          else text = (await r.text()).replace(/<[^>]+>/g, ' ').trim().slice(0, 200);
+        } catch (e) { /* egal */ }
+        const e = new Error(text || ('HTTP ' + r.status));
+        e.server = !!text && ct.includes('json'); // Klartext des Generators
+        throw e;
       }
       if (ct.includes('json')) {
         if (tiefe > 0) throw new Error('Endpunkt liefert kein PDF');
         const j = await r.json();
         if (j && j.leer) { const e = new Error(j.message || 'Keine Daten für diese Auswahl'); e.leer = true; throw e; }
-        if (j && j.success === false) throw new Error(j.message || j.error || 'PDF-Erzeugung fehlgeschlagen');
+        if (j && j.success === false) {
+          const e = new Error(j.message || j.error || 'PDF-Erzeugung fehlgeschlagen');
+          e.server = !!(j.message || j.error);
+          throw e;
+        }
+        // Hinweise des Generators (z.B. Absendenbuch mit leeren Abschnitten): vor dem Druck nachfragen
+        if (j && Array.isArray(j.hinweise) && j.hinweise.length && typeof msvConfirm === 'function') {
+          const liste = j.hinweise.map(h => '<li>' + msvEsc(h) + '</li>').join('');
+          const antwort = await msvConfirm('<div class="text-start"><p class="mb-2">Das Dokument ist erstellt, hat aber '
+            + (j.hinweise.length === 1 ? 'einen Hinweis' : j.hinweise.length + ' Hinweise') + ':</p><ul class="mb-0">' + liste + '</ul></div>',
+            'Trotzdem drucken?', 'Ja, drucken', 'Nicht drucken');
+          if (!antwort.isConfirmed) { const e = new Error('Druck abgebrochen'); e.abgebrochen = true; throw e; }
+        }
         const link = j && (j.pdf_link || j.pdf_url || j.pdf || j.url || j.file || j.download_url || j.link);
         if (!link) throw new Error(j && j.error ? String(j.error) : 'Antwort enthält keinen PDF-Link');
         return this._holePdf(this._normalisiereLink(link, linkPrefix), {}, linkPrefix, tiefe + 1);
