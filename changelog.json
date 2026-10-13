@@ -5,7 +5,7 @@
     "aenderungen": [
       {
         "titel": "Absendenbuch: Vereinscup übersichtlicher",
-        "beschreibung": "Der Cup hat eine eigene Überschrift «Vereinscup», die Runden stehen mit Abstand darunter, ohne die schweren Doppelbalken. Die Paarungen bleiben in der Reihenfolge der Auslosung, aber ohne Kästchen wie die übrigen Tabellen im Buch: Wer weiterkommt, ist fett, eine feine Linie unter jeder Begegnung hält die Gruppen zusammen, auch eine Dreiergruppe. Final und Standcup stehen linksbündig als kurze Rangliste darunter, mit linksbündigem Titel, die Punkte genau unter denen der Runden, nur der Sieger fett.",
+        "beschreibung": "Der Cup hat eine eigene Überschrift «Vereinscup», die Runden stehen mit Abstand darunter, ohne die schweren Doppelbalken. Die Paarungen bleiben in der Reihenfolge der Auslosung, aber ohne Kästchen wie die übrigen Tabellen im Buch: Wer weiterkommt, ist fett, eine feine Linie unter jeder Begegnung hält die Gruppen zusammen, auch eine Dreiergruppe. Final und Standcup stehen linksbündig als kurze Rangliste darunter, mit linksbündigem Titel, die Punkte genau unter denen der Runden, nur der Sieger fett; beim Standcup steht auch der Verein.",
         "typ": "verbesserung",
         "admin_only": true
       }

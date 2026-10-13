@@ -1514,6 +1514,8 @@ function getCup($templateProcessor, $conn)
         $standCupTable->addCell(450, $zelle)->addText("$i.", $schrift, ['spaceAfter' => 0]);
         $standCupTable->addCell(2450, $zelle)->addText($participant, $schrift, ['spaceAfter' => 0]);
         $standCupTable->addCell(650, $zelle)->addText($row['Result'], $schrift, ['spaceAfter' => 0, 'alignment' => Jc::END]);
+        // Verein hinter den Punkten, unter der zweiten Namensspalte der Runden (Punkte bleiben untereinander)
+        $standCupTable->addCell(2900, $zelle)->addText((string)($row['club'] ?? ''), $schrift, ['spaceAfter' => 0]);
         $i++;
     }
     $stmt->close();
