@@ -1751,15 +1751,16 @@ function getJMA($templateProcessor, $conn)
         }
         $isTop3 = ($rang <= 3);
         $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
+        $extra = ($rang % 2 === 0) ? ['bgColor' => 'F2F2F2'] : []; // jede zweite Zeile leicht grau
 
         // Tabelle 1
         $table1->addRow(200);
-        $table1->addCell($wRang,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
-        $table1->addCell($wName, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
+        $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
+        $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table1->addCell($wAnlass, array_merge($cellStyle, $bgColor))
+            $table1->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
 
@@ -1768,11 +1769,11 @@ function getJMA($templateProcessor, $conn)
         foreach ($row['resSecond'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table2->addCell($wAnlass, array_merge($cellStyle, $bgColor))
+            $table2->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
-        $table2->addCell($wTotal, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
+        $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow);
         $rang++;
     }
     $templateProcessor->setComplexBlock('JMA1', $table1);
@@ -2008,15 +2009,16 @@ function getJMB($templateProcessor, $conn)
         }
         $isTop3 = ($rang <= 3);
         $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
+        $extra = ($rang % 2 === 0) ? ['bgColor' => 'F2F2F2'] : []; // jede zweite Zeile leicht grau
 
         // Tabelle 1
         $table1->addRow(200);
-        $table1->addCell($wRang,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
-        $table1->addCell($wName, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
+        $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
+        $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table1->addCell($wAnlass, array_merge($cellStyle, $bgColor))
+            $table1->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
 
@@ -2025,11 +2027,11 @@ function getJMB($templateProcessor, $conn)
         foreach ($row['resSecond'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table2->addCell($wAnlass, array_merge($cellStyle, $bgColor))
+            $table2->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
-        $table2->addCell($wTotal, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
+        $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow);
         $rang++;
     }
     $templateProcessor->setComplexBlock('JMB1', $table1);

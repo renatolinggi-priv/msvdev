@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.16",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Jahresmeisterschaft leichter lesbar",
+        "beschreibung": "In den Tabellen der Jahresmeisterschaft ist jede zweite Zeile leicht grau hinterlegt. So lässt sich eine Person über die Doppelseite verfolgen, ohne dass Linien dazukommen. Streicher bleiben wie gewohnt dunkler grau und durchgestrichen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.15",
     "datum": "2026-10-13",
     "aenderungen": [
