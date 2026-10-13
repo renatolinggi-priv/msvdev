@@ -799,6 +799,7 @@ $(function() {
             html += '<div class="d-flex flex-wrap gap-2 mt-3">';
             html += '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="openBuilder(' + umfrage.id + ')"><i class="bi bi-pencil me-1"></i>Bearbeiten</button>';
             html += '<button type="button" class="btn btn-outline-primary btn-sm" onclick="openResults(' + umfrage.id + ')"><i class="bi bi-bar-chart me-1"></i>Auswertung</button>';
+            html += '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeStatus(' + umfrage.id + ', \'close\')" data-tooltip="Niemand kann mehr antworten, die Antworten bleiben erhalten"><i class="bi bi-lock me-1"></i>Schliessen</button>';
             html += '</div>';
         } else if (readonly) {
             html += '<div class="d-flex flex-wrap gap-2 mt-3">';
@@ -954,8 +955,10 @@ $(function() {
 
     // Status ändern
     window.changeStatus = async function(id, action) {
-        const label = action === 'activate' ? 'aktivieren' : 'schliessen';
-        const r = await msvConfirm('Umfrage wirklich ' + label + '?');
+        const r = action === 'activate'
+            ? await msvConfirm('Umfrage wirklich aktivieren?')
+            : await msvConfirm('Danach kann niemand mehr antworten. Die Antworten bleiben erhalten, die Auswertung bleibt verfügbar.',
+                               'Umfrage schliessen?', 'Schliessen');
         if (!r.isConfirmed) return;
 
         $.post('../api/umfrage_admin.php', { action: action, id: id, csrf_token: csrfToken }, null, 'json')

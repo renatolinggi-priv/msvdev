@@ -274,7 +274,16 @@ function msvDashCount(mysqli $conn, string $sql, int $param): int
  */
 function msvDashboardAusstehend(mysqli $conn, int $jahr, string $heute, int $limit = 10): array
 {
-    $sql = "SELECT jd.ID, jd.Bezeichnung, MAX(s.schiesstag) AS letzter
+    // Endstich und Bester Kantonalstich werden nicht in jmresultate erfasst, sondern
+    // in eigenen Tabellen (wie in jmrang/load_jm.php) - sonst gelten sie ewig als offen.
+    // Die Zählung steht als Spalte im SELECT: im HAVING sieht MariaDB jd.year in den Unterabfragen nicht
+    // («Unknown column jd.year», Fatal auf der Startseite am 13.10.2026).
+    $sql = "SELECT jd.ID, jd.Bezeichnung, MAX(s.schiesstag) AS letzter,
+                   CASE jd.Bezeichnung
+                       WHEN 'Endstich'             THEN (SELECT COUNT(*) FROM endstich e WHERE e.Jahr = jd.year)
+                       WHEN 'Bester Kantonalstich' THEN (SELECT COUNT(*) FROM kantiresultate k WHERE k.Jahr = jd.year)
+                       ELSE (SELECT COUNT(*) FROM jmresultate jr WHERE jr.jmdefinitionID = jd.ID)
+                   END AS erfasst
             FROM JMDefinition jd
             JOIN JMSchiesstage s ON s.jm_id = jd.ID
             WHERE jd.year = ?
@@ -282,9 +291,9 @@ function msvDashboardAusstehend(mysqli $conn, int $jahr, string $heute, int $lim
               AND jd.Info = 0
               AND jd.Erweitert = 0
               AND jd.Maxpunkte > 0
-            GROUP BY jd.ID, jd.Bezeichnung, jd.Reihenfolge
+            GROUP BY jd.ID, jd.Bezeichnung, jd.Reihenfolge, jd.year
             HAVING letzter < ?
-               AND (SELECT COUNT(*) FROM jmresultate jr WHERE jr.jmdefinitionID = jd.ID) = 0
+               AND erfasst = 0
             ORDER BY letzter ASC, jd.Reihenfolge ASC
             LIMIT ?";
     $stmt = $conn->prepare($sql);

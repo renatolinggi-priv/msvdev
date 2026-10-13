@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.68.7",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Startseite: Endstich gilt nicht mehr als «ohne Resultate»",
+        "beschreibung": "Der Endstich und der beste Kantonalstich werden in eigenen Tabellen erfasst. Die Startseite suchte ihre Resultate am falschen Ort und meldete sie darum unter «Das wartet auf dich» als offen, obwohl alles eingetragen war. Sie zählt jetzt dort, wo auch die Rangliste liest.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Umfragen lassen sich schliessen",
+        "beschreibung": "Aktive Umfragen haben neben «Auswertung» einen Knopf «Schliessen». Danach kann niemand mehr antworten, die Antworten und die Auswertung bleiben erhalten. Bisher fehlte der Knopf, abgelaufene Umfragen blieben darum aktiv und standen täglich auf der Startseite.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.6",
     "datum": "2026-10-13",
     "aenderungen": [
