@@ -1367,102 +1367,55 @@ function getCup($templateProcessor, $conn)
     // Funktion zum Erstellen der CUP-Tabelle
     function createCupTable($phpWord, $round, $cupPairsResult)
     {
-        $tableStyle = [
-            'alignment' => JcTable::CENTER,
-            'borderSize' => 4,
-            'borderColor' => '000000',
-            'cellMargin' => 150,
-        ];
-        $fontStyle = ['size' => 8];
-        // Wer weiterkommt fett, wer ausscheidet grau (früher durchgestrichen)
-        $loserFontStyle = ['size' => 8, 'color' => '7F7F7F'];
-        $winnerFontStyle = ['size' => 8, 'bold' => true];
-        $section = $phpWord->addSection();
-        $cupTable = $section->addTable($tableStyle);
+        // Wie bisher eine Zeile pro Paarung in der Reihenfolge der Auslosung (Name | Pkt | Name | Pkt), ohne Rahmen wie
+        // die übrigen Tabellen im Buch; eine feine Linie unter jeder Begegnung hält die Gruppen zusammen (eine Dreiergruppe
+        // hat keine Linie zwischen ihren zwei Zeilen). Wer weiterkommt fett, die anderen normal.
+        $tabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 80, 'cellMarginRight' => 80];
+        $wName = 2900; $wPkt = 650;
+        $fett = ['size' => 8, 'bold' => true];
+        $normal = ['size' => 8];
+        $absLinks = ['spaceAfter' => 0];
+        $absRechts = ['spaceAfter' => 0, 'alignment' => Jc::END];
+        $cupTable = $phpWord->addSection()->addTable($tabelle);
 
-        // Tabelleninhalt
-        $totalRows = count($cupPairsResult);
-        foreach ($cupPairsResult as $index => $row) {
+        foreach ($cupPairsResult as $row) {
             if ($row['Round'] != $round) {
                 continue;
             }
-
-            // Verlierer bestimmen
-            // Sieger wie auf der Cup-Seite: manuell bestimmter Sieger (Gleichstand) vor Resultat und Tiefschuss
-            $manuell = (int)($row['ManualWinner'] ?? 0);
-            $winner1 = $manuell > 0
-                ? $manuell === (int)$row['Participant1']
-                : ($row['Result1'] > $row['Result2']
-                   || ($row['Result1'] == $row['Result2'] && $row['LowShot1'] > $row['LowShot2']));
-            $winner2 = !$winner1;
-            $losers = [];
             if (!empty($row['Participant3'])) {
-                $losers = getThreePairLosers($row);
-            }
-
-            // Einheitliche feine Linien (früher gestrichelte Senkrechte und doppelte Linien zwischen den Paarungen)
-            $cellStyleName = ['borderSize' => 4, 'borderColor' => '000000', 'valign' => VerticalJc::CENTER, 'spaceAfter' => 0];
-            $cellStyleRes = $cellStyleName;
-
-            // Zeilen hinzufügen
-            if (!empty($row['Participant3'])) {
-
-                // Dreiergruppe
-                $cupTable->addRow();
-                $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant1']),
-                    in_array(1, $losers) ? $loserFontStyle : $winnerFontStyle
-                );
-                $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result1'],
-                    in_array(1, $losers) ? $loserFontStyle : $winnerFontStyle
-                );
-                $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant2']),
-                    in_array(2, $losers) ? $loserFontStyle : $winnerFontStyle
-                );
-                $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result2'],
-                    in_array(2, $losers) ? $loserFontStyle : $winnerFontStyle
-                );
-
-                // Zweite Zeile für dritten Teilnehmer
-                $cupTable->addRow();
-                $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant3']),
-                    in_array(3, $losers) ? $loserFontStyle : $winnerFontStyle
-                );
-                $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result3'],
-                    in_array(3, $losers) ? $loserFontStyle : $winnerFontStyle
-                );
-                $cupTable->addCell(2000, $cellStyleName)->addText('', ['size' => 8, 'color' => 'ffffff']);
-                $cupTable->addCell(500, $cellStyleRes)->addText('', ['size' => 8, 'color' => 'ffffff']);
+                $verlierer = getThreePairLosers($row);
+                $weiter = fn(int $n): bool => !in_array($n, $verlierer);
             } else {
-
-                // Normale Paarung
-                $cupTable->addRow();
-                $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant1']), 
-                    $winner1 ? $winnerFontStyle : $loserFontStyle
-                );
-                $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result1'], 
-                    $winner1 ? $winnerFontStyle : $loserFontStyle
-                );
-                $cupTable->addCell(2000, $cellStyleName)->addText(
-                    getParticipantName($row['Participant2']), 
-                    $winner2 ? $winnerFontStyle : $loserFontStyle
-                );
-                $cupTable->addCell(500, $cellStyleRes)->addText(
-                    $row['Result2'], 
-                    $winner2 ? $winnerFontStyle : $loserFontStyle
-                );
+                $manuell = (int)($row['ManualWinner'] ?? 0);
+                $erster = $manuell > 0
+                    ? $manuell === (int)$row['Participant1']
+                    : ($row['Result1'] > $row['Result2']
+                       || ($row['Result1'] == $row['Result2'] && $row['LowShot1'] > $row['LowShot2']));
+                $weiter = fn(int $n): bool => $n === 1 ? $erster : !$erster;
+            }
+            // Zeilen der Begegnung: [Nr links, Nr rechts]; Dreiergruppe zwei Zeilen
+            $zeilen = !empty($row['Participant3']) ? [[1, 2], [3, null]] : [[1, 2]];
+            foreach ($zeilen as $z => [$l, $r]) {
+                $letzte = $z === count($zeilen) - 1;
+                // ohne Rahmen wie die übrigen Tabellen im Buch; nur eine feine Linie unter jeder Begegnung
+                // (eine Dreiergruppe bleibt so als Block erkennbar)
+                $zelle = ['valign' => VerticalJc::CENTER];
+                if ($letzte) { $zelle += ['borderBottomSize' => 4, 'borderBottomColor' => '000000']; }
+                $cupTable->addRow(320); // mindestens ~5.6 mm, etwas luftiger
+                foreach ([$l, $r] as $n) {
+                    if ($n === null) {
+                        $cupTable->addCell($wName, $zelle)->addText('', $normal, $absLinks);
+                        $cupTable->addCell($wPkt, $zelle)->addText('', $normal, $absRechts);
+                        continue;
+                    }
+                    $schrift = $weiter($n) ? $fett : $normal;
+                    $cupTable->addCell($wName, $zelle)->addText(getParticipantName($row['Participant' . $n]), $schrift, $absLinks);
+                    $cupTable->addCell($wPkt, $zelle)->addText((string)$row['Result' . $n], $schrift, $absRechts);
+                }
             }
         }
         return $cupTable;
     }
-
     // Funktion für Teilnehmernamen
     function getParticipantName($id)
     {
@@ -1484,10 +1437,8 @@ function getCup($templateProcessor, $conn)
         $nameCache[$id] = $fullName;
         return $fullName;
     }
-    $tableStyle = [
-        'alignment' => JcTable::CENTER,
-        'cellMargin' => 20,
-    ];
+    // Final und Standcup: linksbündig unter den Runden, so breit wie deren erste Hälfte (Punkte stehen untereinander)
+    $tableStyle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 80, 'cellMarginRight' => 80];
 
     // PhpWord-Instanz erstellen
     $phpWord = new PhpWord();
@@ -1529,13 +1480,13 @@ function getCup($templateProcessor, $conn)
     $i = 1;
     while ($row = $finalResult->fetch_assoc()) {
         $participant = getParticipantName($row['ParticipantID']);
-        $finalTable->addRow();
-        // Rangliste mit feinen Linien, die ersten drei fett
-        $zelle = ['borderSize' => 4, 'borderColor' => '000000', 'valign' => VerticalJc::CENTER];
-        $schrift = ['size' => 8, 'bold' => $i <= 3];
-        $finalTable->addCell(500, $zelle)->addText("$i.", $schrift);
-        $finalTable->addCell(2000, $zelle)->addText($participant, $schrift);
-        $finalTable->addCell(1000, $zelle)->addText($row['Result'], $schrift);
+        $finalTable->addRow(320);
+        // Rangliste ohne Rahmen, nur der Sieger fett, Punkte rechtsbündig
+        $zelle = ['valign' => VerticalJc::CENTER]; // ohne Rahmen wie die übrigen Ranglisten
+        $schrift = ['size' => 8, 'bold' => $i === 1];
+        $finalTable->addCell(450, $zelle)->addText("$i.", $schrift, ['spaceAfter' => 0]);
+        $finalTable->addCell(2450, $zelle)->addText($participant, $schrift, ['spaceAfter' => 0]);
+        $finalTable->addCell(650, $zelle)->addText($row['Result'], $schrift, ['spaceAfter' => 0, 'alignment' => Jc::END]);
         $i++;
     }
     $stmt->close();
@@ -1556,13 +1507,13 @@ function getCup($templateProcessor, $conn)
     $i = 1;
     while ($row = $finalResult->fetch_assoc()) {
         $participant = $row['ParticipantName'];
-        $standCupTable->addRow();
-        // Rangliste mit feinen Linien, die ersten drei fett
-        $zelle = ['borderSize' => 4, 'borderColor' => '000000', 'valign' => VerticalJc::CENTER];
-        $schrift = ['size' => 8, 'bold' => $i <= 3];
-        $standCupTable->addCell(500, $zelle)->addText("$i.", $schrift);
-        $standCupTable->addCell(2000, $zelle)->addText($participant, $schrift);
-        $standCupTable->addCell(1000, $zelle)->addText($row['Result'], $schrift);
+        $standCupTable->addRow(320);
+        // Rangliste ohne Rahmen, nur der Sieger fett, Punkte rechtsbündig
+        $zelle = ['valign' => VerticalJc::CENTER]; // ohne Rahmen wie die übrigen Ranglisten
+        $schrift = ['size' => 8, 'bold' => $i === 1];
+        $standCupTable->addCell(450, $zelle)->addText("$i.", $schrift, ['spaceAfter' => 0]);
+        $standCupTable->addCell(2450, $zelle)->addText($participant, $schrift, ['spaceAfter' => 0]);
+        $standCupTable->addCell(650, $zelle)->addText($row['Result'], $schrift, ['spaceAfter' => 0, 'alignment' => Jc::END]);
         $i++;
     }
     $stmt->close();

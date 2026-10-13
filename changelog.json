@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.15",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Vereinscup übersichtlicher",
+        "beschreibung": "Der Cup hat eine eigene Überschrift «Vereinscup», die Runden stehen mit Abstand darunter, ohne die schweren Doppelbalken. Die Paarungen bleiben in der Reihenfolge der Auslosung, aber ohne Kästchen wie die übrigen Tabellen im Buch: Wer weiterkommt, ist fett, eine feine Linie unter jeder Begegnung hält die Gruppen zusammen, auch eine Dreiergruppe. Final und Standcup stehen als kurze Rangliste darunter, die Punkte genau unter denen der Runden, nur der Sieger fett.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.14",
     "datum": "2026-10-13",
     "aenderungen": [
