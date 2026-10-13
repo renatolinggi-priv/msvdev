@@ -16,6 +16,15 @@ Snapshot der Critique: `.impeccable/critique/2026-10-12T14-28-10Z__inc-endschran
 
 Sicherungspunkt vor der Umsetzung: Commit `743370b`.
 
+**Critique 13.10.2026 nach Runde 1: 24/40 (vorher 21/40).** Danach Entscheid: der Reihe nach DOCX absichern →
+Ablauf (bleibender Stand des Buchs) → Heft; Word-Vorlage oder PDF-Theme bleibt offen.
+
+| Nachtrag | Stand |
+|---|---|
+| DOCX absichern | **erledigt 13.10.2026** (1.68.6): `AbsendenbuchVorlage` schaltet `Settings::setOutputEscapingEnabled()` ein (Werte *und* `setComplexBlock`-Tabellen JM/Cup); `formatBold()` liefert `AbsendenFett`, das den Run der Vorlage fett macht statt `<w:r>` in `<w:t>` zu schachteln (312 → 0); Kopfzellen ganzzahlig. Getestet: Buchtext 2024/2026 identisch, Name mit «& <…>» und Anlass mit «& Co» ergeben wohlgeformtes DOCX (vorher kaputt). |
+| Ablauf | offen (nächster Schritt) |
+| Heft | offen, wartet auf Entscheid Word-Vorlage oder PDF-Theme |
+
 Was Schritt 1 und 3 konkret geändert haben:
 
 - **Vorlage:** Blockmarken `${JUNGSCHUETZEN_BLOCK}` und `${PARTNER_BLOCK}`, je in einem eigenen weissen

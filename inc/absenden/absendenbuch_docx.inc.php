@@ -19,6 +19,7 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/functions.inc.php';
 
+use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
 
@@ -27,11 +28,79 @@ use PhpOffice\PhpWord\Element\TextRun;
 const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261012.docx';
 
 /**
- * TemplateProcessor mit robuster Block-Auflösung. PhpWords cloneBlock() sucht mit einer gierigen Regex über
- * das ganze Dokument (~400 KB) und scheitert dabei je nach Grösse still; hier genügt eine String-Suche.
+ * TemplateProcessor für das Absendenbuch:
+ *   - Schaltet beim Erzeugen Settings::setOutputEscapingEnabled() ein. Ohne den Schalter setzt PhpWord Werte
+ *     (setValue) und den Text der Tabellen aus setComplexBlock() (JM, Cup) roh ins XML; ein «&» oder «<» in einem
+ *     Namen oder Anlass zerstörte dann das ganze Dokument.
+ *   - Werte als AbsendenFett (formatBold() in functions.inc.php) werden fett gesetzt, indem der Run der Vorlage
+ *     <w:b/> bekommt. Schriftgrösse und Schrift der Vorlage bleiben, und das XML ist gültiges OOXML (früher stand
+ *     ein eigener <w:r> mitten im <w:t> der Vorlage).
+ *   - blockAufloesen(): robuste Block-Auflösung. PhpWords cloneBlock() sucht mit einer gierigen Regex über
+ *     das ganze Dokument (~400 KB) und scheitert dabei je nach Grösse still; hier genügt eine String-Suche.
  */
 class AbsendenbuchVorlage extends TemplateProcessor
 {
+    public function __construct($documentTemplate)
+    {
+        Settings::setOutputEscapingEnabled(true); // vor allen setValue()/setComplexBlock()-Aufrufen
+        parent::__construct($documentTemplate);
+    }
+
+    public function setValue($search, $replace, $limit = self::MAXIMUM_REPLACEMENTS_DEFAULT): void
+    {
+        if (is_array($search)) {
+            foreach ($search as $i => $s) {
+                $this->setValue($s, is_array($replace) ? ($replace[$i] ?? '') : $replace, $limit);
+            }
+            return;
+        }
+        if ($replace instanceof AbsendenFett) {
+            $this->setValueFett((string)$search, $replace->text, (int)$limit);
+            return;
+        }
+        parent::setValue($search, (string)$replace, $limit); // maskiert dank Settings selbst
+    }
+
+    /** Platzhalter durch Text ersetzen und den umgebenden Run fett machen (Format der Vorlage bleibt). */
+    private function setValueFett(string $search, string $text, int $limit): void
+    {
+        $makro = (substr($search, 0, 2) === '${') ? $search : '${' . $search . '}';
+        $wert  = htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $xml   = $this->tempDocumentMainPart;
+        $n = 0;
+        $ab = 0;
+        while (($limit < 0 || $n < $limit) && ($pos = strpos($xml, $makro, $ab)) !== false) {
+            $vor   = substr($xml, 0, $pos);
+            $start = max((int)strrpos($vor, '<w:r>'), (int)strrpos($vor, '<w:r '));
+            $ende  = strpos($xml, '</w:r>', $pos);
+            if ($start === 0 || $ende === false) {
+                // ohne umgebenden Run (sollte nicht vorkommen): nur den Text einsetzen
+                $xml = substr_replace($xml, $wert, $pos, strlen($makro));
+                $ab  = $pos + strlen($wert);
+            } else {
+                $run = self::runFett(str_replace($makro, $wert, substr($xml, $start, $ende + 6 - $start)));
+                $xml = substr($xml, 0, $start) . $run . substr($xml, $ende + 6);
+                $ab  = $start + strlen($run);
+            }
+            $n++;
+        }
+        $this->tempDocumentMainPart = $xml;
+    }
+
+    /** <w:b/><w:bCs/> in die Run-Eigenschaften, an der Stelle, die das Schema verlangt (nach rStyle/rFonts). */
+    private static function runFett(string $run): string
+    {
+        if (preg_match('#<w:rPr>(.*?)</w:rPr>#s', $run, $m, PREG_OFFSET_CAPTURE)) {
+            $inhalt = preg_replace('#<w:bCs?(?:\s[^>]*)?/>#', '', $m[1][0]);
+            preg_match('#^\s*(?:<w:rStyle[^>]*/>)?\s*(?:<w:rFonts[^>]*/>)?#', $inhalt, $kopf);
+            $neu = '<w:rPr>' . $kopf[0] . '<w:b/><w:bCs/>' . substr($inhalt, strlen($kopf[0])) . '</w:rPr>';
+            return substr_replace($run, $neu, $m[0][1], strlen($m[0][0]));
+        }
+        // Run ohne Eigenschaften: direkt nach dem öffnenden Tag einfügen
+        $tagEnde = strpos($run, '>') + 1;
+        return substr($run, 0, $tagEnde) . '<w:rPr><w:b/><w:bCs/></w:rPr>' . substr($run, $tagEnde);
+    }
+
     /**
      * Abschnitt ${NAME} … ${/NAME} auflösen. Behalten: nur die beiden Markenabsätze verschwinden;
      * sonst fällt der ganze Abschnitt samt Marken weg. false, wenn die Marken fehlen.

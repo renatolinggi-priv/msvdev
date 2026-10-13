@@ -32,9 +32,19 @@ function fmt1($v) {
     return number_format((float)$v, 1, '.', '');
 }
 
-// Hilfsfunktion für Fettschrift
+// Fettschrift (Ränge 1–3): ein Wert-Objekt statt XML. AbsendenbuchVorlage::setValue() (absendenbuch_docx.inc.php)
+// macht den Run der Vorlage fett, so bleiben Schrift und Grösse der Vorlage und das XML gültig.
+// Nur direkt an setValue() übergeben, nie mit Text verketten.
+final class AbsendenFett {
+    public string $text;
+    public function __construct(string $text) { $this->text = $text; }
+    // Rückfall für einen gewöhnlichen TemplateProcessor (bisheriges, verschachteltes Verhalten)
+    public function __toString(): string {
+        return '<w:r><w:rPr><w:b/></w:rPr><w:t>' . htmlspecialchars($this->text) . '</w:t></w:r>';
+    }
+}
 function formatBold($text) {
-    return '<w:r><w:rPr><w:b/></w:rPr><w:t>' . htmlspecialchars($text) . '</w:t></w:r>';
+    return new AbsendenFett((string)$text);
 }
 
 // Debug-Logging: nur bei eingeschaltetem Debug-Schalter (inc/debug_log.inc.php).
@@ -1682,7 +1692,7 @@ function getJMA($templateProcessor, $conn)
     $table1->addCell(700,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table1->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
-        $c = $table1->addCell(1.5 * 567, $cellHeaderStyle);
+        $c = $table1->addCell((int)round(1.5 * 567), $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
     $table1->addRow(200);
@@ -1690,7 +1700,7 @@ function getJMA($templateProcessor, $conn)
     $table2 = new \PhpOffice\PhpWord\Element\Table('myTable');
     $table2->addRow(3000);
     foreach ($secondHalf as $d) {
-        $c = $table2->addCell(1.5 * 567, $cellHeaderStyle);
+        $c = $table2->addCell((int)round(1.5 * 567), $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
     $table2->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
@@ -1927,7 +1937,7 @@ function getJMB($templateProcessor, $conn)
     $table1->addCell(700,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table1->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
-        $c = $table1->addCell(1.5 * 567, $cellHeaderStyle);
+        $c = $table1->addCell((int)round(1.5 * 567), $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
     $table1->addRow(200);
@@ -1935,7 +1945,7 @@ function getJMB($templateProcessor, $conn)
     $table2 = new \PhpOffice\PhpWord\Element\Table('myTable');
     $table2->addRow(3000);
     foreach ($secondHalf as $d) {
-        $c = $table2->addCell(1.5 * 567, $cellHeaderStyle);
+        $c = $table2->addCell((int)round(1.5 * 567), $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
     $table2->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
