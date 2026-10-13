@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.14",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: einheitliche Kategorienamen",
+        "beschreibung": "Im Absendenbuch heissen die Kategorien überall gleich: «Kat. A (Standardgewehr)» und «Kat. B (Ordonnanzwaffen)». Bisher standen daneben «Standardgewehr/Ordonnanzwaffen» (Endschiessen Total) und «Standardgewehr und freie Waffen» / «Karabiner und Sturmgewehr 57/90» (Siegerlisten).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.13",
     "datum": "2026-10-13",
     "aenderungen": [
