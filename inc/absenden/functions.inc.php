@@ -73,7 +73,45 @@ function absendenHinweis(string $text): void {
     $eintrag = ($abschnitt !== '' ? $abschnitt . ': ' : '') . $text;
     if (!in_array($eintrag, $GLOBALS['absendenHinweise'] ?? [], true)) {
         $GLOBALS['absendenHinweise'][] = $eintrag;
+        // dieselben Hinweise mit Abschnitt getrennt, für den gespeicherten Stand des Buchs (Links je Abschnitt)
+        $GLOBALS['absendenHinweisDetails'][] = ['abschnitt' => $abschnitt, 'text' => $text];
     }
+}
+
+// ========================================
+// STAND DES ZULETZT ERSTELLTEN ABSENDENBUCHS
+// Pro Jahr in settings (absendenbuch_stand_<jahr>, JSON {"word": {…}, "broschuere": {…}}), bewusst nicht in
+// dat/ (per URL erreichbar). Die Generatoren schreiben ihn nach dem Erstellen, endschrang/absenden_bereit.php
+// liefert ihn für den Block «Stand des Absendenbuchs» unter «Fürs Absenden».
+// ========================================
+function absendenStandLesen(mysqli $conn, int $jahr): array {
+    $schluessel = 'absendenbuch_stand_' . $jahr;
+    $st = $conn->prepare('SELECT setting_value FROM settings WHERE setting_key = ?');
+    $st->bind_param('s', $schluessel);
+    $st->execute();
+    $zeile = $st->get_result()->fetch_row();
+    $st->close();
+    $stand = $zeile ? json_decode((string)$zeile[0], true) : null;
+    return is_array($stand) ? $stand : [];
+}
+
+/** $art 'word' | 'broschuere'; $datei = Dateiname in absenden/dat/; $extra z.B. seiten, blatt. */
+function absendenStandSpeichern(mysqli $conn, int $jahr, string $art, string $datei, array $extra = []): void {
+    $stand = absendenStandLesen($conn, $jahr);
+    $von = trim((string)($_SESSION['user_name'] ?? ''));
+    $stand[$art] = $extra + [
+        'datei'    => basename($datei),
+        'erstellt' => date('c'),
+        'von'      => $von !== '' ? explode(' ', $von)[0] : '',
+        'hinweise' => $GLOBALS['absendenHinweisDetails'] ?? [],
+    ];
+    $schluessel = 'absendenbuch_stand_' . $jahr;
+    $wert = json_encode($stand, JSON_UNESCAPED_UNICODE);
+    $st = $conn->prepare('INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)
+                          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+    $st->bind_param('ss', $schluessel, $wert);
+    $st->execute();
+    $st->close();
 }
 
 /**

@@ -22,7 +22,7 @@ Ablauf (bleibender Stand des Buchs) → Heft; Word-Vorlage oder PDF-Theme bleibt
 | Nachtrag | Stand |
 |---|---|
 | DOCX absichern | **erledigt 13.10.2026** (1.68.6): `AbsendenbuchVorlage` schaltet `Settings::setOutputEscapingEnabled()` ein (Werte *und* `setComplexBlock`-Tabellen JM/Cup); `formatBold()` liefert `AbsendenFett`, das den Run der Vorlage fett macht statt `<w:r>` in `<w:t>` zu schachteln (312 → 0); Kopfzellen ganzzahlig. Getestet: Buchtext 2024/2026 identisch, Name mit «& <…>» und Anlass mit «& Co» ergeben wohlgeformtes DOCX (vorher kaputt). |
-| Ablauf | offen (nächster Schritt) |
+| Ablauf | **erledigt 13.10.2026** (1.68.8, Migration 098): Block «Stand des Absendenbuchs» unter «Fürs Absenden». Stand je Art (word, broschuere) in `settings.absendenbuch_stand_<jahr>` (nicht in dat/), geschrieben von den Generatoren, gelesen über `absenden_bereit.php` (buchstand). Ein Befund: Hinweise beim Erstellen (mit Abschnitt, Link je Abschnitt) plus live offene Stiche/Wanderpreise; seither behobene Hinweise «Inzwischen erledigt, Buch neu erstellen». «Öffnen»/«Drucken» genau dieser Datei (Resolver `absendenbuch` mit `data-druck-datei`). Dialog entfällt; Fortschritt mit Uhr (Uhr aria-hidden), Fokus zurück. Knöpfe wie bisher (Entscheid). |
 | Heft | offen, wartet auf Entscheid Word-Vorlage oder PDF-Theme |
 
 Was Schritt 1 und 3 konkret geändert haben:

@@ -118,6 +118,12 @@ try {
             'signature' => $signature,          // Seiten nach Auffüllen
             'sheets'    => (int)($signature / 4), // A4-Blätter beidseitig
         ];
+        // Stand fürs «Fürs Absenden» festhalten (nur die Broschüre); scheitert das, ist sie trotzdem da
+        try {
+            absendenStandSpeichern($conn, $year, 'broschuere', $ziel, ['seiten' => $pages, 'blatt' => (int)($signature / 4)]);
+        } catch (Throwable $e) {
+            error_log('[absendenbuch_pdf] Stand nicht gespeichert: ' . $e->getMessage());
+        }
     }
 
     echo json_encode(['success' => true] + $antwort + ['hinweise' => $hinweise], JSON_UNESCAPED_UNICODE);

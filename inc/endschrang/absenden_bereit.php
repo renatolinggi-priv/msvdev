@@ -4,11 +4,12 @@
 //   wanderpreise  angeschafft bis zum Jahr, nicht in einem früheren Jahr definitiv gewonnen, Gewinner fürs Jahr?
 //   siegerlisten  welchen Listen «… Sieger seit» im Absendenbuch das Jahr noch fehlt (von Hand geführt)
 //   buchteile     haben JM, Heimmeisterschaft, Kantonalstich und Vereinscup Resultate (sonst leere Tabellen im Buch)
+//   buchstand     zuletzt erstelltes Absendenbuch je Art (word, broschuere): Zeit, von, Datei, Hinweise beim Erstellen
 // Jeder Teil wird einzeln geprüft; scheitert einer, ist nur er null und die Seite zeigt «nicht geprüft».
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
-require_once __DIR__ . '/../absenden/functions.inc.php'; // absendenSiegerlisteName()
+require_once __DIR__ . '/../absenden/functions.inc.php'; // absendenSiegerlisteName(), absendenStandLesen()
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -101,6 +102,27 @@ $antwort['buchteile'] = absBereitTeil('buchteile', function () use ($conn, $jahr
     }
     $teile[] = ['teil' => 'Vereinscup', 'vorhanden' => $cup > 0, 'link' => 'cup.php'];
     return $teile;
+});
+
+// Link relativ zu inc/; fehlt die Datei (dat/-Aufräumen), sagt die Seite «nicht mehr vorhanden»
+$antwort['buchstand'] = absBereitTeil('buchstand', function () use ($conn, $jahr) {
+    $stand = [];
+    foreach (absendenStandLesen($conn, $jahr) as $art => $s) {
+        if (!in_array($art, ['word', 'broschuere'], true) || !is_array($s) || empty($s['datei'])) {
+            continue;
+        }
+        $datei = basename((string)$s['datei']);
+        $stand[$art] = [
+            'link'      => 'absenden/dat/' . $datei,
+            'vorhanden' => is_file(__DIR__ . '/../absenden/dat/' . $datei),
+            'erstellt'  => (string)($s['erstellt'] ?? ''),
+            'von'       => (string)($s['von'] ?? ''),
+            'seiten'    => isset($s['seiten']) ? (int)$s['seiten'] : null,
+            'blatt'     => isset($s['blatt']) ? (int)$s['blatt'] : null,
+            'hinweise'  => array_values(array_filter((array)($s['hinweise'] ?? []), 'is_array')),
+        ];
+    }
+    return $stand;
 });
 
 echo json_encode($antwort, JSON_UNESCAPED_UNICODE);

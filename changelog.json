@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.8",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Stand bleibt unter «Fürs Absenden» stehen",
+        "beschreibung": "Unter den Knöpfen fürs Absenden steht jetzt der «Stand des Absendenbuchs»: das zuletzt erstellte Buch des Jahres, getrennt nach Broschüre und Word, mit Zeit, Person und Seitenzahl. «Öffnen» und «Drucken» nehmen genau diese Datei, ohne neue Umwandlung. «Vor dem Druck prüfen» sammelt alles in einer Liste: die Hinweise beim Erstellen und die offenen Stiche und Wanderpreise aus der Prüfliste, je mit Link; ist ein Punkt seither behoben, steht «Inzwischen erledigt, Buch neu erstellen». Den Stand sehen alle im Vorstand, auch nach dem Neuladen. Während ein Buch erstellt wird, steht hier, was läuft, mit der Zeit; danach ist der Fokus wieder auf dem Knopf. Der Dialog nach dem Erstellen entfällt.",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.7",
     "datum": "2026-10-13",
     "aenderungen": [

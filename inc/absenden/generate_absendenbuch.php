@@ -27,6 +27,13 @@ try {
     $filename = 'dat/Resultatbuechlein_' . $date->format('Y-m-d_H-i-s') . '.docx';
     $templateProcessor->saveAs(__DIR__ . '/' . $filename);
 
+    // Stand fürs «Fürs Absenden» festhalten; scheitert das, ist das Buch trotzdem da
+    try {
+        absendenStandSpeichern($conn, $selectedYear, 'word', $filename);
+    } catch (Throwable $e) {
+        error_log('[absendenbuch] Stand nicht gespeichert: ' . $e->getMessage());
+    }
+
     echo json_encode([
         'success'      => true,
         'word_link'    => $filename,

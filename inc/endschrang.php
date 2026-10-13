@@ -31,6 +31,22 @@ $page_specific_css = '
 .es-doks-inhalt { display: grid; gap: 16px; padding: 14px 16px 16px; }
 .es-dok-label { margin: 0 0 6px; font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-text-2); }
 .es-abs-hinweis { margin: -2px 0 8px; font-size: .8rem; line-height: 1.35; color: var(--ui-warn-fg); }
+/* Stand des Absendenbuchs: Abschnitt unter den Knöpfen «Fürs Absenden», abgesetzt durch eine Haarlinie */
+.es-buchstand { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ui-linie); font-size: .8rem; line-height: 1.4; }
+.es-buchstand-titel { display: flex; align-items: center; gap: 4px; margin: 0 0 6px; font-weight: 600; color: var(--ui-text); }
+.es-buchstand-lauf { margin: 0 0 6px; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-buchstand-lauf:has(#absBuchLauf:empty) { display: none; }
+.es-buchdatei { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin: 0 0 6px; }
+.es-buchdatei-art { font-weight: 600; color: var(--ui-text); }
+.es-buchdatei-meta { color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-buchdatei-weg { color: var(--ui-warn-fg); }
+.es-buchdatei a { font-weight: 600; }
+.es-buchdatei .msv-druck { padding: 0 .4rem; line-height: 1.4; }
+.es-buchpunkte-kopf { margin: 8px 0 4px; }
+.es-buchpunkte { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.es-buchpunkte li { color: var(--ui-text); }
+.es-buchpunkte a { font-weight: 600; white-space: nowrap; }
+.es-buchpunkte .es-erledigt { color: var(--ui-ok-fg); }
 .es-dok-liste { display: flex; flex-wrap: wrap; gap: 6px 8px; }
 .es-dok-liste > .btn-group > .btn:first-child { text-align: left; }
 .es-dok-liste > .btn-group > .msv-druck { flex: 0 0 2.25rem; }
@@ -112,6 +128,13 @@ include 'header.inc.php';
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                             </div>
+                            <!-- Stand des zuletzt erstellten Absendenbuchs (aus absenden_bereit.php: buchstand) -->
+                            <section class="es-buchstand" id="absBuchstand" aria-labelledby="absBuchstandTitel" hidden>
+                                <p class="es-buchstand-titel" id="absBuchstandTitel">Stand des Absendenbuchs <button type="button" class="btn-help" data-help="endschrang.buchstand" aria-label="Hilfe"></button></p>
+                                <p class="es-buchstand-lauf"><span id="absBuchLauf" role="status" aria-live="polite"></span> <span id="absBuchUhr" aria-hidden="true"></span></p>
+                                <div id="absBuchDateien"></div>
+                                <div id="absBuchPunkte"></div>
+                            </section>
                         </div>
                         <div role="group" aria-labelledby="dokUebersicht">
                             <p class="es-dok-label" id="dokUebersicht">Übersicht</p>
@@ -325,8 +348,9 @@ $(document).ready(function () {
     // Absendenbuch als Word (Vorlage befüllt); Link relativ zu absenden/
     $(document).on('click', '.abs-btn', function (e) {
         e.preventDefault();
+        if (this.disabled) return;
         var jahr = $('#yearSelect').val();
-        msvAusgabe(this, {
+        absendenbuchErstellen(this, 'Absendenbuch (Word) wird erstellt.', {
             url: 'absenden/generate_absendenbuch.php',
             data: { year: jahr },
             linkPrefix: 'absenden/',
@@ -355,7 +379,9 @@ $(document).ready(function () {
     // «offen», solange ein gelöster Stich kein Resultat hat; Sie und Er braucht eine verknüpfte Partnerin bzw. einen
     // verknüpften Partner, data-su="ohne-partner"). Wanderpreise, Siegerlisten und die übrigen Teile des Absendenbuchs
     // (JM, Heim, Kanti, Cup) kommen aus endschrang/absenden_bereit.php, jeder Teil einzeln (null = nicht geprüft).
+    const absPunkte = {}; // letzter Zustand je Prüfung, für den Stand des Absendenbuchs
     function absZeile(key, zustand, text, link) {
+        absPunkte[key] = { zustand: zustand, text: text, link: link || null };
         const label = { ok: 'erledigt', offen: 'offen', leer: 'nichts zu tun', fehler: 'nicht geprüft' }[zustand];
         $('#absListe li[data-pruefung="' + key + '"]').html(
             '<span class="ui-status' + (zustand === 'ok' || zustand === 'offen' ? ' ' + zustand : '') + '"><span class="ui-punkt"></span>' + label + '</span>'
@@ -434,9 +460,87 @@ $(document).ready(function () {
             : fehler ? '<span class="ui-status"><span class="ui-punkt"></span>nicht alles geprüft</span>'
             : '<span class="ui-status ok"><span class="ui-punkt"></span>bereit fürs Absenden</span>')
             + '<span class="es-abs-zeit">Stand ' + zeit + '</span>');
-        // Die Dokumente lassen sich auch mit offenen Punkten erstellen; der Hinweis sagt, dass sie den heutigen Stand zeigen
-        $('#absDokHinweis').text(offen ? 'Noch ' + (offen === 1 ? '1 Punkt' : offen + ' Punkte') + ' offen – die Dokumente zeigen den heutigen Stand.' : '').prop('hidden', !offen);
+        // Die Dokumente lassen sich auch mit offenen Punkten erstellen; der Hinweis sagt, dass sie den heutigen Stand zeigen.
+        // Gibt es schon ein Absendenbuch, sagt das sein Stand genauer.
+        const hatBuch = absBuchstandZeigen(jahr, bereit.buchstand);
+        $('#absDokHinweis').text(offen ? 'Noch ' + (offen === 1 ? '1 Punkt' : offen + ' Punkte') + ' offen – die Dokumente zeigen den heutigen Stand.' : '').prop('hidden', !offen || hatBuch);
     }
+
+    // ===== Stand des Absendenbuchs =====
+    // Ein Befund fürs Heft: die Hinweise beim Erstellen (gelten für genau diese Datei) plus die offenen Punkte der
+    // Prüfliste, die der Generator nicht kennt (Stiche, Wanderpreise). Ist ein Hinweis seither in der Prüfliste
+    // erledigt, steht «inzwischen erledigt, Buch neu erstellen» – die Datei hat den alten Stand.
+    function absHinweisZiel(abschnitt, jahr) {
+        const basis = String(abschnitt || '').replace(/ Kat\. [AB]$/, '');
+        const ziele = {
+            'Siegerlisten':        { href: 'sieger.php', text: 'Zu den Siegerlisten', pruefung: 'siegerlisten' },
+            'Jahresmeisterschaft': { href: 'jmresultate.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Heimmeisterschaft':   { href: 'heimresultate.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Kantonalstich':       { href: 'kantiresultate.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Vereinscup':          { href: 'cup.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Vorlage':             null
+        };
+        return basis in ziele ? ziele[basis] : (basis ? { href: 'endresultate.php?year=' + jahr, text: 'Zur Erfassung', pruefung: null } : null);
+    }
+    function absZeitpunkt(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return '';
+        return d.toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'numeric' })
+            + ', ' + d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+    }
+    function absPunktHtml(text, ziel, erledigt) {
+        return '<li>' + msvEsc(text)
+            + (erledigt ? ' <span class="es-erledigt">Inzwischen erledigt, Buch neu erstellen.</span>'
+                : ziel ? ' <a href="' + msvEsc(ziel.href) + '">' + msvEsc(ziel.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>' : '')
+            + '</li>';
+    }
+    // true, wenn für das Jahr schon ein Absendenbuch erstellt wurde
+    function absBuchstandZeigen(jahr, stand) {
+        $('#absBuchstand').prop('hidden', false);
+        const $dateien = $('#absBuchDateien'), $punkte = $('#absBuchPunkte');
+        if (!stand) {
+            $dateien.html('<p class="es-buchdatei es-buchdatei-meta">Der Stand des Absendenbuchs konnte nicht geladen werden.</p>');
+            $punkte.empty();
+            return false;
+        }
+        const arten = [['broschuere', 'Broschüre'], ['word', 'Word']].filter(a => stand[a[0]]);
+        if (!arten.length) {
+            $dateien.html('<p class="es-buchdatei es-buchdatei-meta">Für ' + msvEsc(jahr) + ' ist noch kein Absendenbuch erstellt.</p>');
+            $punkte.empty();
+            return false;
+        }
+        $dateien.html(arten.map(([art, name]) => {
+            const s = stand[art];
+            const meta = [absZeitpunkt(s.erstellt), s.von, s.seiten ? s.seiten + ' Seiten auf ' + s.blatt + ' Blatt' : ''].filter(Boolean).join(' · ');
+            return '<p class="es-buchdatei"><span class="es-buchdatei-art">' + name + '</span>'
+                + '<span class="es-buchdatei-meta">' + msvEsc(meta) + '</span>'
+                + (!s.vorhanden ? '<span class="es-buchdatei-weg">Datei nicht mehr vorhanden, bitte neu erstellen.</span>'
+                    : '<a href="' + msvEsc(s.link) + '"' + (art === 'word' ? ' download' : ' target="_blank" rel="noopener"') + '>Öffnen</a>'
+                      + (art === 'broschuere' ? '<button type="button" class="btn btn-sm btn-outline-info msv-druck" data-druck-doctype="absendenbuch"'
+                          + ' data-druck-label="Absendenbuch (Broschüre)" data-druck-datei="' + msvEsc(s.link) + '" aria-label="Diese Broschüre drucken">'
+                          + '<i class="bi bi-printer me-1" aria-hidden="true"></i>Drucken</button>' : ''))
+                + '</p>';
+        }).join(''));
+
+        // Befund der zuletzt erstellten Datei
+        const neueste = arten.map(a => stand[a[0]]).sort((x, y) => String(y.erstellt).localeCompare(String(x.erstellt)))[0];
+        const punkte = (neueste.hinweise || []).map(h => {
+            const ziel = absHinweisZiel(h.abschnitt, jahr);
+            const erledigt = !!(ziel && ziel.pruefung && absPunkte[ziel.pruefung] && absPunkte[ziel.pruefung].zustand === 'ok');
+            return absPunktHtml((h.abschnitt ? h.abschnitt + ': ' : '') + h.text, ziel, erledigt);
+        });
+        ['stiche', 'wanderpreise'].forEach(k => {
+            if (absPunkte[k] && absPunkte[k].zustand === 'offen') punkte.push(absPunktHtml(absPunkte[k].text, absPunkte[k].link, false));
+        });
+        $punkte.html(punkte.length
+            ? '<p class="es-buchpunkte-kopf"><span class="ui-status offen"><span class="ui-punkt"></span>Vor dem Druck prüfen (' + punkte.length + ')</span></p>'
+              + '<ul class="es-buchpunkte">' + punkte.join('') + '</ul>'
+            : '<p class="es-buchpunkte-kopf"><span class="ui-status ok"><span class="ui-punkt"></span>Keine offenen Punkte</span></p>');
+        if (window.MsvDruck && MsvDruck.refresh) MsvDruck.refresh(); // Drucker-Knopf der Datei ein- oder ausblenden
+        return true;
+    }
+    window.absendenPruefen = absendenPruefen; // für die Ausgabe-Knöpfe weiter unten
+
     $('#absNeu').on('click', absendenPruefen);
     // Beim Ändern des Jahres im Dropdown beide Tabellen und die Prüfliste neu laden
     $('#yearSelect').on('change', function () {
@@ -483,38 +587,50 @@ MsvDruck.resolve('endschrang', (btn) => {
 // Absendenbuch als Broschüre (absenden/generate_absendenbuch_pdf.php: DOCX → PDF → pdfjam --booklet).
 // Broschüren brauchen beidseitigen Druck mit Wenden an der kurzen Seite; steht im Profil kein Duplex,
 // wird «short-edge» gesetzt, damit die Rückseiten nicht auf dem Kopf stehen.
-MsvDruck.resolve('absendenbuch', () => {
+// Der Drucker neben «Absendenbuch (Broschüre)» erstellt neu; «Drucken» im Stand des Absendenbuchs druckt genau
+// die vorhandene Datei (data-druck-datei), ohne neue Umwandlung.
+MsvDruck.resolve('absendenbuch', (btn) => {
     const jahr = document.getElementById('yearSelect').value;
     const profil = MsvDruck.profil('absendenbuch');
     return {
-        url: 'absenden/generate_absendenbuch_pdf.php?year=' + encodeURIComponent(jahr),
+        url: (btn && btn.dataset.druckDatei) || ('absenden/generate_absendenbuch_pdf.php?year=' + encodeURIComponent(jahr)),
         jobName: 'Absendenbuch ' + jahr + ' (Broschüre)',
         orientation: 'landscape',
         duplex: (profil && profil.duplex) || 'short-edge'
     };
 });
 
-// Erfolg beim Absendenbuch: ohne Hinweise ein Toast; mit Hinweisen (leere Abschnitte, fehlende Sieger …)
-// ein Dialog, der stehen bleibt, bis man ihn gelesen hat – sonst fällt es erst im gedruckten Heft auf.
+// Erfolg beim Absendenbuch: kurzer Toast. Die Hinweise stehen bleibend im Stand des Absendenbuchs.
 function absendenbuchErfolg(j, text) {
-    const hinweise = (j && Array.isArray(j.hinweise)) ? j.hinweise : [];
-    if (!hinweise.length) return text;
-    return { dialog: {
-        icon: 'warning',
-        title: hinweise.length === 1 ? 'Absendenbuch mit 1 Hinweis' : 'Absendenbuch mit ' + hinweise.length + ' Hinweisen',
-        html: '<div class="text-start"><p class="mb-2">' + msvEsc(text) + ' Vor dem Druck bitte prüfen:</p><ul class="mb-0">'
-            + hinweise.map(h => '<li>' + msvEsc(h) + '</li>').join('') + '</ul></div>',
-        confirmButtonText: 'Verstanden'
-    } };
+    const n = (j && Array.isArray(j.hinweise)) ? j.hinweise.length : 0;
+    return n ? { text: text + ' ' + (n === 1 ? '1 Hinweis' : n + ' Hinweise') + ' unter «Stand des Absendenbuchs».', typ: 'warning' } : text;
+}
+
+// Absendenbuch erstellen (Word oder Broschüre): Während der Arbeit steht im Stand, was läuft, mit mitlaufender
+// Zeit (die Uhr ist für Screenreader ausgeblendet, damit die Live-Region nicht jede Sekunde spricht). Danach
+// Stand neu laden und den Fokus zurück auf den Knopf, den der Ladezustand gesperrt hatte.
+function absendenbuchErstellen(btn, lauftext, opts) {
+    $('#absBuchstand').prop('hidden', false);
+    $('#absBuchLauf').text(lauftext);
+    const start = Date.now();
+    const uhr = () => { const s = Math.floor((Date.now() - start) / 1000); $('#absBuchUhr').text(Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')); };
+    uhr();
+    const takt = setInterval(uhr, 1000);
+    return msvAusgabe(btn, opts).finally(() => {
+        clearInterval(takt);
+        $('#absBuchLauf, #absBuchUhr').text('');
+        if (window.absendenPruefen) window.absendenPruefen();
+        btn.focus();
+    });
 }
 
 // Broschüren-PDF herunterladen (gleicher Endpunkt, zum Prüfen der Seitenfolge oder für die Druckerei)
 $(document).on('click', '.absbk-btn', function () {
+    if (this.disabled) return;
     const jahr = document.getElementById('yearSelect').value;
     // Die Umwandlung in PDF läuft über einen externen Dienst und dauert spürbar: vorher sagen, damit niemand
     // nach einer halben Minute Spinner nochmals klickt oder zum Drucker greift
-    if (!this.disabled) msvToast('Das Absendenbuch wird als Broschüre erstellt. Das kann bis zu einer Minute dauern.', 'info');
-    msvAusgabe(this, {
+    absendenbuchErstellen(this, 'Absendenbuch (Broschüre) wird erstellt, das kann bis zu einer Minute dauern.', {
         url: 'absenden/generate_absendenbuch_pdf.php',
         data: { year: jahr },
         titel: 'Absendenbuch ' + jahr + ' (Broschüre)',

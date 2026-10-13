@@ -160,6 +160,7 @@ function absendenbuchTemplateFuellen(int $selectedYear, mysqli $conn, ?array &$h
 {
     $GLOBALS['selectedYear'] = $selectedYear; // von den get*-Funktionen in functions.inc.php gelesen
     $GLOBALS['absendenHinweise'] = [];
+    $GLOBALS['absendenHinweisDetails'] = [];
 
     if (!file_exists(ABSENDENBUCH_TEMPLATE)) {
         error_log('[absendenbuch] Vorlage fehlt: ' . ABSENDENBUCH_TEMPLATE);
