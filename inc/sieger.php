@@ -228,6 +228,7 @@ const CATEGORY_CONFIG = {
     'KantonalstichB':       { icon: 'bi-flag',       color: 'green',  label: 'Kantonalstich Kat. B' },
     'JahresmeisterschaftA': { icon: 'bi-award',      color: 'gold',   label: 'Jahresmeisterschaft Kat. A' },
     'JahresmeisterschaftB': { icon: 'bi-award',      color: 'gold',   label: 'Jahresmeisterschaft Kat. B' },
+    'Junioren':             { icon: 'bi-person-up',  color: 'green',  label: 'Junioren (Endschiessen)' },
 };
 const DEFAULT_CONFIG = { icon: 'bi-trophy', color: 'blue' };
 

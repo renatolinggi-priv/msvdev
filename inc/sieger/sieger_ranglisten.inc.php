@@ -6,8 +6,10 @@
  * die Rangliste:
  *   - Endschiessen-Stiche (Endstich, Schwini, Kunst, Glück, Zabigstich): Abfragen wie in
  *     endschrang/PDFReports.php, aber nur Mitglieder. Das entspricht dem «WP» der Rangliste
- *     (endschWpVergeben: bestplatziertes Mitglied); Gäste und Jungschützen stehen in keiner Siegerliste.
+ *     (endschWpVergeben: bestplatziertes Mitglied); Gäste stehen in keiner Siegerliste.
  *   - Endschiessen Kat. A/B: Gesamtrangliste endschGesamtAbfrage(), bestplatziertes Mitglied.
+ *   - Junioren: Sieger der Jungschützen-Wertung des Endschiessens (siegerJunioren); ohne Jungschützen
+ *     «Keine Konkurrenz» ohne Wert, wie in der Liste seit 1997.
  *   - Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich Kat. A/B: die Wanderpreis-Regel
  *     (wanderpreise_regeln) mit demselben Code, ausgeführt wie in wanderpreise/auto_zuordnung.php.
  * Die Kategorie kommt überall aus der heutigen Waffe des Mitglieds, wie in den Ranglisten.
@@ -58,6 +60,43 @@ function siegerEndschGesamt(mysqli $conn, string $kat, int $jahr): ?array
     }
     $z = $zeilen[$i];
     return ['name' => endschAnzeigename($z), 'wert' => $z['GesamtTotal']];
+}
+
+/**
+ * Junioren: Sieger der Jungschützen-Wertung des Endschiessens, gleich gerechnet wie im Absendenbuch
+ * (getJungschuetzenResultate): Endstich + Zabig-Punkte + beste Schwini-Passe; bei Gleichstand Endstich, dann das
+ * höhere Alter. Jungschützen sind Gäste mit Geburtsdatum. Hat das Endschiessen stattgefunden, aber kein
+ * Jungschütze geschossen: «Keine Konkurrenz» ohne Wert; ohne Endschiessen-Resultate gar nichts.
+ */
+function siegerJunioren(mysqli $conn, int $jahr): array
+{
+    $endstich = 'COALESCE(Schuss1,0)+COALESCE(Schuss2,0)+COALESCE(Schuss3,0)+COALESCE(Schuss4,0)+COALESCE(Schuss5,0)'
+              . '+COALESCE(Schuss6,0)+COALESCE(Schuss7,0)+COALESCE(Schuss8,0)+COALESCE(Schuss9,0)+COALESCE(Schuss10,0)';
+    $p1 = 'COALESCE(P1Schuss1,0)+COALESCE(P1Schuss2,0)+COALESCE(P1Schuss3,0)+COALESCE(P1Schuss4,0)+COALESCE(P1Schuss5,0)+COALESCE(P1Schuss6,0)';
+    $p2 = 'COALESCE(P2Schuss1,0)+COALESCE(P2Schuss2,0)+COALESCE(P2Schuss3,0)+COALESCE(P2Schuss4,0)+COALESCE(P2Schuss5,0)+COALESCE(P2Schuss6,0)';
+    $z = siegerErsteZeile($conn,
+        "SELECT g.name, g.vorname, g.nachname, e.E + COALESCE(zb.Z, 0) + COALESCE(sw.S, 0) AS Total, e.E
+           FROM endstich_gaeste g
+           JOIN (SELECT GastID, SUM($endstich) AS E FROM endstich WHERE Jahr = ? AND GastID IS NOT NULL GROUP BY GastID) e
+             ON e.GastID = g.id
+           LEFT JOIN (SELECT z.GastID, MAX(" . endschZabigPunkteSql() . ") AS Z FROM zabig z
+                       WHERE z.Jahr = ? AND z.GastID IS NOT NULL GROUP BY z.GastID) zb ON zb.GastID = g.id
+           LEFT JOIN (SELECT GastID, MAX(GREATEST($p1, $p2)) AS S FROM schwini
+                       WHERE Jahr = ? AND GastID IS NOT NULL GROUP BY GastID) sw ON sw.GastID = g.id
+          WHERE g.geburtsdatum IS NOT NULL AND g.jahr = ? AND e.E > 0
+          ORDER BY Total DESC, e.E DESC, g.geburtsdatum ASC
+          LIMIT 1", $jahr);
+    if ($z) {
+        $name = trim((string)$z['nachname']) !== '' && trim((string)$z['vorname']) !== ''
+            ? $z['nachname'] . ' ' . $z['vorname'] : (string)$z['name'];
+        return ['name' => $name, 'wert' => $z['Total']];
+    }
+    // «Keine Konkurrenz» nur, wenn das Jahr schon im heutigen Teilnehmer-Modell erfasst ist (Gäste/Jungschützen aus
+    // «Stiche lösen» in endstich_gaeste) und das Endschiessen Resultate hat. Ältere Jahre haben dort keine Daten
+    // (z.B. 2024: Sieger nur in der alten Vorlage) – dann kein Vorschlag, damit nichts Erfasstes überschrieben wird.
+    $erfasst = siegerErsteZeile($conn,
+        "SELECT 1 FROM endstich_gaeste WHERE jahr = ? AND EXISTS (SELECT 1 FROM endstich WHERE Jahr = ? AND ($endstich) > 0) LIMIT 1", $jahr);
+    return $erfasst ? ['name' => 'Keine Konkurrenz', 'wert' => ''] : [];
 }
 
 /**
@@ -183,6 +222,7 @@ function siegerQuellen(): array
         'KantonalstichB'       => $regel('kantonalstichB', 'KantiSumme'),
         'JahresmeisterschaftA' => $regel('jahresmeisterschaftA', 'Total'),
         'JahresmeisterschaftB' => $regel('jahresmeisterschaftB', 'Total'),
+        'Junioren'             => fn(mysqli $conn, int $jahr): array => siegerJunioren($conn, $jahr),
     ];
 }
 
@@ -223,7 +263,8 @@ function siegerVorschlaege(mysqli $conn, int $jahr): array
                 $r = ['hinweis' => 'Rangliste konnte nicht gelesen werden (Details im Fehlerprotokoll).'];
             }
             if (!empty($r['name'])) {
-                $eintrag['vorschlag'] = ['name' => $r['name'], 'wert' => siegerWertText($r['wert'] ?? 0)];
+                // leerer Wert bleibt leer (Junioren «Keine Konkurrenz»), sonst wie in sieger.Wert
+                $eintrag['vorschlag'] = ['name' => $r['name'], 'wert' => ($r['wert'] ?? null) === '' ? '' : siegerWertText($r['wert'] ?? 0)];
             } else {
                 $eintrag['hinweis'] = $r['hinweis'] ?? 'Keine Resultate für ' . $jahr . '.';
             }

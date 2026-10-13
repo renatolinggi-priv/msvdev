@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.12",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Vorlage überarbeitet, Junioren als Siegerliste",
+        "beschreibung": "Die Tabellen der Jahresmeisterschaft Kat. A und Kat. B beginnen jetzt immer auf einer linken Seite, so liegen ihre beiden Hälften aufgeklappt nebeneinander. Die Ränder sind gespiegelt (innen 5 mm, aussen 10 mm), damit nichts am Blattrand abgeschnitten wird. Leere Zeilen als Abstand sind durch einen kleinen Abstand ersetzt, das spart Platz; die JM- und die Kunst-Tabelle passen genau auf die Seite. Die Siegerlisten zeigen je die letzten 30 Sieger, die Überschrift «… seit» passt sich an. Die Junioren-Siegerliste ist jetzt eine normale Liste auf «Sieger der letzten Jahre» (übernommen aus der alten Vorlage, 2016–2023 «Keine Konkurrenz»); «Aus Ranglisten übernehmen» trägt den Sieger der Jungschützen-Wertung ein oder «Keine Konkurrenz», wenn keiner geschossen hat.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.11",
     "datum": "2026-10-13",
     "aenderungen": [

@@ -23,9 +23,10 @@ use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
 
-// Vorlage seit 12.10.2026 mit Blockmarken ${JUNGSCHUETZEN_BLOCK}/${PARTNER_BLOCK} (je ein eigener Absatz);
-// die Vorgängerin Resultatbuch_Template20251015.docx bleibt als Rückfall in dat/ liegen.
-const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261012.docx';
+// Vorlage seit 13.10.2026: Blockmarken ${JUNGSCHUETZEN_BLOCK}/${PARTNER_BLOCK}, JM Kat. A/B als Abschnitte ab gerader
+// Seite, gespiegelte Ränder, Siegerlisten mit ${<Präfix>AB}, Junioren-Liste (SJ). Vorgängerinnen 20261012 und
+// 20251015 bleiben als Rückfall in dat/ liegen.
+const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261013.docx';
 
 /**
  * TemplateProcessor für das Absendenbuch:

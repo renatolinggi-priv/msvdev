@@ -146,6 +146,7 @@ function absendenSiegerlisteName(string $bezeichnung): string {
         'HeimmeisterschaftA' => 'Heimmeisterschaft Kat. A', 'HeimmeisterschaftB' => 'Heimmeisterschaft Kat. B',
         'KantonalstichA' => 'Kantonalstich Kat. A', 'KantonalstichB' => 'Kantonalstich Kat. B',
         'JahresmeisterschaftA' => 'Jahresmeisterschaft Kat. A', 'JahresmeisterschaftB' => 'Jahresmeisterschaft Kat. B',
+        'Junioren' => 'Junioren',
     ];
     return $namen[$bezeichnung] ?? $bezeichnung;
 }
@@ -1305,72 +1306,49 @@ function getSieger($templateProcessor, $conn)
     // Die Siegerlisten stehen in der Tabelle sieger (Seite «Sieger der letzten Jahre»: aus den Ranglisten übernehmen
     // oder von Hand erfassen). Nur Jahre bis zum Buchjahr
     // zeigen (ein Buch für 2024 ohne spätere Sieger) und melden, welchen Listen das Buchjahr noch fehlt.
+    // Im Buch stehen je Liste die letzten 30 Sieger bis zum Buchjahr (zwei pro Zeile), damit die Listen nicht
+    // jedes Jahr wachsen; die Überschrift «… seit» nennt das erste gezeigte Jahr (${<Präfix>AB} in der Vorlage).
+    $maxSieger = 30;
     $ohneBuchjahr = [];
+    $vorlagenVariablen = array_flip($templateProcessor->getVariables());
     while ($rowdef = $result->fetch_assoc()) {
-        $countSieger = getCountSieger($conn, $rowdef['Bezeichnung'], (int)$selectedYear);
-
-        // Klone die Zeilen basierend auf der Anzahl der Sieger
-        $row = $rowdef['PlatzhalterWord'] . "Y";
-        $templateProcessor->cloneRow($row, $countSieger);
+        $p = $rowdef['PlatzhalterWord'];
         $siegerdef = $rowdef['Bezeichnung'];
-        $sqlSiegerDef = "SELECT * FROM sieger s
-                         JOIN siegerdef sd ON sd.ID = s.siegerdef
-                         WHERE sd.Bezeichnung = ? AND s.year <= ?
-                         ORDER BY s.year ASC";
-        $stmt = $conn->prepare($sqlSiegerDef);
+        if (!isset($vorlagenVariablen[$p . 'Y'])) {
+            // Liste ohne Tabelle in der Vorlage (z.B. ältere Vorlage): nicht abbrechen, nur melden
+            logFehler("getSieger: Vorlage hat keine Tabelle für «{$siegerdef}» (\${{$p}Y})");
+            continue;
+        }
+        $stmt = $conn->prepare("SELECT s.year, s.Name, s.Wert FROM sieger s
+                                 JOIN siegerdef sd ON sd.ID = s.siegerdef
+                                 WHERE sd.Bezeichnung = ? AND s.year <= ?
+                                 ORDER BY s.year DESC, s.ID DESC
+                                 LIMIT ?");
         if (!$stmt) {
             logFehler("SQL-Fehler in getSieger prepare: " . $conn->error);
             continue;
         }
-        $stmt->bind_param("si", $siegerdef, $selectedYear);
+        $stmt->bind_param("sii", $siegerdef, $selectedYear, $maxSieger);
         $stmt->execute();
-        $resultsieger = $stmt->get_result();
-        $currentRow = 1;
-        $siegers = array();
-
-        // Sammle alle Sieger in ein Array
-        while ($row = $resultsieger->fetch_assoc()) {
-            $siegers[] = $row;
-        }
+        $siegers = array_reverse($stmt->get_result()->fetch_all(MYSQLI_ASSOC)); // älteste zuerst
+        $stmt->close();
         if (!in_array((int)$selectedYear, array_map('intval', array_column($siegers, 'year')), true)) {
             $ohneBuchjahr[] = absendenSiegerlisteName($siegerdef);
         }
 
-        // Verarbeite die Sieger paarweise
-        for ($i = 0; $i < count($siegers); $i += 2) {
-            if ($currentRow <= $countSieger) {
-
-                // Erster Sieger
-                $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "Y#{$currentRow}", $siegers[$i]['year']);
-                $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "N#{$currentRow}", $siegers[$i]['Name']);
-                $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "P#{$currentRow}", $siegers[$i]['Wert']);
-
-                // Zweiter Sieger (falls vorhanden)
-                if (isset($siegers[$i + 1])) {
-                    $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "Y2#{$currentRow}", $siegers[$i + 1]['year']);
-                    $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "N2#{$currentRow}", $siegers[$i + 1]['Name']);
-                    $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "P2#{$currentRow}", $siegers[$i + 1]['Wert']);
-                } else {
-
-                    // Leere Platzhalter für den 2. Sieger
-                    $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "Y2#{$currentRow}", "");
-                    $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "N2#{$currentRow}", "");
-                    $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "P2#{$currentRow}", "");
-                }
-                $currentRow++;
-            }
+        $templateProcessor->setValue($p . 'AB', $siegers ? (string)$siegers[0]['year'] : '');
+        $zeilen = (int)ceil(count($siegers) / 2);
+        $templateProcessor->cloneRow($p . 'Y', $zeilen);
+        for ($z = 1; $z <= $zeilen; $z++) {
+            $links = $siegers[2 * $z - 2];
+            $rechts = $siegers[2 * $z - 1] ?? ['year' => '', 'Name' => '', 'Wert' => ''];
+            $templateProcessor->setValue("{$p}Y#{$z}", $links['year']);
+            $templateProcessor->setValue("{$p}N#{$z}", $links['Name']);
+            $templateProcessor->setValue("{$p}P#{$z}", $links['Wert']);
+            $templateProcessor->setValue("{$p}Y2#{$z}", $rechts['year']);
+            $templateProcessor->setValue("{$p}N2#{$z}", $rechts['Name']);
+            $templateProcessor->setValue("{$p}P2#{$z}", $rechts['Wert']);
         }
-
-        // Entferne ungenutzte Platzhalter
-        for ($i = $currentRow; $i <= $countSieger; $i++) {
-            $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "Y#{$i}", "");
-            $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "N#{$i}", "");
-            $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "P#{$i}", "");
-            $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "Y2#{$i}", "");
-            $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "N2#{$i}", "");
-            $templateProcessor->setValue($rowdef['PlatzhalterWord'] . "P2#{$i}", "");
-        }
-        $stmt->close();
     }
     if ($ohneBuchjahr) {
         $welche = count($ohneBuchjahr) === $result->num_rows
@@ -1723,28 +1701,40 @@ function getJMA($templateProcessor, $conn)
     $firstHalf  = array_slice($jmDefs, 0, $midPoint);
     $secondHalf = array_slice($jmDefs, $midPoint);
 
+    // Spaltenbreiten (Twips) passend zum Satzspiegel (A5, 7568 Twips): Kopf- und Datenzeilen gleich breit, festes
+    // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
+    $satzspiegel = 7568;
+    $wRang = 400; $wName = 1700; $wTotal = 700;
+    // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
+    // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
+    $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
+    $wAnlass = (int)floor(min(
+        ($satzspiegel - $wRang - $wName) / max(1, count($firstHalf)),
+        ($satzspiegel - $wTotal) / max(1, count($secondHalf))
+    ));
+
     // Tabellen
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
-    $table1 = new \PhpOffice\PhpWord\Element\Table('myTable');
+    $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table1->addRow(3000);
-    $table1->addCell(700,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
-    $table1->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
+    $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
-        $c = $table1->addCell((int)round(1.5 * 567), $cellHeaderStyle);
+        $c = $table1->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
     $table1->addRow(200);
-    $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
-    $table2 = new \PhpOffice\PhpWord\Element\Table('myTable');
+    $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table2->addRow(3000);
     foreach ($secondHalf as $d) {
-        $c = $table2->addCell((int)round(1.5 * 567), $cellHeaderStyle);
+        $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-    $table2->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
+    $table2->addCell($wTotal, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
     $table2->addRow(200);
-    $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
 
     // Teilnehmer Kat. A
     $mitglieder = getParticipantData('Kat. A', $conn);
@@ -1874,21 +1864,21 @@ function getJMA($templateProcessor, $conn)
     foreach ($rows as $row) {
         if ($rang == 4) {
             $table1->addRow(100);
-            $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+            $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
             $table2->addRow(100);
-            $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+            $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
         }
         $isTop3 = ($rang <= 3);
         $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
 
         // Tabelle 1
         $table1->addRow(200);
-        $table1->addCell(700,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
-        $table1->addCell(3500, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
+        $table1->addCell($wRang,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
+        $table1->addCell($wName, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table1->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+            $table1->addCell($wAnlass, array_merge($cellStyle, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
 
@@ -1897,11 +1887,11 @@ function getJMA($templateProcessor, $conn)
         foreach ($row['resSecond'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table2->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+            $table2->addCell($wAnlass, array_merge($cellStyle, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
-        $table2->addCell(2 * 567, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
+        $table2->addCell($wTotal, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
         $rang++;
     }
     $templateProcessor->setComplexBlock('JMA1', $table1);
@@ -1968,28 +1958,40 @@ function getJMB($templateProcessor, $conn)
     $firstHalf  = array_slice($jmDefs, 0, $midPoint);
     $secondHalf = array_slice($jmDefs, $midPoint);
 
+    // Spaltenbreiten (Twips) passend zum Satzspiegel (A5, 7568 Twips): Kopf- und Datenzeilen gleich breit, festes
+    // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
+    $satzspiegel = 7568;
+    $wRang = 400; $wName = 1700; $wTotal = 700;
+    // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
+    // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
+    $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
+    $wAnlass = (int)floor(min(
+        ($satzspiegel - $wRang - $wName) / max(1, count($firstHalf)),
+        ($satzspiegel - $wTotal) / max(1, count($secondHalf))
+    ));
+
     // Tabellen
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
-    $table1 = new \PhpOffice\PhpWord\Element\Table('myTable');
+    $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table1->addRow(3000);
-    $table1->addCell(700,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
-    $table1->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
+    $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
-        $c = $table1->addCell((int)round(1.5 * 567), $cellHeaderStyle);
+        $c = $table1->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
     $table1->addRow(200);
-    $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
-    $table2 = new \PhpOffice\PhpWord\Element\Table('myTable');
+    $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table2->addRow(3000);
     foreach ($secondHalf as $d) {
-        $c = $table2->addCell((int)round(1.5 * 567), $cellHeaderStyle);
+        $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-    $table2->addCell(3000, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
+    $table2->addCell($wTotal, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
     $table2->addRow(200);
-    $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
 
     // Teilnehmer Kat. A
     $mitglieder = getParticipantData('Kat. B', $conn);
@@ -2119,21 +2121,21 @@ function getJMB($templateProcessor, $conn)
     foreach ($rows as $row) {
         if ($rang == 4) {
             $table1->addRow(100);
-            $table1->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+            $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
             $table2->addRow(100);
-            $table2->addCell(700, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+            $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
         }
         $isTop3 = ($rang <= 3);
         $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
 
         // Tabelle 1
         $table1->addRow(200);
-        $table1->addCell(700,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
-        $table1->addCell(3500, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
+        $table1->addCell($wRang,  ['valign'=>'center','noWrap'=>true])->addText($rang.'.', $fontStyleRow);
+        $table1->addCell($wName, ['valign'=>'center','noWrap'=>true])->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table1->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+            $table1->addCell($wAnlass, array_merge($cellStyle, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
 
@@ -2142,11 +2144,11 @@ function getJMB($templateProcessor, $conn)
         foreach ($row['resSecond'] as $punkte) {
             $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
-            $table2->addCell(2 * 567, array_merge($cellStyle, $bgColor))
+            $table2->addCell($wAnlass, array_merge($cellStyle, $bgColor))
                    ->addText($punkte['wert'], $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
-        $table2->addCell(2 * 567, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
+        $table2->addCell($wTotal, ['valign'=>'center'])->addText($totalOut, $fontStyleRow);
         $rang++;
     }
     $templateProcessor->setComplexBlock('JMB1', $table1);
@@ -2170,26 +2172,6 @@ function calculatePoints($value) {
     if ($value >= 11) return 2;
     if ($value >= 1) return 1;
     return 0;
-}
-
-function getCountSieger($conn, $def, int $bisJahr) {
-    $countSieger = 0;
-    $sqlSiegerDef = "SELECT COUNT(*) as count FROM sieger s
-                     JOIN siegerdef sd ON sd.ID = s.siegerdef
-                     WHERE sd.Bezeichnung = ? AND s.year <= ?";
-    $stmt = $conn->prepare($sqlSiegerDef);
-    if (!$stmt) {
-        return 0;
-    }
-    $stmt->bind_param("si", $def, $bisJahr);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    $stmt->close();
-    $countSieger = $row['count'] / 2;
-    $countSieger = round($countSieger);
-    $countSieger = intval($countSieger);
-    return $countSieger;
 }
 
 function getLoserInThreePair($row) {
