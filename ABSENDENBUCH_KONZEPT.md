@@ -136,9 +136,14 @@ Das sichtbarste Druckstück des Vereins ist der am wenigsten gestaltete Teil des
 
 ### [P2] Das Buch ist für Mitglieder schwer lesbar
 
-- JM-Tabellen in 6 pt (`:1633`, `:1838`), auf zwei Hälften verteilt; die zweite Hälfte hat **keine Namens-
-  und keine Rangspalte** (`:1694–1701`, `:1851–1861`). Ob die Hälften als Doppelseite oder als Vorder- und
-  Rückseite landen, hängt von der Datenmenge ab; nicht gerendert, im Druck prüfen.
+- JM-Tabellen in 6 pt (`:1633`, `:1838`), auf zwei Hälften verteilt. **Korrektur 13.10.2026:** Dass die zweite
+  Hälfte keine Namens- und Rangspalte hat, ist **Absicht** – aufgeklappt liegen beide Hälften als Doppelseite
+  nebeneinander, die Namen links gelten für beide (Hinweis des Benutzers). Kein Mangel.
+  **Echtes Risiko dabei:** Das klappt nur, wenn die JM-Tabelle (JMA1, ebenso JMB1) auf einer *linken*, also geraden
+  Seite beginnt. Die Vorlage hat nur normale Seitenumbrüche, keinen Abschnittsumbruch «gerade Seite»; die Parität
+  hängt von allem davor ab (Teilnehmerzahl, jedes Jahr längere Siegerlisten, seit 1.68.2 wegfallende leere
+  Abschnitte Jungschützen/Partner). Landet JMA1 rechts, stehen die Hälften auf Vorder- und Rückseite desselben
+  Blatts und die rechte Hälfte hat keine Namen. Nicht gerendert, im Druck prüfen.
 - Keine Seitenzahlen, kein Inhaltsverzeichnis, keine Legende.
 - Tippfehler in der Vorlage: «Schinistich», «Ordonanzwaffen».
 - Das Endschiessen-Total, die Hauptsache des Abends, steht erst auf etwa Seite 10. Bei Kunst stehen die
@@ -285,7 +290,8 @@ Rückfall.
 
 ### Spätere Runden
 
-- **Runde 2, Heft:** mindestens 8 pt, Name in beiden JM-Hälften oder Querformat, Seitenzahlen, Legende,
+- **Runde 2, Heft:** mindestens 8 pt, JM-Doppelseite absichern (beginnt sicher auf einer linken Seite, z.B.
+  Abschnittsumbruch «gerade Seite» oder Prüfung der Seitenzahl im Broschüren-PDF per `pdftotext`), Seitenzahlen, Legende,
   einheitliche Kategorienamen, Reihenfolge nach Bedeutung, gespiegelte Ränder. Hängt am Entscheid
   Word-Vorlage oder PDF-Theme.
 - **Runde 3, Ablauf:** ein Knopf «Absendenbuch erstellen» mit Dauerangabe, Zusammenfassung danach
