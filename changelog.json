@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.6",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Sonderzeichen und Fettdruck sicher",
+        "beschreibung": "Ein «&» oder «<» in einem Namen oder Anlass machte das Absendenbuch bisher unbrauchbar (Word meldete eine beschädigte Datei, die Broschüre schlug fehl). Alle Werte und Tabellen werden jetzt korrekt eingesetzt. Die fetten ersten drei Ränge behalten Schrift und Grösse der Vorlage und sind gültiges Word-Format.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.5",
     "datum": "2026-10-13",
     "aenderungen": [
