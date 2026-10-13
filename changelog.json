@@ -24,6 +24,18 @@
     ]
   },
   {
+    "version": "1.68.9",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Sieger der letzten Jahre: aus den Ranglisten übernehmen",
+        "beschreibung": "Neuer Knopf «Aus Ranglisten übernehmen»: Er ermittelt für das gewählte Jahr den Sieger jeder Auszeichnung und trägt ihn nach einer Vorschau fest ein. Endschiessen-Stiche und Endschiessen Kat. A/B kommen aus der Endschiessen-Rangliste (bestplatziertes Mitglied, wie «WP»), Jahresmeisterschaft, Heimmeisterschaft und Kantonalstich aus den Wanderpreis-Regeln. Vorangehakt sind nur Auszeichnungen ohne Eintrag; einen abweichenden Handeintrag ersetzt nur, wer ihn bewusst anhakt. Resultate mit Nachkommastellen (z.B. 263.90) bleiben beim Bearbeiten jetzt erhalten statt auf ganze Zahlen gekürzt zu werden.",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.8",
     "datum": "2026-10-13",
     "aenderungen": [

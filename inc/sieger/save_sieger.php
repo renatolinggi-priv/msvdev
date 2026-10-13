@@ -4,6 +4,7 @@ require_once '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/sieger_ranglisten.inc.php'; // siegerWertText()
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -14,13 +15,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 csrf_require(true);
 
 $member_id = (int)($_POST['member_id'] ?? 0);
-$wert      = (int)($_POST['wert'] ?? 0);
+$wertRoh   = str_replace(',', '.', trim((string)($_POST['wert'] ?? '')));
+$wert      = is_numeric($wertRoh) && (float)$wertRoh > 0 ? siegerWertText($wertRoh) : '';
 $siegerdef = (int)($_POST['siegerdef'] ?? 0);
 $year      = (int)($_POST['year'] ?? 0);
 
 if ($member_id < 1)  { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Bitte ein Mitglied wählen'])); }
 if ($siegerdef < 1)  { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Bitte eine Auszeichnung wählen'])); }
-if ($wert <= 0)      { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Wert muss grösser als 0 sein'])); }
+if ($wert === '')      { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Wert muss grösser als 0 sein'])); }
 if ($year < 2000 || $year > 2100) { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Ungültiges Jahr'])); }
 
 try {
@@ -37,7 +39,7 @@ try {
     $name = $row['Name'] . ' ' . $row['Vorname'];
 
     $stmt = $conn->prepare("INSERT INTO sieger (Name, Wert, siegerdef, year) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param('siii', $name, $wert, $siegerdef, $year);
+    $stmt->bind_param('ssii', $name, $wert, $siegerdef, $year);
     if (!$stmt->execute()) {
         throw new Exception($stmt->error);
     }

@@ -69,6 +69,24 @@ $page_specific_css = <<<'CSS'
 
 /* Leerzustand (.ui-leerzustand) kommt aus css/msv-ui.css */
 
+/* === DIALOG «AUS RANGLISTEN ÜBERNEHMEN» === */
+.sieger-ueb-liste { max-height: 55vh; overflow-y: auto; text-align: left; margin: 0.25rem 0 0; }
+.sieger-ueb-liste table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sieger-ueb-liste th {
+    position: sticky; top: 0; background: var(--ui-flaeche-2); z-index: 1;
+    font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: var(--ui-text-2);
+    padding: 0.3rem 0.4rem; text-align: left;
+}
+.sieger-ueb-liste td { padding: 0.3rem 0.4rem; border-top: 1px solid var(--ui-linie-zart); vertical-align: top; }
+.sieger-ueb-liste td.wahl { width: 1.8rem; }
+.sieger-ueb-liste label { display: block; margin: 0; cursor: pointer; font-weight: 600; color: var(--ui-text); }
+.sieger-ueb-liste .wert { font-variant-numeric: tabular-nums; }
+.sieger-ueb-liste .notiz { display: block; font-size: 0.75rem; color: var(--ui-text-2); }
+.sieger-ueb-liste tr.ist-warnung .notiz { color: var(--ui-warn-punkt); }
+.sieger-ueb-liste tr.ist-aus { color: var(--ui-text-2); }
+.sieger-ueb-liste tr.ist-aus label { color: var(--ui-text-2); font-weight: 500; }
+.sieger-ueb-fuss { margin: 0.6rem 0 0; font-size: 0.75rem; color: var(--ui-text-2); text-align: left; }
+
 /* === MOBILE === */
 @media (max-width: 767.98px) {
     .desktop-cards-container { grid-template-columns: 1fr; gap: 0.75rem; }
@@ -115,7 +133,9 @@ rsort($years);
 <?php endforeach; ?>
 </select>
 <?php           $page_title_after = ob_get_clean();
-                $page_actions = '<button type="button" class="btn btn-sm btn-outline-success" id="btnAddSieger"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Hinzufügen</button>';
+                $page_actions = '<button type="button" class="btn btn-sm btn-outline-success" id="btnSiegerUebernehmen" data-tooltip="Sieger des gewählten Jahres aus den Ranglisten ermitteln und eintragen"><i class="bi bi-list-check me-1" aria-hidden="true"></i>Aus Ranglisten übernehmen</button>'
+                              . '<button type="button" class="btn-help" data-help="sieger.uebernehmen" aria-label="Hilfe"></button>'
+                              . '<button type="button" class="btn btn-sm btn-outline-success" id="btnAddSieger"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Hinzufügen</button>';
                 $page_show_mobile = true;
                 include 'partials/page_header.inc.php'; ?>
 
@@ -174,7 +194,7 @@ ob_start();
 
             <div class="mb-3">
                 <label class="panel-label" for="wertInput"><i class="bi bi-123 me-1"></i>Resultat / Punkte</label>
-                <input type="number" name="wert" id="wertInput" class="form-control form-control-sm" min="1" required placeholder="z.B. 98">
+                <input type="number" name="wert" id="wertInput" class="form-control form-control-sm" min="0.01" step="0.01" required placeholder="z.B. 98 oder 263.90">
             </div>
 
             <div class="mb-3">
@@ -240,6 +260,70 @@ function loadSieger(year) {
         });
 }
 
+// «Aus Ranglisten übernehmen»: Vorschau je Auszeichnung, angehakte fest in die Tabelle sieger schreiben.
+// Vorangehakt sind nur neue Sieger; wer einen Handeintrag ersetzen will, hakt ihn bewusst an.
+const UEB_STATUS = {
+    neu:     { an: true,  aus: false, notiz: () => 'Noch nicht erfasst' },
+    gleich:  { an: false, aus: true,  notiz: () => 'Bereits so erfasst' },
+    wert:    { an: false, aus: false, warn: true, notiz: e => 'Bisher erfasst: ' + e.bisher[0].wert },
+    anders:  { an: false, aus: false, warn: true, notiz: e => 'Bisher erfasst: ' + e.bisher[0].name + ', ' + e.bisher[0].wert },
+    mehrere: { an: false, aus: true,  warn: true, notiz: e => e.bisher.length + ' Einträge erfasst, bitte von Hand bereinigen' },
+    leer:    { an: false, aus: true,  notiz: e => e.hinweis || 'Keine Resultate' }
+};
+
+function siegerUebernehmen() {
+    const jahr = $('#filterYear').val();
+    const $btn = $('#btnSiegerUebernehmen').prop('disabled', true);
+    msvGet('sieger/uebernehmen.php', { year: jahr }, r => {
+        const liste = Array.isArray(r.liste) ? r.liste : [];
+        const zeilen = liste.map(e => {
+            const s = UEB_STATUS[e.status] || UEB_STATUS.leer;
+            const label = (CATEGORY_CONFIG[e.bezeichnung] || {}).label || e.bezeichnung;
+            const id = 'ueb_' + e.siegerdef_id;
+            const vorschlag = e.vorschlag
+                ? msvEsc(e.vorschlag.name) + ' <span class="wert">' + msvEsc(e.vorschlag.wert) + '</span>'
+                : '–';
+            return '<tr class="' + (s.aus ? 'ist-aus' : '') + (s.warn ? ' ist-warnung' : '') + '">'
+                + '<td class="wahl">' + (s.aus ? '' : '<input class="form-check-input" type="checkbox" id="' + id + '" value="' + e.siegerdef_id + '"' + (s.an ? ' checked' : '') + '>') + '</td>'
+                + '<td><label for="' + id + '">' + msvEsc(label) + '</label></td>'
+                + '<td>' + vorschlag + '<span class="notiz">' + msvEsc(s.notiz(e)) + '</span></td>'
+                + '</tr>';
+        }).join('');
+        const anzNeu = liste.filter(e => e.status === 'neu').length;
+
+        msvSwal.fire({
+            title: 'Sieger ' + jahr + ' aus den Ranglisten',
+            width: '40rem',
+            html: '<div class="sieger-ueb-liste"><table>'
+                + '<thead><tr><th></th><th>Auszeichnung</th><th>Sieger laut Rangliste</th></tr></thead>'
+                + '<tbody>' + zeilen + '</tbody></table></div>'
+                + '<p class="sieger-ueb-fuss">Angehakte Auszeichnungen werden fest eingetragen; ein bestehender Eintrag wird dabei ersetzt. '
+                + 'Die Kategorie A/B richtet sich wie in den Ranglisten nach der heutigen Waffe des Mitglieds. Bei früheren Jahren kann das vom damaligen Sieger abweichen.</p>',
+            showCancelButton: true,
+            confirmButtonText: anzNeu ? 'Übernehmen' : 'Angehakte übernehmen',
+            focusConfirm: false,
+            preConfirm: () => {
+                const ids = $('.sieger-ueb-liste input:checked').map(function() { return this.value; }).get();
+                if (!ids.length) { Swal.showValidationMessage('Bitte mindestens eine Auszeichnung anhaken.'); return false; }
+                return ids;
+            }
+        }).then(res => {
+            if (!res.isConfirmed) return;
+            msvPost('sieger/uebernehmen.php', { year: jahr, siegerdef: res.value }, r2 => {
+                const teile = [];
+                if (r2.neu) teile.push(r2.neu + ' neu eingetragen');
+                if (r2.ersetzt) teile.push(r2.ersetzt + ' ersetzt');
+                msvToast(teile.length ? 'Sieger ' + jahr + ': ' + teile.join(', ') : 'Keine Änderung nötig', 'success');
+                if (r2.uebersprungen && r2.uebersprungen.length) {
+                    msvToast('Nicht übernommen (keine Resultate oder mehrere Einträge): ' + r2.uebersprungen.join(', '), 'warning');
+                }
+                loadSieger(jahr);
+            }, { csrf: $('#csrf_token').val(), failMsg: 'Die Sieger konnten nicht gespeichert werden.' });
+        });
+    }, { failMsg: 'Die Ranglisten konnten nicht gelesen werden.' })
+        .always(() => $btn.prop('disabled', false));
+}
+
 // Panel öffnen/schliessen
 function isPanelOpen() { return $('#addSiegerPanel').hasClass('open'); }
 function openAddPanel() {
@@ -279,6 +363,7 @@ function openEditFor($row) {
 
 $(function() {
     $('#filterYear').on('change', function() { loadSieger(this.value); });
+    $('#btnSiegerUebernehmen').on('click', siegerUebernehmen);
 
     // Hinzufügen: Jahr aus dem Filter vorbelegen (vorher aktuelles Jahr -> Eintrag landete
     // im falschen Jahr und war nach dem Speichern unsichtbar)
@@ -328,7 +413,7 @@ $(function() {
         const isEdit = !!editId;
 
         if (!isEdit && !$('#memberSelect').val()) { msvToast('Bitte ein Mitglied wählen', 'warning'); $('#memberSelect').trigger('focus'); return; }
-        const wert = parseInt($('#wertInput').val(), 10);
+        const wert = parseFloat($('#wertInput').val());
         if (isNaN(wert) || wert <= 0) { msvToast('Wert muss grösser als 0 sein', 'warning'); $('#wertInput').trigger('focus'); return; }
 
         const $btn = $('#siegerSubmitBtn');

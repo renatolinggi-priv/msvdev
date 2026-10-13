@@ -4,6 +4,7 @@ require_once '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/sieger_ranglisten.inc.php'; // siegerWertText()
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -14,7 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 csrf_require(true);
 
 $id        = (int)($_POST['id'] ?? 0);
-$wert      = (int)($_POST['wert'] ?? 0);
+$wertRoh   = str_replace(',', '.', trim((string)($_POST['wert'] ?? '')));
+$wert      = is_numeric($wertRoh) && (float)$wertRoh > 0 ? siegerWertText($wertRoh) : '';
 $siegerdef = (int)($_POST['siegerdef'] ?? 0);
 $year      = (int)($_POST['year'] ?? 0);
 $name      = trim((string)($_POST['name'] ?? ''));
@@ -22,7 +24,7 @@ $member_id = (int)($_POST['member_id'] ?? 0);
 
 if ($id < 1)        { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Ungültige ID'])); }
 if ($siegerdef < 1) { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Bitte eine Auszeichnung wählen'])); }
-if ($wert <= 0)     { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Wert muss grösser als 0 sein'])); }
+if ($wert === '')     { http_response_code(422); die(json_encode(['success' => false, 'message' => 'Wert muss grösser als 0 sein'])); }
 
 try {
     // Name aus dem gewaehlten Mitglied ableiten, sonst den mitgeschickten (bestehenden) Namen behalten
@@ -43,10 +45,10 @@ try {
     // Jahr nur uebernehmen, wenn ein gueltiges mitgeschickt wurde
     if ($year >= 2000 && $year <= 2100) {
         $stmt = $conn->prepare("UPDATE sieger SET Name = ?, Wert = ?, siegerdef = ?, year = ? WHERE ID = ?");
-        $stmt->bind_param('siiii', $name, $wert, $siegerdef, $year, $id);
+        $stmt->bind_param('ssiii', $name, $wert, $siegerdef, $year, $id);
     } else {
         $stmt = $conn->prepare("UPDATE sieger SET Name = ?, Wert = ?, siegerdef = ? WHERE ID = ?");
-        $stmt->bind_param('siii', $name, $wert, $siegerdef, $id);
+        $stmt->bind_param('ssii', $name, $wert, $siegerdef, $id);
     }
     if (!$stmt->execute()) {
         throw new Exception($stmt->error);
