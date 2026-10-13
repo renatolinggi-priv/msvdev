@@ -1364,32 +1364,19 @@ function getCup($templateProcessor, $conn)
     global $selectedYear;
     logDebug("Starte getCup für Jahr: " . $selectedYear);
 
-    // Stil für die Zellen
-    $cellStyle = [
-        'valign' => VerticalJc::CENTER,
-        'alignment' => Jc::CENTER,
-        'borderSize' => 6,
-        'borderColor' => '000000',
-        'borderBottomSize' => 12,
-        'borderBottomStyle' => 'double',
-        'borderBottomColor' => '000000',
-    ];
-
     // Funktion zum Erstellen der CUP-Tabelle
     function createCupTable($phpWord, $round, $cupPairsResult)
     {
         $tableStyle = [
             'alignment' => JcTable::CENTER,
-            'borderSize' => 6,
+            'borderSize' => 4,
             'borderColor' => '000000',
             'cellMargin' => 150,
         ];
         $fontStyle = ['size' => 8];
-        $loserFontStyle = [
-            'size' => 8,
-            'strikethrough' => true,
-        ];
-        $winnerFontStyle = ['size' => 8];
+        // Wer weiterkommt fett, wer ausscheidet grau (früher durchgestrichen)
+        $loserFontStyle = ['size' => 8, 'color' => '7F7F7F'];
+        $winnerFontStyle = ['size' => 8, 'bold' => true];
         $section = $phpWord->addSection();
         $cupTable = $section->addTable($tableStyle);
 
@@ -1401,52 +1388,21 @@ function getCup($templateProcessor, $conn)
             }
 
             // Verlierer bestimmen
-            $winner1 = $row['Result1'] > $row['Result2'] || 
-                      ($row['Result1'] == $row['Result2'] && $row['LowShot1'] > $row['LowShot2']);
+            // Sieger wie auf der Cup-Seite: manuell bestimmter Sieger (Gleichstand) vor Resultat und Tiefschuss
+            $manuell = (int)($row['ManualWinner'] ?? 0);
+            $winner1 = $manuell > 0
+                ? $manuell === (int)$row['Participant1']
+                : ($row['Result1'] > $row['Result2']
+                   || ($row['Result1'] == $row['Result2'] && $row['LowShot1'] > $row['LowShot2']));
             $winner2 = !$winner1;
             $losers = [];
             if (!empty($row['Participant3'])) {
                 $losers = getThreePairLosers($row);
             }
 
-            // Zellstile definieren
-            $cellStyleName = [
-                'borderSize' => 6,
-                'borderColor' => '000000',
-                'valign' => VerticalJc::CENTER,
-                'alignment' => Jc::CENTER,
-                'borderRightSize' => 6,
-                'borderRightStyle' => 'dashed',
-                'borderRightColor' => '000000',
-                'spaceAfter' => 0,
-            ];
-            $cellStyleRes = [
-                'borderSize' => 6,
-                'borderColor' => '000000',
-                'valign' => VerticalJc::CENTER,
-                'alignment' => Jc::CENTER,
-                'borderleftSize' => 6,
-                'borderleftStyle' => 'dashed',
-                'borderleftColor' => '000000',
-                'spaceAfter' => 0,
-            ];
-
-            // Prüfe ob letzte Zeile
-            $isLastRow = ($index + 1 == $totalRows) || 
-                        (isset($cupPairsResult[$index + 1]) && $cupPairsResult[$index + 1]['Round'] != $round);
-            if ($isLastRow) {
-                $cellStyleName['borderBottomSize'] = 6;
-                $cellStyleName['borderBottomColor'] = '000000';
-                $cellStyleRes['borderBottomSize'] = 6;
-                $cellStyleRes['borderBottomColor'] = '000000';
-            } else {
-                $cellStyleName['borderBottomSize'] = 12;
-                $cellStyleName['borderBottomStyle'] = 'double';
-                $cellStyleName['borderBottomColor'] = '000000';
-                $cellStyleRes['borderBottomSize'] = 12;
-                $cellStyleRes['borderBottomStyle'] = 'double';
-                $cellStyleRes['borderBottomColor'] = '000000';
-            }
+            // Einheitliche feine Linien (früher gestrichelte Senkrechte und doppelte Linien zwischen den Paarungen)
+            $cellStyleName = ['borderSize' => 4, 'borderColor' => '000000', 'valign' => VerticalJc::CENTER, 'spaceAfter' => 0];
+            $cellStyleRes = $cellStyleName;
 
             // Zeilen hinzufügen
             if (!empty($row['Participant3'])) {
@@ -1488,19 +1444,19 @@ function getCup($templateProcessor, $conn)
                 $cupTable->addRow();
                 $cupTable->addCell(2000, $cellStyleName)->addText(
                     getParticipantName($row['Participant1']), 
-                    $winner1 ? $fontStyle : $loserFontStyle
+                    $winner1 ? $winnerFontStyle : $loserFontStyle
                 );
                 $cupTable->addCell(500, $cellStyleRes)->addText(
                     $row['Result1'], 
-                    $winner1 ? $fontStyle : $loserFontStyle
+                    $winner1 ? $winnerFontStyle : $loserFontStyle
                 );
                 $cupTable->addCell(2000, $cellStyleName)->addText(
                     getParticipantName($row['Participant2']), 
-                    $winner2 ? $fontStyle : $loserFontStyle
+                    $winner2 ? $winnerFontStyle : $loserFontStyle
                 );
                 $cupTable->addCell(500, $cellStyleRes)->addText(
                     $row['Result2'], 
-                    $winner2 ? $fontStyle : $loserFontStyle
+                    $winner2 ? $winnerFontStyle : $loserFontStyle
                 );
             }
         }
@@ -1574,28 +1530,14 @@ function getCup($templateProcessor, $conn)
     while ($row = $finalResult->fetch_assoc()) {
         $participant = getParticipantName($row['ParticipantID']);
         $finalTable->addRow();
-        $cellStyleSieger = [
-            'borderTopSize' => 6,
-            'borderTopColor' => '000000',
-            'borderLeftSize' => 6,
-            'borderLeftColor' => '000000',
-            'borderBottomStyle' => 'dashed',
-            'borderBottomSize' => 6,
-            'borderBottomColor' => '000000'
-        ];
-        if ($i > 1) {
-            $cellStyleSieger['borderTopStyle'] = 'dashed';
-        }
-        $finalTable->addCell(500, $cellStyleSieger)->addText("$i.", ['size' => 8]);
-        $cellStyleSieger['borderLeftSize'] = 0;
-        $finalTable->addCell(2000, $cellStyleSieger)->addText($participant, ['size' => 8]);
-        $cellStyleSieger['borderRightSize'] = 6;
-        $cellStyleSieger['borderRightColor'] = '000000';
-        $finalTable->addCell(1000, $cellStyleSieger)->addText($row['Result'], ['size' => 8]);
+        // Rangliste mit feinen Linien, die ersten drei fett
+        $zelle = ['borderSize' => 4, 'borderColor' => '000000', 'valign' => VerticalJc::CENTER];
+        $schrift = ['size' => 8, 'bold' => $i <= 3];
+        $finalTable->addCell(500, $zelle)->addText("$i.", $schrift);
+        $finalTable->addCell(2000, $zelle)->addText($participant, $schrift);
+        $finalTable->addCell(1000, $zelle)->addText($row['Result'], $schrift);
         $i++;
     }
-    $finalTable->addRow();
-    $finalTable->addCell(null, ['borderTopColor' => '000000', 'borderTopSize' => 6, 'gridSpan' => 3])->addText(" ", ['size' => 8]);
     $stmt->close();
     $templateProcessor->setComplexBlock('CUPF', $finalTable);
 
@@ -1615,28 +1557,14 @@ function getCup($templateProcessor, $conn)
     while ($row = $finalResult->fetch_assoc()) {
         $participant = $row['ParticipantName'];
         $standCupTable->addRow();
-        $cellStyleSieger = [
-            'borderTopSize' => 6,
-            'borderTopColor' => '000000',
-            'borderLeftSize' => 6,
-            'borderLeftColor' => '000000',
-            'borderBottomStyle' => 'dashed',
-            'borderBottomSize' => 6,
-            'borderBottomColor' => '000000'
-        ];
-        if ($i > 1) {
-            $cellStyleSieger['borderTopStyle'] = 'dashed';
-        }
-        $standCupTable->addCell(500, $cellStyleSieger)->addText("$i.", ['size' => 8]);
-        $cellStyleSieger['borderLeftSize'] = 0;
-        $standCupTable->addCell(2000, $cellStyleSieger)->addText($participant, ['size' => 8]);
-        $cellStyleSieger['borderRightSize'] = 6;
-        $cellStyleSieger['borderRightColor'] = '000000';
-        $standCupTable->addCell(1000, $cellStyleSieger)->addText($row['Result'], ['size' => 8]);
+        // Rangliste mit feinen Linien, die ersten drei fett
+        $zelle = ['borderSize' => 4, 'borderColor' => '000000', 'valign' => VerticalJc::CENTER];
+        $schrift = ['size' => 8, 'bold' => $i <= 3];
+        $standCupTable->addCell(500, $zelle)->addText("$i.", $schrift);
+        $standCupTable->addCell(2000, $zelle)->addText($participant, $schrift);
+        $standCupTable->addCell(1000, $zelle)->addText($row['Result'], $schrift);
         $i++;
     }
-    $standCupTable->addRow();
-    $standCupTable->addCell(null, ['borderTopColor' => '000000', 'borderTopSize' => 6, 'gridSpan' => 3])->addText(" ", ['size' => 8]);
     $stmt->close();
     $templateProcessor->setComplexBlock('CUPS', $standCupTable);
     logDebug("getCup erfolgreich abgeschlossen");

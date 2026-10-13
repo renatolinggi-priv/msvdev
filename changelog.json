@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.13",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Deckblatt mit Ort und Datum des Absendens, ruhigerer Cup",
+        "beschreibung": "Unten auf dem Deckblatt stehen jetzt Ort und Datum des Absendens aus dem Jahresprogramm (z.B. «Pfäffikon, 14. November 2026»); fehlt der Ort, steht «Roggenacker», fehlt der Termin, das Druckdatum. Die Zeile bricht nicht mehr um das Logo herum. Im Vereinscup sind die Weitergekommenen fett und die Ausgeschiedenen grau statt durchgestrichen, alle Linien fein und einheitlich; im Final und im Standcup sind die ersten drei fett. Wurde ein Gleichstand auf der Cup-Seite von Hand entschieden, zeigt das Buch jetzt diesen Sieger.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.12",
     "datum": "2026-10-13",
     "aenderungen": [

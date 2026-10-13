@@ -154,6 +154,31 @@ function absendenbuchHatEndstich(mysqli $conn, int $jahr): bool
 }
 
 /**
+ * Zeile unten auf dem Deckblatt: Ort und Datum des Absendens, z.B. «Pfäffikon, 14. November 2026».
+ * Termin wie auf der Startseite (dashboard_phasen.inc.php): Anlass im Jahresprogramm, dessen Bezeichnung
+ * «Absenden» enthält, Datum aus JMSchiesstage, Ort = Teil der Adresse nach der Postleitzahl.
+ * Fehlt der Ort: «Roggenacker»; fehlt der Termin: das Druckdatum – beides wie früher fest in der Vorlage.
+ */
+function absendenbuchDeckblatt(mysqli $conn, int $jahr, IntlDateFormatter $datumFormat): string
+{
+    $st = $conn->prepare("SELECT jd.Adresse, MIN(s.schiesstag) AS tag
+                            FROM JMDefinition jd JOIN JMSchiesstage s ON s.jm_id = jd.ID
+                           WHERE jd.year = ? AND jd.Bezeichnung LIKE '%Absenden%'
+                           GROUP BY jd.ID, jd.Adresse ORDER BY tag LIMIT 1");
+    $st->bind_param('i', $jahr);
+    $st->execute();
+    $termin = $st->get_result()->fetch_assoc();
+    $st->close();
+
+    $ort = 'Roggenacker';
+    if ($termin && preg_match('/\b\d{4}\s+(.+?)\s*$/u', (string)$termin['Adresse'], $m)) {
+        $ort = $m[1];
+    }
+    $datum = $datumFormat->format(new DateTime($termin['tag'] ?? 'now'));
+    return $ort . ', ' . $datum;
+}
+
+/**
  * Füllt die Absendenbuch-Vorlage für ein Jahr. Der Aufrufer speichert mit ->saveAs().
  * $hinweise: Klartext-Liste für den Vorstand (leere oder unvollständige Abschnitte, Platzhalter-Reste).
  */
@@ -176,7 +201,13 @@ function absendenbuchTemplateFuellen(int $selectedYear, mysqli $conn, ?array &$h
 
     $tp = new AbsendenbuchVorlage(ABSENDENBUCH_TEMPLATE);
     $tp->setValue('Year', (string)$selectedYear);
-    $tp->setValue('PrintDate', $printdatum);
+    $tp->setValue('PrintDate', $printdatum); // ältere Vorlagen
+    try {
+        $tp->setValue('Deckblatt', absendenbuchDeckblatt($conn, $selectedYear, $formatter));
+    } catch (Throwable $e) {
+        error_log('[absendenbuch] Deckblatt: ' . $e->getMessage());
+        $tp->setValue('Deckblatt', 'Roggenacker, ' . $printdatum);
+    }
 
     // Jeder Abschnitt einzeln: scheitert einer, fehlt nur er (mit Hinweis), nicht das ganze Buch.
     $abschnitte = [
