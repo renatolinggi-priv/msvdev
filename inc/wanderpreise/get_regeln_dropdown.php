@@ -27,7 +27,9 @@ try {
     
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            echo '<option value="' . htmlspecialchars($row['id']) . '">';
+            // value = regel_code: auto_zuordnung.php sucht die Regel ueber den Code.
+            // (Bis 10.2026 stand hier die ID -> im Edit-Formular gespeicherte Regeln wurden nie gefunden.)
+            echo '<option value="' . htmlspecialchars($row['regel_code']) . '" data-id="' . (int)$row['id'] . '">';
             echo htmlspecialchars($row['regel_name']);
             if (!empty($row['regel_code'])) {
                 echo ' (' . htmlspecialchars($row['regel_code']) . ')';

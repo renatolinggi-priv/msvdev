@@ -30,6 +30,16 @@ try {
   if ($id<=0) wanderpreise_json_response(false, 'ID fehlt/ungültig', [], 400);
   if ($bezeichnung==='') wanderpreise_json_response(false, 'Bezeichnung fehlt', [], 400);
 
+  // Alte Formulare schickten die Regel-ID statt des Codes -> auf den Code umschreiben
+  if ($verknuepfung_regel !== null && ctype_digit($verknuepfung_regel)) {
+    $rid = (int)$verknuepfung_regel;
+    $chk = $conn->prepare("SELECT regel_code FROM wanderpreise_regeln WHERE id=? LIMIT 1");
+    $chk->bind_param("i", $rid);
+    $chk->execute();
+    $rc = $chk->get_result()->fetch_column();
+    if ($rc !== false && $rc !== null && $rc !== '') $verknuepfung_regel = (string)$rc;
+  }
+
   if ($verknuepfung_regel===null || $verknuepfung_regel==='') {
     $sql = "UPDATE wanderpreise SET
               bezeichnung=?, beschreibung=?, beschaffung_datum=?, min_anzahl_gewinne=?, hersteller=?,

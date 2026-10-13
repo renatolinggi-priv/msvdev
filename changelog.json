@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.68.6",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Sonderzeichen und Fettdruck sicher",
+        "beschreibung": "Ein «&» oder «<» in einem Namen oder Anlass machte das Absendenbuch bisher unbrauchbar (Word meldete eine beschädigte Datei, die Broschüre schlug fehl). Alle Werte und Tabellen werden jetzt korrekt eingesetzt. Die fetten ersten drei Ränge behalten Schrift und Grösse der Vorlage und sind gültiges Word-Format.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.5",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Wanderpreise: automatische Zuordnung findet die Regel wieder",
+        "beschreibung": "Wurde bei einem Wanderpreis die Regel im Bearbeiten-Fenster gewählt, speicherte die Seite die interne Nummer der Regel statt ihres Codes. Die automatische Zuordnung fand die Regel darum nicht und übersprang den Preis, obwohl «Testen» funktionierte. Die Zuordnung erkennt jetzt beides, und beim nächsten Speichern wird der richtige Code hinterlegt.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Wanderpreise: Ergebnis der Auto-Zuordnung bleibt lesbar stehen",
+        "beschreibung": "Statt eines kurzen Hinweises mit langem Text öffnet sich ein Fenster mit einer Zeile pro Wanderpreis: zugeordnet (mit Name des Gewinners), übersprungen, ohne Daten oder Fehler – Fehler zuoberst. Es bleibt offen, bis man es schliesst.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.4",
     "datum": "2026-10-12",
     "aenderungen": [

@@ -11,6 +11,18 @@ $page_specific_css = "
 #wanderpreisTableContainer .table-responsive { max-height: none !important; min-height: 0 !important; overflow-y: visible !important; }
 /* Tabelle läuft randlos in der Tabellen-Card; Aussenspalten bündig mit dem Kartenkopf */
 #wanderpreiseTable { margin: 0; }
+/* Ergebnis-Dialog der Auto-Zuordnung */
+.wp-auto-summe { margin: 0 0 .5rem; }
+.wp-auto-liste { list-style: none; margin: 0; padding: 0; text-align: left; max-height: 55vh; overflow-y: auto; }
+.wp-auto-liste li { display: flex; gap: .55rem; align-items: flex-start; padding: .5rem .1rem; border-top: 1px solid var(--ui-rand, #e8ecf1); font-size: .85rem; line-height: 1.4; }
+.wp-auto-liste li:first-child { border-top: 0; }
+.wp-auto-liste .bi { flex: 0 0 auto; margin-top: .1rem; }
+.wp-auto-preis { display: block; font-weight: 600; color: var(--ui-text, #212529); }
+.wp-auto-text { display: block; color: var(--ui-text-2, #495057); }
+.wp-auto-ok .bi { color: var(--ui-ok-fg, #166534); }
+.wp-auto-fehler .bi { color: var(--ui-fehler, #b42318); }
+.wp-auto-hinweis .bi { color: var(--ui-warn-punkt, #d97706); }
+.wp-auto-info .bi { color: var(--ui-text-3, #667080); }
 #wanderpreiseTable th, #wanderpreiseTable td { padding: 10px 12px; vertical-align: middle; }
 #wanderpreiseTable th:first-child, #wanderpreiseTable td:first-child { padding-left: var(--ui-pad); width: 38%; text-align: left; font-weight: 400; background-color: transparent; }
 #wanderpreiseTable th:last-child, #wanderpreiseTable td:last-child { padding-right: var(--ui-pad); }
@@ -928,6 +940,42 @@ if (WANDERPREISE_DEBUG) {
             });
         });
 
+        // Ergebnis der Auto-Zuordnung als Dialog: pro Wanderpreis eine Zeile, Fehler zuoberst.
+        // Die Zeilen kommen als «Status – Preis: Text» vom Server (auto_zuordnung.php).
+        function zeigeAutoZuordnungErgebnis(res, jahr) {
+            var arten = {
+                'Fehler':       { cls: 'fehler',  icon: 'bi-x-circle-fill',             rang: 0 },
+                'Hinweis':      { cls: 'hinweis', icon: 'bi-exclamation-triangle-fill', rang: 1 },
+                'OK':           { cls: 'ok',      icon: 'bi-check-circle-fill',         rang: 2 },
+                'Übersprungen': { cls: 'info',    icon: 'bi-skip-forward-circle',       rang: 3 },
+                'Info':         { cls: 'info',    icon: 'bi-dash-circle',               rang: 3 }
+            };
+            var zeilen = (Array.isArray(res.details) ? res.details : []).map(function (d) {
+                var m = String(d).match(/^(\S+) – (.+?): (.*)$/);
+                var art = (m && arten[m[1]]) || arten['Info'];
+                return { art: art, preis: m ? m[2] : '', text: m ? m[3] : String(d) };
+            });
+            zeilen.sort(function (a, b) { return a.art.rang - b.art.rang; });
+
+            var anz = res.zuordnungen || 0, fehler = res.fehler || 0;
+            var titel = anz ? (anz === 1 ? '1 Gewinner zugeordnet' : anz + ' Gewinner zugeordnet') : 'Keine neue Zuordnung';
+            var icon = fehler ? 'warning' : (anz ? 'success' : 'info');
+
+            var html = '<p class="wp-auto-summe">Jahr ' + msvEsc(jahr)
+                + (fehler ? ' · <strong>' + fehler + ' Fehler</strong>' : '') + '</p>';
+            if (zeilen.length) {
+                html += '<ul class="wp-auto-liste">' + zeilen.map(function (z) {
+                    return '<li class="wp-auto-' + z.art.cls + '"><i class="bi ' + z.art.icon + '" aria-hidden="true"></i><div>'
+                        + (z.preis ? '<span class="wp-auto-preis">' + msvEsc(z.preis) + '</span>' : '')
+                        + '<span class="wp-auto-text">' + msvEsc(z.text) + '</span></div></li>';
+                }).join('') + '</ul>';
+            } else {
+                html += '<p class="mb-0">Kein Wanderpreis hat eine automatische Verknüpfung für dieses Jahr.</p>';
+            }
+
+            msvSwal.fire({ icon: icon, title: titel, html: html, width: '34rem', confirmButtonText: 'Schliessen' });
+        }
+
         // Automatische Zuordnung
         // Gemeinsame Funktion: führt die Auto-Zuordnung aus
         function executeAutoZuordnung(jahr, $triggerBtn) {
@@ -948,11 +996,7 @@ if (WANDERPREISE_DEBUG) {
             })
                 .done(function (res) {
                     if (res && res.success) {
-                        var msg = res.message || 'Automatische Zuordnung erfolgreich!';
-                        if (Array.isArray(res.details) && res.details.length) {
-                            msg += '\n' + res.details.join('\n');
-                        }
-                        msvToast(msg, 'success');
+                        zeigeAutoZuordnungErgebnis(res, jahr);
                         if (typeof loadWanderpreise === 'function') {
                             loadWanderpreise();
                         } else {
@@ -1134,10 +1178,18 @@ if (WANDERPREISE_DEBUG) {
                 if (selectedForEdit !== undefined && selectedForEdit !== null && selectedForEdit !== '') {
                     const wanted = String(selectedForEdit).trim();
 
-                    // 1) per value (ID) versuchen
+                    // 1) per value (Regel-Code) versuchen
                     $edit.val(wanted);
 
-                    // 2) Fallback: per Sicht-Text matchen (falls Backend nur Namen liefert)
+                    // 2) Fallback: alte Einträge speicherten die Regel-ID statt des Codes
+                    if ($edit.val() == null) {
+                        const $optId = $edit.find('option').filter(function () {
+                            return String($(this).data('id')) === wanted;
+                        }).first();
+                        if ($optId.length) $edit.val($optId.val());
+                    }
+
+                    // 3) Fallback: per Sicht-Text matchen (falls Backend nur Namen liefert)
                     if ($edit.val() == null) {
                         const $opt = $edit.find('option').filter(function () {
                             return $(this).text().trim() === wanted;

@@ -62,7 +62,8 @@ try {
     $resW = $w->get_result();
 
     // Regel-Statement vorbereiten (nur aktive Regeln)
-    $getRegel = $conn->prepare("SELECT regel_name, sql_query FROM wanderpreise_regeln WHERE regel_code = ? AND aktiv = 1");
+    // Auch per ID: das Edit-Formular speicherte bis 10.2026 die Regel-ID statt des Codes.
+    $getRegel = $conn->prepare("SELECT regel_code, regel_name, sql_query FROM wanderpreise_regeln WHERE (regel_code = ? OR id = ?) AND aktiv = 1 ORDER BY regel_code = ? DESC LIMIT 1");
     if (!$getRegel) err_json('DB-Fehler (prepare Regel): ' . $conn->error);
 
     // Existiert fuer das Jahr bereits ein Eintrag?
@@ -78,6 +79,9 @@ try {
         (wanderpreis_id, gewinner_id, jahr, rang, resultat, bemerkung, ist_definitiv, anzahl_gewinne, created_at, updated_at)
         VALUES (?,?,?,?,?,?,?, ?, NOW(), NOW())");
     if (!$ins) err_json('DB-Fehler (prepare Insert): ' . $conn->error);
+
+    // Name des Gewinners fuer die Rueckmeldung (faellt auf die ID zurueck)
+    $nameStmt = $conn->prepare("SELECT CONCAT(Vorname, ' ', Name) FROM mitglieder WHERE ID = ?");
 
     // Optionales Update im Stamm bei definitivem Besitz (darf fehlschlagen)
     $updDef = $conn->prepare("UPDATE wanderpreise SET gewinner_id = ?, verknuepfung_jahr = ?, updated_at = NOW() WHERE id = ?");
@@ -107,13 +111,15 @@ try {
                 $details[] = "Hinweis – {$wpName}: Keine Regel verknüpft.";
                 continue;
             }
-            $getRegel->bind_param("s", $code);
+            $codeId = ctype_digit($code) ? (int)$code : 0;
+            $getRegel->bind_param("sis", $code, $codeId, $code);
             $getRegel->execute();
             $rRow = $getRegel->get_result()->fetch_assoc();
             if (!$rRow) {
                 $details[] = "Hinweis – {$wpName}: Regel '{$code}' nicht gefunden oder inaktiv.";
                 continue;
             }
+            $code = (string)$rRow['regel_code']; // fuer die Kategorie-Ableitung unten
 
             // Regel-SQL vor der Ausfuehrung pruefen (zweite Verteidigungslinie)
             $sql = (string)$rRow['sql_query'];
@@ -208,8 +214,14 @@ try {
                 $updDef->execute(); // Fehler ignorieren
             }
 
+            $gewinnerName = '';
+            if ($nameStmt) {
+                $nameStmt->bind_param("i", $gewinnerId);
+                $nameStmt->execute();
+                $gewinnerName = trim((string)$nameStmt->get_result()->fetch_column());
+            }
             $zuordnungen++;
-            $details[] = "OK – {$wpName}: Gewinner ID {$gewinnerId} zugeordnet"
+            $details[] = "OK – {$wpName}: " . ($gewinnerName !== '' ? $gewinnerName : "Gewinner ID {$gewinnerId}") . " zugeordnet"
                        . ($istDef ? " (definitiver Besitz erreicht)" : "")
                        . ($resultat !== '' ? " – Resultat: {$resultat}" : "")
                        . ($rang !== '' ? " – Rang: {$rang}" : "");
