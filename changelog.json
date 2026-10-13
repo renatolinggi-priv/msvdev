@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.17",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: grössere Schrift in der Jahresmeisterschaft",
+        "beschreibung": "Namen und Punkte in den Tabellen der Jahresmeisterschaft stehen neu in 7.5 statt 6 Punkt, die Anlass-Titel in 7 Punkt. Die Tabellen haben weiterhin auf der Doppelseite Platz.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.16",
     "datum": "2026-10-13",
     "aenderungen": [

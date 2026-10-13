@@ -1532,7 +1532,7 @@ function getJMA($templateProcessor, $conn)
     $tableStyle      = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 50];
     $cellStyle       = ['valign' => 'center', 'alignment' => Jc::CENTER];
     $textStyle       = ['alignment' => Jc::CENTER];
-    $boldFontStyle   = ['size' => 6, 'bold' => true, 'alignment' => Jc::CENTER];
+    $boldFontStyle   = ['size' => 7, 'bold' => true, 'alignment' => Jc::CENTER]; // Anlass-Titel 7 pt: der längste (40 Zeichen) füllt die Kopfzeile sonst ganz
     $cellHeaderStyle = ['valign' => 'center', 'alignment' => Jc::CENTER];
     if (defined('PhpOffice\\PhpWord\\Style\\Cell::TEXT_DIR_BTLR')) {
         $cellHeaderStyle['textDirection'] = \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR;
@@ -1750,7 +1750,7 @@ function getJMA($templateProcessor, $conn)
             $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
         }
         $isTop3 = ($rang <= 3);
-        $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
+        $fontStyleRow = $isTop3 ? ['size'=>7.5,'bold'=>true] : ['size'=>7.5];
         $extra = ($rang % 2 === 0) ? ['bgColor' => 'F2F2F2'] : []; // jede zweite Zeile leicht grau
 
         // Tabelle 1
@@ -1790,7 +1790,7 @@ function getJMB($templateProcessor, $conn)
     $tableStyle      = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 50];
     $cellStyle       = ['valign' => 'center', 'alignment' => Jc::CENTER];
     $textStyle       = ['alignment' => Jc::CENTER];
-    $boldFontStyle   = ['size' => 6, 'bold' => true, 'alignment' => Jc::CENTER];
+    $boldFontStyle   = ['size' => 7, 'bold' => true, 'alignment' => Jc::CENTER]; // Anlass-Titel 7 pt: der längste (40 Zeichen) füllt die Kopfzeile sonst ganz
     $cellHeaderStyle = ['valign' => 'center', 'alignment' => Jc::CENTER];
     if (defined('PhpOffice\\PhpWord\\Style\\Cell::TEXT_DIR_BTLR')) {
         $cellHeaderStyle['textDirection'] = \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR;
@@ -2008,7 +2008,7 @@ function getJMB($templateProcessor, $conn)
             $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
         }
         $isTop3 = ($rang <= 3);
-        $fontStyleRow = $isTop3 ? ['size'=>6,'bold'=>true] : ['size'=>6];
+        $fontStyleRow = $isTop3 ? ['size'=>7.5,'bold'=>true] : ['size'=>7.5];
         $extra = ($rang % 2 === 0) ? ['bgColor' => 'F2F2F2'] : []; // jede zweite Zeile leicht grau
 
         // Tabelle 1
