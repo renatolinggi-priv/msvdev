@@ -2,7 +2,7 @@
 // endschrang/absenden_bereit.php – Kennzahlen für «Absenden vorbereiten» auf endschrang.php (nur lesen).
 // Offene Stiche und Sie und Er zählt die Seite aus den Ladern der Erfassung (eine Quelle der Wahrheit); hier:
 //   wanderpreise  angeschafft bis zum Jahr, nicht in einem früheren Jahr definitiv gewonnen, Gewinner fürs Jahr?
-//   siegerlisten  welchen Listen «… Sieger seit» im Absendenbuch das Jahr noch fehlt (von Hand geführt)
+//   siegerlisten  welchen Listen «… Sieger seit» im Absendenbuch das Jahr noch fehlt (Tabelle sieger)
 //   buchteile     haben JM, Heimmeisterschaft, Kantonalstich und Vereinscup Resultate (sonst leere Tabellen im Buch)
 //   buchstand     zuletzt erstelltes Absendenbuch je Art (word, broschuere): Zeit, von, Datei, Hinweise beim Erstellen
 // Jeder Teil wird einzeln geprüft; scheitert einer, ist nur er null und die Seite zeigt «nicht geprüft».

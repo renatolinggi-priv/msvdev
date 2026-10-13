@@ -120,7 +120,8 @@ include 'header.inc.php';
                                     <button type="button" class="btn btn-outline-info abs-btn"><i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Absendenbuch (Word)</span></button>
                                 </div>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Broschüre)">
-                                    <button type="button" class="btn btn-outline-info absbk-btn" data-tooltip="Das Absendenbuch als PDF zum Falten: je zwei A5-Seiten auf A4 quer. Beidseitig drucken, an der kurzen Kante wenden."><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Absendenbuch (Broschüre)</span></button>
+                                    <button type="button" class="btn btn-outline-info absbk-btn" aria-describedby="absbkHinweis" data-tooltip="Das Absendenbuch als PDF zum Falten: je zwei A5-Seiten auf A4 quer. Beidseitig drucken, an der kurzen Kante wenden."><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Absendenbuch (Broschüre)</span></button>
+                                    <span class="visually-hidden" id="absbkHinweis">Das Absendenbuch als PDF zum Falten: je zwei A5-Seiten auf A4 quer. Beidseitig drucken, an der kurzen Kante wenden.</span>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Absendenbuch (Broschüre) direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Gesamtrangliste">
@@ -197,7 +198,7 @@ include 'header.inc.php';
                 <div class="content-background es-rangliste">
                 <!-- Tabellenbereich Kat. A -->
                 <div class="table-wrapper mb-4">
-                    <h5 class="table-title">Endschiessen Kat. A <button type="button" class="btn-help" data-help="endschrang.wertung" aria-label="Hilfe"></button></h5>
+                    <h2 class="table-title">Endschiessen Kat. A <button type="button" class="btn-help" data-help="endschrang.wertung" aria-label="Hilfe"></button></h2>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0" id="EndA">
@@ -236,7 +237,7 @@ include 'header.inc.php';
                 </div>
                 <!-- Tabellenbereich Kat. B -->
                 <div class="table-wrapper mb-4">
-                    <h5 class="table-title">Endschiessen Kat. B <button type="button" class="btn-help" data-help="endschrang.kategorien" aria-label="Hilfe"></button></h5>
+                    <h2 class="table-title">Endschiessen Kat. B <button type="button" class="btn-help" data-help="endschrang.kategorien" aria-label="Hilfe"></button></h2>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0" id="EndB">
@@ -437,7 +438,7 @@ $(document).ready(function () {
             : w.total === 0 ? absZeile('wanderpreise', 'leer', 'Keine Wanderpreise im Umlauf.')
             : w.vergeben >= w.total ? absZeile('wanderpreise', 'ok', 'Alle ' + w.total + ' Wanderpreise sind für ' + jahr + ' vergeben.')
             : absZeile('wanderpreise', 'offen', w.vergeben + ' von ' + w.total + ' Wanderpreisen sind für ' + jahr + ' vergeben.', { href: 'wanderpreise.php', text: 'Zu den Wanderpreisen' }));
-        // Siegerlisten «… Sieger seit» im Absendenbuch: von Hand geführt, das Jahr fehlt sonst im Buch
+        // Siegerlisten «… Sieger seit» im Absendenbuch (Tabelle sieger): fehlt das Jahr, fehlt es auch im Buch
         const s = bereit.siegerlisten;
         z.push(!s ? absZeile('siegerlisten', 'fehler', 'Die Siegerlisten konnten nicht geprüft werden.')
             : s.total === 0 ? absZeile('siegerlisten', 'leer', 'Keine Siegerlisten eingerichtet.')

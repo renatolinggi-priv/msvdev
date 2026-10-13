@@ -205,7 +205,9 @@
 
       this._laufend.add(btn);
       const orig = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+      // Spinner mit Text für Screenreader; aria-busy, solange gedruckt wird
+      btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span class="visually-hidden">Wird gedruckt …</span>';
       try {
         await this.print({
           docType: dt,
@@ -219,6 +221,7 @@
         });
       } finally {
         this._laufend.delete(btn);
+        btn.removeAttribute('aria-busy');
         btn.innerHTML = orig;
         this.refresh();
       }

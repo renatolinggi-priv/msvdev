@@ -1302,7 +1302,8 @@ function getSieger($templateProcessor, $conn)
         logFehler("SQL-Fehler in getSieger: " . $conn->error);
         return;
     }
-    // Die Siegerlisten werden von Hand geführt (Seite «Sieger der letzten Jahre»). Nur Jahre bis zum Buchjahr
+    // Die Siegerlisten stehen in der Tabelle sieger (Seite «Sieger der letzten Jahre»: aus den Ranglisten übernehmen
+    // oder von Hand erfassen). Nur Jahre bis zum Buchjahr
     // zeigen (ein Buch für 2024 ohne spätere Sieger) und melden, welchen Listen das Buchjahr noch fehlt.
     $ohneBuchjahr = [];
     while ($rowdef = $result->fetch_assoc()) {
@@ -1375,7 +1376,7 @@ function getSieger($templateProcessor, $conn)
         $welche = count($ohneBuchjahr) === $result->num_rows
             ? 'Allen ' . $result->num_rows . ' Listen fehlt ' . $selectedYear
             : count($ohneBuchjahr) . ' von ' . $result->num_rows . ' Listen fehlt ' . $selectedYear . ' (' . implode(', ', $ohneBuchjahr) . ')';
-        absendenHinweis($welche . '. Auf der Seite «Sieger der letzten Jahre» nachtragen und das Buch neu erstellen.');
+        absendenHinweis($welche . '. Auf der Seite «Sieger der letzten Jahre» mit «Aus Ranglisten übernehmen» ergänzen und das Buch neu erstellen.');
     }
     logDebug("getSieger erfolgreich abgeschlossen");
 }

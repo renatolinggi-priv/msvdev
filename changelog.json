@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.10",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Rangliste: Feinschliff fürs Absendenbuch",
+        "beschreibung": "Fehlen in den Siegerlisten Jahre, verweisen Prüfliste, Buch und Hilfe jetzt auf «Aus Ranglisten übernehmen» auf der Seite «Sieger der letzten Jahre» statt aufs Nachtragen von Hand. Für Screenreader: Die Druckanweisung der Broschüre ist am Knopf hinterlegt, Drucker-Knöpfe melden «Wird gedruckt …», und die Kategorie-Titel der Rangliste sind richtig gegliedert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.8",
     "datum": "2026-10-13",
     "aenderungen": [
