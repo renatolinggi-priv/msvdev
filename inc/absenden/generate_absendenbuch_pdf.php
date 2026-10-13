@@ -62,6 +62,48 @@ function absendenShellEnv(): string
     return 'HOME=' . escapeshellarg($home) . ' PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=' . escapeshellarg(sys_get_temp_dir()) . ' ';
 }
 
+/**
+ * Seite (ab 1), auf der eine Überschrift zum ersten Mal steht; $seitenText = Ausgabe von pdftotext
+ * (jede Seite endet mit einem Seitenvorschub \f). null, wenn nicht gefunden.
+ */
+function absendenSeiteVon(string $seitenText, string $muster): ?int
+{
+    foreach (explode("\f", $seitenText) as $i => $text) {
+        if (preg_match($muster, $text)) {
+            return $i + 1;
+        }
+    }
+    return null;
+}
+
+/**
+ * JM-Doppelseite prüfen. Die JM-Tabelle ist auf zwei Seiten verteilt, die Namen stehen nur auf der ersten; das
+ * passt nur, wenn sie aufgeklappt nebeneinander liegen, die Tabelle also auf einer linken (geraden) Seite beginnt.
+ * Die Vorlage erzwingt das nicht (normale Seitenumbrüche), die Lage hängt von allem davor ab (Teilnehmer,
+ * Siegerlisten, weggelassene Abschnitte). Liegt sie rechts: Hinweis. Scheitert die Prüfung: nur Log.
+ */
+function absendenJmDoppelseitePruefen(string $pdf): void
+{
+    $zeilen = [];
+    $rc = 0;
+    exec(absendenShellEnv() . 'pdftotext -layout -enc UTF-8 ' . escapeshellarg($pdf) . ' - 2>/dev/null', $zeilen, $rc);
+    if ($rc !== 0 || !$zeilen) {
+        error_log('[absendenbuch_pdf] JM-Doppelseite nicht geprüft (pdftotext rc=' . $rc . ')');
+        return;
+    }
+    $text = implode("\n", $zeilen);
+    foreach (['Kat. A', 'Kat. B'] as $kat) {
+        $seite = absendenSeiteVon($text, '/Jahresmeisterschaft\s+' . preg_quote($kat, '/') . '/u');
+        if ($seite === null) {
+            error_log('[absendenbuch_pdf] JM-Doppelseite: Überschrift «Jahresmeisterschaft ' . $kat . '» nicht gefunden');
+        } elseif ($seite % 2 === 1) {
+            absendenHinweis('Doppelseite Jahresmeisterschaft ' . $kat . ': Die Tabelle beginnt auf Seite ' . $seite
+                . ', einer rechten Seite. Aufgeklappt stehen ihre beiden Hälften dann nicht nebeneinander, sondern auf Vorder- und'
+                . ' Rückseite, und die zweite Hälfte hat keine Namen. Bitte dem Admin melden.');
+        }
+    }
+}
+
 // Klartext je Schritt: beim Füllen bleiben eigene Meldungen sichtbar (z.B. fehlende Vorlage); was der
 // Umwandlungsdienst oder pdfjam melden, ist technisch und geht nur ins Log.
 $schritt  = 'fuellen';
@@ -90,6 +132,8 @@ try {
     $schritt = 'umwandeln';
     $tmpPdf = convertToPdf($tmpDocx, 'docx');
     $pages  = absendenPdfSeiten($tmpPdf);
+    absendenJmDoppelseitePruefen($tmpPdf);
+    $hinweise = $GLOBALS['absendenHinweise'] ?? $hinweise; // inkl. Hinweis zur Doppelseite
 
     if (!$booklet) {
         $ziel = $datDir . '/Resultatbuechlein_A5_' . $ts . '.pdf';

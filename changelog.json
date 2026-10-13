@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.11",
+    "datum": "2026-10-13",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Doppelseite der Jahresmeisterschaft wird geprüft",
+        "beschreibung": "Die Tabelle der Jahresmeisterschaft verteilt sich auf zwei Seiten, die Namen stehen nur auf der ersten; aufgeklappt liegen beide nebeneinander. Das klappt nur, wenn die Tabelle auf einer linken Seite beginnt. Beim Erstellen der Broschüre wird das jetzt für Kat. A und Kat. B geprüft; beginnt eine Tabelle rechts, steht ein Hinweis unter «Vor dem Druck prüfen», und der Direktdruck fragt nach.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.10",
     "datum": "2026-10-13",
     "aenderungen": [
