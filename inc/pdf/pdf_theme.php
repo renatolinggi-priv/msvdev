@@ -297,6 +297,121 @@ CSS;
 }
 
 /**
+ * Ranglisten-Layout wie im Absendenbuch: schwarz auf weiss, keine Zellrahmen, fette Kopfzeile mit einer Linie
+ * darunter, die ersten drei fett, Zahlen rechtsbündig. Kommt NACH pdf_theme_css() und übersteuert dessen
+ * Tabellen-Stil; gilt nur für Ranglisten (Abrechnungen, Listen usw. bleiben beim Theme).
+ * Seitenränder per @page; die Fusszeile zeichnet pdf_seitenfuss() nach dem Rendern.
+ */
+function pdf_rangliste_css(): string
+{
+    $c = pdf_theme_palette();
+    return <<<CSS
+        @page { margin: 14mm 14mm 16mm 14mm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; line-height: 1.25; color: #000; }
+        .container { margin: 0; padding: 0; }
+
+        /* Kopf: Logo links, daneben Titel und Untertitel (pdf_rangliste_kopf) */
+        table.rl-kopf { width: 100%; border-collapse: collapse; margin: 0 0 6mm 0; }
+        table.rl-kopf td { border: none; padding: 0; vertical-align: middle; background: none; text-align: left; font-weight: normal; }
+        td.rl-logo { width: 24mm; }
+        td.rl-logo img { height: 17mm; width: auto; }
+        .rl-titel { font-size: 18pt; font-weight: bold; line-height: 1.1; color: #000; margin: 0; }
+        .rl-unter { font-size: 9pt; color: {$c['muted']}; margin-top: 1.5mm; }
+
+        /* Abschnittstitel (Kat. A, Runde 1 …) */
+        h2, h3, .rl-abschnitt { font-size: 12pt; font-weight: bold; color: #000; text-align: left; margin: 5mm 0 1.5mm 0; }
+
+        /* Tabelle */
+        .table { width: 100%; border-collapse: collapse; margin: 0 0 5mm 0; background: none; }
+        .table th, .table td {
+            border: none; padding: 1.2mm 1.4mm; background: none; color: #000;
+            font-family: Helvetica, Arial, sans-serif; font-weight: normal; vertical-align: bottom;
+        }
+        .table thead { background: none; }
+        .table th { font-weight: bold; text-align: left; border-bottom: 0.8pt solid #000; padding-bottom: 1mm; }
+        .table tbody tr:nth-child(even) { background: none; }
+        .table td:first-child { text-align: left; font-weight: normal; }  /* Theme zentriert/fettet die erste Spalte */
+        .table td.rang { text-align: right; width: 9mm; }
+        .table td:last-child { background: none; color: #000; font-weight: normal; }
+        .table .bold, .table tr.bold td { font-weight: bold; }
+        .table tr.rl-luecke td { padding-top: 3.2mm; }  /* Abstand nach Rang 3 */
+        .table .r { text-align: right; }
+        .table .z { text-align: center; }
+        .table .muted, .muted { color: {$c['muted']}; }
+        .rl-hinweis { font-size: 8pt; color: {$c['muted']}; margin: 2mm 0 0 0; }
+        .footer { display: none; }  /* Fusszeile kommt aus pdf_seitenfuss() */
+CSS;
+}
+
+/**
+ * Nicht geschossen statt «0» (wie absendenStrichWennNull im Absendenbuch): für Passen- und Stich-Totale und den
+ * Tiefschuss, nicht für einzelne Schüsse (dort ist 0 ein Fehlschuss).
+ */
+function pdf_strich_wenn_null($wert): string
+{
+    $roh = str_replace("\u{200C}", '', trim((string)$wert));
+    return ($roh === '' || (is_numeric($roh) && (float)$roh == 0.0)) ? '–' : $roh;
+}
+
+/**
+ * <tr> einer Ranglisten-Zeile: Rang 1–3 fett, vor Rang 4 etwas Abstand (statt einer Leerzeile).
+ * $podest = false für Listen ohne Podest (z.B. nach Name sortiert).
+ */
+function pdf_rangliste_zeile(int $rang, bool $podest = true): string
+{
+    $kl = [];
+    if ($podest && $rang <= 3) { $kl[] = 'bold'; }
+    if ($podest && $rang === 4) { $kl[] = 'rl-luecke'; }
+    return $kl ? '<tr class="' . implode(' ', $kl) . '">' : '<tr>';
+}
+
+/**
+ * Kopf einer Rangliste: Logo links, daneben Titel und Untertitel.
+ */
+function pdf_rangliste_kopf(string $titel, string $untertitel = ''): string
+{
+    $logo = pdf_logo_src();
+    $h = fn($s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+    return '<table class="rl-kopf"><tr>'
+        . ($logo !== '' ? '<td class="rl-logo"><img src="' . $logo . '" alt="MSV Wilen"></td>' : '')
+        . '<td class="rl-text"><div class="rl-titel">' . $h($titel) . '</div>'
+        . ($untertitel !== '' ? '<div class="rl-unter">' . $h($untertitel) . '</div>' : '') . '</td>'
+        . '</tr></table>';
+}
+
+/**
+ * Anfang eines Ranglisten-Dokuments bis und mit Kopf (für Generatoren ohne eigene Basisklasse).
+ * $zusatzCss: nur, was die Rangliste wirklich braucht (Spaltenbreiten, gedrehte Köpfe …), keine Farben/Schriften.
+ * Abschluss: '</body></html>'; nach dem Rendern pdf_seitenfuss() aufrufen.
+ */
+function pdf_rangliste_anfang(string $titel, string $untertitel = '', string $zusatzCss = ''): string
+{
+    return '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">'
+        . '<style>' . pdf_theme_css() . pdf_rangliste_css() . $zusatzCss . '</style>'
+        . '<title>' . htmlspecialchars($titel, ENT_QUOTES, 'UTF-8') . '</title></head><body>'
+        . pdf_rangliste_kopf($titel, $untertitel);
+}
+
+/**
+ * Fusszeile auf jeder Seite (nach $dompdf->render() aufrufen): links Verein, Dokument und Stand, rechts Seitenzahl.
+ */
+function pdf_seitenfuss(\Dompdf\Dompdf $dompdf, string $dokument = ''): void
+{
+    $canvas = $dompdf->getCanvas();
+    $fm = $dompdf->getFontMetrics();
+    $font = $fm->getFont('Helvetica');
+    $grau = [0.39, 0.45, 0.55];
+    $groesse = 7.5;
+    $rand = 14 / 25.4 * 72;   // 14 mm wie @page
+    $y = $canvas->get_height() - 10 / 25.4 * 72;
+    $links = 'Militärschützenverein Wilen' . ($dokument !== '' ? ' · ' . $dokument : '') . ' · Stand ' . date('d.m.Y, H:i');
+    $canvas->page_text($rand, $y, $links, $font, $groesse, $grau);
+    $rechts = 'Seite {PAGE_NUM} von {PAGE_COUNT}';
+    $breite = $fm->getTextWidth('Seite 10 von 10', $font, $groesse);
+    $canvas->page_text($canvas->get_width() - $rand - $breite, $y, $rechts, $font, $groesse, $grau);
+}
+
+/**
  * Konvertiert das Logo (oder ein beliebiges Bild) in eine Base64-Data-URI.
  * DRY-Ersatz für die in vielen Modulen duplizierte imgToBase64()-Funktion.
  * Gibt '' zurück, wenn die Datei fehlt (kein Fatal).

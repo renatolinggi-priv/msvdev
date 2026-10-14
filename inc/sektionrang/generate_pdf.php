@@ -65,57 +65,38 @@ try {
             return $html . '<p class="leer">Keine Resultate.</p>';
         }
         $html .= '<table class="table"><thead><tr>'
-               . '<th class="name">Name</th><th class="pkt">Resultat</th>'
+               . '<th>Name</th><th class="r">Resultat</th>'
                . '</tr></thead><tbody>';
         foreach ($liste as $e) {
             $html .= '<tr><td class="name">' . $h($e['name']) . '</td>'
-                   . '<td class="pkt">' . $e['punkte'] . '</td></tr>';
+                   . '<td class="r pkt">' . $e['punkte'] . '</td></tr>';
         }
         for ($i = 0; $i < $pad; $i++) {
-            $html .= '<tr class="pad"><td class="name">&nbsp;</td><td class="pkt"></td></tr>';
+            $html .= '<tr><td class="name">&nbsp;</td><td class="pkt"></td></tr>';
         }
         return $html . '</tbody></table>' . $schnittBox($schnitt);
     };
 
-    $html = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
-<style>' . pdf_theme_css() . '
-    /* Sektionsmeisterschaft: Layout-Overrides (Hochformat) */
-    @page { margin: 1.5cm; }
-    body { font-size: 11px; margin: 0; padding: 0; }
-    .header { position: relative; margin-bottom: 20px; min-height: 80px; }
-    /* .header .logo schlaegt die Theme-Regel .header img (Logo-Breite aus pdf_theme) */
-    .header .logo { position: absolute; top: 0; left: 0; width: 80px; max-width: 80px; height: auto; margin: 0; }
-    h1 { text-align: center; font-size: 20px; margin: 0; padding-top: 20px; color: #3b5998; }
-    h2 { font-size: 14px; margin: 0 0 8px 0; border-bottom: 2px solid #cbd5e0; padding-bottom: 4px; }
-    .zweispaltig { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    // Runde 1 und 2 nebeneinander; Schnitt-Block unter jeder Runde
+    $layout = '
+    .zweispaltig { width: 100%; border-collapse: collapse; }
     .zweispaltig > tbody > tr > td { width: 50%; vertical-align: top; padding: 0; border: 0; background: none; }
-    .zweispaltig > tbody > tr > td.links { padding-right: 10px; }
-    .zweispaltig > tbody > tr > td.rechts { padding-left: 10px; }
+    .zweispaltig > tbody > tr > td.links { padding-right: 5mm; }
+    .zweispaltig > tbody > tr > td.rechts { padding-left: 5mm; }
+    .zweispaltig h2 { margin-top: 0; }
     .block { page-break-inside: avoid; }
-    .table { width: 100%; }
-    .table th, .table td { padding: 3px 4px; }
-    .table th.name, .table td.name { text-align: left; }
-    .table tr.pad td { background: none; }
-    .pkt { text-align: center; width: 56px; }
-    .total { font-weight: bold; }
-    .leer { color: #718096; font-style: italic; margin: 0 0 12px 0; }
-    .schnitt { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 10px; }
-    .schnitt td { padding: 2px 4px; border: 0; border-bottom: 1px solid #e2e8f0; background: none; }
-    .schnitt td.sl { color: #4a5568; }
-    .schnitt td.sv { text-align: right; font-weight: bold; width: 70px; }
-    .schnitt tr.final td { border-bottom: 0; border-top: 1px solid #a0aec0; }
-    .schnitt tr.final td.sv { font-size: 12px; color: #276749; }
-</style>
-<title>Sektionsmeisterschaft ' . $selectedYear . '</title></head><body>
-<div class="header">
-    <img src="' . pdf_logo_src() . '" class="logo" alt="MSV Wilen Logo">
-    <h1>Sektionsmeisterschaft ' . $selectedYear . '</h1>
-</div>
+    .table td.pkt { width: 18mm; }
+    .leer { font-style: italic; margin: 0 0 4mm 0; }
+    .schnitt { width: 100%; margin-top: 2mm; border-collapse: collapse; }
+    .schnitt td { padding: 0.8mm 1.4mm; border: 0; background: none; }
+    .schnitt td.sv { text-align: right; width: 22mm; }
+    .schnitt tr.final td { border-top: 0.8pt solid #000; font-weight: bold; padding-top: 1.4mm; }
+    ';
+    $html = pdf_rangliste_anfang('Sektionsmeisterschaft ' . $selectedYear, 'Rangliste', $layout) . '
 <table class="zweispaltig"><tbody><tr>
     <td class="links"><div class="block">' . $tabelleRunde($daten['runde1'], 'Runde 1', $daten['schnitt1'], $n1 ? $ziel - $n1 : 0) . '</div></td>
     <td class="rechts"><div class="block">' . $tabelleRunde($daten['runde2'], 'Runde 2', $daten['schnitt2'], $n2 ? $ziel - $n2 : 0) . '</div></td>
 </tr></tbody></table>
-<div class="footer"><p>Generiert am ' . date('d.m.Y \u\m H:i') . ' Uhr</p></div>
 </body></html>';
 
     $options = new Options();
@@ -127,6 +108,7 @@ try {
     require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
     $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch
     $dompdf->render();
+    pdf_seitenfuss($dompdf, 'Sektionsmeisterschaft ' . $selectedYear);
 
     $datDir = __DIR__ . '/dat';
     if (!is_dir($datDir) && !mkdir($datDir, 0755, true)) {

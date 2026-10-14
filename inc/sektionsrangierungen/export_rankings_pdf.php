@@ -5,6 +5,7 @@ require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand), startet die Session
 require_once '../vendor/autoload.php';
 require_once __DIR__ . '/../csrf.inc.php';
+require_once __DIR__ . '/../pdf/pdf_theme.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -76,6 +77,7 @@ try {
     require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
     $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch
     $dompdf->render();
+    pdf_seitenfuss($dompdf, 'Sektionsrangierungen ' . $year);
     
     // Dateiname generieren
     $filename = "Sektionsrangierungen_" . $year . "_" . date('Y-m-d_H-i-s') . ".pdf";
@@ -117,22 +119,13 @@ try {
 }
 
 /**
- * Generiert das HTML für das PDF
+ * Generiert das HTML für das PDF im Ranglisten-Layout (pdf_rangliste_anfang)
  */
 function generatePdfHtml($rankings, $year) {
-    $currentDate = date('d.m.Y H:i');
-
-    // Vereinslogo als Base64 einbetten (robuster als externe URL)
-    $logoBase64 = '';
-    $logoPath = __DIR__ . '/dat/MSVWilen_Logo.jpg';
-    if (file_exists($logoPath)) {
-        $logoBase64 = 'data:' . mime_content_type($logoPath) . ';base64,' . base64_encode(file_get_contents($logoPath));
-    }
-    
     // Statistiken berechnen
     $totalRankings = count($rankings);
     $totalPrizes = array_sum(array_column($rankings, 'preis'));
-    
+
     // Rangverteilung
     $rankDistribution = [];
     foreach ($rankings as $ranking) {
@@ -140,293 +133,62 @@ function generatePdfHtml($rankings, $year) {
         $rankDistribution[$rang] = ($rankDistribution[$rang] ?? 0) + 1;
     }
     ksort($rankDistribution);
-    
-    $html = '
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Sektionsrangierungen ' . $year . '</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                font-size: 11px;
-                margin: 15px;
-                line-height: 1.4;
-            }
-            
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #cbd5e0;
-                padding-bottom: 15px;
-            }
 
-            .header .logo {
-                width: 90px;
-                height: auto;
-                margin-bottom: 10px;
-            }
+    $chf = fn($v) => 'CHF ' . number_format((float)$v, 2);
+    $layout = '
+    .table td.preis { width: 28mm; }
+    .table td.rang { width: 14mm; }
+    .table td.datum { width: 32mm; }
+    .table tr.total td { border-top: 0.8pt solid #000; font-weight: bold; padding-top: 1.4mm; }
+    .block { page-break-inside: avoid; }
+    ';
 
-            .header h1 {
-                font-size: 20px;
-                margin: 0 0 10px 0;
-                font-weight: bold;
-                color: #333;
-            }
-            
-            .header h2 {
-                font-size: 16px;
-                margin: 0 0 15px 0;
-                font-weight: normal;
-                color: #666;
-            }
-            
-            .stats-box {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 5px;
-                padding: 15px;
-                margin-bottom: 25px;
-                overflow: hidden;
-            }
-            
-            .stats-grid {
-                display: table;
-                width: 100%;
-            }
-            
-            .stats-item {
-                display: table-cell;
-                text-align: center;
-                vertical-align: top;
-                padding: 5px;
-                border-right: 1px solid #dee2e6;
-            }
-            
-            .stats-item:last-child {
-                border-right: none;
-            }
-            
-            .stats-label {
-                font-weight: bold;
-                font-size: 10px;
-                color: #666;
-                text-transform: uppercase;
-                margin-bottom: 3px;
-            }
-            
-            .stats-value {
-                font-size: 16px;
-                font-weight: bold;
-                color: #3b5998;
-            }
-            
-            .rankings-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
-            
-            .rankings-table th,
-            .rankings-table td {
-                border: 1px solid #e2e8f0;
-                padding: 8px 6px;
-                text-align: left;
-                vertical-align: top;
-            }
+    $html = pdf_rangliste_anfang('Sektionsrangierungen ' . $year, 'Rangierungen des Vereins an auswärtigen Anlässen', $layout);
 
-            .rankings-table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                font-weight: bold;
-                text-align: center;
-                font-size: 10px;
-            }
-            
-            .rankings-table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            
-            .anlass-col { width: 45%; }
-            .rang-col { width: 15%; text-align: center; }
-            .preis-col { width: 20%; text-align: right; }
-            .datum-col { width: 20%; }
-            
-            .rang-badge {
-                display: inline-block;
-                padding: 3px 8px;
-                border-radius: 12px;
-                font-weight: bold;
-                font-size: 10px;
-                color: white;
-                text-align: center;
-                min-width: 20px;
-            }
-            
-            .rang-1 { background-color: #fdf6e3; color: #8a6d1c; }
-            .rang-2 { background-color: #f1f1f1; color: #6b7280; }
-            .rang-3 { background-color: #f7ede2; color: #9c6b3f; }
-            .rang-other { background-color: #eef2f7; color: #64748b; }
+    // Kennzahlen
+    $html .= '<table class="table"><thead><tr>'
+           . '<th class="r">Anlässe</th><th class="r">Preissumme</th><th class="r">Ø Preis</th>'
+           . '</tr></thead><tbody><tr>'
+           . '<td class="r">' . $totalRankings . '</td>'
+           . '<td class="r">' . $chf($totalPrizes) . '</td>'
+           . '<td class="r">' . $chf($totalPrizes / $totalRankings) . '</td>'
+           . '</tr></tbody></table>';
 
-            .preis-amount {
-                font-weight: bold;
-                color: #2f855a;
-            }
-            
-            .datum-info {
-                font-size: 9px;
-                color: #666;
-                line-height: 1.2;
-            }
-            
-            .summary-section {
-                margin-top: 30px;
-                padding-top: 20px;
-                border-top: 1px solid #ccc;
-            }
-            
-            .summary-title {
-                font-weight: bold;
-                margin-bottom: 15px;
-                font-size: 12px;
-            }
-            
-            .rank-summary {
-                display: table;
-                width: 100%;
-                margin-bottom: 15px;
-            }
-            
-            .rank-item {
-                display: table-cell;
-                text-align: center;
-                padding: 8px;
-                border: 1px solid #dee2e6;
-                background-color: #f8f9fa;
-                width: 20%;
-            }
-            
-            .footer {
-                position: fixed;
-                bottom: 15px;
-                left: 15px;
-                right: 15px;
-                text-align: center;
-                font-size: 9px;
-                color: #666;
-                border-top: 1px solid #ccc;
-                padding-top: 8px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            ' . ($logoBase64 ? '<img src="' . $logoBase64 . '" class="logo" alt="MSV Wilen Logo">' : '') . '
-            <h1>Sektionsrangierungen ' . $year . '</h1>
-            <h2>Militärschützenverein Wilen</h2>
-            <p style="font-size: 10px; color: #666;">Erstellt am: ' . $currentDate . '</p>
-        </div>
-        
-        <div class="stats-box">
-            <div class="stats-grid">
-                <div class="stats-item">
-                    <div class="stats-label">Total Anlässe</div>
-                    <div class="stats-value">' . $totalRankings . '</div>
-                </div>
-                <div class="stats-item">
-                    <div class="stats-label">Preissumme</div>
-                    <div class="stats-value">CHF ' . number_format($totalPrizes, 2) . '</div>
-                </div>
-                <div class="stats-item">
-                    <div class="stats-label">Ø Preis</div>
-                    <div class="stats-value">CHF ' . number_format($totalPrizes / $totalRankings, 2) . '</div>
-                </div>
-            </div>
-        </div>
-        
-        <table class="rankings-table">
-            <thead>
-                <tr>
-                    <th class="anlass-col">Anlass</th>
-                    <th class="rang-col">Rang</th>
-                    <th class="preis-col">Preis</th>
-                    <th class="datum-col">Datum</th>
-                </tr>
-            </thead>
-            <tbody>';
-    
+    $html .= '<h2>Anlässe</h2><table class="table"><thead><tr>'
+           . '<th>Anlass</th><th class="r">Rang</th><th class="r">Preis</th><th>Datum</th>'
+           . '</tr></thead><tbody>';
     foreach ($rankings as $ranking) {
-        $rang = $ranking['rang'];
-        $rangClass = '';
-        if ($rang == 1) $rangClass = 'rang-1';
-        elseif ($rang == 2) $rangClass = 'rang-2';
-        elseif ($rang == 3) $rangClass = 'rang-3';
-        else $rangClass = 'rang-other';
-        
         // Datum aus Schiesstage extrahieren (erste Zeile)
         $datum = '';
         if (!empty($ranking['schiesstage'])) {
             $lines = explode("\n", trim($ranking['schiesstage']));
             if (!empty($lines[0])) {
-                // Versuche Datum zu extrahieren
                 preg_match('/(\d{1,2}\.\s*\w+\s*\d{4})/', $lines[0], $matches);
                 $datum = $matches[1] ?? substr($lines[0], 0, 30) . '...';
             }
         }
-        
-        $html .= '
-                <tr>
-                    <td class="anlass-col">' . htmlspecialchars($ranking['bezeichnung']) . '</td>
-                    <td class="rang-col">
-                        <span class="rang-badge ' . $rangClass . '">' . $rang . '</span>
-                    </td>
-                    <td class="preis-col">
-                        <span class="preis-amount">CHF ' . number_format($ranking['preis'], 2) . '</span>
-                    </td>
-                    <td class="datum-col">
-                        <div class="datum-info">' . htmlspecialchars($datum) . '</div>
-                    </td>
-                </tr>';
+        $html .= '<tr>'
+               . '<td>' . htmlspecialchars($ranking['bezeichnung']) . '</td>'
+               . '<td class="rang">' . (int)$ranking['rang'] . '.</td>'
+               . '<td class="r preis">' . $chf($ranking['preis']) . '</td>'
+               . '<td class="datum">' . htmlspecialchars($datum) . '</td>'
+               . '</tr>';
     }
-    
-    // Total-Zeile hinzufügen
-    $html .= '
-                <tr style="background-color: #f1f5f9; border-top: 2px solid #cbd5e0; font-weight: bold;">
-                    <td class="anlass-col" style="font-weight: bold;">TOTAL</td>
-                    <td class="rang-col" style="text-align: center;">-</td>
-                    <td class="preis-col" style="font-weight: bold;">
-                        <span class="preis-amount">CHF ' . number_format($totalPrizes, 2) . '</span>
-                    </td>
-                    <td class="datum-col" style="text-align: center;">-</td>
-                </tr>';
-    
-    $html .= '
-            </tbody>
-        </table>
-        
-        <div class="summary-section">
-            <div class="summary-title">Rangverteilung:</div>
-            <div class="rank-summary">';
-    
-    foreach ($rankDistribution as $rang => $count) {
-        $html .= '
-                <div class="rank-item">
-                    <strong>' . $rang . '. Rang</strong><br>
-                    ' . $count . ' mal
-                </div>';
+    $html .= '<tr class="total"><td>Total</td><td></td><td class="r preis">' . $chf($totalPrizes) . '</td><td></td></tr>';
+    $html .= '</tbody></table>';
+
+    // Rangverteilung
+    $html .= '<div class="block"><h2>Rangverteilung</h2><table class="table"><thead><tr><th>Rang</th>';
+    foreach (array_keys($rankDistribution) as $rang) {
+        $html .= '<th class="r">' . $rang . '.</th>';
     }
-    
-    $html .= '
-            </div>
-        </div>
-        
-        <div class="footer">
-            MSV Wilen - Sektionsrangierungen ' . $year . ' - Generiert am ' . $currentDate . '
-        </div>
-    </body>
-    </html>';
-    
+    $html .= '</tr></thead><tbody><tr><td>Anzahl</td>';
+    foreach ($rankDistribution as $count) {
+        $html .= '<td class="r">' . $count . '</td>';
+    }
+    $html .= '</tr></tbody></table></div>';
+
+    $html .= '</body></html>';
     return $html;
 }
 ?>

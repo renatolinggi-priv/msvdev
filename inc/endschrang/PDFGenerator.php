@@ -27,6 +27,10 @@ class PDFGenerator {
     protected $zeilenGelesen = 0;
     protected $leerPruefen = true;
 
+    // Sammelmodus (EinzelwettbewerbeReport): Ist das ein Array, schreibt generatePDF() keine Datei, sondern legt
+    // das HTML des Berichts hier ab (Berichte ohne Zeilen gar nicht); outputDownloadLink() gibt nichts aus.
+    public static $sammlung = null;
+
     // Layout-Overrides der Basisklasse (Farben/Tabellen/Footer kommen aus pdf_theme.php)
     private $defaultStyles = '
         body { font-size: 10px; }
@@ -113,6 +117,34 @@ class PDFGenerator {
             </div>';
     }
     
+    // Ranglisten-Layout wie im Absendenbuch (ranglisteHeader): Fusszeile mit Seitenzahl nach dem Rendern
+    protected $ranglisteLayout = false;
+    protected $fussText = '';
+
+    /**
+     * HTML-Kopf einer Rangliste im Layout des Absendenbuchs: Titel links, Logo rechts.
+     */
+    protected function ranglisteHeader($titel, $untertitel = '') {
+        $this->ranglisteLayout = true;
+        $this->fussText = $titel;
+        return '<!DOCTYPE html>
+        <html lang="de">
+        <head>
+            <meta charset="UTF-8">
+            <style>' . pdf_theme_css() . pdf_rangliste_css() . '</style>
+            <title>' . htmlspecialchars($titel) . '</title>
+        </head>
+        <body>
+        <div class="container">' . pdf_rangliste_kopf($titel, $untertitel);
+    }
+
+    /**
+     * Zeilenanfang einer Rangliste mit Rangzelle: die ersten drei fett, vor Rang 4 etwas Abstand.
+     */
+    protected function zeileAnfang($rang) {
+        return pdf_rangliste_zeile($rang) . '<td class="rang">' . $rang . '.</td>';
+    }
+
     /**
      * Erstellt den HTML-Footer
      */
@@ -223,6 +255,13 @@ class PDFGenerator {
      * Generiert das PDF und speichert es
      */
     protected function generatePDF($html, $filename, $orientation = 'portrait') {
+        if (is_array(self::$sammlung)) {
+            ob_end_clean();
+            if (!$this->leerPruefen || $this->zeilenGelesen > 0) {
+                self::$sammlung[] = $html;
+            }
+            return null;
+        }
         // Keine einzige Zeile gelesen: kein leeres PDF (und kein leeres Blatt im Direktdruck), sondern ein Hinweis
         if ($this->leerPruefen && $this->zeilenGelesen === 0 && function_exists('msvAusgabeLeer')) {
             msvAusgabeLeer('Für ' . $this->selectedYear . ' gibt es für diese Rangliste noch keine Resultate.');
@@ -230,10 +269,17 @@ class PDFGenerator {
         // Ausrichtung aus dem Druckprofil (?orientation=portrait|landscape) übersteuert den Report-Default
         require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
         $orientation = pdfOrientationParam($orientation);
+        if ($this->ranglisteLayout) {
+            // fmtNoTrailingZero hängt an echte Nullen ein ZWNJ an; die PDF-Grundschrift kennt es nicht («0?»)
+            $html = str_replace("\u{200C}", '', $html);
+        }
         $this->dompdf->loadHtml($html);
         $this->dompdf->setPaper('A4', $orientation);
         $this->dompdf->render();
-        
+        if ($this->ranglisteLayout) {
+            pdf_seitenfuss($this->dompdf, $this->fussText);
+        }
+
         $pdfOutput = $this->dompdf->output();
         $date = new DateTime();
         $pdfFilePath = 'dat/' . $filename . '_' . $date->format('Y-m-d_H-i-s') . '.pdf';
@@ -249,6 +295,9 @@ class PDFGenerator {
      * Gibt den Download-Link als JSON aus
      */
     protected function outputDownloadLink($pdfFilePath) {
+        if (is_array(self::$sammlung)) {
+            return;
+        }
         header('Content-Type: application/json');
         echo json_encode(array('pdf_link' => $pdfFilePath));
     }

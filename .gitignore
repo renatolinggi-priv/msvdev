@@ -2,6 +2,9 @@
 msvjm_config.php
 ../msvjm_config.php
 
+# Index-Cache von Visual Studio
+.vs/
+
 # Rohdaten (PDFs, Mitglieder-XLSX = Personendaten) - nicht versionieren
 rohdaten/
 ~$*

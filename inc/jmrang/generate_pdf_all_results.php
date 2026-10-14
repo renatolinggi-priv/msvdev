@@ -35,38 +35,11 @@ $htmlOutput .= '<title>Jahresmeisterschaft ' . $selectedYear . ' (Alle Resultate
 </head>
 <body>';
 
-// Logo und Header für erste Seite
-$logoPath = '../../images/MSVWilen_Logo.jpg'; // Pfad anpassen falls nötig
-$htmlOutput .= '<div class="pdf-header">';
-if (file_exists($logoPath)) {
-    $htmlOutput .= '<div class="logo-container">';
-    $htmlOutput .= '<img src="' . imgToBase64($logoPath) . '" class="logo" alt="MSV Wilen Logo">';
-    $htmlOutput .= '</div>';
-}
-$htmlOutput .= '<div class="header-text">';
-$htmlOutput .= '<h1>Jahresmeisterschaft ' . $selectedYear . ' - Alle Resultate (ohne Streichresultate)</h1>';
-$htmlOutput .= '</div>';
-$htmlOutput .= '</div>';
-
-// Tabelle für Kat. A
+// Kat. A und Kat. B, jede auf eigener Seite mit Kopf
+$htmlOutput .= pdf_rangliste_kopf('Jahresmeisterschaft ' . $selectedYear, 'Alle Resultate nach Name (ohne Streicher)');
 $htmlOutput .= createTable('Kat. A', $selectedYear);
-
-// Seitenumbruch
 $htmlOutput .= '<div class="page-break"></div>';
-
-// Header für zweite Seite wiederholen
-$htmlOutput .= '<div class="pdf-header">';
-if (file_exists($logoPath)) {
-    $htmlOutput .= '<div class="logo-container">';
-    $htmlOutput .= '<img src="' . imgToBase64($logoPath) . '" class="logo" alt="MSV Wilen Logo">';
-    $htmlOutput .= '</div>';
-}
-$htmlOutput .= '<div class="header-text">';
-$htmlOutput .= '<h1>Jahresmeisterschaft ' . $selectedYear . ' - Alle Resultate (ohne Streichresultate)</h1>';
-$htmlOutput .= '</div>';
-$htmlOutput .= '</div>';
-
-// Tabelle für Kat. B
+$htmlOutput .= pdf_rangliste_kopf('Jahresmeisterschaft ' . $selectedYear, 'Alle Resultate nach Name (ohne Streicher)');
 $htmlOutput .= createTable('Kat. B', $selectedYear);
 
 $htmlOutput .= $footer;
@@ -77,30 +50,13 @@ try {
     $options->set('isHtml5ParserEnabled', true);
     $options->set('isRemoteEnabled', true);
     $options->set('defaultFont', 'Arial');
-    $options->set('isPhpEnabled', true);
 
     $dompdf = new Dompdf($options);
     require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
     $dompdf->setPaper('A4', pdfOrientationParam('landscape')); // Ausrichtung aus dem Druckprofil, Default quer
     $dompdf->loadHtml($htmlOutput);
     $dompdf->render();
-
-    // Canvas holen für Footer - NACH render()!
-    $canvas = $dompdf->getCanvas();
-    $font = $dompdf->getFontMetrics()->get_font("Arial", "normal");
-    
-    // Footer auf jeder Seite hinzufügen
-    $canvas->page_text(20, $canvas->get_height() - 25, 
-        "Erstellt am: " . date('d.m.Y H:i') . " Uhr", 
-        $font, 7, array(0, 0, 0));
-    
-    $canvas->page_text($canvas->get_width() / 2 - 50, $canvas->get_height() - 25, 
-        "MSV Wilen - Jahresmeisterschaft", 
-        $font, 7, array(0, 0, 0));
-    
-    $canvas->page_text($canvas->get_width() - 100, $canvas->get_height() - 25, 
-        "Seite {PAGE_NUM} von {PAGE_COUNT}", 
-        $font, 7, array(0, 0, 0));
+    pdf_seitenfuss($dompdf, 'Jahresmeisterschaft ' . $selectedYear . ' nach Name');
 
     // PDF speichern
     $pdfOutput = $dompdf->output();
@@ -317,8 +273,7 @@ function createTable($kategorie, $selectedYear) {
     });
 
     // HTML-Tabelle aufbauen mit Rotation
-    $html = '<div class="container">';
-    $html .= '<h2>Kategorie ' . str_replace('Kat. ', '', $kategorie) . '</h2>';
+    $html = '<h2>' . ($kategorie === 'Kat. A' ? 'Kat. A (Standardgewehr)' : 'Kat. B (Ordonnanzwaffen)') . '</h2>';
     
     // Kopfhöhe dynamisch an die längste Wettbewerbs-Bezeichnung anpassen, damit die
     // rotierten Labels vollständig in den Kopf passen und nicht nach oben in den Titel ausbrechen.
@@ -337,7 +292,7 @@ function createTable($kategorie, $selectedYear) {
     $nCols  = count($wettbewerbe);
     $colPct = $nCols > 0 ? round(80 / $nCols, 4) : 80;
 
-    $html .= '<table class="table" style="width: 100%;">';
+    $html .= '<table class="table jm" style="width: 100%;">';
     $html .= '<thead><tr style="height: ' . $headH . 'px;">';
     // Name-Spalte: schmal, aber breit genug für die längsten Namen auf einer Zeile
     $html .= '<th style="width: 14%; text-align: left; vertical-align: bottom; padding-right: 8px;">Name</th>';
@@ -360,7 +315,7 @@ function createTable($kategorie, $selectedYear) {
     // Daten ausgeben - OHNE RANG-SPALTE
     foreach ($resultData as $entry) {
         $html .= "<tr>";
-        $html .= "<td style='text-align: left; font-weight: normal; font-size: 11px; white-space: nowrap; padding-right: 8px;'>{$entry['name']}</td>";
+        $html .= "<td class='name'>{$entry['name']}</td>";
 
         // Nachkommastellen nur bei hochgerechneten Resultaten; rohe Resultate ganzzahlig
         foreach ($wettbewerbe as $wbID => $wb) {
@@ -369,22 +324,21 @@ function createTable($kategorie, $selectedYear) {
             if (!empty($entry['resultate'][$wbID])) {
                 $parts = [];
                 foreach ($entry['resultate'][$wbID] as $v) {
-                    $parts[] = "<span class='value'>" . number_format($v, $isScaled ? 2 : 0, '.', '') . "</span>";
+                    $parts[] = number_format($v, $isScaled ? 2 : 0, '.', '');
                 }
                 $display = implode(', ', $parts);
             } else {
-                $display = '<span class="no-data">-</span>';
+                $display = '–';
             }
             $html .= "<td class='result-col'>$display</td>";
         }
 
         // Total: einheitlich zwei Nachkommastellen
-        $html .= "<td><strong>" . number_format($entry['total'], 2, '.', '') . "</strong></td>";
+        $html .= "<td class='total'>" . number_format($entry['total'], 2, '.', '') . "</td>";
         $html .= "</tr>";
     }
 
     $html .= '</tbody></table>';
-
-    $html .= '</div>';
+    $html .= '<p class="rl-hinweis">Alle Resultate zählen (ohne Streicher). – = nicht teilgenommen.</p>';
     return $html;
 }

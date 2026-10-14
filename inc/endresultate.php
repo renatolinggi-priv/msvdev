@@ -1,5 +1,10 @@
 <?php
-// endresultate.php – Slide-Panel Pattern (wie jmdefinition.php)
+// endresultate.php – Endschiessen auf einer Seite (seit 1.68.29), zwei Ansichten derselben Tabelle:
+//   «Erfassen» (Standard): Teilnehmer nach Name, Rohwerte, Stand, Erfassung im Slide-Panel
+//   «Rangliste» (?ansicht=rangliste): nach Kat. A, Kat. B und «Ohne Wertung», Prüfliste «Absenden vorbereiten»
+//   und alle Dokumente (vorher endschrang.php, das hierher weiterleitet). Bearbeiten geht in beiden Ansichten.
+// Rang und Total kommen aus endschGesamtAbfrage() (dieselbe Rechnung wie die Gesamtrangliste im PDF).
+$__ansicht = (($_GET['ansicht'] ?? '') === 'rangliste') ? 'rangliste' : 'erfassen';
 try {
     include 'dbconnect.inc.php';
 } catch (Exception $e) {
@@ -30,6 +35,67 @@ $page_specific_css = "
 #sieunderSchuesse .su-schuss { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 26px; padding: 0 6px; border: 1px solid var(--ui-linie); border-radius: 6px; background: var(--ui-flaeche-2); color: var(--ui-text); font-weight: 600; }
 #sieunderSchuesse .su-schuss.is-dup { text-decoration: line-through; color: var(--ui-fehler); }
 
+/* Rang je Kategorie vor dem Namen («A 3.»), Total; ohne Wertung steht in der Ansicht «Rangliste» der Grund */
+.es-rang { display: inline-block; width: 2.6rem; font-size: .8rem; font-weight: 600; color: var(--ui-text-2); }
+.es-rang:empty::before { content: '–'; font-weight: 400; color: var(--ui-leer); }
+.es-grund { display: none; margin-left: 8px; font-size: .78rem; font-weight: 400; color: var(--ui-text-3); }
+#mitgliederTabelle tbody td.es-total { font-weight: 700; color: var(--ui-text); }
+#mitgliederTabelle tbody tr.es-gruppe td { height: auto; padding: 6px 20px; text-align: left; background: var(--ui-grund); color: var(--ui-text-2); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--ui-linie); cursor: default; }
+
+/* Ansichten: «Erfassen» füllt das Fenster (nur die Tabelle), «Rangliste» scrollt normal mit Prüfliste und Dokumenten */
+.es-ansicht-erfassen .es-nur-rangliste, .es-ansicht-rangliste .es-nur-erfassen { display: none !important; }
+.es-ansicht-erfassen .es-seite, .es-ansicht-erfassen .es-raster { display: contents; }
+.es-ansicht-rangliste .es-grund { display: inline; }
+.es-ansicht-rangliste #mitgliederTabelle tbody tr.rank-1 > td { background: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
+.es-ansicht-rangliste #mitgliederTabelle tbody tr.rank-2 > td { background: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
+.es-ansicht-rangliste #mitgliederTabelle tbody tr.rank-3 > td { background: color-mix(in srgb, var(--ui-bronze-bg) 40%, var(--ui-flaeche)); }
+.es-ansicht-rangliste #mitgliederTabelle tbody tr:is(.rank-1, .rank-2, .rank-3) .es-rang { color: var(--ui-text); font-weight: 700; }
+
+/* Ansicht «Rangliste»: links Prüfliste und Tabelle, rechts alle Dokumente in einer Leiste (aus endschrang.php).
+   Erst ab 1040px Inhaltsbreite zweispaltig, damit die Spalten der Tabelle Platz behalten. */
+.es-seite { container-type: inline-size; margin-bottom: 14px; }
+.es-raster { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: \"pruef\" \"doks\" \"rang\"; gap: 14px 16px; align-items: start; }
+.es-absenden { grid-area: pruef; }
+.es-doks { grid-area: doks; }
+.es-raster > #endresultateForm { grid-area: rang; margin-bottom: 0 !important; }
+@container (min-width: 1040px) {
+    .es-raster { grid-template-columns: minmax(0, 1fr) 17rem; grid-template-rows: auto 1fr; grid-template-areas: \"pruef doks\" \"rang doks\"; }
+}
+.es-abs-stand { margin-left: auto; }
+.es-abs-liste { list-style: none; margin: 0; padding: 14px var(--ui-pad) 16px; display: grid; gap: 10px; }
+.es-abs-liste li { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; }
+.es-abs-liste .ui-status { min-width: 6.5rem; }
+.es-abs-liste .ui-status:not(.ok):not(.offen) { color: var(--ui-text-2); }
+.es-abs-liste .ui-status:not(.ok):not(.offen) .ui-punkt { background: var(--ui-text-3); }
+.es-abs-liste a { font-weight: 600; white-space: nowrap; }
+.es-abs-zeit { margin-left: 8px; font-size: .75rem; color: var(--ui-text-2); white-space: nowrap; }
+.es-doks-inhalt { display: grid; gap: 16px; padding: 14px 16px 16px; }
+.es-dok-label { margin: 0 0 6px; font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-text-2); }
+.es-abs-hinweis { margin: -2px 0 8px; font-size: .8rem; line-height: 1.35; color: var(--ui-warn-fg); }
+.es-buchstand { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ui-linie); font-size: .8rem; line-height: 1.4; }
+.es-buchstand-titel { display: flex; align-items: center; gap: 4px; margin: 0 0 6px; font-weight: 600; color: var(--ui-text); }
+.es-buchstand-lauf { margin: 0 0 6px; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-buchstand-lauf:has(#absBuchLauf:empty) { display: none; }
+.es-buchdatei { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin: 0 0 6px; }
+.es-buchdatei-art { font-weight: 600; color: var(--ui-text); }
+.es-buchdatei-meta { color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-buchdatei-weg { color: var(--ui-warn-fg); }
+.es-buchdatei a { font-weight: 600; }
+.es-buchdatei .msv-druck { padding: 0 .4rem; line-height: 1.4; }
+.es-buchpunkte-kopf { margin: 8px 0 4px; }
+.es-buchpunkte { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.es-buchpunkte li { color: var(--ui-text); }
+.es-buchpunkte a { font-weight: 600; white-space: nowrap; }
+.es-buchpunkte .es-erledigt { color: var(--ui-ok-fg); }
+.es-dok-liste { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.es-dok-liste > .btn-group > .btn:first-child { text-align: left; }
+.es-dok-liste > .btn-group > .msv-druck { flex: 0 0 2.25rem; }
+@container (min-width: 1040px) {
+    .es-dok-liste { flex-direction: column; flex-wrap: nowrap; }
+    .es-dok-liste > .btn-group { width: 100%; }
+    .es-dok-liste > .btn-group > .btn:first-child { flex: 1 1 auto; }
+}
+
 @media (max-width: 767.98px) {
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
@@ -51,14 +117,17 @@ $csrf = csrf_token();
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">
-            <div class="main-content-wrapper content-width-wide ui-vollhoehe">
+            <div class="main-content-wrapper content-width-wide es-ansicht-<?= $__ansicht ?><?= $__ansicht === 'erfassen' ? ' ui-vollhoehe' : '' ?>" id="esSeite">
                 <?php
-                $page_title = 'Endschiessen Resultate erfassen';
+                $page_title = $__ansicht === 'rangliste' ? 'Endschiessen Rangliste' : 'Endschiessen Resultate erfassen';
                 $page_title_after = '<button type="button" class="btn-help" data-help="endresultate.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
-                    . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-                $page_actions = '<a href="endsch_import.php" class="btn btn-outline-success btn-sm"><i class="bi bi-upload me-1"></i>CSV importieren</a>'
-                    . '<button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm"><i class="bi bi-list-ol me-1"></i>Rangliste</button>';
+                    . '<select id="yearSelect" class="form-select form-select-sm"></select>'
+                    . '<div class="ui-filter" role="group" aria-label="Ansicht" id="esAnsicht">'
+                    . '<button type="button" data-ansicht="erfassen" aria-pressed="' . ($__ansicht === 'erfassen' ? 'true' : 'false') . '">Erfassen</button>'
+                    . '<button type="button" data-ansicht="rangliste" aria-pressed="' . ($__ansicht === 'rangliste' ? 'true' : 'false') . '">Rangliste</button>'
+                    . '</div>';
+                $page_actions = '<a href="endsch_import.php" class="btn btn-outline-success btn-sm es-nur-erfassen"><i class="bi bi-upload me-1"></i>CSV importieren</a>';
                 $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span>'
                     . '<span class="ui-balken" aria-hidden="true"><span id="progressBar"></span></span></div>'
                     . '<div class="ui-chips" id="progressChips"></div>';
@@ -66,12 +135,121 @@ $csrf = csrf_token();
                 include 'partials/page_header.inc.php';
                 ?>
 
+                <div class="es-seite"><div class="es-raster">
+                <!-- Ansicht «Rangliste»: Absenden vorbereiten (Prüfliste) -->
+                <section class="ui-karte es-absenden es-nur-rangliste" aria-labelledby="absTitel">
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel" id="absTitel"><i class="bi bi-flag me-1" aria-hidden="true"></i>Absenden vorbereiten <button type="button" class="btn-help" data-help="endschrang.absenden" aria-label="Hilfe"></button></span>
+                        <span class="es-abs-stand" id="absStand" aria-live="polite"></span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="absNeu" aria-label="Prüfliste neu prüfen" data-tooltip="Neu prüfen"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+                    </div>
+                    <ul class="es-abs-liste" id="absListe" aria-label="Prüfliste">
+                        <li data-pruefung="stiche"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Stiche werden geprüft</span></li>
+                        <li data-pruefung="partner"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Sie und Er wird geprüft</span></li>
+                        <li data-pruefung="wanderpreise"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Wanderpreise werden geprüft</span></li>
+                        <li data-pruefung="siegerlisten"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Siegerlisten werden geprüft</span></li>
+                        <li data-pruefung="buch"><span class="ui-status"><span class="ui-punkt"></span>…</span><span>Weitere Teile des Absendenbuchs werden geprüft</span></li>
+                    </ul>
+                </section>
+                <!-- Ansicht «Rangliste»: alle Dokumente in einer Leiste (rechts, über die ganze Höhe) -->
+                <aside class="ui-karte es-doks es-nur-rangliste" aria-labelledby="doksTitel">
+                    <div class="ui-tab-kopf">
+                        <span class="ui-tab-titel" id="doksTitel"><i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Dokumente <button type="button" class="btn-help" data-help="endschrang.dokumente" aria-label="Hilfe"></button></span>
+                    </div>
+                    <div class="es-doks-inhalt">
+                        <div role="group" aria-labelledby="dokAbsenden">
+                            <p class="es-dok-label" id="dokAbsenden">Fürs Absenden</p>
+                            <p class="es-abs-hinweis" id="absDokHinweis" hidden></p>
+                            <div class="es-dok-liste">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Word)">
+                                    <button type="button" class="btn btn-outline-info abs-btn"><i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Absendenbuch (Word)</span></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Absendenbuch (Broschüre)">
+                                    <button type="button" class="btn btn-outline-info absbk-btn" aria-describedby="absbkHinweis" data-tooltip="Das Absendenbuch als PDF zum Falten: je zwei A5-Seiten auf A4 quer. Beidseitig drucken, an der kurzen Kante wenden."><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Absendenbuch (Broschüre)</span></button>
+                                    <span class="visually-hidden" id="absbkHinweis">Das Absendenbuch als PDF zum Falten: je zwei A5-Seiten auf A4 quer. Beidseitig drucken, an der kurzen Kante wenden.</span>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="absendenbuch" data-druck-label="Absendenbuch (Broschüre)" aria-label="Absendenbuch (Broschüre) direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Gesamtrangliste">
+                                    <button type="button" class="btn btn-outline-info ges-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Gesamtrangliste</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                            </div>
+                            <!-- Stand des zuletzt erstellten Absendenbuchs (aus endschrang/absenden_bereit.php: buchstand) -->
+                            <section class="es-buchstand" id="absBuchstand" aria-labelledby="absBuchstandTitel" hidden>
+                                <p class="es-buchstand-titel" id="absBuchstandTitel">Stand des Absendenbuchs <button type="button" class="btn-help" data-help="endschrang.buchstand" aria-label="Hilfe"></button></p>
+                                <p class="es-buchstand-lauf"><span id="absBuchLauf" role="status" aria-live="polite"></span> <span id="absBuchUhr" aria-hidden="true"></span></p>
+                                <div id="absBuchDateien"></div>
+                                <div id="absBuchPunkte"></div>
+                            </section>
+                        </div>
+                        <div role="group" aria-labelledby="dokUebersicht">
+                            <p class="es-dok-label" id="dokUebersicht">Übersicht</p>
+                            <div class="es-dok-liste">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Zwischenrangliste">
+                                    <button type="button" class="btn btn-outline-info zwi-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Zwischenrangliste</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_zwischenrangliste.php" data-druck-job="Endschiessen Zwischenrangliste" aria-label="Zwischenrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Anmeldungen">
+                                    <button type="button" class="btn btn-outline-info anm-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Anmeldungen</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_anmeldung.php" data-druck-job="Endschiessen Anmeldung" aria-label="Anmeldungen direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div role="group" aria-labelledby="dokEinzel">
+                            <p class="es-dok-label" id="dokEinzel">Einzelwettbewerbe</p>
+                            <div class="es-dok-liste">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Alle Einzelwettbewerbe">
+                                    <button type="button" class="btn btn-outline-info einzel-btn" data-tooltip="Endstich, Schwini, Kunst, Glück, Zabig und Differenzler in einem PDF, jede Rangliste auf einer eigenen Seite."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Alle Einzelwettbewerbe</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_einzelwettbewerbe.php" data-druck-job="Endschiessen Einzelwettbewerbe" aria-label="Alle Einzelwettbewerbe direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Endstich">
+                                    <button type="button" class="btn btn-outline-info end-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Endstich</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_end.php" data-druck-job="Endschiessen Endstich" aria-label="Endstich direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Schwini">
+                                    <button type="button" class="btn btn-outline-info sch-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Schwini</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_schwini.php" data-druck-job="Endschiessen Schwini" aria-label="Schwini direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Kunst">
+                                    <button type="button" class="btn btn-outline-info kun-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Kunst</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_kunst.php" data-druck-job="Endschiessen Kunst" aria-label="Kunst direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Glück">
+                                    <button type="button" class="btn btn-outline-info glu-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Glück</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_glueck.php" data-druck-job="Endschiessen Glück" aria-label="Glück direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Zabig">
+                                    <button type="button" class="btn btn-outline-info zab-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Zabig</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_zabig.php" data-druck-job="Endschiessen Zabig" aria-label="Zabig direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Differenzler">
+                                    <button type="button" class="btn btn-outline-info dif-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Differenzler</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_diff.php" data-druck-job="Endschiessen Differenzler" aria-label="Differenzler direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div role="group" aria-labelledby="dokPartner">
+                            <p class="es-dok-label" id="dokPartner">Partner</p>
+                            <div class="es-dok-liste">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Partner">
+                                    <button type="button" class="btn btn-outline-info part-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Partner</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_partner.php" data-druck-job="Endschiessen Partner" aria-label="Partner direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Sie &amp; Er">
+                                    <button type="button" class="btn btn-outline-info sieer-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Sie &amp; Er</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_sieer.php" data-druck-job="Endschiessen Sie und Er" aria-label="Sie &amp; Er direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
                 <form id="endresultateForm" class="ui-karte ui-vollhoehe-karte" onsubmit="return false">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="ui-tab-kopf">
-                        <span class="ui-tab-titel">Teilnehmer</span>
-                        <div class="ui-filter" role="group" aria-label="Nach Stand filtern">
+                        <span class="ui-tab-titel">Teilnehmer <button type="button" class="btn-help es-nur-rangliste" data-help="endschrang.wertung" aria-label="Hilfe zur Wertung"></button></span>
+                        <div class="ui-filter es-nur-erfassen" role="group" aria-label="Nach Stand filtern" id="esFilter">
                             <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="nAlle">0</span></button>
                             <button type="button" data-filter="offen" aria-pressed="false">Offen <span id="nOffen">0</span></button>
                             <button type="button" data-filter="ok" aria-pressed="false">Vollständig <span id="nOk">0</span></button>
@@ -97,12 +275,13 @@ $csrf = csrf_token();
                                         <th scope="col">Zabig</th>
                                         <th scope="col">Sie und Er</th>
                                         <th scope="col">Ansage</th>
+                                        <th scope="col" data-tooltip="Wie in der Gesamtrangliste: Endstich, bester Schwini, Kunst / 10, Glück / 10, Zabig-Punkte">Total</th>
                                         <th scope="col">Stand</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="ui-leer">
-                                        <td colspan="9"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td>
+                                        <td colspan="10"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -131,6 +310,7 @@ $csrf = csrf_token();
                         <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> speichern &amp; nächstes offenes</span>
                     </div>
                 </form>
+                </div></div><!-- /es-raster, /es-seite -->
             </div>
         </div>
     </div>
@@ -631,7 +811,7 @@ $(document).ready(function() {
         var $tbody = $('#mitgliederTabelle tbody');
         if (!nachher) {
             EndEditPanel.close();
-            $tbody.html('<tr class="ui-leer"><td colspan="9"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td></tr>');
+            $tbody.html('<tr class="ui-leer"><td colspan="10"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td></tr>');
         }
 
         $.ajax({
@@ -640,17 +820,73 @@ $(document).ready(function() {
             data: { year: year },
             success: function(response) {
                 $tbody.html(response);
-                EndEditPanel.buildRowIndex();
-                EndEditPanel.updateProgress();
-                filterAnwenden();
+                esUrsprung = $tbody.children().toArray();
+                sortieren();   // Reihenfolge der Ansicht, Zeilenindex, Fortschritt, Filter
                 buildMobileEndCards();
+                if (esAnsicht === 'rangliste' && window.absendenPruefen) window.absendenPruefen();
                 if (typeof nachher === 'function') nachher();
             },
             error: function(xhr) {
-                $tbody.html('<tr class="ui-leer"><td colspan="9" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Die Daten konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
+                $tbody.html('<tr class="ui-leer"><td colspan="10" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Die Daten konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
             }
         });
     }
+
+    // =========================================
+    //  Ansicht «Erfassen» (nach Name, wie geladen) / «Rangliste» (Kat. A, Kat. B, ohne Wertung)
+    // =========================================
+    var esAnsicht = $('#esSeite').hasClass('es-ansicht-rangliste') ? 'rangliste' : 'erfassen';
+    var esUrsprung = [];   // Zeilen in der geladenen Reihenfolge
+    function sortieren() {
+        var $tbody = $('#mitgliederTabelle tbody');
+        $tbody.children('tr.es-gruppe').remove();
+        if (esUrsprung.length) {
+            if (esAnsicht === 'erfassen') {
+                $tbody.append(esUrsprung);
+            } else {
+                var zeilen = esUrsprung.filter(function(tr) { return tr.classList.contains('hybrid-row'); });
+                var kopf = function(text) { return $('<tr class="es-gruppe"><td colspan="10"></td></tr>').find('td').text(text).end(); };
+                ['A', 'B'].forEach(function(kat) {
+                    var g = zeilen.filter(function(tr) { return tr.getAttribute('data-kat') === kat; })
+                        .sort(function(a, b) { return a.getAttribute('data-rang') - b.getAttribute('data-rang'); });
+                    if (g.length) $tbody.append(kopf('Kat. ' + kat + ' (' + g.length + ')'), g);
+                });
+                var ohne = zeilen.filter(function(tr) { return !tr.hasAttribute('data-rang'); });
+                if (ohne.length) $tbody.append(kopf('Ohne Wertung (' + ohne.length + ')'), ohne);
+            }
+        }
+        EndEditPanel.buildRowIndex();   // Vor/Zurück im Panel folgen der sichtbaren Reihenfolge
+        EndEditPanel.updateProgress();
+        filterAnwenden();
+    }
+    function zeigeAnsicht(ansicht) {
+        esAnsicht = ansicht;
+        var $seite = $('#esSeite');
+        $seite.toggleClass('es-ansicht-rangliste', ansicht === 'rangliste')
+              .toggleClass('es-ansicht-erfassen', ansicht === 'erfassen')
+              .toggleClass('ui-vollhoehe', ansicht === 'erfassen');   // «Rangliste» scrollt normal
+        $('#esAnsicht button').each(function() { this.setAttribute('aria-pressed', String(this.getAttribute('data-ansicht') === ansicht)); });
+        // Titel = Menütext = Browser-Tab folgt der Ansicht
+        var titel = ansicht === 'rangliste' ? 'Endschiessen Rangliste' : 'Endschiessen Resultate erfassen';
+        $seite.find('.page-title').first().text(titel);
+        document.title = titel + ' - MSV Wilen';
+        var url = new URL(location.href);
+        url.searchParams.delete('year');
+        if (ansicht === 'rangliste') url.searchParams.set('ansicht', 'rangliste'); else url.searchParams.delete('ansicht');
+        history.replaceState(null, '', url);
+        if (ansicht === 'rangliste') {   // Filter «Offen/Vollständig» gibt es nur beim Erfassen
+            endFilter = 'alle';
+            $('#esFilter button').attr('aria-pressed', 'false');
+            $('#esFilter button[data-filter="alle"]').attr('aria-pressed', 'true');
+        }
+        sortieren();
+        buildMobileEndCards();
+        if (ansicht === 'rangliste' && esUrsprung.length && window.absendenPruefen) window.absendenPruefen();
+    }
+    $('#esAnsicht').on('click', 'button', function() {
+        var ansicht = this.getAttribute('data-ansicht');
+        if (ansicht !== esAnsicht) zeigeAnsicht(ansicht);
+    });
 
     // =========================================
     //  Filter (Alle / Offen / Vollständig) und Suche
@@ -667,21 +903,21 @@ $(document).ready(function() {
         $('#endKeineTreffer').remove();
         if (!sichtbar && EndEditPanel.allRows.length) {
             $('#mitgliederTabelle tbody').append(
-                '<tr class="ui-leer" id="endKeineTreffer"><td colspan="9">Keine Mitglieder für diese Auswahl. ' +
+                '<tr class="ui-leer" id="endKeineTreffer"><td colspan="10">Keine Mitglieder für diese Auswahl. ' +
                 '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="endFilterZurueck">Filter zurücksetzen</button></td></tr>');
         }
     }
-    $(document).on('click', '.ui-filter button', function() {
+    $(document).on('click', '#esFilter button', function() {
         endFilter = $(this).data('filter');
-        $('.ui-filter button').attr('aria-pressed', 'false');
+        $('#esFilter button').attr('aria-pressed', 'false');
         $(this).attr('aria-pressed', 'true');
         filterAnwenden();
     });
     $('#endSuche').on('input', function() { endSuchtext = this.value.trim().toLowerCase(); filterAnwenden(); });
     $(document).on('click', '#endFilterZurueck', function() {
         endFilter = 'alle'; endSuchtext = ''; $('#endSuche').val('');
-        $('.ui-filter button').attr('aria-pressed', 'false');
-        $('.ui-filter button[data-filter="alle"]').attr('aria-pressed', 'true');
+        $('#esFilter button').attr('aria-pressed', 'false');
+        $('#esFilter button[data-filter="alle"]').attr('aria-pressed', 'true');
         filterAnwenden();
     });
 
@@ -883,9 +1119,6 @@ $(document).ready(function() {
         loadData($(this).val());
     });
 
-    // Rangliste
-    $('#redirect-btn').on('click', function() { window.location.href = 'endschrang.php'; });
-
 
     // Klick auf Tabellenzeile → Panel öffnen
     $(document).on('click', '.hybrid-row', function() {
@@ -1021,6 +1254,8 @@ $(document).ready(function() {
             const zabig = cells[5]?.textContent?.trim() || '-';
             const sieUndEr = cells[6]?.textContent?.trim() || '-';
             const ansage = cells[7]?.textContent?.trim() || '-';
+            const total = cells[8]?.textContent?.trim() || '-';
+            const rang = row.querySelector('.es-rang')?.textContent?.trim() || '';
 
             const statusDot = hasData
                 ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-ok-fg);margin-right:6px;"></span>'
@@ -1030,8 +1265,8 @@ $(document).ready(function() {
             <div class="mobile-card" data-index="${idx}">
                 <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
-                        <div class="fw-bold">${statusDot}${msvEsc(memberName)}${typMarke}</div>
-                        <small class="text-muted">Endstich: ${endstich} | Schwini: ${schwini}</small>
+                        <div class="fw-bold">${statusDot}${rang ? msvEsc(rang) + ' ' : ''}${msvEsc(memberName)}${typMarke}</div>
+                        <small class="text-muted">Endstich: ${endstich} | Schwini: ${schwini} | Total: ${total}</small>
                     </div>
                     <i class="bi bi-chevron-down"></i>
                 </div>
@@ -1118,7 +1353,306 @@ $(document).ready(function() {
     //  Init
     // =========================================
     initializeYearDropdown();
+    zeigeAnsicht(esAnsicht);   // Titel, Browser-Tab und Adresse zur Ansicht aus ?ansicht=
     loadData($('#yearSelect').val());
+});
+</script>
+
+<script>
+/* ===== Ansicht «Rangliste»: Dokumente, Prüfliste und Stand des Absendenbuchs (vorher endschrang.php) =====
+   Die Prüfliste läuft nach jedem Laden der Tabelle, solange die Ansicht «Rangliste» offen ist (loadData). */
+$(document).ready(function () {
+    // Ranglisten als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, ein Toast).
+    // Die Generatoren liefern 'dat/…' relativ zu endschrang/ → linkPrefix.
+    function generatePDF(buttonClass, scriptName, documentName) {
+        $(document).on('click', '.' + buttonClass, function (e) {
+            e.preventDefault();
+            var jahr = $('#yearSelect').val();
+            msvAusgabe(this, {
+                url: 'endschrang/' + scriptName,
+                data: {
+                    year: jahr,
+                    orientation: window.MsvDruck ? MsvDruck.orientierung('endschrang', 'portrait') : 'portrait' // Format aus dem Druckprofil
+                },
+                linkPrefix: 'endschrang/',
+                titel: documentName + ' ' + jahr,
+                name: 'Endschiessen_' + documentName.replace(/\s+/g, '_') + '_' + jahr,
+                fehler: '«' + documentName + '» konnte nicht erstellt werden. Bitte nochmals versuchen und sonst dem Admin melden.'
+            });
+        });
+    }
+
+    // Absendenbuch als Word (Vorlage befüllt); Link relativ zu absenden/
+    $(document).on('click', '.abs-btn', function (e) {
+        e.preventDefault();
+        if (this.disabled) return;
+        var jahr = $('#yearSelect').val();
+        absendenbuchErstellen(this, 'Absendenbuch (Word) wird erstellt.', {
+            url: 'absenden/generate_absendenbuch.php',
+            data: { year: jahr },
+            linkPrefix: 'absenden/',
+            titel: 'Absendenbuch ' + jahr + ' (Word)',
+            name: 'Absendenbuch_' + jahr,
+            fehler: 'Das Absendenbuch konnte nicht erstellt werden. Bitte nochmals versuchen und sonst dem Admin melden.',
+            erfolg: j => absendenbuchErfolg(j, 'Absendenbuch ' + jahr + ' (Word) heruntergeladen.')
+        });
+    });
+
+    generatePDF('ges-btn', 'generate_pdf_gesamt.php', 'Gesamtrangliste');
+    generatePDF('zwi-btn', 'generate_pdf_zwischenrangliste.php', 'Zwischenrangliste');
+    generatePDF('einzel-btn', 'generate_pdf_einzelwettbewerbe.php', 'Einzelwettbewerbe');
+    generatePDF('end-btn', 'generate_pdf_end.php', 'Rangliste Endstich');
+    generatePDF('sch-btn', 'generate_pdf_schwini.php', 'Rangliste Schwini');
+    generatePDF('kun-btn', 'generate_pdf_kunst.php', 'Rangliste Kunst');
+    generatePDF('glu-btn', 'generate_pdf_glueck.php', 'Rangliste Glück');
+    generatePDF('zab-btn', 'generate_pdf_zabig.php', 'Rangliste Zabig');
+    generatePDF('dif-btn', 'generate_pdf_diff.php', 'Rangliste Differenzler');
+    generatePDF('anm-btn', 'generate_pdf_anmeldung.php', 'Anmeldungen');
+    generatePDF('part-btn', 'generate_pdf_partner.php', 'Rangliste Partner');
+    generatePDF('sieer-btn', 'generate_pdf_sieer.php', 'Rangliste Sie und Er');
+
+    // ===== Absenden vorbereiten: Prüfliste =====
+    // Offene Stiche und Sie-und-Er-Paare zählt sie aus dem Lader der Tabelle (dieselbe Regel: «offen», solange ein
+    // gelöster Stich kein Resultat hat; Sie und Er braucht eine verknüpfte Partnerin bzw. einen verknüpften Partner,
+    // data-su="ohne-partner"). Wanderpreise, Siegerlisten und die übrigen Teile des Absendenbuchs (JM, Heim, Kanti,
+    // Cup) kommen aus endschrang/absenden_bereit.php, jeder Teil einzeln (null = nicht geprüft).
+    const absPunkte = {}; // letzter Zustand je Prüfung, für den Stand des Absendenbuchs
+    function absZeile(key, zustand, text, link) {
+        absPunkte[key] = { zustand: zustand, text: text, link: link || null };
+        const label = { ok: 'erledigt', offen: 'offen', leer: 'nichts zu tun', fehler: 'nicht geprüft' }[zustand];
+        $('#absListe li[data-pruefung="' + key + '"]').html(
+            '<span class="ui-status' + (zustand === 'ok' || zustand === 'offen' ? ' ' + zustand : '') + '"><span class="ui-punkt"></span>' + label + '</span>'
+            + '<span>' + msvEsc(text) + '</span>'
+            + (link ? '<a href="' + link.href + '">' + msvEsc(link.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>' : ''));
+        return zustand;
+    }
+    // «A, B und C»
+    function absAufzaehlen(liste) {
+        return liste.length < 2 ? liste.join('') : liste.slice(0, -1).join(', ') + ' und ' + liste[liste.length - 1];
+    }
+    // «Heimmeisterschaft Kat. A» + «Heimmeisterschaft Kat. B» → «Heimmeisterschaft (Kat. A und B)»
+    function absKatZusammen(teile) {
+        const basis = t => t.replace(/ Kat\. [AB]$/, '');
+        return teile.filter((t, i) => teile.findIndex(u => basis(u) === basis(t)) === i)
+            .map(t => teile.filter(u => basis(u) === basis(t)).length > 1 ? basis(t) + ' (Kat. A und B)' : t);
+    }
+    function zeilenZaehlen(html) {
+        const doc = new DOMParser().parseFromString('<table><tbody>' + html + '</tbody></table>', 'text/html');
+        return { total: doc.querySelectorAll('tr[data-stand]').length, offen: doc.querySelectorAll('tr[data-stand="offen"]').length,
+                 ohnePartner: doc.querySelectorAll('tr[data-su="ohne-partner"]').length };
+    }
+    // «Zur Erfassung»: dieselbe Seite in der Ansicht «Erfassen»
+    const zurErfassung = { href: 'endresultate.php', text: 'Zur Erfassung' };
+    async function absendenPruefen() {
+        const jahr = $('#yearSelect').val();
+        if (!jahr) return;
+        $('#absNeu').prop('disabled', true).attr('aria-busy', 'true');
+        try { await absendenPruefenJahr(jahr); }
+        finally { $('#absNeu').prop('disabled', false).removeAttr('aria-busy'); }
+    }
+    async function absendenPruefenJahr(jahr) {
+        $('#absStand').html('<span class="ui-status"><span class="ui-punkt"></span>wird geprüft …</span>');
+        const q = { year: jahr };
+        const [end, wp] = await Promise.allSettled([
+            $.get('endschresultate/load_endschresultate.php', q),
+            $.getJSON('endschrang/absenden_bereit.php', q)
+        ]);
+        if (jahr !== $('#yearSelect').val()) return; // inzwischen ein anderes Jahr gewählt
+        const z = [];
+        if (end.status === 'fulfilled') {
+            const n = zeilenZaehlen(end.value);
+            z.push(n.total === 0 ? absZeile('stiche', 'leer', 'Für ' + jahr + ' sind keine Stiche gelöst.')
+                : n.offen === 0 ? absZeile('stiche', 'ok', 'Alle gelösten Stiche sind erfasst (' + n.total + ' Teilnehmer).')
+                : absZeile('stiche', 'offen', n.offen + ' von ' + n.total + ' Teilnehmern haben noch offene Stiche.', zurErfassung));
+            z.push(n.ohnePartner === 0 ? absZeile('partner', 'ok', 'Alle Sie-und-Er-Schützen sind mit ihrer Partnerin bzw. ihrem Partner verknüpft.')
+                : absZeile('partner', 'offen', (n.ohnePartner === 1 ? '1 Person mit Sie und Er ist' : n.ohnePartner + ' Personen mit Sie und Er sind') + ' noch mit niemandem verknüpft.', zurErfassung));
+        } else {
+            z.push(absZeile('stiche', 'fehler', 'Die Stiche konnten nicht geprüft werden.'));
+            z.push(absZeile('partner', 'fehler', 'Sie und Er konnte nicht geprüft werden.'));
+        }
+        const bereit = wp.status === 'fulfilled' && wp.value && wp.value.success ? wp.value : {};
+        const w = bereit.wanderpreise;
+        z.push(!w ? absZeile('wanderpreise', 'fehler', 'Die Wanderpreise konnten nicht geprüft werden.')
+            : w.total === 0 ? absZeile('wanderpreise', 'leer', 'Keine Wanderpreise im Umlauf.')
+            : w.vergeben >= w.total ? absZeile('wanderpreise', 'ok', 'Alle ' + w.total + ' Wanderpreise sind für ' + jahr + ' vergeben.')
+            : absZeile('wanderpreise', 'offen', w.vergeben + ' von ' + w.total + ' Wanderpreisen sind für ' + jahr + ' vergeben.', { href: 'wanderpreise.php', text: 'Zu den Wanderpreisen' }));
+        // Siegerlisten «… Sieger seit» im Absendenbuch (Tabelle sieger): fehlt das Jahr, fehlt es auch im Buch
+        const s = bereit.siegerlisten;
+        z.push(!s ? absZeile('siegerlisten', 'fehler', 'Die Siegerlisten konnten nicht geprüft werden.')
+            : s.total === 0 ? absZeile('siegerlisten', 'leer', 'Keine Siegerlisten eingerichtet.')
+            : s.ohne.length === 0 ? absZeile('siegerlisten', 'ok', 'Alle ' + s.total + ' Siegerlisten enthalten ' + jahr + '.')
+            : absZeile('siegerlisten', 'offen', (s.ohne.length === s.total ? 'Allen ' + s.total + ' Siegerlisten fehlt ' + jahr + '.'
+                : s.ohne.length + ' von ' + s.total + ' Siegerlisten fehlt ' + jahr + ': ' + absAufzaehlen(s.ohne) + '.'),
+                { href: 'sieger.php', text: 'Zu den Siegerlisten' }));
+        // Übrige Teile des Buchs mit eigener Erfassung: ohne Resultate bliebe ihre Tabelle im Buch leer
+        const b = bereit.buchteile;
+        const fehlt = b ? b.filter(t => !t.vorhanden) : [];
+        z.push(!b ? absZeile('buch', 'fehler', 'Die übrigen Teile des Absendenbuchs konnten nicht geprüft werden.')
+            : !fehlt.length ? absZeile('buch', 'ok', 'Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup haben Resultate für ' + jahr + '.')
+            : absZeile('buch', 'offen', 'Noch ohne Resultate für ' + jahr + ': ' + absAufzaehlen(absKatZusammen(fehlt.map(t => t.teil)))
+                + (fehlt.length === 1 ? '. Im Buch bliebe diese Tabelle leer.' : '. Im Buch blieben diese Tabellen leer.'),
+                { href: fehlt[0].link, text: 'Zur Erfassung' }));
+        const offen = z.filter(s => s === 'offen').length, fehler = z.filter(s => s === 'fehler').length;
+        const zeit = new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+        $('#absStand').html((offen
+            ? '<span class="ui-status offen"><span class="ui-punkt"></span>' + (offen === 1 ? '1 Punkt offen' : offen + ' Punkte offen') + '</span>'
+            : fehler ? '<span class="ui-status"><span class="ui-punkt"></span>nicht alles geprüft</span>'
+            : '<span class="ui-status ok"><span class="ui-punkt"></span>bereit fürs Absenden</span>')
+            + '<span class="es-abs-zeit">Stand ' + zeit + '</span>');
+        // Die Dokumente lassen sich auch mit offenen Punkten erstellen; der Hinweis sagt, dass sie den heutigen Stand zeigen.
+        // Gibt es schon ein Absendenbuch, sagt das sein Stand genauer.
+        const hatBuch = absBuchstandZeigen(jahr, bereit.buchstand);
+        $('#absDokHinweis').text(offen ? 'Noch ' + (offen === 1 ? '1 Punkt' : offen + ' Punkte') + ' offen – die Dokumente zeigen den heutigen Stand.' : '').prop('hidden', !offen || hatBuch);
+    }
+
+    // ===== Stand des Absendenbuchs =====
+    // Ein Befund fürs Heft: die Hinweise beim Erstellen (gelten für genau diese Datei) plus die offenen Punkte der
+    // Prüfliste, die der Generator nicht kennt (Stiche, Wanderpreise). Ist ein Hinweis seither in der Prüfliste
+    // erledigt, steht «inzwischen erledigt, Buch neu erstellen» – die Datei hat den alten Stand.
+    function absHinweisZiel(abschnitt, jahr) {
+        const basis = String(abschnitt || '').replace(/ Kat\. [AB]$/, '');
+        const ziele = {
+            'Siegerlisten':        { href: 'sieger.php', text: 'Zu den Siegerlisten', pruefung: 'siegerlisten' },
+            'Jahresmeisterschaft': { href: 'jmresultate.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Heimmeisterschaft':   { href: 'heimresultate.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Kantonalstich':       { href: 'kantiresultate.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Vereinscup':          { href: 'cup.php', text: 'Zur Erfassung', pruefung: 'buch' },
+            'Vorlage':             null
+        };
+        return basis in ziele ? ziele[basis] : (basis ? { href: 'endresultate.php?year=' + jahr, text: 'Zur Erfassung', pruefung: null } : null);
+    }
+    function absZeitpunkt(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return '';
+        return d.toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'numeric' })
+            + ', ' + d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+    }
+    function absPunktHtml(text, ziel, erledigt) {
+        return '<li>' + msvEsc(text)
+            + (erledigt ? ' <span class="es-erledigt">Inzwischen erledigt, Buch neu erstellen.</span>'
+                : ziel ? ' <a href="' + msvEsc(ziel.href) + '">' + msvEsc(ziel.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>' : '')
+            + '</li>';
+    }
+    // true, wenn für das Jahr schon ein Absendenbuch erstellt wurde
+    function absBuchstandZeigen(jahr, stand) {
+        $('#absBuchstand').prop('hidden', false);
+        const $dateien = $('#absBuchDateien'), $punkte = $('#absBuchPunkte');
+        if (!stand) {
+            $dateien.html('<p class="es-buchdatei es-buchdatei-meta">Der Stand des Absendenbuchs konnte nicht geladen werden.</p>');
+            $punkte.empty();
+            return false;
+        }
+        const arten = [['broschuere', 'Broschüre'], ['word', 'Word']].filter(a => stand[a[0]]);
+        if (!arten.length) {
+            $dateien.html('<p class="es-buchdatei es-buchdatei-meta">Für ' + msvEsc(jahr) + ' ist noch kein Absendenbuch erstellt.</p>');
+            $punkte.empty();
+            return false;
+        }
+        $dateien.html(arten.map(([art, name]) => {
+            const s = stand[art];
+            const meta = [absZeitpunkt(s.erstellt), s.von, s.seiten ? s.seiten + ' Seiten auf ' + s.blatt + ' Blatt' : ''].filter(Boolean).join(' · ');
+            return '<p class="es-buchdatei"><span class="es-buchdatei-art">' + name + '</span>'
+                + '<span class="es-buchdatei-meta">' + msvEsc(meta) + '</span>'
+                + (!s.vorhanden ? '<span class="es-buchdatei-weg">Datei nicht mehr vorhanden, bitte neu erstellen.</span>'
+                    : '<a href="' + msvEsc(s.link) + '"' + (art === 'word' ? ' download' : ' target="_blank" rel="noopener"') + '>Öffnen</a>'
+                      + (art === 'broschuere' ? '<button type="button" class="btn btn-sm btn-outline-info msv-druck" data-druck-doctype="absendenbuch"'
+                          + ' data-druck-label="Absendenbuch (Broschüre)" data-druck-datei="' + msvEsc(s.link) + '" aria-label="Diese Broschüre drucken">'
+                          + '<i class="bi bi-printer me-1" aria-hidden="true"></i>Drucken</button>' : ''))
+                + '</p>';
+        }).join(''));
+
+        // Befund der zuletzt erstellten Datei
+        const neueste = arten.map(a => stand[a[0]]).sort((x, y) => String(y.erstellt).localeCompare(String(x.erstellt)))[0];
+        const punkte = (neueste.hinweise || []).map(h => {
+            const ziel = absHinweisZiel(h.abschnitt, jahr);
+            const erledigt = !!(ziel && ziel.pruefung && absPunkte[ziel.pruefung] && absPunkte[ziel.pruefung].zustand === 'ok');
+            return absPunktHtml((h.abschnitt ? h.abschnitt + ': ' : '') + h.text, ziel, erledigt);
+        });
+        ['stiche', 'wanderpreise'].forEach(k => {
+            if (absPunkte[k] && absPunkte[k].zustand === 'offen') punkte.push(absPunktHtml(absPunkte[k].text, absPunkte[k].link, false));
+        });
+        $punkte.html(punkte.length
+            ? '<p class="es-buchpunkte-kopf"><span class="ui-status offen"><span class="ui-punkt"></span>Vor dem Druck prüfen (' + punkte.length + ')</span></p>'
+              + '<ul class="es-buchpunkte">' + punkte.join('') + '</ul>'
+            : '<p class="es-buchpunkte-kopf"><span class="ui-status ok"><span class="ui-punkt"></span>Keine offenen Punkte</span></p>');
+        if (window.MsvDruck && MsvDruck.refresh) MsvDruck.refresh(); // Drucker-Knopf der Datei ein- oder ausblenden
+        return true;
+    }
+    window.absendenPruefen = absendenPruefen; // loadData und die Ausgabe-Knöpfe rufen sie auf
+    $('#absNeu').on('click', absendenPruefen);
+});
+</script>
+
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray): ein Profil «Endschiessen Ranglisten» für alle PDFs der Ansicht «Rangliste».
+// Die Generatoren liefern JSON {pdf_link: 'dat/…'} relativ zum Modul → linkPrefix.
+MsvDruck.resolve('endschrang', (btn) => {
+    const jahr = document.getElementById('yearSelect').value;
+    return {
+        url: 'endschrang/' + btn.dataset.druckScript + '?year=' + encodeURIComponent(jahr)
+            + '&orientation=' + MsvDruck.orientierung('endschrang', 'portrait'),
+        jobName: btn.dataset.druckJob + ' ' + jahr,
+        linkPrefix: 'endschrang/'
+    };
+});
+
+// Absendenbuch als Broschüre (absenden/generate_absendenbuch_pdf.php: DOCX → PDF → pdfjam --booklet).
+// Broschüren brauchen beidseitigen Druck mit Wenden an der kurzen Seite; steht im Profil kein Duplex,
+// wird «short-edge» gesetzt, damit die Rückseiten nicht auf dem Kopf stehen.
+// Der Drucker neben «Absendenbuch (Broschüre)» erstellt neu; «Drucken» im Stand des Absendenbuchs druckt genau
+// die vorhandene Datei (data-druck-datei), ohne neue Umwandlung.
+MsvDruck.resolve('absendenbuch', (btn) => {
+    const jahr = document.getElementById('yearSelect').value;
+    const profil = MsvDruck.profil('absendenbuch');
+    return {
+        url: (btn && btn.dataset.druckDatei) || ('absenden/generate_absendenbuch_pdf.php?year=' + encodeURIComponent(jahr)),
+        jobName: 'Absendenbuch ' + jahr + ' (Broschüre)',
+        orientation: 'landscape',
+        duplex: (profil && profil.duplex) || 'short-edge'
+    };
+});
+
+// Erfolg beim Absendenbuch: kurzer Toast. Die Hinweise stehen bleibend im Stand des Absendenbuchs.
+function absendenbuchErfolg(j, text) {
+    const n = (j && Array.isArray(j.hinweise)) ? j.hinweise.length : 0;
+    return n ? { text: text + ' ' + (n === 1 ? '1 Hinweis' : n + ' Hinweise') + ' unter «Stand des Absendenbuchs».', typ: 'warning' } : text;
+}
+
+// Absendenbuch erstellen (Word oder Broschüre): Während der Arbeit steht im Stand, was läuft, mit mitlaufender
+// Zeit (die Uhr ist für Screenreader ausgeblendet, damit die Live-Region nicht jede Sekunde spricht). Danach
+// Stand neu laden und den Fokus zurück auf den Knopf, den der Ladezustand gesperrt hatte.
+function absendenbuchErstellen(btn, lauftext, opts) {
+    $('#absBuchstand').prop('hidden', false);
+    $('#absBuchLauf').text(lauftext);
+    const start = Date.now();
+    const uhr = () => { const s = Math.floor((Date.now() - start) / 1000); $('#absBuchUhr').text(Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')); };
+    uhr();
+    const takt = setInterval(uhr, 1000);
+    return msvAusgabe(btn, opts).finally(() => {
+        clearInterval(takt);
+        $('#absBuchLauf, #absBuchUhr').text('');
+        if (window.absendenPruefen) window.absendenPruefen();
+        btn.focus();
+    });
+}
+
+// Broschüren-PDF herunterladen (gleicher Endpunkt, zum Prüfen der Seitenfolge oder für die Druckerei)
+$(document).on('click', '.absbk-btn', function () {
+    if (this.disabled) return;
+    const jahr = document.getElementById('yearSelect').value;
+    // Die Umwandlung in PDF läuft über einen externen Dienst und dauert spürbar: vorher sagen, damit niemand
+    // nach einer halben Minute Spinner nochmals klickt oder zum Drucker greift
+    absendenbuchErstellen(this, 'Absendenbuch (Broschüre) wird erstellt, das kann bis zu einer Minute dauern.', {
+        url: 'absenden/generate_absendenbuch_pdf.php',
+        data: { year: jahr },
+        titel: 'Absendenbuch ' + jahr + ' (Broschüre)',
+        name: 'Absendenbuch_' + jahr + '_Broschuere',
+        fehler: 'Die Broschüre konnte nicht erstellt werden. Bitte nochmals versuchen; bis dahin geht «Absendenbuch (Word)».',
+        erfolg: j => absendenbuchErfolg(j, j && j.pages
+            ? 'Broschüre heruntergeladen: ' + j.pages + ' Seiten auf ' + j.sheets + ' Blatt A4 (beidseitig, Wenden an der kurzen Kante).'
+            : 'Broschüre heruntergeladen.')
+    });
 });
 </script>
 

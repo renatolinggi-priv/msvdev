@@ -85,8 +85,7 @@ class EndstichReport extends PDFGenerator
         }
 
         // HTML erstellen
-        $html = $this->createHTMLHeader('Endstich Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Endstich Rangliste ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Endstich ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createEndstichTable($tableData);
         $html .= $this->createHTMLFooter();
 
@@ -102,46 +101,33 @@ class EndstichReport extends PDFGenerator
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Rang</th>
-                    <th align="left">Name</th>
-                    <th colspan="10" align="left">Passe</th>
-                    <th>Total</th>
-                    <th>TS</th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th colspan="10">Passe</th>
+                    <th class="r">Total</th>
+                    <th class="r">TS</th>
                     <th></th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         foreach ($data as $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['name']}</td>";
 
-            $html .= '<tr>';
-            $html .= "<td align=\"left\" $bold>{$rang}.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['name']}</td>";
-
-            // 10 Schüsse (Fallback-Formatierung)
             for ($i = 1; $i <= 10; $i++) {
                 $value = isset($row['shot' . $i]) ? $row['shot' . $i] : '';
                 if ($value !== '')
                     $value = (string) fmtNoTrailingZero($value);
-                $html .= "<td align=\"right\" $bold>$value</td>";
+                $html .= "<td class=\"r\">$value</td>";
             }
 
             $total = (string) fmtNoTrailingZero($row['total']);
-            $ts = (string) fmtNoTrailingZero($row['ts']);
+            $ts = pdf_strich_wenn_null($row['ts']);
 
-            $html .= "<td align=\"center\" $bold>$total</td>";
-            $html .= "<td align=\"center\" $bold>$ts</td>";
-            $html .= "<td align=\"right\" $bold>{$row['kk']}</td>";
+            $html .= "<td class=\"r\">$total</td>";
+            $html .= "<td class=\"r\">$ts</td>";
+            $html .= "<td>{$row['kk']}</td>";
             $html .= '</tr>';
-
-            if ($rang == 3) {
-                $html .= '<tr>';
-                for ($i = 0; $i < 14; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
-
             $rang++;
         }
 
@@ -190,8 +176,7 @@ ORDER BY Hoechste_Summe DESC, Tiefste_Summe DESC, Geburtsdatum ASC, Name ASC
         $y = (int)$this->selectedYear;
         $data = $this->executePreparedQuery($sql, "i", $y);
 
-        $html = $this->createHTMLHeader('Schwini Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Schwini Rangliste ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Schwinistich ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createSchwiniTable($data);
         $html .= $this->createHTMLFooter();
 
@@ -207,17 +192,15 @@ ORDER BY Hoechste_Summe DESC, Tiefste_Summe DESC, Geburtsdatum ASC, Name ASC
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Rang</th>
-                    <th align="left">Name</th>
-                    <th colspan="6" align="left">Passe</th>
-                    <th>Total</th>
-                    <th></th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th colspan="6">Passe</th>
+                    <th class="r">Total</th>
+                    <th class="r">2. Passe</th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         foreach ($data as $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
-
             // Bestimme welche Passe höher ist
             if ($row['Schwini1_Summe'] >= $row['Schwini2_Summe']) {
                 $shots = [
@@ -240,25 +223,16 @@ ORDER BY Hoechste_Summe DESC, Tiefste_Summe DESC, Geburtsdatum ASC, Name ASC
             }
             rsort($shots);
 
-            $html .= "<tr>";
-            $html .= "<td align=\"left\" $bold>$rang.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['Name']} {$row['Vorname']}</td>";
 
             foreach ($shots as $shot) {
-                $html .= "<td align=\"right\" $bold>$shot</td>";
+                $html .= "<td class=\"r\">$shot</td>";
             }
 
-            $html .= "<td align=\"center\" $bold>{$row['Hoechste_Summe']}</td>";
-            $html .= "<td align=\"center\" $bold>({$row['Tiefste_Summe']})</td>";
+            $html .= "<td class=\"r\">{$row['Hoechste_Summe']}</td>";
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['Tiefste_Summe']) . '</td>';
             $html .= "</tr>";
-
-            if ($rang == 3) {
-                $html .= '<tr>';
-                for ($i = 0; $i < 10; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
 
             $rang++;
         }
@@ -293,14 +267,13 @@ class KunstReport extends PDFGenerator
                 COALESCE(u.KSchuss5, 0)
             ) AS TS
         FROM " . endschQuelle('kunst', ENDSCH_TYPEN_MITGLIED_GAST) . " u
-        WHERE u.KSchuss1 IS NOT NULL AND u.KSchuss1 != 0
+        WHERE COALESCE(u.KSchuss1 + u.KSchuss2 + u.KSchuss3 + u.KSchuss4 + u.KSchuss5, 0) != 0
         ORDER BY Kunst_Summe DESC, TS DESC, u.Geburtsdatum ASC, u.Name ASC";
 
         $y = (int)$this->selectedYear;
         $data = $this->executePreparedQuery($sql, "i", $y);
 
-        $html = $this->createHTMLHeader('Kunst Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Kunst Rangliste ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Kunststich ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createKunstTable($data);
         $html .= $this->createHTMLFooter();
 
@@ -316,18 +289,16 @@ class KunstReport extends PDFGenerator
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Rang</th>
-                    <th align="left">Name</th>
-                    <th colspan="5" align="left">Passe</th>
-                    <th>Total</th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th colspan="5">Passe</th>
+                    <th class="r">Total</th>
                     <th></th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder
         foreach ($data as $i => $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
-
             $kk = '';
             if ($rang == 1 || $row['Kunst_Summe'] >= $row['Kranz_Kunst']) {
                 $kk = 'KK';
@@ -344,29 +315,20 @@ class KunstReport extends PDFGenerator
                 $row['KSchuss5']
             ]);
 
-            $html .= "<tr>";
-            $html .= "<td align=\"left\" $bold>$rang.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['Name']} {$row['Vorname']}</td>";
 
             foreach ($shots as $shot) {
-                $html .= "<td align=\"right\" $bold>$shot</td>";
+                $html .= "<td class=\"r\">$shot</td>";
             }
             // Leere Zellen auffüllen
-            for ($i = count($shots); $i < 5; $i++) {
-                $html .= "<td align=\"right\" $bold></td>";
+            for ($j = count($shots); $j < 5; $j++) {
+                $html .= '<td></td>';
             }
 
-            $html .= "<td align=\"center\" $bold>{$row['Kunst_Summe']}</td>";
-            $html .= "<td align=\"right\" $bold>$kk</td>";
+            $html .= "<td class=\"r\">{$row['Kunst_Summe']}</td>";
+            $html .= "<td>$kk</td>";
             $html .= "</tr>";
-
-            if ($rang == 3) {
-                $html .= '<tr>';
-                for ($i = 0; $i < 8; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
 
             $rang++;
         }
@@ -399,38 +361,37 @@ class GlueckReport extends PDFGenerator
             ) AS ZweitHoechster,
             LEAST(u.GSchuss1, u.GSchuss2, u.GSchuss3) AS DrittHoechster
         FROM " . endschQuelle('glueck', ENDSCH_TYPEN_MITGLIED_GAST) . " u
-        WHERE u.GSchuss1 != 0
+        WHERE GREATEST(COALESCE(u.GSchuss1, 0), COALESCE(u.GSchuss2, 0), COALESCE(u.GSchuss3, 0)) != 0
         ORDER BY MaxGlueck DESC, ZweitHoechster DESC, DrittHoechster DESC, u.Geburtsdatum ASC, u.Name ASC";
 
         $y = (int)$this->selectedYear;
         $data = $this->executePreparedQuery($sql, "i", $y);
 
-        $html = $this->createHTMLHeader('Glückstich Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Glückstich Rangliste ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Glückstich ' . $this->selectedYear, 'Endschiessen · Rangliste');
 
-        // Tabelle erstellen
+        // Tabelle erstellen (wie im Absendenbuch: bester Schuss, dahinter die beiden anderen absteigend)
         if (!empty($data)) {
             $html .= '<table class="table">';
             $html .= '<thead><tr>
-                        <th align="left">Rang</th>
-                        <th align="left">Name</th>
-                        <th align="left">Resultat</th>
-                        <th align="left">Schüsse</th>
+                        <th class="r">Rang</th>
+                        <th>Name</th>
+                        <th class="r">Bester Schuss</th>
+                        <th>Weitere Schüsse</th>
                         <th></th>
                       </tr></thead><tbody>';
 
             $rang = 1;
             $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder
             foreach ($data as $i => $row) {
-                $bold = ($rang <= 3) ? 'class="bold"' : '';
                 $kk = ($i === $wp) ? 'WP' : '';
+                $weitere = $this->getSortedShots([$row['GSchuss1'], $row['GSchuss2'], $row['GSchuss3']]);
+                array_shift($weitere);
 
-                $html .= "<tr>";
-                $html .= "<td align=\"left\" $bold>$rang.</td>";
-                $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
-                $html .= "<td align=\"center\" $bold>{$row['MaxGlueck']}</td>";
-                $html .= "<td align=\"left\" $bold>({$row['GSchuss1']}, {$row['GSchuss2']}, {$row['GSchuss3']})</td>";
-                $html .= "<td align=\"left\" $bold>$kk</td>";
+                $html .= $this->zeileAnfang($rang);
+                $html .= "<td>{$row['Name']} {$row['Vorname']}</td>";
+                $html .= "<td class=\"r\">{$row['MaxGlueck']}</td>";
+                $html .= '<td>' . ($weitere ? '(' . implode(', ', $weitere) . ')' : '') . '</td>';
+                $html .= "<td>$kk</td>";
                 $html .= "</tr>";
 
                 $rang++;
@@ -544,8 +505,7 @@ class ZabigReport extends PDFGenerator
             return $b['Total'] <=> $a['Total'];
         });
 
-        $html = $this->createHTMLHeader('Zabigstich Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Zabigstich Rangliste ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Zabigstich ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createZabigTable($data);
         $html .= $this->createHTMLFooter();
 
@@ -561,46 +521,33 @@ class ZabigReport extends PDFGenerator
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Rang</th>
-                    <th align="left">Name</th>
-                    <th colspan="6" align="left">Passe (Punkte)</th>
-                    <th>Total</th>
-                    <th>TS</th>
-                    <th></th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th colspan="6">Passe (Punkte)</th>
+                    <th class="r">Total</th>
+                    <th class="r">TS</th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         foreach ($data as $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
-
-            $html .= "<tr>";
-            $html .= "<td align=\"left\" $bold>{$rang}.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['Name']} {$row['Vorname']}</td>";
 
             // 6 bereits umgerechnete Punkt-Schüsse; bei den ersten drei darunter die Hunderterwertung
             for ($i = 1; $i <= 6; $i++) {
                 $p = isset($row['PShot' . $i]) ? $row['PShot' . $i] : '';
                 if ($rang <= 3 && isset($row['RShot' . $i])) {
                     $r = (string) (function_exists('fmtNoTrailingZero') ? fmtNoTrailingZero($row['RShot' . $i]) : $row['RShot' . $i]);
-                    $p .= '<br><span style="font-size: 8px; font-weight: normal; color: #666;">' . $r . '</span>';
+                    $p .= '<br><span class="muted" style="font-size: 7pt; font-weight: normal;">' . $r . '</span>';
                 }
-                $html .= "<td align=\"right\" $bold>$p</td>";
+                $html .= "<td class=\"r\">$p</td>";
             }
 
             $total = (string) (function_exists('fmtNoTrailingZero') ? fmtNoTrailingZero($row['Total']) : $row['Total']);
-            $tsRaw = (string) (function_exists('fmtNoTrailingZero') ? fmtNoTrailingZero($row['TS']) : $row['TS']);
 
-            $html .= "<td align=\"center\" $bold>$total</td>";
-            $html .= "<td align=\"center\" $bold>($tsRaw)</td>";
+            $html .= "<td class=\"r\">$total</td>";
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['TS']) . '</td>';
             $html .= "</tr>";
-
-            if ($rang == 3) {
-                $html .= '<tr>';
-                for ($i = 0; $i < 10; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
             $rang++;
         }
 
@@ -628,14 +575,13 @@ class DifferenzlerReport extends PDFGenerator
             COALESCE(u.ZSchuss1 + u.ZSchuss2 + u.ZSchuss3 + u.ZSchuss4 + u.ZSchuss5 + u.ZSchuss6, 0) AS DiffTotal,
             ABS(COALESCE(u.ZSchuss1 + u.ZSchuss2 + u.ZSchuss3 + u.ZSchuss4 + u.ZSchuss5 + u.ZSchuss6 - u.Ansage, 0)) AS NormDiff
         FROM " . endschQuelle('zabig', ENDSCH_TYPEN_MITGLIED_GAST) . " u
-        WHERE u.ZSchuss1 != 0
+        WHERE COALESCE(u.ZSchuss1 + u.ZSchuss2 + u.ZSchuss3 + u.ZSchuss4 + u.ZSchuss5 + u.ZSchuss6, 0) != 0
         ORDER BY NormDiff ASC, u.Geburtsdatum ASC, u.Name ASC";
 
         $y = (int)$this->selectedYear;
         $data = $this->executePreparedQuery($sql, "i", $y);
 
-        $html = $this->createHTMLHeader('Differenzler ' . $this->selectedYear);
-        $html .= '<h2>Differenzler ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Differenzler ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createDifferenzlerTable($data);
         $html .= $this->createHTMLFooter();
 
@@ -651,18 +597,16 @@ class DifferenzlerReport extends PDFGenerator
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Rang</th>
-                    <th align="left">Name</th>
-                    <th colspan="6" align="left">Passe</th>
-                    <th>Total</th>
-                    <th>Differenz</th>
-                    <th>Ansage</th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th colspan="6">Passe</th>
+                    <th class="r">Total</th>
+                    <th class="r">Ansage</th>
+                    <th class="r">Differenz</th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         foreach ($data as $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
-
             $shots = $this->getSortedShots([
                 $row['ZSchuss1'],
                 $row['ZSchuss2'],
@@ -672,32 +616,73 @@ class DifferenzlerReport extends PDFGenerator
                 $row['ZSchuss6']
             ]);
 
-            $html .= "<tr>";
-            $html .= "<td align=\"left\" $bold>$rang.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['Name']} {$row['Vorname']}</td>";
 
             foreach ($shots as $shot) {
-                $html .= "<td align=\"right\" $bold>$shot</td>";
+                $html .= "<td class=\"r\">$shot</td>";
             }
 
-            $html .= "<td align=\"center\" $bold>{$row['DiffTotal']}</td>";
-            $html .= "<td align=\"center\" $bold>{$row['NormDiff']}</td>";
-            $html .= "<td align=\"center\" $bold>({$row['Ansage']})</td>";
+            $html .= "<td class=\"r\">{$row['DiffTotal']}</td>";
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['Ansage']) . '</td>';
+            $html .= "<td class=\"r\">{$row['NormDiff']}</td>";
             $html .= "</tr>";
-
-            if ($rang == 3) {
-                $html .= '<tr>';
-                for ($i = 0; $i < 11; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
 
             $rang++;
         }
 
         $html .= '</tbody></table>';
         return $html;
+    }
+}
+
+/**
+ * Alle Einzelwettbewerbe in einem PDF (Endstich, Schwini, Kunst, Glück, Zabig, Differenzler)
+ * Die Berichte laufen im Sammelmodus von PDFGenerator und liefern ihr HTML statt einer Datei; jede Rangliste
+ * beginnt auf einer neuen Seite. Ranglisten ohne Resultate fallen weg.
+ */
+class EinzelwettbewerbeReport extends PDFGenerator
+{
+    public function generate()
+    {
+        PDFGenerator::$sammlung = [];
+        try {
+            foreach ([EndstichReport::class, SchwiniReport::class, KunstReport::class,
+                      GlueckReport::class, ZabigReport::class, DifferenzlerReport::class] as $klasse) {
+                (new $klasse($this->conn, $this->selectedYear))->generate();
+            }
+            $berichte = PDFGenerator::$sammlung;
+        } finally {
+            PDFGenerator::$sammlung = null;
+        }
+
+        // Kopf (Styles) und Fusszeile vom ersten Bericht, dazwischen der Inhalt jedes Berichts
+        $kopf = $fuss = '';
+        $teile = [];
+        foreach ($berichte as $html) {
+            $start = stripos($html, '<body>');
+            $ende = strpos($html, '<div class="footer">');
+            if ($start === false || $ende === false) {
+                continue;
+            }
+            if (!$teile) {
+                $kopf = substr($html, 0, $start + 6);
+                $fuss = substr($html, $ende);
+            }
+            $teile[] = substr($html, $start + 6, $ende - $start - 6);
+        }
+        if (!$teile) {
+            msvAusgabeLeer('Für ' . $this->selectedYear . ' gibt es noch keine Resultate in den Einzelwettbewerben.');
+        }
+
+        $kopf = preg_replace('~<title>.*?</title>~s', '<title>Einzelwettbewerbe ' . $this->selectedYear . '</title>', $kopf);
+        $html = $kopf . implode('<div style="page-break-before: always;"></div>', $teile) . $fuss;
+
+        $this->zeilenGelesen = count($teile);
+        $this->ranglisteLayout = true; // Fusszeile mit Seitenzahl über alle Seiten
+        $this->fussText = 'Einzelwettbewerbe ' . $this->selectedYear;
+        $pdfPath = $this->generatePDF($html, 'Einzelwettbewerbe');
+        $this->outputDownloadLink($pdfPath);
     }
 }
 
@@ -1110,10 +1095,7 @@ class PartnerRankingReport extends PDFGenerator
 
         $y = (int)$this->selectedYear;
         $data = $this->executePreparedQuery($sql, "ii", $y, $y);
-        $html = $this->createHTMLHeader('Partner Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Partner Rangliste ' . $this->selectedYear . '</h2>';
-        $html .= '<p><strong>Endstichresultat (10 Schuss) + Beste Partner Schwini Passe (6 Schuss)</strong></p>';
-        $html .= '<p>Bei Punktgleichheit entscheidet: 1. Besseres Endstichresultat, 2. Höhere nicht gezählte Schwini-Passe</p>';
+        $html = $this->ranglisteHeader('Partner ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createPartnerRankingTable($data);
         $html .= $this->createHTMLFooter();
 
@@ -1129,52 +1111,31 @@ class PartnerRankingReport extends PDFGenerator
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Rang</th>
-                    <th align="left">Name</th>
-                    <th align="center">Endstich</th>
-                    <th align="center">Beste Schwini</th>
-                    <th align="center">Total</th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th class="r">Endstich</th>
+                    <th class="r">Schwini</th>
+                    <th class="r">2. Passe</th>
+                    <th class="r">Total</th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         foreach ($data as $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
-
-            // Formatiere beste Schwini mit Hinweis auf andere Passe
-            $schwini_display = number_format($row['Schwini_Beste_Passe'], 1);
-            if ($row['Schwini_Andere_Passe'] > 0) {
-                $schwini_display .= ' (' . number_format($row['Schwini_Andere_Passe'], 1) . ')';
-            }
-
-            $html .= "<tr>";
-            $html .= "<td align=\"left\" $bold>$rang.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['PartnerName']}</td>";
-            $html .= "<td align=\"center\" $bold>" . number_format($row['Endstich_Summe'], 1) . "</td>";
-            $html .= "<td align=\"center\" $bold>$schwini_display</td>";
-            $html .= "<td align=\"center\" $bold style=\"font-weight: bold;\">" . number_format($row['Total_Summe'], 1) . "</td>";
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['PartnerName']}</td>";
+            $html .= '<td class="r">' . pdf_strich_wenn_null(fmtNoTrailingZero($row['Endstich_Summe'])) . '</td>';
+            $html .= '<td class="r">' . pdf_strich_wenn_null(fmtNoTrailingZero($row['Schwini_Beste_Passe'])) . '</td>';
+            $html .= '<td class="r">' . pdf_strich_wenn_null(fmtNoTrailingZero($row['Schwini_Andere_Passe'])) . '</td>';
+            $html .= '<td class="r">' . fmtNoTrailingZero($row['Total_Summe']) . '</td>';
             $html .= "</tr>";
-
-            // Trennlinie nach Rang 3
-            if ($rang == 3) {
-                $html .= '<tr>';
-                for ($i = 0; $i < 5; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
 
             $rang++;
         }
 
         $html .= '</tbody></table>';
 
-        // Erklärung hinzufügen
-        $html .= '<div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #0d6efd; font-size: 9px;">';
-        $html .= '<strong>Erläuterung:</strong><br/>';
-        $html .= 'â€¢ <strong>Beste Schwini:</strong> Die höhere der beiden Passen wird gezählt<br/>';
-        $html .= 'â€¢ Wert in Klammern (x.x) = Nicht gezählte Passe (wird bei Gleichstand berücksichtigt)<br/>';
-        $html .= 'â€¢ <strong>Total</strong> = Endstich + Beste Schwini-Passe';
-        $html .= '</div>';
+        $html .= '<p class="rl-hinweis">Total = Endstich (10 Schuss) + bessere Schwini-Passe (6 Schuss). '
+               . 'Bei Gleichstand entscheiden der Endstich, dann die 2. Schwini-Passe.</p>';
 
         return $html;
     }
@@ -1201,10 +1162,7 @@ class SieErReport extends PDFGenerator
             return $b['SpecialTotal'] - $a['SpecialTotal'];
         });
 
-        $html = $this->createHTMLHeader('SieEr Rangliste ' . $this->selectedYear);
-        $html .= '<h2>Sie und Er Rangliste ' . $this->selectedYear . '</h2>';
-        $html .= '<p><strong>Spezielle Berechnung: Jeder Wert wird nur einmal gezählt</strong></p>';
-        $html .= '<p>Beispiel: 3x 10er = nur eine 10 für die Summe</p>';
+        $html = $this->ranglisteHeader('Sie und Er ' . $this->selectedYear, 'Endschiessen · Rangliste');
         $html .= $this->createSieErTable($data);
         $html .= $this->createHTMLFooter();
 
@@ -1220,141 +1178,48 @@ class SieErReport extends PDFGenerator
 
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th style="width: 5%; text-align: left;">Rang</th>
-                    <th style="width: 20%; text-align: left;">Name</th>
-                    <th style="width: 15%; text-align: left;">Partner</th>
-                    <th style="width: 50%; text-align: center;">Sie und Er Schüsse</th>
-                    <th style="width: 10%; text-align: center;">Total*</th>
+                    <th class="r">Rang</th>
+                    <th>Name</th>
+                    <th>Partner</th>
+                    <th colspan="10">Schüsse</th>
+                    <th class="r">Total</th>
                   </tr></thead><tbody>';
 
         $rang = 1;
         foreach ($data as $row) {
-            $bold = ($rang <= 3) ? 'font-weight: bold;' : '';
-
-            // Sammle Schüsse mit Quelleninfo
-            $partnerShots = [];
-            $mitgliedShots = [];
-            $allValues = [];
-
-            // Partner Schüsse (1-5)
-            for ($i = 1; $i <= 5; $i++) {
-                if ($row['SieErSchuss' . $i] !== null && $row['SieErSchuss' . $i] > 0) {
-                    $partnerShots[] = $row['SieErSchuss' . $i];
-                    $allValues[] = (int) $row['SieErSchuss' . $i];
+            // Schüsse der Partnerin bzw. des Partners (1–5) zuerst, dann die der erstgenannten Person (6–10).
+            // Jeder Wert zählt nur einmal: Wiederholungen grau und durchgestrichen.
+            $gezaehlt = [];
+            $zellen = '';
+            for ($i = 1; $i <= 10; $i++) {
+                $v = $row['SieErSchuss' . $i];
+                $trenner = $i === 6 ? ' style="padding-left: 4mm;"' : '';
+                if ($v === null || $v <= 0) {
+                    $zellen .= "<td class=\"r\"$trenner></td>";
+                    continue;
                 }
-            }
-
-            // Mitglied Schüsse (6-10)
-            for ($i = 6; $i <= 10; $i++) {
-                if ($row['SieErSchuss' . $i] !== null && $row['SieErSchuss' . $i] > 0) {
-                    $mitgliedShots[] = $row['SieErSchuss' . $i];
-                    $allValues[] = (int) $row['SieErSchuss' . $i];
-                }
-            }
-
-            // Berechne welche Werte unique sind
-            $valueCount = array_count_values($allValues);
-            $shownValues = [];
-
-            // Erstelle Badge-HTML für Schüsse mit PDF-kompatiblem Inline-Style
-            $shotsDisplay = '';
-
-            // Partner Badges (rot)
-            foreach ($partnerShots as $shot) {
-                $intShot = (int) $shot;
-                if (in_array($intShot, $shownValues)) {
-                    // Duplikat - durchgestrichen mit hellem Hintergrund
-                    $shotsDisplay .= '<span style="' .
-                        'background-color: #ffcccc; ' .
-                        'color: #cc0000; ' .
-                        'border: 1px solid #cc0000; ' .
-                        'padding: 2px 5px; ' .
-                        'margin: 0 2px; ' .
-                        'font-size: 10px; ' .
-                        'font-weight: 600; ' .
-                        'text-decoration: line-through; ' .
-                        'border-radius: 3px; ' .
-                        '">' . $shot . '</span>';
+                $w = (int) $v;
+                if (in_array($w, $gezaehlt, true)) {
+                    $zellen .= "<td class=\"r\"$trenner><span class=\"muted\" style=\"text-decoration: line-through; font-weight: normal;\">$w</span></td>";
                 } else {
-                    // Erstes Vorkommen - volle Farbe
-                    $shotsDisplay .= '<span style="' .
-                        'background-color: #dc3545; ' .
-                        'color: white; ' .
-                        'border: 1px solid #dc3545; ' .
-                        'padding: 2px 5px; ' .
-                        'margin: 0 2px; ' .
-                        'font-size: 10px; ' .
-                        'font-weight: 600; ' .
-                        'border-radius: 3px; ' .
-                        '">' . $shot . '</span>';
-                    $shownValues[] = $intShot;
+                    $gezaehlt[] = $w;
+                    $zellen .= "<td class=\"r\"$trenner>$w</td>";
                 }
             }
 
-            // Trennstrich zwischen Partner und Mitglied
-            if (!empty($partnerShots) && !empty($mitgliedShots)) {
-                $shotsDisplay .= ' <span style="color: #999; margin: 0 3px; font-weight: bold;">|</span> ';
-            }
-
-            // Mitglied Badges (blau)
-            foreach ($mitgliedShots as $shot) {
-                $intShot = (int) $shot;
-                if (in_array($intShot, $shownValues)) {
-                    // Duplikat - durchgestrichen mit hellem Hintergrund
-                    $shotsDisplay .= '<span style="' .
-                        'background-color: #cce5ff; ' .
-                        'color: #004085; ' .
-                        'border: 1px solid #004085; ' .
-                        'padding: 2px 5px; ' .
-                        'margin: 0 2px; ' .
-                        'font-size: 10px; ' .
-                        'font-weight: 600; ' .
-                        'text-decoration: line-through; ' .
-                        'border-radius: 3px; ' .
-                        '">' . $shot . '</span>';
-                } else {
-                    // Erstes Vorkommen - volle Farbe
-                    $shotsDisplay .= '<span style="' .
-                        'background-color: #0d6efd; ' .
-                        'color: white; ' .
-                        'border: 1px solid #0d6efd; ' .
-                        'padding: 2px 5px; ' .
-                        'margin: 0 2px; ' .
-                        'font-size: 10px; ' .
-                        'font-weight: 600; ' .
-                        'border-radius: 3px; ' .
-                        '">' . $shot . '</span>';
-                    $shownValues[] = $intShot;
-                }
-            }
-
-            $html .= '<tr>';
-            $html .= '<td style="text-align: left; ' . $bold . '">' . $rang . '.</td>';
-            $html .= '<td style="text-align: left; ' . $bold . '">' . $row['Name'] . ' ' . $row['Vorname'] . '</td>';
-            $html .= '<td style="text-align: left; ' . $bold . '">' . $row['PartnerName'] . '</td>';
-            $html .= '<td style="text-align: center; padding: 5px;">' . $shotsDisplay . '</td>';
-            $html .= '<td style="text-align: center; font-weight: bold; ' . $bold . '">' . $row['SpecialTotal'] . '</td>';
+            $html .= $this->zeileAnfang($rang);
+            $html .= '<td>' . $row['Name'] . ' ' . $row['Vorname'] . '</td>';
+            $html .= '<td>' . $row['PartnerName'] . '</td>';
+            $html .= $zellen;
+            $html .= '<td class="r">' . $row['SpecialTotal'] . '</td>';
             $html .= '</tr>';
-
-            // Trennlinie nach Rang 3
-            if ($rang == 3) {
-                $html .= '<tr><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 3px;"></td></tr>';
-            }
 
             $rang++;
         }
 
         $html .= '</tbody></table>';
-
-        // Erklärungsbox am Ende
-        $html .= '<div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #0d6efd; font-size: 9px;">';
-        $html .= '<strong>Erläuterung zur speziellen Berechnung:</strong><br/>';
-        $html .= 'â€¢ <span style="background-color: #dc3545; color: white; padding: 1px 4px; border-radius: 2px;">Rot</span> = Schüsse der Partnerin bzw. des Partners<br/>';
-        $html .= 'â€¢ <span style="background-color: #0d6efd; color: white; padding: 1px 4px; border-radius: 2px;">Blau</span> = Schüsse der erstgenannten Person<br/>';
-        $html .= 'â€¢ <span style="text-decoration: line-through;">Durchgestrichen</span> = Duplikate (zählen nicht für Total)<br/>';
-        $html .= 'â€¢ <strong>Total*</strong>: Jeder einzigartige Wert wird nur einmal gezählt<br/>';
-        $html .= 'â€¢ Beispiel: Wenn 3x die "10" geschossen wurde, zählt sie nur 1x für das Total';
-        $html .= '</div>';
+        $html .= '<p class="rl-hinweis">Jeder Wert zählt nur einmal: Wiederholungen sind durchgestrichen und zählen nicht zum Total. '
+               . 'Links die Schüsse der Partnerin bzw. des Partners (sie zählen zuerst), rechts die der erstgenannten Person.</p>';
 
         return $html;
     }

@@ -1,5 +1,77 @@
 [
   {
+    "version": "1.68.29",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Jahresmeisterschaft: Erfassen und Rangliste auf einer Seite",
+        "beschreibung": "«Jahresmeisterschaft erfassen» und «Jahresmeisterschaft Rangliste» sind eine Seite: oben die Anlässe, darunter die Rangliste, im Kopf Import, Veröffentlichen und die PDF-Ranglisten mit Direktdruck. Der Menüeintrag «Jahresmeisterschaft Rangliste» bleibt und springt direkt zur Rangliste. Ein Klick auf einen Anlass im Spaltenkopf der Rangliste öffnet die Erfassung dieses Anlasses.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Heimmeisterschaft und Kantonalstich: Rangliste im Erfassungsraster",
+        "beschreibung": "Vor jedem Namen steht der Rang in seiner Kategorie (z.B. «A 3.») und rechnet beim Tippen mit. Der Umschalter «Name | Rang» sortiert das Raster nach Name oder nach Kat. A, Kat. B und Rang. Die PDF-Rangliste und der Direktdruck stehen im Kopf der Erfassung. Die Menüeinträge «Heimmeisterschaft Rangliste» und «Kantonalstich Rangliste» bleiben und öffnen die Erfassung mit Sortierung «Rang».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen: Erfassen und Rangliste auf einer Seite",
+        "beschreibung": "«Endschiessen Resultate erfassen» und «Endschiessen Rangliste» sind eine Seite mit zwei Ansichten derselben Tabelle, umschaltbar neben dem Jahr. «Erfassen» sortiert nach Name, «Rangliste» nach Kat. A, Kat. B und Rang und zeigt darunter, wer ohne Wertung bleibt und warum. Die Prüfliste «Absenden vorbereiten» und alle Dokumente stehen in der Ansicht «Rangliste». In beiden Ansichten stehen Rang und Total, gerechnet wie die Gesamtrangliste im PDF, und ein Klick auf eine Zeile öffnet die Erfassung. Beide Menüeinträge bleiben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Vereinscup: Rangliste im Kopf der Erfassung",
+        "beschreibung": "Die Rangliste als PDF und der Direktdruck stehen auf «Vereinscup erfassen» oben im Kopf statt in der Werkzeugleiste. Der Menüeintrag «Vereinscup Rangliste» öffnet die Erfassung.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft: Gleichstand entscheidet der Endstich",
+        "beschreibung": "Bei gleichem Total steht neu vorne, wer im Endstich mehr hat. Erst bei gleichem Total und gleichem Endstich teilen sich zwei denselben Rang. Gilt auf dem Bildschirm, in der PDF-Rangliste nach Rang und im Absendenbuch.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.28",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Ranglisten-PDFs im Stil des Absendenbuchs",
+        "beschreibung": "Alle Ranglisten-PDFs sehen gleich aus wie die Ranglisten im Absendenbuch: Logo links, daneben Titel und Jahr, schwarz auf weiss ohne Rahmen, die ersten drei fett, Zahlen rechtsbündig, unten Stand und Seitenzahl. Betroffen sind Endschiessen (alle Ranglisten), Heimmeisterschaft, Kantonalstich, Sektionsmeisterschaft, Jahresmeisterschaft nach Rang und nach Name, JM-Durchschnitt, Vereinscup, Einzel- und Sektionsrangierungen. Nicht geschossene Stiche und fehlender Tiefschuss zeigen «–» statt «0», der Glückstich wie im Buch den besten Schuss und die weiteren Schüsse. Die Farben auf der Seite «PDF-Vorlage» gelten nur noch für die übrigen PDFs. Nicht mehr verwendete Generatoren sind entfernt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.27",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: Nuller im ersten Schuss fällt nicht mehr aus der Rangliste",
+        "beschreibung": "Wer im ersten Schuss eine 0 hatte, fehlte in der Differenzler-Rangliste und in der Zabig-Rangliste des Absendenbuchs. Neu zählt, ob überhaupt ein Schuss getroffen hat. Dasselbe gilt für Kunst und Glück in den Ranglisten, im Absendenbuch, bei «Aus Ranglisten übernehmen» und in der Schützenabrechnung.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.26",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Rangliste: alle Einzelwettbewerbe in einem PDF",
+        "beschreibung": "In den Dokumenten steht unter «Einzelwettbewerbe» neu «Alle Einzelwettbewerbe»: Endstich, Schwini, Kunst, Glück, Zabig und Differenzler in einer Datei, jede Rangliste auf einer eigenen Seite. Der Drucker daneben druckt alles in einem Auftrag. Ranglisten ohne Resultate fallen weg.",
+        "typ": "feature",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.25",
     "datum": "2026-10-14",
     "aenderungen": [

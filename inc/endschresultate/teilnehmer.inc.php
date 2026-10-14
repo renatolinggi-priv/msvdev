@@ -128,7 +128,8 @@ function endschZabigPunkteSql(): string
 /**
  * Gesamtrangliste Endschiessen einer Kategorie (PDF-Gesamt- und Zwischenrangliste, «Sieger der letzten Jahre»).
  * Mitglieder der Kategorie mit Endstich; Gäste (ohne Jungschützen) nur in Kat. B und nur mit allen gewerteten
- * Stichen. Spalten: TeilnehmerTyp, Name, Vorname, Geburtsdatum, ZabigTotal, GlueckTotal, EndstichTotal,
+ * Stichen. Auch die Bildschirm-Rangliste auf «Endschiessen Resultate erfassen» (Rang und Total je Zeile) nutzt sie.
+ * Spalten: TeilnehmerTyp, Schluessel (m<ID>/g<ID>), Name, Vorname, Geburtsdatum, ZabigTotal, GlueckTotal, EndstichTotal,
  * KunstTotal, MaxSchwini, GesamtTotal; sortiert nach GesamtTotal, EndstichTotal, Geburtsdatum.
  * Rückgabe ['sql', 'types', 'params'] für bind_param.
  */
@@ -138,6 +139,7 @@ function endschGesamtAbfrage(string $kat, int $jahr, bool $includeZabig = true):
 
     $sql = "(SELECT
             'mitglied' AS TeilnehmerTyp,
+            CONCAT('m', m.ID) AS Schluessel,
             CONVERT(m.Name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
             CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
             m.Geburtsdatum,
@@ -178,6 +180,7 @@ function endschGesamtAbfrage(string $kat, int $jahr, bool $includeZabig = true):
         UNION ALL
         (SELECT
             'gast' AS TeilnehmerTyp,
+            CONCAT('g', ga.id) AS Schluessel,
             CONVERT(ga.name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
             CONVERT('' USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,
             DATE('2100-01-01') AS Geburtsdatum,

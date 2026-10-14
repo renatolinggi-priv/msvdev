@@ -388,12 +388,21 @@ foreach ($resultData as &$mData) {
         }
     }
     $mData['hasResult'] = $hasResult;
+    // Endstich für den Gleichstand (auch wenn er als Streicher gestrichen ist)
+    $mData['endstichPunkte'] = 0.0;
+    if ($endstichID && !empty($mData['wettbewerbe'][$endstichID])) {
+        foreach ($mData['wettbewerbe'][$endstichID] as $p) {
+            if (!is_array($p)) { $mData['endstichPunkte'] += (float)$p; continue; }
+            if (empty($p['placeholder'])) $mData['endstichPunkte'] += (float)$p['punkte'];
+        }
+    }
 }
 unset($mData);
 
 // ======= 8. Sortieren =======
 // Zuerst Schützen MIT gewertetem Resultat, danach jene ohne (separate Gruppe).
-// Innerhalb "mit Resultat": nach dem Endstich nach Total DESC (Rangliste),
+// Innerhalb "mit Resultat": nach dem Endstich nach Total DESC (Rangliste), bei
+// gleichem Total vorne, wer im Endstich mehr hat (Entscheid 14.10.2026);
 // vorher alphabetisch. "Ohne Resultat" immer alphabetisch.
 usort($resultData, function($a, $b) use ($endstichDone) {
     if (($a['hasResult'] ?? false) !== ($b['hasResult'] ?? false)) {
@@ -401,6 +410,8 @@ usort($resultData, function($a, $b) use ($endstichDone) {
     }
     if (($a['hasResult'] ?? false) && $endstichDone) {
         $cmp = $b['sumTotal'] <=> $a['sumTotal'];
+        if ($cmp !== 0) return $cmp;
+        $cmp = $b['endstichPunkte'] <=> $a['endstichPunkte'];
         if ($cmp !== 0) return $cmp;
     }
     return strnatcasecmp($a['mitglied']['Name'], $b['mitglied']['Name']);
@@ -479,8 +490,10 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
     $theadHtml  = "<tr>";
     $theadHtml .= "<th class='jm-th-rang'>Rang</th>";
     $theadHtml .= "<th class='jm-th-name'>Name</th>";
+    // Spaltenkopf = Knopf: öffnet auf «Jahresmeisterschaft erfassen» die Erfassung dieses Anlasses
     foreach ($mainDefs as $def) {
-        $theadHtml .= "<th class='jm-th-result text-center' data-tooltip='" . h($def['Bezeichnung']) . "'><span class='jm-th-label'>" . h($def['Bezeichnung']) . "</span></th>";
+        $theadHtml .= "<th class='jm-th-result text-center'><button type='button' class='jm-th-anlass' data-jmdef='" . (int)$def['ID'] . "'"
+            . " data-tooltip='" . h($def['Bezeichnung']) . " · Resultate erfassen'><span class='jm-th-label'>" . h($def['Bezeichnung']) . "</span></button></th>";
     }
     $theadHtml .= "<th class='jm-th-total text-center'>Total</th>";
     $theadHtml .= "<th class='jm-th-toggle'></th>";
@@ -493,7 +506,7 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
     foreach ($resultData as $e) { if (empty($e['hasResult'])) $noResultCount++; }
 
     $tbodyHtml = "";
-    $actualPosition = 0; $currentRank = 0; $previousScore = null; $rowIdx = 0;
+    $actualPosition = 0; $currentRank = 0; $previousScore = null; $previousEndstich = null; $rowIdx = 0;
     $noResultHeaderShown = false;
 
     foreach ($resultData as $entry) {
@@ -510,9 +523,11 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
         $sumTotal = $entry['sumTotal'];
         if ($hasResult) {
             $actualPosition++;
-            if ($sumTotal !== $previousScore) {
+            // Geteilter Rang nur bei gleichem Total UND gleichem Endstich
+            if ($sumTotal !== $previousScore || $entry['endstichPunkte'] !== $previousEndstich) {
                 $currentRank = $actualPosition;
                 $previousScore = $sumTotal;
+                $previousEndstich = $entry['endstichPunkte'];
             }
         }
         $m = $entry['mitglied'];

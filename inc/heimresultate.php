@@ -1,6 +1,9 @@
 <?php
-// heimresultate.php – Raster pro Mitglied (8 Passen) und Schnellerfassung im Slide-Panel
+// heimresultate.php – Raster pro Mitglied (8 Passen) und Schnellerfassung im Slide-Panel.
+// Seit 1.68.29 auch die Rangliste: Rang je Kategorie im Raster, Sortierung «Name | Rang», PDF + Direktdruck im Kopf.
+// heimrang.php leitet hierher weiter (?sortierung=rang).
 include 'dbconnect.inc.php';
+$__hkSortRang = (($_GET['sortierung'] ?? '') === 'rang');
 
 // Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
 $page_specific_css = "
@@ -23,6 +26,9 @@ $page_specific_css = "
 .hk-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ui-text); }
 .hk-anzahl { flex: none; font-size: .75rem; color: var(--ui-text-3); font-variant-numeric: tabular-nums; }
 .hk-anzahl.voll { color: var(--ui-ok-fg); font-weight: 600; }
+/* Rang je Kategorie vor dem Namen («A 3.»), rechnet beim Tippen mit; ersetzt die Seite «Heimmeisterschaft Rangliste» */
+.hk-rang { flex: none; width: 2.6rem; font-size: .8rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.hk-rang:empty::before { content: '–'; font-weight: 400; color: var(--ui-leer); }
 tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; background: var(--ui-akzent); vertical-align: middle; }
 .hk-chip-ungespeichert .ui-punkt { background: var(--ui-akzent) !important; }
 #hkScroll #heimresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid var(--ui-rand-stark) !important; border-radius: 6px !important; box-shadow: none; }
@@ -102,8 +108,11 @@ $csrf = csrf_token();
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
                 $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1"></i>Schnellerfassung</button>'
-                    . '<button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm"><i class="bi bi-list-ol me-1"></i>Rangliste</button>'
                     . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>'
+                    . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
+                    . '<button type="button" class="btn btn-outline-info" id="hkPdfBtn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
+                    . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="heimrang" data-druck-label="Heimmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+                    . '</div>'
                     . '<button type="submit" form="heimresultateForm" class="btn btn-primary btn-sm" id="rasterSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>';
                 $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
                     . '<div class="ui-chips" id="progressChips"></div>';
@@ -116,7 +125,11 @@ $csrf = csrf_token();
 
                     <div class="ui-tab-kopf">
                         <span class="ui-tab-titel">Mitglieder <button type="button" class="btn-help" data-help="heimresultate.tabelle" aria-label="Hilfe"></button></span>
-                        <div class="ui-filter d-none d-md-flex" role="group" aria-label="Nach Resultaten filtern">
+                        <div class="ui-filter" role="group" aria-label="Sortierung" id="hkSortierung" data-tooltip="«Rang»: nach Kategorie und Total, ordnet nach dem Speichern neu">
+                            <button type="button" data-sort="name" aria-pressed="<?= $__hkSortRang ? 'false' : 'true' ?>">Name</button>
+                            <button type="button" data-sort="rang" aria-pressed="<?= $__hkSortRang ? 'true' : 'false' ?>">Rang</button>
+                        </div>
+                        <div class="ui-filter d-none d-md-flex" role="group" aria-label="Nach Resultaten filtern" id="hkFilterGruppe">
                             <button type="button" data-filter="alle" aria-pressed="true">Alle <span id="nAlle">0</span></button>
                             <button type="button" data-filter="mit" aria-pressed="false">Mit Resultaten <span id="nMit">0</span></button>
                             <button type="button" data-filter="ohne" aria-pressed="false">Ohne <span id="nOhne">0</span></button>
@@ -245,8 +258,15 @@ $(document).ready(function() {
     });
 
     // ===== Jahr-Dropdown =====
+    // ?year= kommt von der Weiterleitung aus heimrang.php; danach aus der Adresse nehmen
     function initializeYearDropdown() {
-        msvJahrAuswahl('#yearSelect');
+        var params = new URLSearchParams(location.search);
+        msvJahrAuswahl('#yearSelect', { jahr: params.get('year') });
+        if (params.has('year')) {
+            var url = new URL(location.href);
+            url.searchParams.delete('year');
+            history.replaceState(null, '', url);
+        }
     }
 
     // ===== Resultate laden =====
@@ -270,9 +290,9 @@ $(document).ready(function() {
                 $tbody.html(response);
                 geaendert.clear();
                 bindDesktopInputs();
-                updateHeimRowStats();
-                filterAnwenden();
-                EntryPanel.buildIndex();
+                updateHeimRowStats();   // rechnet auch den Rang
+                hkUrsprung = $tbody.children().toArray();
+                sortieren();            // filtert und baut die Reihenfolge der Schnellerfassung
                 buildMobileCards();
             },
             error: function(xhr) {
@@ -318,6 +338,7 @@ $(document).ready(function() {
             this.setAttribute('data-stand', filled ? 'mit' : 'ohne');
             this.setAttribute('data-voll', filled === total ? '1' : '0');
         });
+        rangBerechnen();
         zaehlen();
     }
 
@@ -358,18 +379,79 @@ $(document).ready(function() {
                 '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="hkFilterZurueck">Filter zurücksetzen</button></td></tr>');
         }
     }
-    $(document).on('click', '.ui-filter button', function() {
+    $(document).on('click', '#hkFilterGruppe button', function() {
         hkFilter = $(this).data('filter');
-        $('.ui-filter button').attr('aria-pressed', 'false');
+        $('#hkFilterGruppe button').attr('aria-pressed', 'false');
         $(this).attr('aria-pressed', 'true');
         filterAnwenden();
     });
     $('#hkSuche').on('input', function() { hkSuchtext = this.value.trim().toLowerCase(); filterAnwenden(); });
     $(document).on('click', '#hkFilterZurueck', function() {
         hkFilter = 'alle'; hkSuchtext = ''; $('#hkSuche').val('');
-        $('.ui-filter button').attr('aria-pressed', 'false');
-        $('.ui-filter button[data-filter="alle"]').attr('aria-pressed', 'true');
+        $('#hkFilterGruppe button').attr('aria-pressed', 'false');
+        $('#hkFilterGruppe button[data-filter="alle"]').attr('aria-pressed', 'true');
         filterAnwenden();
+    });
+
+    // ===== Rang je Kategorie (Regel wie die PDF-Rangliste: nur Total > 0, gleiches Total = gleicher Rang) =====
+    function rangBerechnen() {
+        var proKat = { A: [], B: [] };
+        $('#heimresultateTabelle tbody tr[data-stand]').each(function() {
+            var summe = 0;
+            $(this).find('input.small-input').each(function() { summe += parseInt(this.value, 10) || 0; });
+            this.removeAttribute('data-rang');
+            var kat = this.getAttribute('data-kat');
+            if (summe > 0 && proKat[kat]) proKat[kat].push({ tr: this, summe: summe });
+        });
+        Object.keys(proKat).forEach(function(kat) {
+            var liste = proKat[kat].sort(function(a, b) { return b.summe - a.summe; });
+            liste.forEach(function(x, i) {
+                x.rang = (i > 0 && liste[i - 1].summe === x.summe) ? liste[i - 1].rang : i + 1;
+                x.tr.setAttribute('data-rang', x.rang);
+            });
+        });
+        $('#heimresultateTabelle tbody tr[data-stand]').each(function() {
+            var r = this.getAttribute('data-rang'), kat = this.getAttribute('data-kat');
+            $(this).find('.hk-rang').text(r ? kat + ' ' + r + '.' : '').attr('data-tooltip', r ? 'Rang in Kat. ' + kat : null);
+        });
+    }
+
+    // ===== Sortierung «Name» (wie geladen) / «Rang» (Kat. A, Kat. B, dann ohne Rang) =====
+    // Beim Tippen rechnet nur der Rang mit; die Zeilen ordnen sich erst nach dem Speichern bzw. beim Umschalten neu.
+    var hkSort = new URLSearchParams(location.search).get('sortierung') === 'rang' ? 'rang' : 'name';
+    var hkUrsprung = [];   // Zeilen in der geladenen Reihenfolge, mit Gruppen-Überschriften
+    function sortieren() {
+        var $tbody = $('#heimresultateTabelle tbody');
+        $tbody.children('tr.hk-kat-kopf').remove();
+        if (hkUrsprung.length) {
+            if (hkSort === 'name') {
+                $tbody.append(hkUrsprung);
+            } else {
+                var zeilen = hkUrsprung.filter(function(tr) { return tr.hasAttribute('data-stand'); });
+                $(hkUrsprung).filter('tr.group-header').detach();
+                var kopf = function(text) {
+                    return $('<tr class="group-header hk-kat-kopf"><td colspan="10" class="group-header-cell"></td></tr>').find('td').text(text).end();
+                };
+                ['A', 'B'].forEach(function(kat) {
+                    var g = zeilen.filter(function(tr) { return tr.getAttribute('data-kat') === kat && tr.hasAttribute('data-rang'); })
+                        .sort(function(a, b) { return a.getAttribute('data-rang') - b.getAttribute('data-rang'); }); // stabil: bei gleichem Rang alphabetisch
+                    if (g.length) $tbody.append(kopf('Kat. ' + kat + ' (' + g.length + ')'), g);
+                });
+                var ohne = zeilen.filter(function(tr) { return !tr.hasAttribute('data-rang'); });
+                if (ohne.length) $tbody.append(kopf('Ohne Rang (' + ohne.length + ')'), ohne);
+            }
+        }
+        filterAnwenden();
+        EntryPanel.buildIndex();
+    }
+    $('#hkSortierung').on('click', 'button', function() {
+        hkSort = this.getAttribute('data-sort');
+        $('#hkSortierung button').each(function() { this.setAttribute('aria-pressed', String(this.getAttribute('data-sort') === hkSort)); });
+        var url = new URL(location.href);
+        if (hkSort === 'rang') url.searchParams.set('sortierung', 'rang'); else url.searchParams.delete('sortierung');
+        history.replaceState(null, '', url);
+        sortieren();
+        buildMobileCards();
     });
 
     // Input-Listener für Echtzeit-Updates
@@ -420,7 +502,8 @@ $(document).ready(function() {
             // Header
             cardHtml += '<div class="member-card-header">';
             cardHtml += '  <div>';
-            cardHtml += '    <div class="member-name">' + escapeHtml(name) + '</div>';
+            var rang = $tr.find('.hk-rang').text().trim();
+            cardHtml += '    <div class="member-name">' + (rang ? '<span class="hk-rang">' + escapeHtml(rang) + '</span> ' : '') + escapeHtml(name) + '</div>';
             if (hasValues) {
                 cardHtml += '    <div class="member-summary">' + summaryParts.join(' · ') + '</div>';
             } else {
@@ -698,8 +781,22 @@ $(document).ready(function() {
     });
 
 
-    // ===== Rangliste =====
-    $('#redirect-btn').on('click', function() { window.location.href = 'heimrang.php'; });
+    // ===== Rangliste als PDF (vorher heimrang.php; Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast) =====
+    $('#hkPdfBtn').on('click', function(e) {
+        e.preventDefault();
+        var jahr = $('#yearSelect').val();
+        msvAusgabe(this, {
+            url: 'heimrang/generate_pdf.php',
+            data: {
+                year: jahr,
+                kat: 'B',
+                orientation: window.MsvDruck ? MsvDruck.orientierung('heimrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
+            },
+            titel: 'Heimmeisterschaft Rangliste ' + jahr,
+            name: 'Heimmeisterschaft_Rangliste_' + jahr,
+            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
+        });
+    });
 
     // ===== Jahreswechsel (fragt nach, wenn im Raster noch nicht gespeichert wurde) =====
     var aktuellesJahr = null;
@@ -1065,6 +1162,15 @@ $(document).ready(function() {
     initializeYearDropdown();
     aktuellesJahr = $('#yearSelect').val();
     loadResultate(aktuellesJahr);
+});
+</script>
+
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+// Direktdruck (QZ Tray), Profil «Heimmeisterschaft Rangliste» (A4 quer); kat=B wie beim PDF-Knopf
+MsvDruck.resolve('heimrang', () => {
+    const jahr = document.getElementById('yearSelect').value;
+    return { url: 'heimrang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&kat=B&orientation=' + MsvDruck.orientierung('heimrang', 'landscape'), jobName: 'Heimmeisterschaft Rangliste ' + jahr };
 });
 </script>
 

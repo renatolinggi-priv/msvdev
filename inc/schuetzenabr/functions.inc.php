@@ -93,7 +93,7 @@ FROM
     mitglieder m
 LEFT JOIN kunst k ON m.ID = k.MitgliedID
 LEFT JOIN Waffen w ON w.ID = m.WaffenID
-WHERE k.KSchuss1 != 0 and m.ID = ? AND k.Jahr = ?
+WHERE COALESCE(k.KSchuss1 + k.KSchuss2 + k.KSchuss3 + k.KSchuss4 + k.KSchuss5, 0) != 0 and m.ID = ? AND k.Jahr = ?
 GROUP BY
     m.ID, m.Vorname, m.Name, m.Geburtsdatum
 ORDER BY

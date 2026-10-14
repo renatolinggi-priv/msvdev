@@ -1,12 +1,20 @@
 <?php
-// jmresultate.php – JM-Resultate Anlass für Anlass erfassen (Karten + Slide-Panel), Kontroll-Rangliste Kat. A/B
+// jmresultate.php – Jahresmeisterschaft auf einer Seite (seit 1.68.29): Anlass-Karten + Slide-Panel zum Erfassen,
+// darunter die Rangliste Kat. A/B, im Kopf Import, Veröffentlichen und die Ausgaben (PDF, Direktdruck).
+// jmrang.php leitet hierher weiter (#rangliste), der Menüeintrag «Jahresmeisterschaft Rangliste» bleibt.
 include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
 $page_specific_css = "
-/* Seite scrollt normal: Kopf-Card, Anlässe, zwei Kontroll-Ranglisten */
+/* Seite scrollt normal: Kopf-Card, Anlässe, zwei Ranglisten */
 .jm-karte { margin-bottom: 14px; overflow: hidden; }
+#rangliste { scroll-margin-top: 80px; }
 .jm-kopf-hinweis { font-size: .8rem; color: var(--ui-text-2); }
+
+/* Anlass im Spaltenkopf der Rangliste: öffnet die Erfassung dieses Anlasses */
+.jm-th-anlass { display: block; width: 100%; margin: 0; padding: 2px 4px; border: 0; border-radius: 6px; background: transparent; font: inherit; color: inherit; cursor: pointer; }
+.jm-th-anlass:hover { background: var(--ui-hover); color: var(--ui-text); }
+.jm-th-anlass:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
 
 /* Anlass-Karten */
 .jm-anlaesse { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 14px var(--ui-pad) var(--ui-pad); }
@@ -160,10 +168,18 @@ try {
                 $page_title_after = '<button type="button" class="btn-help" data-help="jmresultate.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+                // Erfassen (Import, Veröffentlichen), dann die Ausgaben (PDF + Direktdruck, vorher auf jmrang.php)
                 $page_actions = '<button id="pdf-import-btn" type="button" class="btn btn-outline-success btn-sm"><i class="bi bi-filetype-pdf me-1"></i>PDF importieren</button>'
-                    . '<button id="redirect-btn" type="button" class="btn btn-outline-info btn-sm"><i class="bi bi-list-ol me-1"></i>Rangliste</button>'
                     . '<button id="btnPublishJm" type="button" class="btn btn-outline-secondary btn-sm' . ($__jmUnpublished > 0 ? '' : ' d-none') . '" data-tooltip="Gespeicherte Änderungen im Portal sichtbar machen">'
-                    . '<i class="bi bi-megaphone me-1"></i>Veröffentlichen <span id="publishBadge" class="badge bg-warning text-dark ms-1">' . ($__jmUnpublished > 0 ? (int) $__jmUnpublished : '') . '</span></button>';
+                    . '<i class="bi bi-megaphone me-1"></i>Veröffentlichen <span id="publishBadge" class="badge bg-warning text-dark ms-1">' . ($__jmUnpublished > 0 ? (int) $__jmUnpublished : '') . '</span></button>'
+                    . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste nach Rang">'
+                    . '<button type="button" class="btn btn-outline-info pdfrang-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste nach Rang</span></button>'
+                    . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+                    . '</div>'
+                    . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste nach Name">'
+                    . '<button type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste nach Name</span></button>'
+                    . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+                    . '</div>';
                 $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
                     . '<div class="ui-chips" id="progressChips"></div>';
                 $page_show_mobile = true;
@@ -182,12 +198,12 @@ try {
                     </div>
                 </section>
 
-                <!-- Kontroll-Ranglisten Kat. A / Kat. B (Inhalt aus jmrang/load_jm.php) -->
+                <!-- Ranglisten Kat. A / Kat. B (Inhalt aus jmrang/load_jm.php); #rangliste = Sprungziel aus jmrang.php -->
                 <?php foreach (['A' => 'rankJMA', 'B' => 'rankJMB'] as $__kat => $__tab): ?>
-                <section class="ui-karte jm-karte rank-table-wrapper" aria-label="Rangliste Kat. <?= $__kat ?>">
+                <section class="ui-karte jm-karte rank-table-wrapper"<?= $__kat === 'A' ? ' id="rangliste"' : '' ?> aria-label="Rangliste Kat. <?= $__kat ?>">
                     <div class="ui-tab-kopf">
                         <span class="ui-tab-titel">Rangliste Kat. <?= $__kat ?><?php if ($__kat === 'A'): ?> <button type="button" class="btn-help" data-help="jmresultate.rangliste" aria-label="Hilfe"></button><?php endif; ?></span>
-                        <span class="jm-legende"><span class="jm-cell-strichen">88</span> Streicher, zählt nicht · Zeile anklicken für die Aufschlüsselung</span>
+                        <span class="jm-legende"><span class="jm-cell-strichen">88</span> Streicher, zählt nicht · Zeile anklicken für die Aufschlüsselung · Anlass im Spaltenkopf anklicken zum Erfassen</span>
                     </div>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
@@ -329,14 +345,16 @@ try {
     window.JM_INITIAL_ANLAESSE = <?= json_encode($__jmInitAnlaesse + ['jahr' => $__jmInitYear], JSON_UNESCAPED_UNICODE) ?>;
 </script>
 <script>
-    // Jahr-Auswahl sofort füllen: die Blöcke unten lesen $('#yearSelect').val() beim Start
-    msvJahrAuswahl('#yearSelect');
+    // Jahr-Auswahl sofort füllen: die Blöcke unten lesen $('#yearSelect').val() beim Start.
+    // ?year= kommt von der Weiterleitung aus jmrang.php und von alten Links.
+    msvJahrAuswahl('#yearSelect', { jahr: new URLSearchParams(location.search).get('year') });
 
-    // Rangliste: Ranglisten-Seite im gewählten Jahr
-    $(document).on('click', '#redirect-btn', function () {
-        const y = $('#yearSelect').val();
-        window.location.href = 'jmrang.php' + (y ? '?year=' + encodeURIComponent(y) : '');
-    });
+    // ?year= nach dem Übernehmen aus der Adresse nehmen, sonst erzwingt ein Neuladen das alte Jahr
+    if (new URLSearchParams(location.search).has('year')) {
+        const url = new URL(location.href);
+        url.searchParams.delete('year');
+        history.replaceState(null, '', url);
+    }
 </script>
 <script>
 /**
@@ -666,6 +684,8 @@ try {
         $grid.html(html);
     }
     $(document).on('click', '.jm-anlass', function() { openAnlassPanel($(this).data('id')); });
+    // Spaltenkopf der Rangliste (jmrang/load_jm.php): gleiche Erfassung, in beiden Ansichten
+    $(document).on('click', '.jm-th-anlass', function(e) { e.stopPropagation(); openAnlassPanel($(this).data('jmdef')); });
 
     // Kopf-Card: erfasste Resultate über alle Anlässe, offene Meldungen von Mitgliedern
     function kopfZahlen(anlaesse) {
@@ -1288,6 +1308,39 @@ try {
             .fail(function () { msvToast('Fehler beim Import', 'error'); })
             .always(function () { $btn.prop('disabled', false).html(orig); });
     }
+})();
+</script>
+
+<?php include 'partials/direktdruck_scripts.inc.php'; ?>
+<script>
+/* ===== Ausgaben: Ranglisten als PDF und Direktdruck (vorher jmrang.php) ===== */
+(function () {
+    // Ranglisten als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast).
+    // generate_pdf_jm.php liefert 'jmrang/dat/…', generate_pdf_all_results.php nur 'dat/…' → linkPrefix.
+    function jmRanglistePdf(btn, skript, art) {
+        const jahr = $('#yearSelect').val();
+        msvAusgabe(btn, {
+            url: 'jmrang/' + skript,
+            data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' }, // Format aus dem Druckprofil
+            linkPrefix: 'jmrang/',
+            titel: 'JM Rangliste ' + art + ' ' + jahr,
+            name: 'JM_Rangliste_' + art.replace(/ /g, '_') + '_' + jahr,
+            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
+        });
+    }
+    $('.pdfrang-btn').on('click', function (e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_jm.php', 'nach Rang'); });
+    $('.pdf-btn').on('click', function (e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_all_results.php', 'nach Name'); });
+
+    // Direktdruck (QZ Tray), Profil «JM Rangliste» (A4 quer); Pfad-Asymmetrie der Generatoren → linkPrefix am Button
+    MsvDruck.resolve('jmrang', function (btn) {
+        const jahr = document.getElementById('yearSelect').value;
+        return {
+            url: 'jmrang/' + btn.dataset.druckScript + '?year=' + encodeURIComponent(jahr)
+                + '&orientation=' + MsvDruck.orientierung('jmrang', 'landscape'),
+            jobName: btn.dataset.druckJob + ' ' + jahr,
+            linkPrefix: btn.dataset.druckLinkprefix || ''
+        };
+    });
 })();
 </script>
 

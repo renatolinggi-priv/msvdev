@@ -35,35 +35,11 @@ $htmlOutput = $header;
 $htmlOutput .= "<title>Jahresmeisterschaft $selectedYear</title>";
 $htmlOutput .= "</head>\n<body>\n";
 
-// Logo und Header
-$logoPath = __DIR__ . '/../../images/MSVWilen_Logo.jpg'; // Logo liegt im Root-Ordner images/
-$htmlOutput .= '<div class="pdf-header">';
-if (file_exists($logoPath)) {
-    $htmlOutput .= '<div class="logo-container">';
-    $htmlOutput .= '<img src="' . imgToBase64($logoPath) . '" class="logo" alt="MSV Wilen Logo">';
-    $htmlOutput .= '</div>';
-}
-$htmlOutput .= '<div class="header-text">';
-$htmlOutput .= "<h1>Jahresmeisterschaft $selectedYear</h1>";
-$htmlOutput .= '</div>';
-$htmlOutput .= '</div>';
-
-// 3) Ranglisten erzeugen: Kat. A / Kat. B
+// 3) Ranglisten erzeugen: Kat. A / Kat. B, jede auf eigener Seite mit Kopf
+$htmlOutput .= pdf_rangliste_kopf("Jahresmeisterschaft $selectedYear", 'Rangliste');
 $htmlOutput .= buildJMRangliste($selectedYear, 'Kat. A', $conn);
 $htmlOutput .= "<div class='page-break'></div>";
-
-// Header für zweite Seite wiederholen
-$htmlOutput .= '<div class="pdf-header">';
-if (file_exists($logoPath)) {
-    $htmlOutput .= '<div class="logo-container">';
-    $htmlOutput .= '<img src="' . imgToBase64($logoPath) . '" class="logo" alt="MSV Wilen Logo">';
-    $htmlOutput .= '</div>';
-}
-$htmlOutput .= '<div class="header-text">';
-$htmlOutput .= "<h1>Jahresmeisterschaft $selectedYear</h1>";
-$htmlOutput .= '</div>';
-$htmlOutput .= '</div>';
-
+$htmlOutput .= pdf_rangliste_kopf("Jahresmeisterschaft $selectedYear", 'Rangliste');
 $htmlOutput .= buildJMRangliste($selectedYear, 'Kat. B', $conn);
 
 // 4) Footer
@@ -75,30 +51,13 @@ try {
     $options->set('isHtml5ParserEnabled', true);
     $options->set('isRemoteEnabled', true);
     $options->set('defaultFont', 'Arial');
-    $options->set('isPhpEnabled', true);
 
     $dompdf = new Dompdf($options);
     require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
     $dompdf->setPaper('A4', pdfOrientationParam('landscape')); // Ausrichtung aus dem Druckprofil, Default quer
     $dompdf->loadHtml($htmlOutput);
     $dompdf->render();
-
-    // Canvas holen für Footer - NACH render()!
-    $canvas = $dompdf->getCanvas();
-    $font = $dompdf->getFontMetrics()->get_font("Arial", "normal");
-    
-    // Footer auf jeder Seite hinzufügen
-    $canvas->page_text(20, $canvas->get_height() - 25, 
-        "Erstellt am: " . date('d.m.Y H:i') . " Uhr", 
-        $font, 7, array(0, 0, 0));
-    
-    $canvas->page_text($canvas->get_width() / 2 - 50, $canvas->get_height() - 25, 
-        "MSV Wilen - Jahresmeisterschaft", 
-        $font, 7, array(0, 0, 0));
-    
-    $canvas->page_text($canvas->get_width() - 100, $canvas->get_height() - 25, 
-        "Seite {PAGE_NUM} von {PAGE_COUNT}", 
-        $font, 7, array(0, 0, 0));
+    pdf_seitenfuss($dompdf, "Jahresmeisterschaft $selectedYear");
 
     // PDF-Datei speichern
     $pdfOutput = $dompdf->output();
@@ -245,6 +204,7 @@ function buildJMRangliste($year, $kategorie, $conn) {
             if (isset($resultData[$mid])) {
                 $scaled = scalePoints($pnts, $defByID[$endID]);
                 $resultData[$mid]['wettbewerbe'][$endID][] = $scaled;
+                $resultData[$mid]['endstichPunkte'] = ($resultData[$mid]['endstichPunkte'] ?? 0) + $scaled; // für den Gleichstand
             }
         }
     }
@@ -423,12 +383,11 @@ function buildJMRangliste($year, $kategorie, $conn) {
     }
     unset($mData);
 
-    // 8) Sortierung absteigend
-    usort($resultData, fn($a,$b)=> $b['sumTotal'] <=> $a['sumTotal']);
+    // 8) Sortierung absteigend; bei gleichem Total vorne, wer im Endstich mehr hat (Entscheid 14.10.2026)
+    usort($resultData, fn($a,$b)=> ($b['sumTotal'] <=> $a['sumTotal']) ?: (($b['endstichPunkte'] ?? 0) <=> ($a['endstichPunkte'] ?? 0)));
 
     // 9) HTML-Tabelle mit verbessertem Layout und Rotation
-    $html = '<div class="container">';
-    $html .= '<h2>Kategorie ' . str_replace('Kat. ', '', $kategorie) . '</h2>';
+    $html = '<h2>' . ($kategorie === 'Kat. A' ? 'Kat. A (Standardgewehr)' : 'Kat. B (Ordonnanzwaffen)') . '</h2>';
     
     // Kopfhöhe dynamisch an die längste Bezeichnung anpassen, damit die rotierten
     // Labels vollständig in den Kopf passen und nicht nach oben in den Titel ausbrechen.
@@ -447,9 +406,9 @@ function buildJMRangliste($year, $kategorie, $conn) {
     $nCols  = count($definitions);
     $colPct = $nCols > 0 ? round(78 / $nCols, 4) : 78;
 
-    $html .= '<table class="table" style="width: 100%;">';
+    $html .= '<table class="table jm" style="width: 100%;">';
     $html .= '<thead><tr style="height: ' . $headH . 'px;">';
-    $html .= '<th style="width: 4%; vertical-align: bottom; text-align: center;">Rang</th>';
+    $html .= '<th style="width: 4%; vertical-align: bottom; text-align: right;">Rang</th>';
     // Name-Spalte: schmal, aber breit genug für die längsten Namen auf einer Zeile
     $html .= '<th style="width: 13%; text-align: left; vertical-align: bottom; padding-right: 8px;">Name</th>';
 
@@ -472,78 +431,55 @@ function buildJMRangliste($year, $kategorie, $conn) {
     $actualPos = 0;
     $currRank  = 0;
     $prevScore = null;
+    $prevEndstich = null;
+    $nachPodest = 0;
 
     foreach ($resultData as $entry) {
         $actualPos++;
         $sumTotal = $entry['sumTotal'];
+        $endstich = (float)($entry['endstichPunkte'] ?? 0);
 
-        if ($sumTotal !== $prevScore) {
+        // Geteilter Rang nur bei gleichem Total UND gleichem Endstich
+        if ($sumTotal !== $prevScore || $endstich !== $prevEndstich) {
             $currRank = $actualPos;
             $prevScore= $sumTotal;
+            $prevEndstich = $endstich;
         }
 
         $m = $entry['mitglied'];
         $fullname = htmlspecialchars($m['Name'].' '.$m['Vorname']);
 
-        $html .= "<tr>";
-        
-        // Rang - mit Farbe für erste 3
-        if ($currRank <= 3) {
-            $rankClass = "rank-$currRank";
-            $html .= "<td style='text-align: center;' class='$rankClass'><strong>$currRank</strong></td>";
-            $html .= "<td style='text-align: left; font-size: 11px; font-weight: bold; white-space: nowrap; padding-right: 8px;'>$fullname</td>";
-        } else {
-            $html .= "<td style='text-align: center;'><strong>$currRank</strong></td>";
-            $html .= "<td style='text-align: left; font-size: 11px; white-space: nowrap; padding-right: 8px;'>$fullname</td>";
-        }
+        // Rang 1–3 fett, vor der ersten Zeile danach etwas Abstand (bei Gleichstand teilen sich Zeilen einen Rang)
+        $html .= pdf_rangliste_zeile($currRank <= 3 ? $currRank : ($nachPodest++ === 0 ? 4 : 5));
+        $html .= "<td class='rang'>$currRank.</td>";
+        $html .= "<td class='name'>$fullname</td>";
 
         foreach ($definitions as $def) {
             $dID = $def['ID'];
             // Nachkommastellen nur bei hochgerechneten Resultaten; rohe Resultate ganzzahlig
             $dec = isScaledDef($def) ? 2 : 0;
-            $cellContent = '<span class="no-data">-</span>';
+            $cellContent = '–';
 
             if (!empty($entry['wettbewerbe'][$dID])) {
                 $pointArr = $entry['wettbewerbe'][$dID];
                 $vals     = [];
                 foreach ($pointArr as $pItem) {
                     $pVal = number_format($pItem['punkte'], $dec, '.', '');
-                    if ($pItem['strichen']) {
-                        $vals[] = "<span class='struck'>$pVal</span>";
-                    } else {
-                        // Erste 3 Ränge fett
-                        if ($currRank <= 3) {
-                            $vals[] = "<span class='value' style='font-weight: bold;'>$pVal</span>";
-                        } else {
-                            $vals[] = "<span class='value'>$pVal</span>";
-                        }
-                    }
+                    $vals[] = $pItem['strichen'] ? "<span class='struck'>$pVal</span>" : $pVal;
                 }
                 $cellContent = implode(', ', $vals);
             }
             $html .= "<td class='result-col'>$cellContent</td>";
         }
-        
-        // Total - erste 3 Ränge fett; einheitlich zwei Nachkommastellen
-        $totStr = number_format($sumTotal, 2, '.', '');
-        if ($currRank <= 3) {
-            $html .= "<td style='font-weight: bold;'><strong>$totStr</strong></td>";
-        } else {
-            $html .= "<td><strong>$totStr</strong></td>";
-        }
+
+        // Total: einheitlich zwei Nachkommastellen
+        $html .= "<td class='total'>" . number_format($sumTotal, 2, '.', '') . "</td>";
         $html .= '</tr>';
     }
 
     $html .= '</tbody></table>';
-    
-    // Legende mit Hinweis - NUR GRAUER BEREICH
-    $html .= '<div class="legend">';
-    $html .= '<span class="legend-item"><span class="struck">00.00</span> = Streichresultat (nicht gewertet)</span>';
-    $html .= '<span class="legend-item"><strong>-</strong> = Nicht teilgenommen</span>';
-    $html .= '<span class="legend-item">Die roten durchgestrichenen Werte sind die ' . $anzahlStreicher . ' schlechtesten Resultate (Streicher) und werden nicht in die Gesamtwertung einbezogen</span>';
-    $html .= '</div>';
-    
-    $html .= '</div>';
+    $html .= '<p class="rl-hinweis"><span class="struck">96.00</span> = Streicher: die '
+           . $anzahlStreicher . ' schlechtesten Resultate zählen nicht. – = nicht teilgenommen.</p>';
     return $html;
 }
 

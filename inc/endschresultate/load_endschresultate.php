@@ -62,12 +62,27 @@ function stichZelle(bool $geloest, ?string $wert, string $label = 'gelöst') {
 }
 
 /**
+ * Warum jemand nicht in der Rangliste steht (Regeln von endschGesamtAbfrage()).
+ */
+function endschOhneWertungGrund(array $row): string {
+    $typ = $row['TeilnehmerTyp'] ?? 'mitglied';
+    if ($typ === 'js')   return 'Jungschützen werden im Endschiessen nicht rangiert';
+    if ($typ === 'gast') return 'Gäste stehen erst mit allen fünf Stichen in Kat. B';
+    if (!preg_match('/Kat\.\s*[AB]/', (string)($row['Kategorie'] ?? ''))) return 'Keine Kategorie: beim Mitglied fehlt die Waffe';
+    if ((int)$row['Endstich_Summe'] <= 0) return 'Endstich noch nicht erfasst';
+    return 'Nicht in der Gesamtrangliste (erster Endstich-Schuss fehlt)';
+}
+
+/**
  * Tabellenzeile eines Mitglieds. «Stand» ist offen, sobald ein gelöster Stich noch kein Resultat hat.
+ * Seit 1.68.29 auch die Rangliste: Rang je Kategorie vor dem Namen und Total, beides aus $rang
+ * (endschGesamtAbfrage(), dieselbe Rechnung wie die Gesamtrangliste im PDF).
  *
- * @param array $row Datenbankzeile mit Mitglied, Summen und gelösten Codes
+ * @param array      $row  Datenbankzeile mit Mitglied, Summen und gelösten Codes
+ * @param array|null $rang ['kat' => 'A'|'B', 'rang' => int, 'total' => float] oder null (ohne Wertung)
  * @return string HTML-Zeile
  */
-function generateResultRow($row) {
+function generateResultRow($row, ?array $rang = null) {
     $codes = array_filter(array_map('trim', explode(',', (string)($row['geloeste_codes'] ?? ''))));
     $hat = fn(array $c) => (bool)array_intersect($c, $codes);
 
@@ -123,9 +138,46 @@ function generateResultRow($row) {
     if (!empty($row['Partnerrang'])) $marke .= " <span class='typ-badge' data-tooltip='Steht zusätzlich in der Partner-Rangliste'>Partner</span>";
     $klasse = 'hybrid-row' . ($offen ? ' ui-offen' : '');
 
+    // Rangliste: Rang je Kategorie vor dem Namen, Total; ohne Wertung der Grund (Ansicht «Rangliste» zeigt ihn)
+    if ($rang) {
+        $rangAttr  = " data-kat='{$rang['kat']}' data-rang='{$rang['rang']}'";
+        $rangMarke = "<span class='es-rang' data-tooltip='Rang in Kat. {$rang['kat']}'>{$rang['kat']} {$rang['rang']}.</span>";
+        $grund     = '';
+        $totalZelle = '<td class="es-total">' . number_format($rang['total'], 1, '.', '') . '</td>';
+        if ($rang['rang'] <= 3) $klasse .= ' rank-' . $rang['rang'];
+    } else {
+        $g = htmlspecialchars(endschOhneWertungGrund($row), ENT_QUOTES, 'UTF-8');
+        $rangAttr  = '';
+        $rangMarke = "<span class='es-rang' data-tooltip='{$g}'></span>";
+        $grund     = "<span class='es-grund'>{$g}</span>";
+        $totalZelle = "<td><span class='cell-empty'>–</span></td>";
+    }
+
     return "<tr class='{$klasse}' data-teilnehmer='{$key}' data-typ='{$typ}' data-has-data='" . ($hatDaten ? '1' : '0') . "'"
-         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'" . ($suOhnePartner ? " data-su='ohne-partner'" : '') . ">"
-         . "<td><span class='tn-name'>{$name}</span>{$marke}</td>{$zellen}{$standZelle}</tr>";
+         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'" . ($suOhnePartner ? " data-su='ohne-partner'" : '') . $rangAttr . ">"
+         . "<td>{$rangMarke}<span class='tn-name'>{$name}</span>{$marke}{$grund}</td>{$zellen}{$totalZelle}{$standZelle}</tr>";
+}
+
+/**
+ * Rang und Total je Teilnehmer-Schlüssel aus endschGesamtAbfrage() (Kat. A und B je durchnummeriert, wie die
+ * Gesamtrangliste im PDF: Total, dann Endstich, dann Alter).
+ */
+function endschRangKarte(mysqli $conn, int $jahr): array {
+    $karte = [];
+    foreach (['A', 'B'] as $kat) {
+        $q = endschGesamtAbfrage('Kat. ' . $kat, $jahr, true);
+        $st = $conn->prepare($q['sql']);
+        if (!$st) throw new Exception('Prepare Rangliste failed: ' . $conn->error);
+        $st->bind_param($q['types'], ...$q['params']);
+        $st->execute();
+        $res = $st->get_result();
+        $i = 0;
+        while ($r = $res->fetch_assoc()) {
+            $karte[$r['Schluessel']] = ['kat' => $kat, 'rang' => ++$i, 'total' => (float)$r['GesamtTotal']];
+        }
+        $st->close();
+    }
+    return $karte;
 }
 
 // Include database configuration
@@ -194,16 +246,18 @@ HAVING
 $sql = "(SELECT
     'mitglied' AS TeilnehmerTyp, CONCAT('m', m.ID) AS Schluessel, 1 AS Gruppe,
     EXISTS(SELECT 1 FROM endstich_partnerrang pr WHERE pr.MitgliedID = m.ID AND pr.Jahr = ?) AS Partnerrang,
+    (SELECT w.Kategorie FROM Waffen w WHERE w.ID = m.WaffenID) AS Kategorie,
     CONVERT(m.Name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
     CONVERT(m.Vorname USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,"
     . $spaltenSql('mitglieder m', ['sel' => 'mitglied_id', 'id' => 'm.ID', 'spalte' => 'MitgliedID']) . "
-GROUP BY m.ID, m.Vorname, m.Name
+GROUP BY m.ID, m.Vorname, m.Name, m.WaffenID
 $having)
 UNION ALL
 (SELECT
     IF(ga.geburtsdatum IS NULL, 'gast', 'js') AS TeilnehmerTyp, CONCAT('g', ga.id) AS Schluessel,
     IF(ga.geburtsdatum IS NULL, 2, 3) AS Gruppe,
     0 AS Partnerrang,
+    NULL AS Kategorie,
     CONVERT(ga.name USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Name,
     CONVERT('' USING utf8mb4) COLLATE utf8mb4_unicode_ci AS Vorname,"
     . $spaltenSql('endstich_gaeste ga', ['sel' => 'gast_id', 'id' => 'ga.id', 'spalte' => 'GastID']) . "
@@ -224,21 +278,24 @@ try {
     $stmt->bind_param(str_repeat('i', 16), ...array_fill(0, 16, $year));
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        echo msv_empty_row(9, 'Noch niemand hat für dieses Jahr Stiche gelöst');
+    $zeilen = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    if (!$zeilen) {
+        echo msv_empty_row(10, 'Noch niemand hat für dieses Jahr Stiche gelöst');
     } else {
-        while ($row = $result->fetch_assoc()) {
-            echo generateResultRow($row);
+        $rangKarte = endschRangKarte($conn, (int)$year);
+        $html = '';
+        foreach ($zeilen as $row) {
+            $html .= generateResultRow($row, $rangKarte[$row['Schluessel']] ?? null);
         }
+        echo $html;
     }
 
-    $stmt->close();
-    
 } catch (Exception $e) {
     // Log error for debugging while showing user-friendly message
     error_log("Database error in load_endschresultate.php: " . $e->getMessage());
-    echo "<tr class='ui-leer'><td colspan='9'>Fehler beim Laden der Daten. Bitte die Seite neu laden.</td></tr>";
+    echo "<tr class='ui-leer'><td colspan='10'>Fehler beim Laden der Daten. Bitte die Seite neu laden.</td></tr>";
 } finally {
     // Ensure connection is always closed
     $conn->close();

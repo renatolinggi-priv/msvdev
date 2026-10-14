@@ -20,6 +20,13 @@ $csrf = csrf_token();
     $page_title_after = '<button type="button" class="btn-help" data-help="cup.uebersicht" aria-label="Hilfe"></button>'
         . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
         . '<select id="yearSelect" class="form-select form-select-sm"></select>';
+    // Rangliste (PDF + Direktdruck) im Kopf wie bei JM, Heim und Kanti; cuprang.php leitet hierher weiter (seit 1.68.29)
+    $page_actions = '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
+        . '<button type="button" class="btn btn-outline-info pdf-btn" data-tooltip="Cup-Rangliste als PDF (nur gespeicherte Resultate)">'
+        . '<i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
+        . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken">'
+        . '<i class="bi bi-printer" aria-hidden="true"></i></button>'
+        . '</div>';
     $page_extra = '<div class="cup4-progress" id="progress-section">'
         . '<div class="cup4-progress-steps" id="progress-steps">'
         . '<span class="cup4-step active" data-round="1"><span class="cup4-step-dot"></span> Runde 1 <small id="step-r1-count"></small></span>'
@@ -70,14 +77,6 @@ $csrf = csrf_token();
             </button>
             <div class="cup4-toolbar-spacer"></div>
             <div class="cup4-toolbar-actions">
-                <div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">
-                    <button type="button" class="btn btn-outline-info pdf-btn" data-tooltip="Cup-Rangliste als PDF (nur gespeicherte Resultate)">
-                        <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken">
-                        <i class="bi bi-printer" aria-hidden="true"></i>
-                    </button>
-                </div>
                 <button type="button" id="save-all" class="btn btn-primary btn-sm" data-tooltip="Alle Runden speichern (Ctrl+S)">
                     <i class="bi bi-save me-1"></i>Speichern
                 </button>

@@ -19,28 +19,27 @@ abstract class MultiKategorieReport extends PDFGenerator {
     }
 
     protected function createKategorieTable($kat, $data, $includeZabig = true) {
-        $html = "<h3>$kat</h3>";
+        $html = "<h2>" . ($kat === 'Kat. A' ? 'Kat. A (Standardgewehr)' : 'Kat. B (Ordonnanzwaffen)') . "</h2>";
         $html .= '<table class="table">';
         $html .= '<thead><tr>
-                    <th scope="col" class="fixed-width">Rang</th>
-                    <th scope="col" class="name-width">Name</th>
-                    <th scope="col" class="fixed-width">Endstich</th>
-                    <th scope="col" class="fixed-width">Schwini</th>
-                    <th scope="col" class="fixed-width">Kunst</th>
-                    <th scope="col" class="fixed-width">Glück</th>';
+                    <th scope="col" class="r">Rang</th>
+                    <th scope="col">Name</th>
+                    <th scope="col" class="r">Endstich</th>
+                    <th scope="col" class="r">Schwini</th>
+                    <th scope="col" class="r">Kunst</th>
+                    <th scope="col" class="r">Glück</th>';
         
         if ($includeZabig) {
-            $html .= '<th scope="col" class="fixed-width">Zabig</th>';
+            $html .= '<th scope="col" class="r">Zabig</th>';
         }
         
-        $html .= '<th scope="col" class="total-width">Total</th>
-                  <th scope="col" class="fixed-width"></th>
+        $html .= '<th scope="col" class="r">Total</th>
+                  <th scope="col"></th>
                   </tr></thead><tbody>';
         
         $rang = 1;
         $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder (Gäste können in Kat. B vorne stehen)
         foreach ($data as $i => $row) {
-            $bold = ($rang <= 3) ? 'class="bold"' : '';
             $kk = '';
 
             if ($rang == 1) {
@@ -52,30 +51,20 @@ abstract class MultiKategorieReport extends PDFGenerator {
                 $kk = $kk !== '' ? $kk . ' + WP' : 'WP';
             }
             
-            $html .= "<tr>";
-            $html .= "<td align=\"left\" $bold>$rang.</td>";
-            $html .= "<td align=\"left\" $bold>{$row['Name']} {$row['Vorname']}</td>";
-            $html .= "<td align=\"center\" $bold>{$row['EndstichTotal']}</td>";
-            $html .= "<td align=\"center\" $bold>" . ($row['MaxSchwini'] ?? '–') . "</td>";
-            $html .= "<td align=\"center\" $bold>{$row['KunstTotal']}</td>";
-            $html .= "<td align=\"center\" $bold>{$row['GlueckTotal']}</td>";
-            
+            $html .= $this->zeileAnfang($rang);
+            $html .= "<td>{$row['Name']} {$row['Vorname']}</td>";
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['EndstichTotal']) . '</td>';
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['MaxSchwini'] ?? '') . '</td>';
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['KunstTotal']) . '</td>';
+            $html .= '<td class="r">' . pdf_strich_wenn_null($row['GlueckTotal']) . '</td>';
+
             if ($includeZabig) {
-                $html .= "<td align=\"center\" $bold>{$row['ZabigTotal']}</td>";
+                $html .= '<td class="r">' . pdf_strich_wenn_null($row['ZabigTotal']) . '</td>';
             }
             
-            $html .= "<td align=\"center\" $bold>{$row['GesamtTotal']}</td>";
-            $html .= "<td align=\"right\" $bold>$kk</td>";
+            $html .= "<td class=\"r\">{$row['GesamtTotal']}</td>";
+            $html .= "<td>$kk</td>";
             $html .= "</tr>";
-            
-            if ($rang == 3) {
-                $html .= '<tr>';
-                $colCount = $includeZabig ? 9 : 8;
-                for ($i = 0; $i < $colCount; $i++) {
-                    $html .= '<td></td>';
-                }
-                $html .= '</tr>';
-            }
             
             $rang++;
         }
@@ -90,8 +79,7 @@ abstract class MultiKategorieReport extends PDFGenerator {
  */
 class GesamtRanglisteReport extends MultiKategorieReport {
     public function generate() {
-        $html = $this->createHTMLHeader('Endschiessen Gesamtrangliste');
-        $html .= '<h2>Endschiessen Gesamtrangliste ' . $this->selectedYear . '</h2>';
+        $html = $this->ranglisteHeader('Endschiessen ' . $this->selectedYear, 'Gesamtrangliste');
         
         // Kategorie A
         $qA = $this->getGesamtSQL('Kat. A', true);
@@ -100,7 +88,7 @@ class GesamtRanglisteReport extends MultiKategorieReport {
             $html .= $this->createKategorieTable('Kat. A', $dataA, true);
         }
 
-        $html .= "<div class=\"row\">&nbsp;</div>";
+        
 
         // Kategorie B
         $qB = $this->getGesamtSQL('Kat. B', true);
@@ -121,8 +109,7 @@ class GesamtRanglisteReport extends MultiKategorieReport {
  */
 class ZwischenRanglisteReport extends MultiKategorieReport {
     public function generate() {
-        $html = $this->createHTMLHeader('Endschiessen Zwischenrangliste ' . $this->selectedYear);
-        $html .= '<h2>Endschiessen ' . $this->selectedYear . ' Zwischenrangliste</h2>';
+        $html = $this->ranglisteHeader('Endschiessen ' . $this->selectedYear, 'Zwischenrangliste (ohne Zabig)');
         
         // Kategorie A
         $qA = $this->getGesamtSQL('Kat. A', false);
@@ -131,7 +118,7 @@ class ZwischenRanglisteReport extends MultiKategorieReport {
             $html .= $this->createKategorieTable('Kat. A', $dataA, false);
         }
 
-        $html .= "<div class=\"row\">&nbsp;</div>";
+        
 
         // Kategorie B
         $qB = $this->getGesamtSQL('Kat. B', false);

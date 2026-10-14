@@ -32,27 +32,27 @@ try {
     // Funktion zum Erstellen einer Tabelle
     function createTable($data, $title) {
         if (empty($data)) {
-            return '<div class="container"><h2>' . htmlspecialchars($title) . '</h2><p>Keine Ergebnisse gefunden.</p></div>';
+            return '<h2>' . htmlspecialchars($title) . '</h2><p>Keine Ergebnisse gefunden.</p>';
         }
-        
-        $html = '<div class="container">
-                    <h2>' . htmlspecialchars($title) . '</h2>
+
+        $html = '<h2>' . htmlspecialchars($title) . '</h2>
                     <table class="table">
                         <thead>
                             <tr>
-                                <th class="rang">Rang</th>
-                                <th class="name">Name</th>';
-        
+                                <th class="r">Rang</th>
+                                <th>Name</th>';
+
         for ($i = 1; $i <= 5; $i++) {
-            $html .= '<th class="passe">Passe ' . $i . '</th>';
+            $html .= '<th class="r">Passe ' . $i . '</th>';
         }
-        
-        $html .= '<th class="total">Total</th>
+
+        $html .= '<th class="r">Total</th>
                             </tr>
                         </thead>
                         <tbody>';
-        
+
         $rang = 1;
+        $nachPodest = 0; // Rang 1–3 fett, Abstand vor der ersten Zeile danach (Gleichstand teilt den Rang)
         $previousTotal = null;
         $sameRankCount = 0;
         
@@ -67,22 +67,21 @@ try {
                 $sameRankCount = 1;
             }
             
-            $html .= '<tr>
+            $html .= pdf_rangliste_zeile($rang <= 3 ? $rang : ($nachPodest++ === 0 ? 4 : 5)) . '
                         <td class="rang">' . $rang . '.</td>
-                        <td class="name">' . htmlspecialchars($row['Name'] . ' ' . $row['Vorname']) . '</td>';
-            
+                        <td>' . htmlspecialchars($row['Name'] . ' ' . $row['Vorname']) . '</td>';
+
             for ($i = 1; $i <= 5; $i++) {
-                $value = $row["Passe$i"];
-                $html .= '<td class="passe">' . ($value > 0 ? $value : '-') . '</td>';
+                $html .= '<td class="r">' . pdf_strich_wenn_null($row["Passe$i"]) . '</td>';
             }
-            
-            $html .= '<td class="total">' . $row['KantiSumme'] . '</td>
+
+            $html .= '<td class="r">' . $row['KantiSumme'] . '</td>
                     </tr>';
-            
+
             $previousTotal = $row['KantiSumme'];
         }
-        
-        $html .= '</tbody></table></div>';
+
+        $html .= '</tbody></table>';
         return $html;
     }
 
@@ -130,44 +129,12 @@ try {
     }
 
     // HTML generieren
-    $html = '<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <style>' . pdf_theme_css() . '
-        /* Kantonalstich: Layout-Overrides */
-        @page { margin: 1.5cm; }
-        body { font-size: 11px; margin: 0; padding: 0; }
-        .header { position: relative; margin-bottom: 50px; min-height: 100px; }
-        .logo { position: absolute; top: 0; left: 0; width: 100px; height: auto; margin: 0; }
-        h1 { text-align: center; font-size: 20px; margin: 0; padding-top: 20px; color: #3b5998; }
-        .container { margin-bottom: 30px; page-break-inside: avoid; clear: both; }
-        h2 { font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid #cbd5e0; padding-bottom: 5px; }
-        .table th, .table td { padding: 4px; }
-        .rang, .passe, .total { text-align: center; }
-        .rang { width: 50px; }
-        .name { width: auto; }
-        .passe { width: 65px; }
-        .total { width: 70px; font-weight: bold; }
-    </style>
-    <title>Kantonalstich ' . $selectedYear . '</title>
-</head>
-<body>
-    <div class="header">
-        <img src="https://jahresmeisterschaft.msvwilen.ch/images/MSVWilen_Logo.jpg" class="logo" alt="MSV Wilen Logo">
-        <h1>Kantonalstich ' . $selectedYear . '</h1>
-    </div>';
+    $html = pdf_rangliste_anfang('Kantonalstich ' . $selectedYear, 'Rangliste');
 
     // Beide Kategorien hinzufügen
-    $html .= createTable($kategorienDaten['Kat. A'], 'Kategorie A');
-    $html .= createTable($kategorienDaten['Kat. B'], 'Kategorie B');
-    
-    // Footer
-    $html .= '<div class="footer">
-                <p>Generiert am ' . date('d.m.Y \u\m H:i') . ' Uhr</p>
-              </div>
-</body>
-</html>';
+    $html .= createTable($kategorienDaten['Kat. A'], 'Kat. A (Standardgewehr)');
+    $html .= createTable($kategorienDaten['Kat. B'], 'Kat. B (Ordonnanzwaffen)');
+    $html .= '</body></html>';
 
     // PDF generieren
     $options = new \Dompdf\Options();
@@ -180,6 +147,7 @@ try {
     require_once __DIR__ . '/../pdf/pdf_orientation.inc.php';
     $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch
     $dompdf->render();
+    pdf_seitenfuss($dompdf, 'Kantonalstich ' . $selectedYear);
 
     // Verzeichnis prüfen
     if (!is_dir('dat')) {

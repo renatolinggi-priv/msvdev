@@ -459,7 +459,7 @@ function getZabig($templateProcessor, $conn)
                 COALESCE(u.ZSchuss6, 0)
             ) AS TS
         FROM " . endschQuelle('zabig', ENDSCH_TYPEN_MITGLIED_GAST) . " u
-        WHERE u.ZSchuss1 != 0
+        WHERE COALESCE(u.ZSchuss1 + u.ZSchuss2 + u.ZSchuss3 + u.ZSchuss4 + u.ZSchuss5 + u.ZSchuss6, 0) != 0
         ORDER BY
             u.Geburtsdatum ASC
     ";
@@ -567,7 +567,7 @@ function getGlueck($templateProcessor, $conn, $textRun)
             ) AS Zwei,
             LEAST(u.GSchuss1, u.GSchuss2, u.GSchuss3) AS Drei
         FROM " . endschQuelle('glueck', ENDSCH_TYPEN_MITGLIED_GAST) . " u
-        WHERE u.GSchuss1 != 0
+        WHERE GREATEST(COALESCE(u.GSchuss1, 0), COALESCE(u.GSchuss2, 0), COALESCE(u.GSchuss3, 0)) != 0
         ORDER BY
             MaxGlueck DESC,
             Zwei DESC,
@@ -646,7 +646,7 @@ function getKunst($templateProcessor, $conn)
                 COALESCE(u.KSchuss5, 0)
             ) AS TS
         FROM " . endschQuelle('kunst', ENDSCH_TYPEN_MITGLIED_GAST) . " u
-        WHERE u.KSchuss1 IS NOT NULL AND u.KSchuss1 != 0
+        WHERE COALESCE(u.KSchuss1 + u.KSchuss2 + u.KSchuss3 + u.KSchuss4 + u.KSchuss5, 0) != 0
         ORDER BY
             Kunst_Summe DESC,
             TS DESC,
@@ -1810,16 +1810,19 @@ function getJMA($templateProcessor, $conn)
             'resFirst'  => $resFirst,
             'resSecond' => $resSecond,
             'total'     => $computedTotal,
+            'endstich'  => $endstichDef ? (float)($endVal ?? 0) : 0.0, // für den Gleichstand
         ];
     }
 
     // Nur wer ausser Obligatorisch und Feldschiessen ein Resultat hat (Entscheid 14.10.2026)
     $rows = array_values(array_filter($rows, fn($r) => absendenJmHatResultat($r['resFirst'], $r['resSecond'], $firstHalf, $secondHalf)));
 
-    // Sortierung nach Total DESC, dann Name/Vorname
+    // Sortierung nach Total DESC, dann Endstich DESC, dann Name/Vorname
     usort($rows, function($a, $b) {
         if ($a['total'] < $b['total']) return 1;
         if ($a['total'] > $b['total']) return -1;
+        // Gleiches Total: vorne, wer im Endstich mehr hat (Entscheid 14.10.2026, wie die JM-Rangliste)
+        if ($a['endstich'] != $b['endstich']) return $b['endstich'] <=> $a['endstich'];
         $n1 = $a['name'].' '.$a['vorname'];
         $n2 = $b['name'].' '.$b['vorname'];
         return strcasecmp($n1, $n2);
@@ -2077,16 +2080,19 @@ function getJMB($templateProcessor, $conn)
             'resFirst'  => $resFirst,
             'resSecond' => $resSecond,
             'total'     => $computedTotal,
+            'endstich'  => $endstichDef ? (float)($endVal ?? 0) : 0.0, // für den Gleichstand
         ];
     }
 
     // Nur wer ausser Obligatorisch und Feldschiessen ein Resultat hat (Entscheid 14.10.2026)
     $rows = array_values(array_filter($rows, fn($r) => absendenJmHatResultat($r['resFirst'], $r['resSecond'], $firstHalf, $secondHalf)));
 
-    // Sortierung nach Total DESC, dann Name/Vorname
+    // Sortierung nach Total DESC, dann Endstich DESC, dann Name/Vorname
     usort($rows, function($a, $b) {
         if ($a['total'] < $b['total']) return 1;
         if ($a['total'] > $b['total']) return -1;
+        // Gleiches Total: vorne, wer im Endstich mehr hat (Entscheid 14.10.2026, wie die JM-Rangliste)
+        if ($a['endstich'] != $b['endstich']) return $b['endstich'] <=> $a['endstich'];
         $n1 = $a['name'].' '.$a['vorname'];
         $n2 = $b['name'].' '.$b['vorname'];
         return strcasecmp($n1, $n2);

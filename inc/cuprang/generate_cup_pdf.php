@@ -124,433 +124,114 @@ try {
     }
     unset($r);
     
-    // HTML erstellen - Professionelles Layout
-    $html = '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<style>
-@page {
-    margin: 1.5cm 1.5cm 2cm 1.5cm;
-    size: A4 ' . pdfOrientationParam('portrait') . ';
-}
-body { 
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; 
-    font-size: 10px; 
-    margin: 0; 
-    padding: 0;
-    color: #333;
-}
+    // HTML im Ranglisten-Layout (pdf_rangliste_anfang); Paarungen wie im Absendenbuch: Sieger fett,
+    // feine Linie unter jeder Begegnung, Reihenfolge der Auslosung bleibt.
+    $layout = '
+    .columns { width: 100%; border-collapse: collapse; }
+    .columns > tbody > tr > td { width: 50%; vertical-align: top; padding: 0; border: 0; background: none; }
+    .columns > tbody > tr > td.links { padding-right: 5mm; }
+    .columns > tbody > tr > td.rechts { padding-left: 5mm; }
+    .paarung { width: 100%; border-collapse: collapse; margin: 0; }
+    .paarung td { padding: 0.9mm 1.4mm; border: 0; background: none; }
+    .paarung tr.letzte td { border-bottom: 0.5pt solid #000; padding-bottom: 1.4mm; }
+    .paarung tr.erste td { padding-top: 1.4mm; }
+    .paarung td.pkt { text-align: right; width: 12mm; }
+    .paarung td.ts { text-align: right; width: 10mm; color: #64748b; }
+    .paarung .sieger { font-weight: bold; }
+    .table td.pkt { width: 14mm; }
+    .table td.ts { width: 12mm; color: #64748b; }
+    .club { color: #64748b; font-size: 8pt; }
+    .stand td { vertical-align: top; }
+    ';
 
-/* Header */
-.header { 
-    position: relative; 
-    margin-bottom: 140px;  /* Mehr Abstand nach unten zum Inhalt */
-    padding-bottom: 10px;
-    
-}
-.logo { 
-    position: absolute; 
-    top: 0;  /* Logo bleibt oben */
-    left: 0; 
-    width: 80px; 
-    height: auto; 
-}
-h1 { 
-    text-align: center; 
-    font-size: 24px; 
-    margin: 10px 0 0 0;  /* Titel bleibt wo er war */
-    color: #000000ff;
-    font-weight: bold;
-}
+    // Eine Begegnung (2er oder 3er) als kleine Tabelle
+    $paarungHtml = function (array $row) use ($names) {
+        $teilnehmer = [];
+        foreach ([1, 2, 3] as $k) {
+            $pid = !empty($row['Participant' . $k]) ? (int)$row['Participant' . $k] : 0;
+            if (!$pid && $k === 3) {
+                continue;
+            }
+            $teilnehmer[$k] = [
+                'name' => $pid ? ($names[$pid] ?? 'Mitglied #' . $pid) : '',
+                'res'  => $row['Result' . $k] ?? '',
+                'ts'   => $row['LowShot' . $k] ?? '',
+            ];
+        }
+        if (isset($teilnehmer[3])) {
+            $verlierer = cup_three_loser_index($row);
+            $sieger = fn($k) => $verlierer !== null && $verlierer !== $k;
+        } else {
+            $gewinner = cup_winner_index($row);
+            $sieger = fn($k) => $gewinner === $k;
+        }
+        $html = '<table class="paarung"><tbody>';
+        $letzte = array_key_last($teilnehmer);
+        foreach ($teilnehmer as $k => $t) {
+            $kl = trim(($k === 1 ? 'erste' : '') . ($k === $letzte ? ' letzte' : '') . ($sieger($k) ? ' sieger' : ''));
+            $html .= '<tr class="' . $kl . '">'
+                   . '<td>' . htmlspecialchars($t['name']) . '</td>'
+                   . '<td class="pkt">' . htmlspecialchars((string)$t['res']) . '</td>'
+                   . '<td class="ts">' . ($t['ts'] !== '' && $t['ts'] !== null ? '(' . htmlspecialchars((string)$t['ts']) . ')' : '') . '</td>'
+                   . '</tr>';
+        }
+        return $html . '</tbody></table>';
+    };
 
-/* Sections */
-.section { 
-    margin-bottom: 15px; 
-    page-break-inside: avoid;   
-}
-h2 { 
-    font-size: 12px;
-    margin: 10px 0 5px 0;
-    color: #3b5998;
-    font-weight: bold;
-}
-h3 {
-    font-size: 12px;
-    margin: 10px 0 5px 0;
-    color: #3b5998;
-    font-weight: bold;
-}
+    $rundenHtml = function (array $runden) use ($pairs, $paarungHtml) {
+        $html = '';
+        foreach ($runden as $rnd) {
+            $html .= '<h2>Runde ' . $rnd . '</h2>';
+            foreach (array_filter($pairs, fn($r) => (int)$r['Round'] === $rnd) as $row) {
+                $html .= $paarungHtml($row);
+            }
+        }
+        return $html;
+    };
 
-/* Tabellen */
-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    margin-top: 8px;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-thead th { 
-    background: #f8f9fa;
-    padding: 6px 8px; 
-    text-align: left; 
-    border-bottom: 2px solid #dee2e6;
-    font-weight: bold;
-    font-size: 10px;
-    color: #495057;
-}
-tbody td { 
-    padding: 5px 8px; 
-    border-bottom: 1px solid #e9ecef;
-}
-tbody tr:hover {
-    background: #f8f9fa;
-}
+    $html = pdf_rangliste_anfang('Vereinscup ' . $selectedYear, 'MSV Wilen · Paarungen und Finals', $layout);
 
-/* Spalten */
-.rank { 
-    width: 40px; 
-    text-align: center; 
-    font-weight: bold;
-    font-size: 11px;
-}
-.name { 
-    width: auto;
-    font-size: 10px;
-}
-.points { 
-    width: 50px; 
-    text-align: center; 
-    font-weight: bold;
-    font-size: 11px;
-    color: #3b5998;
-}
-.lowshot {
-    width: 50px;
-    text-align: center;
-    font-size: 9px;
-    color: #6c757d;
-}
-.club { 
-    display: block;
-    color: #6c757d; 
-    font-size: 9px;
-    margin-top: 1px;
-}
-
-/* Medaillen-Farben (ruhige Pastelltöne, einheitlich mit pdf_theme.php) */
-.gold {
-    background: #fdf6e3 !important;
-}
-.gold .rank {
-    color: #8a6d1c;
-}
-.silver {
-    background: #f1f1f1 !important;
-}
-.silver .rank {
-    color: #6b7280;
-}
-.bronze {
-    background: #f7ede2 !important;
-}
-.bronze .rank {
-    color: #9c6b3f;
-}
-
-/* Paarungen */
-.pairing {
-    margin: 6px 0;
-    padding: 6px;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    background: #ffffff;
-}
-.pairing-row {
-    display: table;
-    width: 100%;
-    padding: 3px 0;
-}
-.pairing-name {
-    display: table-cell;
-    width: 60%;
-    padding-right: 10px;
-}
-.pairing-score {
-    display: table-cell;
-    width: 20%;
-    text-align: right;
-    font-weight: bold;
-    color: #3b5998;
-}
-.pairing-lowshot {
-    display: table-cell;
-    width: 20%;
-    text-align: right;
-    font-size: 9px;
-    color: #6c757d;
-}
-.winner {
-    font-weight: bold;
-    color: #2f855a;
-}
-.loser {
-    color: #c0392b;
-    text-decoration: line-through;
-}
-
-/* Kompaktes Layout für eine Seite */
-.columns {
-    display: table;
-    width: 100%;
-    margin-top: 10px;
-}
-.column {
-    display: table-cell;
-    width: 48%;
-    vertical-align: top;
-}
-.column:first-child {
-    padding-right: 2%;
-}
-
-/* Footer */
-.footer {
-    position: fixed;
-    bottom: 10px;  /* 10px vom unteren Rand statt 0 */
-    left: 1.5cm;  /* Gleicher Rand wie die Seite */
-    right: 1.5cm;  /* Gleicher Rand wie die Seite */
-    text-align: center;
-    font-size: 8px;
-    color: #6c757d;
-    padding-top: 10px;
-    border-top: 1px solid #dee2e6;
-    background: white;
-}
-</style>
-</head>
-<body>
-
-<div class="header">
-    <img src="' . pdf_logo_src() . '" class="logo" alt="MSV Wilen Logo">
-    <h1>MSV Wilen Vereinscup ' . $selectedYear . '</h1>
-</div>';
-
-    // Paarungen - Kompakt mit Tiefschuss
-    $html .= '<div class="section">';
-    
+    // Paarungen in zwei Spalten
     if (!empty($pairs)) {
-        $html .= '<div class="columns">';
-        
-        // Aufteilen in zwei Spalten
         $halfPoint = ceil(count($rounds) / 2);
-        $leftRounds = array_slice($rounds, 0, $halfPoint);
-        $rightRounds = array_slice($rounds, $halfPoint);
-        
-        // Linke Spalte
-        $html .= '<div class="column">';
-        foreach ($leftRounds as $rnd) {
-            $html .= '<h3>Runde ' . $rnd . '</h3>';
-            $roundPairs = array_filter($pairs, fn($r) => (int)$r['Round'] === $rnd);
-            
-            foreach ($roundPairs as $row) {
-                $p1 = (int)($row['Participant1'] ?? 0);
-                $p2 = (int)($row['Participant2'] ?? 0);
-                $p3 = !empty($row['Participant3']) ? (int)$row['Participant3'] : null;
-                
-                $n1 = $p1 ? ($names[$p1] ?? 'Mitglied #'.$p1) : '';
-                $n2 = $p2 ? ($names[$p2] ?? 'Mitglied #'.$p2) : '';
-                
-                $r1 = $row['Result1'] ?? '';
-                $r2 = $row['Result2'] ?? '';
-                $l1 = $row['LowShot1'] ?? '';
-                $l2 = $row['LowShot2'] ?? '';
-                
-                $html .= '<div class="pairing">';
-                
-                if ($p3) {
-                    // 3er Paarung
-                    $n3 = $p3 ? ($names[$p3] ?? 'Mitglied #'.$p3) : '';
-                    $r3 = $row['Result3'] ?? '';
-                    $l3 = $row['LowShot3'] ?? '';
-                    $loser = cup_three_loser_index($row);
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($loser === 1 ? 'loser' : 'winner') . '">' . htmlspecialchars($n1) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r1) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l1) . ')</span>';
-                    $html .= '</div>';
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($loser === 2 ? 'loser' : 'winner') . '">' . htmlspecialchars($n2) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r2) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l2) . ')</span>';
-                    $html .= '</div>';
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($loser === 3 ? 'loser' : 'winner') . '">' . htmlspecialchars($n3) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r3) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l3) . ')</span>';
-                    $html .= '</div>';
-                } else {
-                    // 2er Paarung
-                    $winner = cup_winner_index($row);
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($winner === 1 ? 'winner' : ($winner === 2 ? 'loser' : '')) . '">' . htmlspecialchars($n1) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r1) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l1) . ')</span>';
-                    $html .= '</div>';
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($winner === 2 ? 'winner' : ($winner === 1 ? 'loser' : '')) . '">' . htmlspecialchars($n2) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r2) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l2) . ')</span>';
-                    $html .= '</div>';
-                }
-                
-                $html .= '</div>';
-            }
-        }
-        $html .= '</div>';
-        
-        // Rechte Spalte
-        $html .= '<div class="column">';
-        foreach ($rightRounds as $rnd) {
-            $html .= '<h3>Runde ' . $rnd . '</h3>';
-            $roundPairs = array_filter($pairs, fn($r) => (int)$r['Round'] === $rnd);
-            
-            foreach ($roundPairs as $row) {
-                $p1 = (int)($row['Participant1'] ?? 0);
-                $p2 = (int)($row['Participant2'] ?? 0);
-                $p3 = !empty($row['Participant3']) ? (int)$row['Participant3'] : null;
-                
-                $n1 = $p1 ? ($names[$p1] ?? 'Mitglied #'.$p1) : '';
-                $n2 = $p2 ? ($names[$p2] ?? 'Mitglied #'.$p2) : '';
-                
-                $r1 = $row['Result1'] ?? '';
-                $r2 = $row['Result2'] ?? '';
-                $l1 = $row['LowShot1'] ?? '';
-                $l2 = $row['LowShot2'] ?? '';
-                
-                $html .= '<div class="pairing">';
-                
-                if ($p3) {
-                    $n3 = $p3 ? ($names[$p3] ?? 'Mitglied #'.$p3) : '';
-                    $r3 = $row['Result3'] ?? '';
-                    $l3 = $row['LowShot3'] ?? '';
-                    $loser = cup_three_loser_index($row);
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($loser === 1 ? 'loser' : 'winner') . '">' . htmlspecialchars($n1) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r1) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l1) . ')</span>';
-                    $html .= '</div>';
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($loser === 2 ? 'loser' : 'winner') . '">' . htmlspecialchars($n2) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r2) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l2) . ')</span>';
-                    $html .= '</div>';
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($loser === 3 ? 'loser' : 'winner') . '">' . htmlspecialchars($n3) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r3) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l3) . ')</span>';
-                    $html .= '</div>';
-                } else {
-                    $winner = cup_winner_index($row);
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($winner === 1 ? 'winner' : ($winner === 2 ? 'loser' : '')) . '">' . htmlspecialchars($n1) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r1) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l1) . ')</span>';
-                    $html .= '</div>';
-                    
-                    $html .= '<div class="pairing-row">';
-                    $html .= '<span class="pairing-name ' . ($winner === 2 ? 'winner' : ($winner === 1 ? 'loser' : '')) . '">' . htmlspecialchars($n2) . '</span>';
-                    $html .= '<span class="pairing-score">' . htmlspecialchars($r2) . '</span>';
-                    $html .= '<span class="pairing-lowshot">(' . htmlspecialchars($l2) . ')</span>';
-                    $html .= '</div>';
-                }
-                
-                $html .= '</div>';
-            }
-        }
-        $html .= '</div>';
-        
-        $html .= '</div>'; // columns
+        $html .= '<table class="columns"><tbody><tr>'
+               . '<td class="links">' . $rundenHtml(array_slice($rounds, 0, $halfPoint)) . '</td>'
+               . '<td class="rechts">' . $rundenHtml(array_slice($rounds, $halfPoint)) . '</td>'
+               . '</tr></tbody></table>';
     }
-    
-    $html .= '</div>'; // section
-    
-    // Ranglisten nebeneinander
-    $html .= '<div class="columns">';
-    
-    // Finale Rangliste MIT Tiefschuss
-    $html .= '<div class="column">';
-    $html .= '<h2>MSV Wilen Final</h2>';
-    
+
+    // Finals nebeneinander
+    $finalHtml = '<h2>MSV Wilen Final</h2>';
     if (!empty($rankedFinal)) {
-        $html .= '<table>';
-        $html .= '<tbody>';
-        
+        $finalHtml .= '<table class="table"><thead><tr><th class="r">Rang</th><th>Name</th><th class="r">Punkte</th><th class="r">TS</th></tr></thead><tbody>';
         foreach ($rankedFinal as $r) {
-            $rowClass = '';
-            if ($r['Rang'] == 1) $rowClass = 'gold';
-            elseif ($r['Rang'] == 2) $rowClass = 'silver';
-            elseif ($r['Rang'] == 3) $rowClass = 'bronze';
-            
-            $html .= '<tr class="' . $rowClass . '">';
-            $html .= '<td class="rank">' . $r['Rang'] . '.</td>';
-            $html .= '<td class="name">' . htmlspecialchars($r['Teilnehmer'] ?? '') . '</td>';
-            $html .= '<td class="points">' . htmlspecialchars($r['Punkte'] ?? '') . '</td>';
-            $html .= '<td class="lowshot">' . htmlspecialchars($r['Tiefschuss'] ?? '') . '</td>';
-            $html .= '</tr>';
+            $finalHtml .= pdf_rangliste_zeile(min((int)$r['Rang'], 5)) // Final: nur fett, kein Abstand
+                        . '<td class="rang">' . $r['Rang'] . '.</td>'
+                        . '<td>' . htmlspecialchars($r['Teilnehmer'] ?? '') . '</td>'
+                        . '<td class="r pkt">' . htmlspecialchars((string)($r['Punkte'] ?? '')) . '</td>'
+                        . '<td class="r ts">' . htmlspecialchars((string)($r['Tiefschuss'] ?? '')) . '</td></tr>';
         }
-        
-        $html .= '</tbody></table>';
+        $finalHtml .= '</tbody></table>';
     }
-    
-    $html .= '</div>';
-    
-    // Standcup Final
-    $html .= '<div class="column">';
-    $html .= '<h2>Standcup Final</h2>';
-    
+
+    $standHtml = '<h2>Standcup Final</h2>';
     if (!empty($stand)) {
-        $html .= '<table>';
-        $html .= '<tbody>';
-        
+        $standHtml .= '<table class="table stand"><thead><tr><th class="r">Rang</th><th>Name</th><th class="r">Punkte</th></tr></thead><tbody>';
         foreach ($stand as $r) {
-            $rowClass = '';
-            if ($r['_rank'] == 1) $rowClass = 'gold';
-            elseif ($r['_rank'] == 2) $rowClass = 'silver';
-            elseif ($r['_rank'] == 3) $rowClass = 'bronze';
-            
-            $html .= '<tr class="' . $rowClass . '">';
-            $html .= '<td class="rank">' . $r['_rank'] . '.</td>';
-            $html .= '<td class="name">';
-            $html .= htmlspecialchars($r['ParticipantName'] ?? 'Unbekannt');
-            if (!empty($r['club'])) {
-                $html .= '<span class="club">' . htmlspecialchars($r['club']) . '</span>';
-            }
-            $html .= '</td>';
-            $html .= '<td class="points">' . htmlspecialchars($r['Punkte'] ?? '') . '</td>';
-            $html .= '</tr>';
+            $standHtml .= pdf_rangliste_zeile(min((int)$r['_rank'], 5))
+                        . '<td class="rang">' . $r['_rank'] . '.</td>'
+                        . '<td>' . htmlspecialchars($r['ParticipantName'] ?? 'Unbekannt')
+                        . (!empty($r['club']) ? '<br><span class="club">' . htmlspecialchars($r['club']) . '</span>' : '') . '</td>'
+                        . '<td class="r pkt">' . htmlspecialchars((string)($r['Punkte'] ?? '')) . '</td></tr>';
         }
-        
-        $html .= '</tbody></table>';
+        $standHtml .= '</tbody></table>';
     }
-    
-    $html .= '</div>';
-    $html .= '</div>'; // columns
-    
-    // Footer
-    $html .= '<div class="footer">';
-    $html .= 'MSV Wilen - Generiert am ' . date('d.m.Y \u\m H:i') . ' Uhr';
-    $html .= '</div>';
-    
+
+    $html .= '<table class="columns" style="margin-top: 4mm;"><tbody><tr>'
+           . '<td class="links">' . $finalHtml . '</td>'
+           . '<td class="rechts">' . $standHtml . '</td>'
+           . '</tr></tbody></table>';
+
     $html .= '</body></html>';
     
     // PDF generieren
@@ -563,6 +244,7 @@ tbody tr:hover {
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', pdfOrientationParam('portrait')); // Ausrichtung aus dem Druckprofil, Default hoch (auch in @page oben)
     $dompdf->render();
+    pdf_seitenfuss($dompdf, 'Vereinscup ' . $selectedYear);
     
     // Verzeichnis prüfen
     if (!is_dir('dat')) {

@@ -198,14 +198,14 @@ function siegerQuellen(): array
             "COALESCE(u.KSchuss1 + u.KSchuss2 + u.KSchuss3 + u.KSchuss4 + u.KSchuss5, 0) AS Summe,
              GREATEST(COALESCE(u.KSchuss1, 0), COALESCE(u.KSchuss2, 0), COALESCE(u.KSchuss3, 0),
                       COALESCE(u.KSchuss4, 0), COALESCE(u.KSchuss5, 0)) AS TS",
-            'u.KSchuss1 IS NOT NULL AND u.KSchuss1 != 0',
+            'COALESCE(u.KSchuss1 + u.KSchuss2 + u.KSchuss3 + u.KSchuss4 + u.KSchuss5, 0) != 0',
             'Summe DESC, TS DESC, u.Geburtsdatum ASC, u.Name ASC'),
         // wie GlueckReport
         'Glück' => $stich('glueck', 'MaxGlueck',
             "GREATEST(u.GSchuss1, u.GSchuss2, u.GSchuss3) AS MaxGlueck,
              LEAST(GREATEST(u.GSchuss1, u.GSchuss2), GREATEST(u.GSchuss1, u.GSchuss3), GREATEST(u.GSchuss2, u.GSchuss3)) AS Zweit,
              LEAST(u.GSchuss1, u.GSchuss2, u.GSchuss3) AS Dritt",
-            'u.GSchuss1 != 0',
+            'GREATEST(COALESCE(u.GSchuss1, 0), COALESCE(u.GSchuss2, 0), COALESCE(u.GSchuss3, 0)) != 0',
             'MaxGlueck DESC, Zweit DESC, Dritt DESC, u.Geburtsdatum ASC, u.Name ASC'),
         // wie ZabigReport: Punkte (0–10 je Schuss), dann bester Hunderterwert
         'Zabigstich' => $stich('zabig', 'Punkte',

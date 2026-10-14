@@ -34,7 +34,9 @@ function logError($message, $context = []) {
  * Generiert eine sichere Tabellenzeile für ein Mitglied
  */
 function generateMemberRow($mitglied, $resultate, $year) {
-    $html = '<tr>';
+    // data-kat (A/B aus der Waffe): die Seite rechnet daraus den Rang je Kategorie
+    $kat = preg_match('/Kat\.\s*([AB])/', (string)($mitglied['Kategorie'] ?? ''), $km) ? $km[1] : '';
+    $html = '<tr data-mid="' . (int)$mitglied['ID'] . '" data-kat="' . $kat . '">';
 
     // Serverseitig Summe, Beste und Filled berechnen
     $sum = 0;
@@ -55,7 +57,7 @@ function generateMemberRow($mitglied, $resultate, $year) {
     // Name + Anzahl erfasster Passen (die Seite führt beides beim Tippen nach)
     $vorname = sanitizeOutput($mitglied['Vorname']);
     $name = sanitizeOutput($mitglied['Name']);
-    $html .= '<td><div class="hk-zelle"><span class="hk-name">' . $name . ' ' . $vorname . '</span>'
+    $html .= '<td><div class="hk-zelle"><span class="hk-rang"></span><span class="hk-name">' . $name . ' ' . $vorname . '</span>'
            . '<span class="hk-anzahl' . ($filled === 5 ? ' voll' : '') . '">' . ($filled > 0 ? $filled . '/5' : '') . '</span></div></td>';
 
     // Resultate für jede Passe (1-5)
@@ -102,7 +104,9 @@ try {
     }
 
     // Mitglieder mit prepared statement laden
-    $mitgliederSql = "SELECT ID, Name, Vorname FROM mitglieder WHERE Status = 1 AND Verstorben = 0 ORDER BY Name ASC, Vorname ASC";
+    $mitgliederSql = "SELECT m.ID, m.Name, m.Vorname, w.Kategorie FROM mitglieder m
+                      LEFT JOIN Waffen w ON w.ID = m.WaffenID
+                      WHERE m.Status = 1 AND m.Verstorben = 0 ORDER BY m.Name ASC, m.Vorname ASC";
     $mitgliederStmt = $conn->prepare($mitgliederSql);
     
     if (!$mitgliederStmt) {

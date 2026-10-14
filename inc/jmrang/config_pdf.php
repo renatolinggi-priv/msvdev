@@ -13,59 +13,26 @@ function imgToBase64($imgPath)
     return $src;
 }
 
-// Datei-spezifische Layout-Overrides (NACH dem Theme -> gewinnen in der Kaskade).
-// Nur echtes Layout für die Querformat-Breittabelle, keine Farben.
+// Ranglisten-Layout wie im Absendenbuch (pdf_rangliste_css) plus das, was nur die breite JM-Tabelle braucht:
+// kleinere Schrift und Polster für die vielen Anlass-Spalten, Zebra wie im Buch, Streicher grau hinterlegt.
 $jmrangOverrides = '
-    /* JM-Rangliste: Querformat mit vielen rotierten Spalten */
-    body { font-size: 11px; }
-    .table th, .table td { padding: 5px 2px; }
-    .result-col { font-size: 11px; }
-    .vertical-header { font-size: 8px; line-height: 1.2; }
-    @page { margin-bottom: 50px; }
-
-    /* Kompakter Seitenkopf: mehr Hoehe fuer die Tabelle */
-    .pdf-header { min-height: 34px; margin: 0 10px 6px 10px; }
-    .logo { width: 55px; max-width: 55px; margin-right: 10px; }
-    .header-text h1 { font-size: 13px; }
-    h2 { margin-bottom: 6px; }
+    .jm { font-size: 8.5pt; }
+    .jm th, .jm td { padding: 1mm 0.7mm; }
+    .jm td.name { white-space: nowrap; padding-right: 2mm; }
+    .jm td.result-col { text-align: right; }
+    .jm td.total { text-align: right; padding-left: 2mm; }
+    .jm tbody tr:nth-child(even) td { background: #f2f2f2; }
+    .jm .struck, .rl-hinweis .struck { background: #d9d9d9; color: #000; text-decoration: line-through; padding: 0 0.5mm; }
+    .jm-zusatz { font-size: 9pt; color: #64748b; font-weight: normal; }
 ';
 
-// HTML-Header mit Theme-CSS + Overrides; Footer weiterhin via Dompdf page_script.
+// Dokumentanfang: Theme + Ranglisten-Layout + JM. Die Generatoren hängen <title>, </head><body> und den Kopf
+// (pdf_rangliste_kopf) an und rufen nach dem Rendern pdf_seitenfuss() auf.
 $header = '<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>' . pdf_theme_css() . $jmrangOverrides . '</style>
-    <script type="text/php">
-        if (isset($pdf)) {
-            $pdf->page_script(\'
-                $font = $fontMetrics->get_font("Arial", "normal");
-                $size = 7;
-                $pageCount = $pdf->get_page_count();
-                $pageNumber = $pdf->get_page_number();
-
-                // Footer auf jeder Seite
-                $y = $pdf->get_height() - 25;
-
-                // Linie (weiches Grau)
-                $pdf->line(15, $y - 5, $pdf->get_width() - 15, $y - 5, array(0.8, 0.8, 0.8), 0.5);
-
-                // Linker Text
-                $pdf->text(20, $y, "Erstellt am: ' . date('d.m.Y H:i') . ' Uhr", $font, $size);
-
-                // Mittlerer Text
-                $text = "MSV Wilen - Jahresmeisterschaft";
-                $width = $fontMetrics->get_text_width($text, $font, $size);
-                $pdf->text(($pdf->get_width() - $width) / 2, $y, $text, $font, $size);
-
-                // Rechter Text
-                $text = "Seite " . $pageNumber . " von " . $pageCount;
-                $width = $fontMetrics->get_text_width($text, $font, $size);
-                $pdf->text($pdf->get_width() - $width - 20, $y, $text, $font, $size);
-            \');
-        }
-    </script>
+    <style>' . pdf_theme_css() . pdf_rangliste_css() . $jmrangOverrides . '</style>
     ';
 
 // Footer - nur für HTML-Vorschau, nicht für PDF
