@@ -146,10 +146,13 @@ try {
         // 3) Broschüre: eine Lage (signature) = alle Seiten, aufgerundet auf ein Vielfaches von 4
         $schritt = 'ausschiessen';
         $signature = max(4, (int)(ceil($pages / 4) * 4));
+        // Leerseiten vor die letzte Seite (Rückseite «Herzlichen Dank»), nicht dahinter: sonst steht der Dank nicht aussen
+        $leer = $signature - $pages;
+        $auswahl = ($leer > 0 && $pages > 1) ? ' ' . escapeshellarg('1-' . ($pages - 1) . str_repeat(',{}', $leer) . ',' . $pages) : '';
         $ziel = $datDir . '/Resultatbuechlein_Broschuere_' . $ts . '.pdf';
         $cmd = absendenShellEnv()
             . 'pdfjam --booklet true --landscape --paper a4paper --signature ' . $signature . ' --quiet '
-            . escapeshellarg($tmpPdf) . ' -o ' . escapeshellarg($ziel) . ' 2>&1';
+            . escapeshellarg($tmpPdf) . $auswahl . ' -o ' . escapeshellarg($ziel) . ' 2>&1';
         $out = [];
         $rc  = 0;
         exec($cmd, $out, $rc);

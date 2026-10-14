@@ -32,9 +32,12 @@ use PhpOffice\PhpWord\Element\TextRun;
 // unter dem Kopf überall 3 pt, Lücken zusammen 240 Twips (Kantonalstich Kat. A/B im selben Raster), Siegerlisten volle
 // Breite, Titel auf S. 12 mit «Seitenumbruch oberhalb» statt Umbruchzeichen.
 // 20261014c = 20261014b, in Word mit vollständig eingebetteter Schrift (Aptos, alle Schnitte) gespeichert, damit der
-// PDF-Dienst nicht auf eine Ersatzschrift ausweicht. Rückfall: 20261014b in dat/; ältere Vorlagen nur noch in git.
-// Neue Vorlagen per Skript bauen (siehe ABSENDENBUCH_KONZEPT.md), danach wieder in Word mit Einbetten speichern.
-const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014c.docx';
+// PDF-Dienst nicht auf eine Ersatzschrift ausweicht.
+// 20261014d (aus c, Schrift bleibt eingebettet): Deckblatt mit Titel oben und einem Logo unten (60 mm, mittig), Ort/Datum
+// 11 pt unter «Ranglisten», alle Deckblatt-Absätze ohne alte Einzüge (eine Mittelachse); Rückseite «Herzlichen Dank» als
+// eigener Abschnitt, senkrecht zentriert, ohne Seitenzahl (Heft 24 Seiten).
+// Rückfall: 20261014c in dat/; ältere Vorlagen nur noch in git. Neue Vorlagen per Skript bauen (ABSENDENBUCH_KONZEPT.md).
+const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014d.docx';
 
 /**
  * TemplateProcessor für das Absendenbuch:
@@ -149,12 +152,48 @@ class AbsendenbuchVorlage extends TemplateProcessor
         $this->tempDocumentMainPart = substr($doc, 0, $start) . $xml . substr($doc, $ende);
         return true;
     }
+    /**
+     * Seitenverweise (PAGEREF _abs_*) mit der Seitenzahl vorbelegen. Word rechnet solche Felder beim Öffnen vor dem
+     * Umbruch aus (zeigte überall «1»), darum zählt der Generator selbst: Seitenumbrüche, «Seitenumbruch oberhalb» und
+     * Abschnittswechsel (gerade/ungerade Seite) in Dokumentreihenfolge. Das stimmt, solange kein Abschnitt über seine
+     * Seite hinauswächst; beim Drucken und beim Umwandeln in PDF rechnen Word bzw. der PDF-Dienst die Felder ohnehin neu.
+     * Liefert Textmarke => Seite.
+     */
+    public function seitenverweiseFuellen(): array
+    {
+        $xml = $this->tempDocumentMainPart;
+        preg_match_all('#<w:sectPr\b.*?</w:sectPr>#s', $xml, $sect);
+        $typen = array_map(fn($s) => preg_match('#<w:type w:val="(\w+)"#', $s, $m) ? $m[1] : 'nextPage', $sect[0]);
+        preg_match_all('#<w:pageBreakBefore(?: w:val="(?:1|true|on)")?\s*/>|<w:br w:type="page"\s*/>|<w:bookmarkStart\b[^>]*w:name="(_abs_\w+)"|<w:sectPr\b.*?</w:sectPr>#s',
+            $xml, $treffer, PREG_SET_ORDER);
+        $seite = 1;
+        $abschnitt = 0;
+        $seiten = [];
+        foreach ($treffer as $t) {
+            if (str_starts_with($t[0], '<w:sectPr')) {
+                $naechster = $typen[++$abschnitt] ?? null;
+                if ($naechster === null || $naechster === 'continuous') continue;
+                $seite++;
+                if (($naechster === 'evenPage' && $seite % 2 === 1) || ($naechster === 'oddPage' && $seite % 2 === 0)) $seite++;
+            } elseif (!empty($t[1])) {
+                $seiten[$t[1]] ??= $seite;
+            } else {
+                $seite++;
+            }
+        }
+        $this->tempDocumentMainPart = preg_replace_callback(
+            '#( PAGEREF (_abs_\w+) \\\\h </w:instrText></w:r><w:r>(?:<w:rPr>.*?</w:rPr>)?<w:fldChar w:fldCharType="separate"/></w:r><w:r>(?:<w:rPr>.*?</w:rPr>)?<w:t>)(</w:t>)#s',
+            fn($m) => isset($seiten[$m[2]]) ? $m[1] . $seiten[$m[2]] . $m[3] : $m[0],
+            $xml
+        );
+        return $seiten;
+    }
 }
 
 /**
  * Tabelle der Seite «Sieger <Jahr>»: pro Wettkampf Sieger, Resultat und Seite (Feld PAGEREF auf die Textmarke
- * _abs_<Marke> am Abschnittstitel; w:dirty lässt Word die Seitenzahl beim Öffnen rechnen, der PDF-Dienst rechnet sie
- * beim Umwandeln). Nur Wettkämpfe, die im Buch stehen ($sieger aus absendenSiegerMerken()).
+ * _abs_<Marke> am Abschnittstitel; der Generator belegt die Zahl vor (seitenverweiseFuellen()), Drucken und PDF-Dienst
+ * rechnen sie neu). Nur Wettkämpfe, die im Buch stehen ($sieger aus absendenSiegerMerken()).
  */
 function absendenbuchSiegerSeiteXml(array $sieger): string
 {
@@ -186,14 +225,49 @@ function absendenbuchSiegerSeiteXml(array $sieger): string
         . $zelle($b[2], $run('Resultat', true), true, true) . $zelle($b[3], $run('Seite', true), true, true) . '</w:tr>';
     foreach ($reihe as $marke => [$bezeichnung, $textmarke]) {
         if (empty($sieger[$marke]['name'])) continue;
-        $feld = '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r>'
+        $feld = '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="begin"/></w:r>'
             . '<w:r>' . $rPr(false) . '<w:instrText xml:space="preserve"> PAGEREF _abs_' . $textmarke . ' \h </w:instrText></w:r>'
             . '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="separate"/></w:r><w:r>' . $rPr(false) . '<w:t></w:t></w:r>'
             . '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="end"/></w:r>';
         $xml .= '<w:tr><w:trPr><w:trHeight w:val="300"/></w:trPr>' . $zelle($b[0], $run($bezeichnung)) . $zelle($b[1], $run($sieger[$marke]['name'], true))
             . $zelle($b[2], $run($sieger[$marke]['resultat']), true) . $zelle($b[3], $feld, true) . '</w:tr>';
     }
-    return $xml . '</w:tbl>';
+    return absendenbuchJahresmeisterXml($sieger) . $xml . '</w:tbl>';
+}
+
+/**
+ * Block «Jahresmeister» über der Siegertabelle: die zwei Jahresmeister sind der Höhepunkt des Abends und stehen darum
+ * etwas grösser, aber im selben Spaltenraster wie die Tabelle (Resultat und Seite in denselben Spalten). Ohne
+ * JM-Sieger entfällt der Block.
+ */
+function absendenbuchJahresmeisterXml(array $sieger): string
+{
+    $e = fn(string $s): string => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    $rPr = fn(int $sz, bool $fett = false, string $farbe = ''): string => '<w:rPr>' . ($fett ? '<w:b/><w:bCs/>' : '')
+        . ($farbe !== '' ? '<w:color w:val="' . $farbe . '"/>' : '') . '<w:sz w:val="' . $sz . '"/><w:szCs w:val="' . $sz . '"/></w:rPr>';
+    $run = fn(string $t, int $sz, bool $fett = false, string $farbe = ''): string => '<w:r>' . $rPr($sz, $fett, $farbe) . '<w:t xml:space="preserve">' . $e($t) . '</w:t></w:r>';
+    $zelle = fn(int $w, string $inhalt, string $jc = 'left'): string => '<w:tc><w:tcPr><w:tcW w:w="' . $w . '" w:type="dxa"/><w:vAlign w:val="bottom"/></w:tcPr>'
+        . '<w:p><w:pPr><w:spacing w:before="60" w:after="40" w:line="240" w:lineRule="auto"/><w:jc w:val="' . $jc . '"/></w:pPr>' . $inhalt . '</w:p></w:tc>';
+    $b = [2750, 2900, 1000, 918]; // wie die Siegertabelle
+    $zeilen = '';
+    foreach (['JMA' => 'Kat. A (Standardgewehr)', 'JMB' => 'Kat. B (Ordonnanzwaffen)'] as $marke => $kat) {
+        if (empty($sieger[$marke]['name'])) continue;
+        $feld = '<w:r>' . $rPr(18) . '<w:fldChar w:fldCharType="begin"/></w:r><w:r>' . $rPr(18) . '<w:instrText xml:space="preserve"> PAGEREF _abs_' . $marke . ' \h </w:instrText></w:r>'
+            . '<w:r>' . $rPr(18) . '<w:fldChar w:fldCharType="separate"/></w:r><w:r>' . $rPr(18) . '<w:t></w:t></w:r><w:r>' . $rPr(18) . '<w:fldChar w:fldCharType="end"/></w:r>';
+        $zeilen .= '<w:tr>' . $zelle($b[0], $run($kat, 18, false, '595959')) . $zelle($b[1], $run($sieger[$marke]['name'], 18, true))
+            . $zelle($b[2], $run($sieger[$marke]['resultat'], 18), 'right') . $zelle($b[3], $feld, 'right') . '</w:tr>';
+    }
+    if ($zeilen === '') {
+        return '';
+    }
+    $grid = ''; foreach ($b as $w) $grid .= '<w:gridCol w:w="' . $w . '"/>';
+    $titel = '<w:p><w:pPr><w:spacing w:before="0" w:after="40"/></w:pPr>' . $run('Jahresmeister', 20, true, '595959') . '</w:p>';
+    $tabelle = '<w:tbl><w:tblPr><w:tblW w:w="' . array_sum($b) . '" w:type="dxa"/><w:tblLayout w:type="fixed"/>'
+        . '<w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders>'
+        . '<w:tblCellMar><w:left w:w="108" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="0000"/></w:tblPr>'
+        . '<w:tblGrid>' . $grid . '</w:tblGrid>' . $zeilen . '</w:tbl>';
+    $abstand = '<w:p><w:pPr><w:spacing w:before="0" w:after="240"/></w:pPr></w:p>';
+    return $titel . $tabelle . $abstand;
 }
 
 /** Jahr aus ?year= (Standard: laufendes Jahr); ausserhalb 2000 … nächste fünf Jahre → 400 mit Klartext. */
@@ -314,6 +388,7 @@ function absendenbuchTemplateFuellen(int $selectedYear, mysqli $conn, ?array &$h
     $GLOBALS['absendenAbschnitt'] = 'Sieger-Seite';
     try {
         $tp->absatzDurchXml('SIEGER_SEITE', absendenbuchSiegerSeiteXml($GLOBALS['absendenSieger']));
+        $tp->seitenverweiseFuellen();
     } catch (Throwable $e) {
         error_log('[absendenbuch] Sieger-Seite: ' . get_class($e) . ': ' . $e->getMessage());
         absendenHinweis('konnte nicht erstellt werden, die Seite bleibt leer.');

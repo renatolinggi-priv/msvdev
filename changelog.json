@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.68.23",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: neues Deckblatt, Jahresmeister vorne, Dank auf der Rückseite",
+        "beschreibung": "Das Deckblatt zeigt oben Titel, Ort und Datum, unten ein grosses Logo. Auf der Seite «Sieger» stehen die beiden Jahresmeister zuoberst; der Standcup erscheint dort nur, wenn jemand von Wilen ihn gewonnen hat. Die letzte Seite dankt allen Schützinnen und Schützen für die Teilnahme und die Arbeitseinsätze; bei der Broschüre kommen allfällige Leerseiten davor, damit der Dank hinten aussen steht.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Absendenbuch (Word): Seitenzahlen auf der Seite «Sieger» stimmen",
+        "beschreibung": "In der Word-Fassung zeigten die Seitenverweise auf der Seite «Sieger» beim Öffnen überall 1. Neu sind sie gleich richtig ausgefüllt.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.22",
     "datum": "2026-10-14",
     "aenderungen": [

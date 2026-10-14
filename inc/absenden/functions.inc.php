@@ -1587,8 +1587,11 @@ function getCup($templateProcessor, $conn)
         $zelle = ['valign' => VerticalJc::CENTER]; // ohne Rahmen wie die übrigen Ranglisten
         $schrift = ['size' => 9, 'bold' => $i === 1];
         if ($i === 1) {
+            // auf die Seite «Sieger <Jahr>» nur, wenn jemand von Wilen den Standcup gewonnen hat (Entscheid 14.10.2026)
             $verein = trim((string)($row['club'] ?? ''));
-            absendenSiegerMerken('Standcup', $participant . ($verein !== '' ? ', ' . $verein : ''), $row['Result']);
+            if (stripos($verein, 'Wilen') !== false) {
+                absendenSiegerMerken('Standcup', $participant . ', ' . $verein, $row['Result']);
+            }
         }
         $standCupTable->addCell(450, $zelle)->addText("$i.", $schrift, ['spaceAfter' => 0]);
         $standCupTable->addCell(2450, $zelle)->addText($participant, $schrift, ['spaceAfter' => 0]);
