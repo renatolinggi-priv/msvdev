@@ -16,6 +16,12 @@
         "admin_only": true
       },
       {
+        "titel": "Menü aufgeräumt",
+        "beschreibung": "Die Ranglisten von Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup stehen auf den Erfassungsseiten und haben keinen eigenen Menüeintrag mehr. «Endschiessen» bündelt Stiche lösen, Resultate erfassen, Rangliste und Partner Scheiben Ausdruck. «Ranglisten» heisst neu «Auswertungen» mit Sektionsmeisterschaft Rangliste, Sektionsabrechnungen und Wanderpreisen. Alte Links und Lesezeichen funktionieren weiter.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
         "titel": "Endschiessen: Erfassen und Rangliste auf einer Seite",
         "beschreibung": "«Endschiessen Resultate erfassen» und «Endschiessen Rangliste» sind eine Seite mit zwei Ansichten derselben Tabelle, umschaltbar neben dem Jahr. «Erfassen» sortiert nach Name, «Rangliste» nach Kat. A, Kat. B und Rang und zeigt darunter, wer ohne Wertung bleibt und warum. Die Prüfliste «Absenden vorbereiten» und alle Dokumente stehen in der Ansicht «Rangliste». In beiden Ansichten stehen Rang und Total, gerechnet wie die Gesamtrangliste im PDF, und ein Klick auf eine Zeile öffnet die Erfassung. Beide Menüeinträge bleiben.",
         "typ": "verbesserung",
