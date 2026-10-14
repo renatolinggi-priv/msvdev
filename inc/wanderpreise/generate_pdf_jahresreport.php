@@ -25,7 +25,7 @@ if ($hersteller === 'Akura Einsiedeln') {
     
     // Hole das Absenden-Datum aus JMDefinition für das aktuelle Jahr
     $sql_absenden = "SELECT Schiesstage FROM JMDefinition 
-                     WHERE Bezeichnung = 'Absenden' 
+                     WHERE Bezeichnung LIKE '%Absenden%' 
                      AND year = ?
                      LIMIT 1";
     $stmt_absenden = $conn->prepare($sql_absenden);

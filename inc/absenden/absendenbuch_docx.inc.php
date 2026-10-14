@@ -31,8 +31,10 @@ use PhpOffice\PhpWord\Element\TextRun;
 // 20261014b (Polish nach Critique 14.10.2026): überall «Rang», Rang rechtsbündig, KK/WP links nach dem Total, Blindzeile
 // unter dem Kopf überall 3 pt, Lücken zusammen 240 Twips (Kantonalstich Kat. A/B im selben Raster), Siegerlisten volle
 // Breite, Titel auf S. 12 mit «Seitenumbruch oberhalb» statt Umbruchzeichen.
-// Vorgängerinnen 20261014, 20261013, 20261012 und 20251015 bleiben als Rückfall in dat/ liegen.
-const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014b.docx';
+// 20261014c = 20261014b, in Word mit vollständig eingebetteter Schrift (Aptos, alle Schnitte) gespeichert, damit der
+// PDF-Dienst nicht auf eine Ersatzschrift ausweicht. Rückfall: 20261014b in dat/; ältere Vorlagen nur noch in git.
+// Neue Vorlagen per Skript bauen (siehe ABSENDENBUCH_KONZEPT.md), danach wieder in Word mit Einbetten speichern.
+const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014c.docx';
 
 /**
  * TemplateProcessor für das Absendenbuch:

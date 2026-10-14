@@ -203,7 +203,7 @@ class WanderpreiseJahresReport extends PDFGenerator {
         
         // Hole das Absenden-Datum aus JMDefinition
         $sql = "SELECT Schiesstage FROM JMDefinition 
-                WHERE Bezeichnung = 'Absenden' 
+                WHERE Bezeichnung LIKE '%Absenden%' 
                 AND year = ?
                 LIMIT 1";
         
@@ -918,7 +918,7 @@ class AkuraGravurReport extends PDFGenerator {
         
         // Hole das Absenden-Datum aus JMDefinition
         $sql = "SELECT Schiesstage FROM JMDefinition 
-                WHERE Bezeichnung = 'Absenden' 
+                WHERE Bezeichnung LIKE '%Absenden%' 
                 AND year = ?
                 LIMIT 1";
         

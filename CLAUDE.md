@@ -119,7 +119,7 @@ gebraucht werden:
 
 - `MSVWilen_Logo.jpg` / `SKSG_Logo.jpg` — `inc/pdf_design.php` verteilt das Logo in jedes
   Modul-`dat/`, `inc/home.php` bindet `jmrang/dat/MSVWilen_Logo.jpg` als `<img>` ein
-- Vorlagen: `Resultatbuch_Template*.docx`, `Resultatbuch_V1..V3.docx`,
+- Vorlagen: `Resultatbuch_Template*.docx` (Absendenbuch; ältere Fassungen und V1..V3 am 14.10.2026 entfernt, in git),
   `VorlageFragebogen.docx`, `Kantonalstich_Abrechnungsformular-ab-2026.xlsm`
 
 Der Helfer löscht darum nur, was die Signatur einer generierten Datei trägt: ein
