@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.21",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: grössere Anlassnamen in der Jahresmeisterschaft",
+        "beschreibung": "Die gedrehten Anlassnamen der Jahresmeisterschaft stehen in 8.5 statt 7 Punkt, die Kopfzeile ist dafür höher. Die Rangnummer auf der rechten Seite entfällt wieder; die höheren Zeilen bleiben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.20",
     "datum": "2026-10-14",
     "aenderungen": [

@@ -1611,7 +1611,7 @@ function getJMA($templateProcessor, $conn)
     $tableStyle      = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 50];
     $cellStyle       = ['valign' => 'center', 'alignment' => Jc::CENTER];
     $textStyle       = ['alignment' => Jc::CENTER];
-    $boldFontStyle   = ['size' => 7, 'bold' => true, 'alignment' => Jc::CENTER]; // Anlass-Titel 7 pt: der längste (40 Zeichen) füllt die Kopfzeile sonst ganz
+    $boldFontStyle   = ['size' => 8.5, 'bold' => true, 'alignment' => Jc::CENTER]; // Anlass-Titel 8.5 pt, Kopfzeile dafür 4000 Twips (der längste Name hat 40 Zeichen)
     $cellHeaderStyle = ['valign' => 'center', 'alignment' => Jc::CENTER];
     if (defined('PhpOffice\\PhpWord\\Style\\Cell::TEXT_DIR_BTLR')) {
         $cellHeaderStyle['textDirection'] = \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR;
@@ -1665,7 +1665,6 @@ function getJMA($templateProcessor, $conn)
     // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
     $satzspiegel = 7568;
     $wRang = 400; $wName = 1700; $wTotal = 700;
-    $wRangRechts = 360; // Rangnummer am Falz der rechten Seite (ohne Namen): Anker, um die eigene Zeile zu finden
     // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
     // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
     $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
@@ -1678,7 +1677,7 @@ function getJMA($templateProcessor, $conn)
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
     $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table1->addRow(3000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
+    $table1->addRow(4000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
     $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
@@ -1688,8 +1687,7 @@ function getJMA($templateProcessor, $conn)
     $table1->addRow(200);
     $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table2->addRow(3000, ['exactHeight' => true]);
-    $table2->addCell($wRangRechts, ['valign'=>'bottom','noWrap'=>true])->addText('', $boldFontStyle);
+    $table2->addRow(4000, ['exactHeight' => true]);
     foreach ($secondHalf as $d) {
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
@@ -1854,8 +1852,6 @@ function getJMA($templateProcessor, $conn)
 
         // Tabelle 2
         $table2->addRow(284);
-        $table2->addCell($wRangRechts, array_merge(['valign'=>'center','noWrap'=>true], $extra))
-               ->addText($rang . '.', ['size' => 7.5, 'color' => '808080'], ['alignment' => Jc::END]);
         foreach ($row['resSecond'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
@@ -1882,7 +1878,7 @@ function getJMB($templateProcessor, $conn)
     $tableStyle      = ['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 50];
     $cellStyle       = ['valign' => 'center', 'alignment' => Jc::CENTER];
     $textStyle       = ['alignment' => Jc::CENTER];
-    $boldFontStyle   = ['size' => 7, 'bold' => true, 'alignment' => Jc::CENTER]; // Anlass-Titel 7 pt: der längste (40 Zeichen) füllt die Kopfzeile sonst ganz
+    $boldFontStyle   = ['size' => 8.5, 'bold' => true, 'alignment' => Jc::CENTER]; // Anlass-Titel 8.5 pt, Kopfzeile dafür 4000 Twips (der längste Name hat 40 Zeichen)
     $cellHeaderStyle = ['valign' => 'center', 'alignment' => Jc::CENTER];
     if (defined('PhpOffice\\PhpWord\\Style\\Cell::TEXT_DIR_BTLR')) {
         $cellHeaderStyle['textDirection'] = \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR;
@@ -1936,7 +1932,6 @@ function getJMB($templateProcessor, $conn)
     // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
     $satzspiegel = 7568;
     $wRang = 400; $wName = 1700; $wTotal = 700;
-    $wRangRechts = 360; // Rangnummer am Falz der rechten Seite (ohne Namen): Anker, um die eigene Zeile zu finden
     // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
     // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
     $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
@@ -1949,7 +1944,7 @@ function getJMB($templateProcessor, $conn)
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
     $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table1->addRow(3000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
+    $table1->addRow(4000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
     $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
@@ -1959,8 +1954,7 @@ function getJMB($templateProcessor, $conn)
     $table1->addRow(200);
     $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table2->addRow(3000, ['exactHeight' => true]);
-    $table2->addCell($wRangRechts, ['valign'=>'bottom','noWrap'=>true])->addText('', $boldFontStyle);
+    $table2->addRow(4000, ['exactHeight' => true]);
     foreach ($secondHalf as $d) {
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
@@ -2125,8 +2119,6 @@ function getJMB($templateProcessor, $conn)
 
         // Tabelle 2
         $table2->addRow(284);
-        $table2->addCell($wRangRechts, array_merge(['valign'=>'center','noWrap'=>true], $extra))
-               ->addText($rang . '.', ['size' => 7.5, 'color' => '808080'], ['alignment' => Jc::END]);
         foreach ($row['resSecond'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
