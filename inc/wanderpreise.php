@@ -57,7 +57,9 @@ tr.wp-ausser .wp-name { font-weight: 500; color: var(--ui-text-2); }
 /* Ansichten «Wanderpreise» / «Regeln» */
 .wp-ansicht-wanderpreise .wp-nur-regeln, .wp-ansicht-regeln .wp-nur-wanderpreise,
 .wp-ansicht-regeln .msv-kopf-extra { display: none !important; }
-.wp-aktionen { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Gruppe ohne eigene Box: die Knöpfe stehen direkt in der Aktionsleiste des Kopfs (sonst schrumpft die Gruppe
+   als Flex-Element auf Mindestbreite und bricht jeden Knopf um) */
+.wp-aktionen { display: contents; }
 
 /* Regeln (vorher wanderpreise_regeln.php) */
 .regel-name { font-weight: 500; color: var(--ui-text); }
