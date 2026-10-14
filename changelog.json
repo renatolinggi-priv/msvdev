@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.18",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Sieger-Seite, Seitenzahlen und besser lesbare Tabellen",
+        "beschreibung": "Nach dem Deckblatt steht neu die Seite «Sieger» mit dem Sieger jedes Wettkampfs, seinem Resultat und der Seite, auf der die Rangliste steht. Das Buch hat Seitenzahlen (das Deckblatt ohne). Ranglisten, Siegerlisten und Cup stehen in 9 statt 8 Punkt, Zahlen rechtsbündig, Namen brechen nicht mehr um, KK und WP sind gleich gross wie der übrige Text. Was nicht geschossen wurde, steht als «–» statt 0. In der Jahresmeisterschaft liegen die Zeilen links und rechts der Doppelseite auf gleicher Höhe, und wer ausser Obligatorisch und Feldschiessen nichts eingetragen hat, steht nicht mehr in der Tabelle. Der Rand aussen ist 10 statt 5 mm.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.17",
     "datum": "2026-10-13",
     "aenderungen": [

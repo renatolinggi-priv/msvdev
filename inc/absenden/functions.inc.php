@@ -151,6 +151,37 @@ function absendenSiegerlisteName(string $bezeichnung): string {
     return $namen[$bezeichnung] ?? $bezeichnung;
 }
 
+/**
+ * Sieger eines Wettkampfs für die Seite «Sieger <Jahr>» nach dem Deckblatt merken (Rang 1 der Rangliste im Buch).
+ * $marke = Textmarke des Abschnittstitels in der Vorlage (ohne «_abs_»), auf die die Spalte «Seite» verweist.
+ */
+function absendenSiegerMerken(string $marke, string $name, $resultat): void {
+    $GLOBALS['absendenSieger'][$marke] = ['name' => trim($name), 'resultat' => trim((string)$resultat)];
+}
+
+// Nicht geschossen statt «0»: für Passen- und Stich-Totale (nicht für einzelne Schüsse, dort ist 0 ein Fehlschuss)
+function absendenStrichWennNull($wert): string {
+    $roh = str_replace("\u{200C}", '', trim((string)$wert));
+    return ($roh === '' || (is_numeric($roh) && (float)$roh == 0.0)) ? '–' : (string)$wert;
+}
+
+// JM-Zeile zeigen? Nur wer ausser Obligatorisch und Feldschiessen mindestens ein Resultat hat (Entscheid 14.10.2026);
+// wer nur die Pflichtprogramme eingetragen hat oder gar nichts, steht nicht in der Tabelle.
+function absendenJmHatResultat(array $resFirst, array $resSecond, array $firstHalf, array $secondHalf): bool {
+    foreach ([[$resFirst, $firstHalf], [$resSecond, $secondHalf]] as [$res, $defs]) {
+        foreach ($res as $i => $zelle) {
+            if (in_array($defs[$i]['Bezeichnung'] ?? '', ['Obligatorisch', 'Feldschiessen'], true)) {
+                continue;
+            }
+            $roh = str_replace(["\u{200C}", ' ', "\u{00A0}"], '', (string)($zelle['wert'] ?? ''));
+            if (is_numeric(str_replace(',', '.', $roh)) && (float)str_replace(',', '.', $roh) > 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // ========================================
 // HAUPTFUNKTIONEN
 
@@ -234,6 +265,7 @@ function getEndstich($templateProcessor, $conn)
         $ts  = (is_numeric($r['Tiefschuss']) && floor($r['Tiefschuss']) == $r['Tiefschuss'])
              ? (string)intval($r['Tiefschuss']) : (string)$r['Tiefschuss'];
         $templateProcessor->setValue("ESTO#{$iRow}", $isTop3 ? formatBold($sum) : $sum);
+        if ($iRow === 1) absendenSiegerMerken('Endstich', $name, $sum);
 
         // Falls du im Template ein Feld für Tiefschuss hast:
         if (method_exists($templateProcessor, 'setValue')) {
@@ -374,9 +406,10 @@ function getSchwini($templateProcessor, $conn)
             $templateProcessor->setValue("SS{$i}#{$currentRow}", $isTop3 ? formatBold($value) : $value);
         }
         $st1 = (string) fmtNoTrailingZero($row['Hoechste_Summe']);
-        $st2 = (string) fmtNoTrailingZero($row['Tiefste_Summe']);
+        $st2 = absendenStrichWennNull(fmtNoTrailingZero($row['Tiefste_Summe'])); // 2. Passe nicht geschossen: «–»
         $templateProcessor->setValue("ST1#{$currentRow}", $isTop3 ? formatBold($st1) : $st1);
         $templateProcessor->setValue("ST2#{$currentRow}", $isTop3 ? formatBold($st2) : $st2);
+        if ($currentRow === 1) absendenSiegerMerken('Schwinistich', $nameText, $st1);
         $currentRow++;
     }
     $stmt->close();
@@ -479,6 +512,7 @@ function getZabig($templateProcessor, $conn)
             }
             $templateProcessor->setValue("ZT#{$currentRow}", formatBold($row['Total']));
             $templateProcessor->setValue("ZTS#{$currentRow}", formatBold($row['TS']));
+            if ($currentRow === 1) absendenSiegerMerken('Zabigstich', $row['Name'] . ' ' . $row['Vorname'], $row['Total']);
         } else {
             $templateProcessor->setValue("ZRang#{$currentRow}", $currentRow . ".");
             $templateProcessor->setValue("ZName#{$currentRow}", $row['Name'] . " " . $row['Vorname']);
@@ -561,6 +595,7 @@ function getGlueck($templateProcessor, $conn, $textRun)
         $templateProcessor->setValue("GMax#{$currentRow}", $row['MaxGlueck']);
         $templateProcessor->setValue("G2#{$currentRow}", $row['Zwei']);
         $templateProcessor->setValue("G3#{$currentRow}", $row['Drei']);
+        if ($currentRow === 1) absendenSiegerMerken('Glueckstich', $row['Name'] . ' ' . $row['Vorname'], $row['MaxGlueck']);
         $currentRow++;
     }
     $stmt->close();
@@ -635,7 +670,8 @@ function getKunst($templateProcessor, $conn)
         $keys = array_keys($row);
         $schussKeys = preg_grep('/^KSchuss\d+$/', $keys);
         $scount = count($schussKeys);
-        $mitWp = fn(string $kk) => $idx === $wp ? ($kk !== '' ? $kk . ' + WP' : 'WP') : $kk;
+        $mitWp = fn(string $kk) => $idx === $wp ? ($kk !== '' ? 'WP + ' . $kk : 'WP') : $kk; // wie überall «WP + KK»
+        if ($currentRow === 1) absendenSiegerMerken('Kunststich', $row['Name'] . ' ' . $row['Vorname'], $row['Kunst_Summe']);
         if ($currentRow <= 3) {
             $templateProcessor->setValue("KRang#{$currentRow}", formatBold($currentRow . '.'));
             $templateProcessor->setValue("KName#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
@@ -798,6 +834,13 @@ function getEndschGesamt($templateProcessor, $conn, $kat)
     $currentRow = 1;
     $wp = endschWpVergeben($data); // Wanderpreis nur für Mitglieder
     foreach ($data as $idx => $row) {
+        // nicht geschossene Stiche als «–» statt 0 / 0.0 / leer
+        foreach (['EndstichTotal', 'ZabigTotal', 'MaxSchwini', 'GlueckTotal', 'KunstTotal'] as $f) {
+            $row[$f] = absendenStrichWennNull($row[$f] ?? '');
+        }
+        if ($currentRow === 1) {
+            absendenSiegerMerken($kat === 'Kat. A' ? 'EndschA' : 'EndschB', $row['Name'] . ' ' . $row['Vorname'], fmt1($row['GesamtTotal']));
+        }
         if ($currentRow <= 3) {
             $templateProcessor->setValue($kategorie . "Rang#{$currentRow}", formatBold($currentRow . '.'));
             $templateProcessor->setValue($kategorie . "Name#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
@@ -942,6 +985,7 @@ function getJungschuetzenResultate($templateProcessor, $conn)
         $displayName = !empty($row['vorname']) && !empty($row['nachname']) 
             ? $row['nachname'] . " " . $row['vorname']
             : $row['name'];
+        if ($currentRow === 1) absendenSiegerMerken('EndschJ', $displayName, $row['GesamtTotal']);
         if ($currentRow <= 3) {
 
             // Top 3 fett formatiert
@@ -1042,6 +1086,7 @@ function getPartnerResultate($templateProcessor, $conn)
         $endstich = formatNumber($row['Endstich_Summe']);
         $schwini = formatNumber($row['PartnerSchwini_Summe']);
         $total = formatNumber($row['Total_Summe']);
+        if ($currentRow === 1) absendenSiegerMerken('EndschP', $row['PartnerName'], $total);
         if ($currentRow <= 3) {
 
             // Top 3 fett formatiert
@@ -1127,6 +1172,7 @@ function getHeim($templateProcessor, $conn, $kat)
             }
             $templateProcessor->setValue($kategorie . "T#{$currentRow}", formatBold($row['HeimSumme']));
             if ($currentRow == 1) {
+                absendenSiegerMerken($kat === 'Kat. A' ? 'HeimA' : 'HeimB', $row['Name'] . ' ' . $row['Vorname'], $row['HeimSumme']);
                 $templateProcessor->setValue($kategorie . "KK#{$currentRow}", formatBold('WP + 3KK'));
             } elseif ($currentRow == 2) {
                 $templateProcessor->setValue($kategorie . "KK#{$currentRow}", formatBold('2KK'));
@@ -1193,6 +1239,8 @@ function getKanti($templateProcessor, $conn)
         $templateProcessor->cloneRow('aRang', $rowCount);
         $currentRow = 1;
         foreach ($data as $row) {
+            for ($p = 1; $p <= 5; $p++) $row['Passe' . $p] = absendenStrichWennNull($row['Passe' . $p]); // nicht geschossen: «–»
+            if ($currentRow === 1) absendenSiegerMerken('KantiA', $row['Name'] . ' ' . $row['Vorname'], $row['KantonalSumme']);
             if ($currentRow <= 3) {
                 $templateProcessor->setValue("aRang#{$currentRow}", formatBold($currentRow . '.'));
                 $templateProcessor->setValue("KantonalA#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
@@ -1261,6 +1309,8 @@ function getKanti($templateProcessor, $conn)
         $templateProcessor->cloneRow('bRang', $rowCount);
         $currentRow = 1;
         foreach ($data as $row) {
+            for ($p = 1; $p <= 5; $p++) $row['Passe' . $p] = absendenStrichWennNull($row['Passe' . $p]); // nicht geschossen: «–»
+            if ($currentRow === 1) absendenSiegerMerken('KantiB', $row['Name'] . ' ' . $row['Vorname'], $row['KantonalSumme']);
             if ($currentRow <= 3) {
                 $templateProcessor->setValue("bRang#{$currentRow}", formatBold($currentRow . '.'));
                 $templateProcessor->setValue("KantonalB#{$currentRow}", formatBold($row['Name'] . " " . $row['Vorname']));
@@ -1343,11 +1393,13 @@ function getSieger($templateProcessor, $conn)
             $links = $siegers[2 * $z - 2];
             $rechts = $siegers[2 * $z - 1] ?? ['year' => '', 'Name' => '', 'Wert' => ''];
             $templateProcessor->setValue("{$p}Y#{$z}", $links['year']);
+            // «Keine Auswertung», «Nicht durchgeführt», «Keine Konkurrenz»: ohne die 0 dahinter
+            $wert = fn(array $s): string => (preg_match('/^(Keine|Nicht)\b/u', (string)$s['Name']) && trim((string)$s['Wert']) === '0') ? '' : (string)$s['Wert'];
             $templateProcessor->setValue("{$p}N#{$z}", $links['Name']);
-            $templateProcessor->setValue("{$p}P#{$z}", $links['Wert']);
+            $templateProcessor->setValue("{$p}P#{$z}", $wert($links));
             $templateProcessor->setValue("{$p}Y2#{$z}", $rechts['year']);
             $templateProcessor->setValue("{$p}N2#{$z}", $rechts['Name']);
-            $templateProcessor->setValue("{$p}P2#{$z}", $rechts['Wert']);
+            $templateProcessor->setValue("{$p}P2#{$z}", $wert($rechts));
         }
     }
     if ($ohneBuchjahr) {
@@ -1372,8 +1424,9 @@ function getCup($templateProcessor, $conn)
         // hat keine Linie zwischen ihren zwei Zeilen). Wer weiterkommt fett, die anderen normal.
         $tabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 80, 'cellMarginRight' => 80];
         $wName = 2900; $wPkt = 650;
-        $fett = ['size' => 8, 'bold' => true];
-        $normal = ['size' => 8];
+        $fett = ['size' => 9, 'bold' => true]; // 9 pt wie die übrigen Tabellen ausser der JM (14.10.2026)
+        $normal = ['size' => 9];
+        $hinweis = ['size' => 9, 'italic' => true, 'color' => '7F7F7F'];
         $absLinks = ['spaceAfter' => 0];
         $absRechts = ['spaceAfter' => 0, 'alignment' => Jc::END];
         $cupTable = $phpWord->addSection()->addTable($tabelle);
@@ -1404,7 +1457,8 @@ function getCup($templateProcessor, $conn)
                 $cupTable->addRow(320); // mindestens ~5.6 mm, etwas luftiger
                 foreach ([$l, $r] as $n) {
                     if ($n === null) {
-                        $cupTable->addCell($wName, $zelle)->addText('', $normal, $absLinks);
+                        // freier Platz in der zweiten Zeile einer Dreiergruppe: beschriften, sonst wirkt der Dritte wie ein Freilos
+                        $cupTable->addCell($wName, $zelle)->addText('Dreiergruppe', $hinweis, $absLinks);
                         $cupTable->addCell($wPkt, $zelle)->addText('', $normal, $absRechts);
                         continue;
                     }
@@ -1483,7 +1537,8 @@ function getCup($templateProcessor, $conn)
         $finalTable->addRow(320);
         // Rangliste ohne Rahmen, nur der Sieger fett, Punkte rechtsbündig
         $zelle = ['valign' => VerticalJc::CENTER]; // ohne Rahmen wie die übrigen Ranglisten
-        $schrift = ['size' => 8, 'bold' => $i === 1];
+        $schrift = ['size' => 9, 'bold' => $i === 1];
+        if ($i === 1) absendenSiegerMerken('Cup', $participant, $row['Result']);
         $finalTable->addCell(450, $zelle)->addText("$i.", $schrift, ['spaceAfter' => 0]);
         $finalTable->addCell(2450, $zelle)->addText($participant, $schrift, ['spaceAfter' => 0]);
         $finalTable->addCell(650, $zelle)->addText($row['Result'], $schrift, ['spaceAfter' => 0, 'alignment' => Jc::END]);
@@ -1510,7 +1565,11 @@ function getCup($templateProcessor, $conn)
         $standCupTable->addRow(320);
         // Rangliste ohne Rahmen, nur der Sieger fett, Punkte rechtsbündig
         $zelle = ['valign' => VerticalJc::CENTER]; // ohne Rahmen wie die übrigen Ranglisten
-        $schrift = ['size' => 8, 'bold' => $i === 1];
+        $schrift = ['size' => 9, 'bold' => $i === 1];
+        if ($i === 1) {
+            $verein = trim((string)($row['club'] ?? ''));
+            absendenSiegerMerken('Standcup', $participant . ($verein !== '' ? ', ' . $verein : ''), $row['Result']);
+        }
         $standCupTable->addCell(450, $zelle)->addText("$i.", $schrift, ['spaceAfter' => 0]);
         $standCupTable->addCell(2450, $zelle)->addText($participant, $schrift, ['spaceAfter' => 0]);
         $standCupTable->addCell(650, $zelle)->addText($row['Result'], $schrift, ['spaceAfter' => 0, 'alignment' => Jc::END]);
@@ -1598,7 +1657,7 @@ function getJMA($templateProcessor, $conn)
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
     $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table1->addRow(3000);
+    $table1->addRow(3000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
     $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
@@ -1608,7 +1667,7 @@ function getJMA($templateProcessor, $conn)
     $table1->addRow(200);
     $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table2->addRow(3000);
+    $table2->addRow(3000, ['exactHeight' => true]);
     foreach ($secondHalf as $d) {
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
@@ -1731,6 +1790,9 @@ function getJMA($templateProcessor, $conn)
         ];
     }
 
+    // Nur wer ausser Obligatorisch und Feldschiessen ein Resultat hat (Entscheid 14.10.2026)
+    $rows = array_values(array_filter($rows, fn($r) => absendenJmHatResultat($r['resFirst'], $r['resSecond'], $firstHalf, $secondHalf)));
+
     // Sortierung nach Total DESC, dann Name/Vorname
     usort($rows, function($a, $b) {
         if ($a['total'] < $b['total']) return 1;
@@ -1758,21 +1820,24 @@ function getJMA($templateProcessor, $conn)
         $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
         $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
-            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
+            $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
             $table1->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
-                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
+                   ->addText($wert, $cellStyleFont, $textStyle);
         }
 
         // Tabelle 2
         $table2->addRow(200);
         foreach ($row['resSecond'] as $punkte) {
-            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
+            $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
             $table2->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
-                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
+                   ->addText($wert, $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
+        if ($rang === 1) absendenSiegerMerken('JMA', $row['name'] . ' ' . $row['vorname'], $totalOut);
         $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow);
         $rang++;
     }
@@ -1856,7 +1921,7 @@ function getJMB($templateProcessor, $conn)
     $phpWord = new PhpWord();
     $phpWord->addTableStyle('myTable', $tableStyle);
     $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table1->addRow(3000);
+    $table1->addRow(3000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
     $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
@@ -1866,7 +1931,7 @@ function getJMB($templateProcessor, $conn)
     $table1->addRow(200);
     $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
-    $table2->addRow(3000);
+    $table2->addRow(3000, ['exactHeight' => true]);
     foreach ($secondHalf as $d) {
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
@@ -1989,6 +2054,9 @@ function getJMB($templateProcessor, $conn)
         ];
     }
 
+    // Nur wer ausser Obligatorisch und Feldschiessen ein Resultat hat (Entscheid 14.10.2026)
+    $rows = array_values(array_filter($rows, fn($r) => absendenJmHatResultat($r['resFirst'], $r['resSecond'], $firstHalf, $secondHalf)));
+
     // Sortierung nach Total DESC, dann Name/Vorname
     usort($rows, function($a, $b) {
         if ($a['total'] < $b['total']) return 1;
@@ -2016,21 +2084,24 @@ function getJMB($templateProcessor, $conn)
         $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
         $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
-            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
+            $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
             $table1->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
-                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
+                   ->addText($wert, $cellStyleFont, $textStyle);
         }
 
         // Tabelle 2
         $table2->addRow(200);
         foreach ($row['resSecond'] as $punkte) {
-            $cellStyleFont = !empty($punkte['isStreicher']) ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
+            $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
+            $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
             $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
             $table2->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
-                   ->addText($punkte['wert'], $cellStyleFont, $textStyle);
+                   ->addText($wert, $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
+        if ($rang === 1) absendenSiegerMerken('JMB', $row['name'] . ' ' . $row['vorname'], $totalOut);
         $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow);
         $rang++;
     }

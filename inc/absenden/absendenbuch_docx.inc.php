@@ -23,10 +23,13 @@ use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
 
-// Vorlage seit 13.10.2026: Blockmarken ${JUNGSCHUETZEN_BLOCK}/${PARTNER_BLOCK}, JM Kat. A/B als Abschnitte ab gerader
-// Seite, gespiegelte Ränder, Siegerlisten mit ${<Präfix>AB}, Junioren-Liste (SJ). Vorgängerinnen 20261012 und
-// 20251015 bleiben als Rückfall in dat/ liegen.
-const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261013.docx';
+// Vorlage seit 14.10.2026 (aus 20261013 per Skript, nach Word-Vorschauen mit dem Vorstand): Seite «Sieger ${Year}» mit
+// ${SIEGER_SEITE} nach dem Deckblatt, Textmarken _abs_* an den Abschnittstiteln (Seitenverweise), Seitenzahlen unten
+// Mitte ohne Deckblatt, rechte JM-Hälfte mit gleich hohem Leerabsatz statt Umbruch (Zeilen über den Falz auf gleicher
+// Höhe), ohne «Buchfalz» (Word drehte sonst die gespiegelten Ränder um: aussen 5 statt 10 mm), Tabellen ausser JM in
+// 9 pt mit festen Spaltenbreiten und rechtsbündigen Zahlen, Siegerlisten ohne Namensumbruch.
+// Vorgängerinnen 20261013, 20261012 und 20251015 bleiben als Rückfall in dat/ liegen.
+const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014.docx';
 
 /**
  * TemplateProcessor für das Absendenbuch:
@@ -124,6 +127,68 @@ class AbsendenbuchVorlage extends TemplateProcessor
         $this->tempDocumentMainPart = substr($xml, 0, $startA) . $innen . substr($xml, $endeB);
         return true;
     }
+
+    /**
+     * Absatz mit ${NAME} durch fertiges WordprocessingML ersetzen (z.B. eine Tabelle mit Feldern, die PhpWord nicht
+     * erzeugt). $xml wird nicht maskiert: Werte darin muss der Aufrufer selbst maskieren. false ohne Platzhalter.
+     */
+    public function absatzDurchXml(string $name, string $xml): bool
+    {
+        $doc = $this->tempDocumentMainPart;
+        $pos = strpos($doc, '${' . $name . '}');
+        if ($pos === false) {
+            return false;
+        }
+        $start = max((int)strrpos(substr($doc, 0, $pos), '<w:p '), (int)strrpos(substr($doc, 0, $pos), '<w:p>'));
+        $ende = strpos($doc, '</w:p>', $pos) + 6;
+        $this->tempDocumentMainPart = substr($doc, 0, $start) . $xml . substr($doc, $ende);
+        return true;
+    }
+}
+
+/**
+ * Tabelle der Seite «Sieger <Jahr>»: pro Wettkampf Sieger, Resultat und Seite (Feld PAGEREF auf die Textmarke
+ * _abs_<Marke> am Abschnittstitel; w:dirty lässt Word die Seitenzahl beim Öffnen rechnen, der PDF-Dienst rechnet sie
+ * beim Umwandeln). Nur Wettkämpfe, die im Buch stehen ($sieger aus absendenSiegerMerken()).
+ */
+function absendenbuchSiegerSeiteXml(array $sieger): string
+{
+    $reihe = [ // Marke => [Bezeichnung, Textmarke]
+        'Endstich' => ['Endstich', 'Endstich'], 'Schwinistich' => ['Schwinistich', 'Schwinistich'],
+        'Zabigstich' => ['Zabigstich', 'Zabigstich'], 'Glueckstich' => ['Glückstich', 'Glueckstich'], 'Kunststich' => ['Kunststich', 'Kunststich'],
+        'EndschA' => ['Endschiessen Kat. A', 'EndschA'], 'EndschB' => ['Endschiessen Kat. B', 'EndschB'],
+        'EndschJ' => ['Endschiessen Jungschützen', 'EndschJ'], 'EndschP' => ['Endschiessen Partner', 'EndschP'],
+        'JMA' => ['Jahresmeisterschaft Kat. A', 'JMA'], 'JMB' => ['Jahresmeisterschaft Kat. B', 'JMB'],
+        'HeimA' => ['Heimmeisterschaft Kat. A', 'HeimA'], 'HeimB' => ['Heimmeisterschaft Kat. B', 'HeimB'],
+        'KantiA' => ['Kantonalstich Kat. A', 'KantiA'], 'KantiB' => ['Kantonalstich Kat. B', 'KantiB'],
+        'Cup' => ['Vereinscup (Final)', 'Cup'], 'Standcup' => ['Standcup', 'Cup'],
+    ];
+    $e = fn(string $s): string => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    $rPr = fn(bool $fett): string => '<w:rPr>' . ($fett ? '<w:b/><w:bCs/>' : '') . '<w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>';
+    $run = fn(string $t, bool $fett = false): string => '<w:r>' . $rPr($fett) . '<w:t xml:space="preserve">' . $e($t) . '</w:t></w:r>';
+    $zelle = function (int $w, string $inhalt, bool $rechts = false, bool $linie = false): string {
+        return '<w:tc><w:tcPr><w:tcW w:w="' . $w . '" w:type="dxa"/>'
+            . ($linie ? '<w:tcBorders><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>' : '')
+            . '</w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="' . ($rechts ? 'right' : 'left') . '"/></w:pPr>'
+            . $inhalt . '</w:p></w:tc>';
+    };
+    $b = [2750, 2900, 1000, 918];
+    $xml = '<w:tbl><w:tblPr><w:tblW w:w="' . array_sum($b) . '" w:type="dxa"/><w:tblLayout w:type="fixed"/>'
+        . '<w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders>'
+        . '<w:tblCellMar><w:left w:w="108" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="0000"/></w:tblPr><w:tblGrid>';
+    foreach ($b as $w) $xml .= '<w:gridCol w:w="' . $w . '"/>';
+    $xml .= '</w:tblGrid><w:tr>' . $zelle($b[0], $run('Wettkampf', true), false, true) . $zelle($b[1], $run('Sieger', true), false, true)
+        . $zelle($b[2], $run('Resultat', true), true, true) . $zelle($b[3], $run('Seite', true), true, true) . '</w:tr>';
+    foreach ($reihe as $marke => [$bezeichnung, $textmarke]) {
+        if (empty($sieger[$marke]['name'])) continue;
+        $feld = '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r>'
+            . '<w:r>' . $rPr(false) . '<w:instrText xml:space="preserve"> PAGEREF _abs_' . $textmarke . ' \h </w:instrText></w:r>'
+            . '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="separate"/></w:r><w:r>' . $rPr(false) . '<w:t></w:t></w:r>'
+            . '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="end"/></w:r>';
+        $xml .= '<w:tr><w:trPr><w:trHeight w:val="300"/></w:trPr>' . $zelle($b[0], $run($bezeichnung)) . $zelle($b[1], $run($sieger[$marke]['name'], true))
+            . $zelle($b[2], $run($sieger[$marke]['resultat']), true) . $zelle($b[3], $feld, true) . '</w:tr>';
+    }
+    return $xml . '</w:tbl>';
 }
 
 /** Jahr aus ?year= (Standard: laufendes Jahr); ausserhalb 2000 … nächste fünf Jahre → 400 mit Klartext. */
@@ -187,6 +252,7 @@ function absendenbuchTemplateFuellen(int $selectedYear, mysqli $conn, ?array &$h
     $GLOBALS['selectedYear'] = $selectedYear; // von den get*-Funktionen in functions.inc.php gelesen
     $GLOBALS['absendenHinweise'] = [];
     $GLOBALS['absendenHinweisDetails'] = [];
+    $GLOBALS['absendenSieger'] = []; // Rang 1 je Wettkampf, für die Seite «Sieger <Jahr>» (absendenSiegerMerken())
 
     if (!file_exists(ABSENDENBUCH_TEMPLATE)) {
         error_log('[absendenbuch] Vorlage fehlt: ' . ABSENDENBUCH_TEMPLATE);
@@ -237,6 +303,15 @@ function absendenbuchTemplateFuellen(int $selectedYear, mysqli $conn, ?array &$h
                 . ' @ ' . basename($e->getFile()) . ':' . $e->getLine());
             absendenHinweis('konnte nicht erstellt werden und fehlt oder ist unvollständig.');
         }
+    }
+
+    // Seite «Sieger <Jahr>» aus den gemerkten Siegern (erst jetzt, da alle Abschnitte gelaufen sind)
+    $GLOBALS['absendenAbschnitt'] = 'Sieger-Seite';
+    try {
+        $tp->absatzDurchXml('SIEGER_SEITE', absendenbuchSiegerSeiteXml($GLOBALS['absendenSieger']));
+    } catch (Throwable $e) {
+        error_log('[absendenbuch] Sieger-Seite: ' . get_class($e) . ': ' . $e->getMessage());
+        absendenHinweis('konnte nicht erstellt werden, die Seite bleibt leer.');
     }
 
     // Kontrolle des fertigen Buchs: offene Blockmarken (Abschnitt brach vorher ab) auflösen,

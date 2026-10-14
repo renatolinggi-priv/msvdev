@@ -93,7 +93,8 @@ function absendenJmDoppelseitePruefen(string $pdf): void
     }
     $text = implode("\n", $zeilen);
     foreach (['Kat. A', 'Kat. B'] as $kat) {
-        $seite = absendenSeiteVon($text, '/Jahresmeisterschaft\s+' . preg_quote($kat, '/') . '/u');
+        // nur der Titel allein auf seiner Zeile: die Seite «Sieger <Jahr>» nennt «Jahresmeisterschaft Kat. A» schon vorne
+        $seite = absendenSeiteVon($text, '/^\s*Jahresmeisterschaft\s+' . preg_quote($kat, '/') . '\s*$/mu');
         if ($seite === null) {
             error_log('[absendenbuch_pdf] JM-Doppelseite: Überschrift «Jahresmeisterschaft ' . $kat . '» nicht gefunden');
         } elseif ($seite % 2 === 1) {
