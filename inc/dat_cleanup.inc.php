@@ -11,7 +11,7 @@
  * duerfen:
  *   - MSVWilen_Logo.jpg / SKSG_Logo.jpg  -> inc/pdf_design.php verteilt das Logo in jedes
  *     Modul-dat/, inc/home.php bindet jmrang/dat/MSVWilen_Logo.jpg direkt als <img> ein
- *   - Vorlagen: Resultatbuch_Template<Datum>.docx (Absendenbuch, aktuell 20261014d + Rückfall 20261014c),
+ *   - Vorlagen: Resultatbuch_Template<Datum>.docx (Absendenbuch, aktuell 20261014e + Rückfall 20261014d),
  *     VorlageFragebogen.docx, Kantonalstich_Abrechnungsformular-ab-2026.xlsm,
  *     Adressliste_MiFu_20260227.xlsx
  *

@@ -282,10 +282,9 @@ function getEndstich($templateProcessor, $conn)
         $templateProcessor->setValue("ESTO#{$iRow}", $isTop3 ? formatBold($sum) : $sum);
         if ($iRow === 1) absendenSiegerMerken('Endstich', $name, $sum);
 
-        // Falls du im Template ein Feld für Tiefschuss hast:
-        if (method_exists($templateProcessor, 'setValue')) {
-            $templateProcessor->setValue("ESTS#{$iRow}", $isTop3 ? formatBold($ts) : $ts);
-        }
+        // Spalte TS (Tiefschuss, Stichentscheid bei gleichem Total); nicht erfasst: «–»
+        $ts = absendenStrichWennNull($ts);
+        $templateProcessor->setValue("ESTS#{$iRow}", $isTop3 ? formatBold($ts) : $ts);
         $kk = (!is_null($r['Kranz_Endstich']) && $r['Endstich_Summe'] >= $r['Kranz_Endstich']) ? 'KK' : '';
         $templateProcessor->setValue("ESKK#{$iRow}", $isTop3 ? formatBold($kk) : $kk);
         $iRow++;
@@ -1475,7 +1474,8 @@ function getCup($templateProcessor, $conn)
                 $zelle = ['valign' => VerticalJc::CENTER];
                 if ($letzte) { $zelle += ['borderBottomSize' => 4, 'borderBottomColor' => '000000']; }
                 $cupTable->addRow(320); // mindestens ~5.6 mm, etwas luftiger
-                foreach ([$l, $r] as $n) {
+                foreach ([$l, $r] as $seite => $n) {
+                    if ($seite === 1) { $cupTable->addCell(300, $zelle)->addText('', $normal, $absLinks); } // Lücke zwischen den Paaren
                     if ($n === null) {
                         // freier Platz in der zweiten Zeile einer Dreiergruppe: beschriften, sonst wirkt der Dritte wie ein Freilos
                         $cupTable->addCell($wName, $zelle)->addText('Dreiergruppe', $hinweis, $absLinks);
@@ -1667,7 +1667,7 @@ function getJMA($templateProcessor, $conn)
     // Spaltenbreiten (Twips) passend zum Satzspiegel (A5, 7568 Twips): Kopf- und Datenzeilen gleich breit, festes
     // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
     $satzspiegel = 7568;
-    $wRang = 400; $wName = 1700; $wTotal = 700;
+    $wRang = 500; $wName = 1600; $wTotal = 700; // Rang breit genug für den Kopf «Rang»
     // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
     // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
     $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
@@ -1681,7 +1681,7 @@ function getJMA($templateProcessor, $conn)
     $phpWord->addTableStyle('myTable', $tableStyle);
     $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table1->addRow(4000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
-    $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText('Rang', $boldFontStyle, ['alignment' => Jc::END]);
     $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
         $c = $table1->addCell($wAnlass, $cellHeaderStyle);
@@ -1695,7 +1695,7 @@ function getJMA($templateProcessor, $conn)
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-    $table2->addCell($wTotal, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
+    $table2->addCell($wTotal, ['valign'=>'bottom','noWrap'=>true])->addText('Total', $boldFontStyle, ['alignment' => Jc::END]); // rechtsbündig über den Totalen
     $table2->addRow(200);
     $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
 
@@ -1843,7 +1843,7 @@ function getJMA($templateProcessor, $conn)
 
         // Tabelle 1
         $table1->addRow(284); // 5 mm, die JM füllt die Seite sonst nur zur Hälfte
-        $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
+        $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow, ['alignment' => Jc::END]); // «10.» unter «9.»
         $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
@@ -1934,7 +1934,7 @@ function getJMB($templateProcessor, $conn)
     // Spaltenbreiten (Twips) passend zum Satzspiegel (A5, 7568 Twips): Kopf- und Datenzeilen gleich breit, festes
     // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
     $satzspiegel = 7568;
-    $wRang = 400; $wName = 1700; $wTotal = 700;
+    $wRang = 500; $wName = 1600; $wTotal = 700; // Rang breit genug für den Kopf «Rang»
     // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
     // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
     $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
@@ -1948,7 +1948,7 @@ function getJMB($templateProcessor, $conn)
     $phpWord->addTableStyle('myTable', $tableStyle);
     $table1 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table1->addRow(4000, ['exactHeight' => true]); // fest: ein langer Anlassname bricht um, statt nur eine Seite der Doppelseite zu erhöhen
-    $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
+    $table1->addCell($wRang,  ['valign'=>'bottom','noWrap'=>true])->addText('Rang', $boldFontStyle, ['alignment' => Jc::END]);
     $table1->addCell($wName, ['valign'=>'bottom','noWrap'=>true])->addText("Name", $boldFontStyle);
     foreach ($firstHalf as $d) {
         $c = $table1->addCell($wAnlass, $cellHeaderStyle);
@@ -1962,7 +1962,7 @@ function getJMB($templateProcessor, $conn)
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
     }
-    $table2->addCell($wTotal, ['valign'=>'bottom','noWrap'=>true])->addText("Total", $boldFontStyle);
+    $table2->addCell($wTotal, ['valign'=>'bottom','noWrap'=>true])->addText('Total', $boldFontStyle, ['alignment' => Jc::END]); // rechtsbündig über den Totalen
     $table2->addRow(200);
     $table2->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
 
@@ -2110,7 +2110,7 @@ function getJMB($templateProcessor, $conn)
 
         // Tabelle 1
         $table1->addRow(284); // 5 mm, die JM füllt die Seite sonst nur zur Hälfte
-        $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
+        $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow, ['alignment' => Jc::END]); // «10.» unter «9.»
         $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)

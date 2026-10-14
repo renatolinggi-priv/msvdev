@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.25",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: luftigere Ranglisten, Tiefschuss im Endstich",
+        "beschreibung": "Die Ranglisten von Endstich, Schwini, Zabig, Glück, Kunst, Heimmeisterschaft und Kantonalstich haben mehr Zeilenabstand. Der Endstich zeigt neu den Tiefschuss (TS), damit man bei gleichem Total sieht, wer vorne steht. Jede Siegerliste steht nach ihrer Rangliste, Kantonalstich Kat. A und B stehen genau untereinander, im Vereinscup trennt eine Lücke die zwei Schützen einer Begegnung. In der Jahresmeisterschaft steht «Rang» über den Rängen, auf der Seite «Sieger» stehen die Jahresmeister nur noch im Block oben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.24",
     "datum": "2026-10-14",
     "aenderungen": [

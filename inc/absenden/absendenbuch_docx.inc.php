@@ -36,8 +36,11 @@ use PhpOffice\PhpWord\Element\TextRun;
 // 20261014d (aus c, Schrift bleibt eingebettet): Deckblatt mit Titel oben und einem Logo unten (60 mm, mittig), Ort/Datum
 // 11 pt unter «Ranglisten», alle Deckblatt-Absätze ohne alte Einzüge (eine Mittelachse); Rückseite «Herzlichen Dank» als
 // eigener Abschnitt, senkrecht zentriert, ohne Seitenzahl (Heft 24 Seiten).
-// Rückfall: 20261014c in dat/; ältere Vorlagen nur noch in git. Neue Vorlagen per Skript bauen (ABSENDENBUCH_KONZEPT.md).
-const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014d.docx';
+// 20261014e (aus d): Ranglisten-Raster neu (Leerspalten ohne Zellabstand – Word hatte sie beim Speichern auf 134 Twips
+// verbreitert, tcW passte nicht mehr), Endstich mit Spalte TS, Datenzeilen 5 mm (ausser Endschiessen S. 11), Zabig- und
+// Glück-Siegerliste zusammen, Kunst-Siegerliste nach der Kunst-Rangliste, pgSz ohne orient=landscape.
+// Rückfall: 20261014d in dat/; ältere Vorlagen nur noch in git. Neue Vorlagen per Skript bauen (ABSENDENBUCH_KONZEPT.md).
+const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014e.docx';
 
 /**
  * TemplateProcessor für das Absendenbuch:
@@ -223,8 +226,10 @@ function absendenbuchSiegerSeiteXml(array $sieger): string
     foreach ($b as $w) $xml .= '<w:gridCol w:w="' . $w . '"/>';
     $xml .= '</w:tblGrid><w:tr>' . $zelle($b[0], $run('Wettkampf', true), false, true) . $zelle($b[1], $run('Sieger', true), false, true)
         . $zelle($b[2], $run('Resultat', true), true, true) . $zelle($b[3], $run('Seite', true), true, true) . '</w:tr>';
+    $mitBlock = !empty($sieger['JMA']['name']) || !empty($sieger['JMB']['name']);
     foreach ($reihe as $marke => [$bezeichnung, $textmarke]) {
         if (empty($sieger[$marke]['name'])) continue;
+        if ($mitBlock && in_array($marke, ['JMA', 'JMB'], true)) continue; // stehen schon im Block «Jahresmeister»
         $feld = '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="begin"/></w:r>'
             . '<w:r>' . $rPr(false) . '<w:instrText xml:space="preserve"> PAGEREF _abs_' . $textmarke . ' \h </w:instrText></w:r>'
             . '<w:r>' . $rPr(false) . '<w:fldChar w:fldCharType="separate"/></w:r><w:r>' . $rPr(false) . '<w:t></w:t></w:r>'
@@ -254,14 +259,14 @@ function absendenbuchJahresmeisterXml(array $sieger): string
         if (empty($sieger[$marke]['name'])) continue;
         $feld = '<w:r>' . $rPr(18) . '<w:fldChar w:fldCharType="begin"/></w:r><w:r>' . $rPr(18) . '<w:instrText xml:space="preserve"> PAGEREF _abs_' . $marke . ' \h </w:instrText></w:r>'
             . '<w:r>' . $rPr(18) . '<w:fldChar w:fldCharType="separate"/></w:r><w:r>' . $rPr(18) . '<w:t></w:t></w:r><w:r>' . $rPr(18) . '<w:fldChar w:fldCharType="end"/></w:r>';
-        $zeilen .= '<w:tr>' . $zelle($b[0], $run($kat, 18, false, '595959')) . $zelle($b[1], $run($sieger[$marke]['name'], 18, true))
+        $zeilen .= '<w:tr>' . $zelle($b[0], $run($kat, 18)) . $zelle($b[1], $run($sieger[$marke]['name'], 18, true))
             . $zelle($b[2], $run($sieger[$marke]['resultat'], 18), 'right') . $zelle($b[3], $feld, 'right') . '</w:tr>';
     }
     if ($zeilen === '') {
         return '';
     }
     $grid = ''; foreach ($b as $w) $grid .= '<w:gridCol w:w="' . $w . '"/>';
-    $titel = '<w:p><w:pPr><w:spacing w:before="0" w:after="40"/></w:pPr>' . $run('Jahresmeister', 20, true, '595959') . '</w:p>';
+    $titel = '<w:p><w:pPr><w:spacing w:before="0" w:after="40"/></w:pPr>' . $run('Jahresmeister', 20, true) . '</w:p>';
     $tabelle = '<w:tbl><w:tblPr><w:tblW w:w="' . array_sum($b) . '" w:type="dxa"/><w:tblLayout w:type="fixed"/>'
         . '<w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders>'
         . '<w:tblCellMar><w:left w:w="108" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="0000"/></w:tblPr>'
