@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.19",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Feinschliff der Tabellen",
+        "beschreibung": "In der Jahresmeisterschaft sind Felder ohne Resultat nicht mehr grau hinterlegt, das Total steht rechtsbündig und Anlässe mit Kommastellen zeigen überall zwei Stellen. Alle Ranglisten heissen in der Kopfzeile «Rang», die Ränge stehen rechtsbündig, KK und WP immer links nach dem Total. Kantonalstich Kat. A und B haben dieselben Spalten, die Siegerlisten sind so breit wie die Ranglisten, und die Endschiessen-Siegerlisten zeigen eine Kommastelle wie die Rangliste.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.18",
     "datum": "2026-10-14",
     "aenderungen": [

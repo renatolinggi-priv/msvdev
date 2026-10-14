@@ -28,8 +28,11 @@ use PhpOffice\PhpWord\Element\TextRun;
 // Mitte ohne Deckblatt, rechte JM-Hälfte mit gleich hohem Leerabsatz statt Umbruch (Zeilen über den Falz auf gleicher
 // Höhe), ohne «Buchfalz» (Word drehte sonst die gespiegelten Ränder um: aussen 5 statt 10 mm), Tabellen ausser JM in
 // 9 pt mit festen Spaltenbreiten und rechtsbündigen Zahlen, Siegerlisten ohne Namensumbruch.
-// Vorgängerinnen 20261013, 20261012 und 20251015 bleiben als Rückfall in dat/ liegen.
-const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014.docx';
+// 20261014b (Polish nach Critique 14.10.2026): überall «Rang», Rang rechtsbündig, KK/WP links nach dem Total, Blindzeile
+// unter dem Kopf überall 3 pt, Lücken zusammen 240 Twips (Kantonalstich Kat. A/B im selben Raster), Siegerlisten volle
+// Breite, Titel auf S. 12 mit «Seitenumbruch oberhalb» statt Umbruchzeichen.
+// Vorgängerinnen 20261014, 20261013, 20261012 und 20251015 bleiben als Rückfall in dat/ liegen.
+const ABSENDENBUCH_TEMPLATE = __DIR__ . '/dat/Resultatbuch_Template20261014b.docx';
 
 /**
  * TemplateProcessor für das Absendenbuch:

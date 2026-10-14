@@ -182,6 +182,21 @@ function absendenJmHatResultat(array $resFirst, array $resSecond, array $firstHa
     return false;
 }
 
+// JM: in einer Anlass-Spalte mit Dezimalwerten (auf 100 hochgerechnet) alle Zahlen mit zwei Stellen, damit sie
+// untereinander stehen («93.00 / 97.50 / 96.25» statt «93 / 97.5 / 96.25»). Spalten mit ganzen Zahlen bleiben.
+function absendenJmDezimalenAngleichen(array &$rows, string $haelfte): void {
+    $dezimal = [];
+    foreach ($rows as $r) foreach ($r[$haelfte] as $i => $z) {
+        $v = str_replace("\u{200C}", '', (string)($z['wert'] ?? ''));
+        if (is_numeric($v) && str_contains($v, '.')) $dezimal[$i] = true;
+    }
+    foreach ($rows as &$r) foreach ($r[$haelfte] as $i => &$z) {
+        $v = str_replace("\u{200C}", '', (string)($z['wert'] ?? ''));
+        if (!empty($dezimal[$i]) && is_numeric($v)) $z['wert'] = number_format((float)$v, 2, '.', '');
+    }
+    unset($r, $z);
+}
+
 // ========================================
 // HAUPTFUNKTIONEN
 
@@ -1394,7 +1409,12 @@ function getSieger($templateProcessor, $conn)
             $rechts = $siegers[2 * $z - 1] ?? ['year' => '', 'Name' => '', 'Wert' => ''];
             $templateProcessor->setValue("{$p}Y#{$z}", $links['year']);
             // «Keine Auswertung», «Nicht durchgeführt», «Keine Konkurrenz»: ohne die 0 dahinter
-            $wert = fn(array $s): string => (preg_match('/^(Keine|Nicht)\b/u', (string)$s['Name']) && trim((string)$s['Wert']) === '0') ? '' : (string)$s['Wert'];
+            $stellen = ['EndschiessenA' => 1, 'EndschiessenB' => 1][$siegerdef] ?? null; // JM bleibt wie erfasst (alte Jahre ganzzahlig, Entscheid 14.10.2026)
+            $wert = function (array $s) use ($stellen): string {
+                $w = trim((string)$s['Wert']);
+                if (preg_match('/^(Keine|Nicht)\b/u', (string)$s['Name']) && $w === '0') return '';
+                return ($stellen !== null && is_numeric($w) && (float)$w > 0) ? number_format((float)$w, $stellen, '.', '') : $w;
+            };
             $templateProcessor->setValue("{$p}N#{$z}", $links['Name']);
             $templateProcessor->setValue("{$p}P#{$z}", $wert($links));
             $templateProcessor->setValue("{$p}Y2#{$z}", $rechts['year']);
@@ -1802,6 +1822,9 @@ function getJMA($templateProcessor, $conn)
         return strcasecmp($n1, $n2);
     });
 
+    absendenJmDezimalenAngleichen($rows, 'resFirst');
+    absendenJmDezimalenAngleichen($rows, 'resSecond');
+
     // Ausgabe
     $rang = 1;
     foreach ($rows as $row) {
@@ -1822,7 +1845,7 @@ function getJMA($templateProcessor, $conn)
         foreach ($row['resFirst'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
-            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $bgColor       = (!empty($punkte['isStreicher']) && $wert !== '–') ? ['bgColor'=>'D3D3D3'] : []; // ohne Resultat kein Grau (sonst Scheinspalten)
             $table1->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($wert, $cellStyleFont, $textStyle);
         }
@@ -1832,13 +1855,13 @@ function getJMA($templateProcessor, $conn)
         foreach ($row['resSecond'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
-            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $bgColor       = (!empty($punkte['isStreicher']) && $wert !== '–') ? ['bgColor'=>'D3D3D3'] : []; // ohne Resultat kein Grau (sonst Scheinspalten)
             $table2->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($wert, $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
         if ($rang === 1) absendenSiegerMerken('JMA', $row['name'] . ' ' . $row['vorname'], $totalOut);
-        $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow);
+        $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow, ['alignment' => Jc::END]);
         $rang++;
     }
     $templateProcessor->setComplexBlock('JMA1', $table1);
@@ -2066,6 +2089,9 @@ function getJMB($templateProcessor, $conn)
         return strcasecmp($n1, $n2);
     });
 
+    absendenJmDezimalenAngleichen($rows, 'resFirst');
+    absendenJmDezimalenAngleichen($rows, 'resSecond');
+
     // Ausgabe
     $rang = 1;
     foreach ($rows as $row) {
@@ -2086,7 +2112,7 @@ function getJMB($templateProcessor, $conn)
         foreach ($row['resFirst'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
-            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $bgColor       = (!empty($punkte['isStreicher']) && $wert !== '–') ? ['bgColor'=>'D3D3D3'] : []; // ohne Resultat kein Grau (sonst Scheinspalten)
             $table1->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($wert, $cellStyleFont, $textStyle);
         }
@@ -2096,13 +2122,13 @@ function getJMB($templateProcessor, $conn)
         foreach ($row['resSecond'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
-            $bgColor       = !empty($punkte['isStreicher']) ? ['bgColor'=>'D3D3D3'] : [];
+            $bgColor       = (!empty($punkte['isStreicher']) && $wert !== '–') ? ['bgColor'=>'D3D3D3'] : []; // ohne Resultat kein Grau (sonst Scheinspalten)
             $table2->addCell($wAnlass, array_merge($cellStyle, $extra, $bgColor))
                    ->addText($wert, $cellStyleFont, $textStyle);
         }
         $totalOut = number_format($row['total'], 2, '.', '');
         if ($rang === 1) absendenSiegerMerken('JMB', $row['name'] . ' ' . $row['vorname'], $totalOut);
-        $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow);
+        $table2->addCell($wTotal, array_merge(['valign'=>'center'], $extra))->addText($totalOut, $fontStyleRow, ['alignment' => Jc::END]);
         $rang++;
     }
     $templateProcessor->setComplexBlock('JMB1', $table1);
