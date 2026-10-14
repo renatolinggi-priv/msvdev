@@ -1665,6 +1665,7 @@ function getJMA($templateProcessor, $conn)
     // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
     $satzspiegel = 7568;
     $wRang = 400; $wName = 1700; $wTotal = 700;
+    $wRangRechts = 360; // Rangnummer am Falz der rechten Seite (ohne Namen): Anker, um die eigene Zeile zu finden
     // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
     // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
     $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
@@ -1688,6 +1689,7 @@ function getJMA($templateProcessor, $conn)
     $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table2->addRow(3000, ['exactHeight' => true]);
+    $table2->addCell($wRangRechts, ['valign'=>'bottom','noWrap'=>true])->addText('', $boldFontStyle);
     foreach ($secondHalf as $d) {
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
@@ -1839,7 +1841,7 @@ function getJMA($templateProcessor, $conn)
         $extra = ($rang % 2 === 0) ? ['bgColor' => 'F2F2F2'] : []; // jede zweite Zeile leicht grau
 
         // Tabelle 1
-        $table1->addRow(200);
+        $table1->addRow(284); // 5 mm, die JM füllt die Seite sonst nur zur Hälfte
         $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
         $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
@@ -1851,7 +1853,9 @@ function getJMA($templateProcessor, $conn)
         }
 
         // Tabelle 2
-        $table2->addRow(200);
+        $table2->addRow(284);
+        $table2->addCell($wRangRechts, array_merge(['valign'=>'center','noWrap'=>true], $extra))
+               ->addText($rang . '.', ['size' => 7.5, 'color' => '808080'], ['alignment' => Jc::END]);
         foreach ($row['resSecond'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;
@@ -1932,6 +1936,7 @@ function getJMB($templateProcessor, $conn)
     // Layout, damit Word und der PDF-Dienst gleich rechnen. Beide Hälften der Doppelseite mit derselben Anlass-Breite.
     $satzspiegel = 7568;
     $wRang = 400; $wName = 1700; $wTotal = 700;
+    $wRangRechts = 360; // Rangnummer am Falz der rechten Seite (ohne Namen): Anker, um die eigene Zeile zu finden
     // Direkt an der Tabelle: festes Layout und enger Zellabstand links/rechts (oben/unten 0 wie bisher, sonst würden die Zeilen höher). Der benannte Stil «myTable» gelangt nicht in die
     // Vorlage (setComplexBlock übernimmt nur die Tabelle), darum wirkten seine Werte nie; Rahmen bleiben wie bisher weg.
     $jmTabelle = ['layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED, 'cellMarginLeft' => 50, 'cellMarginRight' => 50];
@@ -1955,6 +1960,7 @@ function getJMB($templateProcessor, $conn)
     $table1->addCell($wRang, ['valign'=>'bottom','noWrap'=>true])->addText("", $boldFontStyle);
     $table2 = new \PhpOffice\PhpWord\Element\Table($jmTabelle);
     $table2->addRow(3000, ['exactHeight' => true]);
+    $table2->addCell($wRangRechts, ['valign'=>'bottom','noWrap'=>true])->addText('', $boldFontStyle);
     foreach ($secondHalf as $d) {
         $c = $table2->addCell($wAnlass, $cellHeaderStyle);
         $c->addText($d['Bezeichnung'], $boldFontStyle);
@@ -2106,7 +2112,7 @@ function getJMB($templateProcessor, $conn)
         $extra = ($rang % 2 === 0) ? ['bgColor' => 'F2F2F2'] : []; // jede zweite Zeile leicht grau
 
         // Tabelle 1
-        $table1->addRow(200);
+        $table1->addRow(284); // 5 mm, die JM füllt die Seite sonst nur zur Hälfte
         $table1->addCell($wRang,  array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($rang.'.', $fontStyleRow);
         $table1->addCell($wName, array_merge(['valign'=>'center','noWrap'=>true], $extra))->addText($row['name'].' '.$row['vorname'], $fontStyleRow);
         foreach ($row['resFirst'] as $punkte) {
@@ -2118,7 +2124,9 @@ function getJMB($templateProcessor, $conn)
         }
 
         // Tabelle 2
-        $table2->addRow(200);
+        $table2->addRow(284);
+        $table2->addCell($wRangRechts, array_merge(['valign'=>'center','noWrap'=>true], $extra))
+               ->addText($rang . '.', ['size' => 7.5, 'color' => '808080'], ['alignment' => Jc::END]);
         foreach ($row['resSecond'] as $punkte) {
             $wert = trim((string)$punkte['wert']) === '-' ? '–' : $punkte['wert']; // kein Resultat: «–», nie durchgestrichen (sähe aus wie «=»)
             $cellStyleFont = (!empty($punkte['isStreicher']) && $wert !== '–') ? array_merge($fontStyleRow, ['strikethrough'=>true]) : $fontStyleRow;

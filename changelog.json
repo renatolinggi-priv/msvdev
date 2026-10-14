@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.20",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Jahresmeisterschaft leichter zu verfolgen",
+        "beschreibung": "Die Zeilen der Jahresmeisterschaft sind höher (5 mm), die grauen Streifen damit breiter. Auf der rechten Seite steht neu die Rangnummer grau am Falz, so findet man die eigene Zeile und das Total auch ohne Namen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.19",
     "datum": "2026-10-14",
     "aenderungen": [
