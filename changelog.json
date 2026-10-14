@@ -16,6 +16,12 @@
         "admin_only": true
       },
       {
+        "titel": "Wanderpreise und Regeln auf einer Seite",
+        "beschreibung": "Die Seite «Wanderpreise» hat neben dem Jahr den Schalter «Wanderpreise | Regeln». Die Ansicht «Regeln» enthält die bisherige Seite «Wanderpreis-Regeln» und zeigt bei jeder Regel, für welchen Wanderpreis sie gilt. «SQL testen» rechnet mit dem oben gewählten Jahr. Der eigene Menüeintrag entfällt, alte Links führen auf die Ansicht «Regeln».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
         "titel": "Menü aufgeräumt",
         "beschreibung": "Die Ranglisten von Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup stehen auf den Erfassungsseiten und haben keinen eigenen Menüeintrag mehr. «Endschiessen» bündelt Stiche lösen, Resultate erfassen, Rangliste und Partner Scheiben Ausdruck. «Ranglisten» heisst neu «Auswertungen» mit Sektionsmeisterschaft Rangliste, Sektionsabrechnungen, Wanderpreisen, Wanderpreis-Regeln und Siegern der letzten Jahre. «Definitionen / Ausdrucke» ist aufgeteilt in «Jahresprogramm» (JM Definition, Gruppenschiessen, JM Standblatt, Wichtige Termine, Standbelegung, Monatsblatt) und «Verein» (Mitgliederverwaltung, Einsatzplanung, Auswertung Fragebogen, Dokumente, Foto-Galerien). Alte Links und Lesezeichen funktionieren weiter.",
         "typ": "verbesserung",
