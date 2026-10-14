@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.24",
+    "datum": "2026-10-14",
+    "aenderungen": [
+      {
+        "titel": "Absendenbuch: Schwinistich-Rangliste bei Gleichstand richtig",
+        "beschreibung": "Bei gleicher bester Passe zog die Schwinistich-Rangliste im Absendenbuch die tiefere zweite Passe vor. Neu gewinnt die höhere, wie in der Rangliste des Endschiessens und in den Siegerlisten. 2026 steht damit Linggi Renato vor von Euw Alexander.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.23",
     "datum": "2026-10-14",
     "aenderungen": [

@@ -365,7 +365,7 @@ function getSchwini($templateProcessor, $conn)
     WHERE u.Schwini1_Summe != 0 OR u.Schwini2_Summe != 0
     ORDER BY
         Hoechste_Summe DESC,
-        Tiefste_Summe ASC,
+        Tiefste_Summe DESC, -- bei gleicher bester Passe gewinnt die höhere zweite (wie Rangliste PDF und Siegerlisten)
         u.Geburtsdatum ASC, u.Name ASC
     ";
     $stmt = $conn->prepare($sql);
