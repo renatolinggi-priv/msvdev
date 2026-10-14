@@ -17,7 +17,7 @@
       },
       {
         "titel": "Menü aufgeräumt",
-        "beschreibung": "Die Ranglisten von Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup stehen auf den Erfassungsseiten und haben keinen eigenen Menüeintrag mehr. «Endschiessen» bündelt Stiche lösen, Resultate erfassen, Rangliste und Partner Scheiben Ausdruck. «Ranglisten» heisst neu «Auswertungen» mit Sektionsmeisterschaft Rangliste, Sektionsabrechnungen und Wanderpreisen. Alte Links und Lesezeichen funktionieren weiter.",
+        "beschreibung": "Die Ranglisten von Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup stehen auf den Erfassungsseiten und haben keinen eigenen Menüeintrag mehr. «Endschiessen» bündelt Stiche lösen, Resultate erfassen, Rangliste und Partner Scheiben Ausdruck. «Ranglisten» heisst neu «Auswertungen» mit Sektionsmeisterschaft Rangliste, Sektionsabrechnungen, Wanderpreisen, Wanderpreis-Regeln und Siegern der letzten Jahre. «Definitionen / Ausdrucke» ist aufgeteilt in «Jahresprogramm» (JM Definition, Gruppenschiessen, JM Standblatt, Wichtige Termine, Standbelegung, Monatsblatt) und «Verein» (Mitgliederverwaltung, Einsatzplanung, Auswertung Fragebogen, Dokumente, Foto-Galerien). Alte Links und Lesezeichen funktionieren weiter.",
         "typ": "verbesserung",
         "admin_only": true
       },
