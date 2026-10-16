@@ -345,6 +345,24 @@ function msvDownload(url, filename) {
 // Ausgabe-Knöpfe (PDF, Word, Excel, CSV, Kalender): einheitliches Verhalten auf allen Seiten
 // ---------------------------------------------------------------------------
 
+// Vor einer Ausgabe, die aus der Datenbank liest (Rangliste als PDF, Direktdruck): Ist auf der Seite etwas nicht
+// gespeichert, fragt sie «Zuerst speichern?» – sonst zeigt das Dokument still einen anderen Stand als der Bildschirm.
+//   offen     Anzahl ungespeicherter Zeilen (0 = nichts offen) oder true/false, wenn die Seite nicht zählt
+//   speichern Funktion, die speichert und ein Promise<boolean> liefert (true = gespeichert)
+//   opts.einheit ['Zeile', 'Zeilen'] für den Text bei einer Anzahl
+// Rückgabe: Promise<boolean> – true = weiter mit der Ausgabe, false = abbrechen (abgelehnt oder Speichern gescheitert).
+//   if (!(await msvVorAusgabe(geaendert.size, rasterSpeichern))) return;
+async function msvVorAusgabe(offen, speichern, opts) {
+    if (!offen) return true;
+    var einheit = (opts && opts.einheit) || ['Zeile', 'Zeilen'];
+    var text = typeof offen === 'number'
+        ? 'In ' + offen + ' ' + (offen === 1 ? einheit[0] : einheit[1]) + ' sind Eingaben noch nicht gespeichert.'
+        : 'Es gibt Eingaben, die noch nicht gespeichert sind.';
+    var r = await msvConfirm(text + ' Die Rangliste enthält nur Gespeichertes.', 'Zuerst speichern?', 'Speichern und weiter', 'Abbrechen');
+    if (!r.isConfirmed) return false;
+    return !!(await speichern());
+}
+
 // Datei über einen Generator erzeugen und herunterladen. Der Knopf ist währenddessen gesperrt
 // (kein Doppelklick), sein Icon wird zum Spinner, das Label bleibt stehen; danach meldet ein Toast
 // Erfolg oder Fehler. Immer Download, nie ein neues Fenster (Popup-Blocker nach await).

@@ -89,10 +89,22 @@ $antwort['buchteile'] = absBereitTeil('buchteile', function () use ($conn, $jahr
                          JOIN mitglieder m ON m.ID = k.MitgliedID JOIN Waffen w ON w.ID = m.WaffenID
                         WHERE k.Jahr = ? GROUP BY w.Kategorie');
     $cup = (int)absBereitZeilen($conn, 'SELECT COUNT(*) AS n FROM cupPairs WHERE Year = ?', $jahr)[0]['n'];
+    // Sieger des Cups im Buch kommt aus cupFinalResults (getCup): Paarungen allein heissen noch nicht «fertig»
+    $cupFinal = (int)absBereitZeilen($conn, 'SELECT COUNT(*) AS n FROM cupFinalResults WHERE Year = ? AND Result > 0', $jahr)[0]['n'];
+    // Von Mitgliedern im Portal gemeldet (status «entwurf»), vom Vorstand noch nicht bestätigt: stünden so im Buch
+    $jmGemeldet = (int)absBereitZeilen($conn, "SELECT COUNT(*) AS n FROM jmresultate r
+                      JOIN JMDefinition d ON d.ID = r.jmdefinitionID AND d.year = ?
+                     WHERE r.status = 'entwurf'", $jahr)[0]['n'];
 
+    // vorhanden = es gibt Resultate; offen + hinweis = vorhanden, aber noch nicht fertig fürs Buch
     $teile = [];
     foreach (['Kat. A', 'Kat. B'] as $kat) {
         $teile[] = ['teil' => 'Jahresmeisterschaft ' . $kat, 'vorhanden' => ($jm[$kat] ?? 0) > 0, 'link' => 'jmresultate.php'];
+    }
+    if ($jmGemeldet > 0) {
+        $teile[] = ['teil' => 'Jahresmeisterschaft', 'vorhanden' => true, 'offen' => true, 'link' => 'jmresultate.php',
+                    'hinweis' => ($jmGemeldet === 1 ? '1 JM-Resultat ist' : $jmGemeldet . ' JM-Resultate sind')
+                                 . ' von Mitgliedern gemeldet und noch nicht bestätigt (Marke «gemeldet» beim Anlass)'];
     }
     foreach (['Kat. A', 'Kat. B'] as $kat) {
         $teile[] = ['teil' => 'Heimmeisterschaft ' . $kat, 'vorhanden' => ($heim[$kat] ?? 0) > 0, 'link' => 'heimresultate.php'];
@@ -100,7 +112,10 @@ $antwort['buchteile'] = absBereitTeil('buchteile', function () use ($conn, $jahr
     foreach (['Kat. A', 'Kat. B'] as $kat) {
         $teile[] = ['teil' => 'Kantonalstich ' . $kat, 'vorhanden' => ($kanti[$kat] ?? 0) > 0, 'link' => 'kantiresultate.php'];
     }
-    $teile[] = ['teil' => 'Vereinscup', 'vorhanden' => $cup > 0, 'link' => 'cup.php'];
+    $teile[] = $cup > 0 && $cupFinal === 0
+        ? ['teil' => 'Vereinscup', 'vorhanden' => true, 'offen' => true, 'link' => 'cup.php',
+           'hinweis' => 'Vereinscup: Das Finale hat noch kein Resultat, im Buch fehlt der Sieger']
+        : ['teil' => 'Vereinscup', 'vorhanden' => $cup > 0, 'link' => 'cup.php'];
     return $teile;
 });
 

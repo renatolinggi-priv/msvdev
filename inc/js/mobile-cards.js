@@ -139,6 +139,7 @@ const MSVMobileCards = {
         if (!card) return;
 
         card.classList.toggle('open');
+        header.setAttribute('aria-expanded', card.classList.contains('open') ? 'true' : 'false');
 
         const icon = header.querySelector('i');
         if (icon) {
@@ -260,3 +261,31 @@ const MSVMobileCards = {
         }
     }
 };
+
+// Kartenköpfe auf dem Handy (div mit onclick) per Tastatur bedienbar: Rolle «button», Tab-Stopp, aria-expanded,
+// Enter und Leertaste lösen den Klick aus. Gilt für alle Seiten, auch für später nachgeladene Karten.
+(function () {
+    const SEL = '.mobile-card-header[onclick*="MSVMobileCards.toggle"], .member-card-header';
+    function vorbereiten(wurzel) {
+        const koepfe = wurzel.matches && wurzel.matches(SEL) ? [wurzel] : wurzel.querySelectorAll ? wurzel.querySelectorAll(SEL) : [];
+        koepfe.forEach(function (k) {
+            if (k.hasAttribute('tabindex')) return;
+            const karte = k.closest('.mobile-card, .member-card');
+            k.setAttribute('role', 'button');
+            k.setAttribute('tabindex', '0');
+            k.setAttribute('aria-expanded', karte && karte.classList.contains('open') ? 'true' : 'false');
+        });
+    }
+    document.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches(SEL)) {
+            e.preventDefault();
+            e.target.click();
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        vorbereiten(document);
+        new MutationObserver(function (liste) {
+            liste.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) vorbereiten(n); }); });
+        }).observe(document.body, { childList: true, subtree: true });
+    });
+})();

@@ -143,7 +143,13 @@ function generateResultRow($row, ?array $rang = null) {
         $rangAttr  = " data-kat='{$rang['kat']}' data-rang='{$rang['rang']}'";
         $rangMarke = "<span class='es-rang' data-tooltip='Rang in Kat. {$rang['kat']}'>{$rang['kat']} {$rang['rang']}.</span>";
         $grund     = '';
-        $totalZelle = '<td class="es-total">' . number_format($rang['total'], 1, '.', '') . '</td>';
+        // Rechnung im Tooltip: die Spalten zeigen Rohwerte, das Total rechnet Kunst und Glück /10 und Zabig in Punkten
+        $rechnung = [];
+        foreach ($rang['teile'] ?? [] as $teil => $wert) {
+            $rechnung[] = $teil . ' ' . (in_array($teil, ['Kunst', 'Glück'], true) ? number_format($wert, 1, '.', '') : (string)(int)round($wert));
+        }
+        $totalTip = $rechnung ? " data-tooltip='" . htmlspecialchars(implode(' + ', $rechnung) . ' = ' . number_format($rang['total'], 1, '.', ''), ENT_QUOTES, 'UTF-8') . "'" : '';
+        $totalZelle = '<td class="es-total"' . $totalTip . '>' . number_format($rang['total'], 1, '.', '') . '</td>';
         if ($rang['rang'] <= 3) $klasse .= ' rank-' . $rang['rang'];
     } else {
         $g = htmlspecialchars(endschOhneWertungGrund($row), ENT_QUOTES, 'UTF-8');
@@ -173,7 +179,11 @@ function endschRangKarte(mysqli $conn, int $jahr): array {
         $res = $st->get_result();
         $i = 0;
         while ($r = $res->fetch_assoc()) {
-            $karte[$r['Schluessel']] = ['kat' => $kat, 'rang' => ++$i, 'total' => (float)$r['GesamtTotal']];
+            // teile: die Summanden des Totals, damit die Total-Zelle ihre Rechnung zeigen kann (Spalten = Rohwerte)
+            $karte[$r['Schluessel']] = ['kat' => $kat, 'rang' => ++$i, 'total' => (float)$r['GesamtTotal'], 'teile' => [
+                'Endstich' => (float)$r['EndstichTotal'], 'Schwini' => (float)$r['MaxSchwini'], 'Kunst' => (float)$r['KunstTotal'],
+                'Glück' => (float)$r['GlueckTotal'], 'Zabig' => (float)$r['ZabigTotal'],
+            ]];
         }
         $st->close();
     }

@@ -87,6 +87,16 @@ $page_specific_css = "
 .es-buchpunkte li { color: var(--ui-text); }
 .es-buchpunkte a { font-weight: 600; white-space: nowrap; }
 .es-buchpunkte .es-erledigt { color: var(--ui-ok-fg); }
+.es-dok-weitere { border-top: 1px solid var(--ui-linie); padding-top: 12px; }
+.es-dok-weitere > summary { list-style: none; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--ui-text); border-radius: 6px; }
+.es-dok-weitere > summary::-webkit-details-marker { display: none; }
+.es-dok-weitere > summary:hover { color: var(--ui-akzent-dunkel); }
+.es-dok-weitere > summary:focus-visible { outline: 2px solid var(--ui-akzent); outline-offset: 2px; }
+.es-dok-weitere > summary > i { color: var(--ui-text-3); transition: transform .15s ease-out; }
+.es-dok-weitere[open] > summary > i { transform: rotate(90deg); }
+.es-dok-anzahl { font-weight: 400; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
+.es-dok-weitere-inhalt { display: grid; gap: 16px; margin-top: 12px; }
+@media (prefers-reduced-motion: reduce) { .es-dok-weitere > summary > i { transition: none; } }
 .es-dok-liste { display: flex; flex-wrap: wrap; gap: 6px 8px; }
 .es-dok-liste > .btn-group > .btn:first-child { text-align: left; }
 .es-dok-liste > .btn-group > .msv-druck { flex: 0 0 2.25rem; }
@@ -182,6 +192,10 @@ $csrf = csrf_token();
                                 <div id="absBuchPunkte"></div>
                             </section>
                         </div>
+                        <!-- Seltener Gebrauchtes eingeklappt (Zustand pro Browser gemerkt); «Fürs Absenden» bleibt offen -->
+                        <details class="es-dok-weitere" id="esDokWeitere">
+                        <summary><i class="bi bi-chevron-right" aria-hidden="true"></i>Weitere Dokumente <span class="es-dok-anzahl">11</span></summary>
+                        <div class="es-dok-weitere-inhalt">
                         <div role="group" aria-labelledby="dokUebersicht">
                             <p class="es-dok-label" id="dokUebersicht">Übersicht</p>
                             <div class="es-dok-liste">
@@ -241,6 +255,8 @@ $csrf = csrf_token();
                                 </div>
                             </div>
                         </div>
+                        </div>
+                        </details>
                     </div>
                 </aside>
 
@@ -293,7 +309,7 @@ $csrf = csrf_token();
                         <div class="mobile-search">
                             <div class="position-relative">
                                 <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control" placeholder="Name suchen..."
+                                <input type="search" class="form-control" placeholder="Name suchen..." aria-label="Teilnehmer suchen"
                                        oninput="filterMobileEnd(this)">
                             </div>
                         </div>
@@ -1486,12 +1502,16 @@ $(document).ready(function () {
                 { href: 'sieger.php', text: 'Zu den Siegerlisten' }));
         // Übrige Teile des Buchs mit eigener Erfassung: ohne Resultate bliebe ihre Tabelle im Buch leer
         const b = bereit.buchteile;
+        // fehlt = keine Resultate; unfertig = Resultate da, aber noch nicht fertig fürs Buch (Cup-Finale, gemeldete JM)
         const fehlt = b ? b.filter(t => !t.vorhanden) : [];
+        const unfertig = b ? b.filter(t => t.vorhanden && t.offen) : [];
+        const buchText = [];
+        if (fehlt.length) buchText.push('Noch ohne Resultate für ' + jahr + ': ' + absAufzaehlen(absKatZusammen(fehlt.map(t => t.teil)))
+            + (fehlt.length === 1 ? '. Im Buch bliebe diese Tabelle leer.' : '. Im Buch blieben diese Tabellen leer.'));
+        unfertig.forEach(t => buchText.push(t.hinweis + '.'));
         z.push(!b ? absZeile('buch', 'fehler', 'Die übrigen Teile des Absendenbuchs konnten nicht geprüft werden.')
-            : !fehlt.length ? absZeile('buch', 'ok', 'Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup haben Resultate für ' + jahr + '.')
-            : absZeile('buch', 'offen', 'Noch ohne Resultate für ' + jahr + ': ' + absAufzaehlen(absKatZusammen(fehlt.map(t => t.teil)))
-                + (fehlt.length === 1 ? '. Im Buch bliebe diese Tabelle leer.' : '. Im Buch blieben diese Tabellen leer.'),
-                { href: fehlt[0].link, text: 'Zur Erfassung' }));
+            : !buchText.length ? absZeile('buch', 'ok', 'Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup haben Resultate für ' + jahr + '.')
+            : absZeile('buch', 'offen', buchText.join(' '), { href: (fehlt[0] || unfertig[0]).link, text: 'Zur Erfassung' }));
         const offen = z.filter(s => s === 'offen').length, fehler = z.filter(s => s === 'fehler').length;
         const zeit = new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
         $('#absStand').html((offen
@@ -1654,6 +1674,18 @@ $(document).on('click', '.absbk-btn', function () {
             : 'Broschüre heruntergeladen.')
     });
 });
+</script>
+
+<script>
+// «Weitere Dokumente»: auf- oder zugeklappt bleibt es in diesem Browser, wie zuletzt verlassen
+(function() {
+    const el = document.getElementById('esDokWeitere');
+    if (!el) return;
+    try { if (localStorage.getItem('esDokWeitere') === 'offen') el.open = true; } catch (e) {}
+    el.addEventListener('toggle', function() {
+        try { localStorage.setItem('esDokWeitere', el.open ? 'offen' : 'zu'); } catch (e) {}
+    });
+})();
 </script>
 
 <?php include 'footer.inc.php'; ?>

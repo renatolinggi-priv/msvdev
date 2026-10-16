@@ -1,6 +1,6 @@
 <?php
 // kantirang.php – seit 1.68.29 Teil von kantiresultate.php: Rang je Kategorie im Raster, Sortierung «Rang»,
-// PDF und Direktdruck im Kopf. Bleibt als Weiterleitung für den Menüeintrag «Kantonalstich Rangliste»,
+// PDF und Direktdruck im Kopf. Bleibt als Weiterleitung für (Menüeintrag seit Mig. 107 entfernt)
 // Lesezeichen und alte Links. kantirang/load_kantonal.php und kantirang/generate_pdf.php bleiben in Gebrauch
 // (Kantonalstich Abrechnung, Direktdruck).
 $ziel = 'kantiresultate.php?sortierung=rang';

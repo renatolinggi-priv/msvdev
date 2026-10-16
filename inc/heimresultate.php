@@ -29,6 +29,8 @@ $page_specific_css = "
 /* Rang je Kategorie vor dem Namen («A 3.»), rechnet beim Tippen mit; ersetzt die Seite «Heimmeisterschaft Rangliste» */
 .hk-rang { flex: none; width: 2.6rem; font-size: .8rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
 .hk-rang:empty::before { content: '–'; font-weight: 400; color: var(--ui-leer); }
+.hk-vorlaeufig .hk-rang { font-style: italic; color: var(--ui-text-3); }
+.hk-steuer-label { font-size: .75rem; font-weight: 600; color: var(--ui-text-2); margin-right: -6px; } /* sichtbare Beschriftung: Sortierung ist kein Filter */
 tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; background: var(--ui-akzent); vertical-align: middle; }
 .hk-chip-ungespeichert .ui-punkt { background: var(--ui-akzent) !important; }
 #hkScroll #heimresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid var(--ui-rand-stark) !important; border-radius: 6px !important; box-shadow: none; }
@@ -79,7 +81,7 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
     .passen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
     .passe-field { display: flex; flex-direction: column; }
     .passe-field label { margin-bottom: 3px; font-size: .75rem; font-weight: 500; color: var(--ui-text-2); }
-    .passe-field input { min-height: 48px; text-align: center; font-size: 1.1rem !important; font-weight: 600; background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-radius: 8px; -moz-appearance: textfield; }
+    .passe-field input { min-height: 48px; text-align: center; font-size: 1.35rem !important; font-weight: 600; background: var(--ui-flaeche-2); border: 1px solid var(--ui-feldrand); border-radius: 8px; -moz-appearance: textfield; }
     .passe-field input.has-value { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
     .passe-field input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
 }
@@ -108,7 +110,7 @@ $csrf = csrf_token();
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
                 $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1"></i>Schnellerfassung</button>'
-                    . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>'
+                    . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn" data-titel="Heimresultate" data-tooltip="Hinweis «Resultate aktualisiert» auf www.msvwilen.ch"><i class="bi bi-megaphone me-1" aria-hidden="true"></i>Auf Website melden</button>'
                     . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
                     . '<button type="button" class="btn btn-outline-info" id="hkPdfBtn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
                     . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="heimrang" data-druck-label="Heimmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
@@ -125,6 +127,7 @@ $csrf = csrf_token();
 
                     <div class="ui-tab-kopf">
                         <span class="ui-tab-titel">Mitglieder <button type="button" class="btn-help" data-help="heimresultate.tabelle" aria-label="Hilfe"></button></span>
+                        <span class="hk-steuer-label" aria-hidden="true">Sortierung</span>
                         <div class="ui-filter" role="group" aria-label="Sortierung" id="hkSortierung" data-tooltip="«Rang»: nach Kategorie und Total, ordnet nach dem Speichern neu">
                             <button type="button" data-sort="name" aria-pressed="<?= $__hkSortRang ? 'false' : 'true' ?>">Name</button>
                             <button type="button" data-sort="rang" aria-pressed="<?= $__hkSortRang ? 'true' : 'false' ?>">Rang</button>
@@ -147,7 +150,7 @@ $csrf = csrf_token();
                             <table class="table mb-0" id="heimresultateTabelle">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Mitglied</th>
+                                        <th scope="col">Rang · Mitglied</th>
                                         <?php for ($p = 1; $p <= 8; $p++): ?><th scope="col">Passe <?= $p ?></th><?php endfor; ?>
 
                                         <th scope="col">Total</th>
@@ -287,6 +290,8 @@ $(document).ready(function() {
             cache: false,
             data: { year: year },
             success: function(response) {
+                var gewaehlt = $('#yearSelect').val();
+                if (year && gewaehlt && String(year) !== String(gewaehlt)) return; // Antwort für ein inzwischen abgewähltes Jahr
                 $tbody.html(response);
                 geaendert.clear();
                 bindDesktopInputs();
@@ -301,9 +306,9 @@ $(document).ready(function() {
                 $('#mobileCardsList').html(
                     '<div class="text-center py-4 text-danger">' +
                     '<i class="bi bi-exclamation-triangle me-2"></i>' +
-                    'Fehler beim Laden</div>'
+                    'Die Resultate liessen sich nicht laden. Lade die Seite neu (F5).</div>'
                 );
-                msvToast('Fehler beim Laden der Resultate', 'error');
+                msvToast('Die Resultate liessen sich nicht laden. Lade die Seite neu (F5).', 'error');
             }
         });
     }
@@ -357,6 +362,23 @@ $(document).ready(function() {
         $('#nAlle').text(total);
         $('#nMit').text(mit);
         $('#nOhne').text(total - mit);
+        rangHinweis();
+    }
+
+    // Solange etwas nicht gespeichert ist, rechnet der Rang mit Eingaben, die das PDF (liest die DB) noch nicht kennt:
+    // dann alle Ränge kursiv und mit Tooltip «vorläufig»
+    function rangHinweis() {
+        var vorlaeufig = geaendert.size > 0;
+        var $t = $('#heimresultateTabelle').toggleClass('hk-vorlaeufig', vorlaeufig);
+        $t.find('tbody tr[data-rang]').each(function() {
+            var kat = this.getAttribute('data-kat');
+            var $rang = $(this).find('.hk-rang');
+            $rang.find('.visually-hidden').remove();
+            if (vorlaeufig) $rang.append('<span class="visually-hidden"> (vorläufig)</span>');
+            $rang.attr('data-tooltip', vorlaeufig
+                ? 'Vorläufiger Rang in Kat. ' + kat + ': rechnet mit Eingaben, die noch nicht gespeichert sind'
+                : 'Rang in Kat. ' + kat);
+        });
     }
 
     // ===== Filter (Alle / Mit Resultaten / Ohne) und Suche =====
@@ -412,7 +434,10 @@ $(document).ready(function() {
         });
         $('#heimresultateTabelle tbody tr[data-stand]').each(function() {
             var r = this.getAttribute('data-rang'), kat = this.getAttribute('data-kat');
-            $(this).find('.hk-rang').text(r ? kat + ' ' + r + '.' : '').attr('data-tooltip', r ? 'Rang in Kat. ' + kat : null);
+            this.classList.remove('rank-1', 'rank-2', 'rank-3'); // Podest wie in den anderen Ranglisten
+            if (r && +r <= 3) this.classList.add('rank-' + r);
+            $(this).find('.hk-rang').text(r ? kat + ' ' + r + '.' : '').attr('data-tooltip', r ? 'Rang in Kat. ' + kat
+                : (!kat && this.getAttribute('data-stand') === 'mit' ? 'Ohne Rang: keine Kategorie, weil in den Stammdaten keine Waffe hinterlegt ist' : null));
         });
     }
 
@@ -661,6 +686,8 @@ $(document).ready(function() {
 
         // Diese togglen
         $card.toggleClass('open', !wasOpen);
+        $('.member-card-header').attr('aria-expanded', 'false');
+        $(this).attr('aria-expanded', !wasOpen ? 'true' : 'false');
 
         // Bei Öffnen: ins Sichtfeld scrollen
         if (!wasOpen) {
@@ -744,11 +771,11 @@ $(document).ready(function() {
     }
 
     // ===== Speichern =====
-    $('#heimresultateForm').on('submit', function(e) {
-        e.preventDefault();
+    // Gibt ein Promise zurück: true = gespeichert, false = nicht gespeichert (Prüffehler oder Serverfehler, Meldung steht)
+    function rasterSpeichern() {
         if (isMobile()) syncMobileToDesktop();
         // Werte über 100 oder keine Zahl: nicht speichern, sondern zeigen, wo
-        if (msvEingabeFehler('#hkFehler', msvPruefeFelder('#heimresultateTabelle'))) return;
+        if (msvEingabeFehler('#hkFehler', msvPruefeFelder('#heimresultateTabelle'))) return Promise.resolve(false);
 
         var $submitBtn = $('#rasterSpeichernBtn');
         var originalText = $submitBtn.html();
@@ -758,38 +785,50 @@ $(document).ready(function() {
         fillEmptyWithZero();
 
         var selectedYear = $('#yearSelect').val();
-        var formData = $(this).serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
+        var formData = $('#heimresultateForm').serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
 
-        $.ajax({
-            url: 'heimresultate/save_heimresultate.php',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            success: function(resp) {
-                if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); return; }
-                geaendert.clear();
-                msvToast('Resultate gespeichert', 'success');
-                loadResultate(selectedYear);
-            },
-            error: function(xhr) {
-                msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern der Ergebnisse'), 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false).html(originalText);
-            }
+        return new Promise(function(fertig) {
+            $.ajax({
+                url: 'heimresultate/save_heimresultate.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(resp) {
+                    if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); fertig(false); return; }
+                    geaendert.clear();
+                    msvToast('Resultate gespeichert', 'success');
+                    loadResultate(selectedYear);
+                    fertig(true);
+                },
+                error: function(xhr) {
+                    msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern der Ergebnisse'), 'error');
+                    fertig(false);
+                },
+                complete: function() {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
         });
+    }
+    $('#heimresultateForm').on('submit', function(e) {
+        e.preventDefault();
+        rasterSpeichern();
     });
+
+    // Vor PDF und Direktdruck: Die Rangliste liest die Datenbank. Ist im Raster etwas nicht gespeichert,
+    // zuerst speichern (oder abbrechen), damit PDF und Bildschirm denselben Rang zeigen.
+    window.hkVorAusgabe = function() { return msvVorAusgabe(geaendert.size, rasterSpeichern); };
 
 
     // ===== Rangliste als PDF (vorher heimrang.php; Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast) =====
-    $('#hkPdfBtn').on('click', function(e) {
+    $('#hkPdfBtn').on('click', async function(e) {
         e.preventDefault();
+        if (!(await window.hkVorAusgabe())) return;
         var jahr = $('#yearSelect').val();
         msvAusgabe(this, {
             url: 'heimrang/generate_pdf.php',
             data: {
                 year: jahr,
-                kat: 'B',
                 orientation: window.MsvDruck ? MsvDruck.orientierung('heimrang', 'landscape') : 'landscape' // Format aus dem Druckprofil
             },
             titel: 'Heimmeisterschaft Rangliste ' + jahr,
@@ -804,12 +843,15 @@ $(document).ready(function() {
         var neu = this.value;
         if (neu === aktuellesJahr) return;
         if (geaendert.size) {
-            const r = await msvConfirm('Die Änderungen in ' + geaendert.size + (geaendert.size === 1 ? ' Zeile sind' : ' Zeilen sind') +
-                ' noch nicht gespeichert und gehen beim Jahreswechsel verloren.', 'Ungespeicherte Änderungen verwerfen?', 'Verwerfen');
-            if (!r.isConfirmed) {
-                this.value = aktuellesJahr;
-                this.dispatchEvent(new Event('change', { bubbles: true }));
-                return;
+            // Drei Wege wie im Vereinscup: Speichern (dann wechseln), Verwerfen, Zurück
+            const wahl = await msvUngespeichert({ wer: geaendert.size === 1 ? '1 Zeile' : geaendert.size + ' Zeilen' });
+            const zurueck = () => { this.value = aktuellesJahr; this.dispatchEvent(new Event('change', { bubbles: true })); };
+            if (wahl === 'zurueck') { zurueck(); return; }
+            if (wahl === 'speichern') {
+                this.value = aktuellesJahr;          // rasterSpeichern() liest das Jahr sofort aus der Auswahl
+                const gespeichert = rasterSpeichern();
+                this.value = neu;
+                if (!(await gespeichert)) { zurueck(); return; }
             }
         }
         aktuellesJahr = neu;
@@ -837,7 +879,7 @@ $(document).ready(function() {
 
     // ===== Veröffentlichen =====
     $('#publishChangelogBtn').on('click', async function() {
-        const r = await msvConfirm('Ein Eintrag wird auf der Website angezeigt.', 'Änderung veröffentlichen?', 'Veröffentlichen');
+        const r = await msvConfirm('Auf www.msvwilen.ch erscheint der Hinweis «' + msvEsc((this.dataset.titel || '') + ' ' + $('#yearSelect').val()) + ' aktualisiert». Die Resultate selbst ändert das nicht.', 'Auf der Website melden?', 'Melden', 'Abbrechen');
         if (!r.isConfirmed) return;
         var selectedYear = $('#yearSelect').val();
         $.post('changelog_publish.php', {
@@ -847,10 +889,10 @@ $(document).ready(function() {
             beschreibung: 'Heimresultate ' + selectedYear + ' aktualisiert',
             csrf_token: $('input[name="csrf_token"]').val()
         }).done(function(res) {
-            if (res.success) msvToast(res.message, 'success');
-            else msvToast(res.message || 'Fehler', 'error');
-        }).fail(function() {
-            msvToast('Veröffentlichung fehlgeschlagen', 'error');
+            if (res.success) msvToast('Auf der Website gemeldet', 'success');
+            else msvToast(res.message || 'Der Hinweis konnte nicht gemeldet werden.', 'error');
+        }).fail(function(xhr) {
+            msvToast(msvXhrMessage(xhr, 'Der Hinweis konnte nicht gemeldet werden. Bitte nochmals versuchen.'), 'error');
         });
     });
 
@@ -1167,10 +1209,11 @@ $(document).ready(function() {
 
 <?php include 'partials/direktdruck_scripts.inc.php'; ?>
 <script>
-// Direktdruck (QZ Tray), Profil «Heimmeisterschaft Rangliste» (A4 quer); kat=B wie beim PDF-Knopf
-MsvDruck.resolve('heimrang', () => {
+// Direktdruck (QZ Tray), Profil «Heimmeisterschaft Rangliste» (A4 quer); fragt wie der PDF-Knopf nach Ungespeichertem
+MsvDruck.resolve('heimrang', async () => {
+    if (!(await window.hkVorAusgabe())) return null;
     const jahr = document.getElementById('yearSelect').value;
-    return { url: 'heimrang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&kat=B&orientation=' + MsvDruck.orientierung('heimrang', 'landscape'), jobName: 'Heimmeisterschaft Rangliste ' + jahr };
+    return { url: 'heimrang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('heimrang', 'landscape'), jobName: 'Heimmeisterschaft Rangliste ' + jahr };
 });
 </script>
 

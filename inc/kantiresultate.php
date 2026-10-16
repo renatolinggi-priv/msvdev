@@ -29,6 +29,8 @@ $page_specific_css = "
 /* Rang je Kategorie vor dem Namen («A 3.»), rechnet beim Tippen mit; ersetzt die Seite «Kantonalstich Rangliste» */
 .hk-rang { flex: none; width: 2.6rem; font-size: .8rem; font-weight: 600; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
 .hk-rang:empty::before { content: '–'; font-weight: 400; color: var(--ui-leer); }
+.hk-vorlaeufig .hk-rang { font-style: italic; color: var(--ui-text-3); }
+.hk-steuer-label { font-size: .75rem; font-weight: 600; color: var(--ui-text-2); margin-right: -6px; } /* sichtbare Beschriftung: Sortierung ist kein Filter */
 tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; background: var(--ui-akzent); vertical-align: middle; }
 .hk-chip-ungespeichert .ui-punkt { background: var(--ui-akzent) !important; }
 #hkScroll #kantiresultateTabelle input.small-input { width: 52px !important; height: 32px !important; margin: 0 auto; padding: 0 4px !important; font-size: .9rem !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-text); background: var(--ui-flaeche); border: 1px solid var(--ui-rand-stark) !important; border-radius: 6px !important; box-shadow: none; }
@@ -59,9 +61,11 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 .entry-passe-field input[aria-invalid=true] { background: var(--ui-fehler-bg); border-color: var(--ui-fehler); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
 
 /* Beste Passe in der Akzentfarbe (Raster, Panel, Handy) */
-#hkScroll #kantiresultateTabelle input.small-input.best-passe { background: var(--ui-akzent-hell); border-color: var(--ui-akzent-rand) !important; color: var(--ui-akzent-dunkel); font-weight: 700; }
-.entry-passe-field.is-best input { background: var(--ui-akzent-hell); border-color: var(--ui-akzent-rand); color: var(--ui-akzent-dunkel); }
-.entry-passe-field.is-best label::after { content: ' · beste'; font-weight: 600; color: var(--ui-akzent-dunkel); }
+/* Beste Passe (zählt als «Bester Kantonalstich» in der JM): Gold wie das Podest, nicht Akzentblau (= Fokus/Auswahl) */
+#hkScroll #kantiresultateTabelle input.small-input.best-passe { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg) !important; color: var(--ui-gold-fg); font-weight: 700; }
+.entry-passe-field.is-best input { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); }
+.entry-passe-field.is-best label::after { content: ' · beste'; font-weight: 600; color: var(--ui-gold-fg); }
+.hk-beste { font-weight: 600; color: var(--ui-gold-fg); } /* Handy-Karte: beste Passe, wie in der Schnellerfassung */
 
 /* Handy: Karten aus msv-styles, Suche oben */
 @media (max-width: 767.98px) {
@@ -99,7 +103,7 @@ $csrf = csrf_token();
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
                 $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1"></i>Schnellerfassung</button>'
-                    . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn"><i class="bi bi-megaphone me-1"></i>Veröffentlichen</button>'
+                    . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn" data-titel="Kantiresultate" data-tooltip="Hinweis «Resultate aktualisiert» auf www.msvwilen.ch"><i class="bi bi-megaphone me-1" aria-hidden="true"></i>Auf Website melden</button>'
                     . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
                     . '<button type="button" class="btn btn-outline-info" id="hkPdfBtn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
                     . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
@@ -116,6 +120,7 @@ $csrf = csrf_token();
 
                     <div class="ui-tab-kopf">
                         <span class="ui-tab-titel">Mitglieder <button type="button" class="btn-help" data-help="kantiresultate.tabelle" aria-label="Hilfe"></button></span>
+                        <span class="hk-steuer-label" aria-hidden="true">Sortierung</span>
                         <div class="ui-filter" role="group" aria-label="Sortierung" id="hkSortierung" data-tooltip="«Rang»: nach Kategorie und Total, ordnet nach dem Speichern neu">
                             <button type="button" data-sort="name" aria-pressed="<?= $__hkSortRang ? 'false' : 'true' ?>">Name</button>
                             <button type="button" data-sort="rang" aria-pressed="<?= $__hkSortRang ? 'true' : 'false' ?>">Rang</button>
@@ -138,7 +143,7 @@ $csrf = csrf_token();
                             <table class="table mb-0" id="kantiresultateTabelle">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Mitglied</th>
+                                        <th scope="col">Rang · Mitglied</th>
                                         <?php for ($p = 1; $p <= 5; $p++): ?><th scope="col">Passe <?= $p ?></th><?php endfor; ?>
 
                                         <th scope="col">Total</th>
@@ -158,7 +163,7 @@ $csrf = csrf_token();
                         <div class="mobile-search">
                             <div class="position-relative">
                                 <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control" placeholder="Mitglied suchen..."
+                                <input type="search" class="form-control" placeholder="Mitglied suchen..." aria-label="Mitglied suchen"
                                        oninput="filterMobileKanti(this)">
                             </div>
                         </div>
@@ -265,6 +270,8 @@ $(document).ready(function() {
             cache: false,
             data: { year: year },
             success: function(response) {
+                var gewaehlt = $('#yearSelect').val();
+                if (year && gewaehlt && String(year) !== String(gewaehlt)) return; // Antwort für ein inzwischen abgewähltes Jahr
                 $tbody.html(response);
                 geaendert.clear();
                 bindInputs();
@@ -276,7 +283,7 @@ $(document).ready(function() {
             error: function(xhr) {
                 $tbody.html('<tr class="ui-leer"><td colspan="7" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>' +
                     'Die Resultate konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
-                msvToast('Fehler beim Laden der Resultate', 'error');
+                msvToast('Die Resultate liessen sich nicht laden. Lade die Seite neu (F5).', 'error');
             }
         });
     }
@@ -333,10 +340,10 @@ $(document).ready(function() {
     }
 
     // Speichern
-    $('#kantiresultateForm').on('submit', function(e) {
-        e.preventDefault();
+    // Gibt ein Promise zurück: true = gespeichert, false = nicht gespeichert (Prüffehler oder Serverfehler, Meldung steht)
+    function rasterSpeichern() {
         // Werte über 100 oder keine Zahl: nicht speichern, sondern zeigen, wo
-        if (msvEingabeFehler('#hkFehler', msvPruefeFelder('#kantiresultateTabelle'))) return;
+        if (msvEingabeFehler('#hkFehler', msvPruefeFelder('#kantiresultateTabelle'))) return Promise.resolve(false);
         var $submitBtn = $('#rasterSpeichernBtn');
         var originalText = $submitBtn.html();
         $submitBtn.prop('disabled', true)
@@ -344,33 +351,46 @@ $(document).ready(function() {
 
         fillEmptyWithZero();
         var selectedYear = $('#yearSelect').val();
-        var formData = $(this).serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
+        var formData = $('#kantiresultateForm').serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
 
-        $.ajax({
-            url: 'kantiresultate/save_kantiresultate.php',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            success: function(resp) {
-                if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); return; }
-                geaendert.clear();
-                msvToast('Resultate gespeichert', 'success');
-                loadResultate(selectedYear);
-            },
-            error: function(xhr) {
-                msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern der Ergebnisse'), 'error');
-            },
-            complete: function() {
-                $submitBtn.prop('disabled', false).html(originalText);
-            }
+        return new Promise(function(fertig) {
+            $.ajax({
+                url: 'kantiresultate/save_kantiresultate.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(resp) {
+                    if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); fertig(false); return; }
+                    geaendert.clear();
+                    msvToast('Resultate gespeichert', 'success');
+                    loadResultate(selectedYear);
+                    fertig(true);
+                },
+                error: function(xhr) {
+                    msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern der Ergebnisse'), 'error');
+                    fertig(false);
+                },
+                complete: function() {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
         });
+    }
+    $('#kantiresultateForm').on('submit', function(e) {
+        e.preventDefault();
+        rasterSpeichern();
     });
+
+    // Vor PDF und Direktdruck: Die Rangliste liest die Datenbank. Ist im Raster etwas nicht gespeichert,
+    // zuerst speichern (oder abbrechen), damit PDF und Bildschirm denselben Rang zeigen.
+    window.hkVorAusgabe = function() { return msvVorAusgabe(geaendert.size, rasterSpeichern); };
 
 
     // Rangliste
     // Rangliste als PDF (vorher kantirang.php; Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast)
-    $('#hkPdfBtn').on('click', function(e) {
+    $('#hkPdfBtn').on('click', async function(e) {
         e.preventDefault();
+        if (!(await window.hkVorAusgabe())) return;
         var jahr = $('#yearSelect').val();
         msvAusgabe(this, {
             url: 'kantirang/generate_pdf.php',
@@ -390,12 +410,15 @@ $(document).ready(function() {
         var neu = this.value;
         if (neu === aktuellesJahr) return;
         if (geaendert.size) {
-            const r = await msvConfirm('Die Änderungen in ' + geaendert.size + (geaendert.size === 1 ? ' Zeile sind' : ' Zeilen sind') +
-                ' noch nicht gespeichert und gehen beim Jahreswechsel verloren.', 'Ungespeicherte Änderungen verwerfen?', 'Verwerfen');
-            if (!r.isConfirmed) {
-                this.value = aktuellesJahr;
-                this.dispatchEvent(new Event('change', { bubbles: true }));
-                return;
+            // Drei Wege wie im Vereinscup: Speichern (dann wechseln), Verwerfen, Zurück
+            const wahl = await msvUngespeichert({ wer: geaendert.size === 1 ? '1 Zeile' : geaendert.size + ' Zeilen' });
+            const zurueck = () => { this.value = aktuellesJahr; this.dispatchEvent(new Event('change', { bubbles: true })); };
+            if (wahl === 'zurueck') { zurueck(); return; }
+            if (wahl === 'speichern') {
+                this.value = aktuellesJahr;          // rasterSpeichern() liest das Jahr sofort aus der Auswahl
+                const gespeichert = rasterSpeichern();
+                this.value = neu;
+                if (!(await gespeichert)) { zurueck(); return; }
             }
         }
         aktuellesJahr = neu;
@@ -458,6 +481,23 @@ $(document).ready(function() {
         $('#nAlle').text(total);
         $('#nMit').text(mit);
         $('#nOhne').text(total - mit);
+        rangHinweis();
+    }
+
+    // Solange etwas nicht gespeichert ist, rechnet der Rang mit Eingaben, die das PDF (liest die DB) noch nicht kennt:
+    // dann alle Ränge kursiv und mit Tooltip «vorläufig»
+    function rangHinweis() {
+        var vorlaeufig = geaendert.size > 0;
+        var $t = $('#kantiresultateTabelle').toggleClass('hk-vorlaeufig', vorlaeufig);
+        $t.find('tbody tr[data-rang]').each(function() {
+            var kat = this.getAttribute('data-kat');
+            var $rang = $(this).find('.hk-rang');
+            $rang.find('.visually-hidden').remove();
+            if (vorlaeufig) $rang.append('<span class="visually-hidden"> (vorläufig)</span>');
+            $rang.attr('data-tooltip', vorlaeufig
+                ? 'Vorläufiger Rang in Kat. ' + kat + ': rechnet mit Eingaben, die noch nicht gespeichert sind'
+                : 'Rang in Kat. ' + kat);
+        });
     }
 
     // ===== Filter (Alle / Mit Resultaten / Ohne) und Suche =====
@@ -513,7 +553,10 @@ $(document).ready(function() {
         });
         $('#kantiresultateTabelle tbody tr[data-stand]').each(function() {
             var r = this.getAttribute('data-rang'), kat = this.getAttribute('data-kat');
-            $(this).find('.hk-rang').text(r ? kat + ' ' + r + '.' : '').attr('data-tooltip', r ? 'Rang in Kat. ' + kat : null);
+            this.classList.remove('rank-1', 'rank-2', 'rank-3'); // Podest wie in den anderen Ranglisten
+            if (r && +r <= 3) this.classList.add('rank-' + r);
+            $(this).find('.hk-rang').text(r ? kat + ' ' + r + '.' : '').attr('data-tooltip', r ? 'Rang in Kat. ' + kat
+                : (!kat && this.getAttribute('data-stand') === 'mit' ? 'Ohne Rang: keine Kategorie, weil in den Stammdaten keine Waffe hinterlegt ist' : null));
         });
     }
 
@@ -622,7 +665,7 @@ $(document).ready(function() {
 
                 fieldsHtml += `
                     <div class="mb-3">
-                        <label class="form-label fw-bold small">${label}${isBest ? ' &#127942;' : ''}</label>
+                        <label class="form-label fw-bold small">${label}${isBest ? ' <span class="hk-beste">· beste</span>' : ''}</label>
                         <input type="number"
                                class="form-control passe-input-mobile${isBest ? ' best' : ''}"
                                data-name="${inputName}"
@@ -726,7 +769,7 @@ $(document).ready(function() {
 
     // Veröffentlichen
     $('#publishChangelogBtn').on('click', async function() {
-        const r = await msvConfirm('Ein Eintrag wird auf der Website angezeigt.', 'Änderung veröffentlichen?', 'Veröffentlichen');
+        const r = await msvConfirm('Auf www.msvwilen.ch erscheint der Hinweis «' + msvEsc((this.dataset.titel || '') + ' ' + $('#yearSelect').val()) + ' aktualisiert». Die Resultate selbst ändert das nicht.', 'Auf der Website melden?', 'Melden', 'Abbrechen');
         if (!r.isConfirmed) return;
         var selectedYear = $('#yearSelect').val();
         $.post('changelog_publish.php', {
@@ -736,10 +779,10 @@ $(document).ready(function() {
             beschreibung: 'Kantiresultate ' + selectedYear + ' aktualisiert',
             csrf_token: $('input[name="csrf_token"]').val()
         }).done(function(res) {
-            if (res.success) msvToast(res.message, 'success');
-            else msvToast(res.message || 'Fehler', 'error');
-        }).fail(function() {
-            msvToast('Veröffentlichung fehlgeschlagen', 'error');
+            if (res.success) msvToast('Auf der Website gemeldet', 'success');
+            else msvToast(res.message || 'Der Hinweis konnte nicht gemeldet werden.', 'error');
+        }).fail(function(xhr) {
+            msvToast(msvXhrMessage(xhr, 'Der Hinweis konnte nicht gemeldet werden. Bitte nochmals versuchen.'), 'error');
         });
     });
 
@@ -1063,8 +1106,9 @@ $(document).ready(function() {
 
 <?php include 'partials/direktdruck_scripts.inc.php'; ?>
 <script>
-// Direktdruck (QZ Tray), Profil «Kantonalstich Rangliste» (A4 hoch)
-MsvDruck.resolve('kantirang', () => {
+// Direktdruck (QZ Tray), Profil «Kantonalstich Rangliste» (A4 hoch); fragt wie der PDF-Knopf nach Ungespeichertem
+MsvDruck.resolve('kantirang', async () => {
+    if (!(await window.hkVorAusgabe())) return null;
     const jahr = document.getElementById('yearSelect').value;
     return { url: 'kantirang/generate_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('kantirang', 'portrait'), jobName: 'Kantonalstich Rangliste ' + jahr };
 });

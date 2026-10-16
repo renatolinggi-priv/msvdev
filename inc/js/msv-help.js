@@ -130,12 +130,15 @@
                     hint.classList.remove('show');
                     setTimeout(function () { if (hint.parentNode) hint.parentNode.removeChild(hint); }, 250);
                     document.removeEventListener('click', onAnyClick, true);
+                    document.removeEventListener('keydown', onEsc, true);
                     clearTimeout(autoTimer);
                 };
-                var onAnyClick = function (e) {
-                    if (e.target.closest('[data-help]') || e.target.closest('#help-firsthint')) dismiss();
-                };
+                // Der Hinweis liegt oft über Kopfknöpfen: Klicks gehen durch ihn hindurch (CSS pointer-events),
+                // und jeder Klick oder Escape schliesst ihn, damit nichts 12 s verdeckt bleibt.
+                var onAnyClick = function () { dismiss(); };
+                var onEsc = function (e) { if (e.key === 'Escape') dismiss(); };
                 document.addEventListener('click', onAnyClick, true);
+                document.addEventListener('keydown', onEsc, true);
                 hint.querySelector('.help-firsthint-close').addEventListener('click', dismiss);
                 autoTimer = setTimeout(dismiss, 12000);
             }, 2000);

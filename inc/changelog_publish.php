@@ -10,6 +10,9 @@
  *   csrf_token   - CSRF-Schutz
  */
 include 'config.php';
+// Nur Admin/Vorstand (vorher genügte jede Sitzung mit CSRF-Token, also auch ein Mitglied aus dem Portal)
+require_once __DIR__ . '/admin_api_guard.inc.php';
+adminApiGuard('json');
 require_once __DIR__ . '/changelog_helper.php';
 
 // CSRF-Schutz
