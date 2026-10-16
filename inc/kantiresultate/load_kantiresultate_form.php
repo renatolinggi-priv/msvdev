@@ -54,10 +54,13 @@ function generateMemberRow($mitglied, $resultate, $year) {
         if ($v > $best) { $best = $v; $bestIdx = $i; }
     }
 
-    // Name + Anzahl erfasster Passen (die Seite führt beides beim Tippen nach)
+    // Name + Anzahl erfasster Passen (die Seite führt beides beim Tippen nach). Der Name ist ein Knopf: öffnet die Schnellerfassung.
+    // Nicht mehr aktive Mitglieder stehen nur hier, weil sie in diesem Jahr Resultate haben (die Rangliste zählt sie mit).
     $vorname = sanitizeOutput($mitglied['Vorname']);
     $name = sanitizeOutput($mitglied['Name']);
-    $html .= '<td><div class="hk-zelle"><span class="hk-rang"></span><span class="hk-name">' . $name . ' ' . $vorname . '</span>'
+    $status = !empty($mitglied['Verstorben']) ? 'verstorben' : ((int)($mitglied['Status'] ?? 1) !== 1 ? 'inaktiv' : '');
+    $html .= '<td><div class="hk-zelle"><span class="hk-rang"></span><button type="button" class="hk-name" aria-haspopup="dialog">' . $name . ' ' . $vorname . '</button>'
+           . ($status ? '<span class="hk-status" data-tooltip="In den Stammdaten ' . $status . '; steht hier, weil in diesem Jahr Resultate erfasst sind">' . $status . '</span>' : '')
            . '<span class="hk-anzahl' . ($filled === 5 ? ' voll' : '') . '">' . ($filled > 0 ? $filled . '/5' : '') . '</span></div></td>';
 
     // Resultate für jede Passe (1-5)
@@ -99,19 +102,25 @@ try {
     // Jahr validieren und sanitieren
     $year = isset($_GET['year']) ? filter_var($_GET['year'], FILTER_VALIDATE_INT) : date('Y');
     
-    if ($year === false || $year < 2020 || $year > date('Y') + 5) {
+    if ($year === false || $year < 2000 || $year > date('Y') + 5) {
         throw new Exception("Invalid year parameter");
     }
 
-    // Mitglieder mit prepared statement laden
-    $mitgliederSql = "SELECT m.ID, m.Name, m.Vorname, w.Kategorie FROM mitglieder m
+    // Aktive Mitglieder plus alle, die im gewählten Jahr ein Resultat über 0 haben (inaktiv, verstorben):
+    // die PDF-Rangliste zählt sie mit (gleiche Regel wie kantirang/generate_pdf.php), also müssen sie auch hier
+    // stehen und korrigierbar sein.
+    $mitgliederSql = "SELECT m.ID, m.Name, m.Vorname, m.Status, m.Verstorben, w.Kategorie FROM mitglieder m
                       LEFT JOIN Waffen w ON w.ID = m.WaffenID
-                      WHERE m.Status = 1 AND m.Verstorben = 0 ORDER BY m.Name ASC, m.Vorname ASC";
+                      WHERE (m.Status = 1 AND m.Verstorben = 0)
+                         OR m.ID IN (SELECT MitgliedID FROM kantiresultate WHERE Jahr = ?
+                                     AND (Passe1 > 0 OR Passe2 > 0 OR Passe3 > 0 OR Passe4 > 0 OR Passe5 > 0))
+                      ORDER BY m.Name ASC, m.Vorname ASC";
     $mitgliederStmt = $conn->prepare($mitgliederSql);
-    
+
     if (!$mitgliederStmt) {
         throw new Exception("Failed to prepare members query: " . $conn->error);
     }
+    $mitgliederStmt->bind_param("i", $year);
     
     if (!$mitgliederStmt->execute()) {
         throw new Exception("Failed to execute members query: " . $mitgliederStmt->error);

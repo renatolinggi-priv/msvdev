@@ -535,6 +535,11 @@ tbody tr.rank-3:not(.es-ansicht-erfassen tr) > td { background-color: color-mix(
 #hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) tbody tr:not(.group-header):not(.ui-leer):hover > td { background: var(--ui-flaeche-2); }
 .hk-zelle { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .hk-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ui-text); }
+/* Der Name ist ein Knopf (öffnet die Schnellerfassung, auch per Tastatur); sieht aus wie Text */
+button.hk-name { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+button.hk-name:hover { color: var(--ui-akzent-dunkel); text-decoration: underline; text-underline-offset: 2px; }
+/* «inaktiv» / «verstorben»: steht nur da, weil im gewählten Jahr Resultate erfasst sind */
+.hk-status { flex: none; padding: 1px 6px; font-size: .72rem; font-weight: 600; color: var(--ui-text-2); background: var(--ui-linie-zart); border-radius: 6px; }
 .hk-anzahl { flex: none; font-size: .75rem; color: var(--ui-text-3); font-variant-numeric: tabular-nums; }
 .hk-anzahl.voll { color: var(--ui-ok-fg); font-weight: 600; }
 /* Rang je Kategorie vor dem Namen («A 3.»), rechnet beim Tippen mit; kursiv, solange Eingaben ungespeichert sind */
@@ -549,7 +554,10 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 #hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) input.small-input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel) !important; box-shadow: 0 0 0 1px var(--ui-akzent-dunkel) !important; outline: 0; }
 #hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) input.small-input[aria-invalid=true] { background: var(--ui-fehler-bg) !important; border-color: var(--ui-fehler) !important; color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler) !important; }
 /* Beste Passe (Kantonalstich, zählt als «Bester Kantonalstich» in der JM): Gold wie das Podest, nicht Akzentblau (= Fokus/Auswahl) */
-#hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) input.small-input.best-passe { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg) !important; color: var(--ui-gold-fg); font-weight: 700; }
+#hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) input.small-input.best-passe { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: color-mix(in srgb, var(--ui-gold-fg) 60%, var(--ui-gold-bg)) !important; color: var(--ui-gold-fg); font-weight: 700; }
+/* … und nicht nur über Farbe: Stern an der Ecke des Felds (Bootstrap Icons 1.11 «star-fill») */
+#hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) td.hk-beste-zelle { position: relative; }
+#hkScroll :is(#heimresultateTabelle, #kantiresultateTabelle) td.hk-beste-zelle::after { content: "\f586"; position: absolute; top: 2px; right: 4px; z-index: 1; font-family: "bootstrap-icons"; font-size: .72rem; line-height: 1; color: var(--ui-gold-fg); pointer-events: none; }
 #hkFehler { margin: 10px var(--ui-pad) 0; }
 :is(#heimresultateTabelle, #kantiresultateTabelle) .sum-cell { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 :is(#heimresultateTabelle, #kantiresultateTabelle) .sum-cell.empty { font-weight: 400; color: var(--ui-leer); }
@@ -572,12 +580,23 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 .entry-passe-field input.filled { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
 .entry-passe-field input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
 .entry-passe-field input[aria-invalid=true] { background: var(--ui-fehler-bg); border-color: var(--ui-fehler); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
-.entry-passe-field.is-best input { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); }
+.entry-passe-field.is-best input { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: color-mix(in srgb, var(--ui-gold-fg) 60%, var(--ui-gold-bg)); color: var(--ui-gold-fg); }
 .entry-passe-field.is-best label::after { content: ' · beste'; font-weight: 600; color: var(--ui-gold-fg); }
 .hk-beste { font-weight: 600; color: var(--ui-gold-fg); }
+/* Schützenwahl (Select2, Liste im Panel) */
+.ui-raster-panel .select2-container { z-index: 1065; }
+.ui-raster-panel #entryMemberSelect + .select2-container { width: 100% !important; }
+.ui-raster-panel .select2-container--bootstrap-5 .select2-selection { min-height: calc(1.5em + .75rem + 2px); }
+
+/* Speicherleiste: nur Handy, nur solange etwas nicht gespeichert und der Kopf weggescrollt ist (JS setzt hidden) */
+.raster-speicherleiste { display: none; }
 
 /* Handy: zentrale Karten (.mobile-card), darin die Passen zweispaltig; Zähler neben der Suche */
 @media (max-width: 767.98px) {
+    .raster-speicherleiste:not([hidden]) { position: sticky; bottom: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--ui-flaeche); border-top: 1px solid var(--ui-rand); box-shadow: 0 -8px 24px rgba(26, 35, 50, .12); }
+    .raster-speicherleiste-text { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: .85rem; font-weight: 600; color: var(--ui-text); }
+    .raster-speicherleiste-text .ui-punkt { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ui-akzent); }
+    .raster-speicherleiste .btn { flex: none; min-height: 48px; padding-inline: 1.1rem; }
     .raster-mobil-suche { display: flex; align-items: center; gap: 10px; }
     .raster-mobil-suche > .position-relative { flex: 1 1 auto; min-width: 0; }
     .raster-mobil-zaehler { flex: none; font-size: .8rem; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
@@ -588,5 +607,5 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
     .raster-karte-feld input.filled { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
     .raster-karte-feld input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
     .raster-karte-feld input[aria-invalid=true] { background: var(--ui-fehler-bg); border-color: var(--ui-fehler); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
-    .raster-karte-feld input.best { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); font-weight: 700; }
+    .raster-karte-feld input.best { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: color-mix(in srgb, var(--ui-gold-fg) 60%, var(--ui-gold-bg)); color: var(--ui-gold-fg); font-weight: 700; }
 }

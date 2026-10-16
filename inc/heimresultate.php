@@ -17,16 +17,7 @@ $raster = [
     'csrf'       => $csrf,
 ];
 ?>
-<!-- Select2 (Schützenwahl in der Schnellerfassung). defer: hält den Seitenaufbau nicht an; fehlt Select2
-     (CDN nicht erreichbar), bleibt die normale Auswahlliste -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
-<style>
-.select2-container { z-index: 1065; }
-#entryMemberSelect + .select2-container { width: 100% !important; }
-.select2-container--bootstrap-5 .select2-selection { min-height: calc(1.5em + 0.75rem + 2px); }
-</style>
+<?php msv_raster_select2(); ?>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 ps-0">

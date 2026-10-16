@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.68.38",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Heim und Kanti: ein geleertes Feld löscht die Passe",
+        "beschreibung": "Wer im Raster, in der Schnellerfassung oder auf dem Handy einen Wert löscht und speichert, entfernt die Passe jetzt wirklich. Vorher meldete die Seite «gespeichert», und nach dem Neuladen stand der alte Wert wieder da. Die Meldung nennt, wie viele Passen geleert wurden.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim und Kanti: auch nicht mehr aktive Mitglieder mit Resultaten",
+        "beschreibung": "Die Liste zeigt neben den aktiven Mitgliedern alle, die im gewählten Jahr ein Resultat haben, mit dem Hinweis «inaktiv» oder «verstorben». So stehen auf dem Bildschirm dieselben Schützen wie in der PDF-Rangliste, und ihre Resultate lassen sich korrigieren. Frühere Jahre vor 2020 öffnen sich jetzt als leere Liste statt mit einer Fehlermeldung.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim und Kanti: Speichern auf dem Handy, beste Passe mit Stern",
+        "beschreibung": "Auf dem Handy erscheint unten eine Leiste mit «Speichern», sobald etwas nicht gespeichert ist und der Kopf weggescrollt ist. Die beste Kanti-Passe trägt im Raster zusätzlich einen Stern, und ihr Rand ist kräftiger. Der Name lässt sich auch mit der Tastatur anwählen; Enter öffnet die Schnellerfassung. Nach dem Schliessen steht der Fokus wieder beim Schützen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.37",
     "datum": "2026-10-16",
     "aenderungen": [

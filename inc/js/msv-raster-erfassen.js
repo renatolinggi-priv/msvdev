@@ -47,6 +47,30 @@
             if (geaendert.size) { e.preventDefault(); e.returnValue = ''; }
         });
 
+        // Ein Feld, das beim Laden einen Wert hatte und jetzt leer ist, wurde bewusst geleert. Der Endpunkt lässt
+        // leere Felder unverändert; darum geht es als 0 hinaus (zählt wie «nicht geschossen»), sonst käme der alte Wert zurück.
+        function geleert(input) {
+            const alt = String(input.defaultValue || '').trim();
+            return input.value.trim() === '' && alt !== '' && alt !== '0';
+        }
+
+        // ===== Handy: Speicherleiste unten, solange etwas nicht gespeichert ist und «Speichern» im Kopf nicht zu sehen ist =====
+        let kopfKnopfSichtbar = true;
+        function speicherleiste() {
+            const n = geaendert.size;
+            $('#rasterSpeicherleisteText').text(n === 1 ? '1 Zeile nicht gespeichert' : n + ' Zeilen nicht gespeichert');
+            $('#rasterSpeicherleiste').prop('hidden', !(n && istHandy() && !kopfKnopfSichtbar));
+        }
+        const kopfKnopf = document.getElementById('rasterSpeichernBtn');
+        if (kopfKnopf && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function (eintraege) {
+                kopfKnopfSichtbar = eintraege[eintraege.length - 1].isIntersecting;
+                speicherleiste();
+            }).observe(kopfKnopf);
+        } else {
+            kopfKnopfSichtbar = false;   // ohne Beobachter: Leiste immer zeigen, sobald etwas offen ist
+        }
+
         // ===== Jahr-Dropdown: ?year= kommt von der Weiterleitung der alten Ranglisten-Seite, danach aus der Adresse =====
         function initializeYearDropdown() {
             const params = new URLSearchParams(location.search);
@@ -59,6 +83,11 @@
         }
 
         // ===== Resultate laden =====
+        let fokusNachLaden = null;   // Mitglied-ID, deren Namensknopf nach dem Laden den Fokus bekommt
+        function fokusAufName(id) {
+            const knopf = $(TAB + ' input[name^="passe[' + id + ']"]').first().closest('tr').find('button.hk-name')[0];
+            if (knopf && knopf.offsetParent !== null) knopf.focus();
+        }
         function loadResultate(year) {
             const $tbody = $(TAB + ' tbody');
             $tbody.html('<tr class="ui-leer"><td colspan="' + SPALTEN + '"><div class="spinner-border spinner-border-sm me-2" aria-hidden="true"></div>Lade Resultate …</td></tr>');
@@ -80,6 +109,10 @@
                     ursprung = $tbody.children().toArray();
                     sortieren();        // filtert und baut die Reihenfolge der Schnellerfassung
                     buildMobileCards();
+                    // Fokus war auf einem Namen, den das Neuladen ersetzt hat (Panel nach dem Speichern geschlossen)
+                    const id = fokusNachLaden;
+                    fokusNachLaden = null;
+                    if (id && (!document.activeElement || document.activeElement === document.body)) fokusAufName(id);
                 },
                 error: function (xhr) {
                     $tbody.html('<tr class="ui-leer"><td colspan="' + SPALTEN + '" class="text-danger"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>'
@@ -99,7 +132,7 @@
                 let sum = 0, best = -1, bestIdx = -1, filled = 0;
                 const total = $inputs.length;
                 $inputs.each(function (i) {
-                    $(this).removeClass('best-passe filled');
+                    $(this).removeClass('best-passe filled').removeAttr('aria-describedby').parent().removeClass('hk-beste-zelle');
                     const val = parseInt(this.value) || 0;
                     if (this.value.trim() !== '' && this.value !== '0') {
                         filled++;
@@ -108,7 +141,10 @@
                     sum += val;
                     if (val > best) { best = val; bestIdx = i; }
                 });
-                if (cfg.bestePasse && bestIdx >= 0 && best > 0) $inputs.eq(bestIdx).addClass('best-passe');
+                // Beste Passe nicht nur über Farbe: Stern in der Zelle (CSS) und «beste Passe» für den Screenreader
+                if (cfg.bestePasse && bestIdx >= 0 && best > 0) {
+                    $inputs.eq(bestIdx).addClass('best-passe').attr('aria-describedby', 'hkBesteText').parent().addClass('hk-beste-zelle');
+                }
 
                 const $sumCell = $(this).find('.sum-cell');
                 if ($sumCell.length) $sumCell.text(sum > 0 ? sum : '–').toggleClass('empty', sum === 0);
@@ -141,6 +177,7 @@
             $('#nMit').text(mit);
             $('#nOhne').text(total - mit);
             rangHinweis();
+            speicherleiste();
         }
 
         // Solange etwas nicht gespeichert ist, rechnet der Rang mit Eingaben, die das PDF (liest die DB) noch nicht kennt:
@@ -303,18 +340,22 @@
             });
         }
 
-        // Leere Felder vor einer späteren Passe mit 0 füllen (wie die Schnellerfassung)
+        // Leere Felder vor einer späteren Passe mit 0 füllen (wie die Schnellerfassung), geleerte ebenso.
+        // Gibt die Anzahl geleerter Passen zurück (für die Meldung).
         function fillEmptyWithZero() {
+            let geleerte = 0;
             $(TAB + ' tbody tr').each(function () {
-                const inputs = $(this).find('input');
+                const inputs = $(this).find('input.small-input');
                 let hasLaterValue = false;
                 for (let i = inputs.length - 1; i >= 0; i--) {
                     const $input = $(inputs[i]);
                     const val = $input.val().trim();
                     if (val !== '' && val !== '0') hasLaterValue = true;
+                    else if (geleert(inputs[i])) { $input.val('0'); geleerte++; }
                     else if (hasLaterValue && val === '') $input.val('0');
                 }
             });
+            return geleerte;
         }
 
         // ===== Speichern =====
@@ -322,12 +363,12 @@
         function rasterSpeichern() {
             // Werte über 100 oder keine Zahl: nicht speichern, sondern zeigen, wo
             if (msvEingabeFehler('#hkFehler', msvPruefeFelder(TAB))) return Promise.resolve(false);
-            const $submitBtn = $('#rasterSpeichernBtn');
-            const originalText = $submitBtn.html();
-            $submitBtn.prop('disabled', true)
+            // Kopf-Knopf und Speicherleiste (Handy) sperren und zeigen dasselbe
+            const $submitBtn = $('#rasterSpeichernBtn, #rasterSpeicherleisteBtn');
+            $submitBtn.each(function () { $(this).data('html', $(this).html()); }).prop('disabled', true)
                 .html('<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Speichere …');
 
-            fillEmptyWithZero();
+            const geleerte = fillEmptyWithZero();
             const selectedYear = $('#yearSelect').val();
             const formData = $(FORM).serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
 
@@ -340,7 +381,7 @@
                     success: function (resp) {
                         if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); fertig(false); return; }
                         geaendert.clear();
-                        msvToast('Resultate gespeichert', 'success');
+                        msvToast(geleerte ? 'Resultate gespeichert, ' + (geleerte === 1 ? '1 Passe' : geleerte + ' Passen') + ' geleert' : 'Resultate gespeichert', 'success');
                         loadResultate(selectedYear);
                         fertig(true);
                     },
@@ -349,7 +390,7 @@
                         fertig(false);
                     },
                     complete: function () {
-                        $submitBtn.prop('disabled', false).html(originalText);
+                        $submitBtn.each(function () { $(this).prop('disabled', false).html($(this).data('html')); });
                     }
                 });
             });
@@ -455,6 +496,7 @@
                 const $tr = $(this);
                 const name = $tr.find('.hk-name').text().trim();
                 const rang = $tr.find('.hk-rang').clone().children().remove().end().text().trim();
+                const status = $tr.find('.hk-status').text().trim();   // «inaktiv» / «verstorben»
                 const podest = (this.className.match(/\brank-[123]\b/) || [''])[0];
                 let felder = '';
                 $tr.find('input.small-input').each(function (i) {
@@ -465,7 +507,8 @@
                 });
                 html += '<div class="mobile-card ' + podest + '" data-name="' + msvEsc(name.toLowerCase()) + '">'
                     + '<div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)"><div>'
-                    + '<div class="fw-bold">' + (rang ? '<span class="hk-rang">' + msvEsc(rang) + '</span> ' : '') + msvEsc(name) + '</div>'
+                    + '<div class="fw-bold">' + (rang ? '<span class="hk-rang">' + msvEsc(rang) + '</span> ' : '') + msvEsc(name)
+                    + (status ? ' <span class="hk-status">' + msvEsc(status) + '</span>' : '') + '</div>'
                     + '<small class="raster-karte-stand text-muted"></small></div>'
                     + '<i class="bi bi-chevron-down" aria-hidden="true"></i></div>'
                     + '<div class="mobile-card-body"><div class="raster-karte-passen">' + felder + '</div></div></div>';
@@ -536,6 +579,7 @@
             resizeTimeout = setTimeout(function () {
                 if (istHandy() && !$('#rasterKarten .mobile-card').length) buildMobileCards();
                 else if (!istHandy()) $('#rasterKarten').empty();
+                speicherleiste();
             }, 150);
         });
 
@@ -547,6 +591,7 @@
             idx: -1,
             _silent: false,
             _saved: false,   // im Panel gespeichert → Liste beim Schliessen neu laden
+            _opener: null,   // Element, das das Panel geöffnet hat (bekommt den Fokus beim Schliessen zurück)
 
             buildIndex() {
                 this.rows = [];
@@ -586,6 +631,11 @@
 
             open(idx) {
                 if (idx < 0 || idx >= this.rows.length) return;
+                // Auslöser merken, wenn das Panel neu aufgeht (nicht beim Blättern darin)
+                if (!$('#entryPanel').hasClass('open')) {
+                    const a = document.activeElement;
+                    this._opener = a && a !== document.body && !document.getElementById('entryPanel').contains(a) ? a : null;
+                }
                 this.idx = idx;
                 const row = this.rows[idx];
 
@@ -650,13 +700,26 @@
             },
 
             close() {
+                const letzte = this.idx >= 0 ? this.rows[this.idx].id : null;
+                const fokusImPanel = document.getElementById('entryPanel').contains(document.activeElement);
                 $('#entryPanel').removeClass('open');
                 $('#entryOverlay').removeClass('show');
                 this.rows.forEach(r => r.$tr.removeClass('selected'));
                 this.idx = -1;
-                // Nach Speichern im Panel frisch laden (Gruppen), aber nie ungespeicherte Raster-Eingaben verwerfen
+                // Fokus aus dem Panel zurück (sonst bleibt er im ausgeblendeten Panel und fällt an den Seitenanfang):
+                // auf den Auslöser (z.B. «Schnellerfassung»), bei einem Namen auf den zuletzt erfassten Schützen
+                let aufName = false;
+                const opener = this._opener;
+                this._opener = null;
+                if (fokusImPanel) {
+                    if (opener && opener.isConnected && opener.offsetParent !== null && !opener.classList.contains('hk-name')) opener.focus();
+                    else if (letzte) { fokusAufName(letzte); aufName = true; }
+                }
+                // Nach Speichern im Panel frisch laden (Gruppen), aber nie ungespeicherte Raster-Eingaben verwerfen.
+                // Das Neuladen ersetzt den Namensknopf: danach wieder auf diesen Schützen.
                 if (this._saved && !geaendert.size) {
                     this._saved = false;
+                    if (aufName) fokusNachLaden = letzte;
                     loadResultate($('#yearSelect').val());
                 }
             },
@@ -690,14 +753,14 @@
                 $('#entryTotalBadge').html('<span>Total</span>' + sum);
             },
 
-            // Leere Felder nach einem späteren Wert mit 0 füllen (wie Raster-Save)
+            // Leere Felder vor einem späteren Wert und geleerte Felder als 0 schicken (wie Raster-Save)
             collectPayload(row) {
                 const vals = [];
                 row.$inputs.each(function () { vals.push($(this).val().trim()); });
                 let hasLater = false;
                 for (let i = vals.length - 1; i >= 0; i--) {
                     if (vals[i] !== '' && vals[i] !== '0') hasLater = true;
-                    else if (hasLater && vals[i] === '') vals[i] = '0';
+                    else if (vals[i] === '' && (hasLater || geleert(row.$inputs[i]))) vals[i] = '0';
                 }
                 row.$inputs.each(function (i) {
                     if ($(this).val().trim() === '' && vals[i] === '0') $(this).val('0').trigger('input');

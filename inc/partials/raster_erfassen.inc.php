@@ -10,10 +10,20 @@
  *   'sort_rang'  => false,            // Sortierung «Rang» aktiv (?sortierung=rang)
  *   'csrf'       => $csrf,
  * ]
- * Aufruf: msv_raster_tabelle($r) in .main-content-wrapper.ui-vollhoehe nach der Kopf-Card,
- *         msv_raster_panel($r) nach dem Container (das Panel liegt fest über der Seite).
+ * Aufruf: msv_raster_select2() nach dem Header, msv_raster_tabelle($r) in .main-content-wrapper.ui-vollhoehe
+ *         nach der Kopf-Card, msv_raster_panel($r) nach dem Container (das Panel liegt fest über der Seite).
  */
 if (!function_exists('msv_raster_tabelle')) {
+    // Select2 (Schützenwahl in der Schnellerfassung), Stil im Block «Raster-Erfassung». defer: hält den Seitenaufbau
+    // nicht an; fehlt Select2 (CDN nicht erreichbar), bleibt die normale Auswahlliste.
+    function msv_raster_select2(): void {
+        ?>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+        <?php
+    }
+
     function msv_raster_tabelle(array $r): void {
         $k = htmlspecialchars($r['kennung'], ENT_QUOTES, 'UTF-8');
         $n = (int) $r['passen'];
@@ -74,12 +84,19 @@ if (!function_exists('msv_raster_tabelle')) {
                         <div class="mobile-cards-scroll" id="rasterKarten"></div>
                     </div>
 
+                    <!-- Handy: Speichern bleibt erreichbar, sobald etwas nicht gespeichert und der Kopf weggescrollt ist -->
+                    <div class="raster-speicherleiste" id="rasterSpeicherleiste" hidden>
+                        <span class="raster-speicherleiste-text"><span class="ui-punkt" aria-hidden="true"></span><span id="rasterSpeicherleisteText"></span></span>
+                        <button type="submit" class="btn btn-primary" id="rasterSpeicherleisteBtn"><i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>
+                    </div>
+
                     <div class="ui-tasten d-none d-md-flex">
                         <span><kbd>Enter</kbd> / <kbd>Tab</kbd> nächstes Feld</span>
                         <span><kbd>↑</kbd> <kbd>↓</kbd> gleiche Passe, andere Zeile</span>
                         <span><kbd>Ctrl</kbd>+<kbd>S</kbd> speichern</span>
-                        <span>Name anklicken: Schnellerfassung</span>
+                        <span>Name anklicken oder <kbd>Enter</kbd> auf dem Namen: Schnellerfassung</span>
                     </div>
+                    <span id="hkBesteText" hidden>beste Passe</span>
                 </form>
         <?php
     }
@@ -122,7 +139,7 @@ if (!function_exists('msv_raster_tabelle')) {
             </div>
             <div class="entry-passen-grid" id="entryPassenGrid" style="--raster-spalten: <?= $spalten ?>;"></div>
         </div>
-        <p class="hk-hinweis">Enter springt ins nächste Feld, im letzten Feld wird gespeichert. Leere Felder vor einer späteren Passe werden als 0 gespeichert.</p>
+        <p class="hk-hinweis">Enter springt ins nächste Feld, im letzten Feld wird gespeichert. Leere Felder vor einer späteren Passe werden als 0 gespeichert; ein geleertes Feld löscht die gespeicherte Passe.</p>
     </div>
     <div class="panel-footer">
         <div class="d-flex gap-2 w-100 align-items-center">
