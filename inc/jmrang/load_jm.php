@@ -7,45 +7,13 @@ const DEZIMALSTELLEN = 2;   // Für Punkt-Ausgabe
 
 require_once '../config.php'; // $conn (mysqli)
 require_once __DIR__ . '/../admin_api_guard.inc.php';
+require_once __DIR__ . '/../partials/empty_state.inc.php'; // msv_empty_row() für die Leerzustände
+require_once __DIR__ . '/../jm_berechnung.inc.php';         // jmWertung(): gemeinsame JM-Rechnung (auch PDF und Portal)
 adminApiGuard('json'); // Zugriff nur Admin-Bereich (admin/vorstand)
-
-// ======= Hilfsfunktionen =======
-
-// Hochrechnung nur wenn Maxpunkte < 100 (z.B. 50 → 49*100/50 = 98)
-function scalePoints(float $points, array $def): float {
-    if (in_array($def['Bezeichnung'], ['Einzelwettschiessen', 'Obligatorisch', 'Feldschiessen'])) {
-        return $points;
-    }
-    $maxP = (int)$def['Maxpunkte'];
-    if ($maxP > 0 && $maxP < 100) {
-        return round(($points * 100) / $maxP, DEZIMALSTELLEN);
-    }
-    return $points;
-}
 
 // Sicheres HTML
 function h(?string $str): string {
     return htmlspecialchars((string)$str ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-// Letztes Schiessdatum aus dem Schiesstage-Freitext extrahieren (Fallback, falls
-// keine strukturierten JMSchiesstage-Einträge vorhanden sind). Gibt 'YYYY-MM-DD'.
-function jmLastSchiessdatum(string $text, int $fallbackYear): ?string {
-    $months = ['Januar'=>1,'Februar'=>2,'März'=>3,'Maerz'=>3,'April'=>4,'Mai'=>5,
-               'Juni'=>6,'Juli'=>7,'August'=>8,'September'=>9,'Oktober'=>10,
-               'November'=>11,'Dezember'=>12];
-    $last = null;
-    foreach (preg_split('/\r\n|\r|\n/', $text) as $line) {
-        foreach ($months as $name => $num) {
-            if (preg_match('/(\d{1,2})\.\s*' . preg_quote($name, '/') . '(?:\s+(\d{4}))?/u', $line, $m)) {
-                $y = (isset($m[2]) && $m[2] !== '') ? (int)$m[2] : $fallbackYear;
-                $d = sprintf('%04d-%02d-%02d', $y, $num, (int)$m[1]);
-                if ($last === null || $d > $last) $last = $d;
-                break;
-            }
-        }
-    }
-    return $last;
 }
 
 // ======= 1. Parameter einlesen =======
@@ -53,411 +21,72 @@ $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $kategorie = $_GET['kategorie'] ?? '';
 $asJson = !empty($_GET['json']);
 
-// Anzahl Streicher aus Parameter-Tabelle (Fallback 3)
-$stParam = $conn->prepare("SELECT excludeCount FROM Parameter WHERE year = ?");
-$stParam->bind_param('i', $year);
-$stParam->execute();
-$rowParam = $stParam->get_result()->fetch_assoc();
-$stParam->close();
-$anzahl_streicher = $rowParam ? max(1, (int)$rowParam['excludeCount']) : 3;
-
-// ======= 2. Wettbewerbe laden =======
-$sqlDef = "SELECT ID, Bezeichnung, Maxpunkte, Streicher, Schiesstage FROM JMDefinition WHERE year = ? AND Erweitert=0 AND Info=0
-    ORDER BY 
-        CASE 
-            WHEN Bezeichnung = 'Obligatorisch' THEN 1
-            WHEN Bezeichnung = 'Feldschiessen' THEN 2
-            WHEN Bezeichnung LIKE '%Kantonalstich%' THEN 3
-            WHEN Bezeichnung LIKE '%Sektionsmeisterschaft%' THEN 4
-            ELSE 5
-        END, Reihenfolge";
-$stmtDef = $conn->prepare($sqlDef);
-$stmtDef->bind_param('i', $year);
-$stmtDef->execute();
-$resDef = $stmtDef->get_result();
-$definitions = [];
-$defByID = [];
-while ($row = $resDef->fetch_assoc()) {
-    $definitions[] = $row;
-    $defByID[ $row['ID'] ] = $row;
-}
+// ======= 2. Werten (Werte, Hochrechnung, Streicher, Total, Rang) =======
+// Regeln siehe inc/jm_berechnung.inc.php. Vor dem Endstich ist es ein Zwischenstand:
+// gestrichen werden dann nur verpasste Anlässe, höchstens so viele wie Streicher.
+$wertung = jmWertung($conn, $year, $kategorie !== '' ? ['kategorie' => $kategorie] : []);
+$definitions = $wertung['definitionen'];
 
 if (!$definitions) {
-    if ($asJson) { 
+    if ($asJson) {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['message' => "Keine Wettbewerbe für Jahr $year gefunden"]);
-        exit; 
+        exit;
     }
     echo json_encode([
         'thead' => "<tr><th></th></tr>",
-        'tbody' => '<tr class="msv-empty-row"><td colspan="99" class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>Keine Wettbewerbe gefunden</td></tr>'
+        'tbody' => msv_empty_row(99, "Für $year ist noch kein JM-Anlass definiert. Anlegen unter «Jahresmeisterschaft Definition».")
     ]);
     exit;
 }
-$definitionIDs = array_column($definitions, 'ID');
 
-// ======= 2a. Letztes Schiessdatum je Wettbewerb =======
-// Primär aus strukturierter Tabelle JMSchiesstage, sonst aus Freitext Schiesstage.
-$lastDateByDef = [];
-$resDates = $conn->query("SELECT jm_id, MAX(schiesstag) AS last_date FROM JMSchiesstage WHERE year = " . (int)$year . " GROUP BY jm_id");
-if ($resDates) {
-    while ($r = $resDates->fetch_assoc()) {
-        if (!empty($r['last_date'])) $lastDateByDef[(int)$r['jm_id']] = $r['last_date'];
-    }
-}
-foreach ($definitions as $def) {
-    $id = (int)$def['ID'];
-    if (!isset($lastDateByDef[$id]) && !empty($def['Schiesstage'])) {
-        $d = jmLastSchiessdatum($def['Schiesstage'], (int)$year);
-        if ($d) $lastDateByDef[$id] = $d;
-    }
-}
-
-// ======= 3. Mitglieder laden =======
-$members = [];
-if ($kategorie !== '') {
-    $sqlMembers = "SELECT m.ID, m.Vorname, m.Name FROM mitglieder m
-                   JOIN Waffen w ON w.ID = m.WaffenID
-                   WHERE w.Kategorie = ? AND m.Status = 1
-                   ORDER BY m.Name, m.Vorname";
-    $stmtM = $conn->prepare($sqlMembers);
-    $stmtM->bind_param('s', $kategorie);
-    $stmtM->execute();
-    $resM = $stmtM->get_result();
-} else {
-    $sqlMembers = "SELECT m.ID, m.Vorname, m.Name FROM mitglieder m
-                   JOIN Waffen w ON w.ID = m.WaffenID
-                   ORDER BY m.Name, m.Vorname";
-    $resM = $conn->query($sqlMembers);
-}
-while ($row = $resM->fetch_assoc()) {
-    $members[] = $row;
-}
-
-if (!$members) {
-    if ($asJson) { 
+if (!$wertung['mitglieder']) {
+    if ($asJson) {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['message' => "Keine Mitglieder für Kategorie '$kategorie' gefunden"]);
-        exit; 
+        exit;
     }
     echo json_encode([
         'thead' => "<tr><th></th></tr>",
-        'tbody' => '<tr class="msv-empty-row"><td colspan="99" class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;"></i>Keine Mitglieder gefunden</td></tr>'
+        'tbody' => msv_empty_row(99, "Keine aktiven Mitglieder in $kategorie gefunden. Die Kategorie richtet sich nach der Waffe in den Mitglieder-Stammdaten.")
     ]);
     exit;
 }
 
-// ======= 4. Datenstruktur vorbereiten =======
-$resultData = [];
-foreach ($members as $m) {
-    $mid = $m['ID'];
-    $resultData[$mid] = [
-        'mitglied' => $m,
-        'wettbewerbe' => []
-    ];
-}
-
-// ======= 5. Endstich/Kanti-Sonderfälle laden =======
-function loadSonderfall(mysqli $conn, string $sql, int $defID, array &$resultData, array $defByID) {
-    $res = $conn->query($sql);
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $mid    = (int)$row['MitgliedID'];
-            $punkte = (int)$row['Punkte'];
-            if (isset($resultData[$mid])) {
-                $scaled = scalePoints($punkte, $defByID[$defID]);
-                $resultData[$mid]['wettbewerbe'][$defID][] = $scaled;
-            }
-        }
-    }
-}
-
-$endstichID = null;
-$kantiID = null;
-foreach ($definitions as $def) {
-    if ($def['Bezeichnung'] === 'Endstich')        $endstichID = (int)$def['ID'];
-    if ($def['Bezeichnung'] === 'Bester Kantonalstich') $kantiID = (int)$def['ID'];
-}
-
-if ($endstichID) {
-    loadSonderfall($conn, "
-        SELECT e.MitgliedID,
-        (COALESCE(e.Schuss1,0) + COALESCE(e.Schuss2,0) + COALESCE(e.Schuss3,0) +
-         COALESCE(e.Schuss4,0) + COALESCE(e.Schuss5,0) + COALESCE(e.Schuss6,0) +
-         COALESCE(e.Schuss7,0) + COALESCE(e.Schuss8,0) + COALESCE(e.Schuss9,0) +
-         COALESCE(e.Schuss10,0)) AS Punkte
-        FROM endstich e WHERE e.Jahr = $year
-    ", $endstichID, $resultData, $defByID);
-}
-
-if ($kantiID) {
-    loadSonderfall($conn, "
-        SELECT k.MitgliedID,
-        GREATEST(
-            COALESCE(k.Passe1,0),COALESCE(k.Passe2,0),COALESCE(k.Passe3,0),
-            COALESCE(k.Passe4,0),COALESCE(k.Passe5,0)
-        ) AS Punkte
-        FROM kantiresultate k WHERE k.Jahr = $year
-    ", $kantiID, $resultData, $defByID);
-}
-
-// ======= 6. Normale Resultate laden =======
-$normaleIDs = array_diff($definitionIDs, array_filter([$endstichID, $kantiID]));
-
-// Sammle tatsächliche Teilnahmen
-$tatsaechlicheTeilnahmen = [];
-
-if ($normaleIDs) {
-    $idList = implode(',', $normaleIDs);
-    $sqlResults = "
-        SELECT mitgliederID AS mid, jmdefinitionID AS defID, Punkte
-        FROM jmresultate
-        WHERE jmdefinitionID IN ($idList)
-    ";
-    $r = $conn->query($sqlResults);
-    if ($r) {
-        while ($row = $r->fetch_assoc()) {
-            $mid   = (int)$row['mid'];
-            $defID = (int)$row['defID'];
-            $raw   = (int)$row['Punkte'];
-            if (isset($resultData[$mid])) {
-                $scaled = scalePoints($raw, $defByID[$defID]);
-                $resultData[$mid]['wettbewerbe'][$defID][] = $scaled;
-                $tatsaechlicheTeilnahmen[$mid][] = $defID;
-            }
-        }
-    }
-}
-
-// ======= 6a. Streicher-Pool = nur DURCHGEFÜHRTE Anlässe =======
-// Regel: Für alle Schützen zählen die besten (durchgeführte − Streicher) Resultate.
-// Basis = alle bereits DURCHGEFÜHRTEN Streicher-Wettbewerbe (Datum <= heute bzw.
-// – falls kein Datum hinterlegt – sobald Resultate vorliegen). Noch OFFENE Anlässe
-// zählen weder als Resultat noch als Streicher mit. Verpasste/durchgeführte Anlässe
-// ohne Resultat erhalten 0 und können damit gestrichen werden.
-$heute = date('Y-m-d');
-$doneStreicherIDs = [];
-foreach ($definitions as $def) {
-    if ((int)$def['Streicher'] !== 1) continue;
-    $defID = (int)$def['ID'];
-    $ld = $lastDateByDef[$defID] ?? null;
-    if ($ld !== null) {
-        $isDone = ($ld <= $heute);
-    } else {
-        // Kein Datum bekannt -> als durchgeführt werten, sobald Resultate vorliegen
-        $isDone = false;
-        foreach ($resultData as $mData) {
-            if (!empty($mData['wettbewerbe'][$defID])) { $isDone = true; break; }
-        }
-    }
-    if ($isDone) $doneStreicherIDs[] = $defID;
-}
-
-// 0-Platzhalter nur für DURCHGEFÜHRTE Streicher-Wettbewerbe ohne Resultat
-// (= verpasst bzw. noch nicht erfasst). So ist die Basis für alle Schützen
-// identisch (= Anzahl durchgeführter Anlässe), gestrichen werden die schlechtesten.
-foreach ($resultData as $mid => &$mData) {
-    $mData['_placeholder'] = []; // defID => true: 0-Platzhalter (verpasst/nicht erfasst)
-    foreach ($doneStreicherIDs as $defID) {
-        if (empty($mData['wettbewerbe'][$defID])) {
-            $mData['wettbewerbe'][$defID][] = 0;
-            $mData['_placeholder'][$defID] = true;
-        }
-    }
-}
-unset($mData);
-
-// ======= 6b. Ist der Endstich / das Endschiessen durchgeführt? =======
-// Bis der Endstich durch ist, werden KEINE Streicher angewendet und KEIN Total
-// berechnet/angezeigt. Erst danach steht die definitive Rangliste fest.
-$endstichDone = true; // Fallback: kein Endstich definiert -> Total normal anzeigen
-if (!empty($endstichID)) {
-    $eld = $lastDateByDef[$endstichID] ?? null;
-    if ($eld !== null) {
-        $endstichDone = ($eld <= $heute);
-    } else {
-        // Kein Datum hinterlegt -> als durchgeführt werten, sobald Endstich-Resultate vorliegen
-        $endstichDone = false;
-        foreach ($resultData as $mChk) {
-            if (!empty($mChk['wettbewerbe'][$endstichID])) { $endstichDone = true; break; }
-        }
-    }
-}
-
-// ======= 7. Streicher- und Summenlogik =======
-$sektionsmeisterschaftID = null;
-foreach ($definitions as $d) {
-    if ($d['Bezeichnung'] === 'Sektionsmeisterschaft') {
-        $sektionsmeisterschaftID = $d['ID'];
-        break;
-    }
-}
-$streicher1IDs = [];
-foreach ($definitions as $d) {
-    if ((int)$d['Streicher'] === 1) $streicher1IDs[] = $d['ID'];
-}
-
-foreach ($resultData as $mid => &$mData) {
-    $sumStreicher0 = 0;
-    $streicher1Values = [];
-
-    foreach ($definitions as $def) {
-        $defID  = (int)$def['ID'];
-        $isStr1 = ((int)$def['Streicher'] === 1);
-
-        if (empty($mData['wettbewerbe'][$defID])) continue;
-        $allPoints = $mData['wettbewerbe'][$defID];
-
-        // Sektionsmeisterschaft => nur höchster Wert
-        if ($sektionsmeisterschaftID && $defID == $sektionsmeisterschaftID) {
-            $allPoints = [max($allPoints)];
-            $mData['wettbewerbe'][$defID] = $allPoints;
-        }
-
-        if ($isStr1) {
-            foreach ($allPoints as $p) $streicher1Values[] = ['defID' => $defID, 'punkte' => $p];
-        } else {
-            $sumStreicher0 += array_sum($allPoints);
-        }
-    }
-    
-    // Streicher nur anwenden, wenn der Endstich durch ist – sonst kein Total.
-    if ($endstichDone) {
-        usort($streicher1Values, fn($a,$b)=> $a['punkte'] <=> $b['punkte']);
-        $gestr     = array_slice($streicher1Values, 0, $anzahl_streicher);
-        $verwendet = array_slice($streicher1Values, $anzahl_streicher);
-
-        $mData['sumStreicher0'] = $sumStreicher0;
-        $mData['sumStreicher1'] = array_sum(array_column($verwendet, 'punkte'));
-        $mData['sumTotal']      = $mData['sumStreicher0'] + $mData['sumStreicher1'];
-    } else {
-        // Vor dem Endstich: keine Streicher, kein Total.
-        $gestr = [];
-        $mData['sumStreicher0'] = $sumStreicher0;
-        $mData['sumStreicher1'] = array_sum(array_column($streicher1Values, 'punkte'));
-        $mData['sumTotal']      = null; // Total erst nach dem Endstich
-    }
-
-    // Markierung der gestrichenen Werte
-    $gmap = [];
-    foreach ($gestr as $g) {
-        $key = $g['defID'] . '|' . $g['punkte'];
-        $gmap[$key] = ($gmap[$key] ?? 0) + 1;
-    }
-    foreach ($mData['wettbewerbe'] as $defID => &$pArray) {
-        $isPlaceholder = isset($mData['_placeholder'][$defID]);
-        if (!in_array($defID, $streicher1IDs)) {
-            foreach ($pArray as $ix => $val) {
-                if (!is_array($val)) $pArray[$ix] = ['punkte' => $val, 'strichen' => false, 'placeholder' => $isPlaceholder];
-            }
-        } else {
-            foreach ($pArray as $ix => $val) {
-                $key = $defID . '|' . $val;
-                if (isset($gmap[$key]) && $gmap[$key] > 0) {
-                    $pArray[$ix] = ['punkte' => $val, 'strichen' => true, 'placeholder' => $isPlaceholder];
-                    $gmap[$key]--;
-                } else {
-                    $pArray[$ix] = ['punkte' => $val, 'strichen' => false, 'placeholder' => $isPlaceholder];
-                }
-            }
-        }
-    }
-}
-unset($mData);
-
-// ======= 7c. "Hat gewertetes JM-Resultat" bestimmen (für Gruppierung) =======
-// Gleiche Logik wie das Erfassungs-Panel: Cup, SSM/Sektionsmeisterschaft,
-// Feldschiessen und Obligatorisch zählen NICHT als Resultat. Nur echte
-// (Nicht-Platzhalter) Einträge in den übrigen Anlässen gelten als Teilnahme.
-$countingDefIDs = [];
-foreach ($definitions as $def) {
-    $bez = (string)$def['Bezeichnung'];
-    if ($bez === 'Obligatorisch' || $bez === 'Feldschiessen') continue;
-    if (stripos($bez, 'Sektionsmeisterschaft') !== false) continue;
-    if (stripos($bez, 'SSM') === 0) continue;
-    if (stripos($bez, 'Cup') !== false) continue;
-    $countingDefIDs[(int)$def['ID']] = true;
-}
-foreach ($resultData as &$mData) {
-    $hasResult = false;
-    foreach ($mData['wettbewerbe'] as $defID => $pArray) {
-        if (!isset($countingDefIDs[(int)$defID])) continue;
-        foreach ($pArray as $p) {
-            $isPlaceholder = is_array($p) ? !empty($p['placeholder']) : false;
-            if (!$isPlaceholder) { $hasResult = true; break 2; }
-        }
-    }
-    $mData['hasResult'] = $hasResult;
-    // Endstich für den Gleichstand (auch wenn er als Streicher gestrichen ist)
-    $mData['endstichPunkte'] = 0.0;
-    if ($endstichID && !empty($mData['wettbewerbe'][$endstichID])) {
-        foreach ($mData['wettbewerbe'][$endstichID] as $p) {
-            if (!is_array($p)) { $mData['endstichPunkte'] += (float)$p; continue; }
-            if (empty($p['placeholder'])) $mData['endstichPunkte'] += (float)$p['punkte'];
-        }
-    }
-}
-unset($mData);
-
-// ======= 8. Sortieren =======
-// Zuerst Schützen MIT gewertetem Resultat, danach jene ohne (separate Gruppe).
-// Innerhalb "mit Resultat": nach dem Endstich nach Total DESC (Rangliste), bei
-// gleichem Total vorne, wer im Endstich mehr hat (Entscheid 14.10.2026);
-// vorher alphabetisch. "Ohne Resultat" immer alphabetisch.
-usort($resultData, function($a, $b) use ($endstichDone) {
-    if (($a['hasResult'] ?? false) !== ($b['hasResult'] ?? false)) {
-        return ($a['hasResult'] ?? false) ? -1 : 1;
-    }
-    if (($a['hasResult'] ?? false) && $endstichDone) {
-        $cmp = $b['sumTotal'] <=> $a['sumTotal'];
-        if ($cmp !== 0) return $cmp;
-        $cmp = $b['endstichPunkte'] <=> $a['endstichPunkte'];
-        if ($cmp !== 0) return $cmp;
-    }
-    return strnatcasecmp($a['mitglied']['Name'], $b['mitglied']['Name']);
-});
-
-// ======= 9. Ausgabe =======
 if ($asJson) {
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($resultData);
+    echo json_encode($wertung);
     exit;
 }
 
-// ======= 9a. Hilfsfunktionen für die Ausgabe =======
+// ======= 3. Hilfsfunktionen für die Ausgabe =======
 
-// Summe aller (echten) Einträge eines Wettbewerbs (i.d.R. genau ein Eintrag)
-function sumEntries(array $entry, int $defID): float {
-    if (empty($entry['wettbewerbe'][$defID])) return 0.0;
-    $s = 0.0;
-    foreach ($entry['wettbewerbe'][$defID] as $p) {
-        if (!empty($p['placeholder'])) continue;
-        $s += $p['punkte'];
-    }
-    return $s;
-}
-
-// Zelleninhalt einer Spalte in der Hauptzeile: erfasstes Resultat oder "–"
-// (stattgefunden, aber noch nicht erfasst => Platzhalter => "–").
+// Zelleninhalt einer Spalte in der Hauptzeile: Resultat, gestrichen durchgestrichen;
+// verpasst «–» (mit Hinweis, ob die 0 gestrichen ist oder zählt); Anlass noch ohne Resultate «–».
 function formatCell(array $entry, int $defID): string {
-    if (empty($entry['wettbewerbe'][$defID])) return "&ndash;";
-    $tmp = [];
-    foreach ($entry['wettbewerbe'][$defID] as $p) {
-        if (!empty($p['placeholder'])) { $tmp[] = "<span class='text-muted'>&ndash;</span>"; continue; }
-        $val = number_format($p['punkte'], DEZIMALSTELLEN, '.', '');
-        if (!empty($p['strichen'])) {
-            $tmp[] = "<span class='jm-cell-strichen' data-tooltip='Streicher'>$val</span>";
-        } else {
-            $tmp[] = "<span data-tooltip='Gewertet'>$val</span>";
-        }
+    $w = $entry['werte'][$defID] ?? null;
+    if ($w === null) return "&ndash;";
+    if ($w['roh'] === null) {
+        $tip = $w['gestrichen'] ? 'Verpasst · als Streicher gestrichen' : 'Verpasst · zählt 0';
+        return "<span class='text-muted' data-tooltip='$tip' aria-hidden='true'>&ndash;</span><span class='visually-hidden'>$tip</span>";
     }
-    return implode(", ", $tmp);
+    $val = number_format($w['punkte'], DEZIMALSTELLEN, '.', '');
+    // Durchstreichen allein erreicht keinen Screenreader: «gestrichen» als unsichtbarer Text dazu
+    return $w['gestrichen'] ? "<span class='jm-cell-strichen' data-tooltip='Streicher'>$val<span class='visually-hidden'> gestrichen</span></span>" : $val;
 }
 
-// ======= 9b. HTML Ausgabe als JSON – Rangliste + gruppierte Aufschlüsselung =======
-function renderTable(array $resultData, array $definitions, array $lastDateByDef, bool $endstichDone): array {
-    $today = date('Y-m-d');
-    $offenTxt = "<span class='text-muted'>offen</span>";
+// Kurzname für den Spaltenkopf: ohne Ordnungszahl («41. ») und ohne «-Schiessen», damit sich
+// ähnliche Anlässe unterscheiden («Muota SV Sattel» statt «Muota-Schiessen SV Sattel»).
+function jmKurzname(string $bez): string {
+    $kurz = trim(preg_replace(['/^\d+\.\s*/u', '/-Schiessen\b/u'], '', $bez));
+    return $kurz !== '' ? $kurz : $bez;
+}
+
+// ======= 4. HTML Ausgabe als JSON – Rangliste + gruppierte Aufschlüsselung =======
+function renderTable(array $wertung): array {
+    $today       = date('Y-m-d');
+    $definitions = $wertung['definitionen'];
+    $fertig      = $wertung['abgeschlossen']; // nach dem Endstich: definitive Rangliste mit Podest
 
     // Wettbewerbe in zwei fachliche Gruppen aufteilen (für die Detail-Aufschlüsselung)
     $pflichtDefs = []; // Streicher = 0 (zählt immer)
@@ -472,12 +101,11 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
     // (Obligatorisch, Sektionsmeisterschaft, Kantonalstich) erscheinen nur im Detail.
     $occurred = [];
     foreach ($definitions as $def) {
-        $id = (int)$def['ID'];
         // 20er-Schiessen (Obligatorisch, Feldschiessen) nicht als Spalte anzeigen
         // (andere Skala). Sie zählen weiterhin und erscheinen im Detail unter Pflicht.
         if ((int)$def['Maxpunkte'] === 20) continue;
-        if (isset($lastDateByDef[$id]) && $lastDateByDef[$id] <= $today) {
-            $occurred[] = ['def' => $def, 'date' => $lastDateByDef[$id]];
+        if ($def['letztesDatum'] !== null && $def['letztesDatum'] <= $today) {
+            $occurred[] = ['def' => $def, 'date' => $def['letztesDatum']];
         }
     }
     usort($occurred, fn($a, $b) => $a['date'] <=> $b['date']); // chronologisch aufsteigend
@@ -488,30 +116,31 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
 
     // ---- Header ----
     $theadHtml  = "<tr>";
-    $theadHtml .= "<th class='jm-th-rang'>Rang</th>";
-    $theadHtml .= "<th class='jm-th-name'>Name</th>";
+    $theadHtml .= "<th scope='col' class='jm-th-rang'>Rang</th>";
+    $theadHtml .= "<th scope='col' class='jm-th-name'>Name</th>";
     // Spaltenkopf = Knopf: öffnet auf «Jahresmeisterschaft erfassen» die Erfassung dieses Anlasses
     foreach ($mainDefs as $def) {
-        $theadHtml .= "<th class='jm-th-result text-center'><button type='button' class='jm-th-anlass' data-jmdef='" . (int)$def['ID'] . "'"
-            . " data-tooltip='" . h($def['Bezeichnung']) . " · Resultate erfassen'><span class='jm-th-label'>" . h($def['Bezeichnung']) . "</span></button></th>";
+        $theadHtml .= "<th scope='col' class='jm-th-result text-center'><button type='button' class='jm-th-anlass' data-jmdef='" . (int)$def['ID'] . "'"
+            . " data-tooltip='" . h($def['Bezeichnung']) . " · Resultate erfassen' aria-label='" . h($def['Bezeichnung']) . ", Resultate erfassen'>"
+            . "<span class='jm-th-label' aria-hidden='true'>" . h(jmKurzname($def['Bezeichnung'])) . "</span></button></th>";
     }
-    $theadHtml .= "<th class='jm-th-total text-center'>Total</th>";
-    $theadHtml .= "<th class='jm-th-toggle'></th>";
+    $theadHtml .= "<th scope='col' class='jm-th-total text-center'>Total</th>";
+    $theadHtml .= "<th scope='col' class='jm-th-toggle'><span class='visually-hidden'>Aufschlüsselung</span></th>";
     $theadHtml .= "</tr>";
 
     // ---- Body ----
     // Gruppierung: zuerst Schützen mit gewertetem Resultat (Rangliste), danach als
     // separate Gruppe jene ohne Resultat (alphabetisch, ohne Rang).
     $noResultCount = 0;
-    foreach ($resultData as $e) { if (empty($e['hasResult'])) $noResultCount++; }
+    foreach ($wertung['mitglieder'] as $e) { if (!$e['hatResultat']) $noResultCount++; }
 
     $tbodyHtml = "";
-    $actualPosition = 0; $currentRank = 0; $previousScore = null; $previousEndstich = null; $rowIdx = 0;
+    $rowIdx = 0;
     $noResultHeaderShown = false;
 
-    foreach ($resultData as $entry) {
+    foreach ($wertung['mitglieder'] as $entry) {
         $rowIdx++;
-        $hasResult = !empty($entry['hasResult']);
+        $hasResult = $entry['hatResultat'];
 
         // Trennzeile vor der ersten Zeile ohne Resultat
         if (!$hasResult && !$noResultHeaderShown) {
@@ -520,36 +149,28 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
                 . "<i class='bi bi-dash-circle me-1'></i>Ohne gewertetes JM-Resultat ($noResultCount)</td></tr>";
         }
 
-        $sumTotal = $entry['sumTotal'];
-        if ($hasResult) {
-            $actualPosition++;
-            // Geteilter Rang nur bei gleichem Total UND gleichem Endstich
-            if ($sumTotal !== $previousScore || $entry['endstichPunkte'] !== $previousEndstich) {
-                $currentRank = $actualPosition;
-                $previousScore = $sumTotal;
-                $previousEndstich = $entry['endstichPunkte'];
-            }
-        }
         $m = $entry['mitglied'];
         $fullname   = h($m['Name'] . " " . $m['Vorname']);
-        // Vor dem Endstich: kein Total/keine Rangfolge -> "offen"
-        $pflichtSum = $endstichDone ? number_format($entry['sumStreicher0'], DEZIMALSTELLEN, '.', '') : $offenTxt;
-        $streichSum = $endstichDone ? number_format($entry['sumStreicher1'], DEZIMALSTELLEN, '.', '') : $offenTxt;
-        $totalStr   = $endstichDone ? number_format($sumTotal, DEZIMALSTELLEN, '.', '') : $offenTxt;
-        $rangStr    = ($hasResult && $endstichDone) ? (string)$currentRank : "&ndash;";
-        $totalTip   = $endstichDone ? "" : " data-tooltip='Total wird erst nach dem Endstich berechnet'";
+        $pflichtSum = number_format($entry['sumPflicht'], DEZIMALSTELLEN, '.', '');
+        $streichSum = number_format($entry['sumStreich'], DEZIMALSTELLEN, '.', '');
+        $totalStr   = number_format($entry['total'], DEZIMALSTELLEN, '.', '');
+        $rang       = $entry['rang'];
+        $rangStr    = $rang !== null ? (string)$rang : "&ndash;";
+        $totalTip   = $fertig ? "" : " data-tooltip='Zwischenstand – bis zum Endstich sind nur verpasste Anlässe gestrichen'";
 
         // ---- Hauptzeile (Rangliste mit letzten Anlässen) ----
-        $tbodyHtml .= "<tr class='jm-main-row' data-row='$rowIdx'>";
-        $tbodyHtml .= "<td class='text-center fw-semibold jm-rang-cell'>$rangStr</td>";
+        // Podest (DESIGN «Podest in Ranglisten»): erst wenn es eine Rangliste ist, also nach dem Endstich
+        $podest = ($fertig && $rang !== null && $rang <= 3) ? " rank-$rang" : '';
+        $tbodyHtml .= "<tr class='jm-main-row$podest' data-row='$rowIdx'>";
+        $tbodyHtml .= "<td class='text-center " . ($podest ? 'fw-bold' : 'fw-semibold') . " jm-rang-cell'>$rangStr</td>";
         $tbodyHtml .= "<td class='text-nowrap jm-name-cell'>$fullname</td>";
         foreach ($mainDefs as $def) {
             $tbodyHtml .= "<td class='text-center jm-result-cell'>" . formatCell($entry, (int)$def['ID']) . "</td>";
         }
         $tbodyHtml .= "<td class='text-center fw-bold jm-total-cell'$totalTip>$totalStr</td>";
         $tbodyHtml .= "<td class='text-center'>"
-            . "<button type='button' class='btn btn-sm btn-link p-0 jm-toggle-btn' data-tooltip='Aufschlüsselung anzeigen'>"
-            . "<i class='bi bi-chevron-down'></i></button></td>";
+            . "<button type='button' class='btn btn-sm btn-link p-0 jm-toggle-btn' data-tooltip='Aufschlüsselung anzeigen' aria-label='Aufschlüsselung anzeigen' aria-expanded='false'>"
+            . "<i class='bi bi-chevron-down' aria-hidden='true'></i></button></td>";
         $tbodyHtml .= "</tr>";
 
         // ---- Detailzeile: zwei gruppierte Listen ----
@@ -565,14 +186,10 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
             . "<span class='jm-detail-group-meta'>zählt immer</span></div>";
         $tbodyHtml .= "<div class='jm-detail-lines'>";
         foreach ($pflichtDefs as $def) {
-            $defID = (int)$def['ID'];
-            $max   = (int)$def['Maxpunkte'];
-            $hasReal = false;
-            if (!empty($entry['wettbewerbe'][$defID])) {
-                foreach ($entry['wettbewerbe'][$defID] as $p) { if (empty($p['placeholder'])) { $hasReal = true; break; } }
-            }
-            if ($hasReal) {
-                $valStr = number_format(sumEntries($entry, $defID), DEZIMALSTELLEN, '.', '');
+            $w   = $entry['werte'][(int)$def['ID']] ?? null;
+            $max = (int)$def['Maxpunkte'];
+            if ($w !== null && $w['roh'] !== null) {
+                $valStr = number_format($w['punkte'], DEZIMALSTELLEN, '.', '');
                 $maxStr = $max > 0 ? "<span class='jm-line-max'>/ $max</span>" : "";
                 $tbodyHtml .= "<div class='jm-detail-line'>"
                     . "<span class='jm-line-name'>" . h($def['Bezeichnung']) . "</span>"
@@ -587,53 +204,53 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
         $tbodyHtml .= "<div class='jm-detail-subtotal'><span>Zwischentotal</span><span>$pflichtSum</span></div>";
         $tbodyHtml .= "</div>"; // .jm-detail-group
 
-        // --- Gruppe 2: Auswärtige Schiessen (Streichresultate) ---
-        // Nur echte Resultate auflisten (Platzhalter für offene/verpasste werden
-        // separat gezählt). Sortierung nach Punkten DESC; gestrichene markiert.
+        // --- Gruppe 2: Streichresultate (Streicher = 1) ---
+        // Jeder Anlass, der für alle zählt: geschossene nach Punkten, darunter die verpassten (0).
+        // Gestrichene sind durchgestrichen und tragen den Text «gestrichen»; hochgerechnete nennen
+        // den Rohwert («aus 77 / 80»), damit man ihn mit der Rangliste des Anlasses vergleichen kann.
+        // Anlässe, in denen noch niemand ein Resultat hat, zählen als «offen» nur in der Kopfzeile.
         $streichLines = [];
-        $gewertet = 0; $gestrichen = 0; $offen = 0; $verpasst = 0;
+        $gewertet = 0; $gestrichen = 0; $offen = 0;
         foreach ($streichDefs as $def) {
-            $defID = (int)$def['ID'];
-            if (empty($entry['wettbewerbe'][$defID])) continue;
-            foreach ($entry['wettbewerbe'][$defID] as $p) {
-                if (!empty($p['placeholder'])) {
-                    $ld = $lastDateByDef[$defID] ?? null;
-                    if ($ld !== null && $ld <= $today) $verpasst++; else $offen++;
-                    continue;
-                }
-                $streichLines[] = [
-                    'name'     => $def['Bezeichnung'],
-                    'punkte'   => $p['punkte'],
-                    'strichen' => $p['strichen'],
-                ];
-                if ($p['strichen']) $gestrichen++; else $gewertet++;
+            $w = $entry['werte'][(int)$def['ID']] ?? null;
+            if ($w === null) {
+                if ($def['letztesDatum'] === null || $def['letztesDatum'] > $today) $offen++;
+                continue;
             }
+            $streichLines[] = ['def' => $def, 'w' => $w];
+            if ($w['gestrichen']) $gestrichen++; else $gewertet++;
         }
-        usort($streichLines, fn($a, $b) => $b['punkte'] <=> $a['punkte']);
+        usort($streichLines, fn($a, $b) => [$a['w']['roh'] === null, $b['w']['punkte']] <=> [$b['w']['roh'] === null, $a['w']['punkte']]);
 
         $metaParts = ["$gewertet gewertet"];
         if ($gestrichen > 0) $metaParts[] = "$gestrichen gestrichen";
-        if ($verpasst   > 0) $metaParts[] = "$verpasst verpasst";
         if ($offen      > 0) $metaParts[] = "$offen offen";
         $metaTxt = implode(' · ', $metaParts);
 
         $tbodyHtml .= "<div class='jm-detail-group jm-group-streich'>";
         $tbodyHtml .= "<div class='jm-detail-group-head'>"
-            . "<span class='jm-detail-group-title'><i class='bi bi-geo-alt me-1'></i>Auswärtige Schiessen</span>"
+            . "<span class='jm-detail-group-title'><i class='bi bi-type-strikethrough me-1' aria-hidden='true'></i>Streichresultate</span>"
             . "<span class='jm-detail-group-meta'>$metaTxt</span></div>";
         $tbodyHtml .= "<div class='jm-detail-lines'>";
         if ($streichLines) {
             foreach ($streichLines as $ln) {
-                $valStr = number_format($ln['punkte'], DEZIMALSTELLEN, '.', '');
-                $cls = 'jm-detail-line' . ($ln['strichen'] ? ' gestrichen' : '');
-                $tag = $ln['strichen'] ? "<span class='jm-line-tag'>gestrichen</span>" : "";
+                $def = $ln['def'];
+                $w   = $ln['w'];
+                $verpasst = $w['roh'] === null;
+                $valStr = number_format($w['punkte'], DEZIMALSTELLEN, '.', '');
+                $cls = 'jm-detail-line' . ($w['gestrichen'] ? ' gestrichen' : '') . ($verpasst ? ' jm-line-verpasst' : '');
+                $tags = ($verpasst ? "<span class='jm-line-tag'>verpasst</span>" : '')
+                      . ($w['gestrichen'] ? "<span class='jm-line-tag'>gestrichen</span>" : '');
+                $roh = (!$verpasst && $def['hochgerechnet'])
+                    ? "<span class='jm-line-max' data-tooltip='Auf 100 hochgerechnet'>aus " . (int)$w['roh'] . " / " . (int)$def['Maxpunkte'] . "</span>"
+                    : '';
                 $tbodyHtml .= "<div class='$cls'>"
-                    . "<span class='jm-line-name'>" . h($ln['name']) . "</span>"
-                    . "<span class='jm-line-pts'>$tag<span class='jm-line-val'>$valStr</span></span></div>";
+                    . "<span class='jm-line-name'>" . h($def['Bezeichnung']) . "</span>"
+                    . "<span class='jm-line-pts'>$tags<span class='jm-line-val'>$valStr</span>$roh</span></div>";
             }
         } else {
             $tbodyHtml .= "<div class='jm-detail-line jm-line-empty'>"
-                . "<span class='jm-line-name text-muted'>Noch keine auswärtigen Resultate</span>"
+                . "<span class='jm-line-name text-muted'>Noch kein Anlass mit Streichresultat geschossen</span>"
                 . "<span class='jm-line-pts'><span class='jm-line-val'>&ndash;</span></span></div>";
         }
         $tbodyHtml .= "</div>"; // .jm-detail-lines
@@ -642,14 +259,15 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
 
         $tbodyHtml .= "</div>"; // .jm-detail-groups
 
-        // Gesamttotal – erst nach dem Endstich
-        if ($endstichDone) {
+        // Gesamttotal; vor dem Endstich als Zwischenstand gekennzeichnet
+        if ($fertig) {
             $tbodyHtml .= "<div class='jm-detail-total'>"
                 . "<span><i class='bi bi-trophy me-2'></i>Gesamttotal</span>"
                 . "<span class='jm-detail-total-val'>$totalStr</span></div>";
         } else {
             $tbodyHtml .= "<div class='jm-detail-total jm-detail-total-offen'>"
-                . "<span><i class='bi bi-hourglass-split me-2'></i>Total wird nach dem Endstich berechnet</span></div>";
+                . "<span><i class='bi bi-hourglass-split me-2'></i>Zwischenstand · bis zum Endstich sind nur verpasste Anlässe gestrichen</span>"
+                . "<span class='jm-detail-total-val'>$totalStr</span></div>";
         }
 
         $tbodyHtml .= "</div>"; // .jm-detail-panel
@@ -660,4 +278,9 @@ function renderTable(array $resultData, array $definitions, array $lastDateByDef
 }
 
 header('Content-Type: application/json; charset=utf-8');
-echo json_encode(renderTable($resultData, $definitions, $lastDateByDef, $endstichDone));
+// «stand»: vor dem Endstich zeigt jmresultate.php «Zwischenstand» statt «Rangliste» und nennt das Endstich-Datum
+echo json_encode(renderTable($wertung) + ['stand' => [
+    'endstichDone'    => $wertung['abgeschlossen'],
+    'endstichDatum'   => $wertung['endstichDatum'],
+    'anzahlStreicher' => $wertung['anzahlStreicher'],
+]]);

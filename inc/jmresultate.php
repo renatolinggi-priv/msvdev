@@ -1,7 +1,7 @@
 <?php
 // jmresultate.php – Jahresmeisterschaft auf einer Seite (seit 1.68.29): Anlass-Karten + Slide-Panel zum Erfassen,
 // darunter die Rangliste Kat. A/B, im Kopf Import, Veröffentlichen und die Ausgaben (PDF, Direktdruck).
-// jmrang.php leitet hierher weiter (#rangliste), der Menüeintrag «Jahresmeisterschaft Rangliste» bleibt.
+// jmrang.php leitet hierher weiter (#rangliste) (Lesezeichen und alte Links; kein eigener Menüeintrag mehr).
 include 'dbconnect.inc.php';
 
 // Seitenspezifische Styles: nur Aufbau dieser Seite; die Optik kommt aus css/msv-ui.css
@@ -26,6 +26,8 @@ $page_specific_css = "
 .jm-anlass-zeile { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .jm-anlass-zahl { font-size: .8rem; color: var(--ui-text-2); font-variant-numeric: tabular-nums; }
 .jm-anlass-zahl b { font-weight: 700; color: var(--ui-text); }
+.jm-anlass-datum { font-size: .8rem; color: var(--ui-text-3); font-variant-numeric: tabular-nums; }
+.jm-anlass-fehlt { padding: 1px 6px; border-radius: 6px; background: var(--ui-warn-bg); color: var(--ui-warn-fg); font-size: .72rem; font-weight: 600; }
 .jm-leer { grid-column: 1 / -1; padding: 24px 8px; text-align: center; color: var(--ui-text-2); }
 
 /* Erfassungs-Panel eines Anlasses (Container .anlass-panel in css/msv-styles.css, Titel/Position/Fuss über .ui-erfassen in css/msv-ui.css) */
@@ -73,11 +75,12 @@ $page_specific_css = "
     padding: 8px 6px !important; border-top: none !important; border-bottom: none !important; box-shadow: inset 0 -1px 0 var(--ui-linie) !important;
 }
 .jm-th-rang  { width: 55px !important; }
-.jm-th-result{ width: 84px !important; }
+.jm-th-result{ width: 96px !important; }
 .jm-th-total { width: 90px !important; }
 .jm-th-toggle{ width: 40px !important; }
-/* Lange Anlass-Namen in der Kopfzeile kürzen (voller Name via Tooltip) */
-.jm-th-label { display: block; max-width: 78px; margin: 0 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Anlass-Namen im Kopf: Kurzname (load_jm.php) auf zwei Zeilen mit Silbentrennung, voller Name im Tooltip.
+   Zwei Zeilen statt einer, weil sich ähnliche Namen (dreimal «Muota …») erst hinten unterscheiden. */
+.jm-th-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; max-width: 90px; margin: 0 auto; overflow: hidden; white-space: normal; line-height: 1.25; hyphens: auto; overflow-wrap: break-word; }
 .jm-main-row { cursor: pointer; }
 #rankJMA tbody tr.jm-main-row:hover td, #rankJMB tbody tr.jm-main-row:hover td { background-color: var(--ui-flaeche-2) !important; }
 #rankJMA .jm-group-cell, #rankJMB .jm-group-cell { padding: 6px 12px !important; background: var(--ui-grund) !important; color: var(--ui-text-2); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
@@ -90,6 +93,7 @@ $page_specific_css = "
 .jm-toggle-btn i { transition: transform .2s ease; }
 .jm-toggle-btn.expanded i { transform: rotate(180deg); }
 .jm-toggle-btn:hover { color: var(--ui-akzent) !important; }
+#publishBadge { font-size: .72rem; } /* Bootstrap-Badge ergäbe 9.6px, Mindestgrösse 0.72rem */
 
 /* Aufschlüsselung (Detail-Zeile) */
 .jm-detail-row > td { padding: 0 !important; border-top: none !important; width: auto !important; text-align: left !important; background-color: transparent !important; font-weight: normal !important; }
@@ -110,11 +114,17 @@ $page_specific_css = "
 .jm-line-empty .jm-line-name,
 .jm-line-empty .jm-line-val { font-weight: 400; color: var(--ui-leer); }
 .jm-detail-line.gestrichen .jm-line-val { color: var(--ui-text-3); text-decoration: line-through; }
+.jm-line-verpasst .jm-line-name { color: var(--ui-text-2); }
+.jm-line-verpasst .jm-line-val { font-weight: 400; color: var(--ui-text-2); }
 .jm-line-tag { padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); color: var(--ui-text-2); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .jm-detail-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--ui-flaeche-2); border-top: 1px solid var(--ui-linie); font-size: .8rem; font-weight: 600; color: var(--ui-text-2); }
 .jm-detail-subtotal span:last-child { font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .jm-detail-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; background: var(--ui-ok-bg); border: 1px solid var(--ui-ok-rand); border-radius: var(--ui-rad); font-size: .95rem; font-weight: 700; color: var(--ui-ok-fg); }
-.jm-detail-total-val { font-size: 1.1rem; color: var(--ui-ok-fg); font-variant-numeric: tabular-nums; }
+.jm-detail-total-val { font-size: 1.35rem; line-height: 1.1; color: var(--ui-ok-fg); font-variant-numeric: tabular-nums; } /* Rolle «Zahl» */
+/* Podest auch in der Rang-Zelle: msv-styles.css färbt .table td:first-child (0,2,1) und schlägt die zentrale Podest-Regel */
+:is(#rankJMA, #rankJMB) tr.rank-1 > td.jm-rang-cell { background-color: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
+:is(#rankJMA, #rankJMB) tr.rank-2 > td.jm-rang-cell { background-color: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
+:is(#rankJMA, #rankJMB) tr.rank-3 > td.jm-rang-cell { background-color: color-mix(in srgb, var(--ui-bronze-bg) 40%, var(--ui-flaeche)); }
 .jm-detail-total.jm-detail-total-offen { background: var(--ui-flaeche-2); border-color: var(--ui-rand); color: var(--ui-text-2); font-size: .85rem; font-weight: 600; }
 
 @media (max-width: 767.98px) {
@@ -170,15 +180,15 @@ try {
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
                 // Erfassen (Import, Veröffentlichen), dann die Ausgaben (PDF + Direktdruck, vorher auf jmrang.php)
                 $page_actions = '<button id="pdf-import-btn" type="button" class="btn btn-outline-success btn-sm"><i class="bi bi-filetype-pdf me-1"></i>PDF importieren</button>'
-                    . '<button id="btnPublishJm" type="button" class="btn btn-outline-secondary btn-sm' . ($__jmUnpublished > 0 ? '' : ' d-none') . '" data-tooltip="Gespeicherte Änderungen im Portal sichtbar machen">'
+                    . '<button id="btnPublishJm" type="button" class="btn btn-outline-secondary btn-sm' . ($__jmUnpublished > 0 ? '' : ' d-none') . '" data-tooltip="Gespeicherte JM-Resultate erscheinen erst nach der Freigabe im Mitgliederportal; die Zahl nennt die noch nicht freigegebenen">'
                     . '<i class="bi bi-megaphone me-1"></i>Veröffentlichen <span id="publishBadge" class="badge bg-warning text-dark ms-1">' . ($__jmUnpublished > 0 ? (int) $__jmUnpublished : '') . '</span></button>'
                     . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste nach Rang">'
                     . '<button type="button" class="btn btn-outline-info pdfrang-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste nach Rang</span></button>'
                     . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_jm.php" data-druck-job="JM Rangliste nach Rang" data-druck-linkprefix="" aria-label="Rangliste nach Rang drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
                     . '</div>'
-                    . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste nach Name">'
-                    . '<button type="button" class="btn btn-outline-info pdf-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste nach Name</span></button>'
-                    . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Rangliste nach Name" data-druck-linkprefix="jmrang/" aria-label="Rangliste nach Name drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
+                    . '<div class="btn-group btn-group-sm" role="group" aria-label="Alle Resultate nach Name">'
+                    . '<button type="button" class="btn btn-outline-info pdf-btn" data-tooltip="Alle Resultate alphabetisch, ohne Streicher"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Alle Resultate nach Name</span></button>'
+                    . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="jmrang" data-druck-label="JM Rangliste" data-druck-script="generate_pdf_all_results.php" data-druck-job="JM Alle Resultate nach Name" data-druck-linkprefix="jmrang/" aria-label="Alle Resultate nach Name drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
                     . '</div>';
                 $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
                     . '<div class="ui-chips" id="progressChips"></div>';
@@ -202,12 +212,15 @@ try {
                 <?php foreach (['A' => 'rankJMA', 'B' => 'rankJMB'] as $__kat => $__tab): ?>
                 <section class="ui-karte jm-karte rank-table-wrapper"<?= $__kat === 'A' ? ' id="rangliste"' : '' ?> aria-label="Rangliste Kat. <?= $__kat ?>">
                     <div class="ui-tab-kopf">
-                        <span class="ui-tab-titel">Rangliste Kat. <?= $__kat ?><?php if ($__kat === 'A'): ?> <button type="button" class="btn-help" data-help="jmresultate.rangliste" aria-label="Hilfe"></button><?php endif; ?></span>
-                        <span class="jm-legende"><span class="jm-cell-strichen">88</span> Streicher, zählt nicht · Zeile anklicken für die Aufschlüsselung · Anlass im Spaltenkopf anklicken zum Erfassen</span>
+                        <span class="ui-tab-titel"><span class="jm-rang-titel">Rangliste</span> Kat. <?= $__kat ?><?php if ($__kat === 'A'): ?> <button type="button" class="btn-help" data-help="jmresultate.rangliste" aria-label="Hilfe"></button><?php endif; ?></span>
+                        <?php if ($__kat === 'A'): /* Legende einmal für beide Kategorien; vor dem Endstich ersetzt sie JS (jmStandZeigen) */ ?>
+                        <span class="jm-legende" id="jmLegende"><span class="jm-cell-strichen">88</span> Streicher, zählt nicht · Zeile anklicken für die Aufschlüsselung · Anlass im Spaltenkopf anklicken zum Erfassen</span>
+                        <?php endif; ?>
                     </div>
                     <div class="desktop-table-container">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0" id="<?= $__tab ?>">
+                                <caption class="visually-hidden">Jahresmeisterschaft Kat. <?= $__kat ?></caption>
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
@@ -217,7 +230,7 @@ try {
                         <div class="mobile-search">
                             <div class="position-relative">
                                 <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control" placeholder="Suchen..."
+                                <input type="search" class="form-control" placeholder="Suchen..." aria-label="Kat. <?= $__kat ?> nach Name durchsuchen"
                                        oninput="MSVMobileCards.filterCardsDebounced(this, '#mobileCards<?= ucfirst($__tab) ?>')">
                             </div>
                         </div>
@@ -393,7 +406,7 @@ try {
         const max = field === 'punkte' ? (parseInt(def.maxpunkte, 10) || '') : '';
         return '<input type="text" class="form-control form-control-sm anlass-input jm-feld'
             + (String(wert) !== '' ? ' filled' : '') + (m.status === 'entwurf' ? ' jm-gemeldet' : '') + '"'
-            + ' data-mid="' + m.mitgliedID + '" data-field="' + field + '" value="' + msvEsc(wert) + '"'
+            + ' data-mid="' + m.mitgliedID + '" data-field="' + field + '" value="' + msvEsc(wert) + '" data-orig="' + msvEsc(wert) + '"'
             + ' inputmode="numeric" autocomplete="off"' + (field === 'punkte' ? ' placeholder="\u2013"' : '')
             + ' aria-label="' + label + '"' + (max !== '' ? ' data-max="' + max + '"' : '') + '>';
     }
@@ -417,7 +430,7 @@ try {
         $.get('jmresultate/load_anlass_form.php', { year: year, jmdefinitionID: jmdefID })
             .done(function(resp) {
                 if (!resp.success) {
-                    $body.html('<div class="jm-panel-leer text-danger">Fehler: ' + msvEsc(resp.message) + '</div>');
+                    $body.html('<div class="jm-panel-leer text-danger">' + msvEsc(resp.message || 'Die Resultate dieses Anlasses liessen sich nicht laden. Panel schliessen und nochmals öffnen.') + '</div>');
                     return;
                 }
                 currentAnlassData = resp;
@@ -628,19 +641,29 @@ try {
         // Unplausible Werte zuerst korrigieren lassen
         if (msvEingabeFehler('#anlassPanelFehler', jmFehlerliste())) return;
 
-        const $btn = $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Speichere …');
-
-        // Daten sammeln (pro Mitglied ein Objekt, bei der Sektionsmeisterschaft mit zwei Runden)
+        // Daten sammeln (pro Mitglied ein Objekt, bei der Sektionsmeisterschaft mit zwei Runden).
+        // Nur geänderte Felder und vom Mitglied gemeldete (Speichern bestätigt sie): so überschreibt
+        // ein länger offenes Panel keine Meldung oder keinen Import, der inzwischen dazugekommen ist.
         const members = [];
         const seenMids = {};
         $('#anlassPanelBody .anlass-input').each(function() {
+            const wert = this.value.trim();
+            const geaendert = wert !== String($(this).attr('data-orig') ?? '').trim();
+            if (!geaendert && !$(this).hasClass('jm-gemeldet')) return;
             const mid = $(this).data('mid');
             if (!seenMids[mid]) {
                 seenMids[mid] = { mitgliedID: mid };
                 members.push(seenMids[mid]);
             }
-            seenMids[mid][$(this).data('field')] = this.value.trim();
+            seenMids[mid][$(this).data('field')] = wert;
         });
+        if (!members.length) {
+            msvToast('Nichts geändert', 'info');
+            closeAnlassPanel();
+            return;
+        }
+
+        const $btn = $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Speichere …');
 
         $.post('jmresultate/save_anlass.php', {
             jmdefinitionID: def.id,
@@ -673,11 +696,20 @@ try {
             $grid.html('<div class="jm-leer">Für dieses Jahr sind keine Anlässe erfasst. Sie werden unter <a href="jmdefinition.php">Jahresmeisterschaft Definition</a> angelegt.</div>');
             return;
         }
+        // Datum = letzter Schiesstag; ist er vorbei und noch nichts erfasst, sagt die Karte das
+        const jetzt = new Date();
+        const heute = jetzt.getFullYear() + '-' + String(jetzt.getMonth() + 1).padStart(2, '0') + '-' + String(jetzt.getDate()).padStart(2, '0'); // Ortszeit, nicht UTC
         let html = '';
         bearbeitbar.forEach(function(a) {
+            const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(a.datum || '');
+            const fehlt = d && a.datum < heute && !a.filledCount;
             html += '<button type="button" class="jm-anlass" data-id="' + a.id + '" aria-pressed="false">'
                 + '<span class="jm-anlass-name" data-tooltip="' + msvEsc(a.bezeichnung) + '">' + msvEsc(a.bezeichnung) + '</span>'
-                + '<span class="jm-anlass-zeile"><span class="jm-anlass-zahl"><b>' + a.filledCount + '</b> ' + (a.filledCount === 1 ? 'Resultat' : 'Resultate') + '</span>'
+                + '<span class="jm-anlass-zeile">'
+                + (d ? '<span class="jm-anlass-datum">' + d[3] + '.' + d[2] + '.</span>' : '')
+                + (fehlt
+                    ? '<span class="jm-anlass-fehlt">noch nichts erfasst</span>'
+                    : '<span class="jm-anlass-zahl"><b>' + a.filledCount + '</b> ' + (a.filledCount === 1 ? 'Resultat' : 'Resultate') + '</span>')
                 + (a.gemeldetCount ? '<span class="geloest-pill">' + a.gemeldetCount + ' gemeldet</span>' : '')
                 + '</span></button>';
         });
@@ -707,33 +739,29 @@ try {
 (function() {
     const $yearDD = $('#yearSelect');
 
-    // ---- Tabellen-Update mit Fade-Animation ----
+    // ---- Tabellen-Update: direkt tauschen (die Ladezeile zeigt das Warten schon; kein Ausblenden nach jedem Speichern) ----
     function updateRankTable(tableSelector, theadHtml, tbodyHtml) {
         const $table = $(tableSelector);
-        $table.fadeTo(200, 0.5, function() {
-            $table.find('thead').html(theadHtml);
-            $table.find('tbody').html(tbodyHtml);
-
-            // Tooltips
-            $table.find('td[data-toggle="tooltip"]').each(function() {
-                new bootstrap.Tooltip(this);
-            });
-
-            $table.fadeTo(200, 1, function() {
-                // Mobile Cards generieren
-                if (tableSelector === '#rankJMA') {
-                    buildRankMobileCards('#rankJMA', '#mobileCardsRankJMA');
-                } else if (tableSelector === '#rankJMB') {
-                    buildRankMobileCards('#rankJMB', '#mobileCardsRankJMB');
-                }
-            });
-        });
+        $table.find('thead').html(theadHtml);
+        $table.find('tbody').html(tbodyHtml);
+        if (tableSelector === '#rankJMA') {
+            buildRankMobileCards('#rankJMA', '#mobileCardsRankJMA');
+        } else if (tableSelector === '#rankJMB') {
+            buildRankMobileCards('#rankJMB', '#mobileCardsRankJMB');
+        }
     }
 
     // ---- Mobile Cards Builder (wie jmrang.php) ----
+    // initResponsive hängt einen matchMedia-Listener an: nur einmal pro Tabelle, danach direkt neu bauen
+    // (sonst kommt mit jedem Speichern ein weiterer Listener dazu).
+    const mobilAngemeldet = {};
     function buildRankMobileCards(tableSelector, containerSelector) {
         if (typeof MSVMobileCards === 'undefined') return;
-        MSVMobileCards.initResponsive(function() {
+        if (mobilAngemeldet[tableSelector]) {
+            if (window.matchMedia('(max-width: 767.98px)').matches) mobilAngemeldet[tableSelector]();
+            return;
+        }
+        mobilAngemeldet[tableSelector] = function() {
             const table = document.querySelector(tableSelector);
             const container = document.querySelector(containerSelector);
             if (!table || !container) return;
@@ -786,13 +814,14 @@ try {
             });
 
             scrollContainer.innerHTML = html;
-        });
+        };
+        MSVMobileCards.initResponsive(mobilAngemeldet[tableSelector]);
     }
 
     // ---- AJAX-Loader ----
     function loadRankData(url, params, targetSelector) {
         $(targetSelector).find('tbody').html(
-            '<tr><td colspan="100%" class="loading-indicator">' +
+            '<tr><td colspan="99" class="loading-indicator">' +
             '<div class="spinner-border spinner-border-sm me-2"></div>' +
             'Lade Rangliste...' +
             '</td></tr>'
@@ -806,26 +835,48 @@ try {
                 try {
                     const parsed = typeof response === 'string' ? JSON.parse(response) : response;
                     if (parsed.thead && parsed.tbody) {
+                        if (parsed.stand) jmStandZeigen(parsed.stand);
                         updateRankTable(targetSelector, parsed.thead, parsed.tbody);
-                    } else if (parsed.error) {
-                        $(targetSelector).find('tbody').html(
-                            '<tr><td colspan="100%" class="text-center text-danger">' +
-                            '<i class="bi bi-exclamation-triangle me-2"></i>' + parsed.error +
-                            '</td></tr>'
-                        );
+                    } else {
+                        ladeFehler(targetSelector, parsed.error || parsed.message);
                     }
                 } catch (e) {
-                    $(targetSelector).html(response);
+                    ladeFehler(targetSelector);
                 }
             },
-            error: function() {
-                $(targetSelector).find('tbody').html(
-                    '<tr><td colspan="100%" class="text-center text-danger">' +
-                    '<i class="bi bi-exclamation-triangle me-2"></i>Fehler beim Laden' +
-                    '</td></tr>'
-                );
+            error: function(xhr) {
+                ladeFehler(targetSelector, msvXhrMessage(xhr, LADEFEHLER));
             }
         });
+    }
+
+    // Fehlerzeile statt Tabelle; Meldungen vom Server maskiert, sonst ein Text mit nächstem Schritt
+    const LADEFEHLER = 'Die Rangliste liess sich nicht laden. Lade die Seite neu (F5); die erfassten Resultate sind davon nicht betroffen.';
+    function ladeFehler(targetSelector, meldung) {
+        $(targetSelector).find('tbody').html(
+            '<tr><td colspan="99" class="text-center text-danger">' +
+            '<i class="bi bi-exclamation-triangle me-2"></i>' +
+            msvEsc(meldung || LADEFEHLER) +
+            '</td></tr>'
+        );
+    }
+
+    // Vor dem Endstich (Datum erreicht UND Resultate erfasst) ist die Liste ein Zwischenstand: gestrichen
+    // werden nur verpasste Anlässe, kein Podest. Titel und Legende sagen das (Rechnung: inc/jm_berechnung.inc.php).
+    function jmStandZeigen(stand) {
+        const fertig = !!stand.endstichDone;
+        $('.jm-rang-titel').text(fertig ? 'Rangliste' : 'Zwischenstand');
+        const $leg = $('#jmLegende');
+        if (!$leg.length) return;
+        if (!$leg.data('rangliste')) $leg.data('rangliste', $leg.html());
+        if (fertig) { $leg.html($leg.data('rangliste')); return; }
+        let wann = 'Bis zum Endstich';
+        const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(stand.endstichDatum || '');
+        if (d) wann = 'Bis zum Endstich am ' + d[3] + '.' + d[2] + '.' + d[1];
+        const n = parseInt(stand.anzahlStreicher, 10) || 3;
+        $leg.html('<i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>' + msvEsc(wann)
+            + ' sind nur verpasste Anlässe gestrichen (höchstens ' + n + '), danach die ' + n + ' schlechtesten Resultate'
+            + ' · Zeile anklicken für die Aufschlüsselung · Anlass im Spaltenkopf anklicken zum Erfassen');
     }
 
     function loadRankJMA(year) {
@@ -853,7 +904,7 @@ try {
         const $detail = $('tr.jm-detail-row[data-row="' + rowIdx + '"]');
         const $btn = $(this).find('.jm-toggle-btn');
         $detail.toggle();
-        $btn.toggleClass('expanded');
+        $btn.toggleClass('expanded').attr('aria-expanded', $detail.is(':visible') ? 'true' : 'false');
     });
 })();
 </script>
@@ -977,7 +1028,7 @@ try {
                     });
                 }
             })
-            .fail(function () { $sel.html('<option value="">Fehler beim Laden</option>'); });
+            .fail(function () { $sel.html('<option value="">Anlässe nicht verfügbar – Seite neu laden (F5)</option>'); });
     }
 
     // ---- Drag & Drop ----
@@ -1317,19 +1368,20 @@ try {
 (function () {
     // Ranglisten als PDF (Ausgabe-Baustein msvAusgabe: sperren, Spinner, Download, Toast).
     // generate_pdf_jm.php liefert 'jmrang/dat/…', generate_pdf_all_results.php nur 'dat/…' → linkPrefix.
-    function jmRanglistePdf(btn, skript, art) {
+    // dokument = Name wie auf dem Knopf (Ausgabe-Knopf-Standard: Label = Dokumentname)
+    function jmRanglistePdf(btn, skript, dokument) {
         const jahr = $('#yearSelect').val();
         msvAusgabe(btn, {
             url: 'jmrang/' + skript,
             data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('jmrang', 'landscape') : 'landscape' }, // Format aus dem Druckprofil
             linkPrefix: 'jmrang/',
-            titel: 'JM Rangliste ' + art + ' ' + jahr,
-            name: 'JM_Rangliste_' + art.replace(/ /g, '_') + '_' + jahr,
-            fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
+            titel: 'JM ' + dokument + ' ' + jahr,
+            name: 'JM_' + dokument.replace(/ /g, '_') + '_' + jahr,
+            fehler: '«' + dokument + '» konnte nicht erstellt werden. Bitte nochmals versuchen.'
         });
     }
-    $('.pdfrang-btn').on('click', function (e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_jm.php', 'nach Rang'); });
-    $('.pdf-btn').on('click', function (e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_all_results.php', 'nach Name'); });
+    $('.pdfrang-btn').on('click', function (e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_jm.php', 'Rangliste nach Rang'); });
+    $('.pdf-btn').on('click', function (e) { e.preventDefault(); jmRanglistePdf(this, 'generate_pdf_all_results.php', 'Alle Resultate nach Name'); });
 
     // Direktdruck (QZ Tray), Profil «JM Rangliste» (A4 quer); Pfad-Asymmetrie der Generatoren → linkPrefix am Button
     MsvDruck.resolve('jmrang', function (btn) {

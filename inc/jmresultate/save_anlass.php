@@ -62,17 +62,18 @@ try {
 
     $conn->begin_transaction();
 
+    // Nur mitgeschickte Felder anfassen: das Panel sendet seit 15.10.2026 nur Geändertes und
+    // Gemeldetes. Ein fehlendes Feld heisst «unverändert», ein leeres heisst «löschen».
     foreach ($members as $m) {
-        $mid = intval($m['mitgliedID']);
+        if (!is_array($m)) continue;
+        $mid = intval($m['mitgliedID'] ?? 0);
+        if ($mid <= 0) continue;
 
         if ($isSektionsmeisterschaft) {
-            // Runde 1
-            saveOrDeleteJMResultat($conn, $mid, $jmdefID, $m['punkte_runde1'] ?? '', 'runde 1', $vorstandUserId);
-            // Runde 2
-            saveOrDeleteJMResultat($conn, $mid, $jmdefID, $m['punkte_runde2'] ?? '', 'runde 2', $vorstandUserId);
-        } else {
-            // Normal
-            saveOrDeleteJMResultat($conn, $mid, $jmdefID, $m['punkte'] ?? '', '', $vorstandUserId);
+            if (array_key_exists('punkte_runde1', $m)) saveOrDeleteJMResultat($conn, $mid, $jmdefID, $m['punkte_runde1'], 'runde 1', $vorstandUserId);
+            if (array_key_exists('punkte_runde2', $m)) saveOrDeleteJMResultat($conn, $mid, $jmdefID, $m['punkte_runde2'], 'runde 2', $vorstandUserId);
+        } elseif (array_key_exists('punkte', $m)) {
+            saveOrDeleteJMResultat($conn, $mid, $jmdefID, $m['punkte'], '', $vorstandUserId);
         }
     }
 

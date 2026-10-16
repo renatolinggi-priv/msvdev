@@ -17,7 +17,7 @@ if (!function_exists('getJmAnlaesse')) {
         $year = (int) $year;
 
         $stmt = $conn->prepare("
-            SELECT ID, Bezeichnung, Maxpunkte, Streicher, Reihenfolge
+            SELECT ID, Bezeichnung, Maxpunkte, Streicher, Reihenfolge, Schiesstage
             FROM JMDefinition
             WHERE hidden = 0 AND Info = 0 AND Erweitert = 0 AND year = ?
             ORDER BY
@@ -37,6 +37,18 @@ if (!function_exists('getJmAnlaesse')) {
 
         $totalMembers = (int) $conn->query("SELECT COUNT(*) as cnt FROM mitglieder WHERE status=1 AND Verstorben=0")
             ->fetch_assoc()['cnt'];
+
+        // Letztes Schiessdatum je Anlass (wie die Rangliste: JMSchiesstage, sonst Freitext Schiesstage),
+        // damit die Karte zeigt, wann geschossen wurde und ob noch nichts erfasst ist
+        require_once __DIR__ . '/../jm_berechnung.inc.php';
+        $datum = [];
+        $stD = $conn->prepare("SELECT jm_id, MAX(schiesstag) AS d FROM JMSchiesstage WHERE year = ? GROUP BY jm_id");
+        $stD->bind_param("i", $year);
+        $stD->execute();
+        foreach ($stD->get_result()->fetch_all(MYSQLI_ASSOC) as $d) {
+            if (!empty($d['d'])) $datum[(int) $d['jm_id']] = $d['d'];
+        }
+        $stD->close();
 
         $anlaesse = [];
         while ($row = $result->fetch_assoc()) {
@@ -77,7 +89,8 @@ if (!function_exists('getJmAnlaesse')) {
                 'isReadonly' => $isReadonly,
                 'filledCount' => $filledCount,
                 'gemeldetCount' => $gemeldetCount,
-                'totalMembers' => $totalMembers
+                'totalMembers' => $totalMembers,
+                'datum' => $datum[$defID] ?? (!empty($row['Schiesstage']) ? jmLetztesDatumAusText((string) $row['Schiesstage'], $year) : null)
             ];
         }
 

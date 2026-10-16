@@ -185,40 +185,17 @@ foreach ($schiessen_list as &$s) {
 }
 unset($s);
 
-// Aktive Streicher-Schiessen ermitteln: nur jene mit Streicher=1 die bereits
-// Resultate von irgendjemandem haben (wie in jmrang/load_jm.php)
-$active_streicher_ids = [];
-$all_streicher_def_ids = array_map('intval', array_column(
-    array_filter($schiessen_list, fn($s) => (int)$s['Streicher'] === 1),
-    'ID'
-));
-if (!empty($all_streicher_def_ids)) {
-    // Normale Schiessen: in jmresultate prüfen
-    $placeholders = implode(',', array_fill(0, count($all_streicher_def_ids), '?'));
-    $chk = $db->prepare("SELECT DISTINCT jmdefinitionID FROM jmresultate WHERE jmdefinitionID IN ($placeholders)");
-    $chk->execute($all_streicher_def_ids);
-    $active_streicher_ids = array_map('intval', $chk->fetchAll(PDO::FETCH_COLUMN));
-
-    // Sonderfälle: Endstich/Kanti kommen nicht in jmresultate vor,
-    // daher separat prüfen ob es Resultate in den Originaltabellen gibt
-    if ($endstich_def_id && in_array($endstich_def_id, $all_streicher_def_ids)) {
-        $chk2 = $db->prepare("SELECT 1 FROM endstich WHERE Jahr = ? LIMIT 1");
-        $chk2->execute([$selected_year]);
-        if ($chk2->fetch()) $active_streicher_ids[] = $endstich_def_id;
-    }
-    if ($kanti_def_id && in_array($kanti_def_id, $all_streicher_def_ids)) {
-        $chk3 = $db->prepare("SELECT 1 FROM kantiresultate WHERE Jahr = ? LIMIT 1");
-        $chk3->execute([$selected_year]);
-        if ($chk3->fetch()) $active_streicher_ids[] = $kanti_def_id;
-    }
-    // Vereinscup: kommt aus cupPairs (nicht jmresultate) -> separat als aktiv markieren,
-    // sobald die 1. Cup-Runde des Jahres erfasst ist.
-    foreach ($cup_def_ids as $cdid) {
-        if (!in_array($cdid, $all_streicher_def_ids, true)) continue;
-        $chk4 = $db->prepare("SELECT 1 FROM cupPairs WHERE `Year` = ? AND `Round` = 1 LIMIT 1");
-        $chk4->execute([$selected_year]);
-        if ($chk4->fetch()) $active_streicher_ids[] = $cdid;
-    }
+// Streicher und Total: gemeinsame JM-Rechnung (inc/jm_berechnung.inc.php), gleich wie die
+// Admin-Rangliste und das PDF. Vor dem Endstich sind nur verpasste Anlässe gestrichen.
+require_once __DIR__ . '/../inc/jm_berechnung.inc.php';
+$jm_conn = $conn ?? ($GLOBALS['conn'] ?? null);
+$jm_eintrag = null;
+$jm_abgeschlossen = false;
+if ($mitglied_id && $jm_conn instanceof mysqli) {
+    $jm_wertung = jmWertung($jm_conn, (int)$selected_year, ['mitglied' => (int)$mitglied_id]);
+    $jm_eintrag = $jm_wertung['mitglieder'][0] ?? null;
+    $jm_abgeschlossen = $jm_wertung['abgeschlossen'];
+    $exclude_count = $jm_wertung['anzahlStreicher'];
 }
 
 // Sektionsmeisterschaft: bei mehreren Zeilen mit gleicher defID (LEFT JOIN erzeugt
@@ -237,20 +214,12 @@ foreach ($entries_by_defid as $defid => $entries) {
     }
 }
 
-// Regulaere Streicher-Logik (via _idx, Sektions-Duplikate ausschliessen)
+// Streicher laut jmWertung auf die Zeilen übertragen (via _idx, Sektions-Duplikate ausschliessen)
 $streicher_idxs = [];
-if ($exclude_count > 0) {
-    $streicher_candidates = [];
+if ($jm_eintrag) {
     foreach ($schiessen_list as $s) {
         if (in_array($s['_idx'], $sektions_streicher_idxs)) continue;
-        if ((int)$s['Streicher'] === 1 && in_array((int)$s['ID'], $active_streicher_ids)) {
-            $punkte = ($s['PunkteNorm'] !== null) ? $s['PunkteNorm'] : 0.0;
-            $streicher_candidates[] = ['idx' => $s['_idx'], 'punkte' => $punkte];
-        }
-    }
-    usort($streicher_candidates, fn($a, $b) => $a['punkte'] <=> $b['punkte']);
-    for ($i = 0; $i < min($exclude_count, count($streicher_candidates)); $i++) {
-        $streicher_idxs[] = $streicher_candidates[$i]['idx'];
+        if (!empty($jm_eintrag['werte'][(int)$s['ID']]['gestrichen'])) $streicher_idxs[] = $s['_idx'];
     }
 }
 
@@ -290,12 +259,9 @@ $geschossen_count = 0;
 $streicher_used = count($streicher_idxs); // nur regulaere Streicher fuer Anzeige
 
 foreach ($schiessen_list as $s) {
-    $is_streicher = in_array($s['_idx'], $all_streicher_idxs);
     if ($s['PunkteNorm'] !== null) {
         $geschossen_count++;
     }
-    if (!$is_streicher && $s['PunkteNorm'] !== null) {
-        $total_punkte += $s['PunkteNorm'];
-    }
 }
+if ($jm_eintrag) $total_punkte = $jm_eintrag['total'];
 $total_events = count($schiessen_list);

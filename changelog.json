@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.68.33",
+    "datum": "2026-10-15",
+    "aenderungen": [
+      {
+        "titel": "Jahresmeisterschaft: eine Rechnung für Bildschirm, PDF und Portal",
+        "beschreibung": "Die Rangliste auf «Jahresmeisterschaft erfassen», das PDF «Rangliste nach Rang» und das Portal rechnen jetzt gleich; vorher hatte jede ihre eigene Rechnung, und ein ausgelassener Endstich konnte im PDF einen anderen Rang ergeben als am Bildschirm. Ein Anlass zählt für alle, sobald jemand ein Resultat hat; abgesagte oder noch nicht erfasste Anlässe geben niemandem mehr eine 0. Die Endstände 2024 bis 2026 sind unverändert und stimmen mit dem Absendenbuch überein.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft: Zwischenstand mit Total und Rang",
+        "beschreibung": "Vor dem Endstich zeigt die Liste Total und Rang als Zwischenstand, ohne Podest. Gestrichen werden dann nur verpasste Anlässe, höchstens so viele wie Streicher; nach dem Endstich die schlechtesten Resultate. Zur Rangliste wird sie erst, wenn der Endstich-Tag erreicht ist und Endstich-Resultate erfasst sind, nicht mehr um Mitternacht. Das PDF heisst vorher «Zwischenstand per …».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft: Aufschlüsselung und Spaltenköpfe klarer",
+        "beschreibung": "Die Aufschlüsselung heisst «Streichresultate» statt «Auswärtige Schiessen» und listet alle Anlässe, die zählen, auch verpasste mit 0 und dem Hinweis, ob sie gestrichen sind. Hochgerechnete Werte nennen den Rohwert («96.25 aus 77 / 80»). Die Spaltenköpfe zeigen Kurznamen auf zwei Zeilen, so lassen sich die drei Muota-Schiessen unterscheiden. Der Knopf «Rangliste nach Name» heisst wie das Dokument: «Alle Resultate nach Name». Hilfetexte nachgeführt (Datenbank-Aktualisierung 114).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft erfassen: Speichern überschreibt keine neuen Meldungen",
+        "beschreibung": "Das Erfassungs-Panel speichert nur noch geänderte Felder und die von Mitgliedern gemeldeten Resultate. Meldet jemand im Portal oder kommt ein PDF-Import dazu, während das Panel offen ist, bleibt dieser Wert erhalten. Ohne Änderung meldet das Panel «Nichts geändert».",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Jahresmeisterschaft erfassen: Anlass-Karten mit Datum",
+        "beschreibung": "Jede Anlass-Karte zeigt den letzten Schiesstag. Ist er vorbei und noch kein Resultat erfasst, steht «noch nichts erfasst» statt «0 Resultate», so sieht man nach einem Anlass sofort, was noch fehlt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.29",
     "datum": "2026-10-14",
     "aenderungen": [
