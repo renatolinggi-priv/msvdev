@@ -7,7 +7,8 @@ include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('json');
 
-$year = date("Y");
+// Jahr aus der Jahresauswahl (bis 1.68.30 galt immer das Kalenderjahr)
+$year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date("Y");
 
 // Überprüfen, ob Finalteilnehmer vorhanden sind
 $sql = "SELECT * FROM cupFinalResults WHERE Year = ?";

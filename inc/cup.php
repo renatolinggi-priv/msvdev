@@ -1,5 +1,7 @@
 <?php
-// cup.php - Turnierbaum UI (Vereinscup: Runde 1, Runde 2, Finale, Standcup)
+// cup.php - Turnierbaum (Vereinscup: Runde 1, Runde 2, Finale, Standcup)
+// Seit 1.68.31 im Erscheinungsbild der übrigen Admin-Seiten: Spalten als Tabellen-Karten, Paarungen als
+// kompakte Zeilen (Sieger mit Haken, keine Chips, kein «vs»), «Speichern» im Kopf.
 include 'dbconnect.inc.php';
 
 $body_class = 'cup4-page';
@@ -14,182 +16,139 @@ $csrf = csrf_token();
 <div class="container-fluid">
 <div class="row">
 <div class="col-12 ps-0">
-    <div class="main-content-wrapper content-width-default">
+    <div class="main-content-wrapper content-width-wide">
     <?php
     $page_title = 'Vereinscup erfassen';
     $page_title_after = '<button type="button" class="btn-help" data-help="cup.uebersicht" aria-label="Hilfe"></button>'
         . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
         . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-    // Rangliste (PDF + Direktdruck) im Kopf wie bei JM, Heim und Kanti; cuprang.php leitet hierher weiter (seit 1.68.29)
-    $page_actions = '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
+    // Rangliste (PDF + Direktdruck) wie bei JM, Heim und Kanti; rechts davon die eine Hauptaktion «Speichern»
+    $page_actions = '<span class="cup4-kopf-aktionen">'
+        . '<span class="ui-chip msv-ungespeichert" hidden><span class="ui-punkt" aria-hidden="true"></span>Nicht gespeichert</span>'
+        . '<span class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
         . '<button type="button" class="btn btn-outline-info pdf-btn" data-tooltip="Cup-Rangliste als PDF (nur gespeicherte Resultate)">'
         . '<i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
         . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="cuprang" data-druck-label="Vereinscup Rangliste" aria-label="Rangliste direkt drucken">'
         . '<i class="bi bi-printer" aria-hidden="true"></i></button>'
-        . '</div>';
-    $page_extra = '<div class="cup4-progress" id="progress-section">'
-        . '<div class="cup4-progress-steps" id="progress-steps">'
-        . '<span class="cup4-step active" data-round="1"><span class="cup4-step-dot"></span> Runde 1 <small id="step-r1-count"></small></span>'
-        . '<span class="cup4-step-arrow"><i class="bi bi-chevron-right"></i></span>'
-        . '<span class="cup4-step" data-round="2"><span class="cup4-step-dot"></span> Runde 2 <small id="step-r2-count"></small></span>'
-        . '<span class="cup4-step-arrow"><i class="bi bi-chevron-right"></i></span>'
-        . '<span class="cup4-step" data-round="final"><span class="cup4-step-dot"></span> Finale <small id="step-final-count"></small></span>'
-        . '</div>'
-        . '<div class="cup4-progress-bar" aria-hidden="true"><div class="cup4-progress-fill" id="progress-fill" style="width: 0%"></div></div>'
+        . '</span>'
+        . '<button type="button" id="save-all" class="btn btn-primary btn-sm" data-tooltip="Alle Runden, Finale und Standcup speichern (Ctrl+S)">'
+        . '<i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>'
+        . '</span>';
+    // Fortschritt: je Runde ein Statuspunkt (grau leer, bernstein offen, grün fertig) mit Zähler
+    $page_extra = '<div class="cup4-schritte" id="progress-steps">'
+        . '<span class="cup4-schritt" data-round="1"><span class="ui-punkt" aria-hidden="true"></span>Runde 1 <span class="cup4-schritt-zahl" id="step-r1-count"></span></span>'
+        . '<i class="bi bi-chevron-right cup4-schritt-pfeil" aria-hidden="true"></i>'
+        . '<span class="cup4-schritt" data-round="2"><span class="ui-punkt" aria-hidden="true"></span>Runde 2 <span class="cup4-schritt-zahl" id="step-r2-count"></span></span>'
+        . '<i class="bi bi-chevron-right cup4-schritt-pfeil" aria-hidden="true"></i>'
+        . '<span class="cup4-schritt" data-round="final"><span class="ui-punkt" aria-hidden="true"></span>Finale <span class="cup4-schritt-zahl" id="step-final-count"></span></span>'
+        . '<span class="cup4-sieger" id="cup-sieger" hidden></span>'
         . '</div>';
     $page_show_mobile = true;
     include 'partials/page_header.inc.php';
     ?>
-    <!-- Sticky Toolbar -->
-    <div class="cup4-toolbar" id="cup4-toolbar">
-        <!-- Mobile: Sticky Header mit Fortschritt + Toggle -->
-        <div class="cup4-toolbar-toggle" id="toolbar-toggle">
-            <div class="cup4-mini-progress">
-                <span class="cup4-mini-step active" id="mini-step-r1">
-                    <span class="cup4-mini-dot"></span>R1 <small id="mini-r1"></small>
-                </span>
-                <span class="cup4-mini-arrow"><i class="bi bi-chevron-right"></i></span>
-                <span class="cup4-mini-step" id="mini-step-r2">
-                    <span class="cup4-mini-dot"></span>R2 <small id="mini-r2"></small>
-                </span>
-                <span class="cup4-mini-arrow"><i class="bi bi-chevron-right"></i></span>
-                <span class="cup4-mini-step" id="mini-step-final">
-                    <span class="cup4-mini-dot"></span>Finale <small id="mini-final"></small>
-                </span>
-            </div>
-            <i class="bi bi-chevron-down" id="toolbar-chevron"></i>
-        </div>
-        <!-- Toolbar Body -->
-        <div class="cup4-toolbar-body" id="toolbar-body">
-            <div class="cup4-toolbar-group">
-                <label for="pair-count">Paarungen:</label>
-                <input type="number" id="pair-count" class="form-control" min="1" max="10" value="4">
-            </div>
-            <div class="cup4-toolbar-group">
-                <label for="pair-size">Gr&ouml;sse:</label>
-                <select id="pair-size" class="form-select" style="width: 130px;">
-                    <option value="2">Zweier</option>
-                    <option value="3">Dreier</option>
-                </select>
-            </div>
-            <button type="button" id="generate-pairs" class="btn btn-outline-success btn-sm">
-                <i class="bi bi-plus-circle me-1"></i>Generieren
-            </button>
-            <div class="cup4-toolbar-spacer"></div>
-            <div class="cup4-toolbar-actions">
-                <button type="button" id="save-all" class="btn btn-primary btn-sm" data-tooltip="Alle Runden speichern (Ctrl+S)">
-                    <i class="bi bi-save me-1"></i>Speichern
-                </button>
-            </div>
-        </div>
-        <!-- Tabs (sichtbar < 1200px, im Toolbar f&uuml;r sticky) -->
-        <div class="cup4-tabs" id="cup4-tabs">
-            <button type="button" class="cup4-tab active" data-target="round1-col" aria-pressed="true">Runde 1</button>
-            <button type="button" class="cup4-tab" data-target="round2-col" aria-pressed="false">Runde 2</button>
-            <button type="button" class="cup4-tab" data-target="final-col" aria-pressed="false">Finale</button>
-        </div>
+
+    <!-- Schmale Fenster: eine Spalte nach der anderen -->
+    <div class="ui-filter cup4-tabs" id="cup4-tabs" role="group" aria-label="Spalte anzeigen">
+        <button type="button" data-target="round1-col" aria-pressed="true">Runde 1</button>
+        <button type="button" data-target="round2-col" aria-pressed="false">Runde 2</button>
+        <button type="button" data-target="final-wrap" aria-pressed="false">Finale</button>
     </div>
 
     <!-- Turnierbaum -->
     <div class="cup4-bracket" id="bracket">
 
-        <!-- Teilnehmer-Pool -->
-        <div class="cup4-pool" id="participant-pool">
-            <div class="cup4-pool-header" id="pool-header">
-                <span class="cup4-pool-title"><i class="bi bi-people me-1"></i>Teilnehmer</span>
-                <span class="cup4-pool-header-right">
-                    <span class="cup4-counter" id="pool-counter">0</span>
-                    <i class="bi bi-chevron-down cup4-pool-chevron"></i>
-                </span>
+        <!-- Teilnehmer, die noch keinen Platz haben -->
+        <section class="ui-karte cup4-pool" id="participant-pool" aria-labelledby="pool-titel">
+            <div class="ui-tab-kopf">
+                <h2 class="ui-tab-titel" id="pool-titel">Teilnehmer</h2>
+                <span class="cup4-zahl" id="pool-counter"></span>
             </div>
-            <div id="pool-list"></div>
-        </div>
+            <p class="cup4-hinweis">Ziehen oder anklicken, dann einen freien Platz wählen.</p>
+            <div id="pool-list" class="cup4-liste"></div>
+            <p class="cup4-hinweis cup4-pool-fertig" id="pool-fertig" hidden><i class="bi bi-check-lg" aria-hidden="true"></i> Alle eingeteilt.</p>
+        </section>
 
         <!-- Runde 1 -->
-        <div class="cup4-round active" id="round1-col">
-            <div class="cup4-round-header">
-                <span class="cup4-round-title">Runde 1 <button type="button" class="btn-help" data-help="cup.runden" aria-label="Hilfe"></button></span>
-                <span class="cup4-round-badge" id="r1-badge">0 Paarungen</span>
+        <section class="ui-karte cup4-round active" id="round1-col" aria-labelledby="r1-titel">
+            <div class="ui-tab-kopf">
+                <h2 class="ui-tab-titel" id="r1-titel">Runde 1</h2>
+                <button type="button" class="btn-help" data-help="cup.runden" aria-label="Hilfe"></button>
+                <span class="cup4-zahl" id="r1-badge"></span>
             </div>
-            <div id="r1-pairs"></div>
-            <div class="cup4-empty" id="r1-empty">
-                <div class="cup4-empty-icon"><i class="bi bi-trophy"></i></div>
-                <div class="cup4-empty-text">Noch keine Paarungen.<br>W&auml;hle Anzahl und Gr&ouml;sse, dann klicke &laquo;Generieren&raquo;.</div>
+            <div id="r1-pairs" class="cup4-paarungen"></div>
+            <div class="ui-leerzustand" id="r1-empty"><i class="bi bi-diagram-2" aria-hidden="true"></i><p>Noch keine Paarungen. Unten anlegen.</p></div>
+            <div class="cup4-anlegen">
+                <label for="pair-count">Neue Paarungen</label>
+                <input type="number" id="pair-count" class="form-control form-control-sm" min="1" max="10" value="4">
+                <label for="pair-size" class="visually-hidden">Grösse</label>
+                <select id="pair-size" class="form-select form-select-sm">
+                    <option value="2">Zweier</option>
+                    <option value="3">Dreier</option>
+                </select>
+                <button type="button" id="generate-pairs" class="btn btn-outline-success btn-sm" data-tooltip="Leere Paarungen unten an Runde 1 anfügen">
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Hinzufügen
+                </button>
             </div>
-        </div>
+        </section>
 
         <!-- Runde 2 -->
-        <div class="cup4-round" id="round2-col">
-            <div class="cup4-round-header">
-                <span class="cup4-round-title">Runde 2</span>
-                <span class="cup4-round-badge" id="r2-badge">0 Paarungen</span>
+        <section class="ui-karte cup4-round" id="round2-col" aria-labelledby="r2-titel">
+            <div class="ui-tab-kopf">
+                <h2 class="ui-tab-titel" id="r2-titel">Runde 2</h2>
+                <span class="cup4-zahl" id="r2-badge"></span>
             </div>
-            <!-- Winners pool for R2 (inside round column) -->
-            <div id="r2-winners-pool" style="display:none; margin-bottom:0.75rem;">
-                <div class="cup4-pool-header" style="border:none; padding:0; margin-bottom:0.5rem;">
-                    <span class="cup4-pool-title" style="font-size:0.75rem;"><i class="bi bi-award me-1"></i>Gewinner R1</span>
-                    <span style="display:flex; align-items:center; gap:0.35rem;">
-                        <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" style="font-size:0.72rem; padding:0.15rem 0.5rem;" data-tooltip="Mitglied f&uuml;r Runde 2 nachnominieren">
-                            <i class="bi bi-plus-lg me-1"></i>Nachnominieren
-                        </button>
-                        <span class="cup4-counter" id="r2-pool-counter">0</span>
-                    </span>
-                </div>
-                <div id="r2-pool-list"></div>
-            </div>
-            <div id="r2-pairs"></div>
-            <div class="cup4-empty" id="r2-empty">
-                <div class="cup4-empty-icon"><i class="bi bi-hourglass-split"></i></div>
-                <div class="cup4-empty-text">Runde 1 zuerst abschliessen.</div>
-            </div>
-        </div>
-
-        <!-- Finale + Standcup (4. Spalte) -->
-        <div class="cup4-final-wrap" id="final-wrap">
-            <!-- Finale -->
-            <div class="cup4-round cup4-final-section" id="final-col">
-                <div class="cup4-round-header">
-                    <span class="cup4-round-title"><i class="bi bi-trophy-fill me-1"></i>Finale <button type="button" class="btn-help" data-help="cup.finale" aria-label="Hilfe"></button></span>
-                    <span class="cup4-round-badge" id="final-badge">0 Finalisten</span>
-                </div>
-                <div class="cup4-katb-switch" data-tooltip="Qualifiziert sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale?">
-                    <label class="cup4-katb-label" for="katb-final-switch">Kat.&nbsp;B automatisch ins Finale</label>
-                    <div class="form-check form-switch cup4-katb-toggle">
-                        <input class="form-check-input" type="checkbox" role="switch" id="katb-final-switch" checked>
-                    </div>
-                </div>
-                <div id="final-list"></div>
-                <div class="cup4-empty" id="final-empty">
-                    <div class="cup4-empty-icon"><i class="bi bi-flag"></i></div>
-                    <div class="cup4-empty-text">Noch keine Finalisten.</div>
-                </div>
-                <div id="pdf-link" class="mt-2"></div>
-            </div>
-
-            <!-- Standcup Final (unter der Finale-Card) -->
-            <div class="cup4-standcup" id="standcup-section" style="display:none;">
-                <h6 class="cup4-standcup-title"><i class="bi bi-award me-2"></i>Standcup Final</h6>
-                <div class="cup4-standcup-row">
-                    <span class="cup4-standcup-label">MSV Wilen</span>
-                    <input type="text" id="sc-name-1" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="MSV Wilen: Teilnehmer">
-                    <input type="number" id="sc-result-1" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="MSV Wilen: Resultat">
-                </div>
-                <div class="cup4-standcup-row">
-                    <span class="cup4-standcup-label">SV Wollerau</span>
-                    <input type="text" id="sc-name-2" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="SV Wollerau: Teilnehmer">
-                    <input type="number" id="sc-result-2" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="SV Wollerau: Resultat">
-                </div>
-                <div class="cup4-standcup-row">
-                    <span class="cup4-standcup-label">SV Freienbach</span>
-                    <input type="text" id="sc-name-3" class="form-control cup4-standcup-name" placeholder="Teilnehmer" aria-label="SV Freienbach: Teilnehmer">
-                    <input type="number" id="sc-result-3" class="form-control cup4-standcup-res" placeholder="Pkt" aria-label="SV Freienbach: Resultat">
-                </div>
-                <div class="text-end mt-2">
-                    <button type="button" id="save-standcup" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-save me-1"></i>Standcup speichern
+            <!-- Wer aus Runde 1 weiterkommt und noch keinen Platz hat -->
+            <div id="r2-winners-pool" class="cup4-bereit" hidden>
+                <div class="cup4-abschnitt">
+                    <span class="cup4-abschnitt-titel">Weiter aus Runde 1 <span class="cup4-zahl" id="r2-pool-counter"></span></span>
+                    <button type="button" class="btn-help" data-help="cup.nachruecker" aria-label="Hilfe"></button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" data-tooltip="Einen Verlierer aus Runde 1 für Runde 2 nachnehmen">
+                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nachrücker
                     </button>
                 </div>
+                <div id="r2-pool-list" class="cup4-liste"></div>
             </div>
+            <div id="r2-pairs" class="cup4-paarungen"></div>
+            <div class="ui-leerzustand" id="r2-empty"><i class="bi bi-hourglass-split" aria-hidden="true"></i><p>Runde 1 zuerst abschliessen.</p></div>
+        </section>
+
+        <!-- Finale + Standcup (4. Spalte) -->
+        <div class="cup4-final-wrap cup4-round" id="final-wrap">
+            <section class="ui-karte cup4-final-section" id="final-col" aria-labelledby="final-titel">
+                <div class="ui-tab-kopf">
+                    <h2 class="ui-tab-titel" id="final-titel">Finale</h2>
+                    <button type="button" class="btn-help" data-help="cup.finale" aria-label="Hilfe"></button>
+                    <span class="cup4-zahl" id="final-badge"></span>
+                </div>
+                <div class="cup4-katb-switch form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="katb-final-switch" checked>
+                    <label class="form-check-label" for="katb-final-switch" data-tooltip="Der beste Kat.-B-Schütze aus Runde 2 rückt ins Finale nach, auch wenn er verloren hat. Wirkt sofort.">Bester Kat. B rückt ins Finale nach</label>
+                </div>
+                <div id="final-list" class="cup4-liste"></div>
+                <div class="ui-leerzustand" id="final-empty"><i class="bi bi-flag" aria-hidden="true"></i><p>Noch keine Finalisten.</p></div>
+            </section>
+
+            <!-- Standcup Final: je ein Teilnehmer der drei Vereine (Entscheid 08.10.2026: bleibt so) -->
+            <section class="ui-karte cup4-standcup" id="standcup-section" aria-labelledby="standcup-titel" hidden>
+                <div class="ui-tab-kopf">
+                    <h2 class="ui-tab-titel" id="standcup-titel">Standcup Final</h2>
+                </div>
+                <div class="cup4-standcup-row">
+                    <label class="cup4-standcup-label" for="sc-name-1">MSV Wilen</label>
+                    <input type="text" id="sc-name-1" class="form-control form-control-sm cup4-standcup-name" placeholder="Name Vorname">
+                    <input type="number" id="sc-result-1" class="form-control form-control-sm cup4-result" min="0" max="100" placeholder="Pkt" aria-label="MSV Wilen: Punkte">
+                </div>
+                <div class="cup4-standcup-row">
+                    <label class="cup4-standcup-label" for="sc-name-2">SV Wollerau</label>
+                    <input type="text" id="sc-name-2" class="form-control form-control-sm cup4-standcup-name" placeholder="Name Vorname">
+                    <input type="number" id="sc-result-2" class="form-control form-control-sm cup4-result" min="0" max="100" placeholder="Pkt" aria-label="SV Wollerau: Punkte">
+                </div>
+                <div class="cup4-standcup-row">
+                    <label class="cup4-standcup-label" for="sc-name-3">SV Freienbach</label>
+                    <input type="text" id="sc-name-3" class="form-control form-control-sm cup4-standcup-name" placeholder="Name Vorname">
+                    <input type="number" id="sc-result-3" class="form-control form-control-sm cup4-result" min="0" max="100" placeholder="Pkt" aria-label="SV Freienbach: Punkte">
+                </div>
+            </section>
         </div>
     </div>
 
@@ -210,7 +169,7 @@ $(document).ready(function() {
         }
     });
 
-    /* ── Ctrl+S speichert alle Runden ─────── */
+    /* ── Ctrl+S speichert alles ───────────── */
     $(document).on('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
             e.preventDefault();
@@ -218,148 +177,183 @@ $(document).ready(function() {
         }
     });
 
-    /* ── Globals ──────────────────────────── */
-    const currentYear = new Date().getFullYear();
-    let allParticipants = []; // Cache for swap-back
-
-    function showMessage(msg, type) {
-        const map = { danger: 'error', success: 'success', warning: 'warning', info: 'info' };
-        msvToast(msg, map[type] || 'info');
-    }
-
     /* ── Year Dropdown ────────────────────── */
     function initYearDropdown() {
         msvJahrAuswahl('#yearSelect', { jahr: <?php echo isset($_GET['year']) ? (int)$_GET['year'] : 'null'; ?> });
     }
+    function jahr() { return $('#yearSelect').val(); }
 
-    /* ── Responsive Tabs ──────────────────── */
-    $(document).on('click', '.cup4-tab', function() {
-        const target = $(this).data('target');
-        $('.cup4-tab').removeClass('active').attr('aria-pressed', 'false');
-        $(this).addClass('active').attr('aria-pressed', 'true');
+    /* ── Schmale Fenster: Spalten-Umschalter ─ */
+    $('#cup4-tabs').on('click', 'button', function() {
+        $('#cup4-tabs button').attr('aria-pressed', 'false');
+        $(this).attr('aria-pressed', 'true');
         $('.cup4-round').removeClass('active');
-        $('#' + target).addClass('active');
+        $('#' + $(this).data('target')).addClass('active');
     });
 
-    /* ── Mobile Toolbar Toggle ────────────── */
-    $(document).on('click', '#toolbar-toggle', function() {
-        $('#cup4-toolbar').toggleClass('expanded');
-    });
+    /* ── Bausteine: Zeilen und Paarungen ───── */
+    // Ein Platz in einer Paarung: leer oder mit Teilnehmer (Name, ggf. Nachrücker-Marke, Herausnehmen)
+    function platzInhalt(id, name) {
+        return '<span class="cup4-zone-name">' + msvEsc(name) + '</span>' +
+               '<button type="button" class="cup4-zone-remove" aria-label="' + msvEsc(name) + ' herausnehmen" data-tooltip="Herausnehmen (Entf)">' +
+               '<i class="bi bi-x" aria-hidden="true"></i></button>';
+    }
+    function zeileHtml(id, name, resultat) {
+        const belegt = id ? ' data-id="' + msvEsc(id) + '"' : '';
+        const wert = (resultat !== null && resultat !== undefined && resultat !== '') ? ' value="' + msvEsc(resultat) + '"' : '';
+        return '<div class="cup4-participant-row">' +
+               '<i class="bi bi-check-lg cup4-sieg" aria-hidden="true"></i>' +
+               '<div class="cup4-drop-zone"' + belegt + '>' + (id ? platzInhalt(id, name) : '') + '</div>' +
+               '<span class="visually-hidden cup4-sr-status"></span>' +
+               '<input type="number" class="cup4-result form-control form-control-sm" min="0" max="100" placeholder="Pkt" aria-label="Punkte"' + wert + '>' +
+               '</div>';
+    }
+    // Dreier: wie viele kommen weiter (Segment-Schalter wie überall)
+    function advancersToggle(val) {
+        const v = (parseInt(val, 10) === 1) ? 1 : 2;
+        return '<span class="ui-filter cup4-adv-toggle" role="group" aria-label="Wie viele kommen weiter?">' +
+               '<button type="button" class="cup4-adv-btn" data-adv="1" aria-pressed="' + (v === 1) + '">1 weiter</button>' +
+               '<button type="button" class="cup4-adv-btn" data-adv="2" aria-pressed="' + (v === 2) + '">2 weiter</button>' +
+               '</span>';
+    }
+    // Paarung: Kopf (Nummer, Hinweis bei Gleichstand, Löschen), zwei oder drei Zeilen, bei Dreiern darunter «weiter»
+    function paarungHtml(o) {
+        const drei = o.zeilen.length === 3;
+        let attr = '';
+        if (o.id) attr += ' data-pair-id="' + msvEsc(o.id) + '"';
+        if (drei) attr += ' data-advancers="' + ((parseInt(o.adv, 10) === 1) ? 1 : 2) + '"';
+        if (o.mw) attr += ' data-manual-winner="' + msvEsc(o.mw) + '"';
+        let html = '<div class="cup4-pair-card' + (drei ? ' cup4-dreier' : '') + '"' + attr + '>' +
+                   '<div class="cup4-pair-kopf">' +
+                   '<span class="cup4-pair-titel"></span>' +
+                   '<span class="cup4-pair-hinweis" aria-live="polite"></span>' +
+                   '<button type="button" class="cup4-card-remove" aria-label="Paarung löschen" data-tooltip="Paarung löschen"><i class="bi bi-trash3" aria-hidden="true"></i></button>' +
+                   '</div>';
+        o.zeilen.forEach(function(z) { html += zeileHtml(z.id, z.name, z.r); });
+        if (drei) html += '<div class="cup4-pair-fuss"><span aria-hidden="true">Weiter kommen</span>' + advancersToggle(o.adv) + '</div>';
+        return html + '</div>';
+    }
+    function poolItemHtml(id, name, opts) {
+        opts = opts || {};
+        const nr = opts.nachruecker
+            ? '<span class="cup4-nr" data-tooltip="Nachrücker: in Runde 2, ohne Runde 1 gewonnen zu haben"><i class="bi bi-person-plus" aria-hidden="true"></i><span class="visually-hidden">(Nachrücker)</span></span>'
+            : '';
+        return '<div class="cup4-pool-item' + (opts.nachruecker ? ' cup4-nominated' : '') + '" data-id="' + msvEsc(id) + '" data-name="' + msvEsc(name) + '"' +
+               (opts.live ? ' data-live-preview="1"' : '') + (opts.nachruecker ? ' data-nominated="1"' : '') + '>' +
+               '<i class="bi bi-grip-vertical cup4-griff" aria-hidden="true"></i><span class="cup4-pool-name">' + msvEsc(name) + '</span>' + nr + '</div>';
+    }
+    function finalItemHtml(id, name, resultat, opts) {
+        opts = opts || {};
+        const wert = (resultat !== null && resultat !== undefined && String(resultat).trim() !== '') ? ' value="' + msvEsc(resultat) + '"' : '';
+        return '<div class="cup4-final-item"' + (opts.live ? ' data-live-preview="1"' : '') + (opts.katb ? ' data-katb="1"' : '') + '>' +
+               '<span class="rang-badge cup4-rang" aria-hidden="true">–</span>' +
+               '<span class="cup4-final-name" data-id="' + msvEsc(id) + '">' + msvEsc(name) + '</span>' +
+               (opts.katb ? '<span class="cup4-marke" data-tooltip="Bester Kat. B, rückt ins Finale nach">Kat. B</span>' : '') +
+               '<span class="visually-hidden cup4-sr-status"></span>' +
+               '<input type="number" class="cup4-result form-control form-control-sm" min="0" max="100" placeholder="Pkt" aria-label="Punkte"' + wert + '>' +
+               '</div>';
+    }
 
-    /* ── Mobile Pool Toggle ──────────────── */
-    $(document).on('click', '#pool-header', function(e) {
-        if ($(e.target).closest('.cup4-pool-item').length) return;
-        $('#participant-pool').toggleClass('expanded');
-    });
+    /* ── Fortschritt ──────────────────────── */
+    // Punktefelder für Bildschirmleser benennen («Punkte Muster Hans» statt nur «Punkte»); läuft mit jedem
+    // updateProgress(), also nach Laden, Ablegen, Entfernen und Eingabe
+    function cupFeldNamen() {
+        $('#bracket .cup4-participant-row .cup4-result, #bracket .cup4-final-item .cup4-result').each(function() {
+            const $zeile = $(this).closest('.cup4-participant-row, .cup4-final-item');
+            const $zone = $zeile.find('.cup4-drop-zone[data-id]');
+            const name = $zone.length ? zoneName($zone) : $zeile.find('.cup4-final-name').text().trim();
+            this.setAttribute('aria-label', name ? 'Punkte ' + name : 'Punkte (noch niemand eingeteilt)');
+        });
+    }
 
-    /* ── Progress Update ──────────────────── */
+    function schritt($s, fertig, gesamt) {
+        $s.removeClass('ok offen');
+        if (gesamt > 0) $s.addClass(fertig === gesamt ? 'ok' : 'offen');
+        $s.find('.cup4-schritt-zahl').text(gesamt > 0 ? fertig + '/' + gesamt : '');
+    }
+
     function updateProgress() {
+        cupFeldNamen();
         const r1Total = $('#r1-pairs .cup4-pair-card').length;
         const r1Done = $('#r1-pairs .cup4-pair-card.cup4-pair-complete').length;
         const r2Total = $('#r2-pairs .cup4-pair-card').length;
         const r2Done = $('#r2-pairs .cup4-pair-card.cup4-pair-complete').length;
         const fTotal = $('#final-list .cup4-final-item').length;
         const fDone = $('#final-list .cup4-final-item').filter(function() {
-            return $(this).find('.cup4-result').val();
+            return $(this).find('.cup4-result').val() !== '';
         }).length;
 
-        $('#step-r1-count').text(r1Total > 0 ? '(' + r1Done + '/' + r1Total + ')' : '');
-        $('#step-r2-count').text(r2Total > 0 ? '(' + r2Done + '/' + r2Total + ')' : '');
-        $('#step-final-count').text(fTotal > 0 ? '(' + fDone + '/' + fTotal + ')' : '');
+        schritt($('.cup4-schritt[data-round="1"]'), r1Done, r1Total);
+        schritt($('.cup4-schritt[data-round="2"]'), r2Done, r2Total);
+        schritt($('.cup4-schritt[data-round="final"]'), fDone, fTotal);
 
-        // Steps status
-        const $steps = $('.cup4-step');
-        $steps.removeClass('active completed');
-        if (r1Total > 0 && r1Done === r1Total && r1Total > 0) {
-            $steps.eq(0).addClass('completed');
-            $steps.eq(1).addClass('active');
-        } else if (r1Total > 0) {
-            $steps.eq(0).addClass('active');
-        }
-        if (r2Total > 0 && r2Done === r2Total && r2Total > 0) {
-            $steps.eq(1).addClass('completed');
-            $steps.eq(2).addClass('active');
-        }
-        if (fDone > 0 && fDone === fTotal && fTotal > 0) {
-            $steps.eq(2).addClass('completed');
-        }
+        $('#r1-badge').text(r1Total ? r1Total + ' Paarung' + (r1Total !== 1 ? 'en' : '') : '');
+        $('#r2-badge').text(r2Total ? r2Total + ' Paarung' + (r2Total !== 1 ? 'en' : '') : '');
+        $('#final-badge').text(fTotal ? fTotal + ' Finalist' + (fTotal !== 1 ? 'en' : '') : '');
 
-        // Progress bar
-        const total = r1Total + r2Total + fTotal;
-        const done = r1Done + r2Done + fDone;
-        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-        $('#progress-fill').css('width', pct + '%');
-
-        // Mini-Progress (Mobile Toolbar) — spiegelt Hauptfortschritt
-        $('#mini-r1').text($('#step-r1-count').text());
-        $('#mini-r2').text($('#step-r2-count').text());
-        $('#mini-final').text($('#step-final-count').text());
-        const $mini = $('.cup4-mini-step');
-        $mini.removeClass('active completed');
-        $steps.each(function(i) {
-            if ($(this).hasClass('completed')) $mini.eq(i).addClass('completed');
-            if ($(this).hasClass('active')) $mini.eq(i).addClass('active');
-        });
-
-        // Badges
-        $('#r1-badge').text(r1Total + ' Paarung' + (r1Total !== 1 ? 'en' : ''));
-        $('#r2-badge').text(r2Total + ' Paarung' + (r2Total !== 1 ? 'en' : ''));
-        $('#final-badge').text(fTotal + ' Finalist' + (fTotal !== 1 ? 'en' : ''));
-
-        // Empty states
         $('#r1-empty').toggle(r1Total === 0);
         const r2PoolCount = $('#r2-pool-list .cup4-pool-item').length;
         $('#r2-empty').toggle(r2Total === 0 && r2PoolCount === 0);
         $('#final-empty').toggle(fTotal === 0);
+
+        finalRang();
     }
 
-    /* ── Pool Counter ─────────────────────── */
+    // Rang im Finale: erst wenn alle Finalisten Punkte haben; gleiche Punkte teilen den Rang
+    function finalRang() {
+        const $items = $('#final-list .cup4-final-item');
+        const werte = $items.map(function() { return $(this).find('.cup4-result').val(); }).get();
+        const komplett = $items.length > 1 && werte.every(function(v) { return v !== ''; });
+        $items.removeClass('rank-1 rank-2 rank-3');
+        $items.find('.cup4-rang').removeClass('r1 r2 r3').text('–');
+        $items.find('.cup4-sr-status').text('');
+        const $sieger = $('#cup-sieger');
+        if (!komplett) { $sieger.prop('hidden', true).empty(); return; }
+        const zahlen = werte.map(function(v) { return parseInt(v, 10) || 0; });
+        $items.each(function(i) {
+            const rang = 1 + zahlen.filter(function(z) { return z > zahlen[i]; }).length;
+            $(this).find('.cup4-rang').text(rang + '.').addClass(rang <= 3 ? 'r' + rang : '');
+            if (rang <= 3) $(this).addClass('rank-' + rang);
+            $(this).find('.cup4-sr-status').text('Rang ' + rang);
+        });
+        const sieger = $items.filter('.rank-1').map(function() { return $(this).find('.cup4-final-name').text(); }).get();
+        $sieger.prop('hidden', false).html('<i class="bi bi-trophy" aria-hidden="true"></i> Cupsieger ' + msvEsc(jahr()) + ': <strong>' + msvEsc(sieger.join(' und ')) + '</strong>');
+    }
+
+    /* ── Zähler der Teilnehmer-Liste (der Server liefert nur, wer noch keinen Platz hat) ── */
     function updatePoolCounter() {
-        const total = allParticipants.length;
-        const inPool = $('#pool-list .cup4-pool-item').length;
-        $('#pool-counter').text(inPool + ' / ' + total);
+        const frei = $('#pool-list .cup4-pool-item').length;
+        $('#pool-counter').text(frei ? frei + ' frei' : '');
+        $('#pool-fertig').prop('hidden', !(frei === 0 && $('#r1-pairs .cup4-drop-zone[data-id]').length > 0));
     }
 
     function updateR2PoolCounter() {
         const cnt = $('#r2-pool-list .cup4-pool-item').length;
         $('#r2-pool-counter').text(cnt);
-        $('#r2-winners-pool').toggle(cnt > 0);
+        $('#r2-winners-pool').prop('hidden', cnt === 0);
     }
 
-    /* ── Load Participants ────────────────── */
+    /* ── Teilnehmer laden ─────────────────── */
     function loadParticipants() {
         $.ajax({
             url: 'cup2/fetch_participants.php',
-            data: { year: $('#yearSelect').val() },
+            data: { year: jahr() },
+            dataType: 'json',
             success: function(response) {
-                let participants;
-                if (typeof response === 'string') {
-                    try {
-                        const parsed = JSON.parse(response);
-                        participants = parsed.data || parsed;
-                    } catch (e) { console.error('Parse error', e); return; }
-                } else {
-                    participants = response.data || response;
-                }
-
-                allParticipants = participants;
+                const participants = (response && response.data) || response || [];
                 const $list = $('#pool-list').empty();
                 participants.forEach(function(p) {
-                    $list.append(
-                        '<div class="cup4-pool-item" data-id="' + p.ID + '">' +
-                        p.Name + ' ' + p.Vorname + '</div>'
-                    );
+                    $list.append(poolItemHtml(p.ID, p.Name + ' ' + p.Vorname));
                 });
-
                 initDraggable('#pool-list .cup4-pool-item');
                 removeUsedParticipants();
                 updatePoolCounter();
             },
-            error: function() { msvToast('Fehler beim Laden der Teilnehmer', 'error'); }
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Die Teilnehmer konnten nicht geladen werden. Bitte die Seite neu laden.'), 'error'); }
         });
     }
 
-    /* ── Draggable Init ───────────────────── */
+    /* ── Ziehen und Ablegen ───────────────── */
     function initDraggable(selector) {
         $(selector).draggable({
             helper: 'clone',
@@ -374,7 +368,6 @@ $(document).ready(function() {
         });
     }
 
-    /* ── Droppable Init ───────────────────── */
     function initDroppable(container) {
         $(container).find('.cup4-drop-zone').each(function() {
             if (!$(this).data('ui-droppable')) {
@@ -383,7 +376,7 @@ $(document).ready(function() {
                     hoverClass: 'ui-droppable-hover',
                     tolerance: 'pointer',
                     drop: function(event, ui) {
-                        zuordnen($(this), ui.helper.data('id'), ui.helper.text());
+                        zuordnen($(this), ui.helper.attr('data-id'), ui.helper.attr('data-name'));
                         ui.helper.remove();
                     }
                 });
@@ -391,40 +384,67 @@ $(document).ready(function() {
         });
     }
 
-    /* ── Ungespeicherte Änderungen: Resultate, Zuordnungen, Gewinnerwahl, «weiter» ──
-       Hinweis neben «Speichern», Warnung beim Verlassen, Rückfrage beim Jahreswechsel. */
-    let cupGeaendert = false, cupJahr = null, cupJahrNachher = null;
-    function cupMarkieren(an) { cupGeaendert = !!an; msvPanelUngespeichert($('#save-all').parent(), cupGeaendert); }
-    $(document).on('input', '#bracket input:not(.cup4-standcup-name):not(.cup4-standcup-res)', function() { cupMarkieren(true); });
+    /* ── Ungespeicherte Änderungen: Resultate, Zuordnungen, Gewinnerwahl, «weiter», Standcup ──
+       Hinweis neben «Speichern», Warnung beim Verlassen, Rückfrage beim Jahreswechsel und vor dem Löschen. */
+    let cupGeaendert = false, cupJahr = null, cupJahrNachher = null, cupStandcupGeaendert = false;
+    function cupMarkieren(an) {
+        cupGeaendert = !!an;
+        if (!an) cupStandcupGeaendert = false;
+        msvPanelUngespeichert($('.cup4-kopf-aktionen'), cupGeaendert);
+    }
+    $(document).on('input', '#bracket input:not(#katb-final-switch)', function() {
+        if ($(this).closest('#standcup-section').length) cupStandcupGeaendert = true;
+        cupMarkieren(true);
+    });
     $(window).on('beforeunload', function() { if (cupGeaendert) return 'Nicht gespeicherte Eingaben'; });
 
+    // Vor PDF und Direktdruck (lesen die DB): bei Ungespeichertem zuerst speichern oder abbrechen.
+    // «Speichern» löst #save-all aus; cupGespeichert() meldet das Ende.
+    let cupSpeichernFertig = null;
+    function cupGespeichert(ok) {
+        if (!cupSpeichernFertig) return;
+        const fertig = cupSpeichernFertig;
+        cupSpeichernFertig = null;
+        fertig(ok);
+    }
+    window.cupVorAusgabe = function() {
+        return msvVorAusgabe(cupGeaendert, function() {
+            return new Promise(function(fertig) {
+                if ($('#save-all').prop('disabled')) { fertig(false); return; }
+                cupSpeichernFertig = fertig;
+                $('#save-all').trigger('click');
+            });
+        });
+    };
+
+    // Ändern sich die Teilnehmer einer Paarung, gilt eine frühere Gewinnerwahl nicht mehr
+    function gewinnerwahlZuruecksetzen($card) {
+        $card.removeData('first-winner manual-winner').removeAttr('data-first-winner data-manual-winner');
+    }
+
     /* ── Teilnehmer auf einen Platz setzen (Ziehen, Tastatur, Klick) ── */
-    function zuordnen($zone, newId, rohText) {
-                        cupMarkieren(true);
-                        const newText = String(rohText).trim().replace(/\s*NR$/, '');
+    function zuordnen($zone, newId, name) {
+        cupMarkieren(true);
+        name = String(name || '').trim();
+        const $card = $zone.closest('.cup4-pair-card');
 
-                        // Swap: if zone already occupied, return old participant to correct pool
-                        const oldId = $zone.attr('data-id');
-                        if (oldId) {
-                            const oldName = $zone.find('.cup4-zone-name').text().trim() || $zone.text().trim();
-                            const inR2 = $zone.closest('#r2-pairs').length > 0;
-                            inR2 ? returnToR2Pool(oldId, oldName) : returnToPool(oldId, oldName);
-                        }
+        // Platz schon belegt: bisherigen Teilnehmer in die richtige Liste zurück
+        const oldId = $zone.attr('data-id');
+        if (oldId) {
+            const inR2 = $zone.closest('#r2-pairs').length > 0;
+            inR2 ? returnToR2Pool(oldId, zoneName($zone)) : returnToPool(oldId, zoneName($zone));
+        }
 
-                        $zone.attr('data-id', newId)
-                             .html('<span class="cup4-zone-name">' + newText + '</span>' +
-                                   '<button type="button" class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button>');
-                        $zone.addClass('drop-success');
-                        setTimeout(function() { $zone.removeClass('drop-success'); }, 400);
+        $zone.attr('data-id', newId).html(platzInhalt(newId, name));
+        if ($zone.closest('#r2-pairs').length && !istR1Gewinner(newId)) nachrueckerMarke($zone);
+        gewinnerwahlZuruecksetzen($card);
 
-                        // Remove from all pools
-                        $('#pool-list .cup4-pool-item[data-id="' + newId + '"]').remove();
-                        $('#r2-pool-list .cup4-pool-item[data-id="' + newId + '"]').remove();
+        $('#pool-list .cup4-pool-item[data-id="' + newId + '"]').remove();
+        $('#r2-pool-list .cup4-pool-item[data-id="' + newId + '"]').remove();
 
-                        updatePoolCounter();
-                        updateR2PoolCounter();
-                        // Trigger winner check on card
-                        updateWinnerHighlight($zone.closest('.cup4-pair-card'));
+        updatePoolCounter();
+        updateR2PoolCounter();
+        updateWinnerHighlight($card);
     }
 
     /* ── Zuordnen ohne Ziehen: Teilnehmer wählen (Enter, Leertaste oder Klick), dann den Platz ──
@@ -433,23 +453,31 @@ $(document).ready(function() {
     const cupAnsage = $('<div class="visually-hidden" aria-live="polite"></div>').appendTo('body');
     function cupWahl($item) {
         $('.cup4-pool-item.cup4-gewaehlt').removeClass('cup4-gewaehlt').attr('aria-pressed', 'false');
+        $('#bracket').removeClass('cup4-wahl-aktiv');
         cupGewaehlt = $item && $item.length ? $item : null;
         if (cupGewaehlt) {
             cupGewaehlt.addClass('cup4-gewaehlt').attr('aria-pressed', 'true');
-            cupAnsage.text(cupGewaehlt.text().trim() + ' gewählt. Jetzt einen Platz in einer Paarung wählen.');
+            $('#bracket').addClass('cup4-wahl-aktiv');
+            cupAnsage.text(cupGewaehlt.attr('data-name') + ' gewählt. Jetzt einen Platz in einer Paarung wählen.');
         }
+    }
+    // Ansage-Name eines Platzes: «Lienert Roman, Runde 1, Paarung 2»
+    function platzOrt(z) {
+        const $z = $(z);
+        const runde = $z.closest('#r2-pairs').length ? 'Runde 2' : 'Runde 1';
+        const nr = $z.closest('.cup4-paarungen').children('.cup4-pair-card').index($z.closest('.cup4-pair-card')) + 1;
+        return runde + ', Paarung ' + nr;
     }
     function cupTastaturBereit() {
         $('.cup4-pool-item:not([tabindex])').attr({ tabindex: 0, role: 'button', 'aria-pressed': 'false' });
         $('.cup4-drop-zone:not([tabindex])').attr({ tabindex: 0, role: 'button' });
-        // Name je nach Belegung (der Inhalt wechselt beim Zuordnen und Entfernen)
         document.querySelectorAll('.cup4-drop-zone').forEach(function(z) {
-            const n = (z.querySelector('.cup4-zone-name') || {}).textContent || '';
-            const label = n.trim() ? n.trim() + ', Platz in der Paarung (Entf nimmt heraus)' : 'Freier Platz in der Paarung';
+            const n = ((z.querySelector('.cup4-zone-name') || {}).textContent || '').trim();
+            const label = n ? n + ', ' + platzOrt(z) + ' (Entf nimmt heraus)' : 'Freier Platz, ' + platzOrt(z);
             if (z.getAttribute('aria-label') !== label) z.setAttribute('aria-label', label);
         });
     }
-    new MutationObserver(cupTastaturBereit).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(cupTastaturBereit).observe(document.getElementById('bracket'), { childList: true, subtree: true });
     cupTastaturBereit();
     $(document).on('click', '.cup4-pool-item', function() {
         if ($(this).hasClass('ui-draggable-dragging')) return;
@@ -458,8 +486,8 @@ $(document).ready(function() {
     $(document).on('click', '.cup4-drop-zone', function(e) {
         if (!cupGewaehlt || $(e.target).closest('button').length) return;
         const $zone = $(this);
-        zuordnen($zone, cupGewaehlt.data('id'), cupGewaehlt.text());
-        cupAnsage.text($zone.find('.cup4-zone-name').text().trim() + ' zugeordnet.');
+        zuordnen($zone, cupGewaehlt.attr('data-id'), cupGewaehlt.attr('data-name'));
+        cupAnsage.text(zoneName($zone) + ' zugeordnet.');
         cupWahl(null);
         $zone.trigger('focus');
     });
@@ -473,77 +501,54 @@ $(document).ready(function() {
         }
     });
 
-    /* ── Remove single participant from drop zone ── */
+    /* ── Einzelnen Teilnehmer aus einem Platz nehmen ── */
     $(document).on('click', '.cup4-zone-remove', function(e) {
         e.stopPropagation();
-        cupMarkieren(true);
         const $zone = $(this).closest('.cup4-drop-zone');
         const id = $zone.attr('data-id');
-        const name = $zone.find('.cup4-zone-name').text().trim();
         if (!id) return;
+        cupMarkieren(true);
+        const name = zoneName($zone);
 
         const inR2 = $zone.closest('#r2-pairs').length > 0;
         inR2 ? returnToR2Pool(id, name) : returnToPool(id, name);
 
-        // Reset drop zone to empty
-        $zone.removeAttr('data-id').empty().removeClass('cup4-nachnominiert');
-        // Reset winner highlighting on the card
+        $zone.removeAttr('data-id').empty();
         const $card = $zone.closest('.cup4-pair-card');
-        $card.find('.cup4-participant-row').removeClass('winner loser');
-        $card.removeClass('cup4-pair-complete');
-        updateProgress();
-        if (!inR2) extractR1WinnersToR2Pool();
+        gewinnerwahlZuruecksetzen($card);
+        updateWinnerHighlight($card);
+        $zone.trigger('focus');
     });
 
-    // Hilfsfunktion: Namen aus Drop-Zone lesen (ggf. mit .cup4-zone-name Wrapper)
     function zoneName($zone) {
-        return $zone.find('.cup4-zone-name').text().trim() || $zone.text().trim();
+        return $zone.find('.cup4-zone-name').text().trim();
     }
 
-    /* ── Return to Pool ───────────────────── */
+    /* ── Zurück in die Listen ─────────────── */
     function returnToPool(id, name) {
-        if (!id) return;
-        // Check if already in pool
-        if ($('#pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
-        const $item = $('<div class="cup4-pool-item" data-id="' + id + '">' + name + '</div>');
+        if (!id || $('#pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
+        const $item = $(poolItemHtml(id, name));
         $('#pool-list').append($item);
         initDraggable($item);
         updatePoolCounter();
     }
 
     function returnToR2Pool(id, name) {
-        if (!id) return;
-        if ($('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
-        // Nachnominiert = nicht in R1-Gewinnern
-        const isNominated = !r1WinnerIds[String(id)];
-        let $item;
-        if (isNominated) {
-            $item = $(
-                '<div class="cup4-pool-item cup4-winner-item cup4-nominated" data-id="' + id + '" data-nominated="1">' +
-                '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.72rem;"></i>' +
-                name + ' <span class="cup4-nominated-badge">NR</span></div>'
-            );
-        } else {
-            $item = $(
-                '<div class="cup4-pool-item cup4-winner-item" data-id="' + id + '">' +
-                '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
-                name + '</div>'
-            );
-        }
+        if (!id || $('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
+        const $item = $(poolItemHtml(id, name, { nachruecker: !istR1Gewinner(id) }));
         $('#r2-pool-list').append($item);
         initDraggable($item);
         updateR2PoolCounter();
     }
 
-    /* ── Nachnominierung Hilfsfunktionen ── */
-    let r1WinnerIds = {}; // Cache: R1-Gewinner-IDs { "id": true }
-    let cupKatBToFinal = true; // Kat.-B-Gewinner qualifiziert sich automatisch fürs Finale
+    /* ── Nachrücker ───────────────────────── */
+    let r1WinnerIds = {}; // R1-Gewinner { "id": true }
+    let cupKatBToFinal = true; // Bester Kat. B rückt ins Finale nach
 
-    // Cup-Einstellungen für das aktuelle Jahr laden (Schalter setzen)
     function loadCupSettings(callback) {
         $.ajax({
             url: 'cup2/cup_settings.php',
-            data: { year: $('#yearSelect').val() },
+            data: { year: jahr() },
             dataType: 'json',
             success: function(resp) {
                 cupKatBToFinal = !resp || resp.katb_to_final !== 0;
@@ -551,7 +556,7 @@ $(document).ready(function() {
                 if (typeof callback === 'function') callback();
             },
             error: function(xhr) {
-                msvToast(msvXhrMessage(xhr, 'Cup-Einstellungen konnten nicht geladen werden – Standard (Kat. B ins Finale) angenommen'), 'warning');
+                msvToast(msvXhrMessage(xhr, 'Die Cup-Einstellungen konnten nicht geladen werden; es gilt der Standard (Kat. B rückt nach).'), 'warning');
                 cupKatBToFinal = true;
                 $('#katb-final-switch').prop('checked', true);
                 if (typeof callback === 'function') callback();
@@ -559,109 +564,91 @@ $(document).ready(function() {
         });
     }
 
-    function addNominatedToPool(id, name) {
-        if ($('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').length > 0) return;
-        const $item = $(
-            '<div class="cup4-pool-item cup4-winner-item cup4-nominated" data-id="' + id + '" data-nominated="1">' +
-            '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.72rem;"></i>' +
-            name +
-            ' <span class="cup4-nominated-badge">NR</span>' +
-            '</div>'
-        );
-        $('#r2-pool-list').append($item);
-        initDraggable($item);
-        updateR2PoolCounter();
+    // Gewinner aus Runde 1: gespeichert (Server) oder gerade erfasst (Anzeige)
+    function istR1Gewinner(id) {
+        return !!r1WinnerIds[String(id)] || $('#r1-pairs .cup4-participant-row.winner .cup4-drop-zone[data-id="' + id + '"]').length > 0;
     }
 
-    // Markiert Nachnominierte in R2-Paarungen (= Teilnehmer die NICHT R1-Gewinner sind)
+    function nachrueckerMarke($zone) {
+        if ($zone.find('.cup4-nr').length) return;
+        $zone.find('.cup4-zone-name').after('<span class="cup4-nr" data-tooltip="Nachrücker: in Runde 2, ohne Runde 1 gewonnen zu haben"><i class="bi bi-person-plus" aria-hidden="true"></i><span class="visually-hidden">(Nachrücker)</span></span>');
+    }
+
+    // Nachrücker in Runde-2-Paarungen markieren (= wer dort steht, ohne Runde 1 gewonnen zu haben)
     function markNachnominiertInR2() {
         $('#r2-pairs .cup4-drop-zone[data-id]').each(function() {
-            const id = $(this).attr('data-id');
-            if (id && !r1WinnerIds[id]) {
-                $(this).addClass('cup4-nachnominiert');
-                if ($(this).find('.cup4-nominated-badge').length === 0) {
-                    $(this).append(' <span class="cup4-nominated-badge">NR</span>');
-                }
-            }
+            if (!istR1Gewinner($(this).attr('data-id'))) nachrueckerMarke($(this));
         });
     }
 
-    /* ── Nachnominierung für R2 ──────────── */
-    $('#btn-nachnominierung').click(function() {
-        // IDs sammeln die bereits in R2 sind (Pool + Paarungen)
+    $('#btn-nachnominierung').on('click', function() {
         const usedInR2 = {};
-        $('#r2-pool-list .cup4-pool-item').each(function() {
-            usedInR2[$(this).attr('data-id')] = true;
-        });
-        $('#r2-pairs .cup4-drop-zone[data-id]').each(function() {
+        $('#r2-pool-list .cup4-pool-item, #r2-pairs .cup4-drop-zone[data-id]').each(function() {
             usedInR2[$(this).attr('data-id')] = true;
         });
 
-        // R1-Verlierer aus den Paarungen extrahieren
+        // Verlierer aus Runde 1, die noch nicht in Runde 2 stehen
         const losers = [];
-        $('#r1-pairs .cup4-pair-card').each(function() {
-            $(this).find('.cup4-participant-row.loser').each(function() {
-                const $zone = $(this).find('.cup4-drop-zone');
-                const id = $zone.attr('data-id');
-                const name = zoneName($zone);
-                if (id && name && !usedInR2[id]) {
-                    losers.push({ id: id, name: name });
-                }
-            });
+        $('#r1-pairs .cup4-participant-row.loser .cup4-drop-zone[data-id]').each(function() {
+            const id = $(this).attr('data-id');
+            if (!usedInR2[id]) losers.push({ id: id, name: zoneName($(this)) });
         });
 
         if (losers.length === 0) {
-            msvToast('Keine R1-Verlierer verf\u00fcgbar', 'info');
+            msvToast('In Runde 1 gibt es noch keinen Verlierer, der nachrücken könnte.', 'info');
             return;
         }
 
-        // Kompaktes Radio-Button HTML
-        let radioHtml = '<div style="text-align:left;max-height:220px;overflow-y:auto;">';
+        let radioHtml = '<div class="cup4-nr-wahl">';
         losers.forEach(function(l, i) {
-            radioHtml += '<label style="display:block;padding:0.4rem 0.5rem;margin:0;cursor:pointer;border-radius:6px;font-size:0.85rem;" ' +
-                'onmouseover="this.style.background=\'var(--ui-hover)\'" onmouseout="this.style.background=\'transparent\'">' +
-                '<input type="radio" name="nachn" value="' + l.id + '" data-name="' + l.name.replace(/"/g, '&quot;') + '" style="margin-right:0.5rem;"' +
-                (i === 0 ? ' checked' : '') + '>' + l.name + '</label>';
+            radioHtml += '<label><input type="radio" name="nachn" value="' + msvEsc(l.id) + '" data-name="' + msvEsc(l.name) + '"' +
+                (i === 0 ? ' checked' : '') + '> ' + msvEsc(l.name) + '</label>';
         });
         radioHtml += '</div>';
 
         msvSwal.fire({
-            title: 'NR w\u00e4hlen',
-            html: radioHtml,
+            title: 'Nachrücker für Runde 2',
+            html: '<p class="text-start mb-2">Wer aus Runde 1 rückt nach?</p>' + radioHtml,
             showCancelButton: true,
-            confirmButtonText: 'Nominieren',
+            confirmButtonText: 'Nachrücken lassen',
             cancelButtonText: 'Abbrechen',
             preConfirm: function() {
                 const checked = document.querySelector('input[name="nachn"]:checked');
-                if (!checked) { Swal.showValidationMessage('Bitte einen Verlierer w\u00e4hlen'); return false; }
+                if (!checked) { Swal.showValidationMessage('Bitte jemanden wählen.'); return false; }
                 return { id: checked.value, name: checked.getAttribute('data-name') };
             }
         }).then(function(result) {
             if (!result.isConfirmed) return;
-            addNominatedToPool(result.value.id, result.value.name);
+            returnToR2Pool(result.value.id, result.value.name);
             autoGenerateR2Pairs();
-            msvToast(result.value.name + ' f\u00fcr Runde 2 nominiert', 'success');
+            updateProgress();
+            msvToast(result.value.name + ' rückt in Runde 2 nach', 'success');
         });
     });
 
-    /* ── Remove Used Participants ──────────── */
+    /* ── Bereits eingeteilte aus der Teilnehmer-Liste nehmen ── */
     function removeUsedParticipants() {
         $('#r1-pairs .cup4-drop-zone[data-id], #r2-pairs .cup4-drop-zone[data-id]').each(function() {
-            const usedId = $(this).attr('data-id');
-            if (usedId) {
-                $('#pool-list .cup4-pool-item[data-id="' + usedId + '"]').remove();
-            }
+            $('#pool-list .cup4-pool-item[data-id="' + $(this).attr('data-id') + '"]').remove();
         });
         updatePoolCounter();
     }
 
-    /* ── Winner Highlight (Realtime) ──────── */
+    /* ── Gewinner (live) ──────────────────── */
+    function wahlKnopf($row, id, text) {
+        const nm = zoneName($row.find('.cup4-drop-zone'));
+        $row.addClass('cup4-tied').append(
+            '<button type="button" class="btn btn-outline-primary btn-sm cup4-tie-pick" data-winner-id="' + msvEsc(id) + '" aria-label="' + msvEsc(nm) + ' kommt weiter">' + text + '</button>'
+        );
+    }
+
     function updateWinnerHighlight($card) {
         if (!$card || $card.length === 0) return;
         const $rows = $card.find('.cup4-participant-row');
         $rows.removeClass('winner loser cup4-tied');
         $card.removeClass('cup4-pair-complete cup4-pair-tied');
-        $card.find('.cup4-tie-pick, .cup4-tie-eliminate').remove();
+        $card.find('.cup4-tie-pick').remove();
+        const $hinweis = $card.find('.cup4-pair-hinweis').text('');
 
         const manualWinner = $card.data('manual-winner');
 
@@ -671,33 +658,21 @@ $(document).ready(function() {
             const r1 = parseInt($rows.eq(0).find('.cup4-result').val()) || 0;
             const r2 = parseInt($rows.eq(1).find('.cup4-result').val()) || 0;
 
-            if (r1 === 0 && r2 === 0) { updateProgress(); return; }
+            if (r1 === 0 && r2 === 0) { srStatus($card); updateProgress(); folgerunden($card); return; }
 
-            // Manueller Gewinner hat Vorrang
             if (manualWinner) {
-                if (String(manualWinner) === String(id1)) {
-                    $rows.eq(0).addClass('winner');
-                    $rows.eq(1).addClass('loser');
-                } else {
-                    $rows.eq(1).addClass('winner');
-                    $rows.eq(0).addClass('loser');
-                }
+                const erster = String(manualWinner) === String(id1);
+                $rows.eq(erster ? 0 : 1).addClass('winner');
+                $rows.eq(erster ? 1 : 0).addClass('loser');
                 $card.addClass('cup4-pair-complete');
             } else if (r1 === r2 && r1 > 0) {
-                // Gleichstand — manuelle Wahl nötig
-                $rows.addClass('cup4-tied');
-                $card.addClass('cup4-pair-tied');
+                // Gleichstand: wer weiterkommt, wählt der Mensch
                 $rows.each(function() {
-                    const $zone = $(this).find('.cup4-drop-zone');
-                    const pid = $zone.attr('data-id');
-                    const name = zoneName($zone);
-                    if (pid) {
-                        $(this).append(
-                            '<button type="button" class="cup4-tie-pick" data-winner-id="' + pid + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
-                            '<i class="bi bi-trophy"></i></button>'
-                        );
-                    }
+                    const pid = $(this).find('.cup4-drop-zone').attr('data-id');
+                    if (pid) wahlKnopf($(this), pid, 'Weiter');
                 });
+                $hinweis.text('Gleichstand: wer kommt weiter?');
+                $card.addClass('cup4-pair-tied');
             } else if (r1 > r2) {
                 $rows.eq(0).addClass('winner');
                 $rows.eq(1).addClass('loser');
@@ -717,17 +692,16 @@ $(document).ready(function() {
                 });
             });
 
-            if (scores.every(s => s.r === 0)) { updateProgress(); return; }
+            if (scores.every(s => s.r === 0)) { srStatus($card); updateProgress(); folgerunden($card); return; }
 
             const advancers = parseInt($card.data('advancers'), 10) || 2;
             const mwVal = manualWinner ? parseInt(manualWinner) : 0;
 
             if (advancers === 1) {
-                // ── Nur EINER kommt weiter (Dreier-Gruppe) ──
+                // Nur einer kommt weiter
                 if (mwVal > 0) {
-                    const mwId = String(mwVal);
                     scores.forEach(function(s) {
-                        $rows.eq(s.idx).addClass(String(s.id) === mwId ? 'winner' : 'loser');
+                        $rows.eq(s.idx).addClass(String(s.id) === String(mwVal) ? 'winner' : 'loser');
                     });
                     $card.addClass('cup4-pair-complete');
                 } else {
@@ -735,47 +709,30 @@ $(document).ready(function() {
                     const maxR = scores[0].r;
                     const topTied = scores.filter(function(s) { return s.r === maxR; });
                     if (topTied.length === 1) {
-                        // Eindeutiger Bester gewinnt, die anderen zwei scheiden aus
                         $rows.eq(scores[0].idx).addClass('winner');
                         $rows.eq(scores[1].idx).addClass('loser');
                         $rows.eq(scores[2].idx).addClass('loser');
                         $card.addClass('cup4-pair-complete');
                     } else {
-                        // Gleichstand an der Spitze — den einen Gewinner manuell wählen
                         scores.forEach(function(s) {
-                            const $row = $rows.eq(s.idx);
-                            if (s.r === maxR) {
-                                $row.addClass('cup4-tied');
-                                const nm = zoneName($row.find('.cup4-drop-zone'));
-                                $row.append(
-                                    '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + nm + ' als Gewinner w&auml;hlen">' +
-                                    '<i class="bi bi-trophy"></i></button>'
-                                );
-                            } else {
-                                $row.addClass('loser');
-                            }
+                            if (s.r === maxR) wahlKnopf($rows.eq(s.idx), s.id, 'Weiter');
+                            else $rows.eq(s.idx).addClass('loser');
                         });
+                        $hinweis.text('Gleichstand: wer kommt weiter?');
                         $card.addClass('cup4-pair-tied');
                     }
                 }
             } else if (mwVal < 0) {
-                // Negative ManualWinner = allThreeTied-Auflösung: abs(ID) ist der Verlierer
+                // Negativer manueller Gewinner = Dreier-Gleichstand aufgelöst: abs(ID) ist ausgeschieden
                 const loserId = String(Math.abs(mwVal));
                 scores.forEach(function(s) {
-                    if (String(s.id) === loserId) {
-                        $rows.eq(s.idx).addClass('loser');
-                    } else {
-                        $rows.eq(s.idx).addClass('winner');
-                    }
+                    $rows.eq(s.idx).addClass(String(s.id) === loserId ? 'loser' : 'winner');
                 });
                 $card.addClass('cup4-pair-complete');
             } else if (mwVal > 0) {
-                // Positive ManualWinner = bottomTwoTied-Auflösung: ID ist der Gewinner
+                // Positiver manueller Gewinner = Gleichstand um Platz 2 aufgelöst
                 const mwId = String(mwVal);
-                scores.forEach(function(s) {
-                    $rows.eq(s.idx).addClass(String(s.id) === mwId ? 'winner' : '');
-                });
-                // Aus den verbleibenden den besseren als Gewinner, schlechteren als Verlierer
+                $rows.eq(scores.find(s => String(s.id) === mwId).idx).addClass('winner');
                 const remaining = scores.filter(s => String(s.id) !== mwId).sort((a, b) => b.r - a.r);
                 $rows.eq(remaining[0].idx).addClass('winner');
                 $rows.eq(remaining[1].idx).addClass('loser');
@@ -788,58 +745,25 @@ $(document).ready(function() {
                 const bottomTwoTied = !allThreeTied && !topTwoTied && scores[1].r === scores[2].r && scores[1].r > 0;
 
                 if (allThreeTied) {
-                    // Alle drei gleich — Gewinner wählen (2 Klicks nötig)
+                    // Alle drei gleich: zwei nacheinander wählen; der Hinweis sagt, wo man steht
                     const firstWinner = $card.data('first-winner');
-                    if (firstWinner) {
-                        // 1. Gewinner bereits gewählt — 2. Gewinner wählen
-                        const fwId = String(firstWinner);
-                        scores.forEach(function(s) {
-                            const $row = $rows.eq(s.idx);
-                            if (String(s.id) === fwId) {
-                                $row.addClass('winner');
-                            } else {
-                                $row.addClass('cup4-tied');
-                                const name = zoneName($row.find('.cup4-drop-zone'));
-                                $row.append(
-                                    '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 2. Gewinner w&auml;hlen">' +
-                                    '<i class="bi bi-trophy"></i></button>'
-                                );
-                            }
-                        });
-                    } else {
-                        // Noch kein Gewinner gewählt — 1. Gewinner wählen
-                        scores.forEach(function(s) {
-                            const $row = $rows.eq(s.idx);
-                            $row.addClass('cup4-tied');
-                            const name = zoneName($row.find('.cup4-drop-zone'));
-                            $row.append(
-                                '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als 1. Gewinner w&auml;hlen">' +
-                                '<i class="bi bi-trophy"></i></button>'
-                            );
-                        });
-                    }
+                    scores.forEach(function(s) {
+                        if (firstWinner && String(s.id) === String(firstWinner)) $rows.eq(s.idx).addClass('winner');
+                        else wahlKnopf($rows.eq(s.idx), s.id, 'Weiter');
+                    });
+                    $hinweis.text(firstWinner ? 'Gleichstand: wer kommt als Zweiter weiter?' : 'Gleichstand: wähle die zwei, die weiterkommen.');
                     $card.addClass('cup4-pair-tied');
                 } else if (topTwoTied) {
-                    // Pos 1+2 gleichauf — beide kommen weiter, Pos 3 verliert
                     $rows.eq(scores[0].idx).addClass('winner');
                     $rows.eq(scores[1].idx).addClass('winner');
                     $rows.eq(scores[2].idx).addClass('loser');
                     $card.addClass('cup4-pair-complete');
                 } else if (bottomTwoTied) {
-                    // Pos 1 gewinnt klar, Pos 2+3 gleichauf — manuelle Wahl für Platz 2
                     $rows.eq(scores[0].idx).addClass('winner');
-                    [scores[1], scores[2]].forEach(function(s) {
-                        const $row = $rows.eq(s.idx);
-                        $row.addClass('cup4-tied');
-                        const name = zoneName($row.find('.cup4-drop-zone'));
-                        $row.append(
-                            '<button type="button" class="cup4-tie-pick" data-winner-id="' + s.id + '" data-tooltip="' + name + ' als Gewinner w&auml;hlen">' +
-                            '<i class="bi bi-trophy"></i></button>'
-                        );
-                    });
+                    [scores[1], scores[2]].forEach(function(s) { wahlKnopf($rows.eq(s.idx), s.id, 'Weiter'); });
+                    $hinweis.text('Gleichstand um Platz 2: wer kommt weiter?');
                     $card.addClass('cup4-pair-tied');
                 } else {
-                    // Alle drei unterschiedlich — Top 2 gewinnen, Letzter verliert
                     $rows.eq(scores[0].idx).addClass('winner');
                     $rows.eq(scores[1].idx).addClass('winner');
                     $rows.eq(scores[2].idx).addClass('loser');
@@ -848,327 +772,172 @@ $(document).ready(function() {
             }
         }
 
+        srStatus($card);
         updateProgress();
-
-        // Live-Vorschau: R1-Gewinner sofort im R2-Pool anzeigen
-        if ($card.closest('#r1-pairs').length) {
-            extractR1WinnersToR2Pool();
-        }
-        // Live-Vorschau: R2-Gewinner sofort im Finale anzeigen
-        if ($card.closest('#r2-pairs').length) {
-            extractR2WinnersToFinale();
-        }
+        folgerunden($card);
     }
 
-    /* ── Live R1 Winners → R2 Pool ─────────── */
+    // Sieg und Niederlage nicht nur über Farbe: Text für Bildschirmleser
+    function srStatus($card) {
+        $card.find('.cup4-participant-row').each(function() {
+            const $r = $(this);
+            $r.find('.cup4-sr-status').text($r.hasClass('winner') ? 'kommt weiter' : $r.hasClass('loser') ? 'ausgeschieden' : $r.hasClass('cup4-tied') ? 'Gleichstand' : '');
+        });
+    }
+
+    // Live-Vorschau: Gewinner von Runde 1 sofort in Runde 2, von Runde 2 sofort im Finale
+    let cupLaedt = false;
+    function folgerunden($card) {
+        if (cupLaedt) return;
+        if ($card.closest('#r1-pairs').length) extractR1WinnersToR2Pool();
+        if ($card.closest('#r2-pairs').length) extractR2WinnersToFinale();
+    }
+
+    /* ── Gewinner Runde 1 → Runde 2 (live) ── */
     function extractR1WinnersToR2Pool() {
-        // Alle IDs sammeln die bereits in R2-Paarungen platziert sind
         const usedInR2 = {};
-        $('#r2-pairs .cup4-drop-zone[data-id]').each(function() {
-            const id = $(this).attr('data-id');
-            if (id) usedInR2[id] = true;
-        });
+        $('#r2-pairs .cup4-drop-zone[data-id]').each(function() { usedInR2[$(this).attr('data-id')] = true; });
 
-        // Gewinner aus allen R1-Cards extrahieren
         const liveWinners = [];
-        const r1Cards = $('#r1-pairs .cup4-pair-card');
-        r1Cards.each(function() {
-            const $card = $(this);
-            // Nur abgeschlossene Paarungen (mit eindeutigem Gewinner)
-            if (!$card.hasClass('cup4-pair-complete')) return;
-
-            $card.find('.cup4-participant-row.winner').each(function() {
-                const $zone = $(this).find('.cup4-drop-zone');
-                const id = $zone.attr('data-id');
-                const name = zoneName($zone);
-                if (id && name && !usedInR2[id]) {
-                    liveWinners.push({ id: id, name: name });
-                }
-            });
+        $('#r1-pairs .cup4-pair-card.cup4-pair-complete .cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
+            const id = $(this).attr('data-id');
+            if (!usedInR2[id]) liveWinners.push({ id: id, name: zoneName($(this)) });
         });
 
-        // Bestehende server-seitige Items beibehalten (haben evtl. andere Daten)
-        // Nur live-preview Items aktualisieren
         const $pool = $('#r2-pool-list');
-
-        // Entferne alte live-preview Items
+        // Gespeicherte Einträge bleiben; Vorschau-Einträge werden neu aufgebaut
         $pool.find('.cup4-pool-item[data-live-preview]').remove();
-
-        // Füge aktuelle live-preview Items hinzu (nur wenn nicht schon als server-Item vorhanden)
         liveWinners.forEach(function(w) {
             if ($pool.find('.cup4-pool-item[data-id="' + w.id + '"]').length === 0) {
-                const $item = $(
-                    '<div class="cup4-pool-item cup4-winner-item" data-id="' + w.id + '" data-live-preview="1">' +
-                    '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
-                    w.name + '</div>'
-                );
+                const $item = $(poolItemHtml(w.id, w.name, { live: true }));
                 $pool.append($item);
                 initDraggable($item);
             }
         });
 
-        // Entferne live-preview Items deren Gewinner-Status sich geändert hat
-        $pool.find('.cup4-pool-item[data-live-preview]').each(function() {
-            const id = $(this).attr('data-id');
-            const stillWinner = liveWinners.some(function(w) { return w.id === id; });
-            if (!stillWinner) $(this).remove();
-        });
-
-        // R2-Pool als Droppable initialisieren (falls noch nicht geschehen)
-        if ($pool.children().length > 0 && !$pool.data('ui-droppable')) {
-            $pool.droppable({
-                accept: '.cup4-drop-zone[data-id]',
-                drop: function(event, ui) {
-                    const id = ui.helper.data('id');
-                    const text = ui.helper.text().trim();
-                    const $item = $('<div class="cup4-pool-item cup4-winner-item" data-id="' + id + '" data-live-preview="1">' +
-                                   '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
-                                   text + '</div>');
-                    $(this).append($item);
-                    initDraggable($item);
-                    updateR2PoolCounter();
-                }
-            });
-        }
-
         updateR2PoolCounter();
         autoGenerateR2Pairs();
     }
 
-    /* ── Live R2 Winners → Finale ────────────── */
+    /* ── Gewinner Runde 2 → Finale (live) ──── */
     function extractR2WinnersToFinale() {
         const liveFinalists = [];
-        $('#r2-pairs .cup4-pair-card.cup4-pair-complete').each(function() {
-            $(this).find('.cup4-participant-row.winner').each(function() {
-                const $zone = $(this).find('.cup4-drop-zone');
-                const id = $zone.attr('data-id');
-                const name = zoneName($zone);
-                if (id && name) liveFinalists.push({ id: id, name: name });
-            });
+        $('#r2-pairs .cup4-pair-card.cup4-pair-complete .cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
+            liveFinalists.push({ id: $(this).attr('data-id'), name: zoneName($(this)) });
         });
 
         const $list = $('#final-list');
-
-        // Alte Live-Preview-Items entfernen
         $list.find('.cup4-final-item[data-live-preview]').remove();
-
-        // Neue hinzufügen (nur wenn nicht schon als gespeichertes Item vorhanden)
         liveFinalists.forEach(function(f) {
             if ($list.find('.cup4-final-name[data-id="' + f.id + '"]').length === 0) {
-                $list.append(
-                    '<div class="cup4-final-item" data-live-preview="1">' +
-                    '<span class="cup4-final-name" data-id="' + f.id + '">' + f.name + '</span>' +
-                    '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-                    '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte"></div>' +
-                    '<button type="button" class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
-                    '</div>'
-                );
-            }
-        });
-
-        // Entferne live-preview Items deren Gewinner-Status sich geändert hat
-        $list.find('.cup4-final-item[data-live-preview]').each(function() {
-            const id = $(this).find('.cup4-final-name').data('id');
-            if (!liveFinalists.some(function(f) { return f.id == id; })) {
-                $(this).remove();
+                $list.append(finalItemHtml(f.id, f.name, '', { live: true }));
             }
         });
 
         updateProgress();
     }
 
-    /* ── Auto-Generate R2 Pair Slots ───────── */
+    /* ── Plätze in Runde 2 automatisch ─────── */
     function autoGenerateR2Pairs() {
-        // Zähle verfügbare Gewinner im R2-Pool (ohne Kat. B Qualifier)
-        const availableInPool = $('#r2-pool-list .cup4-pool-item:not(.cup4-katb-qualifier)').length;
-        // Zähle bereits in R2-Paarungen platzierte Teilnehmer
+        const availableInPool = $('#r2-pool-list .cup4-pool-item').length;
         const placedInR2 = $('#r2-pairs .cup4-drop-zone[data-id]').length;
         const totalR2 = availableInPool + placedInR2;
 
         if (totalR2 < 2) return;
 
-        // Soll-Konfiguration: bei ungerader Anzahl eine 3er-Paarung, Rest 2er
-        // 5 → 1×3er + 1×2er = 2 Cards | 6 → 3×2er = 3 Cards | 7 → 1×3er + 2×2er = 3 Cards
+        // Bei ungerader Anzahl eine Dreier-Paarung, sonst Zweier
+        // 5 → 1 Dreier + 1 Zweier | 6 → 3 Zweier | 7 → 1 Dreier + 2 Zweier
         const need3 = (totalR2 % 2 !== 0) ? 1 : 0;
-        const remaining = totalR2 - (need3 * 3);
-        const need2 = Math.max(0, remaining / 2);
+        const need2 = Math.max(0, (totalR2 - need3 * 3) / 2);
 
-        // Ist-Konfiguration ermitteln
-        const $filledCards = [];
-        const $emptyCards = [];
+        const filled = [], empty = [];
         $('#r2-pairs .cup4-pair-card').each(function() {
-            const $card = $(this);
-            const filledZones = $card.find('.cup4-drop-zone[data-id]').length;
-            const is3 = $card.find('.cup4-participant-row').length === 3;
-            if (filledZones > 0) {
-                $filledCards.push({ $el: $card, is3: is3 });
-            } else {
-                $emptyCards.push({ $el: $card, is3: is3 });
-            }
+            const c = { $el: $(this), is3: $(this).find('.cup4-participant-row').length === 3 };
+            ($(this).find('.cup4-drop-zone[data-id]').length > 0 ? filled : empty).push(c);
         });
 
         let filled3 = 0, filled2 = 0, empty3 = 0, empty2 = 0;
-        $filledCards.forEach(function(c) { c.is3 ? filled3++ : filled2++; });
-        $emptyCards.forEach(function(c) { c.is3 ? empty3++ : empty2++; });
+        filled.forEach(function(c) { c.is3 ? filled3++ : filled2++; });
+        empty.forEach(function(c) { c.is3 ? empty3++ : empty2++; });
 
-        // Prüfe ob Rekonfiguration nötig
         if ((filled3 + empty3) === need3 && (filled2 + empty2) === need2) return;
 
-        // Leere Cards entfernen
-        $emptyCards.forEach(function(c) { c.$el.remove(); });
-
-        // Restbedarf berechnen (abzüglich gefüllter Cards)
+        empty.forEach(function(c) { c.$el.remove(); });
         const gen3 = Math.max(0, need3 - filled3);
         const gen2 = Math.max(0, need2 - filled2);
-
         if (gen3 > 0) generatePairSlots(gen3, '#r2-pairs', 3);
         if (gen2 > 0) generatePairSlots(gen2, '#r2-pairs', 2);
     }
 
-    // Bind realtime input event (delegated)
-    $(document).on('input', '.cup4-result', function() {
+    // Resultat geändert: Gewinner neu bestimmen; eine angefangene Dreier-Wahl gilt nicht mehr
+    $(document).on('input', '.cup4-pair-card .cup4-result', function() {
         const $card = $(this).closest('.cup4-pair-card');
-        // Bei Ergebnis-Änderung: Zwischenstatus zurücksetzen
         $card.removeData('first-winner').removeAttr('data-first-winner');
         updateWinnerHighlight($card);
     });
+    $(document).on('input', '#final-list .cup4-result', updateProgress);
 
-    // Tie-Breaker: Klick auf Gewinner-Button
+    // Gleichstand: Gewinner wählen. Gespeichert wird mit «Speichern» (zusammen mit den Resultaten).
     $(document).on('click', '.cup4-tie-pick', function(e) {
         e.preventDefault();
         cupMarkieren(true);
         const $card = $(this).closest('.cup4-pair-card');
-        const pairId = $card.data('pair-id');
         const winnerId = $(this).data('winner-id');
         const $rows = $card.find('.cup4-participant-row');
         const isThreeWay = $rows.length === 3;
         const firstWinner = $card.data('first-winner');
         const advancers = parseInt($card.data('advancers'), 10) || 2;
 
-        // 3-Way allThreeTied: 2-Klick-Flow (nur wenn 2 weiterkommen)
+        // Dreier, alle gleich, zwei kommen weiter: erster Klick merkt den ersten
         if (isThreeWay && advancers === 2 && !firstWinner && !$card.data('manual-winner')) {
-            // Prüfe ob allThreeTied (alle Resultate gleich)
             const vals = [];
             $rows.each(function() { vals.push(parseInt($(this).find('.cup4-result').val()) || 0); });
-            const allEqual = vals[0] > 0 && vals.every(v => v === vals[0]);
-
-            if (allEqual) {
-                // 1. Klick: ersten Gewinner merken
+            if (vals[0] > 0 && vals.every(v => v === vals[0])) {
                 $card.data('first-winner', winnerId);
                 updateWinnerHighlight($card);
-                const $zone = $card.find('.cup4-drop-zone[data-id="' + winnerId + '"]');
-                const name = zoneName($zone) || 'Gewinner';
-                msvToast(name + ' als 1. Gewinner \u2014 bitte 2. w\u00e4hlen', 'info');
+                $card.find('.cup4-tie-pick').first().trigger('focus');
                 return;
             }
         }
 
         if (isThreeWay && firstWinner) {
-            // 2. Klick: zweiten Gewinner → Verlierer ermitteln → negative ManualWinner
-            const allIds = [];
-            $rows.each(function() { allIds.push($(this).find('.cup4-drop-zone').attr('data-id')); });
+            // Zweiter Klick: der Dritte scheidet aus → negativer manueller Gewinner
+            const allIds = $rows.map(function() { return $(this).find('.cup4-drop-zone').attr('data-id'); }).get();
             const loserId = allIds.find(id => String(id) !== String(firstWinner) && String(id) !== String(winnerId));
-            const negativeId = -Math.abs(parseInt(loserId));
-
-            $card.removeData('first-winner').removeAttr('data-first-winner');
-            $card.attr('data-manual-winner', negativeId).data('manual-winner', negativeId);
-            updateWinnerHighlight($card);
-
-            const $loserZone = $card.find('.cup4-drop-zone[data-id="' + loserId + '"]');
-            const loserName = zoneName($loserZone);
-
-            if (!pairId) {
-                msvToast('Gewinner gew\u00e4hlt (' + loserName + ' ausgeschieden)', 'success');
-                return;
-            }
-
-            // Serverseitig aktualisieren
-            $.ajax({
-                url: 'cup2/set_manual_winner.php',
-                method: 'POST',
-                data: { pair_id: pairId, winner_id: negativeId, reason: 'Dreier-Gleichstand - manuell', csrf_token: CUP4_CSRF },
-                dataType: 'json',
-                success: function(resp) {
-                    if (resp.success) {
-                        msvToast('Gewinner gew\u00e4hlt (' + loserName + ' ausgeschieden)', 'success');
-                    } else {
-                        msvToast('Fehler: ' + resp.message, 'error');
-                    }
-                },
-                error: function() { msvToast('Verbindungsfehler', 'error'); }
-            });
-            return;
+            $card.removeData('first-winner');
+            $card.attr('data-manual-winner', -Math.abs(parseInt(loserId))).data('manual-winner', -Math.abs(parseInt(loserId)));
+        } else {
+            $card.attr('data-manual-winner', winnerId).data('manual-winner', winnerId);
         }
-
-        // Standard 2-Way Tie oder bottomTwoTied: positiver ManualWinner
-        $card.attr('data-manual-winner', winnerId).data('manual-winner', winnerId);
         updateWinnerHighlight($card);
-
-        if (!pairId) {
-            const $zone = $card.find('.cup4-drop-zone[data-id="' + winnerId + '"]');
-            const name = zoneName($zone) || 'Gewinner';
-            msvToast(name + ' als Gewinner vorgemerkt', 'success');
-            return;
-        }
-
-        $.ajax({
-            url: 'cup2/set_manual_winner.php',
-            method: 'POST',
-            data: { pair_id: pairId, winner_id: winnerId, reason: 'Gleichstand - manuell', csrf_token: CUP4_CSRF },
-            dataType: 'json',
-            success: function(resp) {
-                if (resp.success) {
-                    msvToast((resp.data.winner_name || 'Gewinner') + ' manuell gew\u00e4hlt', 'success');
-                } else {
-                    msvToast('Fehler: ' + resp.message, 'error');
-                }
-            },
-            error: function() { msvToast('Verbindungsfehler', 'error'); }
-        });
     });
 
-    // Dreier-Gruppe: Umschalten wie viele weiterkommen (1 oder 2)
+    // Dreier: wie viele kommen weiter (1 oder 2)
     $(document).on('click', '.cup4-adv-btn', function(e) {
         e.preventDefault();
-        cupMarkieren(true);
         const $btn = $(this);
         const $card = $btn.closest('.cup4-pair-card');
         const adv = parseInt($btn.data('adv'), 10);
         if ((parseInt($card.data('advancers'), 10) || 2) === adv) return;
+        cupMarkieren(true);
 
         const isR1 = $card.closest('#r1-pairs').length > 0;
 
-        // Gewinner VOR dem Wechsel merken (um demovierte Teilnehmer zu finden)
+        // Gewinner vor dem Wechsel merken (um Ausscheidende in Runde 2 zu finden)
         const winnersBefore = {};
         $card.find('.cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
             winnersBefore[$(this).attr('data-id')] = true;
         });
 
         $card.attr('data-advancers', adv).data('advancers', adv);
-        $card.find('.cup4-adv-btn').removeClass('active');
-        $btn.addClass('active');
+        $card.find('.cup4-adv-btn').attr('aria-pressed', 'false');
+        $btn.attr('aria-pressed', 'true');
 
-        // Bisherige (Tie-)Auswahl wird durch den Wechsel ungültig → zurücksetzen
-        const hadManual = $card.data('manual-winner');
-        $card.removeData('first-winner').removeAttr('data-first-winner');
-        $card.removeData('manual-winner').removeAttr('data-manual-winner');
-
-        const pairId = $card.data('pair-id');
-        if (pairId && hadManual) {
-            // Manuellen Gewinner auch serverseitig löschen
-            $.ajax({
-                url: 'cup2/set_manual_winner.php',
-                method: 'POST',
-                data: { pair_id: pairId, winner_id: '', reason: 'Anzahl Weiterkommende geändert', csrf_token: CUP4_CSRF },
-                dataType: 'json',
-                error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Manueller Gewinner konnte serverseitig nicht gelöscht werden'), 'error'); }
-            });
-        }
-
-        // Neu auswerten (aktualisiert bei R1-Cards auch den R2-Pool-Vorschau)
+        // Eine frühere Gleichstand-Wahl gilt nicht mehr
+        gewinnerwahlZuruecksetzen($card);
         updateWinnerHighlight($card);
 
-        // Folgerunde anpassen: Teilnehmer, die nicht mehr weiterkommen, aus R2 entfernen
+        // Folgerunde anpassen: wer nicht mehr weiterkommt, verlässt Runde 2
         if (isR1) {
             const winnersAfter = {};
             $card.find('.cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
@@ -1176,144 +945,69 @@ $(document).ready(function() {
             });
             let removedFromR2 = false;
             Object.keys(winnersBefore).forEach(function(id) {
-                if (winnersAfter[id]) return; // kommt weiterhin weiter
-                // Aus platzierten R2-Paarungen entfernen
+                if (winnersAfter[id]) return;
                 $('#r2-pairs .cup4-drop-zone[data-id="' + id + '"]').each(function() {
-                    $(this).removeAttr('data-id').empty().removeClass('cup4-nachnominiert');
+                    $(this).removeAttr('data-id').empty();
                     const $c = $(this).closest('.cup4-pair-card');
-                    $c.find('.cup4-participant-row').removeClass('winner loser');
-                    $c.removeClass('cup4-pair-complete cup4-pair-tied');
+                    gewinnerwahlZuruecksetzen($c);
+                    updateWinnerHighlight($c);
                     removedFromR2 = true;
                 });
-                // Aus dem R2-Pool entfernen (auch gespeicherte Items)
                 $('#r2-pool-list .cup4-pool-item[data-id="' + id + '"]').remove();
-                if (r1WinnerIds) delete r1WinnerIds[String(id)];
+                delete r1WinnerIds[String(id)];
             });
             if (removedFromR2) {
                 updateR2PoolCounter();
                 autoGenerateR2Pairs();
             }
         }
-
-        msvToast(adv === 1 ? 'Nur 1 kommt weiter — Folgerunde angepasst' : '2 kommen weiter', 'info');
     });
 
-    /* ── Generate Pair Slots ──────────────── */
+    /* ── Leere Paarungen anlegen ──────────── */
     function generatePairSlots(count, target, size) {
         if (count <= 0) return;
         const $target = $(target);
-
+        const leer = { id: null, name: '', r: null };
         for (let i = 0; i < count; i++) {
-            let html;
-
-            if (size == 3) {
-                // 3-way — Default: 2 kommen weiter
-                html = '<div class="cup4-pair-card" data-advancers="2">';
-                html += buildParticipantRow() + '<div class="cup4-vs">vs</div>' +
-                        buildParticipantRow() + '<div class="cup4-vs">vs</div>' +
-                        buildParticipantRow();
-                html += advancersToggle(2);
-            } else {
-                // 2-way
-                html = '<div class="cup4-pair-card">';
-                html += buildParticipantRow() + '<div class="cup4-vs">vs</div>' +
-                        buildParticipantRow();
-            }
-
-            html += '<button type="button" class="cup4-card-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
-            html += '</div>';
-
-            $target.append(html);
+            $target.append(paarungHtml({ zeilen: size == 3 ? [leer, leer, leer] : [leer, leer], adv: 2 }));
         }
-
         initDroppable($target);
         updateProgress();
     }
 
-    function buildParticipantRow() {
-        return '<div class="cup4-participant-row">' +
-               '<div class="cup4-drop-zone"></div>' +
-               '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-               '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte"></div>' +
-               '</div>';
-    }
-
-    // Segmented-Toggle für Dreier-Gruppen: wie viele kommen weiter (1 oder 2)
-    function advancersToggle(val) {
-        const v = (parseInt(val, 10) === 1) ? 1 : 2;
-        return '<div class="cup4-adv-toggle" data-tooltip="Wie viele kommen weiter?">' +
-               '<i class="bi bi-arrow-up-right-circle"></i>' +
-               '<button type="button" class="cup4-adv-btn' + (v === 1 ? ' active' : '') + '" data-adv="1">1 weiter</button>' +
-               '<button type="button" class="cup4-adv-btn' + (v === 2 ? ' active' : '') + '" data-adv="2">2 weiter</button>' +
-               '</div>';
-    }
-
-    $('#generate-pairs').click(function() {
+    $('#generate-pairs').on('click', function() {
         const count = parseInt($('#pair-count').val()) || 0;
-        const size = $('#pair-size').val();
-        generatePairSlots(count, '#r1-pairs', size);
+        generatePairSlots(Math.min(count, 10), '#r1-pairs', $('#pair-size').val());
+        cupMarkieren(true);
     });
 
-    /* ── Load Saved Pairs ─────────────────── */
+    /* ── Gespeicherte Paarungen laden ─────── */
     function loadSavedPairs(round, targetList, callback) {
         $.ajax({
             url: 'cup2/fetch_pairs.php',
-            data: { round: round, year: $('#yearSelect').val() },
-            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Paarungen konnten nicht geladen werden'), 'error'); },
-            success: function(data) {
-                const pairs = typeof data === 'string' ? JSON.parse(data) : data;
+            data: { round: round, year: jahr() },
+            dataType: 'json',
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Die Paarungen konnten nicht geladen werden. Bitte die Seite neu laden.'), 'error'); },
+            success: function(pairs) {
                 const $target = $(targetList).empty();
-
-                pairs.forEach(function(pair) {
-                    let manualAttr = (pair.ManualWinner != null && pair.ManualWinner !== 0) ? ' data-manual-winner="' + pair.ManualWinner + '"' : '';
+                (pairs || []).forEach(function(pair) {
+                    const zeilen = [
+                        { id: pair.Participant1, name: pair.Name1 + ' ' + pair.Vorname1, r: pair.Result1 },
+                        { id: pair.Participant2, name: pair.Name2 + ' ' + pair.Vorname2, r: pair.Result2 }
+                    ];
                     const isThree = pair.Participant3 && pair.Participant3 !== 'NULL' && pair.Participant3 !== '0';
-                    const advVal = (parseInt(pair.Advancers, 10) === 1) ? 1 : 2;
-                    let advAttr = isThree ? ' data-advancers="' + advVal + '"' : '';
-                    let html = '<div class="cup4-pair-card" data-pair-id="' + pair.ID + '"' + manualAttr + advAttr + '>';
-
-                    function dropZoneHtml(id, name) {
-                        return '<div class="cup4-drop-zone" data-id="' + id + '">' +
-                               '<span class="cup4-zone-name">' + name + '</span>' +
-                               '<button type="button" class="cup4-zone-remove" data-tooltip="Entfernen" tabindex="-1">&times;</button></div>';
-                    }
-
-                    // Participant 1
-                    html += '<div class="cup4-participant-row">' +
-                            dropZoneHtml(pair.Participant1, pair.Name1 + ' ' + pair.Vorname1) +
-                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (pair.Result1 || '') + '"></div>' +
-                            '</div>';
-
-                    html += '<div class="cup4-vs">vs</div>';
-
-                    // Participant 2
-                    html += '<div class="cup4-participant-row">' +
-                            dropZoneHtml(pair.Participant2, pair.Name2 + ' ' + pair.Vorname2) +
-                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (pair.Result2 || '') + '"></div>' +
-                            '</div>';
-
-                    // Participant 3 (3-way)
-                    if (isThree) {
-                        html += '<div class="cup4-vs">vs</div>';
-                        html += '<div class="cup4-participant-row">' +
-                                dropZoneHtml(pair.Participant3, pair.Name3 + ' ' + pair.Vorname3) +
-                                '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-                                '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (pair.Result3 || '') + '"></div>' +
-                                '</div>';
-                        html += advancersToggle(advVal);
-                    }
-
-                    html += '<button type="button" class="cup4-card-remove" tabindex="-1" data-pair-id="' + pair.ID + '" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>';
-                    html += '</div>';
-
-                    $target.append(html);
+                    if (isThree) zeilen.push({ id: pair.Participant3, name: pair.Name3 + ' ' + pair.Vorname3, r: pair.Result3 });
+                    const mw = (pair.ManualWinner != null && parseInt(pair.ManualWinner, 10) !== 0) ? pair.ManualWinner : null;
+                    $target.append(paarungHtml({ id: pair.ID, zeilen: zeilen, adv: pair.Advancers, mw: mw }));
                 });
 
-                // Init droppable & highlight winners
                 initDroppable($target);
                 $target.find('.cup4-pair-card').each(function() {
-                    updateWinnerHighlight($(this));
+                    const $c = $(this);
+                    // Ohne Folgerunden-Vorschau: die Listen für Runde 2 und Finale kommen danach vom Server
+                    cupLaedt = true;
+                    updateWinnerHighlight($c);
+                    cupLaedt = false;
                 });
 
                 removeUsedParticipants();
@@ -1324,9 +1018,9 @@ $(document).ready(function() {
         });
     }
 
-    /* ── Load Winners for Round 2 ─────────── */
+    /* ── Gewinner für Runde 2 laden ───────── */
     function loadWinnersForRound2() {
-        // R1-Gewinner-IDs aus DOM cachen (ALLE R1-Gewinner, auch bereits in R2 platzierte)
+        // R1-Gewinner aus der Anzeige (auch die, die in Runde 2 schon einen Platz haben)
         r1WinnerIds = {};
         $('#r1-pairs .cup4-participant-row.winner .cup4-drop-zone[data-id]').each(function() {
             r1WinnerIds[$(this).attr('data-id')] = true;
@@ -1334,316 +1028,165 @@ $(document).ready(function() {
 
         $.ajax({
             url: 'cup2/fetch_winners.php',
-            data: { year: $('#yearSelect').val() },
-            success: function(data) {
-                const winners = typeof data === 'string' ? JSON.parse(data) : data;
+            data: { year: jahr() },
+            dataType: 'json',
+            success: function(winners) {
                 const $pool = $('#r2-pool-list').empty();
+                (winners || []).forEach(function(w) { r1WinnerIds[String(w.ID)] = true; });
 
-                // Auch die fetch_winners IDs hinzufügen (falls R1-Cards noch keine Winner-Klasse haben)
-                winners.forEach(function(w) {
-                    r1WinnerIds[String(w.ID)] = true;
-                });
-
-                if (winners.length > 0) {
-                    // Kat. B spielt normal in Runde 2 mit; der beste Kat. B aus R2
-                    // (Fallback R1) wird erst nach R2 als Finalist nachgerückt (checkKatBFinalist)
-                    winners.forEach(function(w) {
-                        $pool.append(
-                            '<div class="cup4-pool-item cup4-winner-item" data-id="' + w.ID + '">' +
-                            '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
-                            w.Name + ' ' + w.Vorname + '</div>'
-                        );
-                    });
-
-                    // Alle Gewinner draggable machen
-                    initDraggable('#r2-pool-list .cup4-pool-item');
-
-                    // Remove already used in R2 pairings
-                    $('#r2-pairs .cup4-drop-zone[data-id]').each(function() {
-                        const usedId = $(this).attr('data-id');
-                        if (usedId) {
-                            $('#r2-pool-list .cup4-pool-item[data-id="' + usedId + '"]').remove();
-                        }
-                    });
-
-                    // Nachnominierte aus gespeicherten R2-Paarungen zurück in Pool
-                    // (Teilnehmer in R2, die NICHT R1-Gewinner sind)
-                    const r2UsedNominated = [];
-                    $('#r2-pairs .cup4-drop-zone[data-id]').each(function() {
-                        const id = $(this).attr('data-id');
-                        if (id && !r1WinnerIds[id]) {
-                            r2UsedNominated.push(id);
-                        }
-                    });
-
-                    // Auto-generate R2 pair slots if needed
-                    autoGenerateR2Pairs();
-
-                    // Make R2 pool droppable (return items to pool)
-                    if (!$('#r2-pool-list').data('ui-droppable')) {
-                        $('#r2-pool-list').droppable({
-                            accept: '.cup4-drop-zone[data-id]',
-                            drop: function(event, ui) {
-                                const id = ui.helper.data('id');
-                                const text = ui.helper.text().trim();
-                                const isNominated = !r1WinnerIds[String(id)];
-                                let $item;
-                                if (isNominated) {
-                                    $item = $(
-                                        '<div class="cup4-pool-item cup4-winner-item cup4-nominated" data-id="' + id + '" data-nominated="1">' +
-                                        '<i class="bi bi-person-plus-fill me-1" style="color:var(--cup4-info);font-size:0.72rem;"></i>' +
-                                        text + ' <span class="cup4-nominated-badge">NR</span></div>'
-                                    );
-                                } else {
-                                    $item = $('<div class="cup4-pool-item cup4-winner-item" data-id="' + id + '">' +
-                                        '<i class="bi bi-trophy-fill me-1" style="color:var(--cup4-success);font-size:0.72rem;"></i>' +
-                                        text + '</div>');
-                                }
-                                $(this).append($item);
-                                initDraggable($item);
-                                updateR2PoolCounter();
-                            }
-                        });
+                // Kat. B spielt normal in Runde 2 mit; der beste Kat. B rückt erst danach ins Finale nach
+                (winners || []).forEach(function(w) {
+                    if ($('#r2-pairs .cup4-drop-zone[data-id="' + w.ID + '"]').length === 0) {
+                        $pool.append(poolItemHtml(w.ID, w.Name + ' ' + w.Vorname));
                     }
-                }
+                });
+                initDraggable('#r2-pool-list .cup4-pool-item');
+                autoGenerateR2Pairs();
 
-                // Nachnominierte in R2-Paarungen markieren
                 markNachnominiertInR2();
-
                 updateR2PoolCounter();
+                updateProgress();
                 loadFinalists();
             },
             error: function(xhr) {
-                msvToast(msvXhrMessage(xhr, 'Gewinner konnten nicht geladen werden'), 'error');
+                msvToast(msvXhrMessage(xhr, 'Die Gewinner aus Runde 1 konnten nicht geladen werden. Bitte die Seite neu laden.'), 'error');
             }
         });
     }
 
-    /* ── Load Finalists ───────────────────── */
+    /* ── Finalisten laden ─────────────────── */
     function loadFinalists() {
         $.ajax({
             url: 'cup2/fetch_final_results.php',
-            data: { year: $('#yearSelect').val() },
+            data: { year: jahr() },
             dataType: 'json',
             success: function(finalists) {
                 const $list = $('#final-list').empty();
                 if (!finalists.error && finalists.length > 0) {
                     finalists.forEach(function(f) {
-                        $list.append(
-                            '<div class="cup4-final-item">' +
-                            '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
-                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (f.Result || '') + '"></div>' +
-                            '<button type="button" class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
-                            '</div>'
-                        );
+                        $list.append(finalItemHtml(f.ID, f.Name + ' ' + f.Vorname, f.Result));
                     });
-
                     const hasResults = finalists.some(f => f.Result !== null && f.Result !== undefined && String(f.Result).trim() !== '');
                     if (hasResults) loadStandcupData();
                 }
-
                 updateProgress();
                 checkKatBFinalist();
             },
-            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Finalergebnisse konnten nicht geladen werden'), 'error'); }
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Die Finalresultate konnten nicht geladen werden. Bitte die Seite neu laden.'), 'error'); }
         });
     }
 
-    /* ── Kat B Check ──────────────────────── */
+    /* ── Bester Kat. B rückt nach ─────────── */
     function checkKatBFinalist() {
         $.ajax({
             url: 'cup2/check_katb_finalist.php',
-            data: { year: $('#yearSelect').val() },
+            data: { year: jahr() },
             dataType: 'json',
-            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Kat.-B-Prüfung fehlgeschlagen'), 'error'); },
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Der Kat.-B-Nachrücker konnte nicht ermittelt werden. Bitte die Seite neu laden.'), 'error'); },
             success: function(resp) {
-                if (resp.has_single_katb_winner && resp.katb_finalist) {
-                    const f = resp.katb_finalist;
-                    const roundTxt = (resp.source_round === 1) ? 'Runde 1' : 'Runde 2';
-                    // Show info
-                    if ($('#katb-info').length === 0) {
-                        const info = '<div id="katb-info" class="alert alert-info alert-sm py-2 px-3 mb-2" style="font-size:0.8125rem;">' +
-                                     '<strong>Kat. B:</strong> ' + f.Name + ' ' + f.Vorname + ' (bester Kat. B aus ' + roundTxt + ') r&uuml;ckt ins Finale nach.</div>';
-                        $('#final-col .cup4-round-header').after(info);
-                    }
-                    // Add to final list if not present
-                    if ($('#final-list .cup4-final-name[data-id="' + f.ID + '"]').length === 0) {
-                        $('#final-list').append(
-                            '<div class="cup4-final-item">' +
-                            '<span class="cup4-final-name" data-id="' + f.ID + '">' + f.Name + ' ' + f.Vorname + '</span>' +
-                            '<div class="cup4-input-group"><span class="cup4-result-label" aria-hidden="true">Pkt</span>' +
-                            '<input type="number" class="cup4-result form-control" min="0" max="100" aria-label="Punkte" value="' + (f.Result || '') + '"></div>' +
-                            '<button type="button" class="cup4-btn-sm cup4-btn-remove" tabindex="-1" data-tooltip="Entfernen"><i class="bi bi-x-lg"></i></button>' +
-                            '</div>'
-                        );
-                        updateProgress();
-                    }
+                if (!(resp.has_single_katb_winner && resp.katb_finalist)) return;
+                const f = resp.katb_finalist;
+                if ($('#final-list .cup4-final-name[data-id="' + f.ID + '"]').length === 0) {
+                    $('#final-list').append(finalItemHtml(f.ID, f.Name + ' ' + f.Vorname, f.Result, { katb: true }));
+                    updateProgress();
                 }
             }
         });
     }
 
-    /* ── Save All ─────────────────────────── */
-    $('#save-all').click(function() {
-        const $btn = $(this);
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Speichere...');
-
-        // ALLE ManualWinner sammeln (vor dem Speichern, da Cards danach neu geladen werden)
-        // Sowohl gespeicherte (pair-id bekannt) als auch neue (pair-id unbekannt)
-        const allManualWinners = [];
-        $('#r1-pairs .cup4-pair-card, #r2-pairs .cup4-pair-card').each(function() {
-            const mw = $(this).data('manual-winner');
-            if (!mw) return;
-            const pairId = $(this).data('pair-id');
-            const reason = parseInt(mw) < 0 ? 'Dreier-Gleichstand - manuell' : 'Gleichstand - manuell';
-            if (pairId) {
-                // Bereits gespeichert — Pair-ID bekannt → direkt setzen
-                allManualWinners.push({ pairId: pairId, winnerId: mw, reason: reason });
-            } else {
-                // Noch nicht gespeichert — Teilnehmer-IDs merken um Paar nach Save zu identifizieren
-                const ids = [];
-                $(this).find('.cup4-drop-zone[data-id]').each(function() {
-                    ids.push($(this).attr('data-id'));
+    /* ── Speichern ────────────────────────── */
+    // Ein POST als Promise: erfüllt nur bei Erfolg. Antworten mit success:false (auch HTTP 207, Teilerfolg)
+    // gelten als Fehler, damit nie «Gespeichert» erscheint, wenn etwas fehlt.
+    function cupPost(url, data, wasFehlt) {
+        return new Promise(function(ok, fehler) {
+            $.ajax({ url: url, method: 'POST', data: data, dataType: 'json' })
+                .done(function(r) {
+                    if (r && r.success === false) fehler(r.message || (r.errors || []).join(' ') || wasFehlt + ' wurde nicht gespeichert.');
+                    else ok(r);
+                })
+                .fail(function(xhr) {
+                    const r = xhr.responseJSON;
+                    fehler((r && (r.message || r.error)) || msvXhrMessage(xhr, wasFehlt + ' wurde nicht gespeichert.'));
                 });
-                const round = $(this).closest('#r1-pairs').length ? 1 : 2;
-                allManualWinners.push({ winnerId: mw, p1: ids[0], p2: ids[1], round: round, reason: reason });
-            }
         });
+    }
 
-        const year = $('#yearSelect').val();
-        const promises = [];
+    $('#save-all').on('click', function() {
+        const $btn = $(this);
+        const year = jahr();
+        const auftraege = [];
 
-        // Round 1
         const r1 = collectPairs('#r1-pairs');
-        if (r1.length > 0) {
-            promises.push($.ajax({
-                url: 'cup2/save_pairs.php', method: 'POST',
-                data: { pairs: JSON.stringify(r1), year: year, round: 1 }
-            }));
-        }
-
-        // Round 2
+        if (r1.length) auftraege.push(cupPost('cup2/save_pairs.php', { pairs: JSON.stringify(r1), year: year, round: 1 }, 'Runde 1'));
         const r2 = collectPairs('#r2-pairs');
-        if (r2.length > 0) {
-            promises.push($.ajax({
-                url: 'cup2/save_pairs.php', method: 'POST',
-                data: { pairs: JSON.stringify(r2), year: year, round: 2 }
-            }));
-        }
-
-        // Final
+        if (r2.length) auftraege.push(cupPost('cup2/save_pairs.php', { pairs: JSON.stringify(r2), year: year, round: 2 }, 'Runde 2'));
         const fin = collectFinalResults();
-        if (fin.length > 0) {
-            promises.push($.ajax({
-                url: 'cup2/save_finalresults.php', method: 'POST',
-                data: { pairs: JSON.stringify(fin), year: year }
-            }));
+        if (fin.length) auftraege.push(cupPost('cup2/save_finalresults.php', { pairs: JSON.stringify(fin), year: year }, 'Das Finale'));
+        if (cupStandcupGeaendert) {
+            const names = [1, 2, 3].map(i => $('#sc-name-' + i).val().trim());
+            const results = [1, 2, 3].map(i => $('#sc-result-' + i).val());
+            if (names.some(n => !n) || results.some(r => r === '')) {
+                auftraege.push(Promise.reject('Standcup: bitte für alle drei Vereine Name und Punkte eintragen.'));
+            } else {
+                auftraege.push(cupPost('cup2/save_standcupfinal.php', {
+                    participant1_name: names[0], participant1_result: results[0],
+                    participant2_name: names[1], participant2_result: results[1],
+                    participant3_name: names[2], participant3_result: results[2],
+                    year: year
+                }, 'Der Standcup'));
+            }
         }
 
-        if (promises.length === 0) {
-            msvToast('Keine Daten zum Speichern', 'warning');
-            $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Speichern');
+        if (auftraege.length === 0) {
+            msvToast('Es gibt noch nichts zu speichern.', 'info');
+            cupMarkieren(false);
+            cupGespeichert(true);
             return;
         }
 
-        $.when.apply($, promises).done(function() {
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Speichere…');
+        const fertig = function() { $btn.prop('disabled', false).html('<i class="bi bi-save me-1" aria-hidden="true"></i>Speichern'); };
+
+        Promise.allSettled(auftraege).then(function(ergebnisse) {
+            const fehler = ergebnisse.filter(e => e.status === 'rejected').map(e => String(e.reason));
+            fertig();
+            if (fehler.length) {
+                cupJahrNachher = null;
+                cupGespeichert(false);
+                msvError('Nicht alles gespeichert. ' + fehler.join(' ') + ' Die Eingaben sind noch da; bitte korrigieren und nochmals speichern.');
+                return;
+            }
             cupMarkieren(false);
             msvToast('Gespeichert', 'success');
-            $btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Gespeichert');
-            setTimeout(function() {
-                $btn.html('<i class="bi bi-save me-1"></i>Speichern');
-            }, 2000);
-
-            // ManualWinner synchronisieren (sowohl neue als auch bestehende Paare)
             const jahrNachher = cupJahrNachher;
             cupJahrNachher = null;
-            const danach = jahrNachher ? function() { $('#yearSelect').val(jahrNachher).trigger('change'); } : refreshAfterSave;
-            if (allManualWinners.length > 0) {
-                syncAllManualWinners(allManualWinners, year, danach);
-            } else {
-                danach();
-            }
-        }).fail(function(xhr) {
-            cupJahrNachher = null;
-            // Teilerfolg möglich (Runde 1, Runde 2, Finale getrennt): klar sagen, dass nicht alles gespeichert ist
-            msvToast(msvXhrMessage(xhr, 'Nicht alles gespeichert').replace(/\.$/, '') + ' – die Eingaben sind noch da, bitte noch einmal speichern.', 'error');
-            $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Speichern');
+            if (jahrNachher) $('#yearSelect').val(jahrNachher).trigger('change');
+            else refreshAfterSave();
+            cupGespeichert(true);
         });
     });
 
-    function syncAllManualWinners(winners, year, callback) {
-        if (winners.length === 0) { if (callback) callback(); return; }
-        let completed = 0;
-        const total = winners.length;
-
-        function checkDone() {
-            completed++;
-            if (completed === total && callback) callback();
-        }
-
-        winners.forEach(function(w) {
-            if (w.pairId) {
-                // Pair-ID bekannt → direkt setzen
-                $.ajax({
-                    url: 'cup2/set_manual_winner.php',
-                    method: 'POST',
-                    data: { pair_id: w.pairId, winner_id: w.winnerId, reason: w.reason, csrf_token: CUP4_CSRF },
-                    error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Manueller Gewinner konnte nicht gespeichert werden'), 'error'); },
-                    complete: checkDone
-                });
-            } else {
-                // Pair-ID unbekannt → über fetch_pairs ermitteln
-                $.ajax({
-                    url: 'cup2/fetch_pairs.php',
-                    data: { round: w.round, year: year },
-                    success: function(data) {
-                        const pairs = typeof data === 'string' ? JSON.parse(data) : data;
-                        const match = pairs.find(function(p) {
-                            return String(p.Participant1) === String(w.p1) && String(p.Participant2) === String(w.p2);
-                        });
-                        if (match) {
-                            $.ajax({
-                                url: 'cup2/set_manual_winner.php',
-                                method: 'POST',
-                                data: { pair_id: match.ID, winner_id: w.winnerId, reason: w.reason, csrf_token: CUP4_CSRF },
-                                error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Manueller Gewinner konnte nicht gespeichert werden'), 'error'); },
-                                complete: checkDone
-                            });
-                        } else {
-                            checkDone();
-                        }
-                    },
-                    error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Paarung konnte nicht ermittelt werden – manueller Gewinner nicht gespeichert'), 'error'); checkDone(); }
-                });
-            }
-        });
-    }
-
+    // Je Paarung: ID (falls gespeichert), Teilnehmer mit ihren Resultaten, «weiter» und manueller Gewinner
     function collectPairs(container) {
         const pairs = [];
         $(container + ' .cup4-pair-card').each(function() {
-            const $rows = $(this).find('.cup4-participant-row');
-            const ids = [];
-            const results = [];
-
-            $rows.each(function() {
+            const $card = $(this);
+            const p = [], r = [];
+            $card.find('.cup4-participant-row').each(function() {
                 const id = $(this).find('.cup4-drop-zone').attr('data-id');
-                if (id) ids.push(id);
-                results.push($(this).find('.cup4-result').val() || null);
+                if (!id) return;
+                const v = $(this).find('.cup4-result').val();
+                p.push(parseInt(id, 10));
+                r.push(v === '' ? null : parseInt(v, 10));
             });
-
-            if (ids.length >= 2) {
-                // Format: [id1, id2, (id3), r1, r2, (r3), ls1, ls2, (ls3), (advancers)]
-                // LowShot = null, aber Array-Positionen beibehalten für Backend
-                const nullLowshots = ids.map(() => null);
-                const pair = ids.concat(results).concat(nullLowshots);
-                // Bei Dreier-Gruppen die Anzahl Weiterkommende anhängen (Index 9)
-                if (ids.length === 3) {
-                    pair.push(parseInt($(this).data('advancers'), 10) || 2);
-                }
-                pairs.push(pair);
-            }
+            if (p.length < 2) return;
+            pairs.push({
+                id: $card.data('pair-id') || null,
+                p: p,
+                r: r,
+                adv: parseInt($card.data('advancers'), 10) || 2,
+                mw: $card.data('manual-winner') ? parseInt($card.data('manual-winner'), 10) : null
+            });
         });
         return pairs;
     }
@@ -1653,40 +1196,32 @@ $(document).ready(function() {
         $('#final-list .cup4-final-item').each(function() {
             const id = $(this).find('.cup4-final-name').data('id');
             const r = $(this).find('.cup4-result').val();
-            if (id && (r || r === 0)) {
-                results.push([id, r, 0]);
-            }
+            if (id && r !== '') results.push([id, r, 0]);
         });
         return results;
     }
 
     function refreshAfterSave() {
-        // Reload pairs, then participants & winners (Reihenfolge wichtig!)
+        // Paarungen neu laden, dann Teilnehmer und Gewinner (Reihenfolge wichtig)
         loadSavedPairs(1, '#r1-pairs', function() {
             loadSavedPairs(2, '#r2-pairs', function() {
-                loadParticipants(); // Teilnehmer-Pool neu laden (entfernt verwendete)
+                loadParticipants();
                 loadWinnersForRound2();
             });
         });
+        checkForFinalParticipants(); // erstes Finalresultat gespeichert → Standcup erscheint
     }
 
-    /* ── Delete Single Pair ───────────────── */
-    $(document).on('click', '.cup4-card-remove, .cup4-final-item .cup4-btn-sm.cup4-btn-remove', async function() {
-        const pairId = $(this).data('pair-id');
-        const $card = $(this).closest('.cup4-pair-card, .cup4-final-item');
+    /* ── Paarung löschen ──────────────────── */
+    $(document).on('click', '.cup4-card-remove', async function() {
+        const $card = $(this).closest('.cup4-pair-card');
+        const pairId = $card.data('pair-id');
+        const wasInR1 = $card.closest('#r1-pairs').length > 0;
 
         if (!pairId) {
-            // Unsaved pair — just remove from DOM and return participants to correct pool
-            const wasInR1 = $card.closest('#r1-pairs').length > 0;
-            const wasInR2 = $card.closest('#r2-pairs').length > 0;
+            // Noch nicht gespeichert: nur aus der Anzeige nehmen, Teilnehmer zurück in die Liste
             $card.find('.cup4-drop-zone[data-id]').each(function() {
-                const id = $(this).attr('data-id');
-                const name = zoneName($(this));
-                if (wasInR2) {
-                    returnToR2Pool(id, name);
-                } else {
-                    returnToPool(id, name);
-                }
+                wasInR1 ? returnToPool($(this).attr('data-id'), zoneName($(this))) : returnToR2Pool($(this).attr('data-id'), zoneName($(this)));
             });
             $card.remove();
             updateProgress();
@@ -1694,114 +1229,96 @@ $(document).ready(function() {
             return;
         }
 
-        const result = await msvConfirmDelete('', { title: 'Paarung löschen?', html: 'Die Paarung und ihre Resultate werden gelöscht.' });
-        if (!result.isConfirmed) return;
+        // Gespeichert: der Server löscht und lädt danach alles neu – Ungespeichertes ginge dabei verloren
+        if (cupGeaendert) {
+            msvToast('Bitte zuerst speichern; danach die Paarung löschen.', 'warning');
+            return;
+        }
 
-        $.ajax({
-            url: 'cup2/delete_pair.php',
-            method: 'POST',
-            data: { pair_id: pairId },
-            success: function() {
-                msvToast('Paarung gel&ouml;scht', 'success');
-                refreshAfterSave();
-            },
-            error: function() { msvToast('Fehler beim L&ouml;schen', 'error'); }
+        let p;
+        try { p = await $.post('cup2/delete_pair.php', { pair_id: pairId, aktion: 'pruefen' }, null, 'json'); }
+        catch (xhr) { msvToast(msvXhrMessage(xhr, 'Prüfen hat nicht geklappt. Bitte die Seite neu laden.'), 'error'); return; }
+        const folgen = (p && p.folgen) || [];
+        const liste = folgen.length
+            ? '<p class="text-start mb-1 mt-2">Mitgelöscht wird:</p><ul class="text-start mb-2 ps-3">' + folgen.map(f => '<li>' + msvEsc(f) + '</li>').join('') + '</ul>'
+            : '';
+        const r = await msvConfirmDelete('', {
+            title: 'Paarung löschen?',
+            html: 'Runde ' + msvEsc(p.runde) + ' ' + msvEsc(p.jahr) + ': <strong>' + msvEsc(p.paarung) + '</strong> mit ihren Resultaten.' + liste + 'Vorher wird die Datenbank gesichert.',
+            confirmText: 'Ja, löschen'
         });
+        if (!r.isConfirmed) return;
+
+        try {
+            const resp = await $.post('cup2/delete_pair.php', { pair_id: pairId, aktion: 'loeschen' }, null, 'json');
+            if (resp && resp.success === false) { msvError(resp.message || 'Die Paarung wurde nicht gelöscht. Bitte die Seite neu laden.'); return; }
+            msvToast('Paarung gelöscht' + (resp && resp.sicherung ? ' – Sicherung ' + resp.sicherung : ''), 'success');
+            refreshAfterSave();
+        } catch (xhr) {
+            msvError(msvXhrMessage(xhr, 'Die Paarung wurde nicht gelöscht. Bitte die Seite neu laden und nochmals versuchen.'));
+        }
     });
 
-    /* ── PDF Export ────────────────────────── */
-    // Derselbe Generator wie auf der Seite «Vereinscup Rangliste» (PDF-Vorlage, Format aus dem Druckprofil),
-    // nicht mehr der Altgenerator cuprang/cuprang.php. Das PDF enthält nur Gespeichertes.
-    $(document).on('click', '.pdf-btn', function(e) {
+    /* ── PDF ──────────────────────────────── */
+    // Derselbe Generator wie auf der Seite «Vereinscup Rangliste»; das PDF enthält nur Gespeichertes.
+    $(document).on('click', '.pdf-btn', async function(e) {
         e.preventDefault();
-        const jahr = $('#yearSelect').val();
-        if (cupGeaendert) msvToast('Nicht gespeicherte Eingaben fehlen in der Rangliste – zuerst speichern.', 'warning');
+        if (!(await window.cupVorAusgabe())) return;
+        const j = jahr();
         msvAusgabe(this, {
             url: 'cuprang/generate_cup_pdf.php',
-            data: { year: jahr, orientation: window.MsvDruck ? MsvDruck.orientierung('cuprang', 'portrait') : 'portrait' },
-            titel: 'Vereinscup Rangliste ' + jahr,
-            name: 'Vereinscup_Rangliste_' + jahr,
+            data: { year: j, orientation: window.MsvDruck ? MsvDruck.orientierung('cuprang', 'portrait') : 'portrait' },
+            titel: 'Vereinscup Rangliste ' + j,
+            name: 'Vereinscup_Rangliste_' + j,
             fehler: 'Die Rangliste konnte nicht erstellt werden. Bitte nochmals versuchen.'
         });
     });
 
     /* ── Standcup ─────────────────────────── */
+    function standcupLeeren() {
+        $('#standcup-section input').val('');
+        $('#standcup-section').prop('hidden', true);
+    }
+
     function loadStandcupData() {
         $.ajax({
             url: 'cup2/fetch_standcup_final.php',
-            data: { year: $('#yearSelect').val() },
+            data: { year: jahr() },
             dataType: 'json',
-            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Standcup-Daten konnten nicht geladen werden'), 'error'); },
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Der Standcup konnte nicht geladen werden. Bitte die Seite neu laden.'), 'error'); },
             success: function(data) {
-                if (data.length > 0) {
-                    data.forEach(function(e) {
-                        if (e.club === 'MSV Wilen') {
-                            $('#sc-name-1').val(e.ParticipantName);
-                            $('#sc-result-1').val(e.Result);
-                        } else if (e.club === 'SV Wollerau') {
-                            $('#sc-name-2').val(e.ParticipantName);
-                            $('#sc-result-2').val(e.Result);
-                        } else if (e.club === 'SV Freienbach') {
-                            $('#sc-name-3').val(e.ParticipantName);
-                            $('#sc-result-3').val(e.Result);
-                        }
-                    });
-                    $('#standcup-section').show();
-                }
+                if (!data.length) return;
+                const nr = { 'MSV Wilen': 1, 'SV Wollerau': 2, 'SV Freienbach': 3 };
+                data.forEach(function(e) {
+                    if (!nr[e.club]) return;
+                    $('#sc-name-' + nr[e.club]).val(e.ParticipantName);
+                    $('#sc-result-' + nr[e.club]).val(e.Result);
+                });
+                $('#standcup-section').prop('hidden', false);
             }
         });
     }
 
-    $('#save-standcup').click(function() {
-        const names = [$('#sc-name-1').val(), $('#sc-name-2').val(), $('#sc-name-3').val()];
-        const results = [$('#sc-result-1').val(), $('#sc-result-2').val(), $('#sc-result-3').val()];
-
-        if (names.some(n => !n) || results.some(r => !r)) {
-            msvToast('Bitte alle Felder ausf&uuml;llen', 'warning');
-            return;
-        }
-
-        $.ajax({
-            url: 'cup2/save_standcupfinal.php',
-            method: 'POST',
-            data: {
-                participant1_name: names[0], participant1_result: results[0],
-                participant2_name: names[1], participant2_result: results[1],
-                participant3_name: names[2], participant3_result: results[2],
-                year: $('#yearSelect').val()
-            },
-            dataType: 'json',
-            success: function(resp) {
-                if (resp.success) {
-                    msvToast('Standcup gespeichert!', 'success');
-                } else {
-                    msvToast('Fehler: ' + (resp.errors || []).join(', '), 'error');
-                }
-            },
-            error: function() { msvToast('Verbindungsfehler', 'error'); }
-        });
-    });
-
-    /* ── Check for final participants ─────── */
     function checkForFinalParticipants() {
         $.ajax({
             url: 'cup2/check_final_participants.php',
-            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Final-Teilnehmer konnten nicht geprüft werden'), 'error'); },
+            data: { year: jahr() },
+            error: function(xhr) { msvToast(msvXhrMessage(xhr, 'Die Finalisten konnten nicht geprüft werden. Bitte die Seite neu laden.'), 'error'); },
             success: function(resp) {
                 if (String(resp).trim().toLowerCase() === 'true' || String(resp).trim() === '1') {
-                    $('#standcup-section').show();
+                    $('#standcup-section').prop('hidden', false);
                 }
             }
         });
     }
 
-    /* ── Initialize ───────────────────────── */
+    /* ── Start ────────────────────────────── */
     function initializePage() {
         cupMarkieren(false);
-        $('#r1-pairs, #r2-pairs, #final-list').empty();
-        $('#r2-pool-list').empty();
-        $('#katb-info').remove();
-        $('#standcup-section').hide();
+        cupWahl(null);
+        $('#r1-pairs, #r2-pairs, #final-list, #r2-pool-list').empty();
+        standcupLeeren();
+        r1WinnerIds = {};
 
         loadParticipants();
         loadSavedPairs(1, '#r1-pairs', function() {
@@ -1809,29 +1326,29 @@ $(document).ready(function() {
                 loadWinnersForRound2();
             });
         });
+        checkForFinalParticipants();
         updateProgress();
     }
 
-    // Kat.-B-Schalter: ob sich ein einzelner Kat.-B-Gewinner automatisch fürs Finale qualifiziert
+    // Bester Kat. B ins Finale: wirkt sofort (Einstellung pro Jahr). Ungespeicherte Finalpunkte bleiben stehen,
+    // nur der Kat.-B-Eintrag wird neu bestimmt.
     $('#katb-final-switch').on('change', function() {
         const on = $(this).is(':checked');
         $.ajax({
             url: 'cup2/cup_settings.php',
             method: 'POST',
-            data: { year: $('#yearSelect').val(), katb_to_final: on ? 1 : 0 },
+            data: { year: jahr(), katb_to_final: on ? 1 : 0 },
             dataType: 'json',
             success: function() {
                 cupKatBToFinal = on;
-                $('#katb-info').remove();
-                // R2-Pool + Finalliste neu aufbauen (Kat. B als Qualifier oder normaler Gewinner)
-                loadWinnersForRound2();
-                msvToast(on
-                    ? 'Kat. B qualifiziert sich automatisch fürs Finale'
-                    : 'Kat. B spielt normal in Runde 2 mit', 'info');
+                $('#final-list .cup4-final-item[data-katb]').remove();
+                if (on) checkKatBFinalist();
+                updateProgress();
+                msvToast(on ? 'Der beste Kat. B rückt ins Finale nach' : 'Kein Kat.-B-Nachrücker im Finale', 'info');
             },
-            error: function() {
+            error: function(xhr) {
                 $('#katb-final-switch').prop('checked', !on);
-                msvToast('Einstellung konnte nicht gespeichert werden', 'error');
+                msvToast(msvXhrMessage(xhr, 'Die Einstellung wurde nicht gespeichert. Bitte nochmals versuchen.'), 'error');
             }
         });
     });
@@ -1844,26 +1361,20 @@ $(document).ready(function() {
             if (wahl === 'speichern') { $(this).val(cupJahr); cupJahrNachher = neu; $('#save-all').trigger('click'); return; }
         }
         cupJahr = neu;
-        loadCupSettings(function() {
-            initializePage();
-            checkKatBFinalist();
-        });
+        loadCupSettings(initializePage);
     });
 
     initYearDropdown();
-    cupJahr = $('#yearSelect').val();
-    loadCupSettings(function() {
-        initializePage();
-        checkKatBFinalist();
-        checkForFinalParticipants();
-    });
+    cupJahr = jahr();
+    loadCupSettings(initializePage);
 });
 </script>
 
 <?php include 'partials/direktdruck_scripts.inc.php'; ?>
 <script>
-// Direktdruck (QZ Tray), Profil «Vereinscup Rangliste» – wie auf cuprang.php; druckt nur Gespeichertes
-MsvDruck.resolve('cuprang', () => {
+// Direktdruck (QZ Tray), Profil «Vereinscup Rangliste»; druckt nur Gespeichertes, darum vorher cupVorAusgabe()
+MsvDruck.resolve('cuprang', async () => {
+    if (!(await window.cupVorAusgabe())) return null; // wie der PDF-Knopf: zuerst speichern oder abbrechen
     const jahr = document.getElementById('yearSelect').value;
     return { url: 'cuprang/generate_cup_pdf.php?year=' + encodeURIComponent(jahr) + '&orientation=' + MsvDruck.orientierung('cuprang', 'portrait'), jobName: 'Vereinscup Rangliste ' + jahr };
 });

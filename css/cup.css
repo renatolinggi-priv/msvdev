@@ -1,1102 +1,340 @@
 /* ========================================
-   CUP4 — Turnierbaum UI
+   Vereinscup – Turnierbaum (inc/cup.php)
+   Seit 1.68.31 aus den Bausteinen des Admins (css/msv-ui.css): Spalten sind .ui-karte mit
+   .ui-tab-kopf, Paarungen kompakte Zeilen ohne eigene Rahmen, Schalter .ui-filter, Rang .rang-badge.
+   Farben nur über --ui-*; Hover ändert Farbe, nie Lage.
    ======================================== */
 
-/* Farben und Formen aus dem Admin-Erscheinungsbild (css/msv-ui.css, --ui-*) */
-:root {
-    --cup4-primary: var(--ui-text);
-    --cup4-success: var(--ui-ok-fg);
-    --cup4-danger: var(--ui-k-rot);
-    --cup4-warning: var(--ui-warn-punkt);
-    --cup4-info: var(--ui-akzent);
-    --cup4-muted: var(--ui-text-2);
-    --cup4-light: var(--ui-flaeche-2);
-    --cup4-border: var(--ui-rand);
-    --cup4-bg: var(--ui-grund);
-    --cup4-card-bg: var(--ui-flaeche);
-    --cup4-shadow-sm: none;
-    --cup4-shadow-hover: 0 8px 20px rgba(26, 35, 50, .12);
-    --cup4-radius: var(--ui-rad);
-    --cup4-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* ── Kopf: Aktionen und Fortschritt ───── */
 
-/* Grosse Flächen (Toolbar, Spalten, Standcup) wie die übrigen Karten gerundet */
-.cup4-page :is(.cup4-toolbar, .cup4-pool, .cup4-round, .cup4-standcup) { border-radius: var(--ui-rad-l); }
+.cup4-kopf-aktionen { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-.cup4-page { background: var(--cup4-bg); }
+.cup4-schritte { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 0.85rem; font-weight: 600; color: var(--ui-text-2); }
+.cup4-schritt { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.cup4-schritt .ui-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--ui-leer); flex: none; }
+.cup4-schritt.offen { color: var(--ui-text); }
+.cup4-schritt.offen .ui-punkt { background: var(--ui-warn-punkt); }
+.cup4-schritt.ok { color: var(--ui-ok-fg); }
+.cup4-schritt.ok .ui-punkt { background: var(--ui-ok-fg); }
+.cup4-schritt-zahl { font-weight: 500; color: var(--ui-text-2); }
+.cup4-schritt-pfeil { color: var(--ui-leer); font-size: 0.75rem; }
+.cup4-sieger { margin-left: auto; color: var(--ui-text); font-weight: 500; }
+.cup4-sieger .bi { color: var(--ui-gold-fg); margin-right: 2px; }
 
-/* ── Progress Bar ─────────────────────── */
-
-/* Fortschritt steht in der Kopf-Card (page_extra) */
-.cup4-progress { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
-
-.cup4-progress-steps {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
-}
-
-.cup4-step {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    color: var(--cup4-muted);
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-}
-
-.cup4-step.active {
-    color: var(--cup4-primary);
-    background: var(--ui-akzent-hell);
-}
-
-.cup4-step.completed {
-    color: var(--cup4-success);
-}
-
-.cup4-step-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--cup4-border);
-    flex-shrink: 0;
-}
-
-.cup4-step.active .cup4-step-dot { background: var(--cup4-info); }
-.cup4-step.completed .cup4-step-dot { background: var(--cup4-success); }
-
-.cup4-step-arrow {
-    color: var(--cup4-border);
-    margin: 0 0.25rem;
-}
-
-.cup4-progress-bar {
-    width: 160px;
-    height: 6px;
-    background: var(--ui-linie);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.cup4-progress-fill {
-    height: 100%;
-    background: var(--ui-ok-fg);
-    border-radius: 3px;
-    transition: width 0.4s ease;
-}
-
-/* ── Sticky Toolbar ───────────────────── */
-
-.cup4-toolbar {
-    position: -webkit-sticky;
-    position: sticky;
-    top: 56px; /* unter Bootstrap Navbar */
-    z-index: 100;
-    background: var(--cup4-card-bg);
-    border: 1px solid var(--cup4-border);
-    border-radius: var(--cup4-radius);
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    box-shadow: var(--cup4-shadow-sm);
-    max-width: 1280px;
-}
-
-.cup4-toolbar-body {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.cup4-toolbar-toggle {
-    display: none;
-}
-
-.cup4-mini-progress {
-    display: none; /* nur auf Mobile sichtbar */
-}
-
-.cup4-toolbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-@media (min-width: 1600px) {
-    .cup4-toolbar { max-width: 1400px; }
-}
-
-.cup4-toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.cup4-toolbar-divider {
-    width: 1px;
-    height: 28px;
-    background: var(--cup4-border);
-    flex-shrink: 0;
-}
-
-.cup4-toolbar label {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--cup4-muted);
-    margin: 0;
-    white-space: nowrap;
-}
-
-/* Felder so hoch wie .btn-sm (~28 px), damit Felder und Knöpfe der Leiste eine Linie bilden */
-.cup4-toolbar .form-select,
-.cup4-toolbar .form-control {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.5rem;
-}
-.cup4-toolbar .form-select { padding-right: 1.75rem; background-position: right 0.5rem center; }
-
-.cup4-toolbar .form-control[type="number"] {
-    width: 70px;
-}
-
-/* Knöpfe: keine eigene Grösse mehr – .btn-sm wie auf allen Admin-Seiten (vorher ~34 px) */
-
-.cup4-toolbar-spacer {
-    flex: 1;
-}
-
-/* ── Bracket Grid (Desktop) ──────────── */
+/* ── Spalten ─────────────────────────── */
 
 .cup4-bracket {
     display: grid;
-    grid-template-columns: 200px minmax(0, 300px) minmax(0, 300px) minmax(0, 300px);
-    gap: 1.25rem;
+    grid-template-columns: minmax(170px, 210px) repeat(3, minmax(0, 1fr));
+    gap: 14px;
     align-items: start;
-    min-height: 400px;
-    max-width: 1280px;
 }
 
-/* Auf sehr grossen Screens (>1600px) etwas breiter */
-@media (min-width: 1600px) {
-    .cup4-bracket {
-        max-width: 1400px;
-    }
-}
+.cup4-final-wrap { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
-/* ── Participant Pool (Sidebar) ───────── */
+/* Kartentitel sind h2 (Gliederung für Bildschirmleser), sehen aber aus wie .ui-tab-titel */
+.cup4-page .ui-tab-titel { margin: 0; font-size: 0.95rem; font-weight: 600; line-height: 1.3; color: var(--ui-text); }
+.cup4-page .ui-karte > .ui-tab-kopf { gap: 8px; flex-wrap: nowrap; }
+.cup4-zahl { margin-left: auto; font-size: 0.8rem; font-weight: 500; color: var(--ui-text-2); white-space: nowrap; }
+
+.cup4-hinweis { margin: 0; padding: 8px var(--ui-pad) 6px; font-size: 0.8rem; color: var(--ui-text-2); }
+
+.cup4-page .ui-leerzustand { padding: 2rem 1rem; }
+
+/* ── Teilnehmer-Liste (auch «Weiter aus Runde 1») ── */
 
 .cup4-pool {
-    background: var(--cup4-card-bg);
-    border: 1px solid var(--cup4-border);
-    border-radius: var(--cup4-radius);
-    padding: 1rem;
     position: sticky;
-    top: 130px;
-    max-height: calc(100vh - 160px);
-    overflow-y: auto;
-    box-shadow: var(--cup4-shadow-sm);
-}
-
-.cup4-pool-header {
+    top: calc(var(--nav-height, 56px) + 12px);
+    max-height: calc(100vh - var(--nav-height, 56px) - 24px);
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--cup4-border);
+    flex-direction: column;
 }
+.cup4-pool #pool-list { overflow-y: auto; min-height: 0; padding-bottom: 6px; }
+.cup4-pool-fertig { padding-bottom: 12px; }
+.cup4-pool-fertig .bi { color: var(--ui-ok-fg); }
 
-.cup4-pool-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.cup4-pool-chevron {
-    display: none;
-}
-
-.cup4-pool-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--ui-text);
-}
-
-.cup4-counter {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--cup4-muted);
-    background: var(--cup4-light);
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-}
+.cup4-liste { display: flex; flex-direction: column; }
 
 .cup4-pool-item {
-    background: var(--cup4-light);
-    border: 1px solid var(--cup4-border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.375rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px var(--ui-pad) 4px 10px;
+    border-top: 1px solid var(--ui-linie-zart);
     font-size: 0.875rem;
+    color: var(--ui-text);
     cursor: grab;
     user-select: none;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    will-change: transform;
-    backface-visibility: hidden;
+    transition: background-color .15s;
 }
-
-.cup4-pool-item:hover {
-    background: var(--ui-hover);
-}
-
+.cup4-liste > .cup4-pool-item:first-child { border-top: 0; }
+.cup4-pool-item:hover { background: var(--ui-flaeche-2); }
 .cup4-pool-item:active { cursor: grabbing; }
+.cup4-griff { color: var(--ui-leer); font-size: 0.85rem; flex: none; }
+.cup4-pool-item:hover .cup4-griff { color: var(--ui-text-3); }
+.cup4-pool-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Gewählt (Klick oder Tastatur): wie eine gewählte Tabellenzeile */
+.cup4-pool-item.cup4-gewaehlt { background: var(--ui-gewaehlt); box-shadow: inset 0 0 0 2px var(--ui-akzent); }
+
+/* Beim Ziehen: die Kopie schwebt über der Seite */
 .cup4-pool-item.ui-draggable-dragging {
+    min-width: 180px;
+    background: var(--ui-flaeche);
+    border: 1px solid var(--ui-rand);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(26, 35, 50, .12);
     cursor: grabbing !important;
-    opacity: 0.9;
-    box-shadow: var(--cup4-shadow-hover) !important;
-    z-index: 9999;
-    transform: rotate(1deg);
 }
 
-/* Winner items in pool */
-.cup4-pool-item.cup4-winner-item {
-    background: var(--ui-ok-bg);
-    border-color: var(--ui-ok-rand);
-}
+/* Nachrücker (in Runde 2, ohne Runde 1 gewonnen zu haben) */
+.cup4-nr { display: inline-flex; color: var(--ui-akzent-dunkel); font-size: 0.85rem; flex: none; }
 
-/* ── Round Columns ────────────────────── */
+/* Runde 2: wer aus Runde 1 weiterkommt und noch keinen Platz hat */
+.cup4-bereit { border-bottom: 1px solid var(--ui-linie); padding-bottom: 4px; }
+.cup4-abschnitt { display: flex; align-items: center; gap: 8px; padding: 10px var(--ui-pad) 6px; }
+.cup4-abschnitt-titel { font-size: 0.85rem; font-weight: 600; color: var(--ui-text-2); }
+.cup4-abschnitt-titel .cup4-zahl { margin-left: 4px; }
+.cup4-abschnitt .btn { margin-left: auto; }
 
-.cup4-round {
-    background: var(--cup4-card-bg);
-    border: 1px solid var(--cup4-border);
-    border-radius: var(--cup4-radius);
-    padding: 1rem;
-    box-shadow: var(--cup4-shadow-sm);
-    min-height: 200px;
-}
+/* ── Paarungen ───────────────────────── */
 
-.cup4-round-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--ui-linie);
-}
-
-.cup4-round-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--ui-text);
-}
-
-.cup4-round-badge {
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-    background: var(--cup4-light);
-    color: var(--cup4-muted);
-}
-
-/* ── Pair Cards ───────────────────────── */
+.cup4-paarungen { counter-reset: paarung; }
 
 .cup4-pair-card {
-    background: var(--cup4-card-bg);
-    border: 1px solid var(--cup4-border);
-    border-radius: var(--cup4-radius);
-    padding: 0.5rem 0.6rem;
-    margin-bottom: 0.5rem;
-    position: relative;
-    transition: var(--cup4-transition);
+    counter-increment: paarung;
+    padding: 8px var(--ui-pad) 10px;
+    border-top: 1px solid var(--ui-linie);
 }
+.cup4-paarungen > .cup4-pair-card:first-child { border-top: 0; }
+.cup4-bereit + .cup4-paarungen > .cup4-pair-card:first-child { border-top: 0; }
 
-.cup4-pair-card.cup4-pair-complete {
-    border-color: var(--ui-ok-rand);
-}
+.cup4-pair-kopf { display: flex; align-items: center; gap: 8px; min-height: 26px; margin-bottom: 2px; }
+.cup4-pair-titel { font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); white-space: nowrap; }
+.cup4-pair-titel::before { content: "Paarung " counter(paarung); }
+.cup4-dreier .cup4-pair-titel::after { content: " · Dreier"; font-weight: 500; }
+.cup4-pair-hinweis { flex: 1 1 auto; min-width: 0; font-size: 0.8rem; font-weight: 600; line-height: 1.25; color: var(--ui-warn-fg); }
+.cup4-pair-hinweis:empty { display: none; }
 
-.cup4-participant-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.3rem 0.4rem;
-    border-radius: 6px;
-    transition: background 0.2s ease, opacity 0.2s ease;
-}
-
-.cup4-participant-row.winner {
-    background: var(--ui-ok-bg);
-    font-weight: 600;
-}
-
-.cup4-participant-row.winner::before {
-    content: '\f091'; /* trophy icon - we'll use bi-trophy */
-    font-family: 'bootstrap-icons';
-    color: var(--cup4-success);
-    font-size: 0.75rem;
-    margin-right: 0.25rem;
-}
-
-.cup4-participant-row.loser {
-    opacity: 0.45;
-}
-
-.cup4-participant-row.loser .cup4-name {
-    text-decoration: line-through;
-}
-
-.cup4-name {
-    flex: 1;
-    font-size: 0.875rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-}
-
-/* Drop zone (empty slot) */
-.cup4-drop-zone {
-    flex: 1;
-    min-height: 32px;
-    max-width: 220px;
-    border: 2px dashed var(--cup4-border);
-    border-radius: 6px;
-    display: flex;
+/* Löschen: ruhiges Symbol, rot erst beim Zeigen; immer sichtbar (auch auf Touch) */
+.cup4-card-remove {
+    margin-left: auto;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--ui-text-3);
-    font-size: 0.75rem;
-    transition: var(--cup4-transition);
-    padding: 0.25rem 0.5rem;
-}
-
-.cup4-drop-zone::after {
-    content: 'hierher ziehen';
-}
-
-.cup4-drop-zone[data-id] {
-    border-style: solid;
-    border-color: var(--cup4-border);
-    color: var(--cup4-primary);
-    font-size: 0.875rem;
-    justify-content: flex-start;
-    background: var(--cup4-light);
-    cursor: grab;
-    position: relative;
-}
-.cup4-zone-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-button.cup4-zone-remove {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: var(--ui-text-3);
-    font-size: 0.9rem;
-    line-height: 1;
-    padding: 0 0.25rem !important;
-    margin: 0 0 0 0.25rem !important;
-    cursor: pointer;
-    flex-shrink: 0;
-    min-width: auto;
-}
-button.cup4-zone-remove:hover {
-    color: var(--cup4-danger);
-}
-
-.cup4-drop-zone[data-id]::after {
-    content: none;
-}
-
-.cup4-drop-zone.ui-droppable-hover {
-    background: var(--ui-gewaehlt) !important;
-    border-color: var(--ui-akzent) !important;
-    border-style: solid !important;
-}
-
-.cup4-drop-zone.drop-success {
-    animation: cup4DropPulse 0.4s ease;
-}
-
-@keyframes cup4DropPulse {
-    0% { background: var(--ui-ok-bg); }
-    100% { background: var(--cup4-light); }
-}
-
-/* Result inputs */
-.cup4-result {
-    width: 60px;
-    text-align: center;
-    font-size: 0.875rem;
-    padding: 0.25rem 0.35rem;
-    border: 1px solid var(--ui-feldrand);
+    padding: 0;
+    border: 0;
     border-radius: 6px;
-    transition: border-color 0.2s;
-    flex-shrink: 0;
-}
-
-.cup4-result:focus {
-    outline: none;
-    border-color: var(--ui-akzent-dunkel);
-    box-shadow: 0 0 0 1px var(--ui-akzent-dunkel);
-}
-
-.cup4-result-label {
-    font-size: 0.72rem;
-    color: var(--ui-text-3);
-    text-transform: uppercase;
-    line-height: 1;
-}
-
-.cup4-input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
-}
-
-/* VS divider */
-.cup4-vs {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--ui-text-3);
-    text-transform: uppercase;
-    padding: 0.15rem 0;
-    letter-spacing: 1px;
-}
-
-/* Card remove button (absolute top-right) */
-.cup4-card-remove {
-    position: absolute;
-    top: 0.3rem;
-    right: 0.3rem;
-    border: none;
     background: transparent;
     color: var(--ui-text-3);
     font-size: 0.85rem;
-    padding: 0.2rem 0.4rem;
+    cursor: pointer;
+    transition: color .15s, background-color .15s;
+}
+.cup4-card-remove:hover { color: var(--ui-fehler); background: var(--ui-fehler-bg); }
+.cup4-card-remove:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
+
+/* Dreier: 1 oder 2 weiter – Segment-Schalter in Kleinformat unter den Zeilen */
+.cup4-pair-fuss { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding-left: 20px; font-size: 0.8rem; color: var(--ui-text-2); }
+.cup4-adv-toggle { flex: none; }
+.cup4-adv-toggle button { height: 22px; padding: 0 8px; font-size: 0.75rem; }
+
+/* Eine Zeile: Haken | Platz | Punkte (| Weiter bei Gleichstand) */
+.cup4-participant-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    margin: 0 -8px;
+    padding: 2px 8px;
     border-radius: 6px;
+}
+.cup4-sieg { flex: none; width: 14px; font-size: 0.95rem; color: var(--ui-ok-fg); visibility: hidden; }
+.cup4-participant-row.winner { background: var(--ui-ok-bg); }
+.cup4-participant-row.winner .cup4-sieg { visibility: visible; }
+.cup4-participant-row.winner .cup4-zone-name { font-weight: 600; }
+.cup4-participant-row.loser .cup4-zone-name { color: var(--ui-text-2); }
+.cup4-participant-row.cup4-tied { background: var(--ui-warn-zeile); }
+
+/* Platz: belegt = Name als Text, frei = gestrichelter Rahmen */
+.cup4-drop-zone {
+    flex: 1;
+    min-width: 0;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+    transition: background-color .15s, border-color .15s;
+}
+.cup4-drop-zone:not([data-id]) { border: 1px dashed var(--ui-feldrand); background: var(--ui-flaeche-2); color: var(--ui-text-2); font-size: 0.8rem; cursor: pointer; }
+.cup4-drop-zone:not([data-id])::after { content: "Platz frei"; }
+/* Jemand ist gewählt: freie Plätze laden zum Klicken ein */
+.cup4-wahl-aktiv .cup4-drop-zone:not([data-id]) { border-color: var(--ui-akzent); background: var(--ui-gewaehlt); color: var(--ui-akzent-tief); }
+.cup4-wahl-aktiv .cup4-drop-zone:not([data-id])::after { content: "Hier einsetzen"; }
+.cup4-wahl-aktiv .cup4-drop-zone[data-id] { cursor: pointer; }
+.cup4-drop-zone.ui-droppable-hover { background: var(--ui-gewaehlt) !important; border: 1px solid var(--ui-akzent) !important; }
+.cup4-drop-zone:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
+
+.cup4-zone-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Herausnehmen: erscheint beim Zeigen oder mit dem Fokus, auf Touch immer */
+.cup4-zone-remove {
+    flex: none;
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--ui-text-3);
+    font-size: 1rem;
     cursor: pointer;
     opacity: 0;
-    transition: var(--cup4-transition);
-    z-index: 2;
-    line-height: 1;
+    transition: opacity .15s, color .15s, background-color .15s;
 }
-.cup4-pair-card:hover .cup4-card-remove { opacity: 0.6; }
-.cup4-card-remove:hover { opacity: 1 !important; color: var(--cup4-danger); background: var(--ui-fehler-bg); }
+.cup4-drop-zone:hover .cup4-zone-remove,
+.cup4-drop-zone:focus-within .cup4-zone-remove,
+.cup4-drop-zone:focus .cup4-zone-remove { opacity: 1; }
+.cup4-zone-remove:hover { color: var(--ui-fehler); background: var(--ui-fehler-bg); }
+.cup4-zone-remove:focus-visible { opacity: 1; outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
+@media (hover: none) { .cup4-zone-remove { opacity: 1; } }
 
-/* ── Kat.-B-Schalter im Finale ─────────── */
+/* Punkte: wie die Zahlenfelder der Erfassungsseiten (leer getönt, gefüllt weiss und kräftiger) */
+.cup4-page .cup4-result {
+    flex: none;
+    width: 58px;
+    height: 30px;
+    padding: 0 6px;
+    text-align: center;
+    font-size: 0.875rem;
+    background: var(--ui-flaeche-2);
+    border-color: var(--ui-feldrand-leer);
+}
+.cup4-page .cup4-result:not(:placeholder-shown) { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); font-weight: 600; }
+.cup4-page .cup4-result::placeholder { color: var(--ui-text-3); font-weight: 400; }
+.cup4-page .cup4-result:focus { background: var(--ui-gewaehlt); }
+
+/* Gleichstand: «Weiter» wählt, wer weiterkommt */
+.cup4-page .cup4-tie-pick { flex: none; padding: 0 8px; height: 26px; font-size: 0.75rem; }
+
+/* ── Runde 1: Paarungen anlegen ──────── */
+
+.cup4-anlegen {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px var(--ui-pad);
+    border-top: 1px solid var(--ui-linie);
+    background: var(--ui-flaeche-2);
+    border-radius: 0 0 var(--ui-rad-l) var(--ui-rad-l);
+}
+.cup4-anlegen label { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); }
+.cup4-anlegen .form-control { width: 58px; }
+.cup4-anlegen .form-select { width: auto; }
+
+/* ── Finale ──────────────────────────── */
+
 .cup4-katb-switch {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
-    margin-bottom: 0.5rem;
-    border: 1px solid var(--cup4-border);
-    border-radius: 6px;
-    background: var(--ui-flaeche-2);
-}
-.cup4-katb-label {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: 0.8125rem;
-    line-height: 1.25;
-    color: var(--cup4-muted);
-    cursor: pointer;
-}
-/* Toggle rechtsbündig — ohne Bootstrap-Float/Negativ-Margin */
-.cup4-katb-toggle {
-    flex-shrink: 0;
+    gap: 8px;
     min-height: 0;
     margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-}
-.cup4-katb-toggle .form-check-input {
-    float: none;
-    margin: 0;
-    cursor: pointer;
-}
-.cup4-katb-switch .form-check-input:checked {
-    background-color: var(--ui-akzent-dunkel);
-    border-color: var(--ui-akzent-dunkel);
-}
-
-/* ── Dreier-Gruppe: Anzahl Weiterkommende ─ */
-.cup4-adv-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.4rem;
-    padding-top: 0.4rem;
-    border-top: 1px dashed var(--cup4-border);
-    font-size: 0.72rem;
-}
-.cup4-adv-toggle > .bi {
-    color: var(--cup4-muted);
+    padding: 8px var(--ui-pad) 8px calc(var(--ui-pad) + 2.5em);
+    border-bottom: 1px solid var(--ui-linie);
     font-size: 0.8rem;
-    margin-right: 0.1rem;
+    color: var(--ui-text-2);
 }
-.cup4-adv-btn {
-    border: 1px solid var(--cup4-border);
-    background: var(--cup4-card-bg);
-    color: var(--cup4-muted);
-    font-size: 0.72rem;
-    line-height: 1;
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: var(--cup4-transition);
-}
-.cup4-adv-btn:hover { background: var(--cup4-light); }
-.cup4-adv-btn.active {
-    background: var(--ui-akzent-dunkel);
-    border-color: var(--ui-akzent-dunkel);
-    color: var(--ui-flaeche);
-    font-weight: 600;
-}
-
-/* Generic small button (used in finale items) */
-.cup4-btn-sm {
-    border: none;
-    background: transparent;
-    color: var(--cup4-muted);
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: var(--cup4-transition);
-}
-.cup4-btn-sm:hover { background: var(--cup4-light); }
-.cup4-btn-sm.cup4-btn-remove:hover { color: var(--cup4-danger); background: var(--ui-fehler-bg); }
-
-/* ── Tie State ─────────────────────────── */
-
-.cup4-pair-card.cup4-pair-tied {
-    border-color: var(--ui-warn-rand);
-    background: var(--ui-warn-zeile);
-}
-
-.cup4-participant-row.cup4-tied {
-    background: var(--ui-warn-bg);
-}
-
-.cup4-tie-pick {
-    border: 1px solid var(--cup4-warning);
-    background: var(--ui-warn-bg);
-    color: var(--ui-warn-fg);
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: var(--cup4-transition);
-    flex-shrink: 0;
-    margin-left: 0.25rem;
-}
-
-.cup4-tie-pick:hover {
-    background: var(--cup4-warning);
-    color: var(--ui-flaeche);
-}
-
-.cup4-tie-eliminate {
-    border: 1px solid var(--cup4-danger);
-    background: var(--ui-fehler-bg);
-    color: var(--cup4-danger);
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    line-height: 1;
-    transition: var(--cup4-transition);
-    flex-shrink: 0;
-    margin-left: 0.25rem;
-}
-
-.cup4-tie-eliminate:hover {
-    background: var(--cup4-danger);
-    color: var(--ui-flaeche);
-}
-
-/* Manual winner badge */
-.cup4-manual-badge {
-    display: inline-block;
-    background: var(--ui-warn-bg);
-    color: var(--ui-warn-fg);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.1rem 0.35rem;
-    border-radius: 6px;
-    margin-left: 0.25rem;
-    vertical-align: middle;
-}
-
-/* Kat. B Auto-Qualifier */
-.cup4-katb-qualifier {
-    background: var(--ui-akzent-hell) !important;
-    border-color: var(--ui-akzent-rand) !important;
-    cursor: default !important;
-    opacity: 0.85;
-    pointer-events: none;
-}
-
-.cup4-katb-badge {
-    display: inline-block;
-    background: var(--ui-akzent-hell);
-    color: var(--ui-akzent-dunkel);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.1rem 0.4rem;
-    border-radius: 6px;
-    margin-left: 0.4rem;
-    vertical-align: middle;
-    letter-spacing: 0.02em;
-}
-
-/* Nachnominierung - Pool-Items */
-.cup4-nominated {
-    background: var(--ui-akzent-hell) !important;
-    border-color: var(--ui-akzent-rand) !important;
-}
-
-.cup4-nominated-badge {
-    display: inline-block;
-    background: var(--ui-flaeche);
-    color: var(--ui-akzent-dunkel);
-    border: 1px solid var(--ui-akzent-rand);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.1rem 0.4rem;
-    border-radius: 6px;
-    margin-left: 0.4rem;
-    vertical-align: middle;
-}
-
-/* Nachnominierung - Drop-Zones in R2-Paarungen */
-.cup4-nachnominiert {
-    background: var(--ui-akzent-hell);
-}
-.cup4-nachnominiert .cup4-nominated-badge {
-    font-size: 0.72rem;
-    padding: 0.05rem 0.3rem;
-}
-
-/* ── Final Section ────────────────────── */
-
-/* Finale: neutrale Karte wie die Runden, der Pokal im Titel in Gold */
-.cup4-final-section .cup4-round-title .bi-trophy-fill { color: var(--ui-warn-punkt); }
+.cup4-katb-switch .form-check-label { cursor: pointer; }
 
 .cup4-final-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-    background: var(--ui-flaeche);
-    border-radius: 6px;
-    border: 1px solid var(--cup4-border);
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px var(--ui-pad);
+    border-top: 1px solid var(--ui-linie-zart);
 }
+.cup4-liste > .cup4-final-item:first-child { border-top: 0; }
+.cup4-final-item .cup4-rang { min-width: 30px; height: 26px; font-size: 0.78rem; flex: none; }
+.cup4-final-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; font-weight: 600; }
+/* Podest: Zeile in der 40-%-Mischung wie in den Ranglisten */
+.cup4-final-item.rank-1 { background: color-mix(in srgb, var(--ui-gold-bg) 40%, var(--ui-flaeche)); }
+.cup4-final-item.rank-2 { background: color-mix(in srgb, var(--ui-silber-bg) 40%, var(--ui-flaeche)); }
+.cup4-final-item.rank-3 { background: color-mix(in srgb, var(--ui-bronze-bg) 40%, var(--ui-flaeche)); }
 
-.cup4-final-name {
-    flex: 1;
+.cup4-marke {
+    flex: none;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: var(--ui-akzent-hell);
+    color: var(--ui-akzent-dunkel);
+    font-size: 0.75rem;
     font-weight: 600;
-    font-size: 0.875rem;
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* ── Finale + Standcup Spalte ─────────── */
+/* ── Standcup ────────────────────────── */
 
-.cup4-final-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    min-width: 0;
-}
-
-/* ── Standcup Section ─────────────────── */
-
-.cup4-standcup {
-    background: var(--cup4-card-bg);
-    border: 1px solid var(--cup4-border);
-    border-radius: var(--cup4-radius);
-    padding: 1rem;
-    box-shadow: var(--cup4-shadow-sm);
-}
-
-.cup4-standcup-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--ui-text);
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--ui-linie);
-}
-
+.cup4-standcup { padding-bottom: 6px; }
 .cup4-standcup-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.6rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px dashed var(--cup4-border);
+    display: grid;
+    grid-template-columns: 1fr 58px;
+    gap: 2px 6px;
+    padding: 8px var(--ui-pad);
+    border-top: 1px solid var(--ui-linie-zart);
 }
+.cup4-standcup .ui-tab-kopf + .cup4-standcup-row { border-top: 0; }
+.cup4-standcup-label { grid-column: 1 / -1; margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); }
+.cup4-standcup-name { height: 30px; font-size: 0.875rem; }
 
-.cup4-standcup-row:last-of-type {
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-bottom: 0;
-}
+/* Auswahl im Nachrücker-Dialog */
+.cup4-nr-wahl { max-height: 220px; overflow-y: auto; text-align: left; }
+.cup4-nr-wahl label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 8px; border-radius: 6px; font-size: 0.875rem; cursor: pointer; }
+.cup4-nr-wahl label:hover { background: var(--ui-hover); }
 
-.cup4-standcup-label {
-    width: 100%;
-    font-weight: 600;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    color: var(--cup4-muted);
-    margin-bottom: 0.1rem;
-}
+/* ── Schmale Fenster: eine Spalte nach der anderen ── */
 
-.cup4-standcup-row .form-control {
-    font-size: 0.875rem;
-}
-
-.cup4-standcup-name {
-    flex: 1;
-    min-width: 0;
-}
-
-.cup4-standcup-res {
-    width: 72px;
-    flex-shrink: 0;
-    text-align: center;
-}
-
-/* ── Empty State ──────────────────────── */
-
-.cup4-empty {
-    text-align: center;
-    padding: 2rem 1rem;
-    color: var(--cup4-muted);
-}
-
-.cup4-empty-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.4;
-}
-
-.cup4-empty-text {
-    font-size: 0.875rem;
-}
-
-/* ── Responsive: Tabs < 1200px ────────── */
+.cup4-tabs { display: none; width: fit-content; margin-bottom: 14px; }
 
 @media (max-width: 1199.98px) {
-    .cup4-bracket {
-        display: block;
-    }
-
-    .cup4-pool {
-        position: static;
-        max-height: 250px;
-        margin-bottom: 1rem;
-    }
-
-    .cup4-round {
-        display: none;
-        margin-bottom: 1rem;
-    }
-
-    .cup4-round.active {
-        display: block;
-    }
-
-    .cup4-tabs {
-        display: flex !important;
-        margin: 0.75rem 0 0 0;
-    }
-
-    .cup4-tab {
-        flex: 1;
-        text-align: center;
-        padding: 0.6rem 0.5rem;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        border: 1px solid var(--cup4-border);
-        background: var(--cup4-light);
-        color: var(--cup4-muted);
-        cursor: pointer;
-        transition: var(--cup4-transition);
-    }
-
-    .cup4-tab:first-child { border-radius: 6px 0 0 6px; }
-    .cup4-tab:last-child { border-radius: 0 6px 6px 0; }
-    .cup4-tab + .cup4-tab { border-left: none; }
-
-    .cup4-tab.active {
-        background: var(--ui-akzent-hell);
-        color: var(--ui-akzent-dunkel);
-        border-color: var(--ui-akzent-rand);
-    }
+    .cup4-tabs { display: flex; }
+    .cup4-bracket { grid-template-columns: minmax(170px, 210px) minmax(0, 1fr); }
+    .cup4-round { display: none; }
+    .cup4-round.active { display: block; }
+    .cup4-final-wrap.active { display: flex; }
 }
-
-@media (min-width: 1200px) {
-    .cup4-tabs { display: none !important; }
-}
-
-/* ── Mobile ───────────────────────────── */
 
 @media (max-width: 767.98px) {
-
-    /* Fix: overflow auf Eltern-Chain aufheben damit sticky funktioniert */
-    .cup4-page .container-fluid,
-    .cup4-page .row,
-    .cup4-page .col-12,
-    .cup4-page .col {
-        overflow: visible !important;
-        overflow-x: visible !important;
-        overflow-y: visible !important;
-    }
-
-    /* Progress bar: auf Mobile ausblenden (Mini-Version im Toolbar) */
-    .cup4-progress {
-        display: none;
-    }
-
-    /* Toolbar: ausklappbare Aktions-Card mit Tabs */
-    .cup4-toolbar {
-        position: -webkit-sticky;
-        position: sticky;
-        top: 56px;
-        z-index: 100;
-        display: flex;
-        flex-direction: column;
-        padding: 0.75rem;
-    }
-
-    .cup4-toolbar-toggle { order: 1; }
-    .cup4-tabs { order: 2; margin: 0.5rem 0 0 0 !important; }
-    .cup4-toolbar-body { order: 3; }
-
-    .cup4-toolbar-toggle {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-    }
-
-    /* Mini-Progress im Toolbar-Header */
-    .cup4-mini-progress {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        font-size: 0.72rem;
-        font-weight: 600;
-        flex: 1;
-    }
-
-    .cup4-mini-step {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.2rem;
-        color: var(--cup4-muted);
-        padding: 0.15rem 0.3rem;
-        border-radius: 6px;
-        white-space: nowrap;
-    }
-
-    .cup4-mini-step.active {
-        color: var(--cup4-primary);
-        background: var(--ui-akzent-hell);
-    }
-
-    .cup4-mini-step.completed {
-        color: var(--cup4-success);
-    }
-
-    .cup4-mini-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--cup4-border);
-        flex-shrink: 0;
-    }
-
-    .cup4-mini-step.active .cup4-mini-dot { background: var(--cup4-info); }
-    .cup4-mini-step.completed .cup4-mini-dot { background: var(--cup4-success); }
-
-    .cup4-mini-arrow {
-        color: var(--cup4-border);
-        font-size: 0.72rem;
-    }
-
-    #toolbar-chevron {
-        transition: transform 0.25s ease;
-        font-size: 0.875rem;
-        color: var(--cup4-muted);
-        margin-left: 0.5rem;
-        flex-shrink: 0;
-    }
-
-    .cup4-toolbar.expanded #toolbar-chevron {
-        transform: rotate(180deg);
-    }
-
-    .cup4-toolbar-body {
-        display: none;
-        flex-direction: column;
-        align-items: stretch; /* linksbündig statt zentriert */
-        gap: 0.5rem;
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--cup4-border);
-    }
-
-    .cup4-toolbar.expanded .cup4-toolbar-body {
-        display: flex;
-    }
-
-    .cup4-toolbar-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .cup4-toolbar-group label {
-        min-width: 75px;
-    }
-
-    .cup4-toolbar-group .form-select,
-    .cup4-toolbar-group .form-control {
-        flex: 1;
-    }
-
-    #generate-pairs {
-        width: 100%;
-    }
-
-    .cup4-toolbar-divider { display: none; }
-    .cup4-toolbar-spacer { display: none; }
-
-    .cup4-toolbar-actions {
-        display: flex;
-        gap: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid var(--cup4-border);
-    }
-
-    .cup4-toolbar-actions .btn {
-        flex: 1;
-        font-size: 0.75rem;
-        padding: 0.4rem 0.5rem;
-    }
-
-    /* Pair cards / participant rows */
-    .cup4-participant-row {
-        flex-wrap: wrap;
-    }
-
-    .cup4-result {
-        width: 52px;
-    }
-
-    .cup4-name {
-        flex-basis: 100%;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Drop-Zone: kompakterer Platzhalter */
-    .cup4-drop-zone {
-        min-height: 30px;
-        font-size: 0.72rem;
-    }
-
-    /* Standcup */
-    .cup4-standcup-row {
-        flex-wrap: wrap;
-    }
-
-    .cup4-standcup-label {
-        width: 100%;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Pool: kompakter + eingeklappt */
-    .cup4-pool {
-        padding: 0.75rem;
-        max-height: none;
-        overflow-y: visible;
-    }
-
-    .cup4-pool-header {
-        cursor: pointer;
-        margin-bottom: 0;
-        padding-bottom: 0.5rem;
-        -webkit-tap-highlight-color: rgba(0,0,0,0.05);
-    }
-
-    .cup4-pool-chevron {
-        display: inline-block;
-        transition: transform 0.25s ease;
-        font-size: 0.75rem;
-        color: var(--cup4-muted);
-    }
-
-    #pool-list {
-        display: none;
-        margin-top: 0.5rem;
-    }
-
-    .cup4-pool.expanded #pool-list {
-        display: block;
-    }
-
-    .cup4-pool.expanded .cup4-pool-chevron {
-        transform: rotate(180deg);
-    }
-
-    .cup4-pool.expanded {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-
-    .cup4-pool.expanded .cup4-pool-header {
-        margin-bottom: 0;
-    }
-
-    .cup4-pool-item {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.8125rem;
-    }
+    .cup4-bracket { display: block; }
+    .cup4-pool { position: static; max-height: 260px; margin-bottom: 12px; }
+    .cup4-sieger { margin-left: 0; flex-basis: 100%; }
+    .cup4-kopf-aktionen { width: 100%; }
+    .cup4-kopf-aktionen #save-all { margin-left: auto; }
 }
 
-/* ── Print ────────────────────────────── */
+/* ── Reduzierte Bewegung ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .cup4-pool-item, .cup4-drop-zone, .cup4-card-remove, .cup4-zone-remove { transition: none; }
+}
 
+/* ── Druck ───────────────────────────── */
 @media print {
-    .cup4-toolbar,
-    .cup4-card-remove,
-    .cup4-pool { display: none; }
-
+    .cup4-pool, .cup4-anlegen, .cup4-card-remove, .cup4-zone-remove, .cup4-tabs { display: none; }
     .cup4-pair-card { break-inside: avoid; }
 }
-
-/* Zuordnen per Tastatur oder Klick (cup.php): gewählter Teilnehmer, fokussierter Platz */
-.cup4-pool-item.cup4-gewaehlt { background: var(--ui-gewaehlt); box-shadow: inset 0 0 0 2px var(--ui-akzent); }
-.cup4-pool-item:focus-visible, .cup4-drop-zone:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
