@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.36",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Vereinscup: ganze Namen, Nachrücker immer erreichbar",
+        "beschreibung": "Namen in den Paarungen werden nicht mehr abgeschnitten, auch nicht bei Gleichstand; lange Namen brechen um, und «×» zum Herausnehmen erscheint erst beim Zeigen. «Nachrücker» steht jetzt fest unten in Runde 2 und verschwindet nicht mehr, wenn alle Gewinner eingeteilt sind. Der Gleichstand-Hinweis steht auf einer eigenen Zeile. Eine Eingabe bei «Neue Paarungen» meldet nicht mehr «Nicht gespeichert». Der ausgeschaltete Kat.-B-Schalter und ausgefüllte Standcup-Namen sind deutlicher zu erkennen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.35",
     "datum": "2026-10-16",
     "aenderungen": [

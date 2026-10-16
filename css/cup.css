@@ -74,7 +74,7 @@
 .cup4-pool-item:active { cursor: grabbing; }
 .cup4-griff { color: var(--ui-leer); font-size: 0.85rem; flex: none; }
 .cup4-pool-item:hover .cup4-griff { color: var(--ui-text-3); }
-.cup4-pool-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cup4-pool-name { flex: 1; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
 
 /* Gewählt (Klick oder Tastatur): wie eine gewählte Tabellenzeile */
 .cup4-pool-item.cup4-gewaehlt { background: var(--ui-gewaehlt); box-shadow: inset 0 0 0 2px var(--ui-akzent); }
@@ -96,8 +96,6 @@
 .cup4-bereit { border-bottom: 1px solid var(--ui-linie); padding-bottom: 4px; }
 .cup4-abschnitt { display: flex; align-items: center; gap: 8px; padding: 10px var(--ui-pad) 6px; }
 .cup4-abschnitt-titel { font-size: 0.85rem; font-weight: 600; color: var(--ui-text-2); }
-.cup4-abschnitt-titel .cup4-zahl { margin-left: 4px; }
-.cup4-abschnitt .btn { margin-left: auto; }
 
 /* ── Paarungen ───────────────────────── */
 
@@ -111,11 +109,12 @@
 .cup4-paarungen > .cup4-pair-card:first-child { border-top: 0; }
 .cup4-bereit + .cup4-paarungen > .cup4-pair-card:first-child { border-top: 0; }
 
-.cup4-pair-kopf { display: flex; align-items: center; gap: 8px; min-height: 26px; margin-bottom: 2px; }
+/* Kopf: Nummer links, Löschen rechts; ein Gleichstand-Hinweis steht darunter über die ganze Breite */
+.cup4-pair-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 0 8px; min-height: 26px; margin-bottom: 2px; }
 .cup4-pair-titel { font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); white-space: nowrap; }
 .cup4-pair-titel::before { content: "Paarung " counter(paarung); }
 .cup4-dreier .cup4-pair-titel::after { content: " · Dreier"; font-weight: 500; }
-.cup4-pair-hinweis { flex: 1 1 auto; min-width: 0; font-size: 0.8rem; font-weight: 600; line-height: 1.25; color: var(--ui-warn-fg); }
+.cup4-pair-hinweis { order: 3; flex: 1 0 100%; margin-bottom: 4px; font-size: 0.8rem; font-weight: 600; line-height: 1.3; color: var(--ui-warn-fg); }
 .cup4-pair-hinweis:empty { display: none; }
 
 /* Löschen: ruhiges Symbol, rot erst beim Zeigen; immer sichtbar (auch auf Touch) */
@@ -139,8 +138,8 @@
 .cup4-card-remove:hover { color: var(--ui-fehler); background: var(--ui-fehler-bg); }
 .cup4-card-remove:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
 
-/* Dreier: 1 oder 2 weiter – Segment-Schalter in Kleinformat unter den Zeilen */
-.cup4-pair-fuss { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding-left: 20px; font-size: 0.8rem; color: var(--ui-text-2); }
+/* Dreier: 1 oder 2 weiter – Segment-Schalter in Kleinformat unter den Zeilen, bündig mit den Namen */
+.cup4-pair-fuss { display: flex; align-items: center; margin-top: 6px; padding-left: 20px; }
 .cup4-adv-toggle { flex: none; }
 .cup4-adv-toggle button { height: 22px; padding: 0 8px; font-size: 0.75rem; }
 
@@ -163,6 +162,7 @@
 
 /* Platz: belegt = Name als Text, frei = gestrichelter Rahmen */
 .cup4-drop-zone {
+    position: relative;
     flex: 1;
     min-width: 0;
     min-height: 30px;
@@ -185,21 +185,25 @@
 .cup4-drop-zone.ui-droppable-hover { background: var(--ui-gewaehlt) !important; border: 1px solid var(--ui-akzent) !important; }
 .cup4-drop-zone:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
 
-.cup4-zone-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Der Name bekommt die ganze Breite; ein langer Name bricht um statt abgeschnitten zu werden */
+.cup4-zone-name { min-width: 0; padding: 3px 0; line-height: 1.25; overflow-wrap: anywhere; }
 
-/* Herausnehmen: erscheint beim Zeigen oder mit dem Fokus, auf Touch immer */
+/* Herausnehmen: legt sich beim Zeigen oder mit dem Fokus rechts über den Platz und nimmt dem Namen
+   so keinen Platz weg; auf Touch steht es fest in der Zeile */
 .cup4-zone-remove {
-    flex: none;
-    margin-left: auto;
+    position: absolute;
+    top: 50%;
+    right: 3px;
     width: 22px;
     height: 22px;
+    margin-top: -11px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    border: 0;
+    border: 1px solid var(--ui-rand);
     border-radius: 5px;
-    background: transparent;
+    background: var(--ui-flaeche);
     color: var(--ui-text-3);
     font-size: 1rem;
     cursor: pointer;
@@ -209,9 +213,11 @@
 .cup4-drop-zone:hover .cup4-zone-remove,
 .cup4-drop-zone:focus-within .cup4-zone-remove,
 .cup4-drop-zone:focus .cup4-zone-remove { opacity: 1; }
-.cup4-zone-remove:hover { color: var(--ui-fehler); background: var(--ui-fehler-bg); }
+.cup4-zone-remove:hover { color: var(--ui-fehler); background: var(--ui-fehler-bg); border-color: var(--ui-fehler-rand); }
 .cup4-zone-remove:focus-visible { opacity: 1; outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }
-@media (hover: none) { .cup4-zone-remove { opacity: 1; } }
+@media (hover: none) {
+    .cup4-zone-remove { position: static; flex: none; margin: 0 0 0 auto; border-color: transparent; background: transparent; opacity: 1; }
+}
 
 /* Punkte: wie die Zahlenfelder der Erfassungsseiten (leer getönt, gefüllt weiss und kräftiger) */
 .cup4-page .cup4-result {
@@ -227,6 +233,10 @@
 .cup4-page .cup4-result:not(:placeholder-shown) { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); font-weight: 600; }
 .cup4-page .cup4-result::placeholder { color: var(--ui-text-3); font-weight: 400; }
 .cup4-page .cup4-result:focus { background: var(--ui-gewaehlt); }
+/* Ohne Drehpfeile (wie .shot-input): sie nahmen beim Zeigen die halbe Feldbreite; Pfeiltasten gehen weiter */
+.cup4-page .cup4-result { -moz-appearance: textfield; appearance: textfield; }
+.cup4-page .cup4-result::-webkit-inner-spin-button,
+.cup4-page .cup4-result::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* Gleichstand: «Weiter» wählt, wer weiterkommt */
 .cup4-page .cup4-tie-pick { flex: none; padding: 0 8px; height: 26px; font-size: 0.75rem; }
@@ -243,9 +253,13 @@
     background: var(--ui-flaeche-2);
     border-radius: 0 0 var(--ui-rad-l) var(--ui-rad-l);
 }
-.cup4-anlegen label { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); }
+.cup4-anlegen label,
+.cup4-anlegen-text { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); }
 .cup4-anlegen .form-control { width: 58px; }
 .cup4-anlegen .form-select { width: auto; }
+/* Runde 2: Nachrücker – Text und «?» links, Knopf rechts */
+#r2-nachruecker { flex-wrap: nowrap; gap: 6px; }
+#r2-nachruecker .btn { margin-left: auto; white-space: nowrap; }
 
 /* ── Finale ──────────────────────────── */
 
@@ -261,6 +275,11 @@
     color: var(--ui-text-2);
 }
 .cup4-katb-switch .form-check-label { cursor: pointer; }
+/* Ausgeschaltet muss der Schalter als Schalter erkennbar bleiben: Rand feldrand (3:1), Knopf text-3 */
+.cup4-katb-switch .form-check-input:not(:checked) {
+    border-color: var(--ui-feldrand);
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23667080'/%3e%3c/svg%3e");
+}
 
 .cup4-final-item {
     display: flex;
@@ -301,7 +320,10 @@
 }
 .cup4-standcup .ui-tab-kopf + .cup4-standcup-row { border-top: 0; }
 .cup4-standcup-label { grid-column: 1 / -1; margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--ui-text-2); }
-.cup4-standcup-name { height: 30px; font-size: 0.875rem; }
+/* Namen wie die Punkte: leer getönt, ausgefüllt weiss mit kräftigerem Rand */
+.cup4-page .cup4-standcup-name { height: 30px; font-size: 0.875rem; background: var(--ui-flaeche-2); border-color: var(--ui-feldrand-leer); }
+.cup4-page .cup4-standcup-name:not(:placeholder-shown) { background: var(--ui-flaeche); border-color: var(--ui-rand-stark); }
+.cup4-page .cup4-standcup-name:focus { background: var(--ui-gewaehlt); }
 
 /* Auswahl im Nachrücker-Dialog */
 .cup4-nr-wahl { max-height: 220px; overflow-y: auto; text-align: left; }

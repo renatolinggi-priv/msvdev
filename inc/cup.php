@@ -100,16 +100,21 @@ $csrf = csrf_token();
             <!-- Wer aus Runde 1 weiterkommt und noch keinen Platz hat -->
             <div id="r2-winners-pool" class="cup4-bereit" hidden>
                 <div class="cup4-abschnitt">
-                    <span class="cup4-abschnitt-titel">Weiter aus Runde 1 <span class="cup4-zahl" id="r2-pool-counter"></span></span>
-                    <button type="button" class="btn-help" data-help="cup.nachruecker" aria-label="Hilfe"></button>
-                    <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" data-tooltip="Einen Verlierer aus Runde 1 für Runde 2 nachnehmen">
-                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nachrücker
-                    </button>
+                    <span class="cup4-abschnitt-titel">Weiter aus Runde 1</span>
+                    <span class="cup4-zahl" id="r2-pool-counter"></span>
                 </div>
                 <div id="r2-pool-list" class="cup4-liste"></div>
             </div>
             <div id="r2-pairs" class="cup4-paarungen"></div>
             <div class="ui-leerzustand" id="r2-empty"><i class="bi bi-hourglass-split" aria-hidden="true"></i><p>Runde 1 zuerst abschliessen.</p></div>
+            <!-- Nachrücker: bleibt stehen, auch wenn alle Gewinner schon einen Platz haben (sichtbar, sobald Runde 1 Verlierer hat) -->
+            <div class="cup4-anlegen" id="r2-nachruecker" hidden>
+                <span class="cup4-anlegen-text">Nachrücker</span>
+                <button type="button" class="btn-help" data-help="cup.nachruecker" aria-label="Hilfe"></button>
+                <button type="button" class="btn btn-outline-success btn-sm" id="btn-nachnominierung" aria-label="Nachrücker hinzufügen" data-tooltip="Einen Verlierer aus Runde 1 für Runde 2 nachnehmen">
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Hinzufügen
+                </button>
+            </div>
         </section>
 
         <!-- Finale + Standcup (4. Spalte) -->
@@ -230,7 +235,7 @@ $(document).ready(function() {
                    '<button type="button" class="cup4-card-remove" aria-label="Paarung löschen" data-tooltip="Paarung löschen"><i class="bi bi-trash3" aria-hidden="true"></i></button>' +
                    '</div>';
         o.zeilen.forEach(function(z) { html += zeileHtml(z.id, z.name, z.r); });
-        if (drei) html += '<div class="cup4-pair-fuss"><span aria-hidden="true">Weiter kommen</span>' + advancersToggle(o.adv) + '</div>';
+        if (drei) html += '<div class="cup4-pair-fuss">' + advancersToggle(o.adv) + '</div>';
         return html + '</div>';
     }
     function poolItemHtml(id, name, opts) {
@@ -295,6 +300,7 @@ $(document).ready(function() {
         const r2PoolCount = $('#r2-pool-list .cup4-pool-item').length;
         $('#r2-empty').toggle(r2Total === 0 && r2PoolCount === 0);
         $('#final-empty').toggle(fTotal === 0);
+        $('#r2-nachruecker').prop('hidden', $('#r1-pairs .cup4-participant-row.loser').length === 0);
 
         finalRang();
     }
@@ -329,7 +335,7 @@ $(document).ready(function() {
 
     function updateR2PoolCounter() {
         const cnt = $('#r2-pool-list .cup4-pool-item').length;
-        $('#r2-pool-counter').text(cnt);
+        $('#r2-pool-counter').text(cnt ? cnt + ' frei' : '');
         $('#r2-winners-pool').prop('hidden', cnt === 0);
     }
 
@@ -392,7 +398,9 @@ $(document).ready(function() {
         if (!an) cupStandcupGeaendert = false;
         msvPanelUngespeichert($('.cup4-kopf-aktionen'), cupGeaendert);
     }
+    // Nicht dazu gehören der Kat.-B-Schalter (speichert sofort) und «Neue Paarungen» (erst «Hinzufügen» ändert etwas)
     $(document).on('input', '#bracket input:not(#katb-final-switch)', function() {
+        if ($(this).closest('.cup4-anlegen').length) return;
         if ($(this).closest('#standcup-section').length) cupStandcupGeaendert = true;
         cupMarkieren(true);
     });
