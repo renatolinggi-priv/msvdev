@@ -84,6 +84,9 @@
 
         // ===== Resultate laden =====
         let fokusNachLaden = null;   // Mitglied-ID, deren Namensknopf nach dem Laden den Fokus bekommt
+        let ortNachLaden = null;     // nach dem Speichern im Raster: { feld: name des zuletzt benutzten Felds, scroll }
+        let letztesFeld = null;      // name des zuletzt fokussierten Rasterfelds
+        $(document).on('focusin', TAB + ' input.small-input', function () { letztesFeld = this.name; });
         function fokusAufName(id) {
             const knopf = $(TAB + ' input[name^="passe[' + id + ']"]').first().closest('tr').find('button.hk-name')[0];
             if (knopf && knopf.offsetParent !== null) knopf.focus();
@@ -113,6 +116,16 @@
                     const id = fokusNachLaden;
                     fokusNachLaden = null;
                     if (id && (!document.activeElement || document.activeElement === document.body)) fokusAufName(id);
+                    // Nach dem Speichern im Raster: dort weiter, wo man war (Scrollposition und Feld)
+                    const ort = ortNachLaden;
+                    ortNachLaden = null;
+                    if (ort) {
+                        $('#hkScroll').scrollTop(ort.scroll);
+                        const a = document.activeElement;
+                        const frei = !a || a === document.body || a.id === 'rasterSpeichernBtn' || a.id === 'rasterSpeicherleisteBtn';
+                        const feld = ort.feld ? $(TAB + ' input[name="' + ort.feld + '"]')[0] : null;
+                        if (frei && feld && feld.offsetParent !== null) feld.focus({ preventScroll: true });
+                    }
                 },
                 error: function (xhr) {
                     $tbody.html('<tr class="ui-leer"><td colspan="' + SPALTEN + '" class="text-danger"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>'
@@ -139,7 +152,7 @@
                         $(this).addClass('filled');
                     }
                     sum += val;
-                    if (val > best) { best = val; bestIdx = i; }
+                    if (val > best && val <= MAX) { best = val; bestIdx = i; }   // ungültige Werte (> 100) nie «beste Passe»
                 });
                 // Beste Passe nicht nur über Farbe: Stern in der Zelle (CSS) und «beste Passe» für den Screenreader
                 if (cfg.bestePasse && bestIdx >= 0 && best > 0) {
@@ -345,6 +358,7 @@
         function fillEmptyWithZero() {
             let geleerte = 0;
             $(TAB + ' tbody tr').each(function () {
+                if (!geaendert.has(rowId($(this)))) return;   // nur Zeilen, die gespeichert werden
                 const inputs = $(this).find('input.small-input');
                 let hasLaterValue = false;
                 for (let i = inputs.length - 1; i >= 0; i--) {
@@ -363,6 +377,7 @@
         function rasterSpeichern() {
             // Werte über 100 oder keine Zahl: nicht speichern, sondern zeigen, wo
             if (msvEingabeFehler('#hkFehler', msvPruefeFelder(TAB))) return Promise.resolve(false);
+            if (!geaendert.size) { msvToast('Es gibt nichts zu speichern.', 'info'); return Promise.resolve(true); }
             // Kopf-Knopf und Speicherleiste (Handy) sperren und zeigen dasselbe
             const $submitBtn = $('#rasterSpeichernBtn, #rasterSpeicherleisteBtn');
             $submitBtn.each(function () { $(this).data('html', $(this).html()); }).prop('disabled', true)
@@ -370,7 +385,12 @@
 
             const geleerte = fillEmptyWithZero();
             const selectedYear = $('#yearSelect').val();
-            const formData = $(FORM).serialize() + '&year=' + selectedYear + '&jahr=' + selectedYear;
+            // Nur die geänderten Zeilen: unveränderte alte Werte überschreiben so keine Eingaben einer zweiten Person
+            const $zeilen = $(TAB + ' tbody tr').filter(function () { return geaendert.has(rowId($(this))); });
+            const anzahl = $zeilen.length;
+            const formData = $zeilen.find('input.small-input').serialize()
+                + '&csrf_token=' + encodeURIComponent($(FORM + ' input[name="csrf_token"]').val())
+                + '&year=' + selectedYear + '&jahr=' + selectedYear;
 
             return new Promise(function (fertig) {
                 $.ajax({
@@ -381,7 +401,9 @@
                     success: function (resp) {
                         if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern der Ergebnisse', 'error'); fertig(false); return; }
                         geaendert.clear();
-                        msvToast(geleerte ? 'Resultate gespeichert, ' + (geleerte === 1 ? '1 Passe' : geleerte + ' Passen') + ' geleert' : 'Resultate gespeichert', 'success');
+                        const was = anzahl === 1 ? '1 Zeile' : anzahl + ' Zeilen';
+                        msvToast(was + ' gespeichert' + (geleerte ? ', ' + (geleerte === 1 ? '1 Passe' : geleerte + ' Passen') + ' geleert' : ''), 'success');
+                        ortNachLaden = { feld: letztesFeld, scroll: $('#hkScroll').scrollTop() };
                         loadResultate(selectedYear);
                         fertig(true);
                     },
@@ -444,6 +466,7 @@
 
         // ===== Auf der Website melden =====
         $('#publishChangelogBtn').on('click', async function () {
+            if (!(await window.hkVorAusgabe())) return;   // die Website zeigt, was gespeichert ist
             const r = await msvConfirm('Auf www.msvwilen.ch erscheint der Hinweis «' + msvEsc(cfg.website.titel + ' ' + $('#yearSelect').val()) + ' aktualisiert». Die Resultate selbst ändert das nicht.', 'Auf der Website melden?', 'Melden', 'Abbrechen');
             if (!r.isConfirmed) return;
             const selectedYear = $('#yearSelect').val();
@@ -471,7 +494,7 @@
                 const v = parseInt(this.value, 10) || 0;
                 if (this.value !== '' && this.value !== '0') filled++;
                 sum += v;
-                if (v > best) { best = v; bestIdx = i; }
+                if (v > best && v <= MAX) { best = v; bestIdx = i; }
                 $(this).toggleClass('filled', this.value !== '' && this.value !== '0');
             });
             if (cfg.bestePasse) {
@@ -644,7 +667,7 @@
                     const $field = $(
                         '<div class="entry-passe-field" data-pi="' + i + '">' +
                         '<label>Passe ' + (i + 1) + '</label>' +
-                        '<input type="text" inputmode="numeric" autocomplete="off" aria-label="Passe ' + (i + 1) + '" maxlength="3">' +
+                        '<input type="text" inputmode="numeric" autocomplete="off" aria-label="Passe ' + (i + 1) + '" maxlength="3" data-max="' + MAX + '">' +
                         '</div>'
                     );
                     $field.find('input').val($(this).val() || '');
@@ -658,7 +681,9 @@
                 if (row.$tr.is(':visible')) row.$tr[0].scrollIntoView({ block: 'nearest' });
 
                 this.refreshFields();
+                msvEingabeFehler('#entryFehler', []);
                 zaehlen();
+                this.stand();
                 this._silent = true;
                 this.populateSelect();
                 this._silent = false;
@@ -699,7 +724,39 @@
                 });
             },
 
-            close() {
+            // Hat der aktuelle Schütze ungespeicherte Passen? Dann Chip «Nicht gespeichert» im Panel-Kopf
+            istGeaendert() {
+                return this.idx >= 0 && geaendert.has(this.rows[this.idx].id);
+            },
+            stand() {
+                msvPanelUngespeichert($('#entryUngespeichert'), this.istGeaendert());
+            },
+
+            // Vor Schliessen, Blättern oder Wechseln: Ungespeichertes speichern, verwerfen oder zurück.
+            // Gibt true zurück, wenn das Panel den Schützen verlassen darf.
+            _fragt: false,
+            async verlassen() {
+                if (!this.istGeaendert()) return true;
+                if (this._fragt) return false;
+                const row = this.rows[this.idx];
+                this._fragt = true;
+                let wahl;
+                try { wahl = await msvUngespeichert({ wer: row.name }); } finally { this._fragt = false; }
+                if (wahl === 'speichern') return await this.saveP();
+                if (wahl === 'verwerfen') {
+                    // Raster-Zeile auf den geladenen Stand zurück (dort steht, was gespeichert ist)
+                    row.$inputs.each(function () { this.value = this.defaultValue; this.removeAttribute('aria-invalid'); $(this).trigger('input'); });
+                    geaendert.delete(row.id);
+                    row.$tr.removeClass('hk-geaendert');
+                    zaehlen();
+                    return true;
+                }
+                $('#entryPassenGrid input').first().trigger('focus');
+                return false;   // zurück
+            },
+
+            async close() {
+                if (!(await this.verlassen())) return;
                 const letzte = this.idx >= 0 ? this.rows[this.idx].id : null;
                 const fokusImPanel = document.getElementById('entryPanel').contains(document.activeElement);
                 $('#entryPanel').removeClass('open');
@@ -724,9 +781,10 @@
                 }
             },
 
-            navigate(dir) {
+            async navigate(dir) {
                 const n = this.idx + dir;
-                if (n >= 0 && n < this.rows.length) this.open(n);
+                if (n < 0 || n >= this.rows.length) return;
+                if (await this.verlassen()) this.open(n);
             },
 
             // Panel-Feld → Raster-Input
@@ -735,6 +793,7 @@
                 const row = this.rows[this.idx];
                 row.$inputs.eq(pi).val(value).trigger('input');
                 markGeaendert(row.$tr);   // ungespeichert, bis das Panel speichert
+                this.stand();
             },
 
             // Gefüllt, beste Passe und Total im Panel
@@ -747,7 +806,7 @@
                     $(this).removeClass('is-best');
                     $(this).find('input').toggleClass('filled', raw !== '' && raw !== '0');
                     sum += v;
-                    if (v > best) { best = v; bestIdx = i; }
+                    if (v > best && v <= MAX) { best = v; bestIdx = i; }
                 });
                 if (cfg.bestePasse && bestIdx >= 0 && best > 0) $fields.eq(bestIdx).addClass('is-best');
                 $('#entryTotalBadge').html('<span>Total</span>' + sum);
@@ -772,31 +831,50 @@
                 return obj;
             },
 
-            save(onDone) {
-                if (this.idx < 0 || $('#entrySaveBtn').prop('disabled')) return;   // läuft bereits
+            // Speichert den aktuellen Schützen; Promise: true = gespeichert, false = nicht (Prüffehler oder Serverfehler)
+            saveP() {
+                if (this.idx < 0 || $('#entrySaveBtn').prop('disabled')) return Promise.resolve(false);   // läuft bereits
+                // Wie im Raster: Werte über 100 nicht speichern, sondern im Panel zeigen, wo
+                if (msvEingabeFehler('#entryFehler', msvPruefeFelder('#entryPassenGrid'))) return Promise.resolve(false);
                 const row = this.rows[this.idx];
                 const $btns = $('#entrySaveBtn, #entrySaveNextBtn').prop('disabled', true);
-                $.ajax({
-                    url: cfg.speichern,
-                    type: 'POST',
-                    data: {
-                        csrf_token: $('input[name="csrf_token"]').first().val(),
-                        jahr: $('#yearSelect').val(),
-                        year: $('#yearSelect').val(),
-                        passe: this.collectPayload(row)
-                    },
-                    dataType: 'json',
-                    success: function (resp) {
-                        if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Fehler beim Speichern', 'error'); return; }
-                        EntryPanel._saved = true;
-                        geaendert.delete(row.id);
-                        row.$tr.removeClass('hk-geaendert');
-                        zaehlen();
-                        if (typeof onDone === 'function') onDone();
-                        else msvToast('Gespeichert', 'success');
-                    },
-                    error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Fehler beim Speichern'), 'error'); },
-                    complete: function () { $btns.prop('disabled', false); }
+                const self = this;
+                return new Promise(function (fertig) {
+                    $.ajax({
+                        url: cfg.speichern,
+                        type: 'POST',
+                        data: {
+                            csrf_token: $('input[name="csrf_token"]').first().val(),
+                            jahr: $('#yearSelect').val(),
+                            year: $('#yearSelect').val(),
+                            passe: self.collectPayload(row)
+                        },
+                        dataType: 'json',
+                        success: function (resp) {
+                            if (!resp || !resp.success) { msvToast((resp && resp.message) || 'Die Passen wurden nicht gespeichert. Bitte nochmals versuchen.', 'error'); fertig(false); return; }
+                            self._saved = true;
+                            geaendert.delete(row.id);
+                            row.$tr.removeClass('hk-geaendert');
+                            row.$inputs.each(function () { this.defaultValue = this.value; });   // gilt jetzt als gespeichert
+                            zaehlen();
+                            self.stand();
+                            fertig(true);
+                        },
+                        error: function (xhr) { msvToast(msvXhrMessage(xhr, 'Die Passen wurden nicht gespeichert. Bitte nochmals versuchen.'), 'error'); fertig(false); },
+                        complete: function () {
+                            $btns.prop('disabled', false);
+                            // Der gesperrte Knopf hat den Fokus verloren: zurück ins Panel
+                            if (!document.activeElement || document.activeElement === document.body) $('#entryPassenGrid input').first().trigger('focus');
+                        }
+                    });
+                });
+            },
+            save(onDone) {
+                const name = this.idx >= 0 ? this.rows[this.idx].name : '';
+                return this.saveP().then(function (ok) {
+                    if (!ok) return;
+                    if (typeof onDone === 'function') onDone();
+                    else msvToast('Passen von ' + name + ' gespeichert', 'success');
                 });
             },
 
@@ -807,7 +885,7 @@
                     if (n >= 0) {
                         EntryPanel.open(n);
                     } else {
-                        msvToast('Alle Schützen erfasst', 'success');
+                        msvToast('Gespeichert – alle Schützen sind erfasst', 'success');
                         EntryPanel.close();
                     }
                 });
@@ -824,6 +902,8 @@
             const pi = parseInt($(this).closest('.entry-passe-field').data('pi'), 10);
             EntryPanel.syncField(pi, value);
             EntryPanel.refreshFields();
+            $(this).removeData('autoSprung');
+            if (!$('#entryFehler').prop('hidden')) msvEingabeFehler('#entryFehler', msvPruefeFelder('#entryPassenGrid'), false);
 
             // Auto-Weiter beim Tippen: 2-9 → zweistellig, 1 → dreistellig (100); 0 bleibt stehen
             const typed = e.originalEvent && /^insert/.test(e.originalEvent.inputType || '');
@@ -831,9 +911,11 @@
             if (typed && need && value.length >= need) {
                 const $inputs = $('#entryPassenGrid input');
                 const i = $inputs.index(this);
-                if (i < $inputs.length - 1) $inputs.eq(i + 1).focus().select();
+                // Das Ziel merkt sich den Sprung: ein Enter aus Gewohnheit gleich danach bleibt im (leeren) Feld
+                if (i < $inputs.length - 1) $inputs.eq(i + 1).data('autoSprung', true).focus().select();
             }
         });
+        $(document).on('blur', '#entryPassenGrid input', function () { $(this).removeData('autoSprung'); });
 
         $(document).on('focus', '#entryPassenGrid input', function () {
             if ($(this).val() === '0') $(this).val('');
@@ -844,6 +926,8 @@
         $(document).on('keydown', '#entryPassenGrid input', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                // Gerade selbst hierher gesprungen und noch leer: Enter überspringt nicht diese Passe
+                if ($(this).data('autoSprung') && this.value === '') { $(this).removeData('autoSprung'); return; }
                 const $inputs = $('#entryPassenGrid input');
                 const i = $inputs.index(this);
                 if (i < $inputs.length - 1) $inputs.eq(i + 1).focus().select();
@@ -858,17 +942,23 @@
         });
 
         // Klick auf die Namen-Zelle öffnet die Schnellerfassung bei diesem Schützen
-        $(document).on('click', TAB + ' tbody td:first-child', function () {
+        $(document).on('click', TAB + ' tbody td:first-child', async function () {
             const $tr = $(this).closest('tr');
             const i = EntryPanel.rows.findIndex(r => r.$tr.is($tr));
-            if (i >= 0) EntryPanel.open(i);
+            if (i < 0 || i === EntryPanel.idx) return;
+            if ($('#entryPanel').hasClass('open') && !(await EntryPanel.verlassen())) return;
+            EntryPanel.open(i);
         });
 
         // Auswahl «Schütze wechseln» springt zum Schützen
-        $(document).on('change', '#entryMemberSelect', function () {
+        $(document).on('change', '#entryMemberSelect', async function () {
             if (EntryPanel._silent) return;
             const i = parseInt($(this).val(), 10);
-            if (!isNaN(i) && i !== EntryPanel.idx) EntryPanel.open(i);
+            if (isNaN(i) || i === EntryPanel.idx) return;
+            if (await EntryPanel.verlassen()) { EntryPanel.open(i); return; }
+            EntryPanel._silent = true;   // zurück: Auswahl wieder auf den aktuellen Schützen
+            $(this).val(String(EntryPanel.idx)).trigger('change');
+            EntryPanel._silent = false;
         });
 
         $('#entryPrev').on('click', function () { EntryPanel.navigate(-1); });
@@ -882,7 +972,7 @@
         });
         $('#entrySaveNextBtn').on('click', function () { EntryPanel.saveAndNext(); });
         $(document).on('keydown', function (e) {
-            if (e.key === 'Escape' && $('#entryPanel').hasClass('open') && !$('.select2-container--open').length) EntryPanel.close();
+            if (e.key === 'Escape' && $('#entryPanel').hasClass('open') && !$('.select2-container--open').length && !$('.swal2-container').length) EntryPanel.close();
         });
 
         // Ctrl+S speichert (Panel offen: diesen Schützen, sonst das ganze Raster), Ctrl+Enter im Panel: speichern & weiter

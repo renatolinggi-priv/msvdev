@@ -90,7 +90,7 @@ html.portal-fahne {
     --bs-focus-ring-color: rgba(0, 82, 160, .5);
     --bs-body-font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-    font-size: 15px;
+    font-size: 93.75%;   /* 15px bei der Standard-Schriftgrösse 16px; folgt einer grösseren Browser-Schrift */
     caret-color: var(--akzent);
     accent-color: var(--akzent);
     scrollbar-color: var(--linie-stark) transparent;
@@ -143,6 +143,8 @@ html.portal-fahne body {
 .portal-fahne .portal-bell .portal-bell-btn,
 .portal-fahne .portal-bell .portal-bell-btn:hover { color: var(--tinte); }
 .portal-fahne .portal-bell .portal-bell-btn i { font-size: 1.35rem; }
+/* Tippfläche 44 × 44 px wie die übrigen Kopf-Knöpfe */
+.portal-fahne .portal-bell .portal-bell-btn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
 .portal-fahne .portal-bell .bn-badge { background-color: var(--verein) !important; color: #fff; }
 
 /* Aufklappmenues (Desktop-Navigation, Benutzermenue, Glocke) */
@@ -610,9 +612,20 @@ html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .
     color: var(--tinte-2);
 }
 
+/* ---- Zoom 200 % / grosse Schrift: lange Wörter («Generalversammlung», «Sektionsmeisterschaft») brechen um,
+        statt die Seite seitwärts zu schieben ---- */
+.portal-fahne .portal-content :is(h1, h2, h3, .tf-name, .jm-row-title, .mt-item-title, .bn-item-title, .passe-status, .p-info-value, .bn-toggle-text, .fr-reiter a) {
+    overflow-wrap: anywhere;
+    hyphens: auto;
+}
+.portal-fahne .bn-toggle { flex-wrap: wrap; }
+.portal-fahne .p-info-row { flex-wrap: wrap; }
+.portal-fahne .passe-row .passe-status { flex-shrink: 1; min-width: 0; }   /* «nicht geschossen» bricht um statt über den Rand */
+
 /* ---- Resultatseiten: Reiter und Zustand in Worten ------------------ */
 .portal-fahne .fr-reiter {
     display: flex;
+    flex-wrap: wrap;
     gap: .25rem;
     margin-bottom: .75rem;
     padding: .2rem;

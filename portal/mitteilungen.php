@@ -155,7 +155,7 @@ $istVorstand = isVorstand();
     }
 
     function renderItem(it) {
-        var unread = !it.gelesen_am;
+        var unread = !it.gelesen_am && !+it.abgelaufen;   // abgelaufene Erinnerungen nicht als neu
         var icon = ICONS[it.kategorie] || ICONS.allgemein;
         var li = document.createElement(it.url ? 'a' : 'div');
         li.className = 'mt-item' + (unread ? ' unread' : '');
@@ -163,7 +163,7 @@ $istVorstand = isVorstand();
         li.innerHTML =
             '<i class="bi ' + icon + ' mt-item-icon"></i>' +
             '<div class="mt-item-body">' +
-                '<div class="mt-item-title">' + esc(it.titel) + '</div>' +
+                '<div class="mt-item-title">' + (unread ? '<span class="visually-hidden">Neu: </span>' : '') + esc(it.titel) + '</div>' +
                 '<div class="mt-item-text">' + esc(it.text) + '</div>' +
                 '<div class="mt-item-time">' + fmtTime(it.erstellt_am) + '</div>' +
             '</div>';

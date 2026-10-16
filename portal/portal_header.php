@@ -31,9 +31,8 @@ try {
 // Benachrichtigungs-Glocke: Ungelesen-Zähler (best-effort, bricht nie die Seite).
 $bnUnread = 0;
 try {
-    $__bs = getDB()->prepare('SELECT COUNT(*) FROM benachrichtigungen_inbox WHERE user_id = ? AND gelesen_am IS NULL');
-    $__bs->execute([(int) ($_SESSION['user_id'] ?? 0)]);
-    $bnUnread = (int) $__bs->fetchColumn();
+    require_once __DIR__ . '/../inc/benachrichtigungen_inbox.inc.php';   // abgelaufene Erinnerungen zählen nicht
+    $bnUnread = inboxNeuAnzahl(getDB(), (int) ($_SESSION['user_id'] ?? 0));
 } catch (Throwable $e) { $bnUnread = 0; }
 
 // Jungschuetzen haben einen eingeschraenkten Portal-Zugang: nur ihre eigenen Seiten.
@@ -387,7 +386,8 @@ if (isAdmin()) {
                 height: 100dvh;      /* iOS Safari: sichtbare Hoehe OHNE untere Adressleiste -> letzte Eintraege/Abmelden bleiben sichtbar */
                 background: white;
                 z-index: 9999;
-                transition: left 0.3s ease;
+                transition: left 0.3s ease, visibility 0s linear 0.3s;
+                visibility: hidden;   /* geschlossen weder per Tab noch für Screenreader erreichbar */
                 overflow-y: auto;
                 box-shadow: 4px 0 12px rgba(0,0,0,0.15);
                 display: flex;
@@ -395,6 +395,8 @@ if (isAdmin()) {
             }
             .offcanvas-nav.show {
                 left: 0;
+                visibility: visible;
+                transition: left 0.3s ease, visibility 0s;
             }
 
             /* Overlay */
@@ -797,12 +799,12 @@ if (isAdmin()) {
 
     <!-- Mobile Off-Canvas Menu -->
     <div class="offcanvas-overlay" id="portalOverlay"></div>
-    <div class="offcanvas-nav" id="portalOffcanvas">
+    <div class="offcanvas-nav" id="portalOffcanvas" role="dialog" aria-modal="true" aria-labelledby="portalMenuTitel">
         <div class="offcanvas-header">
             <?php if ($portal_fahne): ?>
-            <h5 class="offcanvas-title"><img src="../icons/icon-96x96.png" alt="" width="32" height="32" class="portal-brand-logo">MSV Wilen</h5>
+            <h5 class="offcanvas-title" id="portalMenuTitel"><img src="../icons/icon-96x96.png" alt="" width="32" height="32" class="portal-brand-logo">MSV Wilen</h5>
             <?php else: ?>
-            <h5 class="offcanvas-title"><img src="../icons/icon-32x32.png" alt="MSV" width="20" height="20" style="border-radius:4px; vertical-align:-2px; margin-right:8px;">MSV Wilen Mitgliederportal</h5>
+            <h5 class="offcanvas-title" id="portalMenuTitel"><img src="../icons/icon-32x32.png" alt="MSV" width="20" height="20" style="border-radius:4px; vertical-align:-2px; margin-right:8px;">MSV Wilen Mitgliederportal</h5>
             <?php endif; ?>
             <button class="offcanvas-close" id="portalMenuClose" aria-label="Schliessen">
                 <i class="bi bi-x"></i>
@@ -888,7 +890,8 @@ if (isAdmin()) {
             overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
             toggler.setAttribute('aria-expanded', 'true');
-            if (closeBtn) closeBtn.focus();
+            // Fokus erst, wenn das Menü sichtbar ist (visibility wechselt mit der Klasse .show)
+            if (closeBtn) setTimeout(function () { closeBtn.focus(); }, 60);
         }
 
         function closeMenu() {

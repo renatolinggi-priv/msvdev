@@ -556,14 +556,14 @@ if (!empty($_SESSION['user_id'])) {
                     }
                     list.innerHTML = '';
                     d.items.forEach(function (it) {
-                        var unread = !it.gelesen_am;
+                        var unread = !it.gelesen_am && !+it.abgelaufen;   // abgelaufene Erinnerungen nicht als neu
                         var a = document.createElement(it.url ? 'a' : 'div');
                         a.className = 'bn-item' + (unread ? ' unread' : '');
                         if (it.url) a.href = '../' + String(it.url).replace(/^\/+/, '');
                         a.innerHTML =
                             '<i class="bi ' + (ICONS[it.kategorie] || ICONS.allgemein) + ' bn-item-icon"></i>' +
                             '<div class="bn-item-body">' +
-                                '<div class="bn-item-title">' + esc(it.titel) + '</div>' +
+                                '<div class="bn-item-title">' + (unread ? '<span class="visually-hidden">Neu: </span>' : '') + esc(it.titel) + '</div>' +
                                 '<div class="bn-item-text">' + esc(it.text) + '</div>' +
                                 '<div class="bn-item-time">' + fmtTime(it.erstellt_am) + '</div>' +
                             '</div>';
@@ -580,6 +580,14 @@ if (!empty($_SESSION['user_id'])) {
                     });
                 }).catch(function () { list.innerHTML = '<div class="bn-dd-empty text-muted">Mitteilungen konnten nicht geladen werden. Öffne die Glocke nochmals.</div>'; });
         }
+
+        // Auf dem Handy führt die Glocke direkt zur Seite «Mitteilungen» (das Dropdown wäre dort fast bildschirmhoch
+        // und hätte eine zweite Scrollfläche). Capture, damit Bootstrap das Dropdown gar nicht erst öffnet.
+        btn.addEventListener('click', function (e) {
+            if (!window.matchMedia('(max-width: 575.98px)').matches) return;
+            e.preventDefault(); e.stopImmediatePropagation();
+            window.location.href = 'mitteilungen.php';
+        }, true);
 
         // Dropdown oeffnet -> Liste laden
         var wrap = btn.closest('.portal-bell');

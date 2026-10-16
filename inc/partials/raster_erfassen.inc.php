@@ -113,7 +113,7 @@ if (!function_exists('msv_raster_tabelle')) {
     <div class="panel-header">
         <div class="min-w-0">
             <div class="d-flex align-items-center gap-2"><h2 class="mb-0" id="entryName">Erfassen</h2><button type="button" class="btn-help" data-help="<?= $k ?>.schnellerfassung" aria-label="Hilfe"></button></div>
-            <small class="panel-pos" id="entrySubtitle"></small>
+            <div class="d-flex align-items-center gap-2"><small class="panel-pos" id="entrySubtitle"></small><span id="entryUngespeichert"></span></div>
         </div>
         <div class="d-flex align-items-center gap-1 ms-auto">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="entryPrev" data-tooltip="Vorheriger Schütze" aria-label="Vorheriger Schütze">
@@ -132,6 +132,7 @@ if (!function_exists('msv_raster_tabelle')) {
         <div class="mb-3">
             <select id="entryMemberSelect" class="form-select form-select-sm"></select>
         </div>
+        <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler mb-3" id="entryFehler" role="alert" hidden></div>
         <div class="hk-erfassung">
             <div class="hk-erfassung-kopf">
                 <span class="hk-erfassung-titel">Passen</span>
@@ -139,7 +140,7 @@ if (!function_exists('msv_raster_tabelle')) {
             </div>
             <div class="entry-passen-grid" id="entryPassenGrid" style="--raster-spalten: <?= $spalten ?>;"></div>
         </div>
-        <p class="hk-hinweis">Enter springt ins nächste Feld, im letzten Feld wird gespeichert. Leere Felder vor einer späteren Passe werden als 0 gespeichert; ein geleertes Feld löscht die gespeicherte Passe.</p>
+        <p class="hk-hinweis">Nach zwei Ziffern (bei 100 nach drei) springt der Cursor selbst ins nächste Feld, sonst mit Enter; Enter im letzten Feld speichert. Leere Felder vor einer späteren Passe werden als 0 gespeichert; ein geleertes Feld löscht die gespeicherte Passe.</p>
     </div>
     <div class="panel-footer">
         <div class="d-flex gap-2 w-100 align-items-center">

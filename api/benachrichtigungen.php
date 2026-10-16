@@ -12,6 +12,7 @@
 
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../inc/dbconnect.inc.php';
+require_once __DIR__ . '/../inc/benachrichtigungen_inbox.inc.php';   // «neu» = ungelesen und nicht abgelaufen
 
 header('Content-Type: application/json; charset=utf-8');
 requireRoleJson(['admin', 'vorstand', 'mitglied', 'jungschuetze']);
@@ -25,9 +26,7 @@ $action = $_GET['action'] ?? '';
 // ---------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($action === 'unread_count') {
-        $s = $db->prepare('SELECT COUNT(*) FROM benachrichtigungen_inbox WHERE user_id = ? AND gelesen_am IS NULL');
-        $s->execute([$userId]);
-        echo json_encode(['success' => true, 'count' => (int) $s->fetchColumn()]);
+        echo json_encode(['success' => true, 'count' => inboxNeuAnzahl($db, $userId)]);
         exit;
     }
 
@@ -35,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $limit  = max(1, min(50, (int) ($_GET['limit'] ?? 20)));
         $offset = max(0, (int) ($_GET['offset'] ?? 0));
         // LIMIT/OFFSET als Integer interpoliert (keine Bind-Unterstuetzung bei manchen Treibern) -> vorher gecastet.
-        $s = $db->prepare("SELECT id, titel, text, url, kategorie, gelesen_am, erstellt_am
+        $s = $db->prepare("SELECT id, titel, text, url, kategorie, gelesen_am, erstellt_am, " . inboxAbgelaufenSpalte($db) . "
                            FROM benachrichtigungen_inbox
                            WHERE user_id = ?
                            ORDER BY erstellt_am DESC, id DESC
@@ -43,13 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $s->execute([$userId]);
         $items = $s->fetchAll(PDO::FETCH_ASSOC);
 
-        $u = $db->prepare('SELECT COUNT(*) FROM benachrichtigungen_inbox WHERE user_id = ? AND gelesen_am IS NULL');
-        $u->execute([$userId]);
-
         echo json_encode([
             'success' => true,
             'items'   => $items,
-            'unread'  => (int) $u->fetchColumn(),
+            'unread'  => inboxNeuAnzahl($db, $userId),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }

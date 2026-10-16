@@ -100,7 +100,15 @@ html.portal-fahne { --bs-border-radius: 8px; --bs-border-radius-sm: 8px; --bs-bo
 .portal-fahne .jm-naechst p { margin: 0; font-size: .875rem; color: var(--tinte-2); line-height: 1.45; }
 .portal-fahne .jm-naechst a { color: var(--akzent); font-weight: 600; }
 .portal-fahne .jm-naechst .jm-eingabe { margin-top: .55rem; }
-.portal-fahne .jm-gruppe { display: flex; justify-content: space-between; align-items: baseline; margin: 1rem 0 .4rem; font-size: .875rem; font-weight: 700; color: var(--tinte); }
+.portal-fahne .jm-gruppe { display: flex; justify-content: space-between; align-items: baseline; margin: 1rem 0 .4rem; font-size: 1rem; font-weight: 700; color: var(--tinte); }
+/* «Ohne Resultat» eingeklappt: Titel als Knopf, Liste erst auf Wunsch */
+.portal-fahne .jm-ohne > summary { list-style: none; cursor: pointer; border-radius: 6px; }
+.portal-fahne .jm-ohne > summary::-webkit-details-marker { display: none; }
+.portal-fahne .jm-ohne > summary .jm-gruppe { margin-bottom: .4rem; }
+.portal-fahne .jm-ohne > summary .jm-gruppe-zahl::after { content: "\F282"; display: inline-block; font-family: "bootstrap-icons"; font-weight: 400; margin-left: .5rem; color: var(--tinte-2); transition: transform .15s ease-out; }
+.portal-fahne .jm-ohne[open] > summary .jm-gruppe-zahl::after { transform: rotate(180deg); }
+.portal-fahne .jm-ohne > summary:focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
+.portal-fahne .jm-leer { margin: .25rem 0 1rem; font-size: .9375rem; color: var(--tinte-2); }
 .portal-fahne .jm-gruppe-zahl { font-weight: 600; color: var(--tinte-2); }
 .portal-fahne .jm-row.future .jm-row-title { color: var(--tinte); }
 .portal-fahne .jm-dat { flex-shrink: 0; width: 3.4rem; font-size: .8125rem; font-weight: 700; color: var(--tinte); line-height: 1.25; font-variant-numeric: tabular-nums; }

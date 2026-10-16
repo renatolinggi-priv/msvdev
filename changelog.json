@@ -1,5 +1,59 @@
 [
   {
+    "version": "1.68.41",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Mitgliederportal: Glocke zeigt nur noch, was noch gilt",
+        "beschreibung": "Erinnerungen an Einsätze, JM-Tage, Termine und Umfragen zählen nach ihrem Datum nicht mehr als neu, auch wenn niemand sie geöffnet hat; Mitteilungen ohne Datum bleiben neu, bis sie gelesen sind. Bisher sammelten sich dort alte Erinnerungen an, deren Termin längst vorbei war. Neue Einträge sind auch für Screenreader als neu gekennzeichnet. Auf dem Handy öffnet die Glocke direkt die Seite «Mitteilungen», die Tippfläche ist 44 × 44 Pixel gross (Datenbank-Aktualisierung 120).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: grosse Schrift und Zoom 200 %",
+        "beschreibung": "Das Portal folgt der im Browser eingestellten Schriftgrösse. Lange Wörter in Titeln brechen um, Reiter, Schalter und Passen-Zeilen umbrechen, statt die Seite seitwärts zu schieben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal «Meine JM»: ruhiger, wenn wenig geschossen ist",
+        "beschreibung": "Ohne Resultat im gewählten Jahr steht ein Satz statt «0 Total · 0 / 22 · 3 / 3 Streicher». Die Liste «Ohne Resultat» ist eingeklappt und öffnet auf Wunsch. In abgeschlossenen Jahren gibt es keine Gruppe «Danach» mehr. Der eigene Stand bleibt wie bisher bis zum Absenden verborgen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.40",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Heim und Kanti erfassen: Schnellerfassung so sicher wie das Raster",
+        "beschreibung": "Das Panel prüft die Passen vor dem Speichern und zeigt einen Wert über 100 in einer Liste über den Feldern statt nur in einer Meldung. Im Kopf steht «Nicht gespeichert», solange etwas offen ist. Escape, Blättern und der Wechsel des Schützen fragen dann zuerst: speichern, verwerfen oder zurück. Ein Enter gleich nach dem selbsttätigen Weiterspringen überspringt keine Passe mehr. Hilfetexte nachgeführt (Datenbank-Aktualisierung 119).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Kantonalstich: ungültiger Wert ist nie die beste Passe",
+        "beschreibung": "Ein Wert über 100 bekam Stern und Gold der besten Passe, und auf dem Handy verdeckte das Gold die rote Fehlermarkierung. Jetzt zählen nur gültige Werte, und der Fehler bleibt rot.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim und Kanti erfassen: Speichern behält den Ort",
+        "beschreibung": "Nach dem Speichern bleiben Fokus und Scrollposition im Raster dort, wo man war. Gespeichert werden nur die geänderten Zeilen; so überschreiben alte Werte keine Eingaben, die jemand anders inzwischen gemacht hat. Die Meldung nennt, wie viele Zeilen gespeichert wurden. «Auf Website melden» fragt zuerst, ob Ungespeichertes gespeichert werden soll.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: geschlossenes Menü nicht mehr per Tastatur erreichbar",
+        "beschreibung": "Auf dem Handy liefen Tab und Bildschirmleser durch die Einträge des geschlossenen Menüs, obwohl es nicht zu sehen war. Geschlossen ist es jetzt ganz ausgeblendet, geöffnet ein benannter Dialog.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.39",
     "datum": "2026-10-16",
     "aenderungen": [

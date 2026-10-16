@@ -280,6 +280,12 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Dein Konto ist noch keinem Mitglied zugeordnet. Melde dich beim Vorstand, damit er es verknüpft.</div>
 <?php else: ?>
 
+<?php if (!empty($portal_fahne) && $geschossen_count === 0): ?>
+<!-- Noch nichts geschossen: ein Satz statt «0 Total · 0 / 22 · 3 / 3 Streicher» -->
+<p class="jm-leer"><?php echo $selected_year < $current_year
+    ? 'Du hast ' . (int) $selected_year . ' in der Jahresmeisterschaft kein Resultat.'
+    : 'Du hast ' . (int) $selected_year . ' in der Jahresmeisterschaft noch kein Resultat.'; ?></p>
+<?php else: ?>
 <!-- Zusammenfassung -->
 <div class="result-summary">
     <div class="rs-item total">
@@ -295,6 +301,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
         <span class="rs-lbl">Streicher</span>
     </div>
 </div>
+<?php endif; ?>
 
 <?php
 // Zeilen vorbereiten: Zustand und Schiesstage pro Anlass (bisherige Liste und Vorschau gleich)
@@ -471,7 +478,7 @@ $jmZeile = function (array $z, string $datumSpalte = '', string $metaVorschau = 
     foreach ($jm_zeilen as $z) {
         if ($z['geschossen'])             $g_geschossen[] = $z;
         elseif ($z['naechster'] !== null) $g_danach[] = $z;
-        elseif ($z['undatiert'])          $g_jahr[] = $z;
+        elseif ($z['undatiert'] && $selected_year >= $current_year) $g_jahr[] = $z;   // abgeschlossenes Jahr: nichts kommt mehr
         else                              $g_ohne[] = $z;
     }
     usort($g_danach, fn($a, $b) => $a['naechster'] <=> $b['naechster']);
@@ -552,7 +559,8 @@ $jmZeile = function (array $z, string $datumSpalte = '', string $metaVorschau = 
     <?php endif; ?>
 
     <?php if ($g_ohne): ?>
-<?php echo $jmGruppe('Ohne Resultat', count($g_ohne)); ?>
+<details class="jm-ohne">
+<summary><?php echo $jmGruppe('Ohne Resultat', count($g_ohne)); ?></summary>
 <div class="jm-list">
     <?php foreach ($g_ohne as $z):
         $erster = null;
@@ -561,6 +569,7 @@ $jmZeile = function (array $z, string $datumSpalte = '', string $metaVorschau = 
         echo $jmZeile($z, '', $meta);
     endforeach; ?>
 </div>
+</details>
     <?php endif; ?>
 
 <script>

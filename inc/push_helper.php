@@ -156,13 +156,20 @@ if (!function_exists('sendePushAnBenutzer')) {
  * @return int Anzahl erfolgreicher Push-Zustellungen (0 wenn Push aus/keine Geraete).
  */
 if (!function_exists('benachrichtigungZustellen')) {
-    function benachrichtigungZustellen(int $userId, string $titel, string $text, string $url = '/portal/dashboard.php', string $kategorie = 'allgemein', string $tag = ''): int {
+    // $giltBis (Y-m-d): Erinnerungen gelten bis zu diesem Tag als «neu», danach nicht mehr (Migration 120)
+    function benachrichtigungZustellen(int $userId, string $titel, string $text, string $url = '/portal/dashboard.php', string $kategorie = 'allgemein', string $tag = '', string $giltBis = ''): int {
         $db = getDB();
+        require_once __DIR__ . '/benachrichtigungen_inbox.inc.php';
 
         // 1) In-App immer persistieren (best-effort: ein DB-Fehler darf den Push nicht verhindern)
         try {
-            $ins = $db->prepare('INSERT INTO benachrichtigungen_inbox (user_id, titel, text, url, kategorie) VALUES (?, ?, ?, ?, ?)');
-            $ins->execute([$userId, $titel, $text, $url, $kategorie]);
+            if (inboxHatGiltBis($db)) {
+                $ins = $db->prepare('INSERT INTO benachrichtigungen_inbox (user_id, titel, text, url, kategorie, gilt_bis) VALUES (?, ?, ?, ?, ?, ?)');
+                $ins->execute([$userId, $titel, $text, $url, $kategorie, preg_match('/^\d{4}-\d{2}-\d{2}$/', $giltBis) ? $giltBis : null]);
+            } else {
+                $ins = $db->prepare('INSERT INTO benachrichtigungen_inbox (user_id, titel, text, url, kategorie) VALUES (?, ?, ?, ?, ?)');
+                $ins->execute([$userId, $titel, $text, $url, $kategorie]);
+            }
         } catch (\Throwable $e) {
             error_log('benachrichtigungZustellen: Inbox-Insert fehlgeschlagen (user ' . $userId . '): ' . $e->getMessage());
         }

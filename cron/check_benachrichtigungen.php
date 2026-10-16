@@ -100,7 +100,9 @@ function zustellen(PDO $db, int $userId, string $kategorie, string $refTyp, int 
     if (bereitsGemeldet($db, $userId, $refTyp, $refId, $termin)) { $stats['skipped']++; return; }
 
     try {
-        $n = benachrichtigungZustellen($userId, $titel, $text, $url, $kategorie, $tag);
+        // Erinnerungen gelten bis zum Termin (danach nicht mehr «neu» in der Glocke)
+        $giltBis = in_array($kategorie, ['einsaetze', 'jm', 'termine', 'umfragen'], true) ? $termin : '';
+        $n = benachrichtigungZustellen($userId, $titel, $text, $url, $kategorie, $tag, $giltBis);
     } catch (\Throwable $e) {
         error_log('cron benachrichtigungen: Sendefehler user ' . $userId . ': ' . $e->getMessage());
         $stats['failed']++;
