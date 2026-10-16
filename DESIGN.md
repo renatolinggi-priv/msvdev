@@ -445,6 +445,13 @@ Bearbeiten, ohne die Liste zu verlassen.
 - **Ungespeichert:** Solange das Panel Änderungen hält, steht im Kopf der Chip «Nicht gespeichert» (`.ui-chip.msv-ungespeichert`, Grund `akzent-hell`, Text `akzent-dunkel` 0.75rem/600, Punkt `akzent`), geschaltet über `msvPanelUngespeichert()`. Blau, nicht Bernstein: es ist ein Zustand, kein Fehler.
 - **Erfassungskarten im Panel** (`.shot-*`): enthält das Panel Erfassungskarten, wird der Panel-Grund `grund`; jede Karte weiss, Rand `rand`, Radius 10px, Padding 12px 14px, Titel 0.9rem/600 mit Icon in `text-3`, Total rechts in der Zahl-Rolle. Rasterfelder 38×36px (Dezimal 46px, breit 56px), Radius 6px. Deaktivierte Karten `flaeche-2`. Unter 768px stapeln sich nebeneinanderliegende Karten.
 
+### Raster-Erfassung (Heimmeisterschaft, Kantonalstich)
+Eine Zeile pro Mitglied mit N Passen, Rang je Kategorie vor dem Namen, Sortierung «Name | Rang», Filter und Suche, Schnellerfassung im Slide-Panel und Karten auf dem Handy. Seit 16.10.2026 ein Baustein für beide Seiten (vorher zwei Kopien).
+- **Teile:** Markup `partials/raster_erfassen.inc.php` (`msv_raster_tabelle($r)` in der Seite, `msv_raster_panel($r)` nach dem Container), Verhalten `js/msv-raster-erfassen.js` (`MsvRaster.init({ kennung, passen, laden, speichern, bestePasse, pdf, website })`), Aussehen Block «Raster-Erfassung» am Ende von `msv-ui.css`. Die Seite liefert nur Kopf-Card, Einstellungen und das Direktdruck-Profil. Der Lader liefert pro Mitglied `<tr data-kat>` mit `.hk-rang`, `.hk-name`, `.hk-anzahl`, `input.small-input name="passe[ID][n]"` und `.sum-cell`.
+- **Raster:** Felder 52×32px, leer getönt, gefüllt weiss mit `rand-stark`; ungespeicherte Zeile mit Punkt `akzent` hinter dem Namen und Chip «N Zeilen nicht gespeichert»; solange etwas ungespeichert ist, stehen die Ränge kursiv («vorläufig»). Die Selektoren tragen die Tabellen-IDs, weil `resultate-unified.css` und `msv-styles.css` dieselben Tabellen mit `!important` ansprechen.
+- **Beste Passe** (`bestePasse: true`, Kantonalstich): Gold wie das Podest (55-%-Mischung von `gold-bg` mit Weiss, Text `gold-fg`), im Raster, im Panel («· beste») und auf dem Handy.
+- **Handy:** zentrale `.mobile-card` mit Podest, Kopf «Rang Name» und «5/8 Passen · Total 465», darin die Passen zweispaltig (48px hoch); Zähler «12/22 erfasst» neben der Suche; Enter nach der letzten Passe öffnet die nächste Karte. Eingaben gehen sofort ins Raster.
+
 ### Tastenhinweise
 Wo eine Seite Tastenkürzel unterstützt (Ctrl+S, Enter, Pfeile, Esc), steht unter der Tabelle eine Leiste `.ui-tasten` (`flaeche-2`, Linie oben, 0.78rem, `text-2`) mit `kbd`-Tasten: weiss, Rand `feldrand` mit 2px-Unterkante, Radius 5px, 0.75rem/700. Einzelne Tasten im Panel-Fuss als `kbd.ui-kbd`.
 

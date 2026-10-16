@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.68.37",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Heim und Kanti: ein gemeinsamer Baustein für das Erfassen",
+        "beschreibung": "«Heimmeisterschaft erfassen» und «Kantonalstich erfassen» nutzen jetzt denselben Code für Raster, Rang, Filter, Schnellerfassung und Handy-Karten; vorher stand er in beiden Seiten doppelt. Am Laptop bleibt alles, wie es war. Künftige Verbesserungen gelten gleich für beide Seiten.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim und Kanti auf dem Handy: gleiche Karten",
+        "beschreibung": "Beide Seiten zeigen auf dem Handy dieselben Karten wie die übrigen Seiten: Podest-Farbe für die ersten drei, im Kopf «5/8 Passen · Total», darin die Passen zweispaltig. Neben der Suche steht, wie viele schon erfasst sind; Enter nach der letzten Passe öffnet die nächste Karte. Findet die Suche niemanden, steht das jetzt da.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.36",
     "datum": "2026-10-16",
     "aenderungen": [
