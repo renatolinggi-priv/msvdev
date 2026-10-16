@@ -242,7 +242,7 @@ components:
 
 # Design System: MSV Wilen – Admin
 
-<!-- Erfasst am 08.10.2026 aus dem ausgelieferten Code (css/msv-ui.css, css/msv-oeffentlich.css, Partials, Musterseiten). Gilt für den Admin-Bereich und die öffentlichen Seiten; das Mitgliederportal hat seit 09.10.2026 ein eigenes System (siehe «Mitgliederportal («Vereinsfahne»)» weiter unten); die Tokens oben gelten dort nicht. Normativ sind die Tokens oben; die Quelle der Wahrheit im Code ist :root in css/msv-ui.css. -->
+<!-- Erfasst am 08.10.2026 aus dem ausgelieferten Code (css/msv-ui.css, css/msv-oeffentlich.css, Partials, Musterseiten). Gilt für den Admin-Bereich und die öffentlichen Seiten; das Mitgliederportal hat seit 09.10.2026 ein eigenes System (siehe «Mitgliederportal («Vereinsfahne»)» weiter unten); die Tokens oben gelten dort nicht. Normativ sind die Tokens oben; die Quelle der Wahrheit im Code ist :root in css/msv-ui.css. Aufgefrischt am 16.10.2026 (Abgleich Tokens, Zahlen und neue Muster gegen den Stand 1.68.34). -->
 
 ## Overview
 
@@ -337,7 +337,7 @@ Gedämpfte Metalltöne, flach, nie als Verlauf. Die Marke (`.rang-badge.r1–r3`
 - **Breite:** genau eine Klasse am `.main-content-wrapper`: `content-width-wide` (1500px), `content-width-default` (1200px), `content-width-narrow` (850px), linksbündig. Kein eigenes `max-width` auf Seiten; der äussere Wrapper ist `col-12 ps-0`.
 - **Stapel:** Kopf-Card, dann eine oder mehrere Inhalts-Cards (`.content-background` oder `.ui-karte`), je 14px Abstand. Kinder einer Inhalts-Card haben 1.25rem Abstand. Keine Karte in der Karte: Tabellenblöcke in einer Inhalts-Card verlieren Rand und Hintergrund.
 - **Innenabstand:** horizontal überall `pad` (20px); Kopf-Card 14px vertikal, Inhalts-Card 16px, Tabellen-Card-Kopf 10px. Unter 768px 12px und Radius 10px.
-- **Scrollende Tabellen:** Erfassungsseiten füllen das Fenster, die Tabelle scrollt innen. Den Rahmen liefern drei Klassen aus `msv-ui.css`: `.ui-vollhoehe` am `.main-content-wrapper` (`height: calc(100vh − Nav − 28px)`, mindestens 520px, Kopf-Card fest), `.ui-vollhoehe-karte` an der Tabellen-Card (Flex-Kette `flex: 1 1 auto; min-height: 0` über `.desktop-table-container`) und `.ui-scroll` am Scrollbereich. Unter 768px fliesst die Seite wieder normal. Fixierte Kopfzeile und Randspalten sowie die Z-Index-Stufen liegen in `css/fixes/resultate-unified.css`; dort steht kein Aussehen. Genutzt von Endschiessen, Partnerinnen, Heimmeisterschaft und Kantonalstich.
+- **Scrollende Tabellen:** Erfassungsseiten füllen das Fenster, die Tabelle scrollt innen. Den Rahmen liefern drei Klassen aus `msv-ui.css`: `.ui-vollhoehe` am `.main-content-wrapper` (`height: calc(100vh − Nav − 28px)`, mindestens 520px, Kopf-Card fest), `.ui-vollhoehe-karte` an der Tabellen-Card (Flex-Kette `flex: 1 1 auto; min-height: 0` über `.desktop-table-container`) und `.ui-scroll` am Scrollbereich. Unter 768px fliesst die Seite wieder normal. Fixierte Kopfzeile und Randspalten sowie die Z-Index-Stufen liegen in `css/fixes/resultate-unified.css`; dort steht kein Aussehen. Genutzt von Endschiessen, Heimmeisterschaft und Kantonalstich.
 - **Mobile:** Tabellen werden unter 768px zu Karten (`mobile-cards.css` + `MSVMobileCards`); die Kopf-Card ist auf Mobile ausgeblendet, ausser die Seite setzt `$page_show_mobile` (nötig, sobald sie die Jahresauswahl enthält). Das Panel ist mobil 100vw breit.
 - **Ladereihenfolge (bestimmt, wer gewinnt):** Bootstrap 5.3 → `msv-styles.css` (Altbestand) → `fixes/resultate-unified.css` → `mobile-cards.css` → Inline-`<style>` im Header → `msv-ui.css` → `$page_specific_css`.
 
@@ -375,6 +375,7 @@ Der feste Einstieg jeder Seite.
 - **Aufbau:** Partial `partials/page_header.inc.php`. `$page_title` (Pflicht), `$page_title_after` direkt neben dem Titel («?»-Hilfe, dann Jahresauswahl `.msv-kopf-neben .form-select`, getönt `flaeche-2`, 600), `$page_actions` rechts, `$page_extra` als zweite Zeile über die ganze Breite (getrennt durch `linie`, z.B. Fortschritt und Chips), `$page_subtitle` optional, `$page_show_mobile` für Mobile.
 - **Form:** `flaeche`, Rand `rand`, Radius `lg`, Padding 14px 20px, Abstand 10px/16px.
 - **Verhalten:** Steht der «?»-Knopf am Anfang von `$page_actions`, verschiebt das Partial ihn neben den Titel.
+- **Jahr-Hinweis:** Weicht das gewählte Jahr vom laufenden ab, setzt `inc/js/msv-jahr.js` hinter die Auswahl eine Pille `.msv-jahr-hinweis` (`role="status"`): «Archiv 2024» in Bernstein (`warn-bg`/`warn-fg`/`warn-rand`), «Planung 2027» in Blau (`akzent-hell`/`akzent-dunkel`/`akzent-rand`), dazu ein Knopf «zu 2026». Im laufenden Jahr verschwindet sie.
 
 ### Inhalts-Card und Tabellen-Card
 - **Inhalts-Card** (`.content-background`): `flaeche`, Rand `rand`, Radius `lg`, kein Schatten, Padding 16px 20px.
@@ -390,6 +391,13 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 - **Icon-Knöpfe:** nur Bootstrap Icons (`bi-*`), immer mit `aria-label` und `data-tooltip`.
 - **Fokus:** 2px `akzent-dunkel`, 2px Abstand.
 
+### Ausgabe-Knöpfe (Dokument + Drucker)
+Jedes Dokument (PDF, Word, Excel, Kalender) ist dasselbe Paar, auf allen Seiten.
+- **Aufbau:** `<div class="btn-group btn-group-sm" role="group" aria-label="Dokumentname">` mit dem Dokument-Knopf (`btn-outline-info`, Icon `bi-file-earmark-*`, Beschriftung in `<span>` = Dokumentname als Nomen; PDF bleibt ungenannt, sonst «(Word)», «(Excel)», «(Kalender)») und bei PDFs dem Drucker `.msv-druck` (nur Icon, `aria-label` «… direkt drucken»).
+- **Drucker:** bleibt unsichtbar, bis `MsvDruck` eine QZ-Tray-Verbindung meldet (`.msv-druck-an`); ohne Verbindung zeigt die Kopf-Card einmal den Hinweis «Direktdruck nicht verbunden» (`.msv-druck-chip`, `text-2`, Icon `text-3`). Der Dokument-Knopf schliesst dann rechts rund ab (7px).
+- **Verhalten:** `msvAusgabe(btn, opts)` aus `msv-toast.js` lädt immer herunter (Dateiname `<Dokument>_<Jahr>.<ext>`), sperrt den Knopf mit Spinner statt Icon, die Beschriftung bleibt; leeres Jahr ergibt einen Hinweis statt einer leeren Datei.
+- **Ort:** 1–3 Dokumente in `$page_actions` der Kopf-Card, ab 4 in der Export-Toolbar (Gruppen mit höchstens 6, erster Knopf mindestens 9rem breit und linksbündig).
+
 ### «?»-Hilfe
 - **Stil:** `.btn-help`, kein `.btn`; Kreis 22px, Rand `feldrand`, Icon `text-2`; Hover `akzent-hell` mit `akzent`-Rand.
 - **Platz:** neben dem Seitentitel, einem Card- oder Abschnittstitel oder einem erklärungsbedürftigen Feld; nie pro Knopf. Markup `<button type="button" class="btn-help" data-help="seite.thema" aria-label="Hilfe"></button>`; Text aus Tabelle `hilfetexte` via `inc/js/msv-help.js` (Klick = Modal, Hover = Kurzansicht).
@@ -402,11 +410,13 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 - **Focus:** Rand `akzent-dunkel` plus 1px-Ring derselben Farbe (kein weicher Glow). Im Raster wird das fokussierte Feld zusätzlich `gewaehlt`.
 - **Gefüllt / leer im Raster:** leere Felder getönt (`flaeche-2`, Rand `feldrand-leer`, 400, `text-2`), gefüllte weiss mit Rand `rand-stark`, 600.
 - **Fehler:** `aria-invalid="true"` → Rand, Text und Ring `fehler`, Grund `fehler-bg`. Eindeutige Treffer (Stich-Codes) `ok-bg`/`ok-rand`.
+- **Sammelmeldung:** Scheitert das Speichern an Eingaben, steht über dem Panel-Fuss ein Gefahr-Hinweis `.alert-danger.msv-eingabe-fehler` (`role="alert"`), gefüllt von `msvEingabeFehler()`: «Nicht gespeichert – 2 Eingaben prüfen:» und darunter eine Liste mit Links (600, unterstrichen), die ins jeweilige Feld springen; das erste Feld erhält den Fokus.
 - **Suche** (`.ui-suche`): 30px hoch, 17rem breit, `flaeche-2`, Lupe in `text-3`, rechtsbündig im Tabellenkopf; Fokus wie Felder.
 
 ### Segment-Schalter (Filter)
 - **Style:** `.ui-filter`: Träger `linie-zart`, Radius 8px, 2px Innenabstand; Knöpfe 26px hoch, 0.8rem/600, transparent.
 - **State:** aktiv über `aria-pressed="true"` → weiss mit Segment-Schatten; Zähler im Knopf in `text-2`/500. Seitenspezifische Umschalter (z.B. Teilnehmer/Zahlung beim Lösen, `.typ-switch`) folgen genau diesem Muster.
+- **Ansichten:** Seit Erfassen und Rangliste je Wettkampf eine Seite sind (1.68.29), schaltet derselbe Segment-Schalter die Ansicht: Endschiessen «Erfassen | Rangliste» (`?ansicht=rangliste`), Heim und Kanti «Name | Rang» (`?sortierung=rang`), Wanderpreise «Wanderpreise | Regeln» (`?ansicht=regeln`). Die Ansicht steht in der URL, damit sie Neuladen und Lesezeichen übersteht; Filter, die nur in einer Ansicht gelten, blendet die Seite in der anderen aus.
 
 ### Chips, Status, Fortschritt
 - **Chip** (`.ui-chip`): `#f4f6f9` mit Text `#3d4757`, Radius 6px, 0.8rem; Zahl fett; optional Punkt 7px in `warn-punkt` (offen) oder `akzent` (ungespeichert).
@@ -424,13 +434,15 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 ### Podest in Ranglisten
 - **Marke** `.rang-badge` (Pille 30px, 0.82rem/700, sonst `linie-zart`/`text-2`) mit `.r1`/`.r2`/`.r3` in Gold, Silber, Bronze.
 - **Zeilen** der Top 3 (`tr.rank-1..3`) und **Kartenköpfe** auf Mobile (`.mobile-card.rank-1..3 .mobile-card-header`, fett) in der 40-%-Mischung; der Rang selbst fett.
+- **Rang in der Namenszelle** (Heim, Kanti: `.hk-rang`): der Rang je Kategorie steht vor dem Namen statt in einer eigenen Spalte (2.6rem breit, 0.8rem/600 in `text-2`, ohne Rang ein Strich in `leer`, vorläufig kursiv in `text-3`); in den Top 3 fett in `text`. In der Erfassungsansicht (`.es-ansicht-erfassen`) bleibt das Podest aus, damit Zeilenzustände lesbar bleiben.
 - Nie Verlauf, Schatten oder Glanz; die Farbe allein trägt den Rang.
 
 ### Slide-Panel
 Bearbeiten, ohne die Liste zu verlassen.
 - **Aufbau:** Partial `partials/side_panel.inc.php` (`$panel_title`, `$panel_body`, `$panel_footer`, `$panel_width` → `--panel-width`, Standard 500px). Fährt von rechts ein (0.3s, `cubic-bezier(0.4, 0, 0.2, 1)`), Overlay dunkelt ab; Escape, Overlay oder «×» (neutraler Outline-Knopf mit `data-tooltip="Schliessen (Esc)"`) schliessen. `role="dialog"`, Fokusführung über `msv-panel-a11y.js`.
 - **Form:** Kopf weiss mit Titel 1rem/700, Fusszeile weiss mit Linie `rand` und dem einen gefüllten Hauptknopf rechts. Mobil 100vw.
-- **Erfassungs-Panel** (`.ui-erfassen` zusätzlich an `.hybrid-edit-panel` bzw. `.anlass-panel`): Titel 1.15rem/1.2 für die Schnellerfassung, darunter die Position («3 von 40», `.panel-pos`, 0.8rem `text-2`), Tasten im Fuss als `kbd.ui-kbd`. Unter 768px ohne Abdunklung (das Panel ist vollbreit) und mit festem Fuss, Fussknöpfe 48px hoch. Genutzt von Endschiessen, Partnerinnen, Heim, Kanti und JM.
+- **Erfassungs-Panel** (`.ui-erfassen` zusätzlich an `.hybrid-edit-panel` bzw. `.anlass-panel`): Titel 1.15rem/1.2 für die Schnellerfassung, darunter die Position («3 von 40», `.panel-pos`, 0.8rem `text-2`), Tasten im Fuss als `kbd.ui-kbd`. Unter 768px ohne Abdunklung (das Panel ist vollbreit) und mit festem Fuss, Fussknöpfe 48px hoch. Genutzt von Endschiessen, Heim, Kanti und JM.
+- **Ungespeichert:** Solange das Panel Änderungen hält, steht im Kopf der Chip «Nicht gespeichert» (`.ui-chip.msv-ungespeichert`, Grund `akzent-hell`, Text `akzent-dunkel` 0.75rem/600, Punkt `akzent`), geschaltet über `msvPanelUngespeichert()`. Blau, nicht Bernstein: es ist ein Zustand, kein Fehler.
 - **Erfassungskarten im Panel** (`.shot-*`): enthält das Panel Erfassungskarten, wird der Panel-Grund `grund`; jede Karte weiss, Rand `rand`, Radius 10px, Padding 12px 14px, Titel 0.9rem/600 mit Icon in `text-3`, Total rechts in der Zahl-Rolle. Rasterfelder 38×36px (Dezimal 46px, breit 56px), Radius 6px. Deaktivierte Karten `flaeche-2`. Unter 768px stapeln sich nebeneinanderliegende Karten.
 
 ### Tastenhinweise
@@ -456,7 +468,7 @@ Radius 10px, 1px-Rand im Ton: Info `#eef4ff`/`#c9d9f7`/`akzent-tief`, Erfolg `ok
 - **Kurzdialoge und Toasts** über `inc/js/msv-toast.js`: `msvToast(msg, type)` oben rechts, `msvError`, `msvSuccess`, `msvConfirm` (gibt das SweetAlert2-Ergebnis zurück, `.isConfirmed` prüfen), `msvConfirmDelete` (gefüllter roter Bestätigungsknopf). Popup `.msv-swal` 22rem, Bootstrap-Knöpfe `btn-sm`: Bestätigen gefüllt, Abbrechen `btn-outline-secondary`. Ajax über `msvPost`, Meldungen über `msvXhrMessage`, Ausgabe escapen mit `msvEsc`; keine lokalen Kopien.
 
 ### Navigation
-Links eine 280px breite Sidebar (Standard, umschaltbar auf Topbar), Einträge aus Tabelle `navigation`, Root «Einstellungen» bündelt Konfiguration; unter 992px Off-Canvas. Der Stil der Navigation ist noch nicht auf die `--ui-*` Tokens umgestellt (siehe «Noch nicht migriert»); neue Navigation übernimmt nicht deren Farben, sondern `akzent`/`gewaehlt`.
+Links eine 280px breite Sidebar (Standard, umschaltbar auf Topbar), Einträge aus Tabelle `navigation`, Root «Einstellungen» bündelt Konfiguration; unter 992px Off-Canvas. Der Stil der Navigation ist noch nicht auf die `--ui-*` Tokens umgestellt (siehe «Noch nicht migriert»); neue Navigation übernimmt nicht deren Farben, sondern `akzent`/`gewaehlt`. Erstes Element jeder Seite ist der Sprunglink «Zum Inhalt springen» (`.msv-sprunglink`): unsichtbar, bei Tastaturfokus oben links als weisses Schild mit Rand und Text `akzent-dunkel`, Radius `md`.
 
 ### Öffentliche Seiten
 Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffentlicher Fragebogen laden statt `header.inc.php` und `msv-ui.css` die Datei `css/msv-oeffentlich.css` (Tokenauszug plus Abbildung der Inline-Variablen der Seiten auf die Tokens). Eine weisse Karte auf `grund` mit der öffentlichen Karten-Schattierung, flacher weisser Kopf mit Titel 1.15rem/600 und Icon in `akzent-dunkel`, ein gefüllter Hauptknopf in `akzent-dunkel` (Hover `#22448a`), keine Verläufe, kein Hüpfen, keine Einblend-Animation. Im Fragebogen bleibt «Absenden» grün, «Zurück» neutral.
@@ -478,6 +490,8 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 - **Do** Erfassungsseiten in Fensterhöhe mit `.ui-vollhoehe`, `.ui-vollhoehe-karte` und `.ui-scroll` bauen und das Panel mit `.ui-erfassen` auszeichnen, statt den Rahmen pro Seite nachzubauen.
 - **Do** Leerzustände, Upload-Flächen, Podest und Flag-Dots über die zentralen Klassen (`.ui-leerzustand`, `.upload-area`, `.rang-badge`/`rank-1..3`, `.flag-dot`) zeigen; die Seite setzt höchstens Abstände.
 - **Do** Token-Änderungen in `msv-ui.css` von Hand in `msv-oeffentlich.css` nachziehen, soweit die öffentlichen Seiten den Wert verwenden.
+- **Do** jedes Dokument als Paar Dokument-Knopf + `.msv-druck` in einer `btn-group btn-group-sm` bauen und über `msvAusgabe()` laden; beschriftet mit dem Dokumentnamen.
+- **Do** Ansichten einer Seite (Erfassen/Rangliste, Name/Rang) mit dem Segment-Schalter umschalten und in der URL festhalten.
 
 ### Don't:
 - **Don't** Verläufe einsetzen (`linear-gradient`, `radial-gradient`) – auch nicht für Ränge oder Fortschritt.
@@ -494,6 +508,8 @@ Login, Registrierung (Mitglied, Jungschütze), Passwort zurücksetzen und öffen
 - **Don't** Hex-Farben in neues Seiten-CSS schreiben.
 - **Don't** neue Optik in `css/msv-styles.css` oder `css/fixes/resultate-unified.css` ablegen; Aussehen gehört nach `msv-ui.css`.
 - **Don't** eine zweite Schrift oder externe Schriftserver einbinden.
+- **Don't** Dokumente mit `window.open` oder in einem neuen Tab ausgeben; Ausgaben werden immer heruntergeladen.
+- **Don't** Drucker-Knöpfe zeigen, solange QZ Tray nicht verbunden ist.
 
 ## Mitgliederportal («Vereinsfahne»)
 
@@ -570,9 +586,10 @@ Das Portal ist das Telefon in der Hosentasche eines Mitglieds: Was steht als Nä
 
 ## Noch nicht migriert (bewusst)
 
-- **Mitgliederportal, Altbestand unter der Fahne:** `css/portal.css` (556 Zeilen), der Inline-`<style>` in `portal/portal_header.php` und Seiten-`<style>`-Blöcke mit Hex-Werten in 24 Portal-Dateien laden weiter unter der Fahne und werden von `portal-fahne*.css` überschrieben, teils mit `!important` gegen Inline-Styles; kein Muster für neue Arbeit. Die alten Zweige ohne Fahne (`$portal_fahne` leer in `dashboard.php`, `meine_jm.php`, `termine.php`, `jsk_dashboard.php`, `anlass.php`, `inc_resultate_reiter.php`, dazu `.portal-back-fab`) erreichen nur noch Admins über `?vorschau=aus`; sie fallen mit dem Vergleichsschalter weg. Die JSK-Seiten und der Chat stecken noch in `container py-4` (von der Fahne auf Padding 0 gesetzt). Gültig ist der Abschnitt «Mitgliederportal («Vereinsfahne»)».
-- **`css/msv-styles.css`** (rund 1215 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip). Seit 15.10.2026 (1.68.32) enthält es keine eigenen Farbwerte mehr: Farbangaben, die `msv-ui.css` ohnehin überschrieb, und tote Regeln sind entfernt, der Rest zeigt auf `--ui-*`; als Literal bleiben nur die Schatten aus dem Shadow Vocabulary. Die alten Namen `--light-color`, `--dark-color`, `--secondary-color`, `--primary-color`, `--success-color` sind nur noch Verweise auf Tokens. Der Hilfe-Dialog folgt jetzt den Dialog-Regeln (weisser Kopf, Dialog-Schatten, Abdunklung wie beim Panel, kein Weichzeichner). Seit 1.68.34 liegen auch Radien und Schriftgrössen auf der Skala; die tote Regel für vertikale Spaltenköpfe (nur noch in PDFs) und `h2.h4` (Seitentitel sind `h1`) ist entfernt. Kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso; ebenso `.info-card` (ohne Seitenstreifen). Die Einblend-Animation aller `.table-wrapper` und das Anheben von `#pdf-link` sind entfernt.
+- **Mitgliederportal, Altbestand unter der Fahne:** `css/portal.css` (556 Zeilen), der Inline-`<style>` in `portal/portal_header.php` und Seiten-`<style>`-Blöcke mit Hex-Werten in 23 Portal-Dateien (Stand 16.10.2026) laden weiter unter der Fahne und werden von `portal-fahne*.css` überschrieben, teils mit `!important` gegen Inline-Styles; kein Muster für neue Arbeit. Die alten Zweige ohne Fahne (`$portal_fahne` leer in `dashboard.php`, `meine_jm.php`, `termine.php`, `jsk_dashboard.php`, `anlass.php`, `inc_resultate_reiter.php`, dazu `.portal-back-fab`) erreichen nur noch Admins über `?vorschau=aus`; sie fallen mit dem Vergleichsschalter weg. Die JSK-Seiten und der Chat stecken noch in `container py-4` (von der Fahne auf Padding 0 gesetzt). Gültig ist der Abschnitt «Mitgliederportal («Vereinsfahne»)».
+- **`css/msv-styles.css`** (1164 Zeilen Altbestand, Stand 16.10.2026) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip). Seit 15.10.2026 (1.68.32) enthält es keine eigenen Farbwerte mehr: Farbangaben, die `msv-ui.css` ohnehin überschrieb, und tote Regeln sind entfernt, der Rest zeigt auf `--ui-*`; als Literal bleiben nur die Schatten aus dem Shadow Vocabulary. Die alten Namen `--light-color`, `--dark-color`, `--secondary-color`, `--primary-color`, `--success-color` sind nur noch Verweise auf Tokens. Der Hilfe-Dialog folgt jetzt den Dialog-Regeln (weisser Kopf, Dialog-Schatten, Abdunklung wie beim Panel, kein Weichzeichner). Seit 1.68.34 liegen auch Radien und Schriftgrössen auf der Skala; die tote Regel für vertikale Spaltenköpfe (nur noch in PDFs) und `h2.h4` (Seitentitel sind `h1`) ist entfernt. Kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso; ebenso `.info-card` (ohne Seitenstreifen). Die Einblend-Animation aller `.table-wrapper` und das Anheben von `#pdf-link` sind entfernt.
 - **Seiten mit eigenem Slide-Panel** statt `partials/side_panel.inc.php`: Einzel- und Sektionsrangierungen (`.edit-panel`, fast identische Kopien), Navigation (`.nav-edit-panel`). Umbau gehört zusammen mit einem gemeinsamen Panel-Verhalten (Esc, Ungespeichertes) gemacht.
-- **Restliche Seiten-Hex-Werte** (Stand 08.10.2026, nach der Polish-Runde): Die Seiten selbst sind auf Tokens; übrig sind Einzelwerte in Navigation-Editor (4), Hilfetexte (2), Foto-Galerie, Einzel- und Sektionsrangierungen, JM-Definition und Gruppen (je 1). In `msv-styles.css` stehen seit 1.68.32 keine Farbwerte mehr (siehe oben). Ebenfalls offen: 2px-Ränder an einzelnen Karten, Karte in Karte im Navigation-Editor, Skeleton mit Verlauf (Farben jetzt aus Tokens), Fortschrittsbalken animieren `width` statt `transform`.
-- **Navigation** (`inc/navigation.inc.php`, eigener Inline-`<style>`): eigene Blautöne und Aktiv-Markierung, nicht auf Tokens.
-- **Doppelte Tokens:** `msv-oeffentlich.css` trägt einen Auszug der `--ui-*` Tokens aus `msv-ui.css` (inkl. `akzent-tief`, `fehler-rand`). Die Werte sind am 08.10.2026 identisch und müssen von Hand synchron gehalten werden. Nur im Admin: `leer`, `feldrand-leer`, `rand-stark`, `warn-zeile-hover` und das Podest.
+- **Restliche Hex-Werte** (Stand 16.10.2026): Die Admin-Seiten sind frei von Hex-Farben bis auf den Editor der PDF-Vorlage (`inc/pdf_design.php`: viermal `#fff`, einmal `#cbd5e0` am Farbwähler; die Vorschau zeigt bewusst PDF-Farben) und die Navigation (unten). In `msv-styles.css` stehen seit 1.68.32 keine Farbwerte mehr. In `msv-ui.css` selbst: gefüllte Rasterfelder `.shot-input.filled` auf `#fbfcfd` statt `flaeche`, und der Fokus von Checkboxen ist noch ein weicher Ring (`0 0 0 .2rem rgba(59, 108, 206, .2)`) statt des 1px-Rings der Felder.
+- **Ebenfalls offen:** 2px-Ränder (JM-Gruppen, Tabellenfüsse in Einsatzplanung, Munitionskauf, Changelog und CSV-Prüfung, `#word-link` in `msv-styles.css`), Karte in Karte im Navigation-Editor, Skeleton mit Verlauf und Dauer-Animation (Farben aus Tokens), Fortschrittsbalken animieren `width` statt `transform`.
+- **Navigation** (`inc/navigation.inc.php`, eigener Inline-`<style>`, 29 Hex-Werte): eigene Blautöne und Aktiv-Markierung, nicht auf Tokens.
+- **Doppelte Tokens:** `msv-oeffentlich.css` trägt einen Auszug der `--ui-*` Tokens aus `msv-ui.css` (inkl. `akzent-tief`, `fehler-rand`). Die Werte sind identisch (zuletzt geprüft 16.10.2026) und müssen von Hand synchron gehalten werden. Nur im Admin: `leer`, `feldrand-leer`, `rand-stark`, `warn-zeile-hover` und das Podest.
