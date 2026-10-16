@@ -35,7 +35,7 @@
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-modal', 'true');
     if (panel.hasAttribute('aria-labelledby') || panel.hasAttribute('aria-label')) return;
-    const titel = panel.querySelector('.panel-header h6, .panel-header h5, .panel-header h4, .panel-header [id$="Title"]');
+    const titel = panel.querySelector('.panel-header h6, .panel-header h2, .panel-header h5, .panel-header h4, .panel-header [id$="Title"]');
     if (!titel) return;
     if (!titel.id) titel.id = 'panelTitel' + Math.random().toString(36).slice(2, 8);
     panel.setAttribute('aria-labelledby', titel.id);

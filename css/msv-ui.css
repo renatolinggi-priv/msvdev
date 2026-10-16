@@ -260,7 +260,7 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
     border-left: 0;
 }
 .panel-header { background: var(--ui-flaeche); border-bottom-color: var(--ui-rand); }
-.panel-header h6 { font-size: 1rem; font-weight: 700; color: var(--ui-text); }
+.panel-header h6, .panel-header h2 { font-size: 1rem; font-weight: 700; line-height: 1.2; color: var(--ui-text); } /* h2: Panel-Titel unter dem h1 der Seite (Endschiessen, Heim, Kanti) */
 .panel-body { background: var(--ui-flaeche); }
 .panel-footer { background: var(--ui-flaeche); border-top: 1px solid var(--ui-rand); }
 .panel-overlay { background: rgba(26, 35, 50, .28); }
@@ -424,7 +424,7 @@ input.form-control[aria-invalid="true"] { border-color: var(--ui-fehler); backgr
 
 /* Erfassungs-Panel (.ui-erfassen am Slide-Panel): grösserer Titel, Position «3 von 40» darunter,
    Tasten im Fuss. Mobil ist das Panel vollbreit (msv-styles.css): keine Abdunklung, Fuss bleibt sichtbar. */
-.ui-erfassen .panel-header h6 { font-size: 1.15rem; line-height: 1.2; }
+.ui-erfassen .panel-header :is(h6, h2) { font-size: 1.15rem; line-height: 1.2; }
 .ui-erfassen .panel-pos { color: var(--ui-text-2); font-size: .8rem; }
 .ui-erfassen .panel-footer .ui-kbd { margin: 0 2px; }
 

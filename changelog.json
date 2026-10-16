@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.68.35",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: Jahreswechsel zeigt immer das gewählte Jahr",
+        "beschreibung": "Wer auf «Endschiessen Resultate erfassen» schnell zwischen Jahren wechselte, konnte die Teilnehmer eines anderen Jahres sehen, wenn dessen Antwort später eintraf. Antworten für ein abgewähltes Jahr werden jetzt verworfen, wie schon bei Heimmeisterschaft und Kantonalstich.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen auf dem Handy: Filter und Stand wie am Laptop",
+        "beschreibung": "Der Filter «Alle / Offen / Vollständig» wirkt jetzt auch auf die Karten, zusammen mit der Suche. Der Punkt vor dem Namen zeigt den Stand wie die Tabelle (bernstein = noch offene Stiche); vorher war er grün, sobald irgendein Resultat erfasst war. In der Ansicht «Rangliste» tragen die ersten drei die Podest-Farbe.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Heim und Kanti: Schnellerfassung auch ohne Suchliste",
+        "beschreibung": "Die Suchliste «Schütze wechseln» kommt von einem fremden Server. Ist er nicht erreichbar, öffnet die Schnellerfassung jetzt trotzdem, mit einer normalen Auswahlliste; vorher blieb das Panel zu. Die Seite wartet beim Laden auch nicht mehr auf diese Datei.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Kantonalstich auf dem Handy: beste Passe in Gold",
+        "beschreibung": "Auf den Handy-Karten ist die beste Passe jetzt golden wie im Raster und in der Schnellerfassung und wechselt beim Tippen mit. Enter springt nach der letzten Passe in die nächste Karte und öffnet sie; die ersten drei tragen die Podest-Farbe.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Erfassungsseiten: besser mit Screenreader",
+        "beschreibung": "Endschiessen, Heimmeisterschaft und Kantonalstich: Der Stand im Seitenkopf wird beim Tippen im Raster nur noch angesagt, wenn er sich ändert. Der Titel im Erfassungs-Panel ist eine richtige Überschrift unter dem Seitentitel und heisst nur noch wie die Person; Symbole werden nicht mehr vorgelesen. Fehlermeldungen beim Speichern im Endschiessen stehen ohne doppelten Vorspann.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.34",
     "datum": "2026-10-15",
     "aenderungen": [

@@ -60,8 +60,8 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
 .entry-passe-field input:focus { background: var(--ui-gewaehlt); border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); outline: 0; }
 .entry-passe-field input[aria-invalid=true] { background: var(--ui-fehler-bg); border-color: var(--ui-fehler); color: var(--ui-fehler); box-shadow: 0 0 0 1px var(--ui-fehler); }
 
-/* Beste Passe in der Akzentfarbe (Raster, Panel, Handy) */
-/* Beste Passe (zählt als «Bester Kantonalstich» in der JM): Gold wie das Podest, nicht Akzentblau (= Fokus/Auswahl) */
+/* Beste Passe (zählt als «Bester Kantonalstich» in der JM), in Raster, Panel und Handy:
+   Gold wie das Podest, nicht Akzentblau (= Fokus/Auswahl) */
 #hkScroll #kantiresultateTabelle input.small-input.best-passe { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg) !important; color: var(--ui-gold-fg); font-weight: 700; }
 .entry-passe-field.is-best input { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); }
 .entry-passe-field.is-best label::after { content: ' · beste'; font-weight: 600; color: var(--ui-gold-fg); }
@@ -72,7 +72,7 @@ tr.hk-geaendert .hk-name::after { content: ''; display: inline-block; width: 7px
     .desktop-table-container { display: none !important; }
     .mobile-cards-container { display: flex !important; }
     .mobile-card-body .passe-input-mobile { min-height: 48px; text-align: center; font-size: 16px; font-weight: 600; }
-    .mobile-card-body .passe-input-mobile.best { background: var(--ui-akzent-hell); border-color: var(--ui-akzent-rand); color: var(--ui-akzent-dunkel); }
+    .mobile-card-body .passe-input-mobile.best { background: color-mix(in srgb, var(--ui-gold-bg) 55%, var(--ui-flaeche)); border-color: var(--ui-gold-bg); color: var(--ui-gold-fg); font-weight: 700; }
     .mobile-card-body .form-label { margin-bottom: .35rem; font-size: .85rem; color: var(--ui-text-2); }
 }
 @media (min-width: 768px) {
@@ -87,7 +87,8 @@ $csrf = csrf_token();
 <!-- Select2 (Schützenwahl in der Schnellerfassung) -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- defer: hält den Seitenaufbau nicht an; fehlt Select2 (CDN nicht erreichbar), bleibt die normale Auswahlliste -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
 <style>
 .select2-container { z-index: 1065; }
 #entryMemberSelect + .select2-container { width: 100% !important; }
@@ -102,13 +103,13 @@ $csrf = csrf_token();
                 $page_title_after = '<button type="button" class="btn-help" data-help="kantiresultate.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-                $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1"></i>Schnellerfassung</button>'
+                $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1" aria-hidden="true"></i>Schnellerfassung</button>'
                     . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn" data-titel="Kantiresultate" data-tooltip="Hinweis «Resultate aktualisiert» auf www.msvwilen.ch"><i class="bi bi-megaphone me-1" aria-hidden="true"></i>Auf Website melden</button>'
                     . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
                     . '<button type="button" class="btn btn-outline-info" id="hkPdfBtn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
                     . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="kantirang" data-druck-label="Kantonalstich Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
                     . '</div>'
-                    . '<button type="submit" form="kantiresultateForm" class="btn btn-primary btn-sm" id="rasterSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>';
+                    . '<button type="submit" form="kantiresultateForm" class="btn btn-primary btn-sm" id="rasterSpeichernBtn"><i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>';
                 $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
                     . '<div class="ui-chips" id="progressChips"></div>';
                 $page_show_mobile = true;
@@ -162,8 +163,8 @@ $csrf = csrf_token();
                     <div class="mobile-cards-container" id="mobileCardsKanti">
                         <div class="mobile-search">
                             <div class="position-relative">
-                                <i class="bi bi-search search-icon"></i>
-                                <input type="search" class="form-control" placeholder="Mitglied suchen..." aria-label="Mitglied suchen"
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="search" class="form-control" placeholder="Mitglied suchen …" aria-label="Mitglied suchen"
                                        oninput="filterMobileKanti(this)">
                             </div>
                         </div>
@@ -187,7 +188,7 @@ $csrf = csrf_token();
 <div class="hybrid-edit-panel ui-erfassen" id="entryPanel" style="--panel-width: 540px;">
     <div class="panel-header">
         <div class="min-w-0">
-            <h6 class="mb-0"><span id="entryName">Erfassen</span> <button type="button" class="btn-help" data-help="kantiresultate.schnellerfassung" aria-label="Hilfe"></button></h6>
+            <div class="d-flex align-items-center gap-2"><h2 class="mb-0" id="entryName">Erfassen</h2><button type="button" class="btn-help" data-help="kantiresultate.schnellerfassung" aria-label="Hilfe"></button></div>
             <small class="panel-pos" id="entrySubtitle"></small>
         </div>
         <div class="d-flex align-items-center gap-1 ms-auto">
@@ -205,7 +206,7 @@ $csrf = csrf_token();
     <div class="panel-body">
         <label class="hk-feldtitel" for="entryMemberSelect">Schütze wechseln</label>
         <div class="mb-3">
-            <select id="entryMemberSelect" style="width:100%"></select>
+            <select id="entryMemberSelect" class="form-select form-select-sm"></select>
         </div>
         <div class="hk-erfassung">
             <div class="hk-erfassung-kopf">
@@ -220,10 +221,10 @@ $csrf = csrf_token();
         <div class="d-flex gap-2 w-100 align-items-center">
             <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> weiter</span>
             <button type="button" class="btn btn-outline-primary btn-sm" id="entrySaveBtn">
-                <i class="bi bi-save me-1"></i>Speichern
+                <i class="bi bi-save me-1" aria-hidden="true"></i>Speichern
             </button>
             <button type="button" class="btn btn-primary btn-sm" id="entrySaveNextBtn">
-                Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1"></i>
+                Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
             </button>
         </div>
     </div>
@@ -467,12 +468,15 @@ $(document).ready(function() {
     }
 
     // Kopf-Card: Mitglieder mit Resultaten, vollständige, ungespeicherte Zeilen; Zähler im Filter
+    var zaehlenStand = '';
     function zaehlen() {
         var $rows = $('#kantiresultateTabelle tbody tr[data-stand]');
         var total = $rows.length;
         var mit = $rows.filter('[data-stand="mit"]').length;
         var voll = $rows.filter('[data-voll="1"]').length;
-        $('#progressText').html(mit + ' von ' + total + ' <span>Mitgliedern mit Resultaten</span>');
+        // Live-Region nur bei echter Änderung schreiben, sonst sagt der Screenreader bei jedem Tastendruck den Stand an
+        var stand = mit + ' von ' + total + ' <span>Mitgliedern mit Resultaten</span>';
+        if (stand !== zaehlenStand) { zaehlenStand = stand; $('#progressText').html(stand); }
         $('#progressChips').html(
             (voll ? '<span class="ui-chip"><b>' + voll + '</b> mit allen 5 Passen</span>' : '') +
             (geaendert.size ? '<span class="ui-chip hk-chip-ungespeichert"><span class="ui-punkt"></span><b>' + geaendert.size + '</b> ' +
@@ -665,7 +669,7 @@ $(document).ready(function() {
 
                 fieldsHtml += `
                     <div class="mb-3">
-                        <label class="form-label fw-bold small">${label}${isBest ? ' <span class="hk-beste">· beste</span>' : ''}</label>
+                        <label class="form-label fw-bold small">${label} <span class="hk-beste"${isBest ? '' : ' hidden'}>· beste</span></label>
                         <input type="number"
                                class="form-control passe-input-mobile${isBest ? ' best' : ''}"
                                data-name="${inputName}"
@@ -677,13 +681,13 @@ $(document).ready(function() {
             });
 
             html += `
-            <div class="mobile-card" data-index="${idx}">
+            <div class="mobile-card ${(row.className.match(/\brank-[123]\b/) || [''])[0]}" data-index="${idx}">
                 <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
                         <div class="fw-bold">${rang ? '<span class="hk-rang">' + msvEsc(rang) + '</span> ' : ''}${msvEsc(memberName)}</div>
                         ${summaryHtml}
                     </div>
-                    <i class="bi bi-chevron-down"></i>
+                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
                 </div>
                 <div class="mobile-card-body">
                     ${fieldsHtml}
@@ -704,19 +708,26 @@ $(document).ready(function() {
                     $(desktopInput).trigger('input');
                     markGeaendert($(desktopInput).closest('tr'));
                 }
+                mobilBesteMarkieren(this.closest('.mobile-card'));
             });
 
-            // Keyboard navigation (Enter/Tab)
+            // Enter: nächstes Feld; liegt es in einer zugeklappten Karte, diese zuerst öffnen (wie Heim)
             input.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') { // Tab bleibt nativ, damit man das Raster verlassen kann
                     e.preventDefault();
                     const allInputs = Array.from(container.querySelectorAll('input[data-name]'));
                     const currentIndex = allInputs.indexOf(this);
-                    const nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
-                    if (allInputs[nextIndex]) {
-                        allInputs[nextIndex].focus();
-                        allInputs[nextIndex].select();
+                    const next = allInputs[e.shiftKey ? currentIndex - 1 : currentIndex + 1];
+                    if (!next) return;
+                    const karte = next.closest('.mobile-card');
+                    const aktuelle = this.closest('.mobile-card');
+                    if (karte !== aktuelle) {
+                        if (aktuelle.classList.contains('open')) MSVMobileCards.toggle(aktuelle.querySelector('.mobile-card-header'));
+                        if (!karte.classList.contains('open')) MSVMobileCards.toggle(karte.querySelector('.mobile-card-header'));
+                        karte.scrollIntoView({ block: 'nearest' });
                     }
+                    next.focus();
+                    next.select();
                 }
             });
 
@@ -728,6 +739,19 @@ $(document).ready(function() {
                 this.select();
             });
 
+        });
+    }
+
+    // Handy-Karte: beste Passe beim Tippen nachführen (Gold und «· beste» wie in Raster und Panel)
+    function mobilBesteMarkieren(karte) {
+        if (!karte) return;
+        const felder = Array.from(karte.querySelectorAll('.passe-input-mobile'));
+        let best = 0, bestIdx = -1;
+        felder.forEach((f, i) => { const v = parseInt(f.value, 10) || 0; if (v > best) { best = v; bestIdx = i; } });
+        felder.forEach((f, i) => {
+            f.classList.toggle('best', i === bestIdx);
+            const marke = f.closest('.mb-3').querySelector('.hk-beste');
+            if (marke) marke.hidden = i !== bestIdx;
         });
     }
 
@@ -893,6 +917,7 @@ $(document).ready(function() {
                 const done = self.isComplete(r);
                 $sel.append(new Option((done ? '✓ ' : '') + r.name, i, false, i === self.idx));
             });
+            if (!$.fn.select2) return;   // Select2 nicht geladen: die normale Auswahlliste tut es auch
             $sel.select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('#entryPanel'),

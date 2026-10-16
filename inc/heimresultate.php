@@ -94,7 +94,8 @@ $csrf = csrf_token();
 <!-- Select2 (Schützenwahl in der Schnellerfassung) -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- defer: hält den Seitenaufbau nicht an; fehlt Select2 (CDN nicht erreichbar), bleibt die normale Auswahlliste -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
 <style>
 .select2-container { z-index: 1065; }
 #entryMemberSelect + .select2-container { width: 100% !important; }
@@ -109,13 +110,13 @@ $csrf = csrf_token();
                 $page_title_after = '<button type="button" class="btn-help" data-help="heimresultate.uebersicht" aria-label="Hilfe"></button>'
                     . '<label for="yearSelect" class="visually-hidden">Jahr</label>'
                     . '<select id="yearSelect" class="form-select form-select-sm"></select>';
-                $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1"></i>Schnellerfassung</button>'
+                $page_actions = '<button type="button" class="btn btn-outline-primary btn-sm d-none d-md-inline-block" id="startEntryBtn"><i class="bi bi-lightning me-1" aria-hidden="true"></i>Schnellerfassung</button>'
                     . '<button type="button" class="btn btn-outline-secondary btn-sm" id="publishChangelogBtn" data-titel="Heimresultate" data-tooltip="Hinweis «Resultate aktualisiert» auf www.msvwilen.ch"><i class="bi bi-megaphone me-1" aria-hidden="true"></i>Auf Website melden</button>'
                     . '<div class="btn-group btn-group-sm" role="group" aria-label="Rangliste">'
                     . '<button type="button" class="btn btn-outline-info" id="hkPdfBtn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Rangliste</span></button>'
                     . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="heimrang" data-druck-label="Heimmeisterschaft Rangliste" aria-label="Rangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
                     . '</div>'
-                    . '<button type="submit" form="heimresultateForm" class="btn btn-primary btn-sm" id="rasterSpeichernBtn"><i class="bi bi-save me-1"></i>Speichern</button>';
+                    . '<button type="submit" form="heimresultateForm" class="btn btn-primary btn-sm" id="rasterSpeichernBtn"><i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>';
                 $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
                     . '<div class="ui-chips" id="progressChips"></div>';
                 $page_show_mobile = true;
@@ -197,7 +198,7 @@ $csrf = csrf_token();
 <div class="hybrid-edit-panel ui-erfassen" id="entryPanel" style="--panel-width: 540px;">
     <div class="panel-header">
         <div class="min-w-0">
-            <h6 class="mb-0"><span id="entryName">Erfassen</span> <button type="button" class="btn-help" data-help="heimresultate.schnellerfassung" aria-label="Hilfe"></button></h6>
+            <div class="d-flex align-items-center gap-2"><h2 class="mb-0" id="entryName">Erfassen</h2><button type="button" class="btn-help" data-help="heimresultate.schnellerfassung" aria-label="Hilfe"></button></div>
             <small class="panel-pos" id="entrySubtitle"></small>
         </div>
         <div class="d-flex align-items-center gap-1 ms-auto">
@@ -215,7 +216,7 @@ $csrf = csrf_token();
     <div class="panel-body">
         <label class="hk-feldtitel" for="entryMemberSelect">Schütze wechseln</label>
         <div class="mb-3">
-            <select id="entryMemberSelect" style="width:100%"></select>
+            <select id="entryMemberSelect" class="form-select form-select-sm"></select>
         </div>
         <div class="hk-erfassung">
             <div class="hk-erfassung-kopf">
@@ -230,10 +231,10 @@ $csrf = csrf_token();
         <div class="d-flex gap-2 w-100 align-items-center">
             <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> weiter</span>
             <button type="button" class="btn btn-outline-primary btn-sm" id="entrySaveBtn">
-                <i class="bi bi-save me-1"></i>Speichern
+                <i class="bi bi-save me-1" aria-hidden="true"></i>Speichern
             </button>
             <button type="button" class="btn btn-primary btn-sm" id="entrySaveNextBtn">
-                Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1"></i>
+                Speichern &amp; Weiter <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
             </button>
         </div>
     </div>
@@ -348,12 +349,15 @@ $(document).ready(function() {
     }
 
     // Kopf-Card: Mitglieder mit Resultaten, vollständige, ungespeicherte Zeilen; Zähler im Filter
+    var zaehlenStand = '';
     function zaehlen() {
         var $rows = $('#heimresultateTabelle tbody tr[data-stand]');
         var total = $rows.length;
         var mit = $rows.filter('[data-stand="mit"]').length;
         var voll = $rows.filter('[data-voll="1"]').length;
-        $('#progressText').html(mit + ' von ' + total + ' <span>Mitgliedern mit Resultaten</span>');
+        // Live-Region nur bei echter Änderung schreiben, sonst sagt der Screenreader bei jedem Tastendruck den Stand an
+        var stand = mit + ' von ' + total + ' <span>Mitgliedern mit Resultaten</span>';
+        if (stand !== zaehlenStand) { zaehlenStand = stand; $('#progressText').html(stand); }
         $('#progressChips').html(
             (voll ? '<span class="ui-chip"><b>' + voll + '</b> mit allen 8 Passen</span>' : '') +
             (geaendert.size ? '<span class="ui-chip hk-chip-ungespeichert"><span class="ui-punkt"></span><b>' + geaendert.size + '</b> ' +
@@ -490,6 +494,7 @@ $(document).ready(function() {
 
     function buildMobileCards() {
         var $container = $('#mobileCardsList').empty();
+        if (!isMobile()) return;   // am Desktop keine versteckten Karten; der Resize-Wechsel baut sie bei Bedarf
         var $rows = $('#heimresultateTabelle tbody tr');
         var totalMembers = 0;
         var membersWithValues = 0;
@@ -863,9 +868,12 @@ $(document).ready(function() {
     $(window).on('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
-            // Bei Wechsel Desktop ↔ Mobile: Cards ggf. neu bauen
+            // Bei Wechsel Desktop ↔ Mobile: Karten aus dem Raster neu bauen bzw. am Desktop entfernen
+            // (sonst stünden beim Zurückwechseln alte Werte in den Karten)
             if (isMobile() && $('#mobileCardsList .member-card').length === 0) {
                 buildMobileCards();
+            } else if (!isMobile()) {
+                $('#mobileCardsList').empty();
             }
         }, 150);
     });
@@ -1003,6 +1011,7 @@ $(document).ready(function() {
                 const done = self.isComplete(r);
                 $sel.append(new Option((done ? '✓ ' : '') + r.name, i, false, i === self.idx));
             });
+            if (!$.fn.select2) return;   // Select2 nicht geladen: die normale Auswahlliste tut es auch
             $sel.select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('#entryPanel'),

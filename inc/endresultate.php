@@ -308,8 +308,8 @@ $csrf = csrf_token();
                     <div class="mobile-cards-container" id="mobileCardsEnd">
                         <div class="mobile-search">
                             <div class="position-relative">
-                                <i class="bi bi-search search-icon"></i>
-                                <input type="search" class="form-control" placeholder="Name suchen..." aria-label="Teilnehmer suchen"
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="search" class="form-control" id="endSucheMobil" placeholder="Name suchen …" aria-label="Teilnehmer suchen"
                                        oninput="filterMobileEnd(this)">
                             </div>
                         </div>
@@ -339,7 +339,7 @@ $csrf = csrf_token();
 <div class="hybrid-edit-panel ui-erfassen" id="editPanel" style="--panel-width: 600px;">
     <div class="panel-header">
         <div class="min-w-0">
-            <h6 class="mb-0" id="panelTitle">Erfassen</h6>
+            <h2 class="mb-0" id="panelTitle">Erfassen</h2>
             <small class="panel-pos" id="panelSubtitle"></small>
         </div>
         <div class="d-flex align-items-center gap-1 ms-auto">
@@ -362,7 +362,7 @@ $csrf = csrf_token();
         <!-- Endstich -->
         <div class="shot-section shot-first" id="endstichSchuesse" data-stich="END">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-bullseye"></i>Endstich <button type="button" class="btn-help" data-help="endresultate.endstich" aria-label="Hilfe"></button></span>
+                <span class="shot-section-title"><i class="bi bi-bullseye" aria-hidden="true"></i>Endstich <button type="button" class="btn-help" data-help="endresultate.endstich" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
                 <span class="shot-total" id="endstichSumme">0</span>
             </div>
@@ -384,7 +384,7 @@ $csrf = csrf_token();
         <!-- Schwini -->
         <div class="shot-section" id="schwiniSchuesse" data-stich="SCHWINI">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-piggy-bank"></i>Schwini <button type="button" class="btn-help" data-help="endresultate.schwini" aria-label="Hilfe"></button></span>
+                <span class="shot-section-title"><i class="bi bi-piggy-bank" aria-hidden="true"></i>Schwini <button type="button" class="btn-help" data-help="endresultate.schwini" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
             </div>
             <div class="shot-section-body">
@@ -415,7 +415,7 @@ $csrf = csrf_token();
         <div class="shot-cols">
             <div class="shot-section" id="kunstSchuesse" data-stich="KUNST">
                 <div class="shot-section-head">
-                    <span class="shot-section-title"><i class="bi bi-palette"></i>Kunst</span>
+                    <span class="shot-section-title"><i class="bi bi-palette" aria-hidden="true"></i>Kunst</span>
                     <span class="shot-status">Nicht gelöst</span>
                     <span class="shot-total" id="kunstSum">0</span>
                 </div>
@@ -429,7 +429,7 @@ $csrf = csrf_token();
             </div>
             <div class="shot-section" id="glueckSchuesse" data-stich="GLUECK">
                 <div class="shot-section-head">
-                    <span class="shot-section-title"><i class="bi bi-clover"></i>Glück</span>
+                    <span class="shot-section-title"><i class="bi bi-clover" aria-hidden="true"></i>Glück</span>
                     <span class="shot-status">Nicht gelöst</span>
                 </div>
                 <div class="shot-section-body">
@@ -445,7 +445,7 @@ $csrf = csrf_token();
         <!-- Zabig -->
         <div class="shot-section" id="zabigSchuesse" data-stich="ZABIG">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-moon-stars"></i>Zabig</span>
+                <span class="shot-section-title"><i class="bi bi-moon-stars" aria-hidden="true"></i>Zabig</span>
                 <span class="shot-status">Nicht gelöst</span>
                 <span class="shot-total" id="zabigsum">0</span>
             </div>
@@ -461,7 +461,7 @@ $csrf = csrf_token();
         <!-- Sie und Er -->
         <div class="shot-section" id="sieunderSchuesse" data-stich="SIEUNDER">
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-people"></i>Sie und Er <span class="shot-hint">fünf eigene Schüsse</span> <button type="button" class="btn-help" data-help="endresultate.sieunder" aria-label="Hilfe"></button></span>
+                <span class="shot-section-title"><i class="bi bi-people" aria-hidden="true"></i>Sie und Er <span class="shot-hint">fünf eigene Schüsse</span> <button type="button" class="btn-help" data-help="endresultate.sieunder" aria-label="Hilfe"></button></span>
                 <span class="shot-status">Nicht gelöst</span>
                 <span class="shot-total" id="uniqueTotal" data-tooltip="Total des Paars: jeder Wert zählt einmal">0</span>
             </div>
@@ -493,7 +493,7 @@ $csrf = csrf_token();
         <div class="shot-cols">
             <div class="shot-section" id="Differenzler">
                 <div class="shot-section-head">
-                    <span class="shot-section-title"><i class="bi bi-chat-square-text"></i>Ansage <span class="shot-hint">Differenzler</span> <button type="button" class="btn-help" data-help="endresultate.ansage" aria-label="Hilfe"></button></span>
+                    <span class="shot-section-title"><i class="bi bi-chat-square-text" aria-hidden="true"></i>Ansage <span class="shot-hint">Differenzler</span> <button type="button" class="btn-help" data-help="endresultate.ansage" aria-label="Hilfe"></button></span>
                     <span class="shot-status">Nicht gelöst</span>
                 </div>
                 <div class="shot-section-body">
@@ -502,7 +502,7 @@ $csrf = csrf_token();
             </div>
             <div class="shot-section" id="Absendenanmeldung">
                 <div class="shot-section-head">
-                    <span class="shot-section-title"><i class="bi bi-calendar-check"></i>Absenden</span>
+                    <span class="shot-section-title"><i class="bi bi-calendar-check" aria-hidden="true"></i>Absenden</span>
                 </div>
                 <div class="shot-section-body">
                     <input type="text" class="form-control form-control-sm focusable-input" id="AbsendenAnmeldung" name="AbsendenAnmeldung" aria-label="Absenden: Anmeldung" placeholder="Anmeldung">
@@ -513,7 +513,7 @@ $csrf = csrf_token();
         <!-- Partner-Rangliste: Mitglied zusätzlich aufführen (nur Mitglieder, Migration 096) -->
         <div class="shot-section" id="partnerrangSection" hidden>
             <div class="shot-section-head">
-                <span class="shot-section-title"><i class="bi bi-person-heart"></i>Partner-Rangliste <button type="button" class="btn-help" data-help="endresultate.partnerrang" aria-label="Hilfe"></button></span>
+                <span class="shot-section-title"><i class="bi bi-person-heart" aria-hidden="true"></i>Partner-Rangliste <button type="button" class="btn-help" data-help="endresultate.partnerrang" aria-label="Hilfe"></button></span>
             </div>
             <div class="shot-section-body">
                 <div class="form-check mb-0">
@@ -531,10 +531,10 @@ $csrf = csrf_token();
             </button>
             <span class="small text-muted me-auto d-none d-md-inline"><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> nächstes offenes</span>
             <button type="button" class="btn btn-outline-primary btn-sm" id="panelSaveBtn">
-                <i class="bi bi-save me-1"></i>Speichern
+                <i class="bi bi-save me-1" aria-hidden="true"></i>Speichern
             </button>
             <button type="button" class="btn btn-primary btn-sm" id="panelSaveNextBtn">
-                Speichern &amp; nächstes offenes <i class="bi bi-arrow-right ms-1"></i>
+                Speichern &amp; nächstes offenes <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
             </button>
         </div>
     </div>
@@ -722,7 +722,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(resp) {
                     if (!resp || resp.success !== true) {
-                        msvToast('Nicht gespeichert: ' + ((resp && resp.message) || 'unbekannter Fehler') + '. Die Eingaben sind noch da.', 'error');
+                        msvToast(((resp && resp.message) || 'Nicht gespeichert').replace(/\.?$/, '.') + ' Die Eingaben sind noch da.', 'error');
                         return;
                     }
                     EndEditPanel.setGeaendert(false);
@@ -736,7 +736,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(xhr) {
-                    msvToast('Nicht gespeichert: ' + msvXhrMessage(xhr, 'Serverfehler').replace(/\.?$/, '.') + ' Die Eingaben sind noch da.', 'error');
+                    msvToast(msvXhrMessage(xhr, 'Nicht gespeichert').replace(/\.?$/, '.') + ' Die Eingaben sind noch da.', 'error');
                 },
                 complete: function() {
                     $saveBtn.prop('disabled', false).html(originalSave);
@@ -835,6 +835,7 @@ $(document).ready(function() {
             type: 'GET',
             data: { year: year },
             success: function(response) {
+                if (year && String(year) !== String($('#yearSelect').val())) return; // Antwort für ein inzwischen abgewähltes Jahr
                 $tbody.html(response);
                 esUrsprung = $tbody.children().toArray();
                 sortieren();   // Reihenfolge der Ansicht, Zeilenindex, Fortschritt, Filter
@@ -843,6 +844,7 @@ $(document).ready(function() {
                 if (typeof nachher === 'function') nachher();
             },
             error: function(xhr) {
+                if (year && String(year) !== String($('#yearSelect').val())) return;
                 $tbody.html('<tr class="ui-leer"><td colspan="10" class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Die Daten konnten nicht geladen werden: ' + msvEsc(msvXhrMessage(xhr, 'Serverfehler')) + '</td></tr>');
             }
         });
@@ -919,9 +921,10 @@ $(document).ready(function() {
         $('#endKeineTreffer').remove();
         if (!sichtbar && EndEditPanel.allRows.length) {
             $('#mitgliederTabelle tbody').append(
-                '<tr class="ui-leer" id="endKeineTreffer"><td colspan="10">Keine Mitglieder für diese Auswahl. ' +
+                '<tr class="ui-leer" id="endKeineTreffer"><td colspan="10">Keine Teilnehmer für diese Auswahl. ' +
                 '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="endFilterZurueck">Filter zurücksetzen</button></td></tr>');
         }
+        mobilKartenFiltern();   // derselbe Filter gilt für die Karten auf dem Handy
     }
     $(document).on('click', '#esFilter button', function() {
         endFilter = $(this).data('filter');
@@ -1272,19 +1275,21 @@ $(document).ready(function() {
             const ansage = cells[7]?.textContent?.trim() || '-';
             const total = cells[8]?.textContent?.trim() || '-';
             const rang = row.querySelector('.es-rang')?.textContent?.trim() || '';
+            // Stand wie in der Tabelle (data-stand): «offen», solange ein gelöster Stich kein Resultat hat
+            const stand = row.dataset.stand || (hasData ? 'ok' : 'offen');
+            const podest = esAnsicht === 'rangliste' ? (row.className.match(/\brank-[123]\b/) || [''])[0] : '';
 
-            const statusDot = hasData
-                ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-ok-fg);margin-right:6px;"></span>'
-                : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-leer);margin-right:6px;"></span>';
+            const statusDot = '<span class="ui-status ' + stand + ' me-1"><span class="ui-punkt"></span>'
+                + '<span class="visually-hidden">' + (stand === 'ok' ? 'vollständig' : 'offen') + '</span></span>';
 
             html += `
-            <div class="mobile-card" data-index="${idx}">
+            <div class="mobile-card ${podest}" data-index="${idx}" data-stand="${stand}" data-name="${msvEsc(memberName.toLowerCase())}">
                 <div class="mobile-card-header" onclick="MSVMobileCards.toggle(this)">
                     <div>
                         <div class="fw-bold">${statusDot}${rang ? msvEsc(rang) + ' ' : ''}${msvEsc(memberName)}${typMarke}</div>
-                        <small class="text-muted">Endstich: ${endstich} | Schwini: ${schwini} | Total: ${total}</small>
+                        <small class="text-muted">Endstich: ${msvEsc(endstich)} | Schwini: ${msvEsc(schwini)} | Total: ${msvEsc(total)}</small>
                     </div>
-                    <i class="bi bi-chevron-down"></i>
+                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
                 </div>
                 <div class="mobile-card-body">
                     <div class="mobile-card-detail-row">
@@ -1316,41 +1321,45 @@ $(document).ready(function() {
                         <span class="mobile-card-detail-value"><strong>${ansage}</strong></span>
                     </div>
                     <button type="button" class="btn btn-outline-primary w-100 mt-3"
-                            onclick="EndEditPanel.open('${key}')"
-                            style="min-height: 48px;">
-                        <i class="bi bi-pencil me-2"></i>Bearbeiten
+                            onclick="EndEditPanel.open('${key}')">
+                        <i class="bi bi-pencil me-2" aria-hidden="true"></i>Bearbeiten
                     </button>
                 </div>
             </div>`;
         });
 
         container.innerHTML = html;
+        mobilKartenFiltern();
     }
 
-    window.filterMobileEnd = function(searchInput) {
-        const query = searchInput.value.toLowerCase();
-        const cards = document.querySelectorAll('#mobileCardsEnd .mobile-card');
+    // Karten auf dem Handy: Filter «Alle / Offen / Vollständig» und Suche zusammen
+    function mobilKartenFiltern() {
+        const container = document.querySelector('#mobileCardsEnd .mobile-cards-scroll');
+        if (!container) return;
+        const cards = container.querySelectorAll('.mobile-card');
+        if (!cards.length) return;
+        const query = ($('#endSucheMobil').val() || '').trim().toLowerCase();
 
         let visibleCount = 0;
         cards.forEach(card => {
-            const text = card.textContent.toLowerCase();
-            const isVisible = text.includes(query);
+            const isVisible = (endFilter === 'alle' || card.dataset.stand === endFilter)
+                && (card.dataset.name || '').includes(query);
             card.style.display = isVisible ? '' : 'none';
             if (isVisible) visibleCount++;
         });
 
-        const container = document.querySelector('#mobileCardsEnd .mobile-cards-scroll');
         const existingEmpty = container.querySelector('.mobile-cards-empty');
         if (visibleCount === 0 && !existingEmpty) {
             container.insertAdjacentHTML('beforeend', `
                 <div class="mobile-cards-empty">
-                    <i class="bi bi-search"></i>
+                    <i class="bi bi-search" aria-hidden="true"></i>
                     <div>Keine Treffer gefunden</div>
                 </div>`);
         } else if (visibleCount > 0 && existingEmpty) {
             existingEmpty.remove();
         }
-    };
+    }
+    window.filterMobileEnd = function() { mobilKartenFiltern(); };
 
     // Responsive Rebuild
     let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
