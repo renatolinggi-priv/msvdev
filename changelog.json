@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.68.34",
+    "datum": "2026-10-15",
+    "aenderungen": [
+      {
+        "titel": "Vereinscup 2024: doppelte Paarungen in Runde 1 entfernt",
+        "beschreibung": "Runde 1 von 2024 stand zweimal in der Datenbank, darum zeigten Cup-Rangliste und Absendenbuch 2024 jede Paarung doppelt. Die Datenbank-Aktualisierung 115 entfernt die exakten Kopien und behält jeweils die ältere Paarung; vorher wird gesichert. Die Jahresmeisterschaft war nicht betroffen.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Stildatei aufgeräumt: Radien und Schriftgrössen",
+        "beschreibung": "Auch Radien und Schriftgrössen der alten Stildatei folgen jetzt dem Erscheinungsbild; Regeln, die nichts mehr betrafen, sind entfernt. Sichtbar ist nur das Info-Symbol im Hilfe-Dialog, das so gross ist wie der Titel.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.33",
     "datum": "2026-10-15",
     "aenderungen": [
@@ -36,18 +54,138 @@
     ]
   },
   {
+    "version": "1.68.32",
+    "datum": "2026-10-15",
+    "aenderungen": [
+      {
+        "titel": "Einheitliche Farben auf allen Admin-Seiten",
+        "beschreibung": "Die alte Stildatei bringt keine eigenen Farben mehr mit; alles kommt aus den Farben des Erscheinungsbilds. Sichtbar wird das an wenigen Stellen: Der Hilfe-Dialog hat einen weissen Kopf, einen ruhigeren Schatten und dunkelt den Hintergrund wie das Seitenpanel ab, ohne Weichzeichner. Nummern in der Mitgliederliste und Codes bei den Wanderpreisen sind blau statt violett, graue Nebentexte und Linien sind leicht angeglichen. Doppelte Eingaben im Endschiessen-Panel sind im Fehler-Rot markiert. Alles andere sieht aus wie vorher; geprüft auf 45 Seiten.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.31",
+    "datum": "2026-10-15",
+    "aenderungen": [
+      {
+        "titel": "Vereinscup: Löschen trifft nur noch das Jahr der Paarung",
+        "beschreibung": "Wer eine Paarung löschte, löschte die abhängigen Paarungen in Runde 2 und die Finalresultate immer im laufenden Jahr, auch wenn ein früheres Jahr gewählt war. Jetzt gilt das Jahr der Paarung. Die Rückfrage nennt, was mitgelöscht wird; vorher wird die Datenbank gesichert, und alles geschieht in einem Schritt. Gibt es ungespeicherte Eingaben, verlangt die Seite zuerst Speichern.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Vereinscup: getauschte Teilnehmer ergeben keine zweite Paarung",
+        "beschreibung": "Wurde in einer gespeicherten Paarung ein Teilnehmer ersetzt, legte Speichern eine zweite Paarung an. Paarungen werden jetzt über ihre Nummer gespeichert. Die Wahl bei Gleichstand und «1 oder 2 weiter» werden mit «Speichern» gesichert statt sofort. Klappt beim Speichern etwas nicht, nennt die Meldung, was fehlt, und es erscheint nie «Gespeichert».",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Vereinscup im Erscheinungsbild der übrigen Seiten",
+        "beschreibung": "Paarungen sind kompakte Zeilen: ein Haken zeigt, wer weiterkommt, die Punkte stehen rechts, ohne «vs» und Namensschilder. «Speichern» steht oben rechts und sichert auch den Standcup. Neue Paarungen werden unten in Runde 1 angelegt («Hinzufügen»). Im Finale stehen die Ränge und oben der Cupsieger. Der Kat.-B-Schalter lässt getippte Finalpunkte stehen. Hilfetexte nachgeführt (Datenbank-Aktualisierung 113).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.30",
+    "datum": "2026-10-15",
+    "aenderungen": [
+      {
+        "titel": "Jahresmeisterschaft: «Zwischenstand» bis zum Endstich",
+        "beschreibung": "Bis zum Endstich heisst die Liste unter den Anlässen «Zwischenstand Kat. A/B» statt «Rangliste». Die Legende sagt, dass sie nach Name sortiert ist und Rang, Total und Streicher ab dem Endstich gelten, mit dessen Datum. Danach heisst sie wie bisher «Rangliste». Die Legende steht nur noch einmal. Lässt sich die Liste nicht laden, nennt die Meldung den nächsten Schritt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Menü «Endschiessen Rangliste» öffnet wieder die Rangliste",
+        "beschreibung": "Der Menüeintrag öffnete die Ansicht «Erfassen», weil das Menü Links nur bis 30 Zeichen speicherte. Links dürfen jetzt 255 Zeichen lang sein, wie im Navigations-Editor vorgesehen (Datenbank-Aktualisierung 110).",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Heimmeisterschaft und Kantonalstich: PDF und Bildschirm zeigen denselben Rang",
+        "beschreibung": "Ist im Raster etwas nicht gespeichert, fragen der Knopf «Rangliste» und der Direktdruck zuerst: «Speichern und weiter» speichert und erstellt dann die Rangliste, «Abbrechen» lässt alles stehen. Bisher enthielt das PDF still nur den gespeicherten Stand. Solange Eingaben offen sind, stehen die Ränge kursiv mit dem Hinweis «vorläufig». Der Spaltenkopf heisst «Rang · Mitglied».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen Rangliste: Dokumente aufgeräumt",
+        "beschreibung": "In der Dokumente-Leiste steht offen nur noch, was es fürs Absenden braucht: Absendenbuch, Broschüre und Gesamtrangliste. Zwischenrangliste, Anmeldungen, Einzelwettbewerbe und Partner liegen unter «Weitere Dokumente»; der Browser merkt sich, ob sie offen bleiben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Heimmeisterschaft und Kantonalstich: «Auf Website melden»",
+        "beschreibung": "Der Knopf «Veröffentlichen» heisst «Auf Website melden», weil er nur den Hinweis «… aktualisiert» auf www.msvwilen.ch setzt; die Resultate selbst sind gespeichert sofort sichtbar. Die Rückfrage nennt den genauen Text. Melden dürfen nur noch Admin und Vorstand (Datenbank-Aktualisierung 111 für die Hilfe).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Bedienung per Tastatur und Bildschirmleser",
+        "beschreibung": "Vereinscup: «Paarung entfernen» und «Aus dem Finale entfernen» sind mit der Tab-Taste erreichbar und auf Touch-Geräten sichtbar. Jahresmeisterschaft: Der Knopf für die Aufschlüsselung meldet, ob sie offen ist. Suchfelder auf dem Handy und der Titel «Standcup Final» sind für Bildschirmleser beschriftet. Die grauen Tabellenköpfe sind etwas dunkler und damit besser lesbar.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Endschiessen: Total mit Rechnung, Hilfe stimmt wieder",
+        "beschreibung": "Mit der Maus über dem Total steht die Rechnung der Person, z.B. «Endstich 92 + Schwini 88 + Kunst 45.0 + Glück 9.6 + Zabig 52 = 286.6». Die Spalten zeigen die erfassten Werte, das Total rechnet Kunst und Glück durch 10 und Zabig in Punkten. Die Hilfe «Spalten und Gesamttotal» beschreibt das jetzt so und erklärt «–» (nicht gelöst) und «gelöst» (bezahlt, noch ohne Resultat) richtig (Datenbank-Aktualisierung 112).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Klarere Beschriftungen und Fehlermeldungen",
+        "beschreibung": "Heimmeisterschaft und Kantonalstich: Vor dem Schalter «Name | Rang» steht «Sortierung», damit er sich vom Filter daneben abhebt. Jahresmeisterschaft: Der Tooltip bei «Veröffentlichen» sagt, dass gespeicherte Resultate erst nach der Freigabe im Mitgliederportal erscheinen. Meldungen beim Laden nennen den nächsten Schritt statt nur «Fehler beim Laden».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Podest und Feinschliff in den Ranglisten",
+        "beschreibung": "Jahresmeisterschaft (nach dem Endstich), Heimmeisterschaft und Kantonalstich zeigen die ersten drei je Kategorie in Gold, Silber und Bronze, wie das Endschiessen; dort färben sich jetzt auch Name und Total mit. Beim Jahreswechsel mit ungespeicherten Eingaben bieten Heimmeisterschaft und Kantonalstich Speichern, Verwerfen oder Zurück an. Die beste Passe im Kantonalstich (sie zählt als «Bester Kantonalstich» in der Jahresmeisterschaft) ist golden statt blau hervorgehoben, damit sie nicht wie eine Auswahl aussieht. Das Total in der JM-Aufschlüsselung und die Passen-Felder auf dem Handy sind grösser.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Absenden vorbereiten: «bereit» erst, wenn es stimmt",
+        "beschreibung": "Die Prüfliste zählt den Vereinscup erst als fertig, wenn das Finale ein Resultat hat; vorher steht «Das Finale hat noch kein Resultat, im Buch fehlt der Sieger». Von Mitgliedern gemeldete JM-Resultate, die der Vorstand noch nicht bestätigt hat, erscheinen als offener Punkt. Der Vereinscup fragt vor dem PDF und dem Direktdruck der Rangliste wie Heimmeisterschaft und Kantonalstich «Zuerst speichern?», statt still einen alten Stand auszugeben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Tastatur und Bildschirmleser, zweite Runde",
+        "beschreibung": "Die aufklappbaren Karten auf dem Handy lassen sich auf allen Seiten mit Tab, Enter und Leertaste bedienen und melden, ob sie offen sind. Die Punktefelder im Vereinscup tragen den Namen des Schützen. Der vorläufige Rang bei Heimmeisterschaft und Kantonalstich wird auch vorgelesen. Das Suchfeld des Endschiessens auf dem Handy ist beschriftet, Platzhalter in Suchfeldern sind besser lesbar. Der einmalige Hinweis auf das Fragezeichen verdeckt keine Knöpfe mehr: Klicks gehen durch ihn hindurch, und jeder Klick oder Escape schliesst ihn.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Feinschliff an den Erfassungsseiten",
+        "beschreibung": "Jahresmeisterschaft: Die Rangliste blendet nach dem Speichern nicht mehr aus und wieder ein, und eine leere Rangliste sagt, was fehlt (kein Anlass definiert oder keine Mitglieder in der Kategorie). Heimmeisterschaft und Kantonalstich: Hat ein Mitglied Resultate, aber keine Waffe in den Stammdaten, erklärt der Tooltip, warum kein Rang steht. Kantonalstich auf dem Handy: Die beste Passe heisst «beste» wie in der Schnellerfassung statt eines Pokal-Symbols. Vereinscup: Bei «Bewegung reduzieren» im System entfallen Aufblinken und Kippen beim Ziehen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Hilfetexte nach dem Zusammenlegen der Ranglisten",
+        "beschreibung": "Die Hilfe zu Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich, Vereinscup, Sieger und Wanderpreise nannte noch Menüeinträge und Seiten, die es seit 1.68.29 nicht mehr gibt. Sie sagt jetzt, wo die Rangliste auf der Seite steht (Datenbank-Aktualisierung 110).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.29",
     "datum": "2026-10-14",
     "aenderungen": [
       {
         "titel": "Jahresmeisterschaft: Erfassen und Rangliste auf einer Seite",
-        "beschreibung": "«Jahresmeisterschaft erfassen» und «Jahresmeisterschaft Rangliste» sind eine Seite: oben die Anlässe, darunter die Rangliste, im Kopf Import, Veröffentlichen und die PDF-Ranglisten mit Direktdruck. Der Menüeintrag «Jahresmeisterschaft Rangliste» bleibt und springt direkt zur Rangliste. Ein Klick auf einen Anlass im Spaltenkopf der Rangliste öffnet die Erfassung dieses Anlasses.",
+        "beschreibung": "«Jahresmeisterschaft erfassen» und «Jahresmeisterschaft Rangliste» sind eine Seite: oben die Anlässe, darunter die Rangliste, im Kopf Import, Veröffentlichen und die PDF-Ranglisten mit Direktdruck. Alte Links auf «Jahresmeisterschaft Rangliste» springen direkt zur Rangliste. Ein Klick auf einen Anlass im Spaltenkopf der Rangliste öffnet die Erfassung dieses Anlasses.",
         "typ": "verbesserung",
         "admin_only": true
       },
       {
         "titel": "Heimmeisterschaft und Kantonalstich: Rangliste im Erfassungsraster",
-        "beschreibung": "Vor jedem Namen steht der Rang in seiner Kategorie (z.B. «A 3.») und rechnet beim Tippen mit. Der Umschalter «Name | Rang» sortiert das Raster nach Name oder nach Kat. A, Kat. B und Rang. Die PDF-Rangliste und der Direktdruck stehen im Kopf der Erfassung. Die Menüeinträge «Heimmeisterschaft Rangliste» und «Kantonalstich Rangliste» bleiben und öffnen die Erfassung mit Sortierung «Rang».",
+        "beschreibung": "Vor jedem Namen steht der Rang in seiner Kategorie (z.B. «A 3.») und rechnet beim Tippen mit. Der Umschalter «Name | Rang» sortiert das Raster nach Name oder nach Kat. A, Kat. B und Rang. Die PDF-Rangliste und der Direktdruck stehen im Kopf der Erfassung. Alte Links auf «Heimmeisterschaft Rangliste» und «Kantonalstich Rangliste» öffnen die Erfassung mit Sortierung «Rang».",
         "typ": "verbesserung",
         "admin_only": true
       },
@@ -71,7 +209,7 @@
       },
       {
         "titel": "Vereinscup: Rangliste im Kopf der Erfassung",
-        "beschreibung": "Die Rangliste als PDF und der Direktdruck stehen auf «Vereinscup erfassen» oben im Kopf statt in der Werkzeugleiste. Der Menüeintrag «Vereinscup Rangliste» öffnet die Erfassung.",
+        "beschreibung": "Die Rangliste als PDF und der Direktdruck stehen auf «Vereinscup erfassen» oben im Kopf statt in der Werkzeugleiste. Alte Links auf «Vereinscup Rangliste» öffnen die Erfassung.",
         "typ": "verbesserung",
         "admin_only": true
       },

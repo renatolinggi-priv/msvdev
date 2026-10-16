@@ -4,26 +4,17 @@
    ========================================== */
 :root {
 
-    /* Primäre Farben */
-    --primary-color: #dee2e6;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #adb5bd;
-    --light-color: #f8f9fa;
-    --dark-color: #343a40;
-
-    /* Erweiterte Farben für spezielle Buttons */
-    --pink-color: #b83280;
-    --blue-color: #3b5998;
-    --yellow-color: #8a6d1c;
+    /* Alte Farbnamen, nur noch Verweise auf die Tokens in css/msv-ui.css (Okt 2026).
+       Neue Regeln nutzen --ui-* direkt; --secondary-color setzt msv-ui.css ebenfalls. */
+    --primary-color: var(--ui-rand);
+    --secondary-color: var(--ui-text-2);
+    --success-color: var(--ui-k-gruen);
+    --light-color: var(--ui-flaeche-2);
+    --dark-color: var(--ui-text);
 
     /* Layout-Variablen */
     --border-radius: 0.375rem;
     --transition-speed: 0.3s;
-    --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    --box-shadow-hover: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
     /* NEU: Einheitliche Spalten für alle Resultat-Tabellen */
     --name-col-w: 200px; /* erste Spalte (Name/Rang) */
@@ -36,19 +27,17 @@
 body {
     font-size: 0.9em;
     padding-top: 76px;
-    background-color: var(--light-color);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Navigation-Styles sind zentral in navigation.inc.php definiert */
 
 /* Breadcrumb Verbesserungen */
 .breadcrumb {
-    background: rgba(255, 255, 255, 0.9) !important;
-    border-radius: 2rem !important;
+    background: color-mix(in srgb, var(--ui-flaeche) 90%, transparent) !important;
+    border-radius: 999px !important;
     padding: 0.75rem 1.5rem !important;
     margin-bottom: 0 !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 2px 10px rgba(26, 35, 50, 0.1) !important;
 }
 
 .breadcrumb-item + .breadcrumb-item::before { content: "→" !important; color: var(--secondary-color) !important; }
@@ -68,18 +57,12 @@ body {
    ========================================== */
 .content-wrapper,
 .content-background {
-    background-color: #ffffff !important;
     padding: 2.5rem !important;
     border-radius: 0.75rem !important;
     margin-bottom: 2rem !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-    border: 1px solid #f1f5f9 !important;
 }
 
 .main-content-wrapper {
-    background-color: #ffffff !important;
-    border-radius: 1rem !important;
-    box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.08) !important;
     padding: 1.5rem !important;
     margin-bottom: 2rem !important;
 }
@@ -111,31 +94,8 @@ body {
 }
 
 /* ==========================================
-   BUTTON TOOLBAR
+   BUTTON-GRUPPE
    ========================================== */
-.button-toolbar {
-    background: #ffffff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    padding: 1rem;
-    margin-bottom: 2rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: center;
-    border: 1px solid #f1f5f9;
-}
-
-.content-wrapper .button-toolbar,
-.content-background .button-toolbar {
-    background: #ffffff !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid #e2e8f0 !important;
-    margin-bottom: 2rem !important;
-    padding: 1.5rem !important;
-    border-radius: 0.5rem !important;
-}
-
 .button-group {
     display: flex;
     gap: 0.75rem;
@@ -170,13 +130,7 @@ body {
 
 /* Buttons heben sich beim Hover nicht an – Rückmeldung nur über Farbe */
 
-/* Outline Button Verbesserungen */
-.btn-outline-info { color: #17a2b8; border-color: #17a2b8; background-color: #ffffff; }
-.btn-outline-info:hover { background-color: #17a2b8; border-color: #17a2b8; color: #ffffff; }
-.btn-outline-success { color: #28a745; border-color: #28a745; background-color: #ffffff; }
-.btn-outline-success:hover { background-color: #28a745; border-color: #28a745; color: #ffffff; }
-.btn-outline-secondary { color: #64748b; border-color: #cbd5e1; background-color: #ffffff; }
-.btn-outline-secondary:hover { background-color: #64748b; border-color: #64748b; color: #ffffff; }
+/* Farben der Outline-Knöpfe (Knopffarbe = Zweck) stehen in css/msv-ui.css */
 
 /* ==========================================
    PDF LINK STYLING
@@ -203,7 +157,7 @@ body {
 
 /* Standard PDF Link (Grün) */
 #pdf-link a { background-color: var(--success-color); color: white; }
-#pdf-link a:hover { background-color: #218838; }
+#pdf-link a:hover { background-color: var(--ui-ok-fg); }
 
 /* Outline Varianten für endschrang.php */
 #pdf-link .btn-outline-success,
@@ -218,31 +172,19 @@ body {
    ========================================== */
 .table-wrapper,
 .table-card {
-    background: #ffffff;
     border-radius: 0.75rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     overflow: hidden;
     margin-bottom: 2rem;
-    border: 1px solid #f1f5f9;
 }
 
 .content-wrapper .table-wrapper,
 .content-background .table-wrapper {
-    background: #ffffff !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
     margin-bottom: 2rem !important;
     border-radius: 0.5rem;
 }
 
 .content-wrapper .table-wrapper:last-child,
 .content-background .table-wrapper:last-child { margin-bottom: 0; }
-
-/* Einheitliche Seitentitel (Admin): Bootstrap .h4 ist ~1.5rem -> kompakter
-   auf 1.05rem vereinheitlicht. Greift fuer alle Seitentitel <h2 class="h4 mb-0">. */
-h2.h4 {
-    font-size: 1.05rem;
-}
 
 .table-title,
 .table-header {
@@ -252,7 +194,6 @@ h2.h4 {
     color: var(--dark-color);
     font-weight: 600;
     font-size: 0.95rem;
-    border-bottom: 2px solid #dee2e6;
     position: sticky;
     top: 0;
     z-index: 10; /* unter Navigation */
@@ -284,8 +225,6 @@ h2.h4 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--secondary-color);
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 6;
@@ -296,26 +235,19 @@ h2.h4 {
     transition: background 0.15s;
 }
 
-.hybrid-table tbody tr.hybrid-row:hover {
-    background: rgba(99, 102, 241, 0.05);
-}
-
-.hybrid-table tbody tr.hybrid-row.selected {
-    background: rgba(59, 130, 246, 0.08);
-    box-shadow: inset 4px 0 0 #3b82f6;
-}
+/* Hover und gewählte Zeile (.selected) stehen in css/msv-ui.css */
 
 .hybrid-table tbody td {
     padding: 0.35rem 0.5rem;
     vertical-align: middle;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--ui-linie-zart);
     font-size: 0.82rem;
 }
 
 /* Hybrid-Table Zellen-Typen */
 .h-nr {
     font-weight: 700;
-    color: #6366f1;
+    color: var(--ui-akzent-dunkel);
     text-align: center;
     white-space: nowrap;
 }
@@ -325,18 +257,18 @@ h2.h4 {
 }
 
 .h-date {
-    color: #64748b;
+    color: var(--ui-text-2);
     font-size: 0.82rem;
     white-space: nowrap;
 }
 
 .h-email {
-    color: #64748b;
+    color: var(--ui-text-2);
     font-size: 0.82rem;
 }
 
 .h-sub {
-    color: #64748b;
+    color: var(--ui-text-2);
     font-size: 0.82rem;
 }
 
@@ -362,7 +294,6 @@ h2.h4 {
     letter-spacing: 0.5px;
     padding: 0.75rem;
     color: var(--secondary-color);
-    border-bottom: 2px solid #dee2e6;
     border-top: none;
     position: sticky;
     top: 0;
@@ -370,16 +301,16 @@ h2.h4 {
 }
 
 .table tbody tr { transition: all var(--transition-speed) ease; }
-.table tbody tr:hover { background-color: rgba(108, 117, 125, 0.05); }
+.table tbody tr:hover { background-color: color-mix(in srgb, var(--ui-text-2) 5%, transparent); }
 
 /* Einheitlicher Hover für Heim/Kanti/End */
 #heimresultateTabelle tbody tr:hover,
 #kantiresultateTabelle tbody tr:hover,
-#endschrangTabelle   tbody tr:hover { background-color: rgba(108, 117, 125, 0.08) !important; }
+#endschrangTabelle   tbody tr:hover { background-color: color-mix(in srgb, var(--ui-text-2) 8%, transparent) !important; }
 #heimresultateTabelle tbody tr:hover th, #heimresultateTabelle tbody tr:hover td,
 #kantiresultateTabelle tbody tr:hover th, #kantiresultateTabelle tbody tr:hover td,
 #endschrangTabelle   tbody tr:hover th, #endschrangTabelle   tbody tr:hover td {
-    background-color: rgba(108, 117, 125, 0.08) !important;
+    background-color: color-mix(in srgb, var(--ui-text-2) 8%, transparent) !important;
     box-shadow: none !important;
 }
 
@@ -391,7 +322,7 @@ h2.h4 {
 .table th,
 .table td {
     padding: 0.5rem 0.75rem;
-    border-right: 1px solid #e9ecef;
+    border-right: 1px solid var(--ui-rand);
     vertical-align: middle;
 }
 
@@ -408,7 +339,7 @@ h2.h4 {
     width: 60px;
     text-align: center;
     font-weight: 600;
-    background-color: rgba(108, 117, 125, 0.02);
+    background-color: color-mix(in srgb, var(--ui-text-2) 2%, transparent);
 }
 
 /* JM-Ranglisten: Name-Spalte linksbündig (Gewicht wie überall = normal,
@@ -416,41 +347,6 @@ h2.h4 {
 #JMA th:nth-child(2), #JMA td:nth-child(2),
 #JMB th:nth-child(2), #JMB td:nth-child(2) {
     text-align: left;
-}
-
-/* === JM-Resultate: erste Spalte sticky + vertikale Header bleiben speziell === */
-#jmresultateTabelle th:first-child,
-#jmresultateTabelle td:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 3; /* unter table-title */
-    background-color: #ffffff !important;
-    border-right: 2px solid #dee2e6 !important;
-    min-width: 200px;
-    font-weight: 500;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-}
-
-#jmresultateTabelle thead th:first-child {
-    z-index: 4;
-    background-color: var(--light-color) !important;
-    position: sticky;
-    left: 0;
-    top: 0;
-}
-
-.table-wrapper:has(#jmresultateTabelle) .table-title {
-    z-index: 10;
-    position: sticky;
-    top: 0;
-    background: var(--light-color) !important;
-}
-
-#jmresultateTabelle .vertical-header {
-    position: sticky;
-    top: 0;
-    z-index: 3; /* unter table-title */
-    background-color: var(--light-color) !important;
 }
 
 /* Resultat-Spalten (generisch) */
@@ -479,7 +375,7 @@ h2.h4 {
     font-size: 0.75rem !important;
     letter-spacing: 0.5px !important;
     padding: 0.75rem !important;
-    border-bottom: 2px solid #dee2e6 !important;
+    border-bottom: 2px solid var(--ui-linie) !important;
     border-top: none !important;
     position: sticky !important;
     top: 0 !important;
@@ -493,8 +389,6 @@ h2.h4 {
     position: sticky !important;
     left: 0 !important;
     z-index: 4 !important;
-    background-color: #ffffff !important;
-    border-right: 2px solid #dee2e6 !important;
     font-weight: 600 !important;
     min-width: var(--name-col-w) !important;
     text-align: left !important;
@@ -514,7 +408,6 @@ h2.h4 {
     position: sticky !important;
     right: 0 !important;
     z-index: 4 !important;
-    background-color: rgba(108, 117, 125, 0.05) !important;
     font-weight: 700 !important;
     min-width: 80px !important;
     text-align: center !important;
@@ -549,10 +442,10 @@ h2.h4 {
 .table-wrapper:has(#heimresultateTabelle),
 .table-wrapper:has(#kantiresultateTabelle),
 .table-wrapper:has(#endschrangTabelle) {
-    background: #ffffff !important;
+    background: var(--ui-flaeche) !important;
     border-radius: 0.75rem !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    border: 1px solid var(--ui-rand) !important;
+    box-shadow: none !important;
     overflow: hidden !important;
 }
 
@@ -566,7 +459,7 @@ h2.h4 {
     color: var(--dark-color) !important;
     font-weight: 600 !important;
     font-size: 0.95rem !important;
-    border-bottom: 2px solid #dee2e6 !important;
+    border-bottom: 1px solid var(--ui-linie) !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 10 !important;
@@ -585,51 +478,6 @@ h2.h4 {
 }
 
 /* ==========================================
-   GESTRICHENE WERTE (FÜR JM)
-   ========================================== */
-.struck-value { color: #dc3545; text-decoration: line-through; opacity: 0.7; }
-
-/* Vertikale Header für JM Ranglisten */
-.vertical-header {
-    writing-mode: vertical-rl !important;
-    text-orientation: mixed !important;
-    font-size: 0.75rem !important;
-    text-align: center !important;
-    padding: 8px 4px !important;
-    min-width: 40px !important;
-    max-width: 50px !important;
-    height: 150px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    font-weight: 600 !important;
-    background-color: var(--light-color) !important;
-    transform: rotate(0deg) !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 3 !important; /* Unter table-title */
-}
-
-/* JM-Ranglisten: Hybrid-Layout mit horizontalen Headern (kein vertical-rl) */
-/* Die alten vertikalen Header sind ersetzt durch das Hybrid-Layout in jmrang.php */
-
-/* Spezifische Klasse für vertikale Header */
-.table th.vertical-header,
-.table thead th.vertical-header {
-    writing-mode: vertical-rl !important;
-    text-orientation: mixed !important;
-    font-size: 0.75rem !important;
-    text-align: center !important;
-    padding: 8px 4px !important;
-    min-width: 40px !important;
-    max-width: 50px !important;
-    height: 150px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    font-weight: 600 !important;
-    background-color: var(--light-color) !important;
-}
-
-/* ==========================================
    UTILITIES
    ========================================== */
 .table-responsive {
@@ -640,12 +488,8 @@ h2.h4 {
     min-height: 300px;
 }
 
-/* Spezielle Responsive-Regeln für JM-Resultate */
-#jmresultateTabelle { min-width: 800px; width: 100%; }
 @media (max-width: 768px) {
     .table-responsive { min-height: 200px; max-height: calc(100vh - 250px); }
-    #jmresultateTabelle { min-width: 600px; font-size: 0.8rem; }
-    #jmresultateTabelle .small-input { width: 30px !important; font-size: 0.7rem !important; padding: 0.2rem 0.1rem !important; }
 }
 
 /* Loading States */
@@ -662,7 +506,6 @@ h2.h4 {
 /* Info Cards (.info-card): Aussehen seit Oktober 2026 in css/msv-ui.css (wie .alert-info, ohne Seitenstreifen) */
 
 /* Margin-Helpers */
-.button-toolbar + .table-wrapper { margin-top: 2rem !important; }
 .table-wrapper + .table-wrapper { margin-top: 2rem !important; }
 .content-background > * { margin-bottom: 2rem !important; }
 .content-background > *:last-child { margin-bottom: 0 !important; }
@@ -677,9 +520,9 @@ h2.h4 {
    SCROLLBAR STYLING
    ========================================== */
 .table-responsive::-webkit-scrollbar { height: 8px; width: 8px; }
-.table-responsive::-webkit-scrollbar-track { background: #f7fafc; }
-.table-responsive::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
-.table-responsive::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+.table-responsive::-webkit-scrollbar-track { background: var(--ui-flaeche-2); }
+.table-responsive::-webkit-scrollbar-thumb { background: var(--ui-leer); border-radius: 999px; }
+.table-responsive::-webkit-scrollbar-thumb:hover { background: var(--ui-feldrand); }
 
 /* ==========================================
    RESPONSIVE ANPASSUNGEN
@@ -699,12 +542,10 @@ h2.h4 {
 
 @media (max-width: 768px) {
     body { padding-top: 66px; }
-    .button-toolbar { flex-direction: column; align-items: stretch; }
     .button-group { width: 100%; }
     .button-group .btn { flex: 1; }
     #pdf-link, #word-link { margin-left: 0; margin-top: 1rem; width: 100%; }
     #pdf-link a, #word-link a { width: 100%; justify-content: center; }
-    .vertical-header { font-size: 0.65rem; min-width: 35px; max-width: 40px; height: 120px; }
     .table { font-size: 0.875rem; }
     .table th, .table td { padding: 0.4rem 0.5rem; }
     .table-header { padding: 1rem; font-size: 0.95rem; }
@@ -726,28 +567,27 @@ h2.h4 {
     align-items: center !important;
     justify-content: center !important;
     gap: 0.5rem !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    box-shadow: none !important;
     white-space: nowrap !important;
     border-width: 1px !important;
 }
 
-.btn-compact-standard:hover { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.08) !important; }
 
 /* Kompakte Button Varianten für Standard-Seiten */
 .btn-compact-standard.btn-outline-info {
-    color: #17a2b8 !important; border-color: #17a2b8 !important; background-color: #ffffff !important;
+    color: var(--ui-k-tuerkis) !important; border-color: var(--ui-k-tuerkis) !important; background-color: var(--ui-flaeche) !important;
 }
 
 .btn-compact-standard.btn-outline-info:hover {
-    background-color: #17a2b8 !important; border-color: #17a2b8 !important; color: #ffffff !important;
+    background-color: var(--ui-k-tuerkis) !important; border-color: var(--ui-k-tuerkis) !important; color: var(--ui-flaeche) !important;
 }
 
 .btn-compact-standard.btn-outline-success {
-    color: #28a745 !important; border-color: #28a745 !important; background-color: #ffffff !important;
+    color: var(--ui-k-gruen) !important; border-color: var(--ui-k-gruen) !important; background-color: var(--ui-flaeche) !important;
 }
 
 .btn-compact-standard.btn-outline-success:hover {
-    background-color: #28a745 !important; border-color: #28a745 !important; color: #ffffff !important;
+    background-color: var(--ui-k-gruen) !important; border-color: var(--ui-k-gruen) !important; color: var(--ui-flaeche) !important;
 }
 
 /* ==========================================
@@ -758,10 +598,6 @@ h2.h4 {
    Erstmals genutzt in inc/endschrang.php
    ========================================== */
 .export-toolbar {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--border-radius, 0.5rem);
-    box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.08));
     padding: 0.7rem 0.95rem;
 }
 .export-toolbar-head {
@@ -775,7 +611,7 @@ h2.h4 {
     font-size: 0.82rem;
     margin-bottom: 0.6rem;
     padding-bottom: 0.55rem;
-    border-bottom: 1px solid #eef2f7;
+    border-bottom: 1px solid var(--ui-linie); /* Farbe auch in msv-ui.css, Breite nur hier */
 }
 /* Jahr-Auswahl direkt im Toolbar-Kopf (eine kompakte Karte statt separater Zeile) */
 .export-year-label {
@@ -787,7 +623,6 @@ h2.h4 {
 .export-toolbar-divider {
     width: 1px;
     height: 1.3rem;
-    background: #e2e8f0;
     margin: 0 0.1rem;
 }
 /* "Jahr:"-Label einheitlich klein – gilt auf allen Ranglisten- UND
@@ -808,14 +643,6 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     display: flex;
     flex-direction: column;
     gap: 0.9rem;
-}
-.export-group-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: #64748b;
-    margin-bottom: 0.4rem;
 }
 .export-group-btns {
     display: flex;
@@ -838,10 +665,9 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 /* ==========================================
    AKTIONS-CARD (EINKLAPPBAR)
    ========================================== */
-.action-card { border-color: #e2e8f0; }
-.action-card-header { cursor: pointer; user-select: none; background-color: #f8fafc; font: inherit; color: inherit; }
-.action-card-header:focus-visible { outline: 2px solid #0d6efd; outline-offset: -2px; }
-.action-card-header:hover { background-color: #f1f5f9; }
+.action-card-header { cursor: pointer; user-select: none; background-color: var(--ui-flaeche-2); font: inherit; color: inherit; }
+.action-card-header:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: -2px; }
+.action-card-header:hover { background-color: var(--ui-hover); }
 .action-chevron { transition: transform .2s ease; }
 .action-card-header[aria-expanded="true"] .action-chevron { transform: rotate(180deg); }
 
@@ -863,7 +689,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     .action-card .card-body > .row > [class*="col"] { display: contents !important; }
     /* Export-Sektion: vertikaler Separator statt horizontale Linie */
     .action-card .card-body > .border-top {
-        border-top: none !important; border-left: 1px solid #ced4da !important;
+        border-top: none !important; border-left: 1px solid var(--ui-rand) !important;
         padding: 0.15rem 0 0.15rem 0.6rem !important; margin: 0 !important;
         display: flex !important; flex-wrap: wrap; align-items: center; gap: 0.4rem;
     }
@@ -878,23 +704,14 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 }
 .action-group .btn:first-child{border-top-right-radius:0!important;border-bottom-right-radius:0!important}
 .action-group .btn:last-child{border-top-left-radius:0!important;border-bottom-left-radius:0!important}
-.btn-action-edit{border-color:#dee2e6!important;color:#0d6efd!important;background:#fff!important}
-.btn-action-delete{border-color:#dc3545!important;color:#dc3545!important;background:#fff!important}
-
-/* === Tabellen-Optik (flacher Header, kein Shadow) – optional per Flag aktivieren */
-.body-flat-tables .table-modern{
-  box-shadow:none!important;border:1px solid #e5e7eb;border-radius:8px;background:#fff
-}
-
-.body-flat-tables .table-modern thead th{
-  background:#f2f4f7!important;border-bottom:1px solid #e5e7eb!important
-}
+.btn-action-edit{border-color:var(--ui-rand)!important;color:var(--ui-k-blau)!important;background:var(--ui-flaeche)!important}
+.btn-action-delete{border-color:var(--ui-k-rot)!important;color:var(--ui-k-rot)!important;background:var(--ui-flaeche)!important}
 
 /* ========== MSV Tooltip (globales DOM-Element, position:fixed) ========== */
 .msv-tooltip {
   position: fixed; white-space: normal; max-width: min(320px, calc(100vw - 16px));
   line-height: 1.35;
-  background: #1e293b; color: #fff; padding: 6px 12px;
+  background: var(--ui-tooltip); color: var(--ui-flaeche); padding: 6px 12px;
   border-radius: 6px; font-size: 0.78rem; font-weight: 500;
   pointer-events: none; z-index: 99999;
 }
@@ -915,8 +732,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     right: calc(-40px - var(--panel-width, 500px));
     width: var(--panel-width, 500px);
     height: 100vh;
-    background: #fff;
-    box-shadow: -8px 0 30px rgba(0,0,0,0.12);
+    background: var(--ui-flaeche);
     z-index: 1060;
     /* geschlossen unsichtbar (nicht per Tab/Screenreader erreichbar); erst nach dem Ausfahren */
     visibility: hidden;
@@ -942,7 +758,6 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .panel-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.3);
     z-index: 1055;
     opacity: 0;
     visibility: hidden;
@@ -955,23 +770,20 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-bottom: 1px solid var(--ui-rand); /* Farbe auch in msv-ui.css, Breite nur hier */
     flex-shrink: 0;
 }
 .panel-header h6 { font-weight: 600; }
 .panel-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
 .panel-footer {
     padding: 0.85rem 1.25rem;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
     flex-shrink: 0;
 }
 .panel-label {
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--ui-text-2);
     margin-bottom: 0.35rem;
 }
 .panel-section {
@@ -979,10 +791,10 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #64748b;
+    color: var(--ui-text-2);
     margin: 1rem 0 0.5rem;
     padding-bottom: 0.35rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--ui-linie);
 }
 
 @media (max-width: 767.98px) {
@@ -1001,7 +813,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 /* ==========================================
    SEITENTITEL (Admin) – Farbe zentral (ersetzt inline style)
    ========================================== */
-.page-title { color: #1e293b; font-weight: 600; }
+.page-title { font-weight: 600; }
 
 /* ==========================================
    MOBILE TOUCH-TARGETS (zentral, WCAG) – ersetzt pro Seite kopierte
@@ -1032,8 +844,8 @@ label[for="yearSelect"] { font-size: 0.82rem; }
    ========================================== */
 .skeleton {
     height: 20px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--ui-linie-zart) 25%, var(--ui-rand) 50%, var(--ui-linie-zart) 75%);
     background-size: 200% 100%;
     animation: msv-skeleton 1.5s infinite;
 }
@@ -1047,7 +859,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
    ========================================== */
 .code-badge {
     font-family: var(--ui-mono, monospace);
-    background: #eff6ff; color: #1e40af;
+    background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel);
     padding: 3px 10px; border-radius: 6px;
     font-size: 0.82rem; font-weight: 500;
     letter-spacing: 0.3px; white-space: nowrap;
@@ -1064,8 +876,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .table-header,
 .table-wrapper:has(#heimresultateTabelle) .table-title,
 .table-wrapper:has(#kantiresultateTabelle) .table-title,
-.table-wrapper:has(#endschrangTabelle) .table-title,
-.table-wrapper:has(#jmresultateTabelle) .table-title {
+.table-wrapper:has(#endschrangTabelle) .table-title {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
     font-size: 0.85rem !important;
@@ -1089,7 +900,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .shot-section,
 .shot-cols {
     padding: 0.85rem 0;
-    border-top: 1px solid #eef2f7;
+    border-top: 1px solid var(--ui-linie);
 }
 .shot-first { border-top: 0; padding-top: 0; }
 .shot-cols { display: flex; gap: 1.5rem; align-items: flex-start; }
@@ -1111,22 +922,22 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #64748b;
+    color: var(--ui-text-2);
     margin-right: auto;
 }
-.shot-section-title i { color: #64748b; font-size: 0.85rem; }
+.shot-section-title i { color: var(--ui-text-3); font-size: 0.85rem; }
 .shot-hint {
     font-size: 0.7rem;
     font-weight: 500;
     text-transform: none;
     letter-spacing: 0;
-    color: #64748b;
+    color: var(--ui-text-2);
 }
 .shot-total {
     font-size: 0.8rem;
     font-weight: 700;
-    color: #1e293b;
-    background: #f1f5f9;
+    color: var(--ui-text);
+    background: var(--ui-linie-zart);
     border-radius: 999px;
     padding: 0.1rem 0.6rem;
     min-width: 2.6rem;
@@ -1135,21 +946,20 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 }
 .shot-status {
     display: none;
-    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #64748b;
-    background: #f8fafc;
-    border: 1px dashed #d9e0e8;
+    color: var(--ui-text-2);
+    background: var(--ui-flaeche-2);
+    border: 1px dashed var(--ui-feldrand-leer);
     border-radius: 999px;
     padding: 0.1rem 0.55rem;
     line-height: 1.4;
     white-space: nowrap;
 }
 .shot-section.disabled .shot-section-head { margin-bottom: 0; }
-.shot-section.disabled .shot-section-title { color: #b6c0cc; }
-.shot-section.disabled .shot-section-title i { color: #cbd5e1; }
+.shot-section.disabled .shot-section-title { color: var(--ui-leer); }
+.shot-section.disabled .shot-section-title i { color: var(--ui-leer); }
 .shot-section.disabled .shot-section-body,
 .shot-section.disabled .shot-total { display: none; }
 .shot-section.disabled .shot-status { display: inline-block; }
@@ -1159,11 +969,10 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .shot-row .shot-total { margin-left: auto; }
 .shot-row-label {
     flex: 0 0 4.2rem;
-    font-size: 0.68rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    color: #64748b;
+    color: var(--ui-text-2);
 }
 .shot-row.schwini-pass-disabled .shot-grid,
 .shot-row.schwini-pass-disabled .shot-total { display: none; }
@@ -1176,11 +985,10 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     height: 40px;
     padding: 0;
     text-align: center;
-    font-size: 1.05rem;
     font-weight: 600;
-    color: #1e293b;
-    background: #fff;
-    border: 1.5px solid #dee2e6;
+    color: var(--ui-text);
+    background: var(--ui-flaeche);
+    border: 1.5px solid var(--ui-feldrand-leer);
     border-radius: 0.5rem;
     -moz-appearance: textfield;
     appearance: textfield;
@@ -1188,22 +996,22 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 }
 .shot-input::-webkit-outer-spin-button,
 .shot-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.shot-input::placeholder { color: #cbd5e1; font-weight: 500; font-size: 0.85rem; }
+.shot-input::placeholder { color: var(--ui-leer); font-weight: 500; font-size: 0.85rem; }
 .shot-input:focus {
-    border-color: #4a90d9;
-    box-shadow: 0 0 0 3px rgba(74,144,217,0.15);
+    border-color: var(--ui-akzent-dunkel);
+    box-shadow: 0 0 0 1px var(--ui-akzent-dunkel);
     outline: none;
 }
-.shot-input.filled { background: #f0fdf4; border-color: #86efac; }
-.shot-input:disabled { background: #f8fafc; color: #cbd5e1; }
+.shot-input.filled { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); }
+.shot-input:disabled { background: var(--ui-flaeche-2); color: var(--ui-leer); }
 .shot-input-dec { width: 50px; }
 .shot-input-wide { width: 72px; }
 /* Sie und Er: Unique-Logik – Duplikate zaehlen nicht */
-.shot-input.is-unique { background: #f0fdf4; border-color: #86efac; }
+.shot-input.is-unique { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); }
 .shot-input.is-dup {
-    background: #fff5f5;
-    border-color: #fca5a5;
-    color: #b91c1c;
+    background: var(--ui-fehler-bg);
+    border-color: var(--ui-fehler-rand);
+    color: var(--ui-fehler);
     text-decoration: line-through;
 }
 
@@ -1211,7 +1019,7 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 
 @media (max-width: 767.98px) {
     .shot-cols { flex-direction: column; gap: 0; }
-    .shot-cols > .shot-section { border-top: 1px solid #eef2f7; padding: 0.85rem 0; }
+    .shot-cols > .shot-section { border-top: 1px solid var(--ui-linie); padding: 0.85rem 0; }
     .shot-cols > .shot-section:first-child { border-top: 0; padding-top: 0; }
     .shot-input { width: 46px; height: 46px; min-height: 46px; font-size: 16px; }
     .shot-input-dec { width: 52px; }
@@ -1227,8 +1035,8 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .btn-help {
     display: inline-flex; align-items: center; justify-content: center;
     width: 24px; height: 24px; padding: 0; margin-left: 0.5rem;
-    border-radius: 50%; border: 1px solid #cbd5e1;
-    background: #fff; color: #64748b;
+    border-radius: 50%; border: 1px solid var(--ui-feldrand);
+    background: var(--ui-flaeche); color: var(--ui-text-2);
     cursor: pointer; font-size: 0.9rem; line-height: 1; vertical-align: middle;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
     flex: 0 0 auto;
@@ -1237,14 +1045,12 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     content: "\f505"; /* bi-question-lg */
     font-family: "bootstrap-icons"; line-height: 1; font-weight: bold;
 }
-.btn-help:hover { background: #1e293b; color: #fff; border-color: #1e293b; }
-.btn-help:focus-visible { outline: 2px solid #1e293b; outline-offset: 2px; }
 .page-title .btn-help, .table-title .btn-help, h5 .btn-help, h6 .btn-help { margin-top: -2px; }
 .shot-section-title .btn-help { margin-left: 0.35rem; width: 20px; height: 20px; font-size: 0.75rem; }
 
 .help-overlay {
     position: fixed; inset: 0; z-index: 1070;
-    background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);
+    background: rgba(26, 35, 50, 0.28);
     opacity: 0; visibility: hidden; transition: opacity 0.2s;
 }
 .help-overlay.active { opacity: 1; visibility: visible; }
@@ -1253,8 +1059,8 @@ label[for="yearSelect"] { font-size: 0.82rem; }
     position: fixed; top: 50%; left: 50%; z-index: 1080;
     transform: translate(-50%, -48%) scale(0.96);
     width: min(560px, 92vw); max-height: 80vh;
-    background: #fff; border-radius: 12px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+    background: var(--ui-flaeche); border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(26, 35, 50, 0.18);
     opacity: 0; visibility: hidden;
     transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
     display: flex; flex-direction: column; overflow: hidden;
@@ -1263,67 +1069,70 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .help-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
 .help-modal-header {
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-    background: var(--light-color);
-    border-bottom: 2px solid #dee2e6; padding: 0.85rem 1.1rem;
+    background: var(--ui-flaeche);
+    border-bottom: 1px solid var(--ui-linie); padding: 0.85rem 1.1rem;
 }
 .help-modal-header h5 {
-    margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--dark-color);
+    margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--ui-text);
     display: flex; align-items: center; gap: 0.5rem;
 }
 .help-modal-header h5::before {
     content: "\f431"; /* bi-info-circle-fill */
-    font-family: "bootstrap-icons"; color: #1e293b; font-size: 1.1rem;
+    font-family: "bootstrap-icons"; color: var(--ui-akzent-dunkel); font-size: 1rem;
 }
 .help-modal-close {
     border: none; background: transparent; width: 30px; height: 30px; border-radius: 6px;
     display: inline-flex; align-items: center; justify-content: center;
-    color: #64748b; cursor: pointer; transition: background 0.15s, color 0.15s;
+    color: var(--ui-text-2); cursor: pointer; transition: background 0.15s, color 0.15s;
 }
-.help-modal-close:hover { background: rgba(15, 23, 42, 0.08); color: #1e293b; }
-.help-modal-body { padding: 1.1rem 1.25rem; overflow-y: auto; line-height: 1.55; color: #334155; font-size: 0.9rem; }
+.help-modal-close:hover { background: var(--ui-hover); color: var(--ui-text); }
+.help-modal-body { padding: 1.1rem 1.25rem; overflow-y: auto; line-height: 1.55; color: var(--ui-text); font-size: 0.9rem; }
 .help-modal-body :first-child { margin-top: 0; }
 .help-modal-body :last-child { margin-bottom: 0; }
-.help-modal-body code { background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
-.help-modal-body pre { background: #f1f5f9; padding: 0.75rem 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85em; }
+.help-modal-body code { background: var(--ui-linie-zart); padding: 0.1em 0.35em; border-radius: 5px; font-size: 0.88em; }
+.help-modal-body pre { background: var(--ui-linie-zart); padding: 0.75rem 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85em; }
 .help-modal-body ul, .help-modal-body ol { padding-left: 1.4rem; }
-.help-modal-body h4, .help-modal-body h5, .help-modal-body h6 { margin-top: 1rem; margin-bottom: 0.4rem; color: #1e293b; font-size: 0.95rem; font-weight: 600; }
-.help-modal-body a { color: #1e40af; text-decoration: underline; }
+.help-modal-body h4, .help-modal-body h5, .help-modal-body h6 { margin-top: 1rem; margin-bottom: 0.4rem; color: var(--ui-text); font-size: 0.95rem; font-weight: 600; }
+.help-modal-body a { color: var(--ui-akzent-dunkel); text-decoration: underline; }
 @media (max-width: 576px) { .help-modal { width: 96vw; max-height: 86vh; } }
 
 #help-hover-popup {
     position: absolute; z-index: 1085;
     max-width: 360px; max-height: 60vh; overflow-y: auto;
-    background: #fff; border: 1px solid #d8dee5; border-radius: 8px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
-    padding: 0.65rem 0.85rem; font-size: 0.83rem; line-height: 1.45; color: #1e293b;
+    background: var(--ui-flaeche); border: 1px solid var(--ui-rand); border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(26, 35, 50, 0.12);
+    padding: 0.65rem 0.85rem; font-size: 0.83rem; line-height: 1.45; color: var(--ui-text);
 }
 #help-hover-popup[hidden] { display: none; }
-#help-hover-popup .help-hover-title { font-weight: 600; font-size: 0.83rem; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid #e8ecf1; }
+#help-hover-popup .help-hover-title { font-weight: 600; font-size: 0.83rem; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--ui-rand); }
 #help-hover-popup .help-hover-body :first-child { margin-top: 0; }
 #help-hover-popup .help-hover-body :last-child  { margin-bottom: 0; }
 #help-hover-popup .help-hover-body ul, #help-hover-popup .help-hover-body ol { padding-left: 1.2rem; margin: 0.35rem 0; }
-#help-hover-popup .help-hover-body code { background: rgba(15, 23, 42, 0.06); padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }
+#help-hover-popup .help-hover-body code { background: var(--ui-linie-zart); padding: 1px 4px; border-radius: 5px; font-size: 0.85em; }
 #help-hover-popup .help-hover-body h4, #help-hover-popup .help-hover-body h5, #help-hover-popup .help-hover-body h6 { font-size: 0.85rem; font-weight: 600; margin: 0.5rem 0 0.25rem; }
-#help-hover-popup .help-hover-body a { color: #1e40af; text-decoration: underline; }
-#help-hover-popup .help-hover-footer { margin-top: 0.5rem; padding-top: 0.3rem; border-top: 1px solid #e8ecf1; font-size: 0.7rem; color: #6c757d; font-style: italic; text-align: right; }
+#help-hover-popup .help-hover-body a { color: var(--ui-akzent-dunkel); text-decoration: underline; }
+#help-hover-popup .help-hover-footer { margin-top: 0.5rem; padding-top: 0.3rem; border-top: 1px solid var(--ui-rand); font-size: 0.72rem; color: var(--ui-text-2); font-style: italic; text-align: right; }
 
 #help-firsthint {
     position: absolute; z-index: 1086;
-    background: #334155; color: #fff;
+    background: var(--ui-tooltip); color: var(--ui-flaeche);
     padding: 0.55rem 0.75rem 0.55rem 0.9rem; border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.30);
+    box-shadow: 0 8px 24px rgba(26, 35, 50, 0.24);
     font-size: 0.83rem; line-height: 1.4; max-width: 320px;
     display: flex; align-items: center; gap: 0.5rem;
     opacity: 0; transform: translateY(-6px);
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
 #help-firsthint.show { opacity: 1; transform: translateY(0); }
+/* Klicks gehen durch den Hinweis zu den Knöpfen darunter; nur das Kreuz fängt sie (msv-help.js schliesst bei jedem Klick) */
+#help-firsthint { pointer-events: none; }
+#help-firsthint .help-firsthint-close { pointer-events: auto; }
 #help-firsthint .help-firsthint-arrow {
     position: absolute; top: -7px; left: 14px; width: 0; height: 0;
-    border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #334155;
+    border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid var(--ui-tooltip);
 }
 #help-firsthint .help-firsthint-body { flex: 1; }
-#help-firsthint .help-firsthint-close { background: transparent; border: 0; color: #fff; font-size: 1.25rem; line-height: 1; padding: 0 0.25rem; cursor: pointer; opacity: 0.75; }
+#help-firsthint .help-firsthint-close { background: transparent; border: 0; color: var(--ui-flaeche); font-size: 1.25rem; line-height: 1; padding: 0 0.25rem; cursor: pointer; opacity: 0.75; }
 #help-firsthint .help-firsthint-close:hover { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
     #help-firsthint { transition: opacity 0.01s; transform: none; }
@@ -1344,14 +1153,12 @@ label[for="yearSelect"] { font-size: 0.82rem; }
 .anlass-input.is-invalid { background-image: none; padding-right: .5rem; }
 /* Sichtbarer Tastaturfokus für eigene Klick-Elemente */
 .btn-help:focus-visible,
-.home-card:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; }
+.home-card:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 2px; }
 
 /* Jahresauswahl: Hinweis, wenn nicht das laufende Jahr gewählt ist (inc/js/msv-jahr.js) */
 .msv-jahr-hinweis { display: inline-flex; align-items: center; gap: .35rem; margin-left: .4rem; padding: .1rem .2rem .1rem .55rem;
-    border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; vertical-align: middle; }
-.msv-jahr-hinweis.is-archiv  { background: #fff7e6; color: #8a5300; border: 1px solid #f5d9a8; }
-.msv-jahr-hinweis.is-planung { background: #eef4ff; color: #1d4ed8; border: 1px solid #c7d7fe; }
-.msv-jahr-hinweis button { border: 0; background: rgba(255,255,255,.75); color: inherit; font: inherit; font-weight: 600;
+    border: 1px solid transparent; border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; vertical-align: middle; }
+.msv-jahr-hinweis button { border: 0; background: color-mix(in srgb, var(--ui-flaeche) 75%, transparent); color: inherit; font: inherit; font-weight: 600;
     border-radius: 999px; padding: .05rem .5rem; cursor: pointer; }
-.msv-jahr-hinweis button:hover { background: #fff; }
-.msv-jahr-hinweis button:focus-visible { outline: 2px solid #0d6efd; outline-offset: 1px; }
+.msv-jahr-hinweis button:hover { background: var(--ui-flaeche); }
+.msv-jahr-hinweis button:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 1px; }

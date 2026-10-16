@@ -32,6 +32,7 @@ colors:
   fehler: "#b42318"
   fehler-rand: "#f5c2bd"
   leer: "#b8c0cc"
+  tooltip: "#1e293b"
   feldrand-leer: "#8a94a5"
   rand-stark: "#7d8899"
   gold-bg: "#f6e3a1"
@@ -311,6 +312,7 @@ Gedämpfte Metalltöne, flach, nie als Verlauf. Die Marke (`.rang-badge.r1–r3`
 **Display Font:** keine (die App hat keine Schaufläche)
 **Body Font:** IBM Plex Sans (mit -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif), lokal aus `css/fonts/ibm-plex-sans/`, variabel 400–700, latin und latin-ext
 **Label/Mono Font:** keine eigene; `kbd` erbt die Grundschrift. Für Code (Hilfe-Schlüssel, SQL-Regeln, HTML-Quelltext, Link-Pfade, `.code-badge`) gilt der Systemstapel `--ui-mono` (ui-monospace, Cascadia Mono, Consolas, SF Mono), seit 08.10.2026 überall derselbe.
+**Icon Font:** Bootstrap Icons (`bootstrap-icons`, Klassen `bi-*`), nur für Symbole; in CSS-Pseudo-Elementen (`::before`) mit dem Zeichencode aus Bootstrap Icons 1.11, nie mit Codes anderer Symbolschriften.
 
 **Character:** Eine einzige sachliche Grotesk mit technischer Herkunft, die in kleinen Grössen klar bleibt. Hierarchie entsteht über Gewicht (400/500/600/700) und Grösse, nicht über eine zweite Familie.
 
@@ -393,7 +395,7 @@ Ruhig und eindeutig: die Farbe sagt, was passiert.
 - **Platz:** neben dem Seitentitel, einem Card- oder Abschnittstitel oder einem erklärungsbedürftigen Feld; nie pro Knopf. Markup `<button type="button" class="btn-help" data-help="seite.thema" aria-label="Hilfe"></button>`; Text aus Tabelle `hilfetexte` via `inc/js/msv-help.js` (Klick = Modal, Hover = Kurzansicht).
 
 ### Tooltips
-`data-tooltip="…"` an jedem Element, das eine Erklärung braucht, nie `title=`. `inc/js/msv-tooltips.js` zeigt ein dunkles Schild (`#1e293b`, Text weiss, 0.78rem/500, Radius 6px, max. 320px).
+`data-tooltip="…"` an jedem Element, das eine Erklärung braucht, nie `title=`. `inc/js/msv-tooltips.js` zeigt ein dunkles Schild (`tooltip`, Text `flaeche`, 0.78rem/500, Radius 6px, max. 320px). Dasselbe Token trägt den Erstbesuch-Hinweis der «?»-Hilfe.
 
 ### Inputs / Fields
 - **Style:** Rand `feldrand`, Radius `md`, Text `text`, Grund `flaeche`.
@@ -569,8 +571,8 @@ Das Portal ist das Telefon in der Hosentasche eines Mitglieds: Was steht als Nä
 ## Noch nicht migriert (bewusst)
 
 - **Mitgliederportal, Altbestand unter der Fahne:** `css/portal.css` (556 Zeilen), der Inline-`<style>` in `portal/portal_header.php` und Seiten-`<style>`-Blöcke mit Hex-Werten in 24 Portal-Dateien laden weiter unter der Fahne und werden von `portal-fahne*.css` überschrieben, teils mit `!important` gegen Inline-Styles; kein Muster für neue Arbeit. Die alten Zweige ohne Fahne (`$portal_fahne` leer in `dashboard.php`, `meine_jm.php`, `termine.php`, `jsk_dashboard.php`, `anlass.php`, `inc_resultate_reiter.php`, dazu `.portal-back-fab`) erreichen nur noch Admins über `?vorschau=aus`; sie fallen mit dem Vergleichsschalter weg. Die JSK-Seiten und der Chat stecken noch in `container py-4` (von der Fahne auf Padding 0 gesetzt). Gültig ist der Abschnitt «Mitgliederportal («Vereinsfahne»)».
-- **`css/msv-styles.css`** (rund 1410 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip) und alte Optik, die `msv-ui.css` überschreibt, wo sie sichtbar wird. Wo nicht überschrieben, ist der alte Stil noch sichtbar; das ist kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso; ebenso `.info-card` (ohne Seitenstreifen). Die Einblend-Animation aller `.table-wrapper` und das Anheben von `#pdf-link` sind entfernt.
+- **`css/msv-styles.css`** (rund 1215 Zeilen Altbestand) lädt weiterhin unter `msv-ui.css`. Es liefert noch Struktur (Breitenklassen, Slide-Panel-Mechanik, Hilfesystem, Tooltip). Seit 15.10.2026 (1.68.32) enthält es keine eigenen Farbwerte mehr: Farbangaben, die `msv-ui.css` ohnehin überschrieb, und tote Regeln sind entfernt, der Rest zeigt auf `--ui-*`; als Literal bleiben nur die Schatten aus dem Shadow Vocabulary. Die alten Namen `--light-color`, `--dark-color`, `--secondary-color`, `--primary-color`, `--success-color` sind nur noch Verweise auf Tokens. Der Hilfe-Dialog folgt jetzt den Dialog-Regeln (weisser Kopf, Dialog-Schatten, Abdunklung wie beim Panel, kein Weichzeichner). Seit 1.68.34 liegen auch Radien und Schriftgrössen auf der Skala; die tote Regel für vertikale Spaltenköpfe (nur noch in PDFs) und `h2.h4` (Seitentitel sind `h1`) ist entfernt. Kein Muster für neue Arbeit. Flag-Dots, Import-Fläche und Rang-Badge sind seit 08.10.2026 ganz nach `msv-ui.css` umgezogen, die Podest-Verläufe aus `mobile-cards.css` ebenso; ebenso `.info-card` (ohne Seitenstreifen). Die Einblend-Animation aller `.table-wrapper` und das Anheben von `#pdf-link` sind entfernt.
 - **Seiten mit eigenem Slide-Panel** statt `partials/side_panel.inc.php`: Einzel- und Sektionsrangierungen (`.edit-panel`, fast identische Kopien), Navigation (`.nav-edit-panel`). Umbau gehört zusammen mit einem gemeinsamen Panel-Verhalten (Esc, Ungespeichertes) gemacht.
-- **Restliche Seiten-Hex-Werte** (Stand 08.10.2026, nach der Polish-Runde): Die Seiten selbst sind auf Tokens; übrig sind Einzelwerte in Navigation-Editor (4), Hilfetexte (2), Foto-Galerie, Einzel- und Sektionsrangierungen, JM-Definition und Gruppen (je 1). Der Rest steckt in `msv-styles.css` (siehe oben). Ebenfalls offen: 2px-Ränder an einzelnen Karten, Karte in Karte im Navigation-Editor, Skeleton mit Verlauf, Fortschrittsbalken animieren `width` statt `transform`.
+- **Restliche Seiten-Hex-Werte** (Stand 08.10.2026, nach der Polish-Runde): Die Seiten selbst sind auf Tokens; übrig sind Einzelwerte in Navigation-Editor (4), Hilfetexte (2), Foto-Galerie, Einzel- und Sektionsrangierungen, JM-Definition und Gruppen (je 1). In `msv-styles.css` stehen seit 1.68.32 keine Farbwerte mehr (siehe oben). Ebenfalls offen: 2px-Ränder an einzelnen Karten, Karte in Karte im Navigation-Editor, Skeleton mit Verlauf (Farben jetzt aus Tokens), Fortschrittsbalken animieren `width` statt `transform`.
 - **Navigation** (`inc/navigation.inc.php`, eigener Inline-`<style>`): eigene Blautöne und Aktiv-Markierung, nicht auf Tokens.
 - **Doppelte Tokens:** `msv-oeffentlich.css` trägt einen Auszug der `--ui-*` Tokens aus `msv-ui.css` (inkl. `akzent-tief`, `fehler-rand`). Die Werte sind am 08.10.2026 identisch und müssen von Hand synchron gehalten werden. Nur im Admin: `leer`, `feldrand-leer`, `rand-stark`, `warn-zeile-hover` und das Podest.
