@@ -5,7 +5,13 @@
     "aenderungen": [
       {
         "titel": "Vereinscup: ganze Namen, Nachrücker immer erreichbar",
-        "beschreibung": "Namen in den Paarungen werden nicht mehr abgeschnitten, auch nicht bei Gleichstand; lange Namen brechen um, und «×» zum Herausnehmen erscheint erst beim Zeigen. «Nachrücker» steht jetzt fest unten in Runde 2 und verschwindet nicht mehr, wenn alle Gewinner eingeteilt sind. Der Gleichstand-Hinweis steht auf einer eigenen Zeile. Eine Eingabe bei «Neue Paarungen» meldet nicht mehr «Nicht gespeichert». Der ausgeschaltete Kat.-B-Schalter und ausgefüllte Standcup-Namen sind deutlicher zu erkennen.",
+        "beschreibung": "Namen in den Paarungen werden nicht mehr abgeschnitten, auch nicht bei Gleichstand; lange Namen brechen um, und «×» zum Herausnehmen erscheint erst beim Zeigen. «Nachrücker» steht jetzt fest unten in Runde 2 und verschwindet nicht mehr, wenn alle Gewinner eingeteilt sind. Der Gleichstand-Hinweis steht auf einer eigenen Zeile. Eine Eingabe bei «Neue Paarungen» meldet nicht mehr «Nicht gespeichert». Ausgefüllte Standcup-Namen sehen nicht mehr leer aus.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Häkchen und Schalter überall gut sichtbar",
+        "beschreibung": "Nicht angehakte Häkchen, Optionsfelder und ausgeschaltete Schalter hatten einen kaum sichtbaren Rand. Sie haben jetzt denselben kräftigen Rand wie Eingabefelder, zum Beispiel in der Mitgliederverwaltung, beim Munitionskauf und beim Kat.-B-Schalter im Vereinscup.",
         "typ": "verbesserung",
         "admin_only": true
       }

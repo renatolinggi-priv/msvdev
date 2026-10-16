@@ -164,7 +164,12 @@ a:hover { color: var(--ui-akzent-tief); }
 }
 .form-floating label { color: var(--ui-text-2); font-weight: 500; }
 .form-label { color: var(--ui-text); }
+/* Wie in msv-ui.css: Rand feldrand (3:1), Schalter «aus» mit Knopf in text-3 */
+.form-check-input { border-color: var(--ui-feldrand); }
 .form-check-input:checked { background-color: var(--ui-akzent); border-color: var(--ui-akzent); }
+.form-switch .form-check-input:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23667080'/%3e%3c/svg%3e");
+}
 .info-hint { color: var(--ui-text-2); }
 
 /* ---------- Knöpfe: ein Hauptknopf in Dunkelblau, keine Verläufe, kein Hüpfen ---------- */

@@ -194,8 +194,15 @@ h2.h4.page-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em
     border-color: var(--ui-akzent-dunkel);
     box-shadow: 0 0 0 1px var(--ui-akzent-dunkel);
 }
+/* Häkchen, Optionsfelder, Schalter: Rand feldrand (3:1) statt --bs-border-color (= rand, 1.2:1) */
+.form-check-input { border-color: var(--ui-feldrand); }
 .form-check-input:checked { background-color: var(--ui-akzent); border-color: var(--ui-akzent); }
 .form-check-input:focus { border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 .2rem rgba(59, 108, 206, .2); }
+/* Schalter «aus»: Knopf in text-3 statt 25 % Schwarz bzw. Bootstrap-Hellblau beim Fokus.
+   %23667080 ist --ui-text-3 ausgeschrieben, ein Daten-URI kann keine Variable lesen. */
+.form-switch .form-check-input:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23667080'/%3e%3c/svg%3e");
+}
 .form-label { color: var(--ui-text); }
 
 /* ---------- Knöpfe: Form neu, Farbsemantik unverändert ---------- */
