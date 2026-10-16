@@ -160,7 +160,8 @@ function generateResultRow($row, ?array $rang = null) {
     }
 
     return "<tr class='{$klasse}' data-teilnehmer='{$key}' data-typ='{$typ}' data-has-data='" . ($hatDaten ? '1' : '0') . "'"
-         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'" . ($suOhnePartner ? " data-su='ohne-partner'" : '') . $rangAttr . ">"
+         . " data-stand='{$stand}' data-geloest='" . ((int)($row['geloest'] ?? 0)) . "'"
+         . ($hat(['SIEUNDER']) ? " data-su='" . ($suOhnePartner ? 'ohne-partner' : 'mit-partner') . "'" : '') . $rangAttr . ">"
          . "<td>{$rangMarke}<span class='tn-name'>{$name}</span>{$marke}{$grund}</td>{$zellen}{$totalZelle}{$standZelle}</tr>";
 }
 

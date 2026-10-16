@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.68.39",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Absenden vorbereiten: «Zur Erfassung» springt direkt zu den offenen",
+        "beschreibung": "Bei offenen Stichen oder Sie und Er schaltet «Zur Erfassung» ohne Neuladen auf die Ansicht «Erfassen» und zeigt nur die offenen Teilnehmer. Hat niemand Sie und Er gelöst, steht «nichts zu tun» statt «erledigt». Kann ein Teil nicht geprüft werden, sagt die Meldung, wie es weitergeht. Hilfetext nachgeführt (Datenbank-Aktualisierung 117).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Siegerliste Heimmeisterschaft: Tippfehler korrigiert",
+        "beschreibung": "Bei Kat. B 2020 stand «Nicht druchgeführt»; das Absendenbuch zeigte es so. Die Datenbank-Aktualisierung 118 korrigiert es.",
+        "typ": "fix",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.38",
     "datum": "2026-10-16",
     "aenderungen": [

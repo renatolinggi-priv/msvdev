@@ -933,6 +933,18 @@ $(document).ready(function() {
         filterAnwenden();
     });
     $('#endSuche').on('input', function() { endSuchtext = this.value.trim().toLowerCase(); filterAnwenden(); });
+    // Aus der Prüfliste «Absenden vorbereiten»: auf «Erfassen» umschalten und nur die offenen Teilnehmer zeigen
+    window.esZurErfassungOffen = function() {
+        zeigeAnsicht('erfassen');
+        endFilter = 'offen';
+        $('#esFilter button').attr('aria-pressed', 'false');
+        $('#esFilter button[data-filter="offen"]').attr('aria-pressed', 'true');
+        filterAnwenden();
+        window.scrollTo(0, 0);
+        var ziel = document.getElementById('endScroll');
+        if (ziel && ziel.offsetParent !== null) ziel.focus();
+        msvToast('Ansicht «Erfassen», nur offene Teilnehmer', 'info');
+    };
     $(document).on('click', '#endFilterZurueck', function() {
         endFilter = 'alle'; endSuchtext = ''; $('#endSuche').val('');
         $('#esFilter button').attr('aria-pressed', 'false');
@@ -1439,7 +1451,7 @@ $(document).ready(function () {
     // ===== Absenden vorbereiten: Prüfliste =====
     // Offene Stiche und Sie-und-Er-Paare zählt sie aus dem Lader der Tabelle (dieselbe Regel: «offen», solange ein
     // gelöster Stich kein Resultat hat; Sie und Er braucht eine verknüpfte Partnerin bzw. einen verknüpften Partner,
-    // data-su="ohne-partner"). Wanderpreise, Siegerlisten und die übrigen Teile des Absendenbuchs (JM, Heim, Kanti,
+    // data-su="ohne-partner" bzw. "mit-partner"). Wanderpreise, Siegerlisten und die übrigen Teile des Absendenbuchs (JM, Heim, Kanti,
     // Cup) kommen aus endschrang/absenden_bereit.php, jeder Teil einzeln (null = nicht geprüft).
     const absPunkte = {}; // letzter Zustand je Prüfung, für den Stand des Absendenbuchs
     function absZeile(key, zustand, text, link) {
@@ -1448,8 +1460,13 @@ $(document).ready(function () {
         $('#absListe li[data-pruefung="' + key + '"]').html(
             '<span class="ui-status' + (zustand === 'ok' || zustand === 'offen' ? ' ' + zustand : '') + '"><span class="ui-punkt"></span>' + label + '</span>'
             + '<span>' + msvEsc(text) + '</span>'
-            + (link ? '<a href="' + link.href + '">' + msvEsc(link.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>' : ''));
+            + (link ? absLink(link) : ''));
         return zustand;
+    }
+    // Link zu einem Ziel; «Zur Erfassung» dieser Seite trägt data-zur-erfassung und schaltet ohne Neuladen um
+    function absLink(ziel) {
+        return '<a href="' + msvEsc(ziel.href) + '"' + (ziel.hier ? ' data-zur-erfassung="offen"' : '') + '>'
+            + msvEsc(ziel.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>';
     }
     // «A, B und C»
     function absAufzaehlen(liste) {
@@ -1464,10 +1481,15 @@ $(document).ready(function () {
     function zeilenZaehlen(html) {
         const doc = new DOMParser().parseFromString('<table><tbody>' + html + '</tbody></table>', 'text/html');
         return { total: doc.querySelectorAll('tr[data-stand]').length, offen: doc.querySelectorAll('tr[data-stand="offen"]').length,
-                 ohnePartner: doc.querySelectorAll('tr[data-su="ohne-partner"]').length };
+                 sieUndEr: doc.querySelectorAll('tr[data-su]').length, ohnePartner: doc.querySelectorAll('tr[data-su="ohne-partner"]').length };
     }
-    // «Zur Erfassung»: dieselbe Seite in der Ansicht «Erfassen»
-    const zurErfassung = { href: 'endresultate.php', text: 'Zur Erfassung' };
+    // «Zur Erfassung»: dieselbe Seite in der Ansicht «Erfassen», gleich mit dem Filter «Offen»
+    const zurErfassung = { href: 'endresultate.php', text: 'Zur Erfassung', hier: true };
+    $(document).on('click', 'a[data-zur-erfassung]', function (e) {
+        if (!window.esZurErfassungOffen) return; // ohne Seiten-Skript: normaler Link
+        e.preventDefault();
+        window.esZurErfassungOffen();
+    });
     async function absendenPruefen() {
         const jahr = $('#yearSelect').val();
         if (!jahr) return;
@@ -1475,6 +1497,8 @@ $(document).ready(function () {
         try { await absendenPruefenJahr(jahr); }
         finally { $('#absNeu').prop('disabled', false).removeAttr('aria-busy'); }
     }
+    // Nächster Schritt bei einem Prüffehler: der Knopf rechts oben in der Karte
+    const absNochmals = 'Bitte mit dem Pfeil rechts oben neu prüfen; klappt es dann nicht, die Seite neu laden.';
     async function absendenPruefenJahr(jahr) {
         $('#absStand').html('<span class="ui-status"><span class="ui-punkt"></span>wird geprüft …</span>');
         const q = { year: jahr };
@@ -1489,21 +1513,22 @@ $(document).ready(function () {
             z.push(n.total === 0 ? absZeile('stiche', 'leer', 'Für ' + jahr + ' sind keine Stiche gelöst.')
                 : n.offen === 0 ? absZeile('stiche', 'ok', 'Alle gelösten Stiche sind erfasst (' + n.total + ' Teilnehmer).')
                 : absZeile('stiche', 'offen', n.offen + ' von ' + n.total + ' Teilnehmern haben noch offene Stiche.', zurErfassung));
-            z.push(n.ohnePartner === 0 ? absZeile('partner', 'ok', 'Alle Sie-und-Er-Schützen sind mit ihrer Partnerin bzw. ihrem Partner verknüpft.')
+            z.push(n.sieUndEr === 0 ? absZeile('partner', 'leer', 'Für ' + jahr + ' hat niemand Sie und Er gelöst.')
+                : n.ohnePartner === 0 ? absZeile('partner', 'ok', (n.sieUndEr === 1 ? 'Die Person mit Sie und Er ist' : 'Alle ' + n.sieUndEr + ' Personen mit Sie und Er sind') + ' mit ihrer Partnerin bzw. ihrem Partner verknüpft.')
                 : absZeile('partner', 'offen', (n.ohnePartner === 1 ? '1 Person mit Sie und Er ist' : n.ohnePartner + ' Personen mit Sie und Er sind') + ' noch mit niemandem verknüpft.', zurErfassung));
         } else {
-            z.push(absZeile('stiche', 'fehler', 'Die Stiche konnten nicht geprüft werden.'));
-            z.push(absZeile('partner', 'fehler', 'Sie und Er konnte nicht geprüft werden.'));
+            z.push(absZeile('stiche', 'fehler', 'Die Stiche konnten nicht geprüft werden. ' + absNochmals));
+            z.push(absZeile('partner', 'fehler', 'Sie und Er konnte nicht geprüft werden. ' + absNochmals));
         }
         const bereit = wp.status === 'fulfilled' && wp.value && wp.value.success ? wp.value : {};
         const w = bereit.wanderpreise;
-        z.push(!w ? absZeile('wanderpreise', 'fehler', 'Die Wanderpreise konnten nicht geprüft werden.')
+        z.push(!w ? absZeile('wanderpreise', 'fehler', 'Die Wanderpreise konnten nicht geprüft werden. ' + absNochmals)
             : w.total === 0 ? absZeile('wanderpreise', 'leer', 'Keine Wanderpreise im Umlauf.')
             : w.vergeben >= w.total ? absZeile('wanderpreise', 'ok', 'Alle ' + w.total + ' Wanderpreise sind für ' + jahr + ' vergeben.')
             : absZeile('wanderpreise', 'offen', w.vergeben + ' von ' + w.total + ' Wanderpreisen sind für ' + jahr + ' vergeben.', { href: 'wanderpreise.php', text: 'Zu den Wanderpreisen' }));
         // Siegerlisten «… Sieger seit» im Absendenbuch (Tabelle sieger): fehlt das Jahr, fehlt es auch im Buch
         const s = bereit.siegerlisten;
-        z.push(!s ? absZeile('siegerlisten', 'fehler', 'Die Siegerlisten konnten nicht geprüft werden.')
+        z.push(!s ? absZeile('siegerlisten', 'fehler', 'Die Siegerlisten konnten nicht geprüft werden. ' + absNochmals)
             : s.total === 0 ? absZeile('siegerlisten', 'leer', 'Keine Siegerlisten eingerichtet.')
             : s.ohne.length === 0 ? absZeile('siegerlisten', 'ok', 'Alle ' + s.total + ' Siegerlisten enthalten ' + jahr + '.')
             : absZeile('siegerlisten', 'offen', (s.ohne.length === s.total ? 'Allen ' + s.total + ' Siegerlisten fehlt ' + jahr + '.'
@@ -1518,7 +1543,7 @@ $(document).ready(function () {
         if (fehlt.length) buchText.push('Noch ohne Resultate für ' + jahr + ': ' + absAufzaehlen(absKatZusammen(fehlt.map(t => t.teil)))
             + (fehlt.length === 1 ? '. Im Buch bliebe diese Tabelle leer.' : '. Im Buch blieben diese Tabellen leer.'));
         unfertig.forEach(t => buchText.push(t.hinweis + '.'));
-        z.push(!b ? absZeile('buch', 'fehler', 'Die übrigen Teile des Absendenbuchs konnten nicht geprüft werden.')
+        z.push(!b ? absZeile('buch', 'fehler', 'Die übrigen Teile des Absendenbuchs konnten nicht geprüft werden. ' + absNochmals)
             : !buchText.length ? absZeile('buch', 'ok', 'Jahresmeisterschaft, Heimmeisterschaft, Kantonalstich und Vereinscup haben Resultate für ' + jahr + '.')
             : absZeile('buch', 'offen', buchText.join(' '), { href: (fehlt[0] || unfertig[0]).link, text: 'Zur Erfassung' }));
         const offen = z.filter(s => s === 'offen').length, fehler = z.filter(s => s === 'fehler').length;
@@ -1559,7 +1584,7 @@ $(document).ready(function () {
     function absPunktHtml(text, ziel, erledigt) {
         return '<li>' + msvEsc(text)
             + (erledigt ? ' <span class="es-erledigt">Inzwischen erledigt, Buch neu erstellen.</span>'
-                : ziel ? ' <a href="' + msvEsc(ziel.href) + '">' + msvEsc(ziel.text) + ' <i class="bi bi-arrow-right" aria-hidden="true"></i></a>' : '')
+                : ziel ? ' ' + absLink(ziel) : '')
             + '</li>';
     }
     // true, wenn für das Jahr schon ein Absendenbuch erstellt wurde
@@ -1567,7 +1592,7 @@ $(document).ready(function () {
         $('#absBuchstand').prop('hidden', false);
         const $dateien = $('#absBuchDateien'), $punkte = $('#absBuchPunkte');
         if (!stand) {
-            $dateien.html('<p class="es-buchdatei es-buchdatei-meta">Der Stand des Absendenbuchs konnte nicht geladen werden.</p>');
+            $dateien.html('<p class="es-buchdatei es-buchdatei-meta">Der Stand des Absendenbuchs konnte nicht geladen werden. ' + absNochmals + '</p>');
             $punkte.empty();
             return false;
         }
