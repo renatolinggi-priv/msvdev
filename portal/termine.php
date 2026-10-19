@@ -54,7 +54,7 @@ if (!empty($portal_fahne)) { include __DIR__ . '/termine_fahne.inc.php'; include
 .tm-toolbar { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1rem; max-width:640px; flex-wrap:wrap; }
 .tm-year-select { max-width:140px; }
 .tm-abo-btn { white-space:nowrap; }
-.tm-section-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; font-weight:700; margin:0.9rem 0 0.35rem; }
+.tm-section-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--tinte-2, #94a3b8); font-weight:700; margin:0.9rem 0 0.35rem; }
 .tm-section-label:first-of-type { margin-top:0; }
 .tm-card { display:flex; align-items:center; gap:var(--p-2); border:1px solid var(--p-border); border-radius:var(--p-radius);
   box-shadow:var(--p-shadow); padding:0.55rem 0.7rem; margin-bottom:var(--p-2); background:#fff; }
@@ -65,8 +65,8 @@ if (!empty($portal_fahne)) { include __DIR__ . '/termine_fahne.inc.php'; include
 .tm-date .mo { font-size:0.6rem; text-transform:uppercase; opacity:0.85; letter-spacing:0.02em; }
 .tm-body { min-width:0; flex:1; }
 .tm-name { font-weight:600; font-size:0.88rem; line-height:1.2; }
-.tm-meta { font-size:0.76rem; color:#64748b; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
-.tm-badge-next { flex-shrink:0; font-size:0.66rem; font-weight:700; color:#3b5998; background:rgba(59,89,152,0.1); border-radius:999px; padding:0.12rem 0.5rem; }
+.tm-meta { font-size:0.76rem; color:var(--tinte-2, #64748b); display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+.tm-badge-next { flex-shrink:0; font-size:0.66rem; font-weight:700; color:var(--akzent, #3b5998); background:rgba(59,89,152,0.1); border-radius:999px; padding:0.12rem 0.5rem; }
 .tm-badge-jsk { font-size:0.64rem; font-weight:600; color:#92400e; background:#fef3c7; border-radius:999px; padding:0.08rem 0.4rem; }
 .tm-empty { text-align:center; color:var(--p-text-muted); padding:2.5rem 1rem; border:1px solid var(--p-border); border-radius:var(--p-radius); box-shadow:var(--p-shadow); background:#fff; max-width:640px; }
 .tm-card--past { opacity:0.55; }

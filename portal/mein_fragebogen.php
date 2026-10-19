@@ -481,7 +481,7 @@ include 'portal_header.php';
 </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../inc/js/lib/xlsx-0.18.5.full.min.js"></script>
 <?php endif; ?>
 <script>
 $(function() {
@@ -1389,9 +1389,9 @@ $(function() {
         if (data.details && data.details.length > 0) {
             html += '<hr><h6 class="mb-2"><i class="bi bi-people me-1"></i>Einzelne Antworten (' + data.details.length + ')</h6>';
             data.details.forEach(function(d) {
-                html += '<div style="padding:0.5rem 0; border-bottom:1px solid #f0f0f0;">';
+                html += '<div style="padding:0.5rem 0; border-bottom:1px solid var(--linie, #f0f0f0);">';
                 html += '<div class="fw-medium" style="font-size:0.88rem;">' + escapeHtml(d.name) + '</div>';
-                html += '<div style="font-size:0.8rem; color:#6c757d; display:flex; flex-wrap:wrap; gap:0.35rem 0.75rem; margin-top:0.2rem;">';
+                html += '<div style="font-size:0.8rem; color:var(--tinte-2, #6c757d); display:flex; flex-wrap:wrap; gap:0.35rem 0.75rem; margin-top:0.2rem;">';
                 html += '<span><i class="bi bi-crosshair me-1"></i>' + escapeHtml(d.waffe) + '</span>';
                 html += '<span>ZSMM: ' + jmBadge(d.mannschaft) + '</span>';
                 html += '<span>GM: ' + jmBadge(d.gruppen) + '</span>';

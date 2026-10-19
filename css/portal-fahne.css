@@ -58,6 +58,7 @@ html.portal-fahne {
     --gut-hell:      #e8f4ed;
     --radius:        10px;
     --radius-sm:     8px;
+    --tipp:          38px;      /* Mindestgrösse Tippfläche mit Maus; auf Touch 44px (Dateiende) */
 
     /* Alte Portal-Tokens auf die Welt abbilden */
     --primary-color:   var(--akzent);
@@ -219,7 +220,7 @@ html.portal-fahne body {
     font-size: .9375rem;
 }
 .portal-fahne .portal-back-link:hover { color: var(--akzent-tief); }
-.portal-fahne .portal-back-fab { display: none !important; }
+.portal-fahne .portal-back-fab { display: none; }   /* mit Maus aus; auf Touch siehe Dateiende */
 
 /* ---- Flaechen: flach, feiner Rand, kein Anheben -------------------- */
 .portal-fahne .p-card,
@@ -318,13 +319,7 @@ html.portal-fahne body {
 .portal-fahne .btn { white-space: nowrap; }
 
 /* Tippflaechen am Touchscreen: kompakt, aber gut treffbar */
-@media (pointer: coarse) {
-    .portal-fahne .btn,
-    .portal-fahne .p-btn,
-    .portal-fahne .form-select-sm,
-    .portal-fahne .form-control-sm { min-height: 38px; }
-    .portal-fahne .btn:has(> .bi:only-child) { min-width: 38px; }
-}
+/* Tippflächen: Token --tipp, Touch-Regeln am Dateiende («Touch: Tippflächen») */
 
 /* ---- Formulare: 16px gegen iOS-Zoom, deutlicher Rand und Fokus ----- */
 .portal-fahne .form-control,
@@ -660,4 +655,62 @@ html.portal-fahne body > footer { color: var(--tinte-2) !important; font-size: .
         transition-duration: .01ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+/* ---- Touch: Tippflächen ------------------------------------------------
+   iOS/Android: mindestens 44 × 44 px (Apple HIG 44 pt, Material 48 dp), seit 16.10.2026, vorher 38 px.
+   Seitenregeln nennen die Grösse über var(--tipp); dieser Block steht am Dateiende, damit spätere Regeln
+   gleicher Spezifität (Reiter, Jahr-Auswahl) ihn nicht übersteuern. Mit Maus bleibt alles wie gehabt. */
+@media (pointer: coarse) {
+    html.portal-fahne { --tipp: 44px; }
+    .portal-fahne .btn,
+    .portal-fahne .p-btn,
+    .portal-fahne .form-control,
+    .portal-fahne .form-select,
+    .portal-fahne .p-field :is(input, select),
+    .portal-fahne .portal-content select,
+    .portal-fahne .portal-content button:not(.btn-close),
+    .portal-fahne .portal-back-link,
+    .portal-fahne .fr-reiter a,
+    .portal-fahne .tf-jahr select,
+    .portal-fahne .jm-row-main[role="button"],
+    .portal-fahne .bn-toggle-label,
+    .portal-fahne .portal-navbar .navbar-brand { min-height: var(--tipp); }
+    .portal-fahne .btn:has(> .bi:only-child),
+    .portal-fahne .portal-content button:has(> .bi:only-child),
+    .portal-fahne .btn-close { min-width: var(--tipp); }
+    .portal-fahne .btn-close { min-height: var(--tipp); }
+    .portal-fahne .portal-content summary { min-height: var(--tipp); padding-block: .6rem; }
+
+    /* Weg zurück im Daumenbereich (Entscheid 16.10.2026): oben links ist für Rechtshänder kaum erreichbar.
+       Runder Knopf unten rechts, Ziel wie der Link oben ($portal_back_href, sonst Start); der Link oben
+       entfällt dann. Unten am Seitenende liegt nur die Fusszeile, darum kein Zusatzabstand nötig.
+       portal_footer.php hält ihn bei ein-/ausfahrender Browser-Leiste am sichtbaren Rand. */
+    .portal-fahne .portal-back-link { display: none; }
+    .portal-fahne .portal-back-fab {
+        display: flex;
+        position: fixed;
+        z-index: 1030;
+        left: auto !important;    /* portal.css setzt ihn am Handy noch nach links */
+        right: 1rem !important;
+        bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        width: 56px;
+        height: 56px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--akzent);
+        color: #fff;
+        font-size: 1.35rem;
+        text-decoration: none;
+        box-shadow: 0 3px 10px rgba(26, 26, 36, .25);
+        transition: background-color .15s;
+    }
+    .portal-fahne .portal-back-fab:hover,
+    .portal-fahne .portal-back-fab:active { background: var(--akzent-tief); color: #fff; transform: none; }
+    .portal-fahne .portal-back-fab:focus-visible { outline: 3px solid var(--akzent); outline-offset: 3px; }
+    /* Bildschirmtastatur offen: Knopf weg, damit er das Feld nicht verdeckt; im Chat-Gespräch führt der Pfeil im Kopf zurück */
+    .portal-fahne .portal-content:has(:is(input, textarea, select):focus) .portal-back-fab,
+    .portal-fahne body.chat-in-thread .portal-back-fab { display: none !important; }
+    .portal-fahne .chat-list-scroll { padding-bottom: 5rem; }   /* letzte Unterhaltung nicht unter dem Knopf */
 }

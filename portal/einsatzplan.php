@@ -31,26 +31,26 @@ include 'portal_header.php';
 .epp-wrap { overflow-x: auto; }
 .epp-grid { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; background: #fff; }
 .epp-grid th, .epp-grid td { border: 1px solid var(--p-border, #e2e8f0); padding: 0.4rem 0.5rem; vertical-align: top; min-width: 150px; }
-.epp-grid thead th { background: #f8f9fa; font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 600; }
-.epp-grid thead th .epp-bez { text-transform: none; font-size: 0.85rem; color: #1e293b; }
-.epp-grid thead th .epp-datum { text-transform: none; font-size: 0.82rem; color: #334155; font-weight: 500; }
+.epp-grid thead th { background: var(--grund, #f8f9fa); font-size: 0.72rem; text-transform: uppercase; color: var(--tinte-2, #64748b); font-weight: 600; }
+.epp-grid thead th .epp-bez { text-transform: none; font-size: 0.85rem; color: var(--tinte, #1e293b); }
+.epp-grid thead th .epp-datum { text-transform: none; font-size: 0.82rem; color: var(--tinte, #334155); font-weight: 500; }
 .epp-grid thead th .epp-zeit { text-transform: none; font-weight: 400; }
-.epp-grid .epp-fn { min-width: 180px; font-weight: 600; background: #fcfcfd; color: #1e293b; }
-.epp-grid .epp-gruppe td { background: #f1f5f9; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; color: #475569; padding: 0.25rem 0.5rem; }
+.epp-grid .epp-fn { min-width: 180px; font-weight: 600; background: #fcfcfd; color: var(--tinte, #1e293b); }
+.epp-grid .epp-gruppe td { background: var(--grund, #f1f5f9); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; color: var(--tinte-2, #475569); padding: 0.25rem 0.5rem; }
 .epp-slot { display: block; padding: 0.1rem 0; white-space: nowrap; }
-.epp-slot.ph { color: #94a3b8; font-style: italic; }
-.epp-slot.fb { color: #2d4373; }
-.epp-slot.wo { color: #2e7d32; }
+.epp-slot.ph { color: var(--tinte-2, #94a3b8); font-style: italic; }
+.epp-slot.fb { color: var(--akzent-tief, #2d4373); }
+.epp-slot.wo { color: var(--gut, #2e7d32); }
 .epp-slot.me { font-weight: 700; color: var(--primary-color, #2d4373); background: #fff7e6; border-radius: 0.3rem; padding: 0.1rem 0.35rem; margin-left: -0.35rem; }
 .epp-card { border: 1px solid var(--p-border, #e2e8f0); border-radius: var(--p-radius, 0.6rem); background: #fff; margin-bottom: var(--p-3, 0.75rem); box-shadow: var(--p-shadow, none); }
-.epp-card-head { padding: 0.5rem 0.75rem; background: #f8f9fa; border-bottom: 1px solid var(--p-border, #e2e8f0); border-radius: var(--p-radius, 0.6rem) var(--p-radius, 0.6rem) 0 0; }
+.epp-card-head { padding: 0.5rem 0.75rem; background: var(--grund, #f8f9fa); border-bottom: 1px solid var(--p-border, #e2e8f0); border-radius: var(--p-radius, 0.6rem) var(--p-radius, 0.6rem) 0 0; }
 .epp-card-head strong { display: block; }
 .epp-card-body { padding: 0.4rem 0.75rem; }
 .epp-row { display: flex; gap: 0.5rem; padding: 0.25rem 0; border-bottom: 1px dashed #eef1f6; font-size: 0.85rem; }
 .epp-row:last-child { border-bottom: 0; }
-.epp-row .epp-row-fn { flex: 0 0 44%; color: #64748b; }
-.epp-legend { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; font-size: 0.75rem; color: #64748b; margin-top: 0.6rem; }
-.epp-fuss { font-size: 0.85rem; color: #475569; margin-top: 1rem; }
+.epp-row .epp-row-fn { flex: 0 0 44%; color: var(--tinte-2, #64748b); }
+.epp-legend { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; font-size: 0.75rem; color: var(--tinte-2, #64748b); margin-top: 0.6rem; }
+.epp-fuss { font-size: 0.85rem; color: var(--tinte-2, #475569); margin-top: 1rem; }
 .epp-fuss p { margin-bottom: 0.2rem; }
 .ep-hinweis { margin: -.5rem 0 .75rem; font-size: .85rem; color: var(--p-text-muted); }
 </style>

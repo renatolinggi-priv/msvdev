@@ -115,13 +115,13 @@ include 'portal_header.php';
 <style>
 /* Vergangen-Variante: gedaempfter Look auf .p-list-row */
 .p-list-row.vergangen {
-    background: #fafafa;
+    background: var(--grund, #fafafa);
     border-color: #ebebeb;
     opacity: 0.7;
 }
 .einsatz-datum {
     font-size: 0.78rem;
-    color: #718096;
+    color: var(--tinte-2, #718096);
     margin-bottom: 0.1rem;
 }
 .p-list-row .einsatz-name {
@@ -130,16 +130,16 @@ include 'portal_header.php';
     text-overflow: ellipsis;
 }
 .p-list-row.vergangen .einsatz-name {
-    color: #718096;
+    color: var(--tinte-2, #718096);
 }
 .einsatz-funktion {
     font-size: 0.78rem;
-    color: #718096;
+    color: var(--tinte-2, #718096);
     margin-top: 0.1rem;
 }
 .einsatz-time-badge {
     font-size: 0.72rem;
-    background: #f0f0f0;
+    background: var(--grund, #f0f0f0);
     color: #555;
     border-radius: 4px;
     padding: 0.1rem 0.4rem;
@@ -165,7 +165,7 @@ include 'portal_header.php';
 .empty-state {
     text-align: center;
     padding: 2.5rem 1rem;
-    color: #a0aec0;
+    color: var(--tinte-2, #a0aec0);
 }
 .empty-state i {
     font-size: 2.5rem;
@@ -194,7 +194,7 @@ include 'portal_header.php';
 .vergangene-toggle {
     background: none;
     border: none;
-    color: #718096;
+    color: var(--tinte-2, #718096);
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
@@ -203,7 +203,7 @@ include 'portal_header.php';
     align-items: center;
     gap: 0.3rem;
 }
-.vergangene-toggle:hover { color: #4a5568; }
+.vergangene-toggle:hover { color: var(--tinte-2, #4a5568); }
 
 /* Tausch-/Übernahme-Anfragen */
 .tausch-section { margin-bottom: 1.25rem; }
@@ -226,13 +226,13 @@ include 'portal_header.php';
     text-transform: uppercase; letter-spacing: 0.03em; border-radius: 3px;
     padding: 0.08rem 0.32rem; margin-right: 0.35rem; vertical-align: middle;
 }
-.tausch-tag.du-bekommst { background: #e8f5e9; color: #2e7d32; }
-.tausch-tag.du-gibst    { background: #ffebee; color: #c62828; }
-.tausch-meta { color: #718096; font-size: 0.76rem; display: block; margin-top: 0.05rem; }
+.tausch-tag.du-bekommst { background: var(--gut-hell, #e8f5e9); color: var(--gut, #2e7d32); }
+.tausch-tag.du-gibst    { background: var(--gefahr-hell, #ffebee); color: var(--gefahr, #c62828); }
+.tausch-meta { color: var(--tinte-2, #718096); font-size: 0.76rem; display: block; margin-top: 0.05rem; }
 .tausch-nachricht { font-size: 0.78rem; color: #5d4037; margin-top: 0.35rem; }
 .tausch-card-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
 .einsatz-tausch-btn { flex-shrink: 0; align-self: center; }
-.tausch-typ-hint { font-size: 0.76rem; color: #718096; }
+.tausch-typ-hint { font-size: 0.76rem; color: var(--tinte-2, #718096); }
 </style>
 
 <div class="portal-page-header">
@@ -375,7 +375,7 @@ if (!$mitglied_id): ?>
     </div>
     <?php else: ?>
     <div class="p-eyebrow">Kommend</div>
-    <div class="empty-state" style="padding: 1.5rem; color: #a0aec0; font-size: 0.85rem; text-align: center;">
+    <div class="empty-state" style="padding: 1.5rem; color: var(--tinte-2, #a0aec0); font-size: 0.85rem; text-align: center;">
         <i class="bi bi-check-circle" style="font-size: 1.5rem; display: block; margin-bottom: 0.4rem;"></i>
         Keine kommenden Einsätze geplant.
     </div>

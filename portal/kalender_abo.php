@@ -55,18 +55,18 @@ include 'portal_header.php';
 }
 .abo-url-row code {
     flex: 1;
-    background: #f5f6fa;
+    background: var(--grund, #f5f6fa);
     padding: .4rem .65rem;
     border-radius: var(--p-radius-sm);
     font-size: .7rem;
     word-break: break-all;
-    border: 1px solid #e0e4e8;
-    color: #4a5568;
+    border: 1px solid var(--linie, #e0e4e8);
+    color: var(--tinte-2, #4a5568);
     min-width: 0;
 }
 .abo-copy-btn {
-    background: #edf2f7;
-    color: #4a5568;
+    background: var(--grund, #edf2f7);
+    color: var(--tinte-2, #4a5568);
     border: none;
     border-radius: var(--p-radius-sm);
     padding: .4rem .6rem;
@@ -76,7 +76,7 @@ include 'portal_header.php';
     transition: background .15s;
     flex-shrink: 0;
 }
-.abo-copy-btn:hover  { background: #e2e8f0; color: var(--p-text); }
+.abo-copy-btn:hover  { background: var(--linie, #e2e8f0); color: var(--p-text); }
 .abo-copy-btn.copied { background: #c6f6d5; color: #276749; }
 
 /* Neu-generieren-Link — seitenspezifisch */
@@ -86,13 +86,13 @@ include 'portal_header.php';
     justify-content: center;
     gap: var(--p-1);
     font-size: .75rem;
-    color: #a0aec0;
+    color: var(--tinte-2, #a0aec0);
     margin-top: var(--p-2);
 }
 .abo-regen-row button {
     background: none;
     border: none;
-    color: #a0aec0;
+    color: var(--tinte-2, #a0aec0);
     font-size: .75rem;
     cursor: pointer;
     padding: 0;

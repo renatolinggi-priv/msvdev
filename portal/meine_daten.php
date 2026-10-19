@@ -216,10 +216,10 @@ $csrf_token = ensureCsrfToken();
         </div>
 
         <!-- Passwort -->
-        <div class="md-login-display" style="border-top: 1px solid #f0f0f0; margin-top: 0.3rem; padding-top: 0.5rem;">
+        <div class="md-login-display" style="border-top: 1px solid var(--linie, #f0f0f0); margin-top: 0.3rem; padding-top: 0.5rem;">
             <div>
                 <span class="p-info-label">Passwort</span>
-                <span class="p-info-value" style="color:#718096;">********</span>
+                <span class="p-info-value" style="color:var(--tinte-2, #718096);">********</span>
             </div>
             <button type="button" class="md-change-link" onclick="toggleForm('password')">Ändern</button>
         </div>

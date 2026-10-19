@@ -85,7 +85,7 @@ include 'portal_header.php';
 .changelog-empty {
     text-align: center;
     padding: var(--p-5) var(--p-4);
-    color: #a0aec0;
+    color: var(--tinte-2, #a0aec0);
 }
 .changelog-empty i {
     font-size: 3rem;

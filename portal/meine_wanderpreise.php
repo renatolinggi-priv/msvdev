@@ -10,7 +10,10 @@ $mitglied_id = $_SESSION['mitglied_id'] ?? null;
 $zurueckbringen = [];
 
 if ($mitglied_id) {
-    // Wanderpreise wo dieses Mitglied aktueller Inhaber ist und noch nicht definitiv
+    // Wanderpreise, die dieses Mitglied aus dem Vorjahr hält (noch nicht definitiv). Gewinner des laufenden
+    // Jahres bleiben bis zum Absenden geheim (Entscheid 16.10.2026): sie sind oft schon vorher erfasst und
+    // würden sonst hier erscheinen und den Vorjahres-Inhaber verdrängen. Massgebend ist darum der jüngste
+    // Gewinner bis und mit Vorjahr.
     $stmt = $db->prepare("
         SELECT
             w.bezeichnung,
@@ -21,12 +24,13 @@ if ($mitglied_id) {
         INNER JOIN (
             SELECT wanderpreis_id, MAX(jahr) as max_jahr
             FROM wanderpreise_gewinner
+            WHERE jahr < ?
             GROUP BY wanderpreis_id
         ) latest ON wg.wanderpreis_id = latest.wanderpreis_id AND wg.jahr = latest.max_jahr
         WHERE wg.gewinner_id = ? AND wg.ist_definitiv = 0
         ORDER BY w.bezeichnung ASC
     ");
-    $stmt->execute([$mitglied_id]);
+    $stmt->execute([(int) date('Y'), $mitglied_id]);
     $zurueckbringen = $stmt->fetchAll();
 }
 

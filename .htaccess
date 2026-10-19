@@ -57,3 +57,22 @@ Options -Indexes
 <FilesMatch "\.inc\.php$">
     Require all denied
 </FilesMatch>
+
+# Zwischenspeichern (eingefuehrt 16.10.2026, Audit Mitgliederportal). Vorher lieferte der Server fuer CSS/JS keinen
+# Cache-Header; der Browser fragte darum bei jedem Seitenwechsel neu nach. Was sich unter derselben Adresse nie
+# aendert, bleibt jetzt ein Jahr im Browser:
+#   - eigene Dateien mit ?v=filemtime (jede Aenderung ergibt eine neue Adresse; feste ?v=-Nummern gibt es nicht)
+#   - Bibliotheken mit Version im Namen (css/lib/, inc/js/lib/: jquery-3.6.0..., bootstrap-5.3.0..., pdfjs-3.11.174/)
+#   - Schriften (.woff2)
+# Alles andere (PHP-Seiten, sw.js, Manifest, Uploads) bleibt wie bisher.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{QUERY_STRING} (^|&)v=
+    RewriteRule \.(css|js)$ - [E=MSV_VERSIONIERT:1]
+</IfModule>
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable" env=MSV_VERSIONIERT
+    <FilesMatch "^(jquery|bootstrap|sweetalert2|xlsx)-[0-9][0-9.]*[.-].*\.(css|js)$|^pdf(\.worker)?\.min\.js$|\.woff2$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>

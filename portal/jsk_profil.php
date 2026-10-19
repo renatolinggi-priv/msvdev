@@ -25,7 +25,7 @@ $csrf_token = ensureCsrfToken();
 ?>
 
 <style>
-.profil-card { border:1px solid #e2e8f0; border-radius:1rem; padding:1.25rem; margin-bottom:1rem; background:#fff; }
+.profil-card { border:1px solid var(--linie, #e2e8f0); border-radius:1rem; padding:1.25rem; margin-bottom:1rem; background:#fff; }
 .profil-card h6 { font-weight:700; }
 </style>
 
@@ -36,7 +36,7 @@ $csrf_token = ensureCsrfToken();
   </div>
 
   <div class="profil-card">
-    <h6 class="mb-1"><i class="bi bi-person me-1 text-club"></i>Anzeigename</h6>
+    <h2 class="h6 mb-1"><i class="bi bi-person me-1 text-club" aria-hidden="true"></i>Anzeigename</h2>
     <p class="text-muted small mb-2" id="fullNameHinweis">Dieser Name gilt für die Begrüssung im Portal. Im Jungschützenchat und auf dem Betreuer-Board erscheint immer dein Name aus den Kursdaten.</p>
     <div class="mb-2">
       <label class="form-label visually-hidden" for="fullName">Anzeigename</label>
@@ -47,7 +47,7 @@ $csrf_token = ensureCsrfToken();
   </div>
 
   <div class="profil-card">
-    <h6 class="mb-2"><i class="bi bi-key me-1 text-club"></i>Passwort ändern</h6>
+    <h2 class="h6 mb-2"><i class="bi bi-key me-1 text-club" aria-hidden="true"></i>Passwort ändern</h2>
     <div class="mb-2">
       <label class="form-label visually-hidden" for="pwCurrent">Aktuelles Passwort</label>
       <input type="password" class="form-control" id="pwCurrent" placeholder="Aktuelles Passwort" autocomplete="current-password">

@@ -28,7 +28,7 @@ $portal_fahne = (($_COOKIE['msv_portal_fahne'] ?? '') === '1');
     <style>
         body {
             margin: 0;
-            background: #f5f6fa;
+            background: var(--grund, #f5f6fa);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -37,7 +37,7 @@ $portal_fahne = (($_COOKIE['msv_portal_fahne'] ?? '') === '1');
         }
         .loader {
             text-align: center;
-            color: #718096;
+            color: var(--tinte-2, #718096);
         }
         .loader img {
             width: 48px;

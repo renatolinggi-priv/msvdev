@@ -1,5 +1,53 @@
 [
   {
+    "version": "1.68.42",
+    "datum": "2026-10-16",
+    "aenderungen": [
+      {
+        "titel": "Mitgliederportal: Zurück-Knopf im Daumenbereich",
+        "beschreibung": "Auf iPhone und Android sitzt der Weg zurück als runder Knopf unten rechts statt als Link oben links, wo er mit der rechten Hand kaum erreichbar war. Er führt zum selben Ziel wie bisher (Start, in der Galerie zu den Fotos), verschwindet, solange die Tastatur offen ist, und in der Galerie liegt «Fotos hochladen» darüber. Am PC bleibt der Link oben.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: Wanderpreise des laufenden Jahres bleiben bis zum Absenden geheim",
+        "beschreibung": "Der Reiter «Wanderpreise» zeigte den jüngsten erfassten Gewinner. Waren die Sieger des laufenden Jahres schon eingetragen (2026: alle 11), sahen Mitglieder ihren Gewinn vor dem Absenden, und wer den Preis aus dem Vorjahr noch hält, sah ihn nicht mehr. Jetzt zählen nur Gewinner bis und mit Vorjahr: wer einen Preis aus dem Vorjahr hat, sieht ihn mit dem Hinweis, ihn ans Endschiessen mitzubringen.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: ein Menüeintrag «Resultate»",
+        "beschreibung": "JM, Heim, Kanti und Wanderpreise sind Reiter derselben Seite; das Menü führt jetzt mit einem Eintrag «Resultate» dorthin und markiert ihn auf allen vier Reitern. Vorher standen JM, Heim und Kanti einzeln unter «Resultate» und die Wanderpreise unter «Persönliches».",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: schneller und ohne fremde Server",
+        "beschreibung": "Bootstrap, Symbole, jQuery, SweetAlert2, pdf.js und der Excel-Leser kommen vom eigenen Server mit fester Version statt von drei fremden CDNs: keine IP-Adressen der Mitglieder mehr an Dritte, keine ungeprüften Updates. pdf.js lädt erst, wenn jemand ein Dokument öffnet, und der Grundstil des Portals liegt in einer eigenen Datei statt in jeder Seite. CSS, Skripte und Schriften bleiben ein Jahr im Browser. Lokal mit gedrosseltem Handy-Netz gemessen, steht die erste Ansicht rund 0.6 s früher (1.4–1.6 s statt 2.0–2.4 s).",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: Foto-Ansicht lädt am Handy die passende Grösse",
+        "beschreibung": "Die Foto-Ansicht lud auf jedem aktuellen Handy das Originalbild (bis 2560 px, rund 1 MB pro Foto), weil die Pixeldichte mitgerechnet wurde. Jetzt nimmt sie am Handy die Mittelgrösse (1280 px, rund 280 KB); Tablet und PC bekommen weiterhin das Original.",
+        "typ": "fix",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: Tippflächen 44 px auf iPhone und Android",
+        "beschreibung": "Knöpfe, Felder, Auswahllisten, Resultat-Reiter, der «Start»-Link, Aufklapper und Schliessen-Kreuze sind auf Touch-Geräten mindestens 44 px gross (vorher 34–38 px). Am PC mit Maus bleibt alles wie bisher.",
+        "typ": "verbesserung",
+        "admin_only": true
+      },
+      {
+        "titel": "Mitgliederportal: Farben und Screenreader",
+        "beschreibung": "164 alte Farbwerte in 22 Portalseiten zeigen auf die Farben der Vereinsfahne; damit ist auch der zu schwache Kontrast bei «Vergangene Termine» der Jungschützen behoben. Der Seiteninhalt ist als Hauptbereich ausgezeichnet, und die Überschriften folgen der richtigen Reihenfolge (Was ist neu, Jungschützen-Profil, Chat), damit VoiceOver und TalkBack sauber springen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.41",
     "datum": "2026-10-16",
     "aenderungen": [

@@ -76,9 +76,9 @@ $statusBadge = function ($s) {
 
 <style>
 .jsk-hero { background: linear-gradient(135deg,#3b5998,#2d4373); color:#ffffff; border-radius:1rem; padding:1.5rem; margin-bottom:1.5rem; }
-.jsk-card { border:1px solid #e2e8f0; border-radius:0.85rem; padding:1rem 1.25rem; margin-bottom:0.75rem; background:#fff; }
+.jsk-card { border:1px solid var(--linie, #e2e8f0); border-radius:0.85rem; padding:1rem 1.25rem; margin-bottom:0.75rem; background:#fff; }
 .jsk-card .datum { font-size:1.1rem; font-weight:700; }
-.jsk-empty { text-align:center; color:#94a3b8; padding:2rem 1rem; }
+.jsk-empty { text-align:center; color:var(--tinte-2, #94a3b8); padding:2rem 1rem; }
 /* Vorschau «Vereinsfahne»: «Meine Anmeldungen» ist jetzt h2.h5 (portal-fahne-seiten.css zielt noch auf h5) */
 .portal-fahne .jsk-hero ~ .d-flex > h2.h5 { font-size:1rem; font-weight:700; color:var(--tinte); }
 .portal-fahne .jsk-hero ~ .d-flex > h2.h5 .bi { color:var(--tinte-2); }
@@ -91,7 +91,7 @@ $statusBadge = function ($s) {
   </div>
 
   <?php if (trim($infoTitel) !== '' || trim($infoText) !== ''): ?>
-    <div class="jsk-card" style="border-left:4px solid #3b5998;">
+    <div class="jsk-card" style="border-left:4px solid var(--akzent, #3b5998);">
       <?php if (trim($infoTitel) !== ''): ?>
         <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1 text-club"></i><?= htmlspecialchars($infoTitel) ?></div>
       <?php endif; ?>

@@ -59,12 +59,12 @@ include 'portal_header.php';
 ?>
 
 <style>
-.res-card { border:1px solid #e2e8f0; border-radius:1rem; padding:1.25rem; margin-bottom:1rem; background:#fff; }
+.res-card { border:1px solid var(--linie, #e2e8f0); border-radius:1rem; padding:1.25rem; margin-bottom:1rem; background:#fff; }
 .res-card h6 { font-weight:700; margin-bottom:0.75rem; }
-.res-total { font-size:1.4rem; font-weight:800; color:#3b5998; }
+.res-total { font-size:1.4rem; font-weight:800; color:var(--akzent, #3b5998); }
 .shot-grid { display:flex; flex-wrap:wrap; gap:0.4rem; }
-.shot { min-width:34px; text-align:center; padding:0.3rem 0.4rem; border-radius:0.5rem; background:#f1f5f9; font-weight:600; font-variant-numeric:tabular-nums; }
-.res-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; }
+.shot { min-width:34px; text-align:center; padding:0.3rem 0.4rem; border-radius:0.5rem; background:var(--grund, #f1f5f9); font-weight:600; font-variant-numeric:tabular-nums; }
+.res-empty { text-align:center; color:var(--tinte-2, #94a3b8); padding:2.5rem 1rem; }
 </style>
 
 <div class="container py-4" style="max-width:760px;">

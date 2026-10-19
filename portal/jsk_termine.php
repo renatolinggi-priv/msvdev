@@ -41,25 +41,25 @@ $csrf_token = ensureCsrfToken();
 
 <style>
 .tm-list { max-width:640px; }
-.tm-card { display:flex; align-items:center; gap:0.9rem; border:1px solid #e2e8f0; border-radius:0.85rem;
+.tm-card { display:flex; align-items:center; gap:0.9rem; border:1px solid var(--linie, #e2e8f0); border-radius:0.85rem;
   padding:0.75rem 1rem; margin-bottom:0.6rem; background:#fff; }
-.tm-date { flex-shrink:0; width:54px; text-align:center; background:#3b5998; color:#fff; border-radius:0.6rem; padding:0.35rem 0; line-height:1.1; }
+.tm-date { flex-shrink:0; width:54px; text-align:center; background:var(--akzent, #3b5998); color:#fff; border-radius:0.6rem; padding:0.35rem 0; line-height:1.1; }
 .tm-date .d { font-size:1.1rem; font-weight:800; }
 .tm-date .wd { font-size:0.68rem; text-transform:uppercase; opacity:0.85; }
 .tm-body { min-width:0; flex:1; }
 .tm-name { font-weight:600; }
-.tm-time { font-size:0.85rem; color:#64748b; }
+.tm-time { font-size:0.85rem; color:var(--tinte-2, #64748b); }
 .tm-rsvp { flex-shrink:0; text-align:right; }
 .tm-rsvp .form-check-input { cursor:pointer; }
-.tm-rsvp .form-check-input:checked { background-color:#3b5998; border-color:#3b5998; }
-.tm-rsvp-label { display:block; font-size:0.72rem; color:#64748b; }
-.tm-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
+.tm-rsvp .form-check-input:checked { background-color:var(--akzent, #3b5998); border-color:var(--akzent, #3b5998); }
+.tm-rsvp-label { display:block; font-size:0.72rem; color:var(--tinte-2, #64748b); }
+.tm-empty { text-align:center; color:var(--tinte-2, #94a3b8); padding:2.5rem 1rem; border:1px solid var(--linie, #e2e8f0); border-radius:0.85rem; background:#fff; }
 .tm-card--past { opacity:0.55; }
 .tm-card--past .tm-date { background:#94a3b8; }
 /* Jahr nur, wenn es nicht das laufende ist – eigene Zeile, der Chip ist für «Mo · 2025» zu schmal */
 .tm-date .tm-jahr { display:block; }
 .tm-past { margin-top:1rem; }
-.tm-past > summary { cursor:pointer; font-size:0.9rem; font-weight:600; color:#64748b; padding:0.35rem 0; margin-bottom:0.5rem; }
+.tm-past > summary { cursor:pointer; font-size:0.9rem; font-weight:600; color:var(--tinte-2, #64748b); padding:0.35rem 0; margin-bottom:0.5rem; }
 </style>
 
 <div class="container py-4">

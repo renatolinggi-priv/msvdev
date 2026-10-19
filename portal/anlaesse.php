@@ -38,9 +38,9 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 <link rel="stylesheet" href="css/foto-slideshow.css?v=<?php echo @filemtime(__DIR__ . '/css/foto-slideshow.css'); ?>">
 <style>
 .ga-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:0.7rem; }
-.ga-card { position:relative; border:1px solid #e2e8f0; border-radius:0.6rem; overflow:hidden; background:#fff; transition:transform .15s, box-shadow .15s; cursor:pointer; }
+.ga-card { position:relative; border:1px solid var(--linie, #e2e8f0); border-radius:0.6rem; overflow:hidden; background:#fff; transition:transform .15s, box-shadow .15s; cursor:pointer; }
 .ga-card:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,0.10); }
-.ga-cover { position:relative; aspect-ratio:4/3; background:#eef2f7; display:flex; align-items:center; justify-content:center; }
+.ga-cover { position:relative; aspect-ratio:4/3; background:var(--grund, #eef2f7); display:flex; align-items:center; justify-content:center; }
 /* Cover ist ein Knopf (Tastatur): Knopf-Vorgaben neutralisieren, Optik wie bisher */
 button.ga-cover { width:100%; padding:0; margin:0; border:0; border-radius:0; color:inherit; font:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; }
 .ga-cover:focus-visible { outline:3px solid var(--primary-color); outline-offset:-3px; }
@@ -50,11 +50,11 @@ button.ga-cover { width:100%; padding:0; margin:0; border:0; border-radius:0; co
 .ga-play i { width:46px; height:46px; border-radius:50%; background:rgba(0,0,0,0.45); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.5rem; }
 .ga-body { padding:0.5rem 0.6rem; }
 .ga-name { font-weight:600; font-size:0.85rem; line-height:1.2; }
-.ga-meta { font-size:0.72rem; color:#64748b; margin-top:0.15rem; }
-.ga-add { display:flex; align-items:center; justify-content:center; gap:0.35rem; width:100%; border:none; border-top:1px solid #eef2f7; background:#fff; color:var(--primary-color); font-weight:600; font-size:0.8rem; padding:0.5rem; cursor:pointer; }
-.ga-add:hover { background:#f1f5fb; }
-.ga-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
-.ga-uploadbar { display:none; align-items:center; gap:0.6rem; background:#eef6ff; border:1px solid #cfe2ff; border-radius:0.6rem; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.85rem; }
+.ga-meta { font-size:0.72rem; color:var(--tinte-2, #64748b); margin-top:0.15rem; }
+.ga-add { display:flex; align-items:center; justify-content:center; gap:0.35rem; width:100%; border:none; border-top:1px solid var(--linie, #eef2f7); background:#fff; color:var(--primary-color); font-weight:600; font-size:0.8rem; padding:0.5rem; cursor:pointer; }
+.ga-add:hover { background:var(--grund, #f1f5fb); }
+.ga-empty { text-align:center; color:var(--tinte-2, #94a3b8); padding:2.5rem 1rem; border:1px solid var(--linie, #e2e8f0); border-radius:0.85rem; background:#fff; }
+.ga-uploadbar { display:none; align-items:center; gap:0.6rem; background:var(--akzent-hell, #eef6ff); border:1px solid var(--akzent-hell, #cfe2ff); border-radius:0.6rem; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.85rem; }
 @media (max-width:575.98px){ .ga-grid { grid-template-columns:1fr; gap:0.6rem; } }
 </style>
 

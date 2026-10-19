@@ -34,9 +34,9 @@ if (!empty($_SESSION['user_id'])) {
     }
 }
 ?>
-    </div><!-- /.portal-content -->
+    </main><!-- /.portal-content -->
 
-    <footer class="text-center py-3 mt-4" style="color: #adb5bd; font-size: 0.8rem; flex-shrink: 0; padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
+    <footer class="text-center py-3 mt-4" style="color: var(--tinte-2, #adb5bd); font-size: 0.8rem; flex-shrink: 0; padding-bottom: calc(1rem + env(safe-area-inset-bottom));">
         &copy; <?php echo date('Y'); ?> MSV Wilen
     </footer>
 
@@ -151,10 +151,26 @@ if (!empty($_SESSION['user_id'])) {
     // ================================================================
     var USE_PDFJS_VIEWER = true;
 
-    // PDF.js Worker konfigurieren
-    if (typeof pdfjsLib !== 'undefined') {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    // PDF.js (vom eigenen Server) erst beim ersten Dokument laden: 320 KB, die sonst jede Portalseite bremsten
+    var PDFJS_PFAD = '../inc/js/lib/pdfjs-3.11.174/';
+    var pdfJsLaden = null;
+    function ladePdfJs() {
+        if (typeof pdfjsLib !== 'undefined') return Promise.resolve(pdfjsLib);
+        if (!pdfJsLaden) {
+            pdfJsLaden = new Promise(function (ok, fehler) {
+                var s = document.createElement('script');
+                s.src = PDFJS_PFAD + 'pdf.min.js';
+                s.onload = function () {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_PFAD + 'pdf.worker.min.js';
+                    ok(pdfjsLib);
+                };
+                s.onerror = function () { pdfJsLaden = null; fehler(new Error('pdf.js nicht geladen')); };
+                document.head.appendChild(s);
+            });
+        }
+        return pdfJsLaden;
     }
+    var docOeffnung = 0;   // zählt Öffnungen: ein spät geladenes PDF darf kein neueres oder geschlossenes ersetzen
 
     var currentDocId = 0;
     var currentDocFilename = '';
@@ -189,6 +205,7 @@ if (!empty($_SESSION['user_id'])) {
         var loading  = document.getElementById('pdfLoading');
 
         title.textContent = titel || filename;
+        var diese = ++docOeffnung;
         overlay.style.display = 'flex';
         document.body.style.overflow = 'hidden';
 
@@ -207,7 +224,7 @@ if (!empty($_SESSION['user_id'])) {
 
         var docUrl = '../api/dokument_download.php?id=' + id;
 
-        if (USE_PDFJS_VIEWER && isPdfFile(filename) && typeof pdfjsLib !== 'undefined') {
+        if (USE_PDFJS_VIEWER && isPdfFile(filename)) {
             // === PDF.js Modus ===
             loading.style.display = 'block';
             pdfCont.style.display = 'flex';
@@ -217,7 +234,12 @@ if (!empty($_SESSION['user_id'])) {
             pdfZoomFactor  = 1.0;
             pdfBaseScale   = 0;
 
-            pdfjsLib.getDocument(docUrl).promise.then(function(doc) {
+            ladePdfJs().then(function (lib) {
+                if (diese !== docOeffnung) return null;   // inzwischen geschlossen oder anderes Dokument
+                return lib.getDocument(docUrl).promise;
+            }).then(function(doc) {
+                if (!doc) return;
+                if (diese !== docOeffnung) { doc.destroy(); return; }
                 pdfDoc = doc;
                 pdfTotalPages = doc.numPages;
                 loading.style.display = 'none';
@@ -226,6 +248,7 @@ if (!empty($_SESSION['user_id'])) {
                 updatePdfPageInfo();
                 renderPdfPage(pdfCurrentPage);
             }).catch(function(err) {
+                if (diese !== docOeffnung) return;
                 console.error('PDF.js Fehler:', err);
                 loading.style.display = 'none';
                 pdfCont.innerHTML = '<div class="pdf-error-msg"><i class="bi bi-exclamation-triangle"></i>PDF konnte nicht angezeigt werden.<br><small>Oben rechts auf das Teilen-Symbol tippen, um die Datei zu speichern oder in einer anderen App zu öffnen.</small></div>';
@@ -312,6 +335,7 @@ if (!empty($_SESSION['user_id'])) {
     // Dokument schliessen
     // ================================================================
     function closePortalDoc() {
+        docOeffnung++;   // laufendes Laden verwerfen
         var overlay = document.getElementById('docViewerOverlay');
         var frame   = document.getElementById('docViewerFrame');
         var pdfCont = document.getElementById('pdfCanvasContainer');
@@ -639,7 +663,7 @@ if (!empty($_SESSION['user_id'])) {
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header" style="background:linear-gradient(135deg,#3b5bdb,#5c7cfa);color:#fff;">
-            <h5 class="modal-title" id="whatsNewLabel"><i class="bi bi-stars me-2"></i>Was ist neu?</h5>
+            <h2 class="modal-title h5" id="whatsNewLabel"><i class="bi bi-stars me-2" aria-hidden="true"></i>Was ist neu?</h2>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schliessen"></button>
           </div>
           <div class="modal-body whatsnew-body">
@@ -683,16 +707,16 @@ if (!empty($_SESSION['user_id'])) {
       </div>
     </div>
     <style>
-    .whatsnew-release + .whatsnew-release { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid #e9ecef; }
+    .whatsnew-release + .whatsnew-release { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--linie, #e9ecef); }
     .whatsnew-rel-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
     .whatsnew-version { background: #343a40; color: #fff; padding: .15rem .55rem; border-radius: 6px;
         font-size: .78rem; font-weight: 600; font-family: monospace; }
-    .whatsnew-date { color: #868e96; font-size: .78rem; }
+    .whatsnew-date { color: var(--tinte-2, #868e96); font-size: .78rem; }
     .whatsnew-entry { display: flex; align-items: flex-start; gap: .5rem; padding: .4rem 0; }
-    .whatsnew-entry + .whatsnew-entry { border-top: 1px solid #f1f3f5; }
+    .whatsnew-entry + .whatsnew-entry { border-top: 1px solid var(--linie, #f1f3f5); }
     .whatsnew-entry .badge { font-size: .65rem; padding: .2rem .45rem; flex-shrink: 0; margin-top: .15rem; }
-    .whatsnew-entry-title { font-weight: 600; font-size: .9rem; color: #212529; }
-    .whatsnew-entry-desc { color: #6c757d; font-size: .82rem; margin-top: .1rem; }
+    .whatsnew-entry-title { font-weight: 600; font-size: .9rem; color: var(--tinte, #212529); }
+    .whatsnew-entry-desc { color: var(--tinte-2, #6c757d); font-size: .82rem; margin-top: .1rem; }
     </style>
     <script>
     (function () {
@@ -740,7 +764,9 @@ if (!empty($_SESSION['user_id'])) {
             var gap = document.documentElement.clientHeight - (vv.offsetTop + vv.height);
             // gap = wie weit der Layout-Boden unter dem sichtbaren Boden liegt (Toolbar etc.)
             if (gap < 1) { fab.style.bottom = ''; return; } // kein Versatz -> CSS-Standard
-            fab.style.bottom = 'calc(1.25rem + env(safe-area-inset-bottom, 0px) + ' + Math.round(gap) + 'px)';
+            // Grundabstand wie im CSS (Fahne: 1rem, alte Ansicht: 1.25rem)
+            var basis = document.documentElement.classList.contains('portal-fahne') ? '1rem' : '1.25rem';
+            fab.style.bottom = 'calc(' + basis + ' + env(safe-area-inset-bottom, 0px) + ' + Math.round(gap) + 'px)';
         }
         vv.addEventListener('resize', pin);
         vv.addEventListener('scroll', pin);

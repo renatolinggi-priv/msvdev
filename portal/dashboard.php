@@ -160,7 +160,7 @@ include 'portal_header.php';
 <style>
 /* Begruessung — bewusster Marken-Akzent (Gradient), nur kompakter + Tokens */
 .dashboard-greeting {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, var(--grund, #f8f9fa) 0%, var(--grund, #e9ecef) 100%);
     border-radius: var(--p-radius);
     display: flex;
     justify-content: space-between;
@@ -244,7 +244,7 @@ include 'portal_header.php';
     padding: var(--p-2) var(--p-3);
     margin-bottom: var(--p-3);
 }
-.next-event-card { background: linear-gradient(135deg, #e8f4fd, #d1ecf9); border: 1px solid #bee5eb; }
+.next-event-card { background: linear-gradient(135deg, var(--akzent-hell, #e8f4fd), var(--akzent-hell, #d1ecf9)); border: 1px solid var(--akzent-hell, #bee5eb); }
 .next-einsatz-card { background: linear-gradient(135deg, #fff8e1, #ffecb3); border: 1px solid #ffe082; }
 .next-event-card h5,
 .next-einsatz-card h5 {
@@ -252,9 +252,9 @@ include 'portal_header.php';
     font-size: 0.82rem;
     margin-bottom: 2px;
 }
-.next-event-card h5 { color: #0c5460; }
+.next-event-card h5 { color: var(--akzent-tief, #0c5460); }
 .next-einsatz-card h5 { color: #e65100; }
-.next-event-card .event-name { font-weight: 700; font-size: 0.88rem; color: #155724; }
+.next-event-card .event-name { font-weight: 700; font-size: 0.88rem; color: var(--gut, #155724); }
 .next-einsatz-card .einsatz-name { font-weight: 700; font-size: 0.88rem; color: #bf360c; }
 .next-event-card small,
 .next-einsatz-card small {
@@ -263,8 +263,8 @@ include 'portal_header.php';
 }
 /* Kombinierte Termin-Karte: "Nächste Schiessanlässe" (oben) + "Nächste Termine" (Liste) */
 .dash-events-card {
-    background: linear-gradient(135deg, #e8f4fd, #d1ecf9);
-    border: 1px solid #bee5eb;
+    background: linear-gradient(135deg, var(--akzent-hell, #e8f4fd), var(--akzent-hell, #d1ecf9));
+    border: 1px solid var(--akzent-hell, #bee5eb);
     border-radius: var(--p-radius);
     padding: var(--p-2) var(--p-3);
     margin-bottom: var(--p-3);
@@ -277,11 +277,11 @@ include 'portal_header.php';
     align-items: center;
     font-weight: 600;
     font-size: 0.82rem;
-    color: #0c5460;
+    color: var(--akzent-tief, #0c5460);
     margin-bottom: 3px;
 }
-.dash-event-name { font-weight: 700; font-size: 0.88rem; color: #155724; }
-.dash-event-meta { font-size: 0.76rem; color: #155724; line-height: 1.3; opacity: 0.92; }
+.dash-event-name { font-weight: 700; font-size: 0.88rem; color: var(--gut, #155724); }
+.dash-event-meta { font-size: 0.76rem; color: var(--gut, #155724); line-height: 1.3; opacity: 0.92; }
 .dash-events-divider { margin: 0.6rem 0; border: 0; border-top: 1px solid rgba(12,84,96,0.18); }
 .dash-termine-list { margin-top: 4px; }
 .dash-termine-row {
@@ -292,9 +292,9 @@ include 'portal_header.php';
     padding: 2px 0;
 }
 .dash-termine-row + .dash-termine-row { border-top: 1px solid rgba(12,84,96,0.15); }
-.dash-termine-date { flex-shrink: 0; font-weight: 700; color: #0c5460; min-width: 64px; }
-.dash-termine-name { flex: 1; min-width: 0; color: #155724; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dash-termine-time { flex-shrink: 0; color: #0c5460; font-size: 0.74rem; opacity: 0.85; }
+.dash-termine-date { flex-shrink: 0; font-weight: 700; color: var(--akzent-tief, #0c5460); min-width: 64px; }
+.dash-termine-name { flex: 1; min-width: 0; color: var(--gut, #155724); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-termine-time { flex-shrink: 0; color: var(--akzent-tief, #0c5460); font-size: 0.74rem; opacity: 0.85; }
 @media (max-width: 767.98px) {
     .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -374,7 +374,7 @@ include 'portal_header.php';
     border-radius: 50%;
     background: white;
     border: none;
-    color: #333;
+    color: var(--tinte, #333);
     font-size: 1.2rem;
     cursor: pointer;
     display: flex;
@@ -444,8 +444,8 @@ include 'portal_header.php';
     height: 36px;
     border-radius: 50%;
     background: white;
-    border: 1px solid #dee2e6;
-    color: #333;
+    border: 1px solid var(--linie, #dee2e6);
+    color: var(--tinte, #333);
     font-size: 1.1rem;
     cursor: pointer;
     display: flex;
@@ -639,8 +639,8 @@ include 'portal_header.php';
 
 <!-- Offene Umfragen Banner -->
 <?php if ($offene_umfragen > 0): ?>
-<a href="mein_fragebogen.php" class="next-event-card d-block text-decoration-none" style="background: linear-gradient(135deg, #e8f4fd, #d1ecf9);">
-    <h5 style="color: #0c5460;"><i class="bi bi-clipboard2-check me-2"></i><?= $offene_umfragen ?> offene Umfrage<?= $offene_umfragen > 1 ? 'n' : '' ?> <i class="bi bi-arrow-right-short float-end"></i></h5>
+<a href="mein_fragebogen.php" class="next-event-card d-block text-decoration-none" style="background: linear-gradient(135deg, var(--akzent-hell, #e8f4fd), var(--akzent-hell, #d1ecf9));">
+    <h5 style="color: var(--akzent-tief, #0c5460);"><i class="bi bi-clipboard2-check me-2"></i><?= $offene_umfragen ?> offene Umfrage<?= $offene_umfragen > 1 ? 'n' : '' ?> <i class="bi bi-arrow-right-short float-end"></i></h5>
     <small class="text-muted"><?= $offene_umfragen > 1 ? 'warten auf deine Antworten' : 'wartet auf deine Antwort' ?></small>
 </a>
 <?php endif; ?>
@@ -656,7 +656,7 @@ include 'portal_header.php';
 <!-- Dashboard-Kacheln -->
 <div class="dashboard-grid">
     <a href="meine_jm.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: #28a745;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, var(--gut-hell, #e8f5e9), #c8e6c9); color: var(--gut, #28a745);">
             <i class="bi bi-bullseye"></i>
         </div>
         <div class="dash-card-title">JM</div>
@@ -672,7 +672,7 @@ include 'portal_header.php';
     </a>
 
     <a href="meine_kanti.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #fce4ec, #f8bbd0); color: #c62828;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, #fce4ec, #f8bbd0); color: var(--gefahr, #c62828);">
             <i class="bi bi-geo-alt"></i>
         </div>
         <div class="dash-card-title">Kantonalstich</div>
@@ -680,7 +680,7 @@ include 'portal_header.php';
     </a>
 
     <a href="termine.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1565c0;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, var(--akzent-hell, #e3f2fd), var(--akzent-hell, #bbdefb)); color: var(--akzent-tief, #1565c0);">
             <i class="bi bi-calendar3"></i>
         </div>
         <div class="dash-card-title">Termine</div>
@@ -689,7 +689,7 @@ include 'portal_header.php';
 
 
     <a href="mein_fragebogen.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e8f4fd, #cce7ff); color: #0c5460;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, var(--akzent-hell, #e8f4fd), #cce7ff); color: var(--akzent-tief, #0c5460);">
             <i class="bi bi-clipboard-check"></i>
         </div>
         <div class="dash-card-title">Umfragen</div>
@@ -704,7 +704,7 @@ include 'portal_header.php';
     </a>
 
     <a href="kalender_abo.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e8f5e9, #b2dfdb); color: #00796b;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, var(--gut-hell, #e8f5e9), #b2dfdb); color: #00796b;">
             <i class="bi bi-calendar-plus"></i>
         </div>
         <div class="dash-card-title">Kalender-Abo</div>
@@ -721,7 +721,7 @@ include 'portal_header.php';
 
     <?php if (isVorstand()): ?>
     <a href="einsatzplaene.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1565c0;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, var(--akzent-hell, #e3f2fd), var(--akzent-hell, #bbdefb)); color: var(--akzent-tief, #1565c0);">
             <i class="bi bi-calendar-check"></i>
         </div>
         <div class="dash-card-title">Einsatzpläne</div>
@@ -737,7 +737,7 @@ include 'portal_header.php';
     </a>
     <?php else: ?>
     <a href="einsatzplaene.php" class="dash-card">
-        <div class="dash-card-icon" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1565c0;">
+        <div class="dash-card-icon" style="background: linear-gradient(135deg, var(--akzent-hell, #e3f2fd), var(--akzent-hell, #bbdefb)); color: var(--akzent-tief, #1565c0);">
             <i class="bi bi-calendar-check"></i>
         </div>
         <div class="dash-card-title">Einsatzpläne</div>

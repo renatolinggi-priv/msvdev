@@ -1,0 +1,460 @@
+/* Grundstil des Mitgliederportals (Kopf, Navigation, Handymenü, Glocke, Weg zurück).
+   Bis 16.10.2026 als <style> in jedem Seitenkopf (portal/portal_header.php), jetzt als Datei, damit der
+   Browser sie zwischenspeichert. Gleiche Stelle in der Kaskade: nach css/portal.css, vor portal-fahne*.css.
+   Altbestand: die Fahne (css/portal-fahne*.css) überschreibt fast alles davon; kein Muster für neue Arbeit. */
+
+/* Design-Tokens (:root) + Karten/Header/Felder: siehe css/portal.css */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f6fa;
+    padding-top: var(--nav-height);
+    min-height: 100vh;       /* Fallback fuer aeltere Browser */
+    min-height: 100dvh;      /* iOS/Safari: sichtbare Hoehe ohne Browserleiste -> Footer nicht unter der Falz */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Portal Navbar */
+.portal-navbar {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    height: var(--nav-height);
+}
+
+.portal-navbar .navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.portal-navbar .navbar-brand i {
+    color: var(--primary-color);
+}
+
+.portal-navbar .nav-link {
+    font-weight: 500;
+    color: #495057;
+    padding: 0.3rem 0.55rem !important;
+    border-radius: 6px;
+    transition: all var(--transition-speed) ease;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    position: relative;
+}
+
+.portal-navbar .nav-link i {
+    font-size: 0.9rem;
+}
+
+.portal-navbar .nav-link:hover {
+    background: rgba(59, 89, 152, 0.08);
+    color: var(--primary-color);
+}
+
+.portal-navbar .nav-link.active {
+    background: rgba(59, 89, 152, 0.1);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.portal-navbar .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: var(--primary-color);
+    border-radius: 1px;
+}
+
+.portal-user-badge {
+    background: linear-gradient(135deg, var(--primary-color), #2d4373);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* ---- Benachrichtigungs-Glocke ---- */
+.portal-bell .portal-bell-btn {
+    color: #495057;
+    line-height: 1;
+    padding: 0.3rem 0.5rem !important;
+    text-decoration: none;
+}
+/* Icon-Groesse am <i> setzen -> sonst gewinnt .portal-navbar .nav-link i (0.9rem) */
+.portal-bell .portal-bell-btn i { font-size: 1.5rem; }
+.portal-bell .portal-bell-btn:hover { color: var(--primary-color); }
+.portal-bell .bn-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.65rem;
+    padding: 0.2em 0.42em;
+    min-width: 1.15em;
+}
+.bn-dropdown {
+    width: 340px;
+    max-width: calc(100vw - 1.5rem);
+    padding: 0;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.bn-dd-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid #f1f3f5;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #212529;
+}
+.bn-dd-head .bn-mark-all {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+.bn-dd-head .bn-mark-all:hover { text-decoration: underline; }
+.bn-dd-list { max-height: 60vh; overflow-y: auto; }
+.bn-item {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid #f5f6f8;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+.bn-item:hover { background: #f8f9fb; }
+.bn-item.unread { background: rgba(59, 89, 152, 0.06); }
+.bn-item.unread .bn-item-title { font-weight: 700; }
+.bn-item-icon { color: var(--primary-color); font-size: 1rem; flex-shrink: 0; margin-top: 0.1rem; }
+.bn-item-body { min-width: 0; flex: 1; }
+.bn-item-title { font-size: 0.85rem; color: #212529; }
+.bn-item-text { font-size: 0.78rem; color: #6c757d; word-break: break-word; }
+.bn-item-time { font-size: 0.7rem; color: #adb5bd; margin-top: 0.1rem; }
+.bn-dd-empty { padding: 1.1rem 0.85rem; text-align: center; font-size: 0.82rem; }
+.bn-dd-foot {
+    display: block;
+    text-align: center;
+    padding: 0.6rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    text-decoration: none;
+    border-top: 1px solid #f1f3f5;
+}
+.bn-dd-foot:hover { background: #f8f9fb; color: var(--primary-color); }
+
+/* Mobile: Dropdown mittig statt am rechten Rand (data-bs-display="static"
+   verhindert Popper-Positionierung -> CSS gewinnt). */
+@media (max-width: 575.98px) {
+    .portal-bell { position: static; }
+    .bn-dropdown.dropdown-menu {
+        position: fixed !important;
+        top: calc(var(--nav-height) + 6px) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 1.5rem);
+        max-width: 380px;
+    }
+}
+
+/* .portal-content, .portal-card(-body), .portal-page-header: siehe css/portal.css */
+
+/* Responsive (Content-/Header-Abstaende: siehe css/portal.css) */
+@media (max-width: 767.98px) {
+    .d-mobile-none {
+        display: none !important;
+    }
+}
+
+/* Back Link - Desktop: Textlink */
+.portal-back-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--secondary-color);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 1rem;
+    transition: color 0.2s;
+}
+.portal-back-link:hover {
+    color: var(--primary-color);
+}
+.portal-back-link .back-label { display: inline; }
+.portal-back-fab { display: none; }
+
+/* Back Link - Mobile: Floating Action Button */
+@media (max-width: 767.98px) {
+    .portal-back-link { display: none; }
+    .portal-back-fab {
+        display: flex;
+        position: fixed;
+        bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+        right: 1.25rem;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 12px rgba(59,89,152,0.4);
+        text-decoration: none;
+        z-index: 1040;
+        transition: all 0.2s;
+    }
+    .portal-back-fab:hover,
+    .portal-back-fab:active {
+        background: #2d4373;
+        color: white;
+        transform: scale(1.08);
+    }
+}
+
+/* === MOBILE OFF-CANVAS MENU === */
+@media (max-width: 991.98px) {
+    /* Hide default Bootstrap collapse on mobile */
+    .navbar-collapse {
+        display: none !important;
+    }
+
+    /* Hamburger Button - Touch-friendly */
+    .navbar-toggler {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 12px;
+        border: none;
+        font-size: 24px;
+    }
+    .navbar-toggler:focus {
+        box-shadow: none;
+    }
+
+    /* Off-Canvas Container */
+    .offcanvas-nav {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;       /* Fallback fuer aeltere Browser */
+        height: 100dvh;      /* iOS Safari: sichtbare Hoehe OHNE untere Adressleiste -> letzte Eintraege/Abmelden bleiben sichtbar */
+        background: white;
+        z-index: 9999;
+        transition: left 0.3s ease, visibility 0s linear 0.3s;
+        visibility: hidden;   /* geschlossen weder per Tab noch für Screenreader erreichbar */
+        overflow-y: auto;
+        box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+    }
+    .offcanvas-nav.show {
+        left: 0;
+        visibility: visible;
+        transition: left 0.3s ease, visibility 0s;
+    }
+
+    /* Overlay */
+    .offcanvas-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .offcanvas-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Off-Canvas Header */
+    .offcanvas-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.65rem 1rem;
+        border-bottom: 2px solid #e9ecef;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    .offcanvas-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 0;
+    }
+    .offcanvas-close {
+        min-width: 40px;
+        min-height: 40px;
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        color: #6c757d;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .offcanvas-close:active {
+        background: #e9ecef;
+        transform: scale(0.95);
+    }
+
+    /* Off-Canvas Body */
+    .offcanvas-body {
+        padding: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Mobile Menu Items */
+    .mobile-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .mobile-nav-item {
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .mobile-nav-link {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        color: #212529;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        min-height: 40px;
+        transition: all 0.2s;
+    }
+    .mobile-nav-link:active {
+        background: #f8f9fa;
+    }
+    .mobile-nav-link.active {
+        background: rgba(59, 89, 152, 0.1);
+        color: var(--primary-color);
+        font-weight: 600;
+        border-left: 4px solid var(--primary-color);
+        padding-left: 12px;
+    }
+    .mobile-nav-link i {
+        width: 20px;
+        margin-right: 10px;
+        font-size: 15px;
+        text-align: center;
+    }
+
+    /* User Section */
+    .mobile-user-section {
+        margin-top: auto;
+        border-top: 2px solid #dee2e6;
+        padding: 0.65rem;
+        /* iPhone: Inhalt ueber den Home-Indicator anheben (sonst kaum sichtbar) */
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        background: #f8f9fa;
+    }
+    .mobile-user-header {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+    .mobile-user-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary-color), #2d4373);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .mobile-user-info {
+        overflow: hidden;
+    }
+    .mobile-user-name {
+        font-weight: 600;
+        color: #212529;
+        font-size: 14px;
+    }
+    .mobile-user-role {
+        font-size: 12px;
+        color: #6c757d;
+    }
+}
+
+/* Desktop: Off-Canvas Elemente komplett ausblenden */
+@media (min-width: 992px) {
+    .offcanvas-nav,
+    .offcanvas-overlay {
+        display: none !important;
+    }
+
+    /* Desktop Dropdown Navigation — nur Nav-Dropdowns per Hover, User-Dropdown bleibt click */
+    .portal-navbar .navbar-nav.me-auto .nav-item.dropdown:hover > .dropdown-menu {
+        display: block;
+        margin-top: 0;
+    }
+    .portal-navbar .dropdown-menu {
+        border: 1px solid #e9ecef;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        padding: 0.35rem 0;
+        min-width: 210px;
+    }
+    .portal-navbar .dropdown-item {
+        padding: 0.45rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #495057;
+    }
+    .portal-navbar .dropdown-item:hover {
+        background: rgba(59, 89, 152, 0.08);
+        color: var(--primary-color);
+    }
+    .portal-navbar .dropdown-item.active {
+        background: rgba(59, 89, 152, 0.1);
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    .portal-navbar .dropdown-item i {
+        color: #6c757d;
+        width: 20px;
+        display: inline-block;
+    }
+    .portal-navbar .dropdown-item.active i,
+    .portal-navbar .dropdown-item:hover i {
+        color: var(--primary-color);
+    }
+    .portal-navbar .nav-link.dropdown-toggle::after {
+        font-size: 0.6em;
+        vertical-align: 0.15em;
+    }
+}

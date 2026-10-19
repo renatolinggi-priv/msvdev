@@ -147,7 +147,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
 /* Einheitliche Pills (Streicher + Status) */
 .badge-streicher {
     background: var(--warning-color);
-    color: #343a40;
+    color: var(--tinte, #343a40);
     font-size: 0.7rem;
     font-weight: 600;
     padding: 0.2rem 0.55rem;
@@ -207,7 +207,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
 .jm-punkte-input {
     width: 80px;
     padding: 0.25rem 0.5rem;
-    border: 1px solid #cbd5e0;
+    border: 1px solid var(--linie-stark, #cbd5e0);
     border-radius: var(--p-radius-sm);
     font-size: 0.95rem;
     font-weight: 600;
@@ -220,7 +220,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
     box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
 }
 .jm-punkte-input:disabled {
-    background: #f8f9fa;
+    background: var(--grund, #f8f9fa);
     color: var(--p-text-muted);
     cursor: not-allowed;
 }
@@ -244,10 +244,10 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
     font-size: 0.72rem;
     font-weight: 600;
 }
-.jm-status-leer       { background: #e9ecef; color: var(--p-text-muted); }
+.jm-status-leer       { background: var(--grund, #e9ecef); color: var(--p-text-muted); }
 .jm-status-entwurf    { background: #fff3cd; color: #856404; }
-.jm-status-freigegeben { background: #d4edda; color: #155724; }
-.jm-status-cup        { background: #cfe2ff; color: #084298; }
+.jm-status-freigegeben { background: var(--gut-hell, #d4edda); color: var(--gut, #155724); }
+.jm-status-cup        { background: var(--akzent-hell, #cfe2ff); color: #084298; }
 .jm-save-spinner i { animation: jm-spin 0.8s linear infinite; }
 .jm-save-ok { color: var(--success-color); font-size: 0.78rem; font-weight: 600; }
 .jm-save-err { flex-basis: 100%; color: var(--danger-color); font-size: 0.85rem; font-weight: 600; }

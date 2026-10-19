@@ -39,7 +39,7 @@ $csrf_token = ensureCsrfToken();
 <style>
 .wd-quick { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
 .wd-quick .btn { border-radius:2rem; }
-.termin-card { border:1px solid #e2e8f0; border-radius:1rem; padding:1.5rem; background:#fff; }
+.termin-card { border:1px solid var(--linie, #e2e8f0); border-radius:1rem; padding:1.5rem; background:#fff; }
 </style>
 
 <div class="container py-4" style="max-width:620px;">

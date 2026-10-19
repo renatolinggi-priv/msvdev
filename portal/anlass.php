@@ -26,18 +26,18 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 <style>
 .an-head { display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; flex-wrap:wrap; margin-bottom:0.85rem; }
 .an-title { margin:0; font-weight:700; font-size:1.15rem; line-height:1.2; }  /* h1: Browser-Abstand und -Grösse neutralisiert */
-.an-sub { font-size:0.82rem; color:#64748b; margin-top:0.2rem; }
+.an-sub { font-size:0.82rem; color:var(--tinte-2, #64748b); margin-top:0.2rem; }
 .an-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
-.an-desc { font-size:0.88rem; color:#475569; background:#f8fafc; border:1px solid #eef2f7; border-radius:0.6rem; padding:0.6rem 0.8rem; margin-bottom:1rem; }
+.an-desc { font-size:0.88rem; color:var(--tinte-2, #475569); background:var(--grund, #f8fafc); border:1px solid var(--linie, #eef2f7); border-radius:0.6rem; padding:0.6rem 0.8rem; margin-bottom:1rem; }
 .an-daygroup { margin-bottom:1.4rem; }
-.an-daytitle { font-size:0.8rem; font-weight:700; color:#3b5998; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:0.5rem; padding-bottom:0.3rem; border-bottom:2px solid #eef2f7; }
+.an-daytitle { font-size:0.8rem; font-weight:700; color:var(--akzent, #3b5998); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:0.5rem; padding-bottom:0.3rem; border-bottom:2px solid var(--linie, #eef2f7); }
 .an-photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(105px,1fr)); gap:0.45rem; }
 @media (max-width:575.98px){ .an-photos { grid-template-columns:repeat(3,1fr); gap:0.35rem; } }
-.an-photo { position:relative; aspect-ratio:1/1; border-radius:0.5rem; overflow:hidden; background:#eef2f7; cursor:pointer; }
+.an-photo { position:relative; aspect-ratio:1/1; border-radius:0.5rem; overflow:hidden; background:var(--grund, #eef2f7); cursor:pointer; }
 .an-photo img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
 .an-photo:hover img { transform:scale(1.04); }
 .an-photo .an-pending { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fff3cd; color:#8a6d3b; padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
-.an-photo .an-rejected { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:#fde2e2; color:#c0392b; padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
+.an-photo .an-rejected { position:absolute; top:4px; left:4px; font-size:0.6rem; font-weight:700; background:var(--gefahr-hell, #fde2e2); color:var(--gefahr, #c0392b); padding:0.1rem 0.4rem; border-radius:0.4rem; z-index:1; }
 .an-photo.is-rejected img { opacity:0.45; filter:grayscale(60%); }
 .an-photo .an-del, .an-photo .an-titel { position:absolute; top:4px; width:24px; height:24px; border:none; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; font-size:0.7rem; display:none; align-items:center; justify-content:center; z-index:2; }
 .an-photo .an-del { right:4px; }
@@ -50,8 +50,8 @@ $csrf = $_SESSION['csrf_token'] ?? '';
 /* Tastatur: Stift und Papierkorb erscheinen, sobald die Kachel den Tastaturfokus hat (sonst nicht erreichbar) */
 .an-photo:has(:focus-visible) .an-del, .an-photo:has(:focus-visible) .an-titel { display:flex; }
 .an-photo .an-cap { position:absolute; left:0; right:0; bottom:0; padding:0.2rem 0.35rem; font-size:0.62rem; line-height:1.25; color:#fff; background:linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; }
-.an-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; border:1px solid #e2e8f0; border-radius:0.85rem; background:#fff; }
-.an-uploadbar { display:none; align-items:center; gap:0.6rem; background:#eef6ff; border:1px solid #cfe2ff; border-radius:0.6rem; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.85rem; }
+.an-empty { text-align:center; color:var(--tinte-2, #94a3b8); padding:2.5rem 1rem; border:1px solid var(--linie, #e2e8f0); border-radius:0.85rem; background:#fff; }
+.an-uploadbar { display:none; align-items:center; gap:0.6rem; background:var(--akzent-hell, #eef6ff); border:1px solid var(--akzent-hell, #cfe2ff); border-radius:0.6rem; padding:0.5rem 0.8rem; margin-bottom:1rem; font-size:0.85rem; }
 /* Schwebender Upload-Button (FAB) */
 .an-upload-fab {
   position:fixed; right:1.5rem; bottom:1.5rem; z-index:1045;
@@ -61,7 +61,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
   display:flex; align-items:center; justify-content:center;
   transition:transform .15s, background .15s;
 }
-.an-upload-fab:hover, .an-upload-fab:focus { background:#2d4373; color:#fff; transform:scale(1.06); }
+.an-upload-fab:hover, .an-upload-fab:focus { background:var(--akzent-tief, #2d4373); color:#fff; transform:scale(1.06); }
 .an-upload-fab .spinner-border { width:1.4rem; height:1.4rem; }
 @media (max-width: 767.98px) {
   /* über dem Dashboard-Zurück-FAB stapeln (dieser sitzt unten rechts bei 1.25rem) */

@@ -38,11 +38,12 @@
   }
   function saveInterval(v) { try { localStorage.setItem(STORAGE_KEY, String(v)); } catch (e) {} }
 
-  // Bildgroesse nach Anzeige: auf Handys reicht die Medium-Version (1280 px), auf
-  // Beamer/Desktop/Tablet die volle (2560 px). Massstab = groesste Bildschirmkante in Geraetepixeln.
+  // Bildgroesse nach Anzeige: auf Handys reicht die Medium-Version (1280 px, ~280 KB), auf Tablet, Desktop
+  // und Beamer die volle (2560 px, ~1 MB). Massstab = groesste Bildschirmkante in CSS-Pixeln; bis 16.10.2026
+  // mal Pixeldichte gerechnet, damit lag jedes aktuelle Handy (390 x 844 x 3) ueber der Grenze und lud Full.
   function pickUrl(f) {
-    var px = Math.max(window.screen.width || 0, window.screen.height || 0) * (window.devicePixelRatio || 1);
-    return (px <= 1600 && f.medium_url) ? f.medium_url : f.full_url;
+    var css = Math.max(window.screen.width || 0, window.screen.height || 0);
+    return (css <= 1024 && f.medium_url) ? f.medium_url : f.full_url;
   }
 
   function fullscreenAvailable() {

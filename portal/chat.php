@@ -57,17 +57,18 @@ $csrf_token = ensureCsrfToken();
 
 <style>
 /* Seitentitel als h1, sieht aus wie das bisherige <strong> */
-.chat-list-head > h1 { margin:0; font-size:inherit; font-weight:700; line-height:inherit; color:inherit; }
+.chat-list-head > .chat-list-titel { margin:0; font-size:inherit; font-weight:700; line-height:inherit; color:inherit; }
 /* Tastatur: Fokus auf einer Chat-Zeile sichtbar, nicht vom Scrollbereich abgeschnitten */
 .chat-row:focus-visible { outline:2px solid var(--primary-color); outline-offset:-2px; }
 </style>
 
 <div class="container-fluid py-3 chat-page" style="max-width:1100px;">
+  <h1 class="visually-hidden">Jungschützenchat</h1><!-- am Handy ist die Liste bei offener Unterhaltung ausgeblendet -->
   <div class="chat-wrap" id="chatWrap">
     <!-- Linke Spalte: Unterhaltungen -->
     <div class="chat-list">
       <div class="chat-list-head">
-        <h1><i class="bi bi-chat-dots me-1" aria-hidden="true"></i>Jungschützenchat</h1>
+        <div class="chat-list-titel" aria-hidden="true"><i class="bi bi-chat-dots me-1"></i>Jungschützenchat</div>
         <?php if ($istLeiter): ?>
           <button type="button" class="btn btn-sm btn-outline-club" id="btnNewChat" data-tooltip="Jungschütze anschreiben" aria-label="Jungschütze anschreiben"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
         <?php endif; ?>

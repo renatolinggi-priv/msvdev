@@ -31,18 +31,18 @@ $pwa_dismissible = isset($pwa_dismissible) ? (bool) $pwa_dismissible : true;
     align-items:center;justify-content:center;background:var(--primary-color,#3b5998);
     color:#fff;font-size:1.2rem;}
 .pwa-install-body{flex:1;min-width:0;}
-.pwa-install-title{font-weight:700;font-size:.95rem;color:#1e293b;margin-bottom:.15rem;}
-.pwa-install-text{font-size:.83rem;color:#475569;line-height:1.5;}
-.pwa-install-text strong{color:#1e293b;}
+.pwa-install-title{font-weight:700;font-size:.95rem;color:var(--tinte, #1e293b);margin-bottom:.15rem;}
+.pwa-install-text{font-size:.83rem;color:var(--tinte-2, #475569);line-height:1.5;}
+.pwa-install-text strong{color:var(--tinte, #1e293b);}
 .pwa-install-actions{margin-top:.6rem;}
 .pwa-install-actions:empty{display:none;}
 .pwa-ios-share{display:inline-flex;align-items:center;justify-content:center;width:1.5em;
     height:1.5em;border-radius:5px;background:#0a84ff;color:#fff;vertical-align:-.35em;}
 .pwa-ios-share i{font-size:.85em;}
 .pwa-install-close{position:absolute;top:.4rem;right:.4rem;background:transparent;border:none;
-    color:#94a3b8;width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;
+    color:var(--tinte-2, #94a3b8);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;
     align-items:center;justify-content:center;font-size:.8rem;}
-.pwa-install-close:hover,.pwa-install-close:active{background:rgba(0,0,0,.06);color:#475569;}
+.pwa-install-close:hover,.pwa-install-close:active{background:rgba(0,0,0,.06);color:var(--tinte-2, #475569);}
 @media (max-width:420px){.pwa-install-icon{display:none;}}
 </style>
 

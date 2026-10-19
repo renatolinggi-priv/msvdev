@@ -87,7 +87,7 @@ include __DIR__ . '/inc_resultate_reiter.php';   // Reiter JM/Heim/Kanti/Wanderp
 <style>
 /* Summary-Strip + Passen-Liste kommen aus css/portal.css. Hier nur die Kranzlimite-Info. */
 .kranz-info {
-    background: #f8f9fa;
+    background: var(--grund, #f8f9fa);
     border-radius: var(--p-radius);
     padding: var(--p-2) var(--p-3);
     margin-bottom: var(--p-3);

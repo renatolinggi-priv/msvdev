@@ -23,16 +23,16 @@ $csrf_token = ensureCsrfToken();
 
 <style>
 .jsk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
-.jsk-tile { border:1px solid #e2e8f0; border-radius:1rem; padding:1.25rem; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.06); transition:box-shadow .2s; }
+.jsk-tile { border:1px solid var(--linie, #e2e8f0); border-radius:1rem; padding:1.25rem; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.06); transition:box-shadow .2s; }
 .jsk-tile:hover { box-shadow:0 6px 18px rgba(0,0,0,0.10); }
-.jsk-tile.vergeben { opacity:0.7; background:#f8fafc; }
+.jsk-tile.vergeben { opacity:0.7; background:var(--grund, #f8fafc); }
 .jsk-tile .name { font-weight:700; font-size:1.05rem; }
-.jsk-tile .datum { color:#2d4373; font-weight:600; }
-.jsk-tile .bem { font-size:.85rem; color:#64748b; margin-top:.4rem; }
-.jsk-tile .termin { font-size:.8rem; color:#3b5998; margin-top:.25rem; }
+.jsk-tile .datum { color:var(--akzent-tief, #2d4373); font-weight:600; }
+.jsk-tile .bem { font-size:.85rem; color:var(--tinte-2, #64748b); margin-top:.4rem; }
+.jsk-tile .termin { font-size:.8rem; color:var(--akzent, #3b5998); margin-top:.25rem; }
 .jsk-tile .same-day { font-size:.78rem; color:#b45309; margin-top:.4rem; }
-.jsk-empty { text-align:center; color:#94a3b8; padding:2.5rem 1rem; }
-.jsk-refresh { font-size:.75rem; color:#94a3b8; }
+.jsk-empty { text-align:center; color:var(--tinte-2, #94a3b8); padding:2.5rem 1rem; }
+.jsk-refresh { font-size:.75rem; color:var(--tinte-2, #94a3b8); }
 </style>
 
 <div class="container py-4" style="max-width:920px;">
