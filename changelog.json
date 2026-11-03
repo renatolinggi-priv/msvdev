@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.47",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "Jahresprogramm im Ranglisten-Layout",
+        "beschreibung": "Das Jahresprogramm (auch der öffentliche Download) sieht jetzt aus wie die übrigen PDFs: Logo links mit Titel und Untertitel, Tabelle ohne Gitter mit leichten Zebrastreifen, Fusszeile mit Stand und Seitenzahl. Es passt immer auf eine A4-Seite; bei vielen Anlässen wird die Schrift etwas kleiner. Tage und Monate stehen immer auf einer Zeile, über zwei Monate abgekürzt («Nov. / Dez.»). Anlässe ohne Datum zeigen keinen einzelnen Punkt mehr. Das Wasserzeichen «ENTWURF» bleibt. Inhalt und Reihenfolge sind unverändert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.46",
     "datum": "2026-11-03",
     "aenderungen": [

@@ -47,7 +47,8 @@ function extractDaysAndMonths($schiesstage)
         }
     }
 
-    $uniqueDays = implode('. / ', array_unique($days)) . '.';
+    // Ohne erkanntes Datum leer lassen (früher stand dann ein einzelner Punkt)
+    $uniqueDays = $days ? implode('. / ', array_unique($days)) . '.' : '';
     $uniqueMonths = implode(' / ', array_unique($months));
 
     return [
@@ -132,186 +133,87 @@ if (empty($jmdefinitions)) {
     exit;
 }
 
-// HTML-Template für das PDF
-ob_start();
-?>
-<!DOCTYPE html>
-<html lang="de">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Jahresprogramm <?php echo $currentYear; ?></title>
-    <style>
-        @page {
-            margin: 20px;
-        }
-
-        body {
-    font-family: Arial, sans-serif;
-    font-size: 10px; /* Schriftgrösse verkleinern */
-    margin: 10px;
+// HTML für das PDF: Ranglisten-Layout (Logo links, Titel, Fusszeile mit Stand) – muss auf EINE A4-Seite passen.
+// Zeilen kompakter als in den Ranglisten; je mehr Anlässe, desto kleiner (geprüft mit 2024–2026: 22/31/34 Zeilen).
+$anzahlZeilen = count($jmdefinitions);
+if ($anzahlZeilen > 38) {
+    [$jpSchrift, $jpPolster] = ['8pt', '0.4mm'];
+} elseif ($anzahlZeilen > 31) {
+    [$jpSchrift, $jpPolster] = ['8.5pt', '0.6mm'];
+} else {
+    [$jpSchrift, $jpPolster] = ['9pt', '0.9mm'];
 }
+$jpCss = '
+    .jp { font-size: ' . $jpSchrift . '; margin-bottom: 4mm; }
+    .jp th, .jp td { padding: ' . $jpPolster . ' 1.2mm; }
+    .jp th { vertical-align: bottom; }
+    .jp th.tage, .jp td.tage { white-space: nowrap; padding-right: 3mm; }
+    .jp th.monat, .jp td.monat { white-space: nowrap; padding-right: 3mm; }
+    .jp th.x, .jp td.x { width: 20mm; text-align: center; }
+    .jp td:last-child { text-align: center; }
+    .jp-text { font-size: 8.5pt; line-height: 1.35; margin: 0; }
+    .watermark { position: fixed; top: 38%; left: 8%; transform: rotate(-35deg); font-size: 90pt; font-weight: bold;
+                 color: rgba(200, 0, 0, 0.15); z-index: 1000; white-space: nowrap; }
+';
+$h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+$titel = 'Jahresprogramm ' . (int)$currentYear;
 
-        .header {
-            text-align: center;
-            margin-bottom: 16px;
-        }
+// Monate eines Anlasses auf eine Zeile: über mehrere Monate abgekürzt («Nov. / Dez.»), einzelne ausgeschrieben
+$monatKurz = ['Januar' => 'Jan.', 'Februar' => 'Feb.', 'April' => 'Apr.', 'August' => 'Aug.', 'September' => 'Sept.',
+              'Oktober' => 'Okt.', 'November' => 'Nov.', 'Dezember' => 'Dez.'];
+$monateText = static function (string $monate) use ($monatKurz): string {
+    if (strpos($monate, ' / ') === false) {
+        return $monate;
+    }
+    return implode(' / ', array_map(
+        static fn($m) => preg_replace_callback('/^(\p{L}+)/u', static fn($t) => $monatKurz[$t[1]] ?? $t[1], $m),
+        explode(' / ', $monate)
+    ));
+};
 
-        .header img {
-            width: 150px;
-        }
-
-        .header h2 {
-            margin: 10px 0;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 10px;
-    font-size: 10px; /* Tabelle kleiner */
+$html = pdf_rangliste_anfang($titel, 'Militärschützenverein Wilen · Jahresmeisterschaft und Gruppenschiessen', $jpCss);
+if ($isDraft) {
+    $html .= '<div class="watermark">ENTWURF</div>';
 }
-.table th,
-.table td {
-    border: 1px solid #e2e8f0;
-    padding: 5px; /* Weniger Platz zwischen Text */
-    text-align: left;
+$html .= '<div class="container"><table class="table rl-zebra jp"><thead><tr>'
+    . '<th class="tage">Datum</th><th class="monat"></th><th>Schiessanlass</th>'
+    . '<th class="x">Jahres-<br>meisterschaft</th><th class="x">Gruppen-<br>schiessen</th>'
+    . '</tr></thead><tbody>';
+
+foreach ($jmdefinitions as $jm) {
+    $dateData = extractDaysAndMonths($jm['Schiesstage']);
+    // Bezeichnung anpassen: "Endstich" -> "MSV Wilen Endschiessen"
+    $bezeichnung = trim($jm['Bezeichnung']) === 'Endstich' ? 'MSV Wilen Endschiessen' : $jm['Bezeichnung'];
+
+    // Spalte JM: Bonus (20 Punkte), X (zählt) oder leer (Info / nur erweitert)
+    $isStreicher = (int)($jm['Streicher'] ?? 0);
+    $isErweitert = (int)($jm['Erweitert'] ?? 0);
+    $isInfo      = (int)($jm['Info'] ?? 0);
+    if ((int)$jm['Maxpunkte'] === 20) {
+        $jmText = 'Bonus';
+    } elseif ($isInfo === 1) {
+        $jmText = '';
+    } elseif ($isStreicher === 1 || $isErweitert === 0) {
+        $jmText = 'X';
+    } else {
+        $jmText = '';
+    }
+
+    $html .= '<tr>'
+        . '<td class="tage">' . $h($dateData['days']) . '</td>'
+        . '<td class="monat">' . $h($monateText($dateData['months'])) . '</td>'
+        . '<td>' . $h($bezeichnung) . '</td>'
+        . '<td class="x">' . $jmText . '</td>'
+        . '<td class="x">' . ($jm['Erweitert'] ? 'X' : '') . '</td>'
+        . '</tr>';
 }
+$html .= '</tbody></table>';
 
-        .table th {
-            background-color: #eef2f7;
-            color: #2d3748;
-            border-bottom: 2px solid #cbd5e0;
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 9px;
-            padding: 10px 0;
-            border-top: 1px solid #cbd5e0;
-            position: fixed;
-            bottom: -10px;
-            left: 0;
-            right: 0;
-            height: 30px;
-        }
-
-        /* Wasserzeichen für Entwurf */
-        .watermark {
-            position: fixed;
-            top: 35%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 100px;
-            font-weight: bold;
-            color: rgba(200, 0, 0, 0.15);
-            z-index: 1000;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-
-        /* Zentrierung für die Spalten "JM A", "JM B" und "Gruppenschiessen" */
-        .table th:nth-child(4),
-        .table td:nth-child(4) {
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .table th:nth-child(5),
-        /* Gruppenschiessen */
-        .table td:nth-child(5) {
-            text-align: center;
-            /* Inhalt horizontal zentrieren */
-            vertical-align: middle;
-            /* Inhalt vertikal zentrieren */
-        }
-        @page {
-    margin: 10px 20px; /* Oben und Unten auf 10px reduzieren, Links und Rechts auf 20px */
+// Zusatztext (Bonus, Streicher …) – wichtig, darum normale Schrift statt grau
+if (!empty($zusatztext)) {
+    $html .= '<p class="jp-text">' . nl2br($h($zusatztext)) . '</p>';
 }
-    </style>
-</head>
-
-<body>
-    <?php if ($isDraft): ?>
-    <div class="watermark">ENTWURF</div>
-    <?php endif; ?>
-    <table class="table">
-        <thead>
-            <tr>
-                <th colspan="5" style="text-align: center;">
-                    <h2 style="text-align: center; font-size: 18px; font-weight: bold;">Jahresprogramm <?php echo $currentYear; ?></h2>
-                </th>
-
-            </tr>
-            <tr>
-                <th colspan="2">Datum</th>
-                <th>Schiessanlass</th>
-                <th style="text-align: center">Jahresmeisterschaft</th>
-                <th>Gruppen-<br>schiessen</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($jmdefinitions as $jm): ?>
-                <?php
-                // Verarbeitung der Tage und Monate
-                $dateData = extractDaysAndMonths($jm['Schiesstage']);
-                // Bezeichnung anpassen: "Endstich" -> "MSV Wilen Endschiessen"
-                $bezeichnung = $jm['Bezeichnung'];
-                if (trim($bezeichnung) === 'Endstich') {
-                    $bezeichnung = 'MSV Wilen Endschiessen';
-                }
-                ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($dateData['days']); ?></td>
-                    <td><?php echo htmlspecialchars($dateData['months']); ?></td>
-                    <td><?php echo htmlspecialchars($bezeichnung); ?></td>
-                    <td align="center">
-                        <?php
-                        $isStreicher = isset($jm['Streicher']) ? $jm['Streicher'] : 0;
-                        $isErweitert = isset($jm['Erweitert']) ? $jm['Erweitert'] : 0;
-                        $isInfo = isset($jm['Info']) ? $jm['Info'] : 0; // Sicherstellen, dass Info existiert
-
-                        // **DEBUG: Werte im PDF ausgeben**
-                        // echo "<span style='font-size:10px;'>S:$isStreicher E:$isErweitert I:$isInfo</span><br>";
-
-                        if ($jm['Maxpunkte'] == 20) {
-                            echo 'Bonus';
-                        } elseif ($isInfo == 1) {
-                            echo ''; // Falls Info = 1, KEIN X setzen
-                        } elseif ($isStreicher == 1) {
-                            echo 'X'; // Falls Streicher = 1, dann X setzen
-                        } elseif ($isErweitert == 0 && $isInfo == 0) {
-                            echo 'X'; // Falls Erweitert = 0 UND Info = 0 â†’ X setzen
-                        } else {
-                            echo ''; // Falls keine Bedingung erfüllt ist, bleibt das Feld leer
-                        }
-                        ?>
-                    </td>
-
-                    <td align="center">
-                        <?php echo $jm['Erweitert'] ? 'X' : ''; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <!-- Zusatztext für das PDF -->
-    <?php if (!empty($zusatztext)): ?>
-        <div class="notes">
-            <p><?php echo nl2br(htmlspecialchars($zusatztext)); ?></p>
-        </div>
-    <?php endif; ?>
-
-    <div class="footer">
-        <p>Erstellt am <?php echo date('d.m.Y'); ?></p>
-    </div>
-</body>
-
-</html>
-<?php
-$html = ob_get_clean();
+$html .= '</div></body></html>';
 
 // Dompdf initialisieren
 $options = new Options();
@@ -323,6 +225,7 @@ $dompdf->set_option('debugFont', true);
 $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
+pdf_seitenfuss($dompdf, $titel);
 
 // PDF-Ausgabe speichern. Schreibpfad ABSOLUT ueber __DIR__, damit das Ergebnis nicht vom
 // Working Directory des Aufrufers abhaengt (bei include aus einem anderen Verzeichnis
