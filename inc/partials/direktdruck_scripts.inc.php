@@ -15,4 +15,5 @@ $ddV = static fn(string $f): string => (string)(@filemtime($ddBase . $f) ?: '1')
 <script src="js/lib/sha-256.min.js"></script>
 <script src="js/lib/qz-tray.js"></script>
 <script src="js/print-manager.js?v=<?= $ddV('print-manager.js') ?>"></script>
+<script src="js/msv-druck-dokumente.js?v=<?= $ddV('msv-druck-dokumente.js') ?>"></script>
 <script src="js/msv-direktdruck.js?v=<?= $ddV('msv-direktdruck.js') ?>"></script>

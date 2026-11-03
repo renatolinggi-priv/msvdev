@@ -1,124 +1,99 @@
 <?php
-// drucksteuerung.php - Drucksteuerung (QZ Tray Druckprofile, Drucker, Protokoll)
+// drucksteuerung.php – Drucksteuerung: Verbindung zu QZ Tray, Drucker dieses Browsers, Druckprofile, Protokoll.
+// Seit 1.68.52 in der Reihenfolge der Einrichtung (Verbindung → Drucker → Profile), Drucker im Slide-Panel,
+// Dokumentkatalog gemeinsam mit dem Direktdruck (js/msv-druck-dokumente.js). Logik: js/app-drucksteuerung.js.
 
-$page_specific_css = '
-    /* Collapse-Chevron (.action-chevron kommt zentral aus msv-styles.css) */
-    [data-bs-toggle="collapse"].collapsed .action-chevron { transform: rotate(-90deg); }
+$page_specific_css = <<<'CSS'
+.dr-stapel { display: flex; flex-direction: column; gap: 14px; }
+.dr-kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dr-innen { padding: 14px var(--ui-pad); }
 
-    /* Container fuer Drucksteuerung */
-    .data-card { max-width: 1100px; }
-    .data-card .table-sm td, .data-card .table-sm th { padding: .25rem .5rem; vertical-align: middle; text-align: left; }
-    @media (max-width: 991.98px) { .data-card { max-width: 100%; } }
+/* Verbindung */
+.ui-status.fehler { color: var(--ui-fehler); } .ui-status.fehler .ui-punkt { background: var(--ui-fehler); }
+.ui-status.aus { color: var(--ui-text-2); } .ui-status.aus .ui-punkt { background: var(--ui-leer); }
+.dr-verbindung { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.dr-verbindung .ui-status { font-size: 0.9rem; }
+.dr-schritte { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.dr-hinweis { margin: 12px 0 0; font-size: 0.85rem; }
+.dr-hinweis p { margin: 0 0 6px; } .dr-hinweis p:last-child { margin-bottom: 0; }
+.dr-hinweis .btn { margin-top: 4px; }
 
-    /* QZ Status Bar */
-    .qz-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--ui-flaeche-2); border-bottom: 1px solid var(--ui-rand); border-radius: 8px 8px 0 0; }
-    .qz-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .qz-dot.connected { background: var(--ui-ok-fg); }
-    .qz-dot.disconnected { background: var(--ui-fehler); }
-    .qz-bar .qz-text { font-size: 0.85rem; font-weight: 500; }
-    .qz-bar .qz-actions { margin-left: auto; display: flex; gap: 6px; }
+/* Drucker */
+.dr-matrix-kopf.dr-drucker-zeile,
+.dr-drucker-zeile { grid-template-columns: minmax(0, 2fr) 120px minmax(0, 1fr) 76px; }
+.dr-drucker-zeile { display: grid; gap: 10px; align-items: center; padding: 9px var(--ui-pad); border-bottom: 1px solid var(--ui-linie-zart); }
+#druckerListe .dr-drucker-zeile:last-child { border-bottom: 0; }
+.dr-drucker-name { font-weight: 600; font-size: 0.85rem; overflow-wrap: anywhere; }
+.dr-drucker-system { display: block; font-size: 0.78rem; font-weight: 400; color: var(--ui-text-2); }
+.dr-drucker-zeile .dr-aktionen { display: flex; gap: 4px; justify-content: flex-end; }
 
-    /* Profil-Matrix Layout */
-    .profile-matrix-header,
-    .profile-row {
-        display: grid;
-        grid-template-columns: 1.8fr 2fr 1.3fr 70px 110px 120px 76px; /* Typ, Drucker, Format, Kopien, Duplex, Farbe, Test+Übertragen */
-        gap: 10px;
-        padding: 10px 20px;
-        align-items: center;
-        border-bottom: 1px solid var(--ui-linie);
-    }
-    .profile-matrix-header {
-        font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
-        letter-spacing: 0.04em; color: var(--ui-text-2); background: var(--ui-flaeche-2);
-        border-bottom: 1px solid var(--ui-rand); padding: 8px 20px;
-    }
-    .profile-row:hover { background: var(--ui-flaeche-2); }
-    .profile-row:last-child { border-bottom: none; }
+/* Profilliste */
+.dr-matrix-kopf,
+.dr-zeile {
+    display: grid;
+    grid-template-columns: minmax(170px, 1.7fr) minmax(150px, 1.6fr) 104px 64px minmax(150px, 1.3fr) 120px 70px;
+    gap: 10px; align-items: center; padding: 9px var(--ui-pad);
+    border-bottom: 1px solid var(--ui-linie-zart);
+}
+.dr-matrix-kopf {
+    padding-top: 7px; padding-bottom: 7px; background: var(--ui-flaeche-2); border-bottom-color: var(--ui-linie);
+    font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ui-text-2);
+}
+.dr-gruppe-knopf {
+    width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px var(--ui-pad);
+    border: 0; border-bottom: 1px solid var(--ui-linie); background: var(--ui-flaeche-2); text-align: left;
+    font: inherit; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ui-text-2);
+}
+.dr-gruppe-knopf:hover { background: var(--ui-hover); color: var(--ui-text); }
+.dr-gruppe-knopf .dr-chevron { transition: transform 0.15s ease-out; }
+.dr-gruppe-knopf[aria-expanded="false"] .dr-chevron { transform: rotate(-90deg); }
+.dr-gruppe-zahl { margin-left: auto; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.dr-zeile:hover { background: var(--ui-flaeche-2); }
+.dr-zeile.dr-geaendert { background: var(--ui-gewaehlt); }
+.dr-zeile.dr-kopiert { background: var(--ui-akzent-hell); transition: background 0.6s ease-out; }
+.dr-name { font-weight: 600; font-size: 0.85rem; }
+.dr-desc { display: block; margin-top: 1px; font-size: 0.78rem; color: var(--ui-text-2); }
+.dr-punkt { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--ui-akzent); vertical-align: middle; }
+.dr-warn { display: block; margin-top: 3px; font-size: 0.78rem; color: var(--ui-warn-fg); }
+.dr-format { font-size: 0.8rem; color: var(--ui-text-2); white-space: nowrap; }
+.dr-zeile .form-select-sm, .dr-zeile .form-control-sm { font-size: 0.8rem; }
+.dr-zeile .dr-aktionen { display: flex; gap: 4px; justify-content: flex-end; }
+.dr-leer { padding: 1.5rem var(--ui-pad); text-align: center; color: var(--ui-text-2); }
+.dr-leer > .bi { display: block; margin-bottom: 0.4rem; font-size: 1.6rem; color: var(--ui-text-3); }
+.dr-leer p { margin: 0 0 8px; }
+.dr-fuss {
+    position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    padding: 10px var(--ui-pad); background: var(--ui-flaeche); border-top: 1px solid var(--ui-linie);
+    border-radius: 0 0 var(--ui-rad-l) var(--ui-rad-l);
+}
+.dr-fuss-text { margin-right: auto; font-size: 0.85rem; color: var(--ui-text-2); }
 
-    /* Profil-Name */
-    .profile-name-label { font-weight: 600; font-size: 0.85rem; display: block; }
-    .profile-name-desc { font-size: 0.75rem; color: var(--ui-text-2); display: block; margin-top: 1px; }
+/* Protokoll */
+.dr-log { max-height: 280px; overflow-y: auto; }
+.dr-log-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px var(--ui-pad); border-bottom: 1px solid var(--ui-linie-zart); font-size: 0.8rem; }
+.dr-log-zeile:last-child { border-bottom: 0; }
+.dr-log-typ { font-weight: 600; white-space: nowrap; }
+.dr-log-datei, .dr-log-drucker { color: var(--ui-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.dr-log-zeit { margin-left: auto; color: var(--ui-text-2); white-space: nowrap; }
+.dr-log-fehler { flex-basis: 100%; padding-left: 14px; color: var(--ui-fehler); font-size: 0.78rem; }
 
-    /* Section Labels */
-    .profile-section-label {
-        font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--ui-text-2); padding: 10px 20px 5px; background: var(--ui-flaeche-2);
-        border-bottom: 1px solid var(--ui-rand); cursor: pointer; user-select: none;
-        display: flex; align-items: center; gap: 6px;
-    }
-    .profile-section-label:hover { background: var(--ui-rand); }
-    .profile-section-label .section-chevron { font-size: 0.72rem; transition: transform 0.2s ease; display: inline-block; }
-    .profile-section-label.collapsed .section-chevron { transform: rotate(-90deg); }
-    .profile-section-label .section-count { font-size: 0.72rem; color: var(--ui-text-2); font-weight: 400; margin-left: auto; }
+.dr-stapel, .dr-stapel > .ui-karte, .dr-zeile, .dr-zeile > * { min-width: 0; }
 
-    /* Selects innerhalb der Matrix */
-    .profile-select {
-        width: 100%; height: 32px; border: 1px solid var(--ui-feldrand); border-radius: 6px;
-        padding: 0 8px; font-size: 0.8rem; background: var(--ui-flaeche);
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath d=\'M3 5l3 3 3-3\' stroke=\'%235a6577\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E");
-        background-repeat: no-repeat; background-position: right 8px center;
-    }
-    .profile-select:focus { outline: none; border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
-
-    /* Kopien-Input */
-    .profile-copies-input {
-        width: 50px; height: 32px; border: 1px solid var(--ui-feldrand); border-radius: 6px;
-        padding: 0 6px; font-size: 0.85rem; text-align: center;
-    }
-    .profile-copies-input:focus { outline: none; border-color: var(--ui-akzent-dunkel); box-shadow: 0 0 0 1px var(--ui-akzent-dunkel); }
-
-    /* Format-Badge */
-    .profile-format-badge {
-        font-size: 0.75rem; padding: 3px 10px; border-radius: 6px;
-        background: var(--ui-linie-zart); color: var(--ui-text-2); font-weight: 600; white-space: nowrap;
-    }
-
-    /* Testdruck-Button */
-    .profile-test-btn {
-        width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-        border-radius: 6px; background: transparent; border: 1px solid var(--ui-feldrand);
-        color: var(--ui-text-2); cursor: pointer; font-size: 14px; transition: all 0.15s;
-    }
-    .profile-test-btn:hover { background: var(--ui-flaeche-2); color: var(--ui-text); }
-    .profile-test { display: flex; gap: 4px; }
-    .profile-copy-btn:hover { color: var(--ui-akzent); border-color: var(--ui-akzent); }
-    .profile-row-copied { background: var(--ui-akzent-hell) !important; transition: background 0.6s ease; }
-
-    /* Druckprotokoll */
-    .print-log-list { max-height: 240px; overflow-y: auto; }
-    .print-log-row {
-        display: flex; align-items: center; gap: 8px;
-        padding: 4px 16px; border-bottom: 1px solid var(--ui-linie); font-size: 0.78rem;
-    }
-    .print-log-row:last-child { border-bottom: none; }
-    .print-log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .print-log-dot.ok { background: var(--ui-ok-fg); }
-    .print-log-dot.err { background: var(--ui-fehler); }
-    .print-log-dot.warn { background: var(--ui-warn-punkt); }
-    .print-log-dot.sent { background: var(--ui-akzent); }
-    .print-log-type { font-weight: 600; white-space: nowrap; }
-    .print-log-file { color: var(--ui-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
-    .print-log-status { font-size: 0.72rem; white-space: nowrap; padding: 1px 6px; border-radius: 999px; background: var(--ui-linie-zart); color: var(--ui-text-2); }
-    .print-log-status.ok { background: var(--ui-ok-bg); color: var(--ui-ok-fg); }
-    .print-log-status.err { background: var(--ui-fehler-bg); color: var(--ui-fehler); }
-    .print-log-status.sent { background: var(--ui-akzent-hell); color: var(--ui-akzent-dunkel); }
-    .print-log-row.is-error { cursor: help; }
-    .print-log-printer { color: var(--ui-text-2); white-space: nowrap; }
-    .print-log-time { color: var(--ui-text-2); margin-left: auto; white-space: nowrap; font-size: 0.72rem; }
-    .print-log-empty { padding: 12px 16px; font-size: 0.8rem; color: var(--ui-text-2); text-align: center; }
-
-    /* Responsive */
-    @media (max-width: 767.98px) {
-        .profile-matrix-header { display: none; }
-        .profile-row { grid-template-columns: 1fr; gap: 6px; padding: 12px 16px; }
-        .profile-row > div { display: flex; align-items: center; gap: 8px; }
-        .profile-row > div::before { content: attr(data-label); font-size: 0.72rem; color: var(--ui-text-2); min-width: 80px; }
-        .profile-copies-input { width: 100%; }
-        .profile-test-btn { margin-left: auto; }
-    }
-';
+@media (max-width: 767.98px) {
+    .dr-matrix-kopf { display: none; }
+    .dr-zeile { grid-template-columns: 1fr; gap: 6px; padding: 12px; }
+    .dr-zeile > [data-label] { display: flex; align-items: center; gap: 8px; }
+    .dr-zeile > [data-label] > * { flex: 1 1 auto; min-width: 0; }
+    .dr-zeile > [data-label]::before { content: attr(data-label); flex: 0 0 84px; font-size: 0.72rem; color: var(--ui-text-2); }
+    .dr-zeile > [data-label="Dokument"]::before { display: none; }
+    .dr-zeile .dr-aktionen { justify-content: flex-start; }
+    .dr-drucker-zeile { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 12px; }
+    .dr-drucker-zeile > :nth-child(3) { display: none; }
+    .dr-drucker-zeile .dr-aktionen { grid-column: 2; grid-row: 1 / span 2; }
+    .dr-schritte { margin-left: 0; }
+    .dr-log-datei { display: none; }
+}
+CSS;
 
 include 'header.inc.php';
 require_once __DIR__ . '/csrf.inc.php';
@@ -134,150 +109,124 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
 <div class="container-fluid">
   <div class="row">
     <div class="col-12 ps-0">
-      <div class="main-content-wrapper">
+      <div class="main-content-wrapper content-width-default">
         <?php $page_title = 'Drucksteuerung'; $page_actions = '<button type="button" class="btn-help" data-help="drucksteuerung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
-        <div class="content-background">
 
-    <!-- Karte 1: Druckprofile (QZ-Bar + Matrix) -->
-    <div class="card data-card mb-3">
-        <!-- QZ Status -->
-        <div class="qz-bar">
-            <div id="qzDot" class="qz-dot disconnected"></div>
-            <span id="qzStatusText" class="qz-text">Nicht verbunden mit QZ Tray</span>
-            <span id="machineIdBadge" class="badge bg-secondary ms-2" style="font-size:.72rem; font-weight:normal; cursor:help" title=""></span> <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe"></button>
-            <div class="qz-actions">
-                <button id="btnConnect" class="btn btn-outline-primary btn-sm" onclick="Druck.connect()">
-                    <i class="bi bi-plug me-1"></i>Verbinden
-                </button>
-                <button id="btnDisconnect" class="btn btn-outline-secondary btn-sm" onclick="Druck.disconnect()" disabled>
-                    <i class="bi bi-x-circle me-1"></i>Trennen
-                </button>
+        <div class="dr-stapel">
+
+          <!-- Verbindung zu QZ Tray -->
+          <section class="ui-karte" aria-labelledby="drVerbindungTitel">
+            <div class="ui-tab-kopf">
+              <h2 class="ui-tab-titel mb-0" id="drVerbindungTitel">Verbindung <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe zur Verbindung"></button></h2>
+              <div class="dr-kopf-rechts">
+                <span class="ui-chip" id="drArbeitsplatz" tabindex="0" data-tooltip="Drucker und Profile gelten für diesen Browser."><i class="bi bi-laptop" aria-hidden="true"></i>Gilt für diesen Browser</span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnConnect" hidden><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Neu verbinden</button>
+              </div>
             </div>
-        </div>
-
-        <!-- Toolbar -->
-        <div class="card-header d-flex align-items-center">
-            <span class="fw-bold">Druckprofile <button type="button" class="btn-help" data-help="drucksteuerung.profile" aria-label="Hilfe"></button></span>
-            <span class="badge bg-primary ms-2" id="profileCount">0</span>
-            <button class="btn btn-outline-primary btn-sm ms-auto" onclick="Druck.saveAllProfiles()">
-                <i class="bi bi-save me-1"></i>Speichern
-            </button>
-        </div>
-
-        <!-- Profil-Matrix -->
-        <div class="profile-matrix" id="profileMatrix"></div>
-
-        <div class="card-footer text-muted" style="font-size:0.8rem">
-            <span id="profileFooter">0 Profile konfiguriert</span>
-        </div>
-    </div>
-
-    <!-- Karte 2: Drucker -->
-    <div class="card data-card mb-3">
-        <div class="card-header d-flex align-items-center" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#druckerBody">
-            <i class="bi bi-chevron-down action-chevron me-2"></i>
-            <span class="fw-bold">Drucker</span>
-            <button class="btn btn-outline-success btn-sm ms-auto" onclick="event.stopPropagation(); Druck.showAddPrinter()">
-                <i class="bi bi-plus-lg me-1"></i>Hinzufuegen
-            </button>
-        </div>
-        <div class="collapse" id="druckerBody">
-        <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0" style="table-layout:fixed">
-                <colgroup>
-                    <col>
-                    <col style="width:80px">
-                    <col style="width:70px">
-                    <col style="width:45px">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th>Anzeigename</th>
-                        <th>Typ</th>
-                        <th>Aktiv</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="printerTableBody">
-                    <tr><td colspan="4" class="text-center text-muted">Lade...</td></tr>
-                </tbody>
-            </table>
-        </div>
-        </div>
-    </div>
-
-    <!-- Karte 3: Druckprotokoll -->
-    <div class="card data-card mb-3">
-        <div class="card-header d-flex align-items-center" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#protokollBody">
-            <i class="bi bi-chevron-down action-chevron me-2"></i>
-            <span class="fw-bold">Druckprotokoll</span>
-            <button class="btn btn-outline-secondary btn-sm ms-auto" onclick="event.stopPropagation(); Druck.loadPrintLog()">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
-        </div>
-        <div class="collapse" id="protokollBody">
-            <div class="print-log-list" id="printLogBody">
-                <div class="print-log-empty">Lade...</div>
+            <div class="dr-innen">
+              <div class="dr-verbindung">
+                <span class="ui-status aus" id="qzStatus" role="status" aria-live="polite"><span class="ui-punkt" aria-hidden="true"></span><span id="qzStatusText">Verbinde mit QZ Tray …</span></span>
+                <div class="dr-schritte" id="drSchritte" aria-label="Stand der Einrichtung"></div>
+              </div>
+              <div class="alert alert-info dr-hinweis" id="qzHinweis" hidden></div>
+              <div class="alert alert-info dr-hinweis" id="drAndere" hidden></div>
             </div>
-        </div>
-    </div>
+          </section>
+
+          <!-- Drucker dieses Browsers -->
+          <section class="ui-karte" aria-labelledby="drDruckerTitel">
+            <div class="ui-tab-kopf">
+              <h2 class="ui-tab-titel mb-0" id="drDruckerTitel">Drucker <button type="button" class="btn-help" data-help="drucksteuerung.drucker" aria-label="Hilfe zu den Druckern"></button></h2>
+              <div class="dr-kopf-rechts">
+                <button type="button" class="btn btn-outline-success btn-sm" id="btnDruckerNeu"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Drucker übernehmen</button>
+              </div>
+            </div>
+            <div role="table" aria-labelledby="drDruckerTitel">
+              <div role="rowgroup"><div class="dr-matrix-kopf dr-drucker-zeile" role="row">
+                <span role="columnheader">Drucker</span><span role="columnheader">Status</span><span role="columnheader">Genutzt von</span><span role="columnheader"><span class="visually-hidden">Aktionen</span></span>
+              </div></div>
+              <div role="rowgroup" id="druckerListe"><div class="dr-leer">Drucker werden geladen …</div></div>
+            </div>
+          </section>
+
+          <!-- Druckprofile -->
+          <section class="ui-karte" aria-labelledby="drProfileTitel">
+            <div class="ui-tab-kopf">
+              <h2 class="ui-tab-titel mb-0" id="drProfileTitel">Druckprofile <button type="button" class="btn-help" data-help="drucksteuerung.profile" aria-label="Hilfe zu den Druckprofilen"></button></h2>
+              <div class="dr-kopf-rechts">
+                <span class="ui-chip msv-ungespeichert" id="drUngespeichert" hidden><span class="ui-punkt" aria-hidden="true"></span><span id="drUngespeichertText">Nicht gespeichert</span></span>
+              </div>
+            </div>
+            <div id="profileMatrix" role="table" aria-labelledby="drProfileTitel" aria-describedby="drProfilFussText"></div>
+            <div class="dr-fuss">
+              <span class="dr-fuss-text" id="drProfilFussText">Profile werden geladen …</span>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnVerwerfen" hidden>Änderungen verwerfen</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btnSpeichern"><i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>
+            </div>
+          </section>
+
+          <!-- Druckprotokoll -->
+          <section class="ui-karte" aria-labelledby="drLogTitel">
+            <div class="ui-tab-kopf">
+              <h2 class="ui-tab-titel mb-0" id="drLogTitel">Druckprotokoll</h2>
+              <div class="dr-kopf-rechts">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLogNeu" aria-label="Druckprotokoll aktualisieren" data-tooltip="Aktualisieren"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+              </div>
+            </div>
+            <div class="dr-log" id="printLogBody" aria-live="polite">
+              <div class="dr-leer">Protokoll wird geladen …</div>
+            </div>
+          </section>
+
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Drucker-Panel (Modal) -->
-<div class="modal fade" id="printerModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="printerModalTitle"><i class="bi bi-printer me-2"></i>Drucker hinzufuegen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="printerEditId">
-                <div class="mb-3">
-                    <label for="printerName" class="form-label">Systemname <span class="text-danger">*</span></label>
-                    <select id="printerName" class="form-select">
-                        <option value="">-- Drucker aus System waehlen --</option>
-                    </select>
-                    <div class="form-text">Drucker wird live von QZ Tray geladen</div>
-                </div>
-                <div class="mb-3">
-                    <label for="printerDisplayName" class="form-label">Anzeigename</label>
-                    <input type="text" id="printerDisplayName" class="form-control" placeholder="Optionaler Anzeigename">
-                </div>
-                <div class="mb-3">
-                    <label for="printerTyp" class="form-label">Typ</label>
-                    <select id="printerTyp" class="form-select">
-                        <option value="laser">Laser</option>
-                        <option value="tintenstrahl">Tintenstrahl</option>
-                        <option value="etiketten">Etiketten</option>
-                        <option value="bon">Bon</option>
-                        <option value="sonstige">Sonstige</option>
-                    </select>
-                </div>
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" id="printerAktiv" checked>
-                    <label class="form-check-label" for="printerAktiv">Aktiv</label>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-outline-primary btn-sm" onclick="Druck.savePrinter()"><i class="bi bi-save me-1"></i>Speichern</button>
-            </div>
-        </div>
-    </div>
-</div>
+<?php
+// Slide-Panel: Drucker übernehmen / bearbeiten
+ob_start(); ?>
+  <input type="hidden" id="druckerId">
+  <div class="mb-3" id="druckerWahlFeld">
+    <label for="druckerSystem" class="form-label">Drucker auf diesem Computer</label>
+    <select id="druckerSystem" class="form-select form-select-sm" aria-describedby="druckerSystemHinweis"></select>
+    <div class="form-text" id="druckerSystemHinweis">Die Liste kommt live von QZ Tray.</div>
+  </div>
+  <div class="mb-3" id="druckerNameFeld" hidden>
+    <span class="form-label d-block">Drucker auf diesem Computer</span>
+    <span id="druckerSystemText" class="fw-semibold"></span>
+  </div>
+  <div class="mb-3">
+    <label for="druckerAnzeige" class="form-label">Anzeigename</label>
+    <input type="text" id="druckerAnzeige" class="form-control form-control-sm" maxlength="255" aria-describedby="druckerAnzeigeHinweis">
+    <div class="form-text" id="druckerAnzeigeHinweis">So erscheint der Drucker in den Profilen, z.&nbsp;B. «Laser Büro». Leer = Name des Druckers.</div>
+  </div>
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" role="switch" id="druckerAktiv" checked>
+    <label class="form-check-label" for="druckerAktiv">Aktiv</label>
+    <div class="form-text mt-0">Ein inaktiver Drucker steht nicht mehr zur Wahl; Profile, die ihn nutzen, behalten ihn.</div>
+  </div>
+<?php
+$panel_id = 'druckerPanel';
+$panel_overlay_id = 'druckerOverlay';
+$panel_close_id = 'druckerClose';
+$panel_width = '420px';
+$panel_title = '<span id="druckerPanelTitel">Drucker übernehmen</span>';
+$panel_body = ob_get_clean();
+$panel_footer = '<div class="d-flex justify-content-end gap-2 w-100">'
+    . '<button type="button" class="btn btn-outline-secondary btn-sm" id="druckerAbbrechen">Abbrechen</button>'
+    . '<button type="button" class="btn btn-primary btn-sm" id="druckerSpeichern"><i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>'
+    . '</div>';
+include 'partials/side_panel.inc.php';
+?>
 
-<script>window._csrfToken = '<?= csrf_token() ?>';</script>
-
-<!-- QZ Tray Scripts -->
+<!-- QZ Tray -->
 <script src="js/lib/rsvp.min.js"></script>
 <script src="js/lib/sha-256.min.js"></script>
 <script src="js/lib/qz-tray.js"></script>
 <script src="js/print-manager.js?v=<?php echo @filemtime(__DIR__ . '/js/print-manager.js') ?: '1'; ?>"></script>
+<script src="js/msv-druck-dokumente.js?v=<?php echo @filemtime(__DIR__ . '/js/msv-druck-dokumente.js') ?: '1'; ?>"></script>
 <script src="js/app-drucksteuerung.js?v=<?php echo @filemtime(__DIR__ . '/js/app-drucksteuerung.js') ?: '1'; ?>"></script>
 
 <?php include 'footer.inc.php'; ?>

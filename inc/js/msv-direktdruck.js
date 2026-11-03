@@ -24,7 +24,8 @@
  * Verhalten: Beim Laden verbindet das Modul QZ Tray im Hintergrund und lädt alle Druckprofile des
  * Benutzers/Arbeitsplatzes (eine Anfrage). Ohne QZ-Verbindung sind die Drucker AUSGEBLENDET (CSS: .msv-druck
  * ohne .msv-druck-an) und die Kopf-Card zeigt einen Hinweis «Direktdruck nicht verbunden». Mit Verbindung,
- * aber ohne Profil für den doc_type bleibt der Drucker sichtbar und gesperrt; der Tooltip nennt den Grund.
+ * aber ohne Profil für den doc_type fragt der erste Klick einmal nach dem Drucker (einrichten(), seit 1.68.52):
+ * Drucker und Profil werden für diesen Browser angelegt, Format nach js/msv-druck-dokumente.js, dann wird gedruckt.
  * War QZ beim letzten Seitenaufruf verbunden, stehen die Drucker während des Verbindens schon da (gesperrt),
  * damit nichts springt. Nach dynamischem Rendern: MsvDruck.refresh().
  * Seiten mit eigener Druck-UI können MsvDruck.onChange = fn setzen (wird nach jedem refresh() aufgerufen).
@@ -100,8 +101,8 @@
     /** Profil für einen doc_type (oder null). */
     profil(docType) { return this.profile[docType] || null; },
 
-    /** Druckbereit für diesen doc_type? */
-    bereit(docType) { return !!(this.pm && this.verbunden && this.profil(docType)); },
+    /** Druckbereit für diesen doc_type? Mit Verbindung immer: ohne Profil fragt print() einmal nach dem Drucker. */
+    bereit(docType) { return !!(this.pm && this.verbunden); },
 
     /**
      * Sollen Drucker-Knöpfe überhaupt sichtbar sein? Ja mit QZ-Verbindung – und während des Verbindens,
@@ -116,7 +117,6 @@
     grund(docType, label) {
       if (!this.pm) return 'QZ Tray nicht verfügbar';
       if (!this.verbunden) return 'QZ Tray nicht verbunden';
-      if (!this.profil(docType)) return 'Kein Druckprofil «' + (label || docType) + '» (Drucksteuerung)';
       return '';
     },
 
@@ -133,7 +133,7 @@
     /** Kurzbeschreibung des Profils fürs Tooltip. */
     profilText(docType) {
       const p = this.profil(docType);
-      if (!p) return '';
+      if (!p) return 'Drucker beim ersten Druck wählen';
       const farbe = { color: ', Farbe', grayscale: ', Graustufen' }[String(p.color_mode || '').toLowerCase()] || '';
       return p.printer_name + (String(p.orientation).toLowerCase() === 'landscape' ? ', quer' : '')
         + (p.duplex ? ', beidseitig' : '') + farbe + (Number(p.copies) > 1 ? ', ' + p.copies + '×' : '');
@@ -227,6 +227,105 @@
       }
     },
 
+    // -------------------------------------------------------------- Drucker beim ersten Druck wählen
+    /**
+     * Für einen doc_type ohne Profil einmal nach dem Drucker fragen und Drucker + Profil für diesen Browser
+     * anlegen (printers_api / profiles_api, gleiche Arbeitsplatz-Kennung wie die Drucksteuerung).
+     * Vorschlag: der Drucker, den die meisten Profile schon nutzen, sonst der Standarddrucker des Systems.
+     * Format, Kopien und Farbe kommen aus js/msv-druck-dokumente.js. Rückgabe: Profil oder null (abgebrochen).
+     */
+    async einrichten(docType, label) {
+      if (!this.pm || !this.verbunden) return null;
+      if (this._einrichtung) return this._einrichtung; // Doppelklick: dieselbe Frage nicht zweimal
+      this._einrichtung = this._einrichtenAblauf(docType, label);
+      try { return await this._einrichtung; } finally { this._einrichtung = null; }
+    },
+
+    async _einrichtenAblauf(docType, label) {
+      const katalog = global.MsvDruckDokumente || null;
+      const def = katalog ? katalog.finde(docType) : null;
+      const name = (def && def.label) || label || docType;
+      if (typeof msvSwal === 'undefined') {
+        this._toast('Für «' + name + '» ist noch kein Drucker festgelegt (Einstellungen → Drucksteuerung).', 'warning');
+        return null;
+      }
+      let system = [];
+      try { system = await this.pm.listPrinters(); } catch (e) { system = []; }
+      if (!system || !system.length) {
+        this._toast('QZ Tray findet auf diesem Computer keinen Drucker. Bitte den Drucker in Windows einrichten und nochmals versuchen.', 'warning');
+        return null;
+      }
+      const zaehler = {};
+      Object.values(this.profile).forEach(p => { zaehler[p.printer_name] = (zaehler[p.printer_name] || 0) + 1; });
+      let vorschlag = Object.keys(zaehler).sort((a, b) => zaehler[b] - zaehler[a]).find(n => system.includes(n)) || '';
+      if (!vorschlag) { try { vorschlag = await qz.printers.getDefault(); } catch (e) { vorschlag = ''; } }
+      const esc = typeof msvEsc === 'function' ? msvEsc : (s => String(s));
+      const optionen = system.map(s => '<option value="' + esc(s) + '"' + (s === vorschlag ? ' selected' : '') + '>' + esc(s) + '</option>').join('');
+
+      const r = await msvSwal.fire({
+        title: 'Drucker wählen',
+        html: '<div class="text-start"><p class="mb-2">Für «' + esc(name) + '» ist auf diesem Computer noch kein Drucker festgelegt.</p>'
+          + '<label class="form-label small fw-semibold mb-1" for="msvDruckWahl">Drucker</label>'
+          + '<select id="msvDruckWahl" class="form-select form-select-sm">' + optionen + '</select>'
+          + '<p class="small text-muted mt-2 mb-0">Wird für diesen Browser gemerkt. Kopien, Farbe und beidseitig lassen sich unter Einstellungen → Drucksteuerung ändern.</p></div>',
+        showCancelButton: true,
+        confirmButtonText: 'Drucken',
+        customClass: Object.assign(typeof msvSwalButtons === 'function' ? msvSwalButtons('btn-primary') : {}, { popup: 'msv-swal' }),
+        preConfirm: () => (document.getElementById('msvDruckWahl') || {}).value || '',
+      });
+      if (!r.isConfirmed || !r.value) return null;
+      const wahl = r.value;
+
+      const csrf = (document.querySelector('[name="csrf_token"]') || {}).value || '';
+      const sende = async (url, body) => {
+        const res = await fetch(url, {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+          body: JSON.stringify(body),
+        });
+        let j = {};
+        try { j = await res.json(); } catch (e) { j = {}; }
+        if (!res.ok || !j.success) throw new Error(j.message || 'Speichern fehlgeschlagen');
+        return j;
+      };
+      const lies = async (url) => {
+        const res = await fetch(url, { credentials: 'same-origin' });
+        const j = await res.json();
+        if (!j || !j.success) throw new Error((j && j.message) || 'Laden fehlgeschlagen');
+        return j.data || [];
+      };
+
+      try {
+        // Drucker dieses Browsers: vorhandenen nehmen (ggf. wieder aktivieren), sonst anlegen
+        const drucker = await lies('drucksteuerung/printers_api.php');
+        let d = drucker.find(x => x.name === wahl);
+        let druckerId;
+        if (d) {
+          druckerId = Number(d.id);
+          if (Number(d.aktiv) !== 1) {
+            await sende('drucksteuerung/printers_api.php', { action: 'update', id: druckerId, anzeigename: d.anzeigename || d.name,
+              typ: d.typ || 'laser', beschreibung: d.beschreibung || '', ist_standard: d.ist_standard || 0, aktiv: 1 });
+          }
+        } else {
+          druckerId = Number((await sende('drucksteuerung/printers_api.php', { action: 'add', name: wahl, anzeigename: wahl })).id);
+        }
+        // Profil: ein vorhandenes ohne Drucker (Drucker gelöscht) weiterverwenden, sonst neu
+        const profile = await lies('drucksteuerung/profiles_api.php');
+        const alt = profile.find(x => x.doc_type === docType);
+        const neu = Object.assign(katalog ? katalog.profilVorgabe(docType) : { doc_type: docType, anzeigename: name }, { printer_id: druckerId });
+        if (alt) neu.id = alt.id;
+        await sende('drucksteuerung/profiles_api.php', { action: 'save_all', profiles: [neu], delete_ids: [] });
+      } catch (err) {
+        this._toast('Der Drucker konnte nicht gespeichert werden: ' + (err && err.message ? err.message : err), 'error');
+        return null;
+      }
+      await this._ladeProfile();
+      this.refresh();
+      const p = this.profil(docType);
+      if (!p) this._toast('Das Profil für «' + name + '» ist gespeichert, liess sich aber nicht laden. Bitte die Seite neu laden.', 'warning');
+      return p; // die Meldung «… an Drucker gesendet» kommt gleich danach aus print()
+    },
+
     // -------------------------------------------------------------- Drucken
     /**
      * PDF von url holen und über das Profil des docType drucken.
@@ -234,8 +333,11 @@
      * request: { method, body, headers } für POST-Endpunkte (z.B. CSRF-geschützte Exporte).
      */
     async print({ docType, url = null, blob = null, jobName, orientation = null, paper = null, duplex = null, linkPrefix = '', request = {} }) {
-      const p = this.profil(docType);
-      if (!p) throw new Error('Kein Druckprofil für ' + docType);
+      let p = this.profil(docType);
+      if (!p) {
+        p = await this.einrichten(docType);
+        if (!p) return false; // abgebrochen oder nicht möglich (Meldung kam schon)
+      }
       const copies = parseInt(p.copies, 10) || 1;
       const name = jobName || docType;
       try {

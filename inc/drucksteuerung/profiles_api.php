@@ -3,7 +3,7 @@
  * pages/drucksteuerung/profiles_api.php — Druckprofile verwalten
  *
  * GET:  Liste aller Profile (mit Druckernamen), optional gefiltert nach doc_type
- * POST: Profil erstellen/bearbeiten/loeschen/bulk-save
+ * POST: Profil erstellen/bearbeiten/löschen/bulk-save
  *       action = "add" | "update" | "delete" | "save_all"
  */
 header('Content-Type: application/json; charset=utf-8');
@@ -29,7 +29,7 @@ if (empty($_SESSION['csrf_token'])) {
 $db = getDB();
 $userId = (int) $_SESSION['user_id'];
 
-// Machine-ID: fuer Mehrplatz-Druckertrennung (UUID aus localStorage)
+// Machine-ID: für Mehrplatz-Druckertrennung (UUID aus localStorage)
 $machineId = $_SERVER['HTTP_X_MACHINE_ID'] ?? null;
 $machineWhere = $machineId ? 'pp.machine_id = ?' : 'pp.machine_id IS NULL';
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $db->beginTransaction();
             try {
-                // 1) Profile mit leerem Drucker loeschen
+                // 1) Profile mit leerem Drucker löschen
                 if (!empty($deleteIds)) {
                     $placeholders = implode(',', array_fill(0, count($deleteIds), '?'));
                     $delSql = "DELETE FROM print_profiles WHERE id IN ($placeholders) AND benutzer_id = ?";
@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $input['paper_size'] ?? 'A4',
                 $input['orientation'] ?? 'portrait',
                 $input['color_mode'] ?? 'blackwhite',
-                !empty($input['duplex']) ? 1 : 0,
+                in_array($input['duplex'] ?? '', ['', 'long-edge', 'short-edge'], true) ? ($input['duplex'] ?? '') : '', // Spalte ist Text, nicht 0/1
                 $optionen,
             ]);
             echo json_encode(['success' => true, 'message' => 'Profil erstellt', 'id' => (int)$db->lastInsertId()]);
@@ -186,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = intval($input['id'] ?? 0);
             if ($id <= 0) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Ungueltige ID']);
+                echo json_encode(['success' => false, 'message' => 'Ungültige ID']);
                 exit;
             }
             $optionenUpd = isset($input['optionen']) && $input['optionen'] !== '' ? trim($input['optionen']) : null;
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $input['paper_size'] ?? 'A4',
                 $input['orientation'] ?? 'portrait',
                 $input['color_mode'] ?? 'blackwhite',
-                !empty($input['duplex']) ? 1 : 0,
+                in_array($input['duplex'] ?? '', ['', 'long-edge', 'short-edge'], true) ? ($input['duplex'] ?? '') : '', // Spalte ist Text, nicht 0/1
                 $optionenUpd,
                 $id,
                 $userId,
@@ -211,12 +211,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = intval($input['id'] ?? 0);
             if ($id <= 0) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Ungueltige ID']);
+                echo json_encode(['success' => false, 'message' => 'Ungültige ID']);
                 exit;
             }
             $stmt = $db->prepare("DELETE FROM print_profiles WHERE id = ? AND benutzer_id = ?");
             $stmt->execute([$id, $userId]);
-            echo json_encode(['success' => true, 'message' => 'Profil geloescht']);
+            echo json_encode(['success' => true, 'message' => 'Profil gelöscht']);
             exit;
 
         default:

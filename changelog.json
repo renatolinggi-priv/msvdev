@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.52",
+    "datum": "2026-11-04",
+    "aenderungen": [
+      {
+        "titel": "Drucksteuerung neu aufgebaut, Drucker beim ersten Druck wählen",
+        "beschreibung": "Direktdruck geht jetzt auch ohne Vorbereitung: Hat ein Dokument noch keinen Drucker, fragt der erste Klick auf das Drucker-Symbol einmal nach dem Drucker, merkt sich die Wahl für diesen Browser und druckt gleich. Die Seite «Drucksteuerung» folgt der Reihenfolge der Einrichtung: Verbindung, Drucker, Druckprofile, Protokoll. Läuft QZ Tray nicht, erscheint kein Fehlerfenster mehr, sondern ein Hinweis mit dem nächsten Schritt (starten, herunterladen oder Dokument normal drucken). Ist auf diesem Browser noch nichts eingerichtet, lässt sich die Einrichtung eines anderen Arbeitsplatzes übernehmen. Profile gehen nicht mehr still verloren: ein inaktiver Drucker bleibt im Profil stehen, beim Löschen eines Druckers werden die betroffenen Profile genannt, Entfernen nur nach Rückfrage. Geänderte Zeilen sind markiert, «Speichern» und «Änderungen verwerfen» stehen unten fest, Verlassen mit ungespeicherten Änderungen warnt. Drucker übernehmen und bearbeiten im Seitenpanel, alle Gruppen beim ersten Besuch offen, alles per Tastatur bedienbar, Fehler im Protokoll direkt lesbar, Texte ohne Technikbegriffe (A4 hoch/quer, beidseitig lange/kurze Kante).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.51",
     "datum": "2026-11-03",
     "aenderungen": [

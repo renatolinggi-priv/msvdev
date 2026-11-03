@@ -1,698 +1,602 @@
 /**
- * app-drucksteuerung.js — Drucksteuerung-Modul (MSV)
+ * app-drucksteuerung.js — Seite «Drucksteuerung» (inc/drucksteuerung.php)
  *
- * Eigenstaendiges Modul (Druck-Objekt), nicht App-abhaengig.
- * Nutzt PrintManager, msvToast/msvError fuer Feedback.
+ * Reihenfolge der Einrichtung: Verbindung zu QZ Tray → Drucker dieses Browsers → Druckprofile pro Dokument.
+ * Dokumente und Formate kommen aus js/msv-druck-dokumente.js (dieselbe Quelle wie der Direktdruck auf den Seiten).
+ * Umbau 1.68.52 nach der Critique vom 03.11.2026:
+ *  - ohne QZ Tray kein Fehlerdialog, sondern ein Hinweis mit dem nächsten Schritt (auch: herunterladen und normal drucken)
+ *  - Profile gehen nie still verloren: inaktive Drucker bleiben in ihren Profilen, Entfernen nur nach Rückfrage
+ *  - ungespeicherte Zeilen sind markiert, «Speichern» ist der eine Hauptknopf, Verlassen warnt
+ *  - Gruppen und Knöpfe per Tastatur erreichbar, jedes Feld beschriftet
+ *  - Einrichtung eines anderen Arbeitsplatzes (anderer Browser, gelöschte Browserdaten) übernehmen
  */
+(function ($) {
+  'use strict';
 
-// Format-Auswahl fuer Ranglisten: die Wahl landet in print_profiles.orientation (+ optionen.format) und wird
-// vom Direktdruck und von den PDF-Buttons der Seiten als ?orientation= an den Generator weitergegeben
-// (inc/pdf/pdf_orientation.inc.php). Erster Eintrag = Vorgabe = bisheriges Format des Generators.
-const FORMAT_A4_HOCH = [
-    { value: 'A4P', label: 'A4 Portrait',  paper: 'A4', orient: 'portrait' },
-    { value: 'A4L', label: 'A4 Landscape', paper: 'A4', orient: 'landscape' }
-];
-const FORMAT_A4_QUER = [FORMAT_A4_HOCH[1], FORMAT_A4_HOCH[0]];
+  const KATALOG = window.MsvDruckDokumente;
+  const ZU_SCHLUESSEL = 'msv_druckprofile_zu'; // zugeklappte Gruppen (Standard: alle offen)
+  const PAPIER = { A3: [297, 420], A4: [210, 297], A5: [148, 210], LETTER: [216, 279] };
+  const esc = s => msvEsc(s == null ? '' : String(s));
+  const csrf = () => (document.querySelector('[name="csrf_token"]') || {}).value || '';
 
-const Druck = {
-
+  const Druck = {
     pm: null,
-    printers: [],
-    profiles: [],
-    systemPrinters: [],
+    verbunden: false,
+    drucker: [],       // Drucker dieses Browsers (printers)
+    profile: [],       // Profile dieses Browsers (print_profiles)
+    system: [],        // Drucker des Computers (live von QZ Tray)
+    geaendert: new Set(),
 
-    // ============================================================
-    //  PROFIL-DEFINITIONEN (wird spaeter pro Seite erweitert)
-    // ============================================================
-    _profileDefinitions: [
-        // doc_type = Schluessel in print_profiles; die Seiten nutzen ihn ueber js/msv-direktdruck.js
-        // (data-druck-doctype). Ausrichtung = Seitenformat des jeweiligen PDF-Generators (Dompdf setPaper).
-        {
-            section: 'Jahresmeisterschaft',
-            profiles: [
-                { doc_type: 'jm_standblatt',  label: 'JM Standblatt',    desc: 'Standblatt Heimmeisterschaft und Kantonalstich (A4 quer, 2 Seiten zum Falten, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
-                { doc_type: 'jmrang',         label: 'JM Rangliste',     desc: 'Rangliste nach Rang / nach Name (JM Rangliste)', format_select: FORMAT_A4_QUER, format_field: 'format', default_copies: 1 },
-                { doc_type: 'jmdurchschnitt', label: 'JM Durchschnitte', desc: 'PDF-Export der Durchschnitte pro Anlass', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
-                { doc_type: 'jmdefinition',   label: 'Jahresprogramm',   desc: 'Jahresprogramm-PDF (JM Definition)', format_fixed: 'A4 Portrait', default_copies: 1 }
-            ]
-        },
-        {
-            section: 'Endschiessen',
-            profiles: [
-                // PDF direkt mit Dompdf (seit 1.68.50) → QZ Tray; Duplex nach Profil
-                { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt',   desc: 'Standblatt aus «Endschiessen loesen» (A4 quer, 2 Seiten zum Falten, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
-                { doc_type: 'endschiessen_abrechnung', label: 'Endschiessen Abrechnung',   desc: 'Abrechnung aus «Endschiessen loesen»', format_fixed: 'A4 Landscape', default_copies: 1 },
-                { doc_type: 'endschrang',              label: 'Endschiessen Ranglisten',   desc: 'Alle Ranglisten der Seite «Endschiessen Rangliste» (Gesamt, Zwischen, Anmeldung, Stiche, Partner)', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
-                { doc_type: 'absendenbuch',            label: 'Absendenbuch (Broschuere)', desc: 'A5-Broschuere auf A4 quer, 2 Seiten pro Blatt, gefaltet. Duplex «Kurze Seite» (ohne Angabe wird sie automatisch gesetzt)', format_fixed: 'A4 Landscape', default_copies: 1 },
-                { doc_type: 'endsch_targetprint',      label: 'Endschiessen Zielscheiben', desc: 'Zielscheiben-PDF aus der CSV-Datei', format_fixed: 'A4 Portrait', default_copies: 1 },
-                { doc_type: 'munitionskauf',           label: 'Munitionskauf Liste',       desc: 'PDF der Munitionskaeufe (aktiver Zeitraum-Filter)', format_fixed: 'A4 Portrait', default_copies: 1 }
-            ]
-        },
-        {
-            section: 'Ranglisten',
-            profiles: [
-                { doc_type: 'kantirang',            label: 'Kantonalstich Rangliste',        desc: 'Rangliste Kantonalstich (auch von «Kantonal Abrechnung» genutzt)', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
-                { doc_type: 'heimrang',             label: 'Heimmeisterschaft Rangliste',    desc: 'Rangliste Heimmeisterschaft', format_select: FORMAT_A4_QUER, format_field: 'format', default_copies: 1 },
-                { doc_type: 'sektionrang',          label: 'Sektionsmeisterschaft Rangliste', desc: 'Runde 1, Runde 2 und Schnitt', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
-                { doc_type: 'sektionsrangierungen', label: 'Sektionsrangierungen',           desc: 'PDF-Export der Sektionsrangierungen', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
-                { doc_type: 'einzelrangierung',     label: 'Einzelrangierungen',             desc: 'PDF-Export der Einzelrangierungen', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
-                { doc_type: 'cuprang',              label: 'Vereinscup Rangliste',           desc: 'Rangliste Vereinscup', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 }
-            ]
-        },
-        {
-            section: 'Einsätze',
-            profiles: [
-                // Word-Einsatzliste (PhpWord) → PDF über den Konvertierungsdienst → QZ Tray; Ausrichtung kommt je Plan von der Seite
-                { doc_type: 'einsatzplan', label: 'Einsatzplan', desc: 'Einsatzliste aus der Einsatzplanung (Obligatorisch, Feldschiessen, Chilbi quer; Schlossturm hoch), PDF', format_fixed: 'A4 (Ausrichtung je Plan)', default_copies: 1 }
-            ]
-        },
-        {
-            section: 'Verein',
-            profiles: [
-                // Monatsblatt: A5-Broschüre auf A4 quer (seit 1.68.48); ohne Duplex im Profil setzt die Seite «Kurze Seite»
-                { doc_type: 'monatsblatt', label: 'Monatsblatt',  desc: 'A5-Broschuere auf A4 quer, 2 Seiten pro Blatt, gefaltet. Duplex «Kurze Seite» (ohne Angabe wird sie automatisch gesetzt)', format_fixed: 'A4 Landscape', default_copies: 1 },
-                { doc_type: 'fragebogen',  label: 'Fragebogen',   desc: 'Auswertung des Mitgliederfragebogens (A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 }
-            ]
-        }
-    ],
-
-    // ============================================================
-    //  INIT
-    // ============================================================
+    // =================================================================== Start
     init() {
-        this.pm = new PrintManager();
-        this.pm.onStatusChange = (connected) => this.updateStatusUI(connected);
+      this.pm = new PrintManager();
+      this.pm.onStatusChange = (c) => { this.verbunden = !!c; this.zeigeStatus(); this.renderMatrix(true); };
 
-        // Machine-ID Badge
-        const badge = document.getElementById('machineIdBadge');
-        if (badge && typeof getMachineId === 'function') {
-            const mid = getMachineId();
-            badge.textContent = 'Arbeitsplatz: ' + mid.substring(0, 8);
-            badge.title = 'Machine-ID: ' + mid;
-        } else if (badge) {
-            badge.style.display = 'none';
-        }
+      const chip = document.getElementById('drArbeitsplatz');
+      if (chip && typeof getMachineId === 'function') {
+        chip.dataset.tooltip = 'Drucker und Profile gelten für diesen Browser (Kennung ' + getMachineId().slice(0, 8)
+          + '). In einem anderen Browser oder nach dem Löschen der Browserdaten lässt sich die Einrichtung übernehmen.';
+      }
 
-        this.loadPrinters();
-        this.loadPrintLog();
-        this.connect();
+      $('#btnConnect').on('click', () => this.verbinde(true));
+      $('#btnDruckerNeu').on('click', () => this.oeffnePanel(null));
+      $('#btnSpeichern').on('click', () => this.speichern());
+      $('#btnVerwerfen').on('click', () => this.verwerfen());
+      $('#btnLogNeu').on('click', () => this.ladeLog());
+      $('#druckerSpeichern').on('click', () => this.speichereDrucker());
+      $('#druckerAbbrechen, #druckerClose, #druckerOverlay').on('click', () => this.schliessePanel());
+      $(document).on('keydown', (e) => { if (e.key === 'Escape' && $('#druckerPanel').hasClass('open')) this.schliessePanel(); });
+
+      const $m = $('#profileMatrix');
+      $m.on('click', '.dr-gruppe-knopf', (e) => this.klappe(e.currentTarget));
+      $m.on('click', '.dr-test', (e) => this.testdruck(e.currentTarget.dataset.doc));
+      $m.on('click', '.dr-uebertragen', (e) => this.uebertrage(e.currentTarget.dataset.doc, e.shiftKey));
+      $m.on('change input', '[data-feld]', (e) => this.markiere($(e.target).closest('.dr-zeile')[0]));
+      $('#druckerListe').on('click', '.dr-bearbeiten', (e) => this.oeffnePanel(Number(e.currentTarget.dataset.id)));
+      $('#druckerListe').on('click', '.dr-loeschen', (e) => this.loescheDrucker(Number(e.currentTarget.dataset.id)));
+      $(window).on('beforeunload', (e) => {
+        if (!this.geaendert.size) return undefined;
+        e.preventDefault();
+        return 'Die Druckprofile sind noch nicht gespeichert.';
+      });
+
+      this.zeigeStatus();
+      this.ladeAlles();
+      this.ladeLog();
+      this.verbinde(false);
     },
 
-    // ============================================================
-    //  HILFSFUNKTIONEN
-    // ============================================================
-    esc(str) {
-        if (str == null) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
+    // =================================================================== Verbindung
+    async verbinde(manuell) {
+      $('#btnConnect').prop('disabled', true);
+      $('#qzStatusText').text('Verbinde mit QZ Tray …');
+      $('#qzStatus').attr('class', 'ui-status aus');
+      try {
+        await this.pm.connect();
+        this.verbunden = true;
+        $('#qzHinweis').prop('hidden', true).empty();
+        try { this.system = await this.pm.listPrinters(); } catch (e) { this.system = []; }
+      } catch (err) {
+        this.verbunden = false;
+        console.warn('[Drucksteuerung] QZ Tray:', err);
+        this.zeigeHinweis(err && err.message ? err.message : String(err));
+        if (manuell) msvToast('Keine Verbindung zu QZ Tray', 'warning');
+      } finally {
+        $('#btnConnect').prop('disabled', false);
+        this.zeigeStatus();
+        this.renderMatrix(true);
+      }
     },
 
-    // ============================================================
-    //  QZ TRAY VERBINDUNG
-    // ============================================================
-    async connect() {
-        if (!this.pm) return;
-        try {
-            $('#btnConnect').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Verbinde...');
-            await this.pm.connect();
-            this.updateStatusUI(true);
-            await this.refreshSystemPrinters();
-        } catch (err) {
-            this.updateStatusUI(false);
-            const msg = err?.message || String(err);
-            console.error('[QZ Connect] Fehler:', err);
-            let hint = '';
-            if (msg.includes('Unable to connect') || msg.includes('WebSocket')) {
-                hint = '\n\nPruefe: Laeuft QZ Tray im System-Tray?';
-            } else if (msg.includes('sign') || msg.includes('Signierung') || msg.includes('certificate')) {
-                hint = '\n\nPruefe: Liegt der Private Key in qz_certs/private-key.pem (Ordner neben msvjm_config.php) und ist das QZ-Zertifikat installiert?';
-            }
-            msvError('QZ Tray Verbindung fehlgeschlagen: ' + msg + hint);
-        } finally {
-            this.updateConnectButtons();
-        }
+    zeigeStatus() {
+      const v = this.verbunden;
+      $('#qzStatus').attr('class', 'ui-status ' + (v ? 'ok' : 'fehler'));
+      $('#qzStatusText').text(v ? 'Mit QZ Tray verbunden' : 'Nicht mit QZ Tray verbunden');
+      $('#btnConnect').prop('hidden', v);
+      const aktiv = this.drucker.filter(d => Number(d.aktiv) === 1).length;
+      const mitDrucker = this.profile.filter(p => p.printer_id).length;
+      $('#drSchritte').html(
+        '<span class="ui-chip"><i class="bi bi-printer" aria-hidden="true"></i><b>' + aktiv + '</b> ' + (aktiv === 1 ? 'Drucker' : 'Drucker') + '</span>'
+        + '<span class="ui-chip"><i class="bi bi-list-check" aria-hidden="true"></i><b>' + mitDrucker + '</b> von ' + this.alleDokumente().length + ' Dokumenten eingerichtet</span>');
     },
 
-    async disconnect() {
-        if (!this.pm) return;
-        await this.pm.disconnect();
-        this.systemPrinters = [];
-        this.updateConnectButtons();
+    /** Hinweis mit dem nächsten Schritt statt der technischen Meldung (die steht in der Konsole). */
+    zeigeHinweis(meldung) {
+      const m = String(meldung || '').toLowerCase();
+      let html;
+      if (/sign|certificate|zertifikat|untrusted/.test(m)) {
+        html = '<p><strong>QZ Tray lehnt die Verbindung ab.</strong> Auf diesem Computer ist das Zertifikat der Vereinsverwaltung nicht eingerichtet; das richtet der Administrator ein.</p>'
+          + '<p>Bis dahin: Dokumente herunterladen und wie gewohnt drucken.</p>';
+      } else {
+        html = '<p><strong>QZ Tray läuft nicht auf diesem Computer.</strong> Für den Direktdruck muss das Programm QZ Tray gestartet sein (Symbol unten rechts in der Taskleiste). Ist es nicht installiert, gibt es es kostenlos bei qz.io.</p>'
+          + '<p>Ohne QZ Tray: Dokumente herunterladen und wie gewohnt drucken.</p>';
+      }
+      html += '<div class="d-flex flex-wrap gap-2">'
+        + '<button type="button" class="btn btn-outline-secondary btn-sm" id="btnHinweisVerbinden"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Neu verbinden</button>'
+        + '<a class="btn btn-outline-secondary btn-sm" href="https://qz.io/download/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>QZ Tray herunterladen</a>'
+        + '</div>';
+      $('#qzHinweis').html(html).prop('hidden', false);
+      $('#btnHinweisVerbinden').on('click', () => this.verbinde(true));
     },
 
-    updateStatusUI(connected) {
-        const $dot = $('#qzDot');
-        const $text = $('#qzStatusText');
-        if (connected) {
-            $dot.removeClass('disconnected').addClass('connected');
-            $text.text('Verbunden mit QZ Tray');
+    // =================================================================== Daten
+    alleDokumente() {
+      return KATALOG.gruppen.reduce((a, g) => a.concat(g.dokumente), []);
+    },
+
+    ladeAlles() {
+      return $.when(
+        $.getJSON('drucksteuerung/printers_api.php'),
+        $.getJSON('drucksteuerung/profiles_api.php')
+      ).done((d, p) => {
+        this.drucker = (d[0] && d[0].data) || [];
+        this.profile = (p[0] && p[0].data) || [];
+        this.geaendert.clear();
+        this.renderDrucker();
+        this.renderMatrix();
+        this.zeigeStatus();
+        this.pruefeAndere();
+      }).fail((xhr) => {
+        msvToast(msvXhrMessage(xhr, 'Drucker und Profile konnten nicht geladen werden. Bitte die Seite neu laden.'), 'error');
+        $('#druckerListe').html('<div class="dr-leer text-danger">Drucker konnten nicht geladen werden.</div>');
+      });
+    },
+
+    /** Hat dieser Browser nichts, aber ein anderer Arbeitsplatz desselben Benutzers? Dann Übernahme anbieten. */
+    pruefeAndere() {
+      const $box = $('#drAndere');
+      if (this.profile.some(p => p.printer_id)) { $box.prop('hidden', true).empty(); return; }
+      $.getJSON('drucksteuerung/printers_api.php', { andere: 1 }).done((r) => {
+        const liste = (r && r.data) || [];
+        if (!liste.length) { $box.prop('hidden', true).empty(); return; }
+        let html = '<p><strong>Auf diesem Browser ist noch nichts eingerichtet.</strong> Du hast den Direktdruck schon an einem anderen Arbeitsplatz eingerichtet; das lässt sich hierher übernehmen.</p><ul class="mb-2 ps-3">';
+        liste.forEach((a, i) => {
+          const zuletzt = a.zuletzt ? new Date(String(a.zuletzt).replace(' ', 'T')).toLocaleDateString('de-CH') : '';
+          html += '<li class="mb-1">' + esc(a.profile) + ' Profile, Drucker: ' + esc(a.drucker || '–') + (zuletzt ? ', eingerichtet am ' + esc(zuletzt) : '')
+            + ' <button type="button" class="btn btn-outline-success btn-sm ms-2 dr-uebernehmen" data-i="' + i + '"><i class="bi bi-download me-1" aria-hidden="true"></i>Übernehmen</button></li>';
+        });
+        html += '</ul><p class="small mb-0">Vorhandenes bleibt, wie es ist. Hat der andere Computer Drucker mit anderen Namen, danach unter «Drucker» prüfen.</p>';
+        $box.html(html).prop('hidden', false);
+        $box.find('.dr-uebernehmen').on('click', (e) => this.uebernehme(liste[Number(e.currentTarget.dataset.i)].machine_id, e.currentTarget));
+      });
+    },
+
+    uebernehme(von, knopf) {
+      $(knopf).prop('disabled', true);
+      this.sende('drucksteuerung/printers_api.php', { action: 'uebernehmen', von: von === null ? '' : von })
+        .then((r) => { msvToast(r.message || 'Einrichtung übernommen', 'success'); return this.ladeAlles(); })
+        .catch((err) => { msvToast(err.message, 'error'); $(knopf).prop('disabled', false); });
+    },
+
+    /** POST mit JSON; liefert die Antwort oder wirft Error mit der Servermeldung. */
+    sende(url, body) {
+      return new Promise((resolve, reject) => {
+        $.ajax({ url, method: 'POST', contentType: 'application/json', dataType: 'json',
+          headers: { 'X-CSRF-Token': csrf() }, data: JSON.stringify(body) })
+          .done((r) => (r && r.success ? resolve(r) : reject(new Error((r && r.message) || 'Speichern fehlgeschlagen'))))
+          .fail((xhr) => reject(new Error(msvXhrMessage(xhr, 'Keine Verbindung zum Server. Bitte nochmals versuchen.'))));
+      });
+    },
+
+    // =================================================================== Drucker
+    druckerName(d) { return d ? (d.anzeigename || d.name) : ''; },
+
+    renderDrucker() {
+      const $b = $('#druckerListe');
+      if (!this.drucker.length) {
+        $b.html('<div class="dr-leer" role="row"><span role="cell"><i class="bi bi-printer" aria-hidden="true"></i>'
+          + '<p><strong>Noch kein Drucker übernommen.</strong></p><p>Zuerst einen Drucker dieses Computers übernehmen; danach lassen sich die Profile einrichten.</p></span></div>');
+        return;
+      }
+      $b.html(this.drucker.map(d => {
+        const n = this.profile.filter(p => Number(p.printer_id) === Number(d.id)).length;
+        const name = this.druckerName(d);
+        return '<div class="dr-drucker-zeile" role="row">'
+          + '<div role="cell" class="dr-drucker-name">' + esc(name) + (d.anzeigename && d.anzeigename !== d.name ? '<span class="dr-drucker-system">' + esc(d.name) + '</span>' : '') + '</div>'
+          + '<div role="cell">' + (Number(d.aktiv) === 1 ? '<span class="ui-status ok"><span class="ui-punkt" aria-hidden="true"></span>Aktiv</span>' : '<span class="ui-status aus"><span class="ui-punkt" aria-hidden="true"></span>Inaktiv</span>') + '</div>'
+          + '<div role="cell">' + (n ? 'genutzt von ' + n + (n === 1 ? ' Profil' : ' Profilen') : '<span class="cell-empty">nicht genutzt</span>') + '</div>'
+          + '<div role="cell" class="dr-aktionen">'
+          + '<button type="button" class="btn btn-outline-primary btn-sm dr-bearbeiten" data-id="' + d.id + '" aria-label="' + esc(name) + ' bearbeiten" data-tooltip="Bearbeiten"><i class="bi bi-pencil" aria-hidden="true"></i></button>'
+          + '<button type="button" class="btn btn-outline-danger btn-sm dr-loeschen" data-id="' + d.id + '" aria-label="' + esc(name) + ' löschen" data-tooltip="Löschen"><i class="bi bi-trash" aria-hidden="true"></i></button>'
+          + '</div></div>';
+      }).join(''));
+    },
+
+    oeffnePanel(id) {
+      const d = id ? this.drucker.find(x => Number(x.id) === id) : null;
+      $('#druckerId').val(d ? d.id : '');
+      $('#druckerPanelTitel').text(d ? 'Drucker bearbeiten' : 'Drucker übernehmen');
+      $('#druckerWahlFeld').prop('hidden', !!d);
+      $('#druckerNameFeld').prop('hidden', !d);
+      $('#druckerSystemText').text(d ? d.name : '');
+      $('#druckerAnzeige').val(d ? (d.anzeigename && d.anzeigename !== d.name ? d.anzeigename : '') : '');
+      $('#druckerAktiv').prop('checked', d ? Number(d.aktiv) === 1 : true);
+      let speichernMoeglich = true;
+      if (!d) {
+        const $s = $('#druckerSystem').empty();
+        const frei = (this.system || []).filter(n => !this.drucker.some(x => x.name === n));
+        if (!this.verbunden) {
+          $s.append('<option value="">QZ Tray nicht verbunden</option>').prop('disabled', true);
+          $('#druckerSystemHinweis').text('Ohne Verbindung zu QZ Tray lassen sich keine Drucker übernehmen. Zuerst oben «Neu verbinden».');
+          speichernMoeglich = false;
+        } else if (!frei.length) {
+          $s.append('<option value="">Keine weiteren Drucker</option>').prop('disabled', true);
+          $('#druckerSystemHinweis').text('Alle Drucker dieses Computers sind schon übernommen.');
+          speichernMoeglich = false;
         } else {
-            $dot.removeClass('connected').addClass('disconnected');
-            $text.text('Nicht verbunden mit QZ Tray');
+          frei.forEach(n => $s.append('<option value="' + esc(n) + '">' + esc(n) + '</option>'));
+          $s.prop('disabled', false);
+          $('#druckerSystemHinweis').text('Die Liste kommt live von QZ Tray.');
         }
-        this.updateConnectButtons();
+      }
+      $('#druckerSpeichern').prop('disabled', !speichernMoeglich);
+      $('#druckerPanel').addClass('open');
+      $('#druckerOverlay').addClass('show');
+      setTimeout(() => $(d ? '#druckerAnzeige' : '#druckerSystem').trigger('focus'), 320);
     },
 
-    updateConnectButtons() {
-        if (!this.pm) return;
-        const connected = this.pm.connected;
-        $('#btnConnect').prop('disabled', connected).html('<i class="bi bi-plug me-1"></i>Verbinden');
-        $('#btnDisconnect').prop('disabled', !connected);
+    schliessePanel() {
+      $('#druckerPanel').removeClass('open');
+      $('#druckerOverlay').removeClass('show');
     },
 
-    // ============================================================
-    //  SYSTEMDRUCKER (live von QZ Tray)
-    // ============================================================
-    async refreshSystemPrinters() {
-        if (!this.pm || !this.pm.connected) return;
-        try {
-            this.systemPrinters = await this.pm.listPrinters();
-            console.log('[Drucker] Systemdrucker geladen:', this.systemPrinters);
-            this.populatePrinterSelects();
-        } catch (err) {
-            console.error('[Drucker] Systemdrucker-Fehler:', err);
+    speichereDrucker() {
+      const id = Number($('#druckerId').val()) || 0;
+      const d = id ? this.drucker.find(x => Number(x.id) === id) : null;
+      const anzeige = $('#druckerAnzeige').val().trim();
+      const aktiv = $('#druckerAktiv').is(':checked') ? 1 : 0;
+      let body;
+      if (d) {
+        body = { action: 'update', id, anzeigename: anzeige || d.name, typ: d.typ || 'laser', beschreibung: d.beschreibung || '', ist_standard: d.ist_standard || 0, aktiv };
+      } else {
+        const name = $('#druckerSystem').val();
+        if (!name) { msvToast('Bitte einen Drucker wählen.', 'warning'); return; }
+        body = { action: 'add', name, anzeigename: anzeige || name };
+      }
+      const $k = $('#druckerSpeichern').prop('disabled', true);
+      this.sende('drucksteuerung/printers_api.php', body)
+        .then(() => {
+          msvToast(d ? 'Drucker gespeichert' : 'Drucker übernommen', 'success');
+          this.schliessePanel();
+          // neue Druckerliste übernehmen, ungespeicherte Profiländerungen behalten
+          return $.getJSON('drucksteuerung/printers_api.php').done((r) => {
+            this.drucker = (r && r.data) || [];
+            this.renderDrucker();
+            this.renderMatrix(true);
+            this.zeigeStatus();
+          });
+        })
+        .catch((err) => msvToast(err.message, 'error'))
+        .finally(() => $k.prop('disabled', false));
+    },
+
+    async loescheDrucker(id) {
+      const d = this.drucker.find(x => Number(x.id) === id);
+      if (!d) return;
+      const nutzer = this.profile.filter(p => Number(p.printer_id) === id).map(p => (KATALOG.finde(p.doc_type) || {}).label || p.doc_type);
+      const html = 'Möchtest du <strong>' + esc(this.druckerName(d)) + '</strong> wirklich löschen?'
+        + (nutzer.length
+          ? '<p class="mt-2 mb-1 text-start">Diese Profile verlieren damit ihren Drucker:</p><ul class="text-start ps-3 mb-1">' + nutzer.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>'
+            + '<p class="text-start small mb-0">Sie bleiben in der Liste und brauchen danach einen anderen Drucker. Soll er nur nicht mehr zur Wahl stehen, stattdessen auf «Inaktiv» setzen.</p>'
+          : '');
+      const r = await msvConfirmDelete(this.druckerName(d), { html });
+      if (!r.isConfirmed) return;
+      this.sende('drucksteuerung/printers_api.php', { action: 'delete', id })
+        .then(() => { msvToast('Drucker gelöscht', 'success'); return this.ladeAlles(); })
+        .catch((err) => msvToast(err.message, 'error'));
+    },
+
+    // =================================================================== Profile
+    profilVon(docType) { return this.profile.find(p => p.doc_type === docType) || null; },
+
+    optionAus(profil, feld) {
+      if (!profil || !profil.optionen) return null;
+      try {
+        const o = typeof profil.optionen === 'string' ? JSON.parse(profil.optionen) : profil.optionen;
+        return (o && o[feld]) || null;
+      } catch (e) { return null; }
+    },
+
+    zugeklappt() {
+      try { return JSON.parse(localStorage.getItem(ZU_SCHLUESSEL) || '[]'); } catch (e) { return []; }
+    },
+
+    /** behalte=true: Eingaben der Zeilen übernehmen (z.B. nach neuem Drucker oder Verbindungswechsel). */
+    renderMatrix(behalte) {
+      const $m = $('#profileMatrix');
+      const vorher = {};
+      if (behalte) $m.find('.dr-zeile').each((_, z) => { vorher[z.dataset.doc] = this.werteAus(z); });
+      const zu = this.zugeklappt();
+      const aktiveDrucker = this.drucker.filter(d => Number(d.aktiv) === 1);
+      let html = '<div role="rowgroup"><div class="dr-matrix-kopf" role="row">'
+        + '<span role="columnheader">Dokument</span><span role="columnheader">Drucker</span><span role="columnheader">Format</span>'
+        + '<span role="columnheader">Kopien</span><span role="columnheader">Beidseitig</span><span role="columnheader">Farbe</span>'
+        + '<span role="columnheader"><span class="visually-hidden">Aktionen</span></span></div></div>';
+
+      if (!this.drucker.length) {
+        html += '<div class="dr-leer"><i class="bi bi-arrow-up-circle" aria-hidden="true"></i><p>Zuerst oben unter «Drucker» einen Drucker übernehmen.</p>'
+          + '<p class="small">Oder direkt auf einer Seite das Drucker-Symbol klicken: Beim ersten Druck wird nach dem Drucker gefragt.</p></div>';
+      }
+
+      KATALOG.gruppen.forEach((g, gi) => {
+        const offen = !zu.includes(g.gruppe);
+        const fertig = g.dokumente.filter(def => { const p = this.profilVon(def.doc_type); return p && p.printer_id; }).length;
+        const zid = 'drGruppe' + gi;
+        html += '<div role="rowgroup">'
+          + '<div role="row"><div role="cell"><button type="button" class="dr-gruppe-knopf" aria-expanded="' + offen + '" aria-controls="' + zid + '" data-gruppe="' + esc(g.gruppe) + '">'
+          + '<i class="bi bi-chevron-down dr-chevron" aria-hidden="true"></i><span>' + esc(g.gruppe) + '</span>'
+          + '<span class="dr-gruppe-zahl">' + fertig + ' von ' + g.dokumente.length + ' eingerichtet</span></button></div></div>'
+          + '<div id="' + zid + '"' + (offen ? '' : ' hidden') + '>';
+        g.dokumente.forEach(def => { html += this.zeile(def, aktiveDrucker, behalte ? vorher[def.doc_type] : null); });
+        html += '</div></div>';
+      });
+      $m.html(html);
+      if (behalte) $m.find('.dr-zeile').each((_, z) => this.markiere(z, true));
+      this.zeigeAenderungen();
+    },
+
+    zeile(def, aktiveDrucker, werte) {
+      const p = this.profilVon(def.doc_type);
+      const w = werte || {
+        printer_id: p && p.printer_id ? String(p.printer_id) : '',
+        format: def.formate ? (this.optionAus(p, 'format') || def.formate[0].value) : '',
+        copies: String(p ? (p.copies || 1) : 1),
+        duplex: p ? (String(p.duplex) === '1' ? 'long-edge' : String(p.duplex || '')) : '',
+        color_mode: (p && p.color_mode) || 'blackwhite',
+      };
+      const label = def.label;
+      // Drucker: aktive zur Wahl; ein inaktiver bleibt im eigenen Profil stehen (nie still verlieren)
+      let opts = '<option value="">Kein Drucker</option>';
+      const liste = aktiveDrucker.slice();
+      const eigener = p && p.printer_id ? this.drucker.find(d => Number(d.id) === Number(p.printer_id)) : null;
+      if (eigener && Number(eigener.aktiv) !== 1) liste.push(eigener);
+      liste.forEach(d => {
+        opts += '<option value="' + d.id + '"' + (String(d.id) === String(w.printer_id) ? ' selected' : '') + '>'
+          + esc(this.druckerName(d)) + (Number(d.aktiv) !== 1 ? ' (inaktiv)' : '') + '</option>';
+      });
+      let warn = '';
+      if (p && !p.printer_id) warn = '<span class="dr-warn">Der Drucker wurde gelöscht. Bitte einen anderen wählen.</span>';
+      else if (eigener && Number(eigener.aktiv) !== 1) warn = '<span class="dr-warn">Der Drucker ist inaktiv.</span>';
+
+      const format = def.formate
+        ? '<select class="form-select form-select-sm" data-feld="format" aria-label="Format für ' + esc(label) + '">'
+          + def.formate.map(f => '<option value="' + f.value + '"' + (f.value === w.format ? ' selected' : '') + '>' + esc(f.label) + '</option>').join('') + '</select>'
+        : '<span class="dr-format">' + esc(def.format.text) + '</span>';
+
+      const duplex = [['', def.broschuere ? 'Automatisch (kurze Kante)' : 'Einseitig'], ['long-edge', 'Beidseitig, lange Kante'], ['short-edge', 'Beidseitig, kurze Kante']]
+        .map(([v, t]) => '<option value="' + v + '"' + (v === w.duplex ? ' selected' : '') + '>' + t + '</option>').join('');
+      const farbe = [['blackwhite', 'Schwarzweiss'], ['grayscale', 'Graustufen'], ['color', 'Farbe']]
+        .map(([v, t]) => '<option value="' + v + '"' + (v === w.color_mode ? ' selected' : '') + '>' + t + '</option>').join('');
+
+      const testGrund = !this.verbunden ? 'Testdruck braucht die Verbindung zu QZ Tray' : (!w.printer_id ? 'Zuerst einen Drucker wählen' : '');
+      return '<div class="dr-zeile" role="row" data-doc="' + def.doc_type + '">'
+        + '<div role="cell" data-label="Dokument"><div><span class="dr-name">' + esc(label) + '</span><span class="dr-punkt" hidden aria-hidden="true"></span>'
+        + '<span class="visually-hidden dr-punkt-text" hidden>, nicht gespeichert</span><span class="dr-desc">' + esc(def.desc) + '</span>' + warn + '</div></div>'
+        + '<div role="cell" data-label="Drucker"><select class="form-select form-select-sm" data-feld="printer_id" aria-label="Drucker für ' + esc(label) + '">' + opts + '</select></div>'
+        + '<div role="cell" data-label="Format">' + format + '</div>'
+        + '<div role="cell" data-label="Kopien"><input type="number" class="form-control form-control-sm" data-feld="copies" min="1" max="9" value="' + esc(w.copies) + '" aria-label="Kopien für ' + esc(label) + '"></div>'
+        + '<div role="cell" data-label="Beidseitig"><select class="form-select form-select-sm" data-feld="duplex" aria-label="Beidseitig für ' + esc(label) + '">' + duplex + '</select></div>'
+        + '<div role="cell" data-label="Farbe"><select class="form-select form-select-sm" data-feld="color_mode" aria-label="Farbe für ' + esc(label) + '">' + farbe + '</select></div>'
+        + '<div role="cell" class="dr-aktionen">'
+        + '<button type="button" class="btn btn-outline-info btn-sm dr-test" data-doc="' + def.doc_type + '" aria-label="Testseite für ' + esc(label) + ' drucken" data-tooltip="' + esc(testGrund || 'Testdruck mit den Werten dieser Zeile') + '"' + (testGrund ? ' disabled' : '') + '><i class="bi bi-printer" aria-hidden="true"></i></button>'
+        + '<button type="button" class="btn btn-outline-secondary btn-sm dr-uebertragen" data-doc="' + def.doc_type + '" aria-label="Einstellungen von ' + esc(label) + ' übertragen" data-tooltip="Drucker, Kopien, Beidseitig und Farbe auf andere Dokumente übertragen"><i class="bi bi-arrow-bar-down" aria-hidden="true"></i></button>'
+        + '</div></div>';
+    },
+
+    werteAus(z) {
+      const $z = $(z);
+      const v = f => { const $f = $z.find('[data-feld="' + f + '"]'); return $f.length ? String($f.val() ?? '') : ''; };
+      return { printer_id: v('printer_id'), format: v('format'), copies: v('copies'), duplex: v('duplex'), color_mode: v('color_mode') };
+    },
+
+    gespeichert(docType) {
+      const def = KATALOG.finde(docType);
+      const p = this.profilVon(docType);
+      return {
+        printer_id: p && p.printer_id ? String(p.printer_id) : '',
+        format: def && def.formate ? (this.optionAus(p, 'format') || def.formate[0].value) : '',
+        copies: String(p ? (p.copies || 1) : 1),
+        duplex: p ? (String(p.duplex) === '1' ? 'long-edge' : String(p.duplex || '')) : '',
+        color_mode: (p && p.color_mode) || 'blackwhite',
+      };
+    },
+
+    /** Zeile mit dem gespeicherten Stand vergleichen und markieren; auch den Testknopf nachführen. */
+    markiere(z, still) {
+      if (!z) return;
+      const doc = z.dataset.doc;
+      const jetzt = this.werteAus(z);
+      const alt = this.gespeichert(doc);
+      const p = this.profilVon(doc);
+      // ohne Profil und ohne Drucker zählt nur die Druckerwahl als Änderung
+      const anders = p ? Object.keys(jetzt).some(k => jetzt[k] !== alt[k]) : !!jetzt.printer_id;
+      if (anders) this.geaendert.add(doc); else this.geaendert.delete(doc);
+      z.classList.toggle('dr-geaendert', anders);
+      $(z).find('.dr-punkt, .dr-punkt-text').prop('hidden', !anders);
+      const testGrund = !this.verbunden ? 'Testdruck braucht die Verbindung zu QZ Tray' : (!jetzt.printer_id ? 'Zuerst einen Drucker wählen' : '');
+      const t = z.querySelector('.dr-test');
+      if (t) { t.disabled = !!testGrund; t.dataset.tooltip = testGrund || 'Testdruck mit den Werten dieser Zeile'; }
+      if (!still) this.zeigeAenderungen();
+    },
+
+    zeigeAenderungen() {
+      const n = this.geaendert.size;
+      $('#drUngespeichert').prop('hidden', !n);
+      $('#drUngespeichertText').text(n === 1 ? '1 Zeile nicht gespeichert' : n + ' Zeilen nicht gespeichert');
+      $('#btnVerwerfen').prop('hidden', !n);
+      const fertig = this.profile.filter(p => p.printer_id).length;
+      $('#drProfilFussText').text(n
+        ? n + (n === 1 ? ' Änderung' : ' Änderungen') + ' noch nicht gespeichert.'
+        : fertig + ' von ' + this.alleDokumente().length + ' Dokumenten haben einen Drucker.');
+    },
+
+    klappe(knopf) {
+      const offen = knopf.getAttribute('aria-expanded') === 'true';
+      knopf.setAttribute('aria-expanded', String(!offen));
+      document.getElementById(knopf.getAttribute('aria-controls')).hidden = offen;
+      const zu = $('#profileMatrix .dr-gruppe-knopf[aria-expanded="false"]').map((_, b) => b.dataset.gruppe).get();
+      try { localStorage.setItem(ZU_SCHLUESSEL, JSON.stringify(zu)); } catch (e) { /* privat: egal */ }
+    },
+
+    verwerfen() {
+      this.geaendert.clear();
+      this.renderMatrix();
+      msvToast('Änderungen verworfen', 'info');
+    },
+
+    async speichern() {
+      const speichern = [];
+      const entfernen = [];
+      $('#profileMatrix .dr-zeile').each((_, z) => {
+        const doc = z.dataset.doc;
+        const w = this.werteAus(z);
+        const p = this.profilVon(doc);
+        if (!w.printer_id) {
+          if (p) entfernen.push({ id: p.id, label: (KATALOG.finde(doc) || {}).label || doc });
+          return;
         }
-    },
-
-    populatePrinterSelects() {
-        const $panel = $('#printerName');
-        const panelVal = $panel.val();
-        $panel.find('option:not(:first)').remove();
-        (this.systemPrinters || []).forEach(p => {
-            $panel.append(`<option value="${this.esc(p)}">${this.esc(p)}</option>`);
+        const vorgabe = KATALOG.profilVorgabe(doc);
+        const def = KATALOG.finde(doc);
+        const f = KATALOG.format(def, w.format);
+        const d = Object.assign(vorgabe, {
+          printer_id: Number(w.printer_id),
+          copies: Math.min(9, Math.max(1, parseInt(w.copies, 10) || 1)),
+          paper_size: f.paper || 'A4',
+          orientation: f.orient || 'portrait',
+          color_mode: w.color_mode || 'blackwhite',
+          duplex: w.duplex || '',
+          optionen: def && def.formate ? JSON.stringify({ format: f.value }) : '{}',
         });
-        if (panelVal) $panel.val(panelVal);
-    },
-
-    // ============================================================
-    //  PROFIL-MATRIX: Render
-    // ============================================================
-    _renderProfileMatrix() {
-        const $matrix = $('#profileMatrix');
-        let html = '';
-
-        if (this._profileDefinitions.length === 0) {
-            html = '<div class="text-center text-muted p-4">Keine Dokumenttypen definiert. Dokumenttypen werden hinzugefuegt, wenn Seiten Direktdruck bekommen.</div>';
-            $matrix.html(html);
-            $('#profileCount').text(0);
-            $('#profileFooter').text('0 Profile konfiguriert');
-            return;
-        }
-
-        // Header-Zeile
-        html += '<div class="profile-matrix-header">';
-        html += '<span>Dokumenttyp</span><span>Drucker</span>';
-        html += '<span>Format / Modus</span><span>Kopien</span><span>Duplex</span><span>Farbe</span><span>Test</span>';
-        html += '</div>';
-
-        let configuredCount = 0;
-        const expandedSections = this._getExpandedSections();
-
-        this._profileDefinitions.forEach((section, sIdx) => {
-            let sectionConfigured = 0;
-            section.profiles.forEach(def => {
-                const p = this._findProfile(def.doc_type);
-                if (p && p.printer_id) sectionConfigured++;
-            });
-
-            const sectionKey = 'section_' + sIdx;
-            const isCollapsed = !expandedSections.includes(sectionKey);
-
-            html += '<div class="profile-section-label' + (isCollapsed ? ' collapsed' : '') + '" data-section="' + sectionKey + '" onclick="Druck.toggleSection(this)">';
-            html += '<i class="bi bi-chevron-down section-chevron"></i>';
-            html += '<span>' + this.esc(section.section) + '</span>';
-            html += '<span class="section-count">' + sectionConfigured + '/' + section.profiles.length + '</span>';
-            html += '</div>';
-
-            section.profiles.forEach(def => {
-                const profile = this._findProfile(def.doc_type);
-                const printerId = profile ? profile.printer_id : '';
-                if (printerId) configuredCount++;
-
-                const printerOptions = this._buildPrinterOptions(printerId);
-
-                let formatHtml;
-                if (def.format_select) {
-                    const currentVal = this._getProfileOption(profile, def.format_field) || def.format_select[0].value;
-                    const opts = def.format_select.map(o =>
-                        '<option value="' + o.value + '" ' + (o.value === currentVal ? 'selected' : '') + '>' + this.esc(o.label) + '</option>'
-                    ).join('');
-                    formatHtml = '<select class="profile-select" data-field="' + def.format_field + '">' + opts + '</select>';
-                } else {
-                    formatHtml = '<span class="profile-format-badge">' + this.esc(def.format_fixed) + '</span>';
-                }
-
-                const copies = profile ? (profile.copies || def.default_copies) : def.default_copies;
-                const duplexVal = profile ? (profile.duplex || '') : '';
-
-                html += '<div class="profile-row" data-doc-type="' + def.doc_type + '" data-section="' + sectionKey + '"' + (isCollapsed ? ' style="display:none"' : '') + '>';
-                html += '<div class="profile-name" data-label="Typ"><span class="profile-name-label">' + this.esc(def.label) + '</span><span class="profile-name-desc">' + this.esc(def.desc) + '</span></div>';
-                html += '<div class="profile-printer" data-label="Drucker"><select class="profile-select" data-field="printer_id">' + printerOptions + '</select></div>';
-                html += '<div class="profile-format" data-label="Format">' + formatHtml + '</div>';
-                html += '<div class="profile-copies" data-label="Kopien"><input type="number" class="profile-copies-input" data-field="copies" value="' + copies + '" min="1" max="9"></div>';
-                html += '<div class="profile-duplex" data-label="Duplex"><select class="profile-select" data-field="duplex">';
-                html += '<option value=""' + (!duplexVal ? ' selected' : '') + '>Aus</option>';
-                html += '<option value="long-edge"' + (duplexVal === 'long-edge' || duplexVal === '1' || duplexVal === 1 ? ' selected' : '') + '>Lange Seite</option>';
-                html += '<option value="short-edge"' + (duplexVal === 'short-edge' ? ' selected' : '') + '>Kurze Seite</option>';
-                html += '</select></div>';
-                // Farbe: QZ colorType color | grayscale | blackwhite (print_profiles.color_mode, Default Schwarzweiss)
-                const colorVal = (profile && profile.color_mode) ? profile.color_mode : 'blackwhite';
-                html += '<div class="profile-color" data-label="Farbe"><select class="profile-select" data-field="color_mode">';
-                html += '<option value="blackwhite"' + (colorVal === 'blackwhite' ? ' selected' : '') + '>Schwarzweiss</option>';
-                html += '<option value="grayscale"' + (colorVal === 'grayscale' ? ' selected' : '') + '>Graustufen</option>';
-                html += '<option value="color"' + (colorVal === 'color' ? ' selected' : '') + '>Farbe</option>';
-                html += '</select></div>';
-                html += '<div class="profile-test" data-label="">'
-                    + '<button class="profile-test-btn" onclick="Druck.testProfile(\'' + def.doc_type + '\')" title="Testdruck"><i class="bi bi-printer"></i></button>'
-                    + '<button class="profile-test-btn profile-copy-btn" onclick="Druck.copyToSection(\'' + def.doc_type + '\', event)" title="Drucker, Duplex, Farbe und Kopien dieser Zeile auf alle Profile der Sektion übertragen (Shift+Klick: auf alle Sektionen). Danach speichern."><i class="bi bi-arrow-bar-down"></i></button>'
-                    + '</div>';
-                html += '</div>';
-            });
+        if (p) d.id = p.id;
+        speichern.push(d);
+      });
+      if (!speichern.length && !entfernen.length) { msvToast('Noch kein Dokument hat einen Drucker.', 'warning'); return; }
+      if (entfernen.length) {
+        const r = await msvConfirmDelete('Profile', {
+          title: 'Profile entfernen?',
+          confirmText: 'Entfernen und speichern',
+          html: '<div class="text-start"><p class="mb-2">Diese Profile werden entfernt, weil kein Drucker gewählt ist:</p><ul class="ps-3 mb-0">'
+            + entfernen.map(e => '<li>' + esc(e.label) + '</li>').join('') + '</ul></div>',
         });
-
-        $matrix.html(html);
-        $('#profileCount').text(configuredCount);
-        $('#profileFooter').text(configuredCount + ' Profile konfiguriert');
+        if (!r.isConfirmed) return;
+      }
+      const $k = $('#btnSpeichern').prop('disabled', true).attr('aria-busy', 'true');
+      try {
+        const r = await this.sende('drucksteuerung/profiles_api.php', { action: 'save_all', profiles: speichern, delete_ids: entfernen.map(e => e.id) });
+        const teile = [];
+        if (r.saved) teile.push(r.saved + ' gespeichert');
+        if (r.deleted) teile.push(r.deleted + ' entfernt');
+        msvToast('Druckprofile: ' + (teile.join(', ') || 'gespeichert'), 'success');
+        this.geaendert.clear();
+        await this.ladeAlles();
+      } catch (err) {
+        msvToast(err.message, 'error');
+      } finally {
+        $k.prop('disabled', false).removeAttr('aria-busy');
+      }
     },
 
-    // ============================================================
-    //  PROFIL-MATRIX: Save All
-    // ============================================================
-    saveAllProfiles() {
-        const profiles = [];
-        const toDelete = [];
-
-        $('#profileMatrix .profile-row').each((_, row) => {
-            const $row = $(row);
-            const docType = $row.data('doc-type');
-            const printerId = $row.find('[data-field="printer_id"]').val();
-            const existing = this._findProfile(docType);
-            const def = this._findDefinition(docType);
-
-            if (!printerId) {
-                if (existing) toDelete.push(existing.id);
-                return;
-            }
-
-            const data = {
-                doc_type: docType,
-                anzeigename: def.label,
-                printer_id: parseInt(printerId),
-                print_mode: 'pixel',
-                copies: parseInt($row.find('[data-field="copies"]').val()) || def.default_copies,
-                paper_size: 'A4',
-                orientation: 'portrait',
-                color_mode: $row.find('[data-field="color_mode"]').val() || 'blackwhite',
-                duplex: $row.find('[data-field="duplex"]').val() || '',
-                optionen: '{}',
-            };
-            if (existing) data.id = existing.id;
-
-            if (def.format_select) {
-                const formatVal = $row.find('[data-field="' + def.format_field + '"]').val();
-                const formatDef = def.format_select.find(o => o.value === formatVal);
-                if (formatDef) {
-                    data.paper_size = formatDef.paper || data.paper_size;
-                    if (formatDef.orient) data.orientation = formatDef.orient;
-                }
-                const optObj = {};
-                optObj[def.format_field] = formatVal;
-                data.optionen = JSON.stringify(optObj);
-            } else if (def.format_fixed) {
-                const parts = def.format_fixed.split(' ');
-                data.paper_size = parts[0] || 'A4';
-                data.orientation = (parts[1] || 'portrait').toLowerCase();
-            }
-
-            profiles.push(data);
+    /** Drucker, Kopien, Beidseitig und Farbe einer Zeile auf die Gruppe oder alle Dokumente übertragen. */
+    async uebertrage(docType, alleDirekt) {
+      const $q = $('#profileMatrix .dr-zeile[data-doc="' + docType + '"]');
+      const w = this.werteAus($q[0]);
+      if (!w.printer_id) { msvToast('Bitte zuerst in dieser Zeile einen Drucker wählen.', 'warning'); return; }
+      const label = (KATALOG.finde(docType) || {}).label || docType;
+      const gruppe = (KATALOG.gruppen.find(g => g.dokumente.some(d => d.doc_type === docType)) || {}).gruppe || '';
+      let alle = !!alleDirekt;
+      if (!alleDirekt) {
+        const r = await msvSwal.fire({
+          title: 'Einstellungen übertragen',
+          html: 'Drucker, Kopien, Beidseitig und Farbe von «' + esc(label) + '» übernehmen für …<p class="small text-muted mt-2 mb-0">Das Format bleibt je Dokument. Danach «Speichern».</p>',
+          showCancelButton: true, showDenyButton: true,
+          confirmButtonText: 'Gruppe «' + esc(gruppe) + '»', denyButtonText: 'Alle Dokumente',
+          customClass: Object.assign(msvSwalButtons('btn-primary'), { denyButton: 'btn btn-sm btn-outline-primary', popup: 'msv-swal msv-swal-drei' }),
         });
-
-        if (profiles.length === 0 && toDelete.length === 0) {
-            msvToast('Keine Profile mit zugewiesenem Drucker', 'warning');
-            return;
-        }
-
-        $.ajax({
-            url: 'drucksteuerung/profiles_api.php',
-            method: 'POST',
-            contentType: 'application/json',
-            headers: { 'X-CSRF-Token': window._csrfToken || '' },
-            data: JSON.stringify({
-                action: 'save_all',
-                profiles: profiles,
-                delete_ids: toDelete
-            }),
-            dataType: 'json',
-            success: (res) => {
-                if (res.success) {
-                    const msg = [];
-                    if (res.saved > 0) msg.push(res.saved + ' gespeichert');
-                    if (res.deleted > 0) msg.push(res.deleted + ' entfernt');
-                    msvToast('Profile: ' + msg.join(', '), 'success');
-                } else {
-                    msvError(res.message || 'Fehler beim Speichern');
-                }
-                this._reloadProfiles();
-            },
-            error: () => msvError('Serverfehler beim Speichern')
+        if (r.isDismissed) return;
+        alle = r.isDenied;
+      }
+      const $ziel = (alle ? $('#profileMatrix .dr-zeile') : $q.closest('[id^="drGruppe"]').find('.dr-zeile')).not($q);
+      $ziel.each((_, z) => {
+        ['printer_id', 'copies', 'duplex', 'color_mode'].forEach(f => {
+          const $f = $(z).find('[data-feld="' + f + '"]');
+          if ($f.length && $f.find('option[value="' + w[f] + '"]').length + ($f.is('input') ? 1 : 0)) $f.val(w[f]);
         });
+        z.classList.add('dr-kopiert');
+        this.markiere(z, true);
+      });
+      this.zeigeAenderungen();
+      setTimeout(() => $('#profileMatrix .dr-kopiert').removeClass('dr-kopiert'), 1200);
+      msvToast('Auf ' + $ziel.length + ' Dokumente übertragen. Jetzt «Speichern».', 'success');
     },
 
-    // ============================================================
-    //  TESTDRUCK
-    // ============================================================
-    async testProfile(docType) {
-        if (!this.pm || !this.pm.connected) {
-            msvError('Nicht verbunden mit QZ Tray');
-            return;
-        }
-        const $row = $('.profile-row[data-doc-type="' + docType + '"]');
-        const printerId = $row.find('[data-field="printer_id"]').val();
-        if (!printerId) {
-            msvError('Bitte zuerst einen Drucker waehlen');
-            return;
-        }
-        const printer = this.printers.find(p => p.id == printerId);
-        if (!printer) return;
-        const copies = parseInt($row.find('[data-field="copies"]').val()) || 1;
-        const def = this._findDefinition(docType);
-        const label = def?.label || docType;
-
-        // Druckoptionen aus der ZEILE (auch ungespeicherte Werte), damit der Test zeigt, was gespeichert wuerde
-        let paper = 'A4', orientation = 'portrait';
-        if (def?.format_select) {
-            const fv = $row.find('[data-field="' + def.format_field + '"]').val();
-            const fd = def.format_select.find(o => o.value === fv) || def.format_select[0];
-            paper = fd.paper || paper; orientation = fd.orient || orientation;
-        } else if (def?.format_fixed) {
-            const parts = def.format_fixed.split(' ');
-            paper = parts[0] || paper; orientation = (parts[1] || 'portrait').toLowerCase();
-        }
-        const duplex = $row.find('[data-field="duplex"]').val() || '';
-        const color  = $row.find('[data-field="color_mode"]').val() || 'blackwhite';
-        const PAPIER = { A3: [297, 420], A4: [210, 297], A5: [148, 210], LETTER: [216, 279] };
-        const size = PAPIER[paper.toUpperCase()] || PAPIER.A4;
-
-        // Testseite als PDF vom Server (gleicher Druckpfad wie echte Dokumente, kein HTML-Rendering in QZ)
-        const params = new URLSearchParams({ doc_type: docType, label, printer: printer.name, orientation, paper, copies, duplex, color });
-        try {
-            const r = await fetch('drucksteuerung/test_pdf.php?' + params, { credentials: 'same-origin' });
-            if (!r.ok) throw new Error('Testseite konnte nicht erzeugt werden (HTTP ' + r.status + ')');
-            const blob = await r.blob();
-            const base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result).split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-            await this.pm.printPixel(printer.name,
-                [{ type: 'pdf', format: 'base64', data: base64 }],
-                {
-                    // orientation:null wie im Direktdruck (js/msv-direktdruck.js): QZ erkennt die Ausrichtung aus dem PDF;
-                    // explizites 'landscape' fuehrte zu doppelt gedrehtem, verkleinertem Druck
-                    size: { width: size[0], height: size[1] }, units: 'mm', orientation: null,
-                    copies, duplex: duplex || false, colorType: color,
-                    margins: { top: 0, right: 0, bottom: 0, left: 0 }, rasterize: false,
-                    jobName: 'Testdruck ' + label
-                }
-            );
-            await this.pm.logJob(docType, printer.name, 'Testdruck ' + paper + ' ' + orientation, 'gesendet', copies);
-            msvToast('Testdruck "' + label + '" gesendet (' + paper + ' ' + (orientation === 'landscape' ? 'quer' : 'hoch') + ')', 'success');
-            this.loadPrintLog();
-        } catch (err) {
-            await this.pm.logJob(docType, printer.name, 'Testdruck', 'fehler', copies, err && err.message ? err.message : String(err));
-            msvError('Testdruck fehlgeschlagen: ' + (err.message || err));
-        }
-    },
-
-    // ============================================================
-    //  EINSTELLUNGEN AUF SEKTION UEBERTRAGEN
-    //  Drucker, Duplex, Farbe und Kopien der Quellzeile in alle Zeilen der Sektion (Shift: alle Sektionen)
-    //  kopieren. Das Format bleibt pro Zeile (Ausrichtung ist dokumentspezifisch). Speichern macht der Benutzer.
-    // ============================================================
-    copyToSection(docType, ev) {
-        if (ev && ev.stopPropagation) ev.stopPropagation();
-        const $src = $('.profile-row[data-doc-type="' + docType + '"]');
-        if (!$src.length) return;
-        const alle = !!(ev && ev.shiftKey);
-        const sectionKey = $src.data('section');
-        const werte = {
-            printer_id: $src.find('[data-field="printer_id"]').val(),
-            duplex:     $src.find('[data-field="duplex"]').val(),
-            color_mode: $src.find('[data-field="color_mode"]').val(),
-            copies:     $src.find('[data-field="copies"]').val(),
-        };
-        if (!werte.printer_id) {
-            msvToast('Bitte zuerst in dieser Zeile einen Drucker wählen', 'warning');
-            return;
-        }
-        const $ziel = (alle ? $('.profile-row') : $('.profile-row[data-section="' + sectionKey + '"]')).not($src);
-        let n = 0;
-        $ziel.each((_, row) => {
-            const $row = $(row);
-            Object.keys(werte).forEach(feld => {
-                const $f = $row.find('[data-field="' + feld + '"]');
-                if ($f.length && werte[feld] !== undefined && werte[feld] !== null) $f.val(werte[feld]);
-            });
-            $row.addClass('profile-row-copied');
-            n++;
+    async testdruck(docType) {
+      const $z = $('#profileMatrix .dr-zeile[data-doc="' + docType + '"]');
+      const w = this.werteAus($z[0]);
+      const d = this.drucker.find(x => String(x.id) === w.printer_id);
+      if (!this.verbunden || !d) return;
+      const def = KATALOG.finde(docType);
+      const label = (def && def.label) || docType;
+      const f = KATALOG.format(def, w.format);
+      const size = PAPIER[String(f.paper || 'A4').toUpperCase()] || PAPIER.A4;
+      const copies = Math.min(9, Math.max(1, parseInt(w.copies, 10) || 1));
+      const $k = $z.find('.dr-test').prop('disabled', true).attr('aria-busy', 'true');
+      const params = new URLSearchParams({ doc_type: docType, label, printer: d.name, orientation: f.orient, paper: f.paper, copies, duplex: w.duplex, color: w.color_mode });
+      try {
+        // Testseite als PDF vom Server: gleicher Druckpfad wie die echten Dokumente
+        const r = await fetch('drucksteuerung/test_pdf.php?' + params, { credentials: 'same-origin' });
+        if (!r.ok) throw new Error('Die Testseite konnte nicht erstellt werden.');
+        const blob = await r.blob();
+        const base64 = await new Promise((ok, fehler) => {
+          const rd = new FileReader();
+          rd.onload = () => ok(String(rd.result).split(',')[1]);
+          rd.onerror = fehler;
+          rd.readAsDataURL(blob);
         });
-        setTimeout(() => $('.profile-row-copied').removeClass('profile-row-copied'), 1500);
-        const def = this._findDefinition(docType);
-        msvToast('Einstellungen von «' + (def?.label || docType) + '» auf ' + n + (alle ? ' Profile aller Sektionen' : ' Profile der Sektion')
-            + ' übertragen – jetzt «Speichern» klicken', 'success');
-    },
-
-    // ============================================================
-    //  SEKTIONEN
-    // ============================================================
-    toggleSection(el) {
-        const $label = $(el);
-        const sectionKey = $label.data('section');
-        const isCollapsed = $label.hasClass('collapsed');
-
-        if (isCollapsed) {
-            $label.removeClass('collapsed');
-            $('.profile-row[data-section="' + sectionKey + '"]').slideDown(150);
-        } else {
-            $label.addClass('collapsed');
-            $('.profile-row[data-section="' + sectionKey + '"]').slideUp(150);
-        }
-        this._saveExpandedSections();
-    },
-
-    _getExpandedSections() {
-        try { return JSON.parse(localStorage.getItem('msv_druckprofile_expanded') || '[]'); }
-        catch (e) { return []; }
-    },
-
-    _saveExpandedSections() {
-        const expanded = [];
-        $('.profile-section-label:not(.collapsed)').each(function() {
-            expanded.push($(this).data('section'));
+        // orientation:null wie im Direktdruck: QZ erkennt die Ausrichtung aus dem PDF (explizit = doppelt gedreht)
+        await this.pm.printPixel(d.name, [{ type: 'pdf', format: 'base64', data: base64 }], {
+          size: { width: size[0], height: size[1] }, units: 'mm', orientation: null,
+          copies, duplex: w.duplex || (def && def.broschuere ? 'short-edge' : false), colorType: w.color_mode,
+          margins: { top: 0, right: 0, bottom: 0, left: 0 }, rasterize: false, jobName: 'Testdruck ' + label,
         });
-        localStorage.setItem('msv_druckprofile_expanded', JSON.stringify(expanded));
+        await this.pm.logJob(docType, d.name, 'Testdruck ' + f.text, 'gesendet', copies);
+        msvToast('Testseite «' + label + '» (' + f.text + ') an ' + this.druckerName(d) + ' gesendet', 'success');
+        this.ladeLog();
+      } catch (err) {
+        await this.pm.logJob(docType, d.name, 'Testdruck', 'fehler', copies, err && err.message ? err.message : String(err));
+        msvToast('Testdruck nicht gesendet. Ist der Drucker eingeschaltet und QZ Tray verbunden?', 'error');
+        this.ladeLog();
+      } finally {
+        $k.removeAttr('aria-busy');
+        this.markiere($z[0]);
+      }
     },
 
-    // ============================================================
-    //  HILFSMETHODEN
-    // ============================================================
-    _findProfile(docType) {
-        return (this.profiles || []).find(p => p.doc_type === docType) || null;
+    // =================================================================== Protokoll
+    ladeLog() {
+      msvGet('drucksteuerung/print_log_api.php?limit=20', (res) => {
+        const $b = $('#printLogBody');
+        const liste = (res && res.data) || [];
+        if (!liste.length) { $b.html('<div class="dr-leer"><p>Noch keine Druckaufträge.</p></div>'); return; }
+        $b.html(liste.map(j => {
+          const zeit = new Date(String(j.erstellt_am).replace(' ', 'T')).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          const fehler = j.status === 'fehler';
+          const def = KATALOG.finde(j.doc_type);
+          const status = fehler
+            ? '<span class="ui-status fehler"><span class="ui-punkt" aria-hidden="true"></span>Fehler</span>'
+            : '<span class="ui-status ok"><span class="ui-punkt" aria-hidden="true"></span>' + (j.status === 'erfolgreich' ? 'gedruckt' : 'an Drucker übergeben') + '</span>';
+          return '<div class="dr-log-zeile">'
+            + status
+            + '<span class="dr-log-typ">' + esc((def && def.label) || j.doc_type || '–') + '</span>'
+            + '<span class="dr-log-datei">' + esc(j.dateiname || '') + '</span>'
+            + '<span class="dr-log-drucker">' + esc(j.printer_name || '–') + (Number(j.copies) > 1 ? ' · ' + esc(j.copies) + '×' : '') + '</span>'
+            + '<span class="dr-log-zeit">' + esc(zeit) + '</span>'
+            + (fehler && j.fehler_text ? '<span class="dr-log-fehler">' + esc(j.fehler_text) + '</span>' : '')
+            + '</div>';
+        }).join(''));
+      }, { failMsg: 'Das Druckprotokoll konnte nicht geladen werden.' });
     },
+  };
 
-    _findDefinition(docType) {
-        for (const section of this._profileDefinitions) {
-            const def = section.profiles.find(p => p.doc_type === docType);
-            if (def) return def;
-        }
-        return null;
-    },
-
-    _getProfileOption(profile, field) {
-        if (!profile || !profile.optionen) return null;
-        try {
-            const opts = typeof profile.optionen === 'string' ? JSON.parse(profile.optionen) : profile.optionen;
-            return opts[field] || null;
-        } catch (e) { return null; }
-    },
-
-    _buildPrinterOptions(selectedId) {
-        let html = '<option value="">-- Drucker --</option>';
-        (this.printers || []).forEach(p => {
-            if (p.aktiv != 1) return;
-            const label = p.anzeigename || p.name;
-            html += '<option value="' + p.id + '" ' + (p.id == selectedId ? 'selected' : '') + '>' + this.esc(label) + '</option>';
-        });
-        return html;
-    },
-
-    // ============================================================
-    //  DRUCKER (aus DB)
-    // ============================================================
-    loadPrinters() {
-        $('#printerTableBody').html('<tr><td colspan="4" class="text-center text-muted">Lade...</td></tr>');
-        msvGet('drucksteuerung/printers_api.php', (res) => {
-            this.printers = res.data;
-            this.renderPrinterTable();
-            this._reloadProfiles();
-        }, {
-            failMsg: 'Drucker konnten nicht geladen werden',
-            fail: () => $('#printerTableBody').html('<tr><td colspan="4" class="text-center text-danger">Drucker konnten nicht geladen werden</td></tr>')
-        });
-    },
-
-    _reloadProfiles() {
-        msvGet('drucksteuerung/profiles_api.php', (res) => {
-            this.profiles = res.data;
-            this._renderProfileMatrix();
-        }, { failMsg: 'Druckprofile konnten nicht geladen werden' });
-    },
-
-    renderPrinterTable() {
-        const $body = $('#printerTableBody');
-        if (this.printers.length === 0) {
-            $body.html('<tr><td colspan="4" class="text-center text-muted">Keine Drucker konfiguriert</td></tr>');
-            return;
-        }
-        let html = '';
-        this.printers.forEach(p => {
-            const label = p.anzeigename || p.name;
-            html += '<tr style="cursor:pointer" onclick="Druck.editPrinter(' + p.id + ')">'
-                + '<td>' + this.esc(label) + '</td>'
-                + '<td><span class="badge bg-secondary">' + this.esc(p.typ) + '</span></td>'
-                + '<td>' + (p.aktiv == 1 ? '<span class="badge bg-success">Aktiv</span>' : '<span class="badge bg-secondary">Inaktiv</span>') + '</td>'
-                + '<td style="text-align:right"><button class="btn btn-outline-danger btn-sm" onclick="event.stopPropagation(); Druck.deletePrinter(' + p.id + ')" title="Loeschen"><i class="bi bi-trash"></i></button></td>'
-                + '</tr>';
-        });
-        $body.html(html);
-    },
-
-    showAddPrinter() {
-        $('#printerModalTitle').html('<i class="bi bi-printer me-2"></i>Drucker hinzufuegen');
-        $('#printerEditId').val('');
-        $('#printerName').val('');
-        $('#printerDisplayName').val('');
-        $('#printerTyp').val('laser');
-        $('#printerAktiv').prop('checked', true);
-        new bootstrap.Modal('#printerModal').show();
-    },
-
-    editPrinter(id) {
-        const p = this.printers.find(x => x.id == id);
-        if (!p) return;
-        $('#printerModalTitle').html('<i class="bi bi-printer me-2"></i>Drucker bearbeiten');
-        $('#printerEditId').val(p.id);
-        $('#printerName').val(p.name);
-        $('#printerDisplayName').val(p.anzeigename || '');
-        $('#printerTyp').val(p.typ);
-        $('#printerAktiv').prop('checked', p.aktiv == 1);
-        new bootstrap.Modal('#printerModal').show();
-    },
-
-    savePrinter() {
-        const id = $('#printerEditId').val();
-        const name = $('#printerName').val().trim();
-        if (!name) { msvError('Systemname ist erforderlich.'); return; }
-
-        const data = {
-            action: id ? 'update' : 'add',
-            name: name,
-            anzeigename: $('#printerDisplayName').val().trim(),
-            typ: $('#printerTyp').val(),
-            beschreibung: '',
-            ist_standard: 0,
-            aktiv: $('#printerAktiv').is(':checked') ? 1 : 0,
-        };
-        if (id) data.id = id;
-
-        $.ajax({
-            url: 'drucksteuerung/printers_api.php',
-            method: 'POST',
-            contentType: 'application/json',
-            headers: { 'X-CSRF-Token': window._csrfToken || '' },
-            data: JSON.stringify(data),
-            dataType: 'json',
-            success: (res) => {
-                if (res.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('printerModal'))?.hide();
-                    msvToast(id ? 'Drucker aktualisiert' : 'Drucker erstellt', 'success');
-                    this.loadPrinters();
-                } else {
-                    msvError(res.message || 'Fehler beim Speichern');
-                }
-            },
-            error: () => msvError('Serverfehler')
-        });
-    },
-
-    async deletePrinter(id) {
-        const result = await msvConfirmDelete('Drucker');
-        if (!result.isConfirmed) return;
-        $.ajax({
-            url: 'drucksteuerung/printers_api.php',
-            method: 'POST',
-            contentType: 'application/json',
-            headers: { 'X-CSRF-Token': window._csrfToken || '' },
-            data: JSON.stringify({ action: 'delete', id: id }),
-            dataType: 'json',
-            error: (xhr) => msvError(msvXhrMessage(xhr, 'Fehler beim Loeschen')),
-            success: (res) => {
-                if (res.success) {
-                    msvToast('Drucker geloescht', 'success');
-                    this.loadPrinters();
-                } else {
-                    msvError(res.message || 'Fehler beim Loeschen');
-                }
-            }
-        });
-    },
-
-    // ============================================================
-    //  DRUCKPROTOKOLL
-    // ============================================================
-    loadPrintLog() {
-        msvGet('drucksteuerung/print_log_api.php?limit=20', (res) => {
-            const $body = $('#printLogBody');
-            if (!res.data.length) {
-                $body.html('<div class="print-log-empty">Keine Eintraege</div>');
-                return;
-            }
-            // Status: gesendet = an den Spooler uebergeben (Normalfall, blau), erfolgreich = bestaetigt (gruen),
-            // fehler = rot mit Ursache im Tooltip. Dokumenttyp als Profil-Bezeichnung statt Schluessel.
-            const STATUS = {
-                gesendet:    { dot: 'sent', text: 'an Drucker übergeben' },
-                erfolgreich: { dot: 'ok',   text: 'gedruckt' },
-                fehler:      { dot: 'err',  text: 'Fehler' },
-            };
-            let html = '';
-            res.data.forEach(j => {
-                const zeit = new Date(j.erstellt_am).toLocaleString('de-CH', {
-                    day: '2-digit', month: '2-digit',
-                    hour: '2-digit', minute: '2-digit'
-                });
-                const st = STATUS[j.status] || { dot: 'warn', text: j.status || '?' };
-                const def = this._findDefinition(j.doc_type);
-                const kopien = Number(j.copies) > 1 ? ' · ' + j.copies + '×' : '';
-                const tip = (j.status === 'fehler' && j.fehler_text) ? ' title="' + this.esc(j.fehler_text) + '"' : '';
-                html += '<div class="print-log-row' + (j.status === 'fehler' ? ' is-error' : '') + '"' + tip + '>'
-                    + '<span class="print-log-dot ' + st.dot + '"></span>'
-                    + '<span class="print-log-type">' + this.esc(def?.label || j.doc_type || '-') + '</span>'
-                    + '<span class="print-log-file">' + this.esc(j.dateiname || '') + '</span>'
-                    + '<span class="print-log-printer">' + this.esc(j.printer_name || '-') + kopien + '</span>'
-                    + '<span class="print-log-status ' + st.dot + '">' + this.esc(st.text) + '</span>'
-                    + '<span class="print-log-time">' + zeit + '</span>'
-                    + '</div>';
-            });
-            $body.html(html);
-        });
-    }
-};
-
-// Auto-Init wenn DOM bereit
-$(function() {
-    if (document.getElementById('profileMatrix')) {
-        Druck.init();
-    }
-});
+  window.Druck = Druck;
+  $(function () { if (document.getElementById('profileMatrix') && KATALOG) Druck.init(); });
+})(jQuery);
