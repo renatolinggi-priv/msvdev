@@ -2,18 +2,10 @@
 /**
  * inc/jmstandblatt/standblatt_common.inc.php
  *
- * Gemeinsame Bausteine der drei Standblatt-Generatoren (DOCX, PDF, Sammel-PDF).
- * Vorher lagen Barcode-Berechnung, Barcode-Bild und Vorlagen-Befuellung dreimal
- * wortgleich in den Generatoren (Review 09.2026).
+ * Gemeinsame Bausteine der Standblatt-Generatoren (PDF, Sammel-PDF): Mitglied laden,
+ * Lizenz-Barcode, Dateiname. Das Layout steht in standblatt_pdf.inc.php; die Word-Vorlage
+ * und ihre Befüllung sind seit 1.68.49 entfernt (in git).
  */
-
-use PhpOffice\PhpWord\TemplateProcessor;
-
-/** Pfad zur DOCX-Vorlage (A4 quer). */
-function sb_template_path(): string
-{
-    return __DIR__ . '/Vorlage/MSVStandblatHeim-KantVorlage.docx';
-}
 
 /** Mitglied fuer das Standblatt laden (null wenn unbekannt). */
 function sb_load_mitglied(mysqli $conn, int $mitgliedId): ?array
@@ -44,7 +36,7 @@ function sb_barcode_nummer(string $lnr): string
  * ITF-Barcode (Interleaved 2 of 5) als Bilddatei. Gibt den Pfad einer Temp-Datei zurueck
  * (Aufrufer loescht sie), oder null bei ungerader Stellenzahl.
  *
- * @param string $format 'png' (DOCX-Download) oder 'jpg' (PDF-Konvertierung)
+ * @param string $format 'png' oder 'jpg'
  */
 function sb_barcode_image(string $nummer, string $format = 'png', int $imgWidth = 280, int $imgHeight = 60): ?string
 {
@@ -103,44 +95,6 @@ function sb_barcode_image(string $nummer, string $format = 'png', int $imgWidth 
     }
     imagedestroy($img);
     return $tmpFile;
-}
-
-/**
- * Befuellt die Vorlage fuer ein Mitglied und liefert den Pfad der temporaeren DOCX-Datei.
- * Der Aufrufer loescht die Datei nach Gebrauch.
- *
- * @throws RuntimeException wenn die Vorlage fehlt
- */
-function sb_standblatt_docx(int $lizenz, string $vorname, string $name, int $jahr, string $barcodeFormat = 'png'): string
-{
-    $templatePath = sb_template_path();
-    if (!file_exists($templatePath)) {
-        throw new RuntimeException('Vorlage nicht gefunden: ' . basename($templatePath));
-    }
-
-    $barcodeImg = null;
-    $barcode = sb_barcode_nummer((string)$lizenz);
-    if ($barcode !== '') {
-        $barcodeImg = sb_barcode_image($barcode, $barcodeFormat);
-    }
-
-    try {
-        $template = new TemplateProcessor($templatePath);
-        $template->setValue('year', (string)$jahr);
-        $template->setValue('name', trim($vorname . ' ' . $name));
-        if ($barcodeImg) {
-            $template->setImageValue('lizenz', ['path' => $barcodeImg, 'width' => 150, 'height' => 30]);
-        } else {
-            $template->setValue('lizenz', '');
-        }
-
-        $tmpDocx = tempnam(sys_get_temp_dir(), 'standblatt_');
-        rename($tmpDocx, $tmpDocx . '.docx'); $tmpDocx .= '.docx';
-        $template->saveAs($tmpDocx);
-        return $tmpDocx;
-    } finally {
-        if ($barcodeImg && file_exists($barcodeImg)) unlink($barcodeImg);
-    }
 }
 
 /**

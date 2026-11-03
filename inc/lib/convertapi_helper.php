@@ -21,8 +21,8 @@
  *   // ... PDF verwenden ...
  *   unlink($pdfPath); // Caller raeumt auf
  *
- * Aufrufer: inc/endschloesen/generate_standblatt.php (?format=pdf),
- *           inc/jmstandblatt/generate_jmstandblatt_pdf.php, generate_jmstandblatt_all_pdf.php
+ * Aufrufer: inc/endschloesen/generate_standblatt.php (?format=pdf)
+ *           (das JM-Standblatt entsteht seit 1.68.49 direkt mit Dompdf)
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';

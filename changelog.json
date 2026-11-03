@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.49",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "JM Standblatt direkt als PDF, mit Mannschaftsstichen",
+        "beschreibung": "Das Standblatt für Heimmeisterschaft und Kantonalstich entsteht jetzt direkt als PDF, ohne Word-Vorlage und ohne PDF-Dienst. Das Sammel-PDF aller Mitglieder ist in wenigen Sekunden fertig statt nach 22 Umwandlungen. Klebefelder, Linien und Barcodes haben genau die Masse der bisherigen Vorlage, die Barcodes sind Strich für Strich gleich. Neu: Die Heimmeisterschaft wird als Mannschaft geführt, 4 Runden zu je 2 Passen; die Felder wechseln darum zwischen 1. und 2. Passe Mannschaft (Stich 133 und 134 statt überall 133 mit Barcode 521). Kopfzeilen hellgrau mit «Runde 1» bis «Runde 4», Stichnummer gross. Das Deckblatt sieht aus wie beim Endschiessen: grosser Titel, Logo zwischen zwei Linien, Vorname/Name und Waffe, Lizenz-Barcode. Die Stichnummern kommen aus «Imetron-Stichnummern». Der Word-Download fällt weg; pro Zeile gibt es das PDF.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.48",
     "datum": "2026-11-03",
     "aenderungen": [

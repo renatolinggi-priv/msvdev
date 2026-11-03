@@ -1,7 +1,7 @@
 <?php
 /**
- * Generiert ein JM-Standblatt als PDF (fuer QZ Tray Direktdruck).
- * Ablauf: DOCX-Vorlage befuellen -> PDF-Dienst (convertapi_helper) -> PDF ausgeben.
+ * Generiert ein JM-Standblatt als PDF (Download und QZ-Tray-Direktdruck).
+ * Seit 1.68.49 direkt mit Dompdf (standblatt_pdf.inc.php), ohne Word-Vorlage und PDF-Dienst.
  * GET-Parameter: jahr, mitglied_id
  */
 
@@ -13,8 +13,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../dbconnect.inc.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('plain');
-require_once __DIR__ . '/../lib/convertapi_helper.php';
-require_once __DIR__ . '/standblatt_common.inc.php';
+require_once __DIR__ . '/../pdf/pdf_theme.php';
+require_once __DIR__ . '/standblatt_pdf.inc.php';
 
 $jahr        = (int)($_GET['jahr'] ?? date('Y'));
 $mitglied_id = (int)($_GET['mitglied_id'] ?? 0);
@@ -32,23 +32,13 @@ if (!$row) {
     exit;
 }
 
-$tmpDocx = null;
-$tmpPdf  = null;
 try {
-    $tmpDocx = sb_standblatt_docx((int)$row['ID'], $row['Vorname'], $row['Name'], $jahr, 'jpg');
-    $tmpPdf  = convertDocxToPdf($tmpDocx);
-
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . sb_dateiname($row['Vorname'], $row['Name'], $jahr, 'pdf') . '"');
-    header('Content-Length: ' . filesize($tmpPdf));
-    header('Cache-Control: max-age=0');
-    readfile($tmpPdf);
+    $person = sb_pdf_person($row, $jahr, sb_pdf_stichnummern($conn), sb_pdf_waffen($conn));
+    $pdf = sb_pdf_rendern(sb_pdf_dokument([$person], $jahr));
+    sb_pdf_senden($pdf, sb_dateiname($row['Vorname'], $row['Name'], $jahr, 'pdf'));
 } catch (Throwable $e) {
     error_log('[jmstandblatt_pdf] Fehler: ' . $e->getMessage());
     http_response_code(500);
-    echo msvFehler('Das Dokument konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
-} finally {
-    if ($tmpPdf && file_exists($tmpPdf)) unlink($tmpPdf);
-    if ($tmpDocx && file_exists($tmpDocx)) unlink($tmpDocx);
+    echo msvFehler('Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.', $e);
 }
 exit;

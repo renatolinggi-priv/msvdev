@@ -1,5 +1,7 @@
 <?php
-// jmstandblatt.php - JM Standblatt generieren (Word/PDF/Direktdruck) für aktive Mitglieder
+// jmstandblatt.php - JM Standblatt generieren (PDF/Direktdruck) für aktive Mitglieder
+// Seit 1.68.49 erzeugt Dompdf das Blatt direkt (jmstandblatt/standblatt_pdf.inc.php); Word-Vorlage
+// und Word-Download sind entfernt (in git).
 require_once 'dbconnect.inc.php';               // $conn (header.inc.php bindet dieselbe Datei ein -> eine Verbindung)
 require_once 'partials/empty_state.inc.php';    // msv_empty_row()
 
@@ -39,7 +41,6 @@ ob_start(); ?>
 </select>
 <?php $page_title_after = ob_get_clean();
 ob_start(); ?>
-<button type="button" id="btnDownloadAll" class="btn btn-outline-info btn-sm" data-tooltip="Je eine Word-Datei pro Mitglied, nacheinander"><i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Alle Standblätter (Word)</span></button>
 <div class="btn-group btn-group-sm" role="group" aria-label="Alle Standblätter">
 <button type="button" id="btnDownloadAllPdf" class="btn btn-outline-info" data-tooltip="Ein Sammel-PDF mit allen Standblättern"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Alle Standblätter</span></button>
 <button type="button" id="btnPrintAll" class="btn btn-outline-info" disabled hidden data-druck-eigen data-tooltip="QZ Tray nicht verbunden" aria-label="Alle Standblätter direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
@@ -58,7 +59,7 @@ include 'partials/page_header.inc.php'; ?>
           <!-- Tabelle -->
           <div class="table-wrapper">
             <h5 class="table-title">
-              <span><i class="bi bi-file-earmark-word me-2"></i>Mitglieder <button type="button" class="btn-help" data-help="jmstandblatt.ausgabe" aria-label="Hilfe"></button></span>
+              <span><i class="bi bi-file-earmark-pdf me-2"></i>Mitglieder <button type="button" class="btn-help" data-help="jmstandblatt.ausgabe" aria-label="Hilfe"></button></span>
               <span class="badge bg-secondary" id="memberCount"><?= count($mitglieder) ?> Mitglieder</span>
             </h5>
 
@@ -91,9 +92,9 @@ include 'partials/page_header.inc.php'; ?>
                                 data-id="<?= (int)$m['ID'] ?>"
                                 data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                                 data-name="<?= htmlspecialchars($m['Name']) ?>"
-                                data-tooltip="Standblatt (Word) herunterladen"
-                                aria-label="Standblatt <?= htmlspecialchars($m['Vorname'] . ' ' . $m['Name']) ?> herunterladen (Word)">
-                          <i class="bi bi-file-earmark-word"></i>
+                                data-tooltip="Standblatt (PDF) herunterladen"
+                                aria-label="Standblatt <?= htmlspecialchars($m['Vorname'] . ' ' . $m['Name']) ?> herunterladen (PDF)">
+                          <i class="bi bi-file-earmark-pdf"></i>
                         </button>
                         <button type="button" class="btn btn-outline-info btn-print-single"
                                 data-id="<?= (int)$m['ID'] ?>"
@@ -139,7 +140,7 @@ include 'partials/page_header.inc.php'; ?>
                             data-id="<?= (int)$m['ID'] ?>"
                             data-vorname="<?= htmlspecialchars($m['Vorname']) ?>"
                             data-name="<?= htmlspecialchars($m['Name']) ?>">
-                      <i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i><span>Standblatt (Word)</span>
+                      <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Standblatt</span>
                     </button>
                   </div>
                 </div>
@@ -183,24 +184,14 @@ function standblattUrl(script, mitgliedId) {
   return 'jmstandblatt/' + script + '?' + p.toString();
 }
 
-// Übersprungene Mitglieder aus den Antwort-Headern des Sammel-PDFs (null = keine)
-function uebersprungen(response) {
-  const skipped = parseInt((response && response.headers.get('X-Skipped')) || '0', 10);
-  if (!skipped) return null;
-  let names = '';
-  try { names = decodeURIComponent(response.headers.get('X-Skipped-Names') || ''); } catch (e) { /* ignorieren */ }
-  return skipped + ' Mitglied(er) ohne Standblatt übersprungen' + (names ? ': ' + names : '');
-}
-
-// Standblatt (Word) eines Mitglieds über den Ausgabe-Baustein; still = ohne Erfolgs-Toast (Sammel-Download)
-function downloadStandblatt(btn, mitgliedId, vorname, name, still) {
+// Standblatt (PDF) eines Mitglieds über den Ausgabe-Baustein
+function downloadStandblatt(btn, mitgliedId, vorname, name) {
   const jahr = document.getElementById('yearSelect').value;
   return msvAusgabe(btn, {
-    url: standblattUrl('generate_jmstandblatt.php', mitgliedId),
+    url: standblattUrl('generate_jmstandblatt_pdf.php', mitgliedId),
     titel: `Standblatt ${vorname} ${name}`,
     name: `JM_Standblatt_${jahr}_${vorname}_${name}`,
-    fehler: 'Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.',
-    still: !!still
+    fehler: 'Das Standblatt konnte nicht erstellt werden. Bitte nochmals versuchen.'
   });
 }
 
@@ -212,7 +203,7 @@ document.querySelectorAll('.btn-standblatt').forEach(btn => {
 });
 
 // --- QZ Tray Druck-Integration (gemeinsamer Baustein js/msv-direktdruck.js, Profil «jm_standblatt») ---
-// Die DOCX-Vorlage ist A4 QUER; die Ausrichtung wird darum explizit mitgegeben, Papier/Rand setzt MsvDruck.
+// Das Standblatt ist A4 QUER; die Ausrichtung wird darum explizit mitgegeben, Papier/Rand setzt MsvDruck.
 const JM_DOC = 'jm_standblatt';
 
 function printReady() {
@@ -283,14 +274,12 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
         const blob = await response.blob();
 
         // Druckauftrag läuft (Spinner bleibt)
-        const ok = await MsvDruck.print({
+        await MsvDruck.print({
             docType: JM_DOC,
             blob,
             jobName: `JM Standblätter ${jahr} alle`,
             orientation: 'landscape',
         });
-        const hinweis = ok && uebersprungen(response);
-        if (hinweis) msvToast(hinweis, 'warning');
     } catch (err) {
         console.error('Druckfehler:', err);
         msvToast(err instanceof TypeError ? 'Keine Verbindung zum Server. Bitte nochmals versuchen.' : err.message, 'error');
@@ -301,44 +290,15 @@ document.getElementById('btnPrintAll').addEventListener('click', async function(
     }
 });
 
-// Alle als PDF herunterladen
-// (Ausgabe-Baustein; übersprungene Mitglieder ersetzen die Erfolgsmeldung durch einen Hinweis)
+// Alle als ein Sammel-PDF herunterladen (Ausgabe-Baustein)
 document.getElementById('btnDownloadAllPdf').addEventListener('click', function() {
     const jahr = document.getElementById('yearSelect').value;
     msvAusgabe(this, {
         url: standblattUrl('generate_jmstandblatt_all_pdf.php'),
         titel: `JM Standblätter ${jahr} (alle)`,
         name: `JM_Standblaetter_${jahr}_alle`,
-        fehler: 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.',
-        erfolg: (j, res) => {
-            const hinweis = uebersprungen(res);
-            return hinweis ? { text: 'PDF heruntergeladen – ' + hinweis, typ: 'warning' } : '';
-        }
+        fehler: 'Das PDF konnte nicht erstellt werden. Bitte nochmals versuchen.'
     });
-});
-
-// Alle als DOCX herunterladen (sequenziell) — ueber die Datenzeilen, nicht ueber Buttons
-// (Desktop-Zeile UND Mobile-Card tragen .btn-standblatt -> vorher jedes Blatt doppelt)
-document.getElementById('btnDownloadAll').addEventListener('click', async function() {
-  const btn = this;
-  const originalHTML = btn.innerHTML;
-  const rows = Array.from(document.querySelectorAll('#mitgliederTable tbody tr[data-id]'));
-  if (!rows.length) { msvToast('Keine Mitglieder vorhanden', 'warning'); return; }
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>0 / ' + rows.length;
-
-  let ok = 0;
-  for (const row of rows) {
-    const rowBtn = row.querySelector('.btn-standblatt');
-    if (await downloadStandblatt(rowBtn, row.dataset.id, row.dataset.vorname, row.dataset.name, true)) ok++;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + ok + ' / ' + rows.length;
-    // Kurze Pause damit der Browser den Download verarbeiten kann
-    await new Promise(r => setTimeout(r, 300));
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = originalHTML;
-  msvToast(ok + ' von ' + rows.length + ' Standblättern heruntergeladen', ok === rows.length ? 'success' : 'warning');
 });
 
 // QZ Tray initialisieren
