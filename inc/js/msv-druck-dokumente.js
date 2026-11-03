@@ -8,7 +8,8 @@
  * format    = feste Seitengrösse des Generators { paper, orient, text }
  * formate   = wählbar (Ranglisten); der erste Eintrag ist die Vorgabe des Generators. Die Wahl landet in
  *             print_profiles.orientation und optionen.format und geht als ?orientation= an den Generator.
- * broschuere= A5-Broschüre auf A4 quer: ohne Duplex im Profil setzt die Seite «kurze Kante».
+ * broschuere= Blatt zum Falten (A5-Heft oder Standblatt, A4 quer): ohne Duplex im Profil druckt MsvDruck.print()
+ *             automatisch beidseitig über die kurze Kante (seit 1.68.53 zentral, auch für die Standblätter).
  */
 (function (global) {
   'use strict';
@@ -22,7 +23,7 @@
     {
       gruppe: 'Jahresmeisterschaft',
       dokumente: [
-        { doc_type: 'jm_standblatt', label: 'JM Standblatt', desc: 'Heimmeisterschaft und Kantonalstich, 2 Seiten zum Falten', format: F_QUER },
+        { doc_type: 'jm_standblatt', label: 'JM Standblatt', desc: 'Heimmeisterschaft und Kantonalstich, 2 Seiten zum Falten', format: F_QUER, broschuere: true },
         { doc_type: 'jmrang', label: 'JM Rangliste', desc: 'Nach Rang oder nach Name', formate: [QUER, HOCH] },
         { doc_type: 'jmdurchschnitt', label: 'JM Durchschnitte', desc: 'Durchschnitte pro Anlass', formate: [HOCH, QUER] },
         { doc_type: 'jmdefinition', label: 'Jahresprogramm', desc: 'Alle Anlässe des Jahres auf einer Seite', format: F_HOCH },
@@ -31,7 +32,7 @@
     {
       gruppe: 'Endschiessen',
       dokumente: [
-        { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt', desc: 'Aus «Endschiessen lösen», 2 Seiten zum Falten', format: F_QUER },
+        { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt', desc: 'Aus «Endschiessen lösen», 2 Seiten zum Falten', format: F_QUER, broschuere: true },
         { doc_type: 'endschiessen_abrechnung', label: 'Endschiessen Abrechnung', desc: 'Aus «Endschiessen lösen»', format: F_QUER },
         { doc_type: 'endschrang', label: 'Endschiessen Ranglisten', desc: 'Gesamt, Zwischen, Anmeldungen, Einzelwettbewerbe, Partner', formate: [HOCH, QUER] },
         { doc_type: 'absendenbuch', label: 'Absendenbuch (Broschüre)', desc: 'A5-Heft auf A4 quer, 2 Seiten pro Blatt, gefaltet', format: F_QUER, broschuere: true },

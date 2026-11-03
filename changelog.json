@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.53",
+    "datum": "2026-11-04",
+    "aenderungen": [
+      {
+        "titel": "Standblätter beim Direktdruck automatisch beidseitig",
+        "beschreibung": "Das JM Standblatt und das Endschiessen Standblatt werden beim Direktdruck wie Absendenbuch und Monatsblatt automatisch beidseitig über die kurze Kante gedruckt, damit sie sich falten lassen. Das gilt, solange im Druckprofil bei «Beidseitig» nichts anderes gewählt ist; in der Drucksteuerung steht dort «Automatisch (kurze Kante)». Auch der Testdruck dieser Zeilen druckt so.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.52",
     "datum": "2026-11-04",
     "aenderungen": [

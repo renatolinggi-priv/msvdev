@@ -346,6 +346,8 @@
         const base64 = await this._blobZuBase64(blob);
 
         const papier = PAPIER[String(paper || p.paper_size || 'A4').toUpperCase()] || PAPIER.A4;
+        const katalogDef = global.MsvDruckDokumente ? global.MsvDruckDokumente.finde(docType) : null;
+        const zumFalten = !!(katalogDef && katalogDef.broschuere);
 
         // Ausrichtung NICHT explizit setzen: QZ Tray erkennt sie für PDFs aus der Seitengrösse selbst
         // (orientation:null). Mit explizitem 'landscape' wurde die Querseite zusätzlich gedreht und auf
@@ -362,7 +364,8 @@
             units: 'mm',
             margins: { top: 0, right: 0, bottom: 0, left: 0 },
             colorType: p.color_mode || 'blackwhite',
-            duplex: duplex || p.duplex || false, // Übersteuerung (z.B. Broschüre) vor Profil
+            // Übersteuerung der Seite vor Profil; Blätter zum Falten (Katalog: broschuere) ohne Angabe über die kurze Kante
+            duplex: duplex || p.duplex || (zumFalten ? 'short-edge' : false),
             rasterize: false,
             jobName: name,
           }
