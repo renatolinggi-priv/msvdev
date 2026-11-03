@@ -339,6 +339,16 @@ function pdf_rangliste_css(): string
         .table .z { text-align: center; }
         .table .muted, .muted { color: {$c['muted']}; }
         .rl-hinweis { font-size: 8pt; color: {$c['muted']}; margin: 2mm 0 0 0; }
+        /* Zähl- und Abrechnungslisten (Absendenanmeldung): Gruppentitel, eingerückte Posten, Summenzeilen */
+        .table tr.rl-gruppe td { font-weight: bold; padding-top: 3.2mm; text-align: left; }  /* colspan-Zelle ist auch :last-child */
+        .table td.rl-einzug { padding-left: 5mm; }
+        .table tr.rl-total td { font-weight: bold; border-top: 0.5pt solid #000; }
+        /* Zwei Blöcke nebeneinander (Layout-Tabelle). Dompdf teilt eine Zelle nicht über einen Seitenwechsel:
+           der Inhalt jeder Zelle muss auf eine Seite passen, längere Listen teilt der Generator selbst auf. */
+        table.rl-spalten { width: 100%; border-collapse: collapse; margin: 0; }
+        table.rl-spalten td.rl-spalte { vertical-align: top; padding: 0; border: none; background: none; }
+        table.rl-spalten td.rl-luecke { width: 7mm; padding: 0; border: none; background: none; }
+        td.rl-spalte .rl-abschnitt { margin-top: 0; }
         .footer { display: none; }  /* Fusszeile kommt aus pdf_seitenfuss() */
 CSS;
 }

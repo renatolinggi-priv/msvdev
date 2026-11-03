@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.43",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: Absendenanmeldung im Ranglisten-Layout",
+        "beschreibung": "Das PDF «Anmeldung» sieht jetzt aus wie die übrigen Endschiessen-Ranglisten: Logo und Titel oben, schlichte Tabelle ohne Gitterlinien, Zahlen rechtsbündig und eine Fusszeile mit Stand und Seitenzahl. Alles steht auf einer A4-Seite hochkant: links die Anmeldungen mit Total, rechts die Abrechnung mit Schwini, Differenzler, Sie & Er und Partner-Endschiessen als Gruppen mit eingerückten Posten und je einer Totalzeile mit Linie. Passen nicht alle Namen auf die erste Seite (mehr als 32), folgen die übrigen auf weiteren Seiten in zwei Spalten. Zahlen und Beträge bleiben unverändert.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.42",
     "datum": "2026-10-16",
     "aenderungen": [

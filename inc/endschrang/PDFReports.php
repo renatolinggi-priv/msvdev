@@ -698,21 +698,21 @@ class AnmeldungReport extends PDFGenerator
     /** Fragt auch direkt über $this->conn ab – die Leer-Prüfung der Basisklasse würde hier falsch zählen. */
     protected $leerPruefen = false;
 
+    /**
+     * A4 hochkant, eine Zeile ≈ 6.6 mm: Namen auf Seite 1 neben der Abrechnung (unter Logo-Kopf und Titel)
+     * und pro Spalte auf den Folgeseiten. Bewusst mit Reserve – eine Zelle der Layout-Tabelle darf nicht
+     * über die Seite hinauslaufen, Dompdf teilt sie nicht.
+     */
+    private const NAMEN_SEITE1 = 32;
+    private const NAMEN_SPALTE = 36;
+
     public function generate()
     {
-        $html = $this->createHTMLHeader('Absendenanmeldung', '', 12);
-        $html .= '<div class="container">';
+        // Layout wie die übrigen Ranglisten (Kopf mit Logo, Fusszeile mit Seitenzahl)
+        $html = $this->ranglisteHeader('Absendenanmeldung ' . (int)$this->selectedYear, 'Endschiessen · Anmeldung');
 
-        // Teil 1: Mitglieder mit Absendenanmeldung
-        $html .= '<h5>Absendenanmeldung ' . (int)$this->selectedYear . '</h5>';
-        $html .= $this->createAnmeldungTable();
-
-        // Seitenumbruch
-        $html .= '</div><div style="page-break-before: always;"></div><div class="container">';
-
-        // Teil 2: Schwini (aus selection), Differenzler, Sie & Er, Partner-Pakete
-        $html .= '<h5>Schwini, Differenzler, Sie &amp; Er und Partner-Endschiessen</h5>';
-        $html .= $this->createSchwiniDifferenzlerTable();
+        // Seite 1: links die Anmeldungen, rechts Schwini, Differenzler, Sie & Er und Partner-Pakete
+        $html .= $this->anmeldungLayout($this->getAnmeldungRows(), $this->createSchwiniDifferenzlerTable());
 
         $html .= $this->createHTMLFooter();
 
@@ -720,8 +720,48 @@ class AnmeldungReport extends PDFGenerator
         $this->outputDownloadLink($pdfPath);
     }
 
-private function createAnmeldungTable()
-{
+    /**
+     * Seite 1 zweispaltig: links die ersten NAMEN_SEITE1 Anmeldungen, rechts die Abrechnung.
+     * Weitere Namen folgen auf eigenen Seiten in zwei Spalten; das Total steht am Ende der Liste.
+     */
+    private function anmeldungLayout(array $rows, string $abrechnung): string
+    {
+        $total = 0;
+        foreach ($rows as $row) {
+            $total += (int)($row['Anmeldungen'] ?? 0);
+        }
+
+        $teile = [array_slice($rows, 0, self::NAMEN_SEITE1)];
+        foreach (array_chunk(array_slice($rows, self::NAMEN_SEITE1), self::NAMEN_SPALTE) as $teil) {
+            $teile[] = $teil;
+        }
+        $letzter = count($teile) - 1;
+        $liste = fn(int $i) => isset($teile[$i])
+            ? $this->createAnmeldungTable($teile[$i], $i === $letzter ? $total : null)
+            : '';
+        $spalten = fn(string $links, string $rechts, string $breiteLinks) =>
+            '<table class="rl-spalten"><tr>'
+            . "<td class=\"rl-spalte\" style=\"width: {$breiteLinks};\">{$links}</td>"
+            . '<td class="rl-luecke"></td>'
+            . "<td class=\"rl-spalte\">{$rechts}</td>"
+            . '</tr></table>';
+
+        $anmeldungen = '<h2 class="rl-abschnitt">Anmeldungen</h2>'
+            . ($rows ? $liste(0) : '<p>Keine Anmeldungen gefunden.</p>');
+        $html = $spalten($anmeldungen, '<h2 class="rl-abschnitt">Abrechnung</h2>' . $abrechnung, '70mm');
+
+        for ($i = 1; $i <= $letzter; $i += 2) {
+            $html .= '<div style="page-break-before: always;"></div>'
+                . '<h2 class="rl-abschnitt" style="margin-top: 0;">Anmeldungen (Fortsetzung)</h2>'
+                . $spalten($liste($i), $liste($i + 1), '50%');
+        }
+
+        return $html;
+    }
+
+    /** Alle Teilnehmenden mit Absendenanmeldung, nach Name sortiert. */
+    private function getAnmeldungRows(): array
+    {
     // Alle Teilnehmer mit Endstich-Eintrag (Migration 094: Gäste und Jungschützen über GastID).
     // Gäste erst ab einer Anmeldung, damit die übernommenen Partnerinnen ohne Angabe nicht als 0 erscheinen.
     $sql = "
@@ -734,40 +774,30 @@ private function createAnmeldungTable()
         ORDER BY Name ASC";
 
     $y = (int)$this->selectedYear;
-    $data = $this->executePreparedQuery($sql, "i", $y);
+    return $this->executePreparedQuery($sql, "i", $y) ?: [];
+}
 
-    if (!empty($data)) {
-        $html = '<table class="table table-bordered">';
+    /** Tabelle Name/Anzahl für einen Teil der Anmeldungen; Totalzeile nur, wenn $total übergeben wird. */
+    private function createAnmeldungTable(array $rows, ?int $total = null): string
+    {
+        $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Name</th>
-                    <th align="center">Anzahl</th>
+                    <th>Name</th>
+                    <th class="r" style="width: 17mm;">Anzahl</th>
                   </tr></thead><tbody>';
 
-        $total = 0;
-        foreach ($data as $row) {
+        foreach ($rows as $row) {
             $name = htmlspecialchars($row['Name'] ?? '', ENT_QUOTES, 'UTF-8');
             $anz = (int)($row['Anmeldungen'] ?? 0);
-
-            $html .= "<tr>";
-            $html .= "<td align='left'>{$name}</td>";
-            $html .= "<td align='center'>{$anz}</td>";
-            $html .= "</tr>";
-
-            $total += $anz;
+            $html .= "<tr><td>{$name}</td><td class=\"r\">{$anz}</td></tr>";
         }
 
-        $html .= "<tr>";
-        $html .= "<td align='left'><strong>Total</strong></td>";
-        $html .= "<td align='center'><strong>$total</strong></td>";
-        $html .= "</tr>";
+        if ($total !== null) {
+            $html .= "<tr class=\"rl-total\"><td>Total</td><td class=\"r\">{$total}</td></tr>";
+        }
 
-        $html .= '</tbody></table>';
-    } else {
-        $html = '<p>Keine Ergebnisse gefunden.</p>';
+        return $html . '</tbody></table>';
     }
-
-    return $html;
-}
 
     /** CHF-Format aus Rappen */
     private function frStrFromCents(int $cents): string
@@ -896,7 +926,7 @@ private function createAnmeldungTable()
 
     /**
      * Partner-Pakete (Summe über Partner = Gäste ohne Geburtsdatum).
-     * Pro Partner max(gast_spezialpreis) (in Rappen) â€” so vermeiden wir Doppelzählungen.
+     * Pro Partner max(gast_spezialpreis) (in Rappen) – so vermeiden wir Doppelzählungen.
      * Liefert auch Details (heuristisch) für Kombi 2 / Kombi 3.
      */
     private function getPartnerPaketeStats(): array
@@ -1020,43 +1050,46 @@ private function createAnmeldungTable()
         $grand_total_str = $this->frStrFromFr($grand_total_chf);
 
         // --- Tabelle rendern ---
-        $html = '<table class="table table-bordered">';
+        // --- Tabelle rendern (Ranglisten-Layout: Gruppentitel, eingerückte Posten, Summenzeilen mit Linie) ---
+        $posten = fn(string $text, $anz, string $betrag, string $kl = 'rl-einzug') =>
+            "<tr><td class=\"{$kl}\">{$text}</td><td class=\"r\">{$anz}</td><td class=\"r\">{$betrag}</td></tr>";
+        $gruppe = fn(string $text) => "<tr class=\"rl-gruppe\"><td colspan=\"3\">{$text}</td></tr>";
+        $summe  = fn(string $text, string $betrag, $anz = '') =>
+            "<tr class=\"rl-total\"><td>{$text}</td><td class=\"r\">{$anz}</td><td class=\"r\">{$betrag}</td></tr>";
+
+        $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th align="left">Stich</th>
-                    <th align="center">Anzahl</th>
-                    <th align="right">Betrag (Fr.)</th>
+                    <th>Stich</th>
+                    <th class="r" style="width: 15mm;">Anzahl</th>
+                    <th class="r" style="width: 23mm;">Betrag (Fr.)</th>
                   </tr></thead><tbody>';
 
         // Schwini
-        $html .= "<tr><td align='left'><strong>Schwini</strong></td><td></td><td></td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;Schwini (1. Passe)</td><td align='center'>".$counts['mitglieder']['p1']."</td><td align='right'>{$mit_p1_amt_str}</td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;Schwini (2. Passe)</td><td align='center'>".$counts['mitglieder']['p2']."</td><td align='right'>{$mit_p2_amt_str}</td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;Partner Schwini (1. Passe)</td><td align='center'>".$counts['gaeste']['p1']."</td><td align='right'>{$ga_p1_amt_str}</td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;Partner Schwini (2. Passe)</td><td align='center'>".$counts['gaeste']['p2']."</td><td align='right'>{$ga_p2_amt_str}</td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;Jungschützen Schwini (1. Passe)</td><td align='center'>".$counts['jung']['p1']."</td><td align='right'>{$ju_p1_amt_str}</td></tr>";
-
-        $html .= "<tr><td align='left' colspan='2'><strong>Total Schwini</strong></td><td align='right'><strong>{$total_schwini_str}</strong></td></tr>";
-        $html .= "<tr><td colspan='3'></td></tr>";
+        $html .= $gruppe('Schwini');
+        $html .= $posten('Schwini (1. Passe)', $counts['mitglieder']['p1'], $mit_p1_amt_str);
+        $html .= $posten('Schwini (2. Passe)', $counts['mitglieder']['p2'], $mit_p2_amt_str);
+        $html .= $posten('Partner Schwini (1. Passe)', $counts['gaeste']['p1'], $ga_p1_amt_str);
+        $html .= $posten('Partner Schwini (2. Passe)', $counts['gaeste']['p2'], $ga_p2_amt_str);
+        $html .= $posten('Jungschützen Schwini (1. Passe)', $counts['jung']['p1'], $ju_p1_amt_str);
+        $html .= $summe('Total Schwini', $total_schwini_str);
 
         // Differenzler
-        $html .= "<tr><td align='left'><strong>Differenzler</strong></td><td></td><td></td></tr>";
-        $html .= "<tr><td align='left'>Differenzler</td><td align='center'>{$anzahl_diff}</td><td align='right'>{$amount_diff_str}</td></tr>";
-        $html .= "<tr><td align='left' colspan='2'><strong>Total Differenzler</strong></td><td align='right'><strong>{$amount_diff_str}</strong></td></tr>";
-        $html .= "<tr><td colspan='3'></td></tr>";
+        $html .= $gruppe('Differenzler');
+        $html .= $posten('Differenzler', $anzahl_diff, $amount_diff_str);
+        $html .= $summe('Total Differenzler', $amount_diff_str);
 
         // Sie & Er
-        $html .= "<tr><td align='left'><strong>Sie & Er</strong></td><td></td><td></td></tr>";
-        $html .= "<tr><td align='left'>Sie &amp; Er</td><td align='center'>{$anzSieUndEr}</td><td align='right'>{$amountSieUndEr_str}</td></tr>";
-        $html .= "<tr><td align='left' colspan='2'><strong>Total Sie &amp; Er</strong></td><td align='right'><strong>{$amountSieUndEr_str}</strong></td></tr>";
-        $html .= "<tr><td colspan='3'></td></tr>";
+        $html .= $gruppe('Sie &amp; Er');
+        $html .= $posten('Sie &amp; Er', $anzSieUndEr, $amountSieUndEr_str);
+        $html .= $summe('Total Sie &amp; Er', $amountSieUndEr_str);
 
         // Partner-Pakete (Details + Brutto/Abzug/Netto)
-        $html .= "<tr><td align='left'><strong>Partner Endschiessen</strong></td><td></td><td></td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;â€“ Partner-Paket Kombi 2 Stiche</td><td align='center'>{$cntKombi2}</td><td align='right'>{$amtKombi2_str}</td></tr>";
-        $html .= "<tr><td align='left'>&nbsp;&nbsp;â€“ Partner-Paket Kombi 3 Stiche</td><td align='center'>{$cntKombi3}</td><td align='right'>{$amtKombi3_str}</td></tr>";
-        $html .= "<tr><td align='left'><em>Zwischentotal Partner</em></td><td align='center'>{$anzPartnerPakete}</td><td align='right'><em>{$amountPartnerPakete_brutto_str}</em></td></tr>";
-        $html .= "<tr><td align='left'>abzüglich Schwini-Anteil Partner</td><td align='center'></td><td align='right'>- {$ga_schwini_anteil_str}</td></tr>";
-        $html .= "<tr><td align='left'><strong>Total Partner Endschiessen</strong></td><td align='center'></td><td align='right'><strong>{$amountPartnerPakete_netto_str}</strong></td></tr>";
+        $html .= $gruppe('Partner-Endschiessen');
+        $html .= $posten('Partner-Paket Kombi 2 Stiche', $cntKombi2, $amtKombi2_str);
+        $html .= $posten('Partner-Paket Kombi 3 Stiche', $cntKombi3, $amtKombi3_str);
+        $html .= $posten('Zwischentotal Partner', $anzPartnerPakete, $amountPartnerPakete_brutto_str, 'rl-einzug muted');
+        $html .= $posten('abzüglich Schwini-Anteil Partner', '', '– ' . $ga_schwini_anteil_str, 'rl-einzug muted');
+        $html .= $summe('Total Partner-Endschiessen', $amountPartnerPakete_netto_str);
 
         /**
         // Gesamttotal
