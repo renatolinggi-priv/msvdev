@@ -327,8 +327,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
             </div>
             <div class="action-buttons">
               <div class="btn-group btn-group-sm" role="group" aria-label="Standblatt">
-                <button type="button" id="btnStandblatt" class="btn btn-outline-info" disabled data-tooltip="Standblatt (Excel) für diesen Teilnehmer">
-                  <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i><span class="ms-1">Standblatt (Excel)</span>
+                <button type="button" id="btnStandblatt" class="btn btn-outline-info" disabled data-tooltip="Standblatt (PDF, A4 quer) für diesen Teilnehmer">
+                  <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span class="ms-1">Standblatt</span>
                 </button>
                 <button type="button" id="btnStandblattDruck" class="btn btn-outline-info" disabled hidden data-druck-eigen data-tooltip="QZ Tray nicht verbunden" aria-label="Standblatt direkt drucken">
                   <i class="bi bi-printer" aria-hidden="true"></i>
@@ -1050,7 +1050,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="Aktionen" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'><i class="bi bi-three-dots"></i></button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item act-edit" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-pencil me-2"></i>Bearbeiten</a></li>
-                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-spreadsheet me-2" aria-hidden="true"></i>Standblatt (Excel)</a></li>
+                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Standblatt</a></li>
                 ${druckSichtbar() ? `<li><a class="dropdown-item act-print${printReady() ? '' : ' disabled'}" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}" data-tooltip="${printReady() ? 'Direktdruck über QZ Tray' : 'Kein Druckprofil «Endschiessen Standblatt» (Drucksteuerung)'}"><i class="bi bi-printer me-2"></i>Standblatt drucken</a></li>` : ''}
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item act-delete text-danger" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-trash me-2"></i>Löschen</a></li>
@@ -1139,7 +1139,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     return url;
   }
 
-  // Standblatt (Excel) über den Ausgabe-Baustein; der Server liefert den Dateinamen mit (Content-Disposition)
+  // Standblatt (PDF) über den Ausgabe-Baustein; der Server liefert den Dateinamen mit (Content-Disposition)
   function downloadStandblatt(knopf, { typ, entityId, name, stiche, waffenId = '' }) {
     return msvAusgabe(knopf, {
       url: standblattUrl({ typ, entityId, name, stiche, waffenId }),
@@ -1170,7 +1170,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
   // =========================================================================
   //  Direktdruck über QZ Tray – gemeinsamer Baustein js/msv-direktdruck.js (MsvDruck)
-  //  Profile «endschiessen_standblatt» (A4 quer, XLSX → PDF serverseitig) und
+  //  Profile «endschiessen_standblatt» (A4 quer, PDF direkt mit Dompdf) und
   //  «endschiessen_abrechnung» (Abrechnungs-PDF) aus der Drucksteuerung.
   // =========================================================================
   const DRUCK_STANDBLATT = 'endschiessen_standblatt';

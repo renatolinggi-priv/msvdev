@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.50",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Standblatt direkt als PDF, Stichnummern gross",
+        "beschreibung": "Das Standblatt des Endschiessens entsteht jetzt direkt als PDF, ohne Excel-Vorlage und ohne PDF-Dienst, und ist sofort da. Aufbau, Texte, Klebefelder und Barcodes entsprechen genau der bisherigen Vorlage (auf 0.1 mm nachgemessen; die Felder sind nie kleiner). Neu stehen die Stichnummern in den Klebefeldern gross und fett, «Stichnr.» klein darüber. Die Preise kommen aus den Stich-Definitionen und Spezialpreisen (Schwini 2. Doppel damit CHF 15.--), die Junioren-Preise wie bisher fest auf dem Blatt. Die Stichnummern kommen aus «Imetron-Stichnummern». Der Knopf heisst jetzt «Standblatt» (PDF) statt «Standblatt (Excel)»; Direktdruck und Druckprofil bleiben gleich.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.49",
     "datum": "2026-11-03",
     "aenderungen": [
