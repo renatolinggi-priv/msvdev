@@ -128,7 +128,8 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
                 <span class="ui-status aus" id="qzStatus" role="status" aria-live="polite"><span class="ui-punkt" aria-hidden="true"></span><span id="qzStatusText">Verbinde mit QZ Tray …</span></span>
                 <div class="dr-schritte" id="drSchritte" aria-label="Stand der Einrichtung"></div>
               </div>
-              <div class="alert alert-info dr-hinweis" id="qzHinweis" hidden></div>
+              <div class="alert alert-warning dr-hinweis" id="qzHinweis" role="status" hidden></div>
+              <p class="small text-muted mt-2 mb-0" id="drSetupZeile" hidden></p>
               <div class="alert alert-info dr-hinweis" id="drAndere" hidden></div>
             </div>
           </section>

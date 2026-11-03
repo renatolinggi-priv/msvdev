@@ -510,9 +510,11 @@ tbody tr.rank-3:not(.es-ansicht-erfassen tr) > td { background-color: color-mix(
 .btn-group > .btn-group:has(+ .msv-druck:not(.msv-druck-an)) > .btn { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }
 /* Dokumente-Leiste (.export-toolbar): Dokument + Drucker als Gruppe; Dokument-Knöpfe gleich breit, damit die Reihe ruhig wirkt */
 .export-group-btns > .btn-group > .btn:first-child { min-width: 9rem; text-align: left; }
-/* Ein Hinweis pro Seite statt grauer Drucker-Symbole */
-.msv-druck-chip { color: var(--ui-text-2); cursor: help; }
-.msv-druck-chip .bi { font-size: .85em; color: var(--ui-text-3); }
+/* Ein Hinweis pro Seite statt grauer Drucker-Symbole; seit 1.68.54 ein Knopf «Direktdruck: QZ Tray starten»
+   in Bernstein (offen, braucht eine Handlung), Klick öffnet die Anleitung (MsvDruck.anleitung) */
+.msv-druck-chip { border: 1px solid var(--ui-warn-rand); background: var(--ui-warn-bg); color: var(--ui-warn-fg); font-weight: 600; cursor: pointer; }
+.msv-druck-chip .bi { font-size: .9em; color: var(--ui-warn-punkt); }
+.msv-druck-chip:hover { background: var(--ui-warn-zeile-hover); }
 .msv-druck-chip:focus-visible { outline: 2px solid var(--ui-akzent-dunkel); outline-offset: 2px; }
 
 /* ==========================================================================

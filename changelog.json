@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.54",
+    "datum": "2026-11-04",
+    "aenderungen": [
+      {
+        "titel": "QZ Tray: klarer Hinweis und eigenes Setup «MSV Wilen Direktdruck»",
+        "beschreibung": "Läuft QZ Tray nicht, steht auf den Seiten mit Direktdruck oben ein deutlicher Knopf «Direktdruck: QZ Tray starten» (vorher nur «Direktdruck nicht verbunden»). Ein Klick zeigt die Anleitung (QZ Tray im Startmenü öffnen) und verbindet mit «Neu verbinden» ohne Neuladen der Seite. In der Drucksteuerung gibt es neu das Setup «MSV Wilen Direktdruck» zum Herunterladen (nur nach Login): Es installiert QZ Tray mit dem Zertifikat der Vereinsverwaltung, wie das QZ-Setup von SFARL. Für weitere Computer steht der Download auch bei bestehender Verbindung unter «Verbindung».",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.53",
     "datum": "2026-11-04",
     "aenderungen": [

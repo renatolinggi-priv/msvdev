@@ -94,6 +94,17 @@ Zertifikat in den Web-Root legen und nie ein `ca-key.pem` auf den Webserver. Bis
 `certs/private-key.pem` im Docroot und war per HTTP öffentlich abrufbar; der Ordner `certs/` ist
 entfernt.
 
+### Setup «MSV Wilen Direktdruck» (QZ Tray + Zertifikat)
+
+Seit 1.68.54, übernommen von SFARL (`installer/sfarl-qz.iss`). Quellen in `C:\TEMP\msvjm\installer\` (bewusst
+**ausserhalb** von msvdev, sonst lädt der Watcher den 140-MB-Installer in den Docroot): `msv-qz.iss`, `qz-tray.isi`
+(von SFARL), `msv-de.isl`, `auftritt.isi`, `baue.ps1`. QZ-Installer von qz.io nach `installer\qz\`
+(`qz-tray-<Version>-x86_64.exe`), Root-Zertifikat `build\certs\ca-cert.pem` = «SKSG EWS Root CA» (nur öffentlicher Teil,
+nie Schlüssel). Bauen: `powershell -NoProfile -ExecutionPolicy Bypass -File C:\TEMP\msvjm\installer\baue.ps1`
+(Inno Setup 7 unter `%LOCALAPPDATA%\Programs\Inno Setup 7\`); neue Version = `MyAppVersion` in `msv-qz.iss` erhöhen.
+Hochladen per scp nach `~/www/msv_downloads/` (700/600, ausserhalb des Docroots);
+`inc/drucksteuerung/qz_setup.php` liefert die höchste Version nur an Admin/Vorstand aus.
+
 ## Generierte Exportdateien in `inc/<modul>/dat/`
 
 Jeder Export-Generator schreibt eine zeitgestempelte Datei pro Aufruf. Früher räumte

@@ -63,6 +63,7 @@
       this.zeigeStatus();
       this.ladeAlles();
       this.ladeLog();
+      this.ladeSetup();
       this.verbinde(false);
     },
 
@@ -93,6 +94,7 @@
       $('#qzStatus').attr('class', 'ui-status ' + (v ? 'ok' : 'fehler'));
       $('#qzStatusText').text(v ? 'Mit QZ Tray verbunden' : 'Nicht mit QZ Tray verbunden');
       $('#btnConnect').prop('hidden', v);
+      $('#drSetupZeile').prop('hidden', !v || !this.setup); // ohne Verbindung steht das Setup schon im Hinweis
       const aktiv = this.drucker.filter(d => Number(d.aktiv) === 1).length;
       const mitDrucker = this.profile.filter(p => p.printer_id).length;
       $('#drSchritte').html(
@@ -102,21 +104,41 @@
 
     /** Hinweis mit dem nächsten Schritt statt der technischen Meldung (die steht in der Konsole). */
     zeigeHinweis(meldung) {
+      this._letzteMeldung = meldung;
       const m = String(meldung || '').toLowerCase();
+      const s = this.setup;
+      const setupText = s
+        ? 'das Setup «MSV Wilen Direktdruck» herunterladen und ausführen (braucht Administratorrechte am Computer)'
+        : 'das Setup «MSV Wilen Direktdruck» ausführen; es ist noch nicht auf dem Server, bitte beim Administrator melden';
       let html;
       if (/sign|certificate|zertifikat|untrusted/.test(m)) {
-        html = '<p><strong>QZ Tray lehnt die Verbindung ab.</strong> Auf diesem Computer ist das Zertifikat der Vereinsverwaltung nicht eingerichtet; das richtet der Administrator ein.</p>'
-          + '<p>Bis dahin: Dokumente herunterladen und wie gewohnt drucken.</p>';
+        html = '<p><strong>QZ Tray lehnt die Verbindung ab.</strong> Auf diesem Computer fehlt das Zertifikat der Vereinsverwaltung.</p>'
+          + '<p>Abhilfe: ' + setupText + '. Es richtet das Zertifikat ein, QZ Tray bleibt. Danach «Neu verbinden».</p>';
       } else {
-        html = '<p><strong>QZ Tray läuft nicht auf diesem Computer.</strong> Für den Direktdruck muss das Programm QZ Tray gestartet sein (Symbol unten rechts in der Taskleiste). Ist es nicht installiert, gibt es es kostenlos bei qz.io.</p>'
-          + '<p>Ohne QZ Tray: Dokumente herunterladen und wie gewohnt drucken.</p>';
+        html = '<p><strong>QZ Tray läuft nicht auf diesem Computer.</strong> Ohne QZ Tray gibt es keinen Direktdruck.</p>'
+          + '<ol class="ps-3 mb-2"><li class="mb-1"><strong>Schon installiert?</strong> Im Windows-Startmenü «QZ Tray» öffnen. Es läuft danach unten rechts in der Taskleiste. Dann «Neu verbinden».</li>'
+          + '<li><strong>Noch nicht installiert?</strong> Dafür ' + setupText + '. Es installiert QZ Tray mit dem Zertifikat. Danach «Neu verbinden».</li></ol>';
       }
-      html += '<div class="d-flex flex-wrap gap-2">'
-        + '<button type="button" class="btn btn-outline-secondary btn-sm" id="btnHinweisVerbinden"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Neu verbinden</button>'
-        + '<a class="btn btn-outline-secondary btn-sm" href="https://qz.io/download/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>QZ Tray herunterladen</a>'
+      html += '<p class="small mb-2">Ohne QZ Tray: Dokumente herunterladen und wie gewohnt drucken. Auf einem Mac: QZ Tray von qz.io; das Zertifikat richtet der Administrator ein.</p>'
+        + '<div class="d-flex flex-wrap gap-2">'
+        + '<button type="button" class="btn btn-outline-primary btn-sm" id="btnHinweisVerbinden"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Neu verbinden</button>'
+        + (s ? '<a class="btn btn-outline-info btn-sm" href="drucksteuerung/qz_setup.php" download><i class="bi bi-download me-1" aria-hidden="true"></i>Setup herunterladen (Windows, ' + esc(s.mb) + ' MB)</a>' : '')
         + '</div>';
       $('#qzHinweis').html(html).prop('hidden', false);
       $('#btnHinweisVerbinden').on('click', () => this.verbinde(true));
+    },
+
+    /** Setup «MSV Wilen Direktdruck» auf dem Server? Dann im Hinweis und für weitere Computer anbieten. */
+    ladeSetup() {
+      $.getJSON('drucksteuerung/qz_setup.php', { info: 1 }).done((r) => {
+        this.setup = r && r.success ? r : null;
+        if (this.setup) {
+          $('#drSetupZeile').html('<i class="bi bi-download me-1" aria-hidden="true"></i>Weiterer Computer? '
+            + '<a href="drucksteuerung/qz_setup.php" download>Setup «MSV Wilen Direktdruck» herunterladen</a> (Windows, ' + esc(this.setup.mb) + ' MB, Version ' + esc(this.setup.version) + '): installiert QZ Tray mit dem Zertifikat.')
+            .prop('hidden', !this.verbunden);
+        }
+        if (!this.verbunden && !$('#qzHinweis').prop('hidden')) this.zeigeHinweis(this._letzteMeldung);
+      });
     },
 
     // =================================================================== Daten

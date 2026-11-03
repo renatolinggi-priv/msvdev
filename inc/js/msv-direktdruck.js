@@ -162,22 +162,65 @@
       }
     },
 
-    /** Hinweis «Direktdruck nicht verbunden» in der Kopf-Card (einmal pro Seite) ein-/ausblenden. */
+    /**
+     * Hinweis «QZ Tray starten» in der Kopf-Card (einmal pro Seite) ein-/ausblenden. Seit 1.68.54 ein Knopf:
+     * Klick öffnet die Anleitung mit «Neu verbinden» und dem Weg zum Setup (Drucksteuerung).
+     */
     _hinweis(an) {
       let chip = document.querySelector('.msv-druck-chip');
       if (!an) { if (chip) chip.hidden = true; return; }
       if (!chip) {
         const ziel = document.querySelector('.msv-kopf .page-actions') || document.querySelector('.msv-kopf .msv-kopf-titel');
         if (!ziel) return;
-        chip = document.createElement('span');
+        chip = document.createElement('button');
+        chip.type = 'button';
         chip.className = 'ui-chip msv-druck-chip';
-        chip.tabIndex = 0;
-        chip.dataset.tooltip = 'Für den Direktdruck muss QZ Tray auf diesem Computer laufen. '
+        chip.dataset.tooltip = 'Direktdruck ist aus: QZ Tray läuft auf diesem Computer nicht. Klicken für die Anleitung. '
           + 'Ohne QZ Tray: Dokument herunterladen und wie gewohnt drucken.';
-        chip.innerHTML = '<i class="bi bi-printer" aria-hidden="true"></i>Direktdruck nicht verbunden';
+        chip.innerHTML = '<i class="bi bi-exclamation-circle" aria-hidden="true"></i>Direktdruck: QZ Tray starten';
+        chip.addEventListener('click', () => this.anleitung());
         ziel.appendChild(chip);
       }
       chip.hidden = false;
+    },
+
+    /** Anleitung, wenn QZ Tray nicht erreichbar ist: starten, neu verbinden, sonst Setup in der Drucksteuerung. */
+    async anleitung() {
+      if (typeof msvSwal === 'undefined') { this._toast('QZ Tray auf diesem Computer starten, dann die Seite neu laden.', 'warning'); return; }
+      const r = await msvSwal.fire({
+        title: 'QZ Tray starten',
+        html: '<div class="text-start"><p class="mb-2">Für den Direktdruck muss auf diesem Computer das Programm <strong>QZ Tray</strong> laufen. Im Moment antwortet es nicht.</p>'
+          + '<ol class="ps-3 mb-2"><li class="mb-1">QZ Tray starten: im Windows-Startmenü «QZ Tray» suchen und öffnen. Es läuft danach unten rechts in der Taskleiste.</li>'
+          + '<li>Hier <strong>Neu verbinden</strong> klicken.</li></ol>'
+          + '<p class="small mb-1"><strong>Noch nicht installiert?</strong> Das Setup mit Zertifikat gibt es unter Einstellungen → Drucksteuerung.</p>'
+          + '<p class="small text-muted mb-0">Ohne QZ Tray: das Dokument herunterladen und wie gewohnt drucken.</p></div>',
+        showCancelButton: true, showDenyButton: true,
+        confirmButtonText: 'Neu verbinden', denyButtonText: 'Zur Drucksteuerung', cancelButtonText: 'Schliessen',
+        customClass: Object.assign(typeof msvSwalButtons === 'function' ? msvSwalButtons('btn-primary') : {},
+          { denyButton: 'btn btn-sm btn-outline-secondary', popup: 'msv-swal msv-swal-drei' }),
+      });
+      if (r.isConfirmed) this.neuVerbinden();
+      else if (r.isDenied) window.location.href = 'drucksteuerung.php';
+    },
+
+    /** Verbindung zu QZ Tray nochmals versuchen (nach dem Starten), ohne die Seite neu zu laden. */
+    async neuVerbinden() {
+      if (!this.pm) { this._toast('Direktdruck ist auf dieser Seite nicht verfügbar. Bitte die Seite neu laden.', 'warning'); return; }
+      this._verbinde = true;
+      this.refresh();
+      try {
+        await this.pm.connect();
+        this.verbunden = true;
+      } catch (err) {
+        this.verbunden = false;
+        console.warn('[MsvDruck] QZ Tray nicht verfügbar:', err && err.message ? err.message : err);
+      }
+      this._merke();
+      await this._ladeProfile();
+      this._verbinde = false;
+      this.refresh();
+      this._toast(this.verbunden ? 'Direktdruck verbunden' : 'QZ Tray antwortet noch nicht. Ist es gestartet? Beim ersten Start kann es einige Sekunden dauern.',
+        this.verbunden ? 'success' : 'warning');
     },
 
     // -------------------------------------------------------------- Klick
