@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.68.46",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "PDF-Vorlage aufgeräumt: nur noch, was wirkt",
+        "beschreibung": "Die Seite «PDF-Vorlage» zeigt nur noch Einstellungen, die in den PDFs sichtbar etwas ändern: das Logo, die Gruppe «Listen und Ranglisten» und für das Monatsblatt die Textfarbe und die Farbe der Überschriften. Die früheren Gruppen Tabelle, Medaillen, Status und Layout sowie die Vorlagen «Hell & minimal» und «Dezent markentreu» sind entfernt, weil kein PDF sie mehr verwendet. Rechts gibt es je eine Vorschau für Listen und Ranglisten und für das Monatsblatt. Speichern schreibt nur noch die Felder, die auf der Seite stehen.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.45",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "PDF-Vorlage: Einstellungen für Listen und Ranglisten",
+        "beschreibung": "Die Seite «PDF-Vorlage» hat eine neue Gruppe «Listen und Ranglisten», die für fast alle PDFs gilt: Farbe für Titel und Abschnitte, Farbe der Linien unter dem Tabellenkopf und über den Totalzeilen, gedämpfter Text (Untertitel, Hinweise, Fusszeile), Zebrastreifen breiter Tabellen (JM-Rangliste, Endschiessen lösen, Fragebogen; Weiss schaltet sie aus), Hinterlegung gestrichener Resultate und Logo-Höhe im Kopf. Eine zweite Vorschau zeigt den Ranglisten-Stil. Die bisherigen Farbgruppen und Vorlagen stehen jetzt unter «Monatsblatt und ältere Ausdrucke», weil sie nur noch dort wirken. Die Vorgabe entspricht dem bisherigen Aussehen, ohne eigene Einstellung ändert sich nichts.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.44",
     "datum": "2026-11-03",
     "aenderungen": [

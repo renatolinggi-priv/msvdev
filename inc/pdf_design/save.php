@@ -128,9 +128,12 @@ try {
         exit;
     }
     if ($action === 'save') {
+        // Nur Felder speichern, die die Seite mitschickt (Werte ohne Feld im Editor bleiben unberührt)
         $clean = [];
         foreach (pdf_theme_schema() as $key => $def) {
-            $clean[$key] = pdf_theme_sanitize_value($_POST[$key] ?? null, $def);
+            if (array_key_exists($key, $_POST)) {
+                $clean[$key] = pdf_theme_sanitize_value($_POST[$key], $def);
+            }
         }
         $pdo->beginTransaction();
         $stmt = $pdo->prepare('INSERT INTO pdf_theme_settings (skey, svalue) VALUES (?, ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)');
