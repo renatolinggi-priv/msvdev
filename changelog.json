@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.48",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "Monatsblatt als A5-Broschüre im Ranglisten-Layout",
+        "beschreibung": "Das Monatsblatt wird jetzt auf A5 gesetzt und als Broschüre ausgegeben: zwei A5-Seiten pro A4-Blatt quer, in der Reihenfolge zum Falten, aufgefüllt auf ein Vielfaches von 4 Seiten (Leerseiten am Schluss). Drucken auf A4 beidseitig, Wenden an der kurzen Seite, dann in der Mitte falten. Titelblatt mit Logo, Zeitraum und Stand; die Schiesstage sind nach Monat gegliedert («Samstag, 18. April»), mit Zeit, Anlass und Typ. Mehrere Zeitfenster stehen untereinander, die Gruppen klein unter dem Anlass. Ein Tag wird nie auf zwei Seiten geteilt. Fusszeile mit Seitenzahl ab Seite 2. Die PDF-Vorlage zeigt den Bereich «Monatsblatt» nicht mehr, weil das Monatsblatt jetzt der Gruppe «Listen und Ranglisten» folgt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.47",
     "datum": "2026-11-03",
     "aenderungen": [

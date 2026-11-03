@@ -4,8 +4,10 @@
  * inc/monatsblatt/export_monatsblatt.php
  *
  * Liest Daten (JMDefinition / JMSchiesstage), filtert sie
- * nach Jahr und Monatsbereich und erzeugt ein PDF via DomPDF.
- * POST: year, start_month, end_month, bemerkung, csrf_token
+ * nach Jahr und Monatsbereich und erzeugt ein PDF via DomPDF:
+ * A5-Seiten im Ranglisten-Stil, ausgeschossen als Broschüre (A4 quer, zum Falten;
+ * drucken beidseitig, Wenden an der kurzen Seite).
+ * POST: year, start_month, end_month, bemerkung, csrf_token [, broschuere=0 → nur A5-Seiten]
  * Antwort: PDF-Stream; bei Fehlern Klartext mit 400/500.
  ************************************************************/
 
@@ -313,97 +315,62 @@ class MonatsblattPDFExporter {
     }
 
     private function buildHTML($allTimestamps, $parsedDates, $eventsByDate, $gruppenMapping, $wichtigeTermine) {
-        $rangeTitle = $this->monthDe[$this->startMonth] . " - " . $this->monthDe[$this->endMonth] . " " . $this->year;
-        
-        // CSS als separate Methode
-        $css = $this->getCSS();
-        
-        // Titelseite
-        $titlePage = $this->buildTitlePage($rangeTitle);
-        
-        // HTML Start
-        $html = '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<style>' . $css . '</style>
-</head>
-<body>' . $titlePage;
-        
-        // Hauptinhalt
+        $rangeTitle = $this->startMonth === $this->endMonth
+            ? $this->monthDe[$this->startMonth] . ' ' . $this->year
+            : $this->monthDe[$this->startMonth] . ' – ' . $this->monthDe[$this->endMonth] . ' ' . $this->year;
+
+        // A5-Seiten im Ranglisten-Stil (pdf_rangliste_css) plus Broschüren-Layout
+        $html = '<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">'
+              . '<title>Schiesszeiten ' . htmlspecialchars($rangeTitle) . '</title>'
+              . '<style>' . pdf_theme_css() . pdf_rangliste_css() . $this->getCSS() . '</style>'
+              . '</head><body>' . $this->buildTitlePage($rangeTitle) . '<div class="container">';
+
+        // Tage, gruppiert nach Monat (Monatstitel steht im ersten Tagesblock, damit er nie allein unten steht)
+        $letzterMonat = null;
         foreach ($allTimestamps as $ymd => $ts) {
-            $html .= $this->buildDayBlock($ymd, $ts, $parsedDates, $eventsByDate, $gruppenMapping);
+            $monat = (int)date('n', $ts);
+            $monatTitel = $monat !== $letzterMonat ? $this->monthDe[$monat] . ' ' . date('Y', $ts) : null;
+            $letzterMonat = $monat;
+            $html .= $this->buildDayBlock($ymd, $ts, $parsedDates, $eventsByDate, $gruppenMapping, $monatTitel);
         }
-        
-        // Wichtige Termine
+        if (!$allTimestamps) {
+            $html .= '<p class="muted">Keine Schiesstage in diesem Zeitraum.</p>';
+        }
+
         $html .= $this->buildWichtigeTermine($wichtigeTermine);
-        
-        // Bemerkungen
         if (!empty($this->bemerkung)) {
             $html .= $this->buildBemerkungen();
         }
-        
-        $html .= '</body></html>';
-        
-        return $html;
+
+        return $html . '</div></body></html>';
     }
 
+    /** Ergänzungen zum Ranglisten-Stil für A5 hoch (Broschüre aus A4 gefaltet). */
     private function getCSS() {
-        // Zentrales Theme zuerst (Typografie/Akzentfarbe/Tabellen-Defaults),
-        // danach Monatsblatt-spezifische Layout-Overrides.
-        return pdf_theme_css() . '
-            body {
-                font-family: Arial, sans-serif;
-                font-size: 10px;
-                margin: 20px;
-                line-height: 1.4;
-            }
-            .day-block {
-                page-break-inside: avoid;
-                margin-bottom: 20px;
-            }
-            table.day-table {
-                border-collapse: collapse;
-                width: 100%;
-                margin-bottom: 20px;
-                page-break-inside: avoid;
-            }
-            th, td {
-                border: 1px solid #e2e8f0;
-                padding: 4px;
-                vertical-align: top;
-            }
-            th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                font-weight: bold;
-            }
-            .td-left {
-                text-align: left;
-            }
-            .td-center {
-                text-align: center;
-            }
-            .no-top {
-                border-top: none !important;
-            }
-            .no-bottom {
-                border-bottom: none !important;
-            }
-            .date-cell {
-                font-family: "Roboto Mono", Consolas, "Courier New", monospace;
-                white-space: nowrap;
-            }
-            h3 {
-                margin-top: 10px;
-                margin-bottom: 10px;
-            }
-            hr {
-                border: none;
-                border-top: 1px solid #ccc;
-                margin: 10px 0;
-            }
+        $c = pdf_theme_palette();
+        return '
+            @page { margin: 12mm 11mm 15mm 11mm; }
+            body { font-size: 9pt; }
+            /* Titelblatt */
+            .mb-titelseite { text-align: center; padding-top: 18mm; page-break-after: always; }
+            .mb-titelseite img { height: 44mm; width: auto; }
+            .mb-titel { font-size: 26pt; font-weight: bold; color: ' . $c['rl_titel'] . '; margin: 14mm 0 3mm 0; }
+            .mb-zeitraum { font-size: 15pt; margin: 0 0 4mm 0; }
+            .mb-verein { font-size: 10pt; color: ' . $c['muted'] . '; }
+            .mb-stand { font-size: 8pt; color: ' . $c['muted'] . '; margin-top: 52mm; }
+            /* Tage */
+            .mb-tag { page-break-inside: avoid; margin-bottom: 6mm; }  /* Luft vor dem nächsten Datumstitel */
+            h2.mb-monat { font-size: 13pt; margin: 2mm 0 2mm 0; }
+            h3.mb-datum { font-size: 10pt; margin: 0 0 0.8mm 0; }
+            .table.mb { margin-bottom: 0; }
+            .table.mb th, .table.mb td { padding: 0.8mm 1.2mm; vertical-align: top; }
+            .table.mb th { vertical-align: bottom; }
+            .table.mb .zeit { width: 21mm; white-space: nowrap; }
+            .table.mb .typ { width: 24mm; font-size: 8pt; }
+            .table.mb td:last-child { text-align: left; }
+            .mb-gruppen { font-size: 7.5pt; margin-top: 0.5mm; line-height: 1.3; }
+            .mb-block { page-break-inside: avoid; margin-top: 4mm; }
+            .mb-bemerkung { margin: 0; }
         ';
     }
 
@@ -411,25 +378,13 @@ class MonatsblattPDFExporter {
         // Zentrales Logo (Master-Datei via pdf_theme), Fallback auf lokale dat/-Kopie
         $logoBase64 = pdf_logo_src() ?: $this->imgToBase64('dat/MSVWilen_Logo.jpg');
 
-        return '<div style="text-align: left; margin-top: 100px;">
-            <img src="' . $logoBase64 . '" alt="Logo" style="width:200px; height:auto;">
-        </div>
-        
-        <div style="text-align: center; margin-top: 100px;">
-            <hr>
-            <h1 style="font-size: 24px; margin-top: 20px;">Schiesszeiten<br>' . $rangeTitle . '</h1>
-            <hr>
-        </div>
-        
-        <div style="text-align: right; margin-top: 100px;">
-            <img src="' . $logoBase64 . '" alt="Logo" style="width:200px; height:auto;">
-        </div>
-        
-        <div style="text-align: right; margin-top: 100px;">
-            ' . date('d.m.Y') . $this->erstellerKuerzel() . '
-        </div>
-        
-        <div style="page-break-after: always;"></div>';
+        return '<div class="mb-titelseite">'
+            . ($logoBase64 !== '' ? '<img src="' . $logoBase64 . '" alt="Logo">' : '')
+            . '<div class="mb-titel">Schiesszeiten</div>'
+            . '<div class="mb-zeitraum">' . htmlspecialchars($rangeTitle) . '</div>'
+            . '<div class="mb-verein">Militärschützenverein Wilen</div>'
+            . '<div class="mb-stand">Stand ' . date('d.m.Y') . $this->erstellerKuerzel() . '</div>'
+            . '</div>';
     }
 
     /**
@@ -445,78 +400,45 @@ class MonatsblattPDFExporter {
         return $initialen !== '' ? ' / ' . htmlspecialchars(mb_substr($initialen, 0, 3), ENT_QUOTES, 'UTF-8') : '';
     }
 
-    private function buildDayBlock($ymd, $ts, $parsedDates, $eventsByDate, $gruppenMapping) {
-        $dayLabel = $this->formatDay($ts);
-        
-        $html = '<div class="day-block">
-            <hr>
-            <h3>' . $dayLabel . '</h3>
-            <table class="day-table">
-                <tr>
-                    <th style="width:100px;" class="td-left">Zeit</th>
-                    <th style="width:250px;" class="td-left">Bezeichnung</th>
-                    <th style="width:100px;" class="td-left">Typ</th>
-                    <th style="width:150px;" class="td-left">Gruppen</th>
-                </tr>';
-        
+    private function buildDayBlock($ymd, $ts, $parsedDates, $eventsByDate, $gruppenMapping, $monatTitel = null) {
+        $html = '<div class="mb-tag">';
+        if ($monatTitel !== null) {
+            $html .= '<h2 class="rl-abschnitt mb-monat">' . htmlspecialchars($monatTitel) . '</h2>';
+        }
+        $html .= '<h3 class="rl-abschnitt mb-datum">' . $this->formatDay($ts) . '</h3>'
+            . '<table class="table mb"><thead><tr>'
+            . '<th class="zeit">Zeit</th><th>Anlass</th><th class="typ">Typ</th>'
+            . '</tr></thead><tbody>';
+
         if (empty($parsedDates[$ymd])) {
-            $html .= '<tr><td colspan="4" class="td-center">Keine Events</td></tr>';
+            $html .= '<tr><td colspan="3" class="muted">Keine Anlässe</td></tr>';
         } else {
             foreach ($parsedDates[$ymd] as $event) {
                 $html .= $this->buildEventRows($event, $ymd, $eventsByDate, $gruppenMapping);
             }
         }
-        
-        $html .= '</table></div>';
-        
-        return $html;
+
+        return $html . '</tbody></table></div>';
     }
 
+    /** Eine Zeile pro Anlass: alle Zeitfenster untereinander, Gruppen klein unter dem Namen. */
     private function buildEventRows($event, $ymd, $eventsByDate, $gruppenMapping) {
         $eid = $event['id'];
-        $typText = $this->getEventType($event['erweitert'], $event['info']);
-        $gruppenText = $this->getGruppenText($eid, $gruppenMapping);
-        
         $blocks = $eventsByDate[$ymd][$eid] ?? [];
-        
-        if (empty($blocks)) {
-            return '<tr>
-                <td class="td-left">Keine Zeit</td>
-                <td>' . htmlspecialchars($event['bezeichnung']) . '</td>
-                <td class="td-left">' . $typText . '</td>
-                <td>' . $gruppenText . '</td>
-            </tr>';
+
+        if ($blocks) {
+            $zeiten = array_map(static fn($b) => substr($b['start'], 0, 5) . ' – ' . substr($b['end'], 0, 5), $blocks);
+            $zeit = implode('<br>', $zeiten);
+        } else {
+            $zeit = '<span class="muted">ohne Zeit</span>';
         }
-        
-        $html = '';
-        $cnt = count($blocks);
-        
-        foreach ($blocks as $idx => $timeBlock) {
-            $startHM = substr($timeBlock['start'], 0, 5);
-            $endHM = substr($timeBlock['end'], 0, 5);
-            
-            $extraClass = '';
-            if ($idx > 0) $extraClass .= ' no-top';
-            if ($idx < $cnt - 1) $extraClass .= ' no-bottom';
-            
-            if ($idx === 0) {
-                $html .= '<tr>
-                    <td class="td-left' . $extraClass . '">' . $startHM . ' - ' . $endHM . '</td>
-                    <td class="' . $extraClass . '">' . htmlspecialchars($event['bezeichnung']) . '</td>
-                    <td class="td-left' . $extraClass . '">' . $typText . '</td>
-                    <td class="' . $extraClass . '">' . $gruppenText . '</td>
-                </tr>';
-            } else {
-                $html .= '<tr>
-                    <td class="td-left' . $extraClass . '">' . $startHM . ' - ' . $endHM . '</td>
-                    <td class="' . $extraClass . '"></td>
-                    <td class="td-left' . $extraClass . '"></td>
-                    <td class="' . $extraClass . '"></td>
-                </tr>';
-            }
-        }
-        
-        return $html;
+
+        $gruppen = $this->getGruppenText($eid, $gruppenMapping);
+        return '<tr>'
+            . '<td class="zeit">' . $zeit . '</td>'
+            . '<td>' . htmlspecialchars($event['bezeichnung']) . ($gruppen !== '' ? '<div class="mb-gruppen">' . $gruppen . '</div>' : '') . '</td>'
+            . '<td class="typ">' . $this->getEventType($event['erweitert'], $event['info']) . '</td>'
+            . '</tr>';
     }
 
     private function getEventType($erweitert, $info) {
@@ -528,104 +450,133 @@ class MonatsblattPDFExporter {
         return "";
     }
 
+    /** Gruppen eines Anlasses: «Gruppenname: Mitglied, Mitglied …», eine Gruppe pro Zeile. */
     private function getGruppenText($eid, $gruppenMapping) {
-        $text = "";
+        $zeilen = [];
         if (!empty($gruppenMapping[$eid])) {
-            foreach ($gruppenMapping[$eid] as $gUID => $gdata) {
-                $text .= "<strong>" . htmlspecialchars($gdata['Gruppenname']) . "</strong> (" 
-                      . htmlspecialchars(implode(", ", $gdata['members'])) . ")<br>";
+            foreach ($gruppenMapping[$eid] as $gdata) {
+                $zeilen[] = '<strong>' . htmlspecialchars($gdata['Gruppenname']) . ':</strong> '
+                          . htmlspecialchars(implode(', ', $gdata['members']));
             }
         }
-        return $text;
+        return implode('<br>', $zeilen);
     }
 
     private function buildWichtigeTermine($termine) {
         if (empty($termine)) {
             return '';
         }
-        
-        $html = '<div class="day-block" style="page-break-inside: avoid;">
-            <h3>Wichtige Termine</h3>
-            <table class="day-table">
-                <tr>
-                    <th class="td-left">Datum</th>
-                    <th class="td-left">Uhrzeit</th>
-                    <th>Bezeichnung</th>
-                </tr>';
-        
+
+        $html = '<div class="mb-block"><h2 class="rl-abschnitt mb-monat">Wichtige Termine</h2>'
+            . '<table class="table mb"><thead><tr>'
+            . '<th class="zeit">Datum</th><th class="zeit">Zeit</th><th>Termin</th>'
+            . '</tr></thead><tbody>';
+
         foreach ($termine as $termin) {
             $ts = strtotime($termin['date']);
             $weekday = date('D', $ts);
             $weekdayDe = $this->deDays[$weekday] ?? $weekday;
-            $dateStr = $weekdayDe . '. ' . date('d.m.Y', $ts);
-            
-            $html .= '<tr>
-                <td class="td-left date-cell">' . $dateStr . '</td>
-                <td class="td-left">' . htmlspecialchars($termin['time']) . '</td>
-                <td>' . htmlspecialchars($termin['name']) . '</td>
-            </tr>';
+            $html .= '<tr>'
+                . '<td class="zeit">' . $weekdayDe . ' ' . date('d.m.Y', $ts) . '</td>'
+                . '<td class="zeit">' . htmlspecialchars((string)$termin['time']) . '</td>'
+                . '<td>' . htmlspecialchars((string)$termin['name']) . '</td>'
+                . '</tr>';
         }
-        
-        $html .= '</table></div>';
-        
-        return $html;
+
+        return $html . '</tbody></table></div>';
     }
 
     private function buildBemerkungen() {
-        return '<div class="day-block" style="page-break-inside: avoid;">
-            <h3>Bemerkungen</h3>
-            <table class="day-table">
-                <tr><td>' . nl2br($this->bemerkung) . '</td></tr>
-            </table>
-        </div>';
+        return '<div class="mb-block"><h2 class="rl-abschnitt mb-monat">Bemerkungen</h2>'
+            . '<p class="mb-bemerkung">' . nl2br($this->bemerkung) . '</p></div>';
     }
 
+    /** «Samstag, 18. April» */
     private function formatDay($ts) {
         $wd = date('l', $ts);
         $wdD = $this->wdEnToDe[$wd] ?? $wd;
-        $d = date('d', $ts);
-        $m = date('m', $ts);
-        return "$wdD, $d.$m.";
+        return $wdD . ', ' . (int)date('j', $ts) . '. ' . $this->monthDe[(int)date('n', $ts)];
     }
 
     private function imgToBase64($imgPath) {
         if (!file_exists($imgPath)) {
             return "";
         }
-        
+
         $imageData = file_get_contents($imgPath);
         if ($imageData === false) {
             return "";
         }
-        
+
         $mimeType = mime_content_type($imgPath);
         return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
     }
 
+    /**
+     * A5-PDF rendern (Fusszeile ab Seite 2) und standardmässig als Broschüre ausschiessen:
+     * zwei A5-Seiten pro A4-Blatt quer, Reihenfolge fürs Falten, aufgefüllt auf ein Vielfaches von 4
+     * (Leerseiten am Schluss = leere Rückseite). Drucken: beidseitig, Wenden an der KURZEN Seite.
+     * POST broschuere=0 liefert nur die A5-Seiten. Gestreamt wird direkt (kein Speichern in dat/).
+     */
     private function createPDF($htmlContent) {
         $options = new Options();
         $options->set('isRemoteEnabled', false); // Logo ist als Data-URI eingebettet
         $options->set('isHtml5ParserEnabled', true);
-        $options->set('defaultFont', 'Arial');
-        
+        $options->set('defaultFont', 'Helvetica');
+
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($htmlContent);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A5', 'portrait');
         $dompdf->render();
+        pdf_seitenfuss($dompdf, 'Schiesszeiten ' . $this->year, 2);
 
-        $filename = sprintf(
-            'Monatsblatt_%d_%02d-%02d_%s.pdf',
-            $this->year,
-            $this->startMonth,
-            $this->endMonth,
-            date('d.m.Y')
-        );
+        $pdf = $dompdf->output();
+        $seiten = $dompdf->getCanvas()->get_page_count();
+        $art = 'A5';
+        if (($_POST['broschuere'] ?? '1') !== '0') {
+            $broschuere = $this->ausschiessen($pdf, $seiten);
+            if ($broschuere !== null) {
+                $pdf = $broschuere;
+                $art = 'Broschuere';
+            }
+        }
 
-        // PDF direkt als Download streamen (kein Speichern auf Platte).
-        // Puffer leeren, damit keine Vor-Ausgabe das Binär-PDF beschädigt.
-        if (ob_get_length()) { @ob_end_clean(); }
-        $dompdf->stream($filename, ['Attachment' => true]);
+        $filename = sprintf('Monatsblatt_%d_%02d-%02d_%s_%s.pdf', $this->year, $this->startMonth, $this->endMonth, $art, date('d.m.Y'));
+
+        // PDF direkt als Download ausgeben. Puffer leeren, damit keine Vor-Ausgabe das Binär-PDF beschädigt.
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdf));
+        echo $pdf;
         exit;
+    }
+
+    /** Broschüre mit pdfjam (wie das Absendenbuch). Bei einem Fehler null (dann gehen die A5-Seiten raus, Log-Eintrag). */
+    private function ausschiessen(string $pdfA5, int $seiten): ?string {
+        $ein = tempnam(sys_get_temp_dir(), 'mbA5_');
+        $aus = $ein . '_broschuere.pdf';
+        try {
+            $fh = fopen($ein, 'wb');
+            fwrite($fh, $pdfA5);
+            fclose($fh);
+            $signatur = max(4, (int)(ceil($seiten / 4) * 4));
+            $home = getenv('HOME') ?: dirname(__DIR__, 4); // /home/<user> oberhalb von www/<docroot>/inc/monatsblatt
+            $env = 'HOME=' . escapeshellarg($home) . ' PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=' . escapeshellarg(sys_get_temp_dir()) . ' ';
+            $cmd = $env . 'pdfjam --booklet true --landscape --paper a4paper --signature ' . $signatur . ' --quiet '
+                 . escapeshellarg($ein) . ' -o ' . escapeshellarg($aus) . ' 2>&1';
+            $out = [];
+            $rc = 0;
+            exec($cmd, $out, $rc);
+            if ($rc !== 0 || !is_file($aus) || filesize($aus) < 1000) {
+                error_log('[export_monatsblatt] Ausschiessen fehlgeschlagen (rc=' . $rc . '): ' . trim(implode(' ', array_slice($out, -3))));
+                return null;
+            }
+            return (string)file_get_contents($aus);
+        } finally {
+            @unlink($ein);
+            @unlink($aus);
+        }
     }
 }
 
