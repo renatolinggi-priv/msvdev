@@ -30,7 +30,7 @@ const Druck = {
         {
             section: 'Jahresmeisterschaft',
             profiles: [
-                { doc_type: 'jm_standblatt',  label: 'JM Standblatt',    desc: 'Standblatt fuer Jahresmeisterschaft (Word-Vorlage A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
+                { doc_type: 'jm_standblatt',  label: 'JM Standblatt',    desc: 'Standblatt Heimmeisterschaft und Kantonalstich (A4 quer, 2 Seiten zum Falten, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
                 { doc_type: 'jmrang',         label: 'JM Rangliste',     desc: 'Rangliste nach Rang / nach Name (JM Rangliste)', format_select: FORMAT_A4_QUER, format_field: 'format', default_copies: 1 },
                 { doc_type: 'jmdurchschnitt', label: 'JM Durchschnitte', desc: 'PDF-Export der Durchschnitte pro Anlass', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
                 { doc_type: 'jmdefinition',   label: 'Jahresprogramm',   desc: 'Jahresprogramm-PDF (JM Definition)', format_fixed: 'A4 Portrait', default_copies: 1 }
@@ -39,8 +39,8 @@ const Druck = {
         {
             section: 'Endschiessen',
             profiles: [
-                // Excel-Vorlage → PDF (Konvertierungsdienst) → QZ Tray; Duplex «Lange Seite» = beidseitig, Bindung an der langen Kante
-                { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt',   desc: 'Standblatt aus «Endschiessen loesen» (A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
+                // PDF direkt mit Dompdf (seit 1.68.50) → QZ Tray; Duplex nach Profil
+                { doc_type: 'endschiessen_standblatt', label: 'Endschiessen Standblatt',   desc: 'Standblatt aus «Endschiessen loesen» (A4 quer, 2 Seiten zum Falten, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 },
                 { doc_type: 'endschiessen_abrechnung', label: 'Endschiessen Abrechnung',   desc: 'Abrechnung aus «Endschiessen loesen»', format_fixed: 'A4 Landscape', default_copies: 1 },
                 { doc_type: 'endschrang',              label: 'Endschiessen Ranglisten',   desc: 'Alle Ranglisten der Seite «Endschiessen Rangliste» (Gesamt, Zwischen, Anmeldung, Stiche, Partner)', format_select: FORMAT_A4_HOCH, format_field: 'format', default_copies: 1 },
                 { doc_type: 'absendenbuch',            label: 'Absendenbuch (Broschuere)', desc: 'A5-Broschuere auf A4 quer, 2 Seiten pro Blatt, gefaltet. Duplex «Kurze Seite» (ohne Angabe wird sie automatisch gesetzt)', format_fixed: 'A4 Landscape', default_copies: 1 },
@@ -64,6 +64,14 @@ const Druck = {
             profiles: [
                 // Word-Einsatzliste (PhpWord) → PDF über den Konvertierungsdienst → QZ Tray; Ausrichtung kommt je Plan von der Seite
                 { doc_type: 'einsatzplan', label: 'Einsatzplan', desc: 'Einsatzliste aus der Einsatzplanung (Obligatorisch, Feldschiessen, Chilbi quer; Schlossturm hoch), PDF', format_fixed: 'A4 (Ausrichtung je Plan)', default_copies: 1 }
+            ]
+        },
+        {
+            section: 'Verein',
+            profiles: [
+                // Monatsblatt: A5-Broschüre auf A4 quer (seit 1.68.48); ohne Duplex im Profil setzt die Seite «Kurze Seite»
+                { doc_type: 'monatsblatt', label: 'Monatsblatt',  desc: 'A5-Broschuere auf A4 quer, 2 Seiten pro Blatt, gefaltet. Duplex «Kurze Seite» (ohne Angabe wird sie automatisch gesetzt)', format_fixed: 'A4 Landscape', default_copies: 1 },
+                { doc_type: 'fragebogen',  label: 'Fragebogen',   desc: 'Auswertung des Mitgliederfragebogens (A4 quer, PDF)', format_fixed: 'A4 Landscape', default_copies: 1 }
             ]
         }
     ],

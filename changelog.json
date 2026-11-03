@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.51",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "Direktdruck für Monatsblatt und Fragebogen einstellbar",
+        "beschreibung": "In der Drucksteuerung gibt es die neue Gruppe «Verein» mit den Profilen Monatsblatt und Fragebogen (beide A4 quer). Bisher blieben deren Druck-Knöpfe gesperrt, weil sich kein Profil anlegen liess. Das Monatsblatt wird wie das Absendenbuch als Broschüre über die kurze Seite gewendet, wenn im Profil kein Duplex steht. Die Beschreibungen der beiden Standblätter in der Drucksteuerung sind nachgeführt. Ein nicht mehr benutzter, alter Wanderpreis-Generator ist entfernt.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.50",
     "datum": "2026-11-03",
     "aenderungen": [

@@ -123,10 +123,15 @@ $(function() {
 
     // Direktdruck: gleicher POST, Ergebnis geht an QZ Tray (Profil «monatsblatt» in der Drucksteuerung)
     if (typeof MsvDruck !== 'undefined') {
+        // A5-Broschüre auf A4 quer: beidseitig mit Wenden an der kurzen Seite; steht im Profil kein Duplex,
+        // wird «short-edge» gesetzt (wie beim Absendenbuch), sonst gilt das Profil.
         MsvDruck.resolve('monatsblatt', () => {
             const p = exportParams();
             if (!p) return null;
+            const profil = MsvDruck.profil('monatsblatt');
             return {
+                orientation: 'landscape',
+                duplex: (profil && profil.duplex) || 'short-edge',
                 url: 'monatsblatt/export_monatsblatt.php',
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
