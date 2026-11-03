@@ -28,10 +28,19 @@
 function pdf_theme_schema(): array
 {
     return [
-        // --- Allgemein ---
+        // --- Listen und Ranglisten (pdf_rangliste_css: alle PDFs im Stil des Absendenbuchs) ---
+        // Defaults = bisher fest eingebautes Aussehen (schwarz auf weiss).
+        'rl_titel'     => ['type' => 'color', 'default' => '#000000', 'label' => 'Titel und Abschnitte',               'group' => 'Listen'],
+        'rl_linie'     => ['type' => 'color', 'default' => '#000000', 'label' => 'Linien (Tabellenkopf, Totalzeilen)', 'group' => 'Listen'],
+        'muted'        => ['type' => 'color', 'default' => '#64748b', 'label' => 'Gedämpft (Untertitel, Hinweise, Fusszeile)', 'group' => 'Listen'],
+        'rl_zebra'     => ['type' => 'color', 'default' => '#f1f1f1', 'label' => 'Zebrastreifen breiter Tabellen (Weiss = aus)', 'group' => 'Listen'],
+        'rl_streich'   => ['type' => 'color', 'default' => '#d9d9d9', 'label' => 'Hinterlegung gestrichener Resultate', 'group' => 'Listen'],
+        'rl_logo_h'    => ['type' => 'int', 'default' => 17, 'min' => 10, 'max' => 30, 'label' => 'Logo-Höhe im Kopf (mm)', 'group' => 'Listen'],
+        // --- Nicht mehr im Editor (seit 1.68.46, Text/Akzent seit 1.68.48 mit dem Monatsblatt im Ranglisten-Stil):
+        //     kein PDF zeigt diese Werte noch an. Sie bleiben mit ihren Defaults im Schema, weil pdf_theme_css()
+        //     sie verwendet; gespeicherte Werte werden weiter gelesen. ---
         'text'         => ['type' => 'color', 'default' => '#2d3748', 'label' => 'Text',                 'group' => 'Allgemein'],
-        'muted'        => ['type' => 'color', 'default' => '#64748b', 'label' => 'Gedämpft / Fusszeile', 'group' => 'Allgemein'],
-        'accent'       => ['type' => 'color', 'default' => '#3b5998', 'label' => 'Akzent (Titel/Total)', 'group' => 'Allgemein'],
+        'accent'       => ['type' => 'color', 'default' => '#3b5998', 'label' => 'Akzent',               'group' => 'Allgemein'],
         // --- Tabelle ---
         'head_bg'      => ['type' => 'color', 'default' => '#eef2f7', 'label' => 'Kopf-Hintergrund',     'group' => 'Tabelle'],
         'head_text'    => ['type' => 'color', 'default' => '#2d3748', 'label' => 'Kopf-Text',            'group' => 'Tabelle'],
@@ -299,12 +308,15 @@ CSS;
 /**
  * Ranglisten-Layout wie im Absendenbuch: schwarz auf weiss, keine Zellrahmen, fette Kopfzeile mit einer Linie
  * darunter, die ersten drei fett, Zahlen rechtsbündig. Kommt NACH pdf_theme_css() und übersteuert dessen
- * Tabellen-Stil; gilt nur für Ranglisten (Abrechnungen, Listen usw. bleiben beim Theme).
+ * Tabellen-Stil; gilt seit 1.68.44 für Ranglisten, Listen und Abrechnungen. Einstellbar in der PDF-Vorlage
+ * (Gruppe «Listen»): Titel-, Linien-, Gedämpft-, Zebra- und Streichfarbe sowie die Logo-Höhe.
  * Seitenränder per @page; die Fusszeile zeichnet pdf_seitenfuss() nach dem Rendern.
  */
 function pdf_rangliste_css(): string
 {
     $c = pdf_theme_palette();
+    // Logo-Spalte: Logo-Höhe plus Abstand zum Titel (das Logo ist etwa so breit wie hoch)
+    $logoSpalte = $c['rl_logo_h'] + 7;
     return <<<CSS
         @page { margin: 14mm 14mm 16mm 14mm; }
         body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; line-height: 1.25; color: #000; }
@@ -313,13 +325,13 @@ function pdf_rangliste_css(): string
         /* Kopf: Logo links, daneben Titel und Untertitel (pdf_rangliste_kopf) */
         table.rl-kopf { width: 100%; border-collapse: collapse; margin: 0 0 6mm 0; }
         table.rl-kopf td { border: none; padding: 0; vertical-align: middle; background: none; text-align: left; font-weight: normal; }
-        td.rl-logo { width: 24mm; }
-        td.rl-logo img { height: 17mm; width: auto; }
-        .rl-titel { font-size: 18pt; font-weight: bold; line-height: 1.1; color: #000; margin: 0; }
+        td.rl-logo { width: {$logoSpalte}mm; }
+        td.rl-logo img { height: {$c['rl_logo_h']}mm; width: auto; }
+        .rl-titel { font-size: 18pt; font-weight: bold; line-height: 1.1; color: {$c['rl_titel']}; margin: 0; }
         .rl-unter { font-size: 9pt; color: {$c['muted']}; margin-top: 1.5mm; }
 
         /* Abschnittstitel (Kat. A, Runde 1 …) */
-        h2, h3, .rl-abschnitt { font-size: 12pt; font-weight: bold; color: #000; text-align: left; margin: 5mm 0 1.5mm 0; }
+        h2, h3, .rl-abschnitt { font-size: 12pt; font-weight: bold; color: {$c['rl_titel']}; text-align: left; margin: 5mm 0 1.5mm 0; }
 
         /* Tabelle */
         .table { width: 100%; border-collapse: collapse; margin: 0 0 5mm 0; background: none; }
@@ -328,7 +340,7 @@ function pdf_rangliste_css(): string
             font-family: Helvetica, Arial, sans-serif; font-weight: normal; vertical-align: bottom;
         }
         .table thead { background: none; }
-        .table th { font-weight: bold; text-align: left; border-bottom: 0.8pt solid #000; padding-bottom: 1mm; }
+        .table th { font-weight: bold; text-align: left; border-bottom: 0.8pt solid {$c['rl_linie']}; padding-bottom: 1mm; }
         .table tbody tr:nth-child(even) { background: none; }
         .table td:first-child { text-align: left; font-weight: normal; }  /* Theme zentriert/fettet die erste Spalte */
         .table td.rang { text-align: right; width: 9mm; }
@@ -342,7 +354,11 @@ function pdf_rangliste_css(): string
         /* Zähl- und Abrechnungslisten (Absendenanmeldung): Gruppentitel, eingerückte Posten, Summenzeilen */
         .table tr.rl-gruppe td { font-weight: bold; padding-top: 3.2mm; text-align: left; }  /* colspan-Zelle ist auch :last-child */
         .table td.rl-einzug { padding-left: 5mm; }
-        .table tr.rl-total td { font-weight: bold; border-top: 0.5pt solid #000; }
+        .table tr.rl-total td { font-weight: bold; border-top: 0.5pt solid {$c['rl_linie']}; }
+        /* Breite Tabellen (JM, Endschiessen lösen, Fragebogen): Zebrastreifen; gestrichene Resultate hinterlegt */
+        .table.rl-zebra tbody tr:nth-child(even) td { background: {$c['rl_zebra']}; }
+        .table.rl-zebra tr.rl-total td { background: none; }
+        .rl-gestrichen { background: {$c['rl_streich']}; color: #000; text-decoration: line-through; padding: 0 0.5mm; }
         /* Zwei Blöcke nebeneinander (Layout-Tabelle). Dompdf teilt eine Zelle nicht über einen Seitenwechsel:
            der Inhalt jeder Zelle muss auf eine Seite passen, längere Listen teilt der Generator selbst auf. */
         table.rl-spalten { width: 100%; border-collapse: collapse; margin: 0; }
@@ -405,16 +421,30 @@ function pdf_rangliste_anfang(string $titel, string $untertitel = '', string $zu
 /**
  * Fusszeile auf jeder Seite (nach $dompdf->render() aufrufen): links Verein, Dokument und Stand, rechts Seitenzahl.
  */
-function pdf_seitenfuss(\Dompdf\Dompdf $dompdf, string $dokument = ''): void
+function pdf_seitenfuss(\Dompdf\Dompdf $dompdf, string $dokument = '', int $abSeite = 1): void
 {
+    // $abSeite > 1: Fusszeile erst ab dieser Seite (z. B. Broschüre ohne Fusszeile auf dem Titelblatt)
     $canvas = $dompdf->getCanvas();
     $fm = $dompdf->getFontMetrics();
     $font = $fm->getFont('Helvetica');
-    $grau = [0.39, 0.45, 0.55];
+    // Farbe «Gedämpft» aus der PDF-Vorlage (#rrggbb -> Dompdf-RGB 0..1)
+    $hex = pdf_theme_palette()['muted'];
+    $grau = [hexdec(substr($hex, 1, 2)) / 255, hexdec(substr($hex, 3, 2)) / 255, hexdec(substr($hex, 5, 2)) / 255];
     $groesse = 7.5;
     $rand = 14 / 25.4 * 72;   // 14 mm wie @page
     $y = $canvas->get_height() - 10 / 25.4 * 72;
     $links = 'Militärschützenverein Wilen' . ($dokument !== '' ? ' · ' . $dokument : '') . ' · Stand ' . date('d.m.Y, H:i');
+    if ($abSeite > 1) {
+        $canvas->page_script(function (int $seite, int $seiten, $c, $metrik) use ($abSeite, $rand, $y, $links, $font, $groesse, $grau) {
+            if ($seite < $abSeite) {
+                return;
+            }
+            $c->text($rand, $y, $links, $font, $groesse, $grau);
+            $rechts = 'Seite ' . $seite . ' von ' . $seiten;
+            $c->text($c->get_width() - $rand - $metrik->getTextWidth($rechts, $font, $groesse), $y, $rechts, $font, $groesse, $grau);
+        });
+        return;
+    }
     $canvas->page_text($rand, $y, $links, $font, $groesse, $grau);
     $rechts = 'Seite {PAGE_NUM} von {PAGE_COUNT}';
     $breite = $fm->getTextWidth('Seite 10 von 10', $font, $groesse);

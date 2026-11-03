@@ -41,17 +41,9 @@ class MunitionskaufReport extends PDFGenerator {
      * Generiert den Munitionskauf-Report
      */
     public function generate() {
-        $title = 'Munitionsverkauf ' . $this->selectedYear;
-        if ($this->filter !== 'year') {
-            $title .= ' - ' . $this->filterText;
-        }
-        
-        // Custom CSS für den Report
-        $customStyles = $this->getCustomStyles();
-        
-        // HTML Header
-        $html = $this->createHTMLHeader($title, $customStyles, 10);
-        $html .= '<h2>' . $title . '</h2>';
+        // Ranglisten-Layout (Logo links, Titel, Fusszeile mit Seitenzahl); Zeitraum im Untertitel
+        $untertitel = $this->filter === 'year' ? 'Ganzes Jahr' : $this->filterText;
+        $html = $this->ranglisteHeader('Munitionsverkauf ' . $this->selectedYear, $untertitel, $this->getCustomStyles());
         
         // Hole Daten
         $bestellungen = $this->getBestellungen();
@@ -281,43 +273,43 @@ class MunitionskaufReport extends PDFGenerator {
      * Erstellt die Haupttabelle mit Kaufdatum in erster Spalte
      */
     private function createMainTable($bestellungen, $totals) {
-        $html = '<table class="table main-table">';
+        $html = '<table class="table">';
         $html .= '<thead><tr>';
-        $html .= '<th class="date-col">Datum</th>';
-        $html .= '<th class="name-col">Käufer</th>';
-        $html .= '<th class="anlass-col">Anlass</th>';
-        $html .= '<th class="munition-col">GP11</th>';
-        $html .= '<th class="munition-col">GP90</th>';
-        $html .= '<th class="price-col">Preis CHF</th>';
+        $html .= '<th style="width: 24mm;">Datum</th>';
+        $html .= '<th>Käufer</th>';
+        $html .= '<th>Anlass</th>';
+        $html .= '<th class="r" style="width: 18mm;">GP11</th>';
+        $html .= '<th class="r" style="width: 18mm;">GP90</th>';
+        $html .= '<th class="r" style="width: 24mm;">Preis CHF</th>';
         $html .= '</tr></thead><tbody>';
-        
+
+        $strich = '<span class="muted">–</span>';
         foreach ($bestellungen as $b) {
             $datum = date('d.m.Y', strtotime($b['kauf_datum']));
-            $kaeufer = htmlspecialchars($b['kaeufer_name']);
-            $anlass = htmlspecialchars($b['anlass'] ?: '-');
-            $gp11 = $b['gp11_total'] ?: '-';
-            $gp90 = $b['gp90_total'] ?: '-';
+            $kaeufer = htmlspecialchars((string)$b['kaeufer_name']);
+            $anlass = $b['anlass'] ? htmlspecialchars($b['anlass']) : $strich;
+            $gp11 = $b['gp11_total'] ?: $strich;
+            $gp90 = $b['gp90_total'] ?: $strich;
             $preis = number_format($b['total_preis'] / 100, 2, '.', '');
-            
-            $html .= '<tr>';
-            $html .= '<td class="date-cell">' . $datum . '</td>';
-            $html .= '<td class="name-cell">' . $kaeufer . '</td>';
-            $html .= '<td class="anlass-cell">' . $anlass . '</td>';
-            $html .= '<td class="munition-cell">' . $gp11 . '</td>';
-            $html .= '<td class="munition-cell">' . $gp90 . '</td>';
-            $html .= '<td class="price-cell">' . $preis . '</td>';
-            $html .= '</tr>';
+
+            $html .= '<tr>'
+                . '<td>' . $datum . '</td>'
+                . '<td>' . $kaeufer . '</td>'
+                . '<td>' . $anlass . '</td>'
+                . '<td class="r">' . $gp11 . '</td>'
+                . '<td class="r">' . $gp90 . '</td>'
+                . '<td class="r">' . $preis . '</td>'
+                . '</tr>';
         }
-        
-        // Totals row
-        $html .= '</tbody><tfoot>';
-        $html .= '<tr class="totals-row">';
-        $html .= '<td colspan="3" class="total-label"><strong>TOTAL</strong></td>';
-        $html .= '<td class="munition-cell"><strong>' . ($totals['gp11_total'] ?: '0') . '</strong></td>';
-        $html .= '<td class="munition-cell"><strong>' . ($totals['gp90_total'] ?: '0') . '</strong></td>';
-        $html .= '<td class="price-cell"><strong>' . number_format(($totals['total_preis'] ?: 0) / 100, 2, '.', '') . '</strong></td>';
-        $html .= '</tr>';
-        $html .= '</tfoot></table>';
+
+        // Totalzeile mit Linie (wie die Abrechnungen im Endschiessen)
+        $html .= '<tr class="rl-total">'
+            . '<td colspan="3">Total</td>'
+            . '<td class="r">' . ($totals['gp11_total'] ?: '0') . '</td>'
+            . '<td class="r">' . ($totals['gp90_total'] ?: '0') . '</td>'
+            . '<td class="r">' . number_format(($totals['total_preis'] ?: 0) / 100, 2, '.', '') . '</td>'
+            . '</tr>';
+        $html .= '</tbody></table>';
         
         return $html;
     }
@@ -384,192 +376,8 @@ class MunitionskaufReport extends PDFGenerator {
      */
     private function getCustomStyles() {
         return '
-            @page {
-                size: A4 portrait;
-                margin: 15mm;
-            }
-            
-            body {
-                font-family: Arial, sans-serif;
-                font-size: 10pt;
-            }
-            
-            h1 {
-                color: #3b5998;
-                font-size: 20pt;
-                margin: 15px 0;
-                text-align: center;
-            }
-            
-            h2 {
-                color: #3b5998;
-                font-size: 14pt;
-                margin: 5px 0 20px 0;
-                text-align: center;
-            }
-            
-            h3 {
-                color: #3b5998;
-                font-size: 14pt;
-                margin: 20px 0 10px 0;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 5px;
-            }
-            
-            h4 {
-                color: #3b5998;
-                font-size: 12pt;
-                margin: 15px 0 10px 0;
-            }
-            
-            .main-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-                font-size: 9pt;
-            }
-            
-            .main-table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                padding: 8px 5px;
-                text-align: left;
-                font-weight: bold;
-                border: 1px solid #e2e8f0;
-                border-bottom: 2px solid #cbd5e0;
-            }
+            .table { font-size: 10pt; }
 
-            .main-table td {
-                padding: 6px 5px;
-                border: 1px solid #e2e8f0;
-            }
-            
-            .main-table tbody tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            
-            .date-col {
-                width: 15%;
-            }
-            
-            .date-cell {
-                text-align: center;
-                font-weight: 600;
-            }
-            
-            .name-col {
-                width: 25%;
-            }
-            
-            .name-cell {
-                font-weight: 600;
-            }
-            
-            .anlass-col {
-                width: 25%;
-            }
-            
-            .anlass-cell {
-                font-style: italic;
-                color: #666;
-            }
-            
-            .munition-col {
-                width: 10%;
-                text-align: center;
-                background-color: #e8f4f8;
-            }
-            
-            .munition-cell {
-                text-align: center;
-                background-color: #e8f4f8;
-            }
-            
-            .price-col {
-                width: 15%;
-                text-align: right;
-                background-color: #fff3cd;
-            }
-            
-            .price-cell {
-                text-align: right;
-                padding-right: 10px !important;
-                font-weight: 600;
-                background-color: #fff3cd;
-            }
-            
-            .totals-row {
-                background-color: #f0f0f0 !important;
-                font-weight: bold;
-            }
-            
-            .totals-row td {
-                padding: 10px 5px;
-                border-top: 2px solid #3b5998;
-            }
-            
-            .total-label {
-                text-align: right;
-                padding-right: 15px !important;
-            }
-            
-            .statistics-box {
-                margin-top: 30px;
-                padding: 20px;
-                background-color: #f8f9fa;
-                border: 2px solid #dee2e6;
-                border-radius: 5px;
-                page-break-inside: avoid;
-            }
-            
-            .stat-row {
-                display: table;
-                width: 100%;
-                margin: 15px 0;
-            }
-            
-            .stat-item {
-                display: table-cell;
-                padding: 10px;
-                text-align: center;
-                border-right: 1px solid #dee2e6;
-            }
-            
-            .stat-item:last-child {
-                border-right: none;
-            }
-            
-            .stat-item.highlight {
-                background-color: #fff3cd;
-                font-size: 12pt;
-            }
-            
-            .stat-table {
-                width: 70%;
-                border-collapse: collapse;
-                margin: 10px 0;
-            }
-            
-            .stat-table th {
-                background-color: #e9ecef;
-                padding: 8px;
-                text-align: left;
-                border: 1px solid #dee2e6;
-                font-weight: bold;
-            }
-            
-            .stat-table td {
-                padding: 6px 8px;
-                border: 1px solid #dee2e6;
-            }
-            
-            .text-center {
-                text-align: center;
-            }
-            
-            .text-right {
-                text-align: right;
-            }
         ';
     }
 }

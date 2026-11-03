@@ -21,15 +21,9 @@ use Dompdf\Options;
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 if ($selectedYear < 2000 || $selectedYear > 2100) $selectedYear = (int)date('Y');
 
-// 2) HTML-Kopf zusammenbauen
-$htmlOutput = $header;
-$htmlOutput .= "<title>MSV Wilen Fragebogen $selectedYear</title>";
-$htmlOutput .= "</head>\n<body>\n";
-
-$htmlOutput .= "
-<img src='{$logoBase64}' alt='MSV Wilen Logo' style='max-width:100px;' />
-";
-$htmlOutput .= "<h1 style='text-align:left;'>MSV Wilen Fragebogen $selectedYear</h1>";
+// 2) HTML-Kopf im Ranglisten-Layout (Logo links, Titel, Fusszeile mit Seitenzahl nach dem Rendern)
+$titel = 'Fragebogen ' . $selectedYear;
+$htmlOutput = pdf_rangliste_anfang($titel, 'Mitglieder · Teilnahme an den Wettkämpfen', $fragebogenOverrides);
 
 // 3) Tabelle inkl. Totals-Zeile erzeugen
 $htmlOutput .= buildFragebogenTableForPDF($selectedYear, $conn);
@@ -46,6 +40,7 @@ $dompdf = new Dompdf($options);
 $dompdf->setPaper('A4', 'landscape');
 $dompdf->loadHtml($htmlOutput);
 $dompdf->render();
+pdf_seitenfuss($dompdf, $titel);
 
 $pdfFile = 'Fragebogen_' . $selectedYear . '_' . date('Y-m-d_H-i-s') . '.pdf';
 $written = file_put_contents(__DIR__ . '/dat/' . $pdfFile, $dompdf->output());
@@ -135,7 +130,7 @@ function buildFragebogenTableForPDF($year, $conn)
     }
     
     // 7) HTML-Tabelle aufbauen
-    $html = '<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse;">';
+    $html = '<table class="table rl-zebra">';
     
     // Tabellenkopf
     $html .= '<thead><tr>';
@@ -210,10 +205,8 @@ function buildFragebogenTableForPDF($year, $conn)
         $html .= '</tr>';
     }
     
-    $html .= '</tbody>';
-    
-    // 8) Totals-Zeile in der Tabelle einfügen
-    $totalRow = '<tr style="font-weight:bold;">';
+    // 8) Totals-Zeile (noch im tbody, damit Dompdf sie nicht als Fuss auf jeder Seite wiederholt)
+    $totalRow = '<tr class="rl-total">';
     // Spalte "Name": Zellen verbinden (colspan 2 für Name und Waffe)
     $totalRow .= '<td colspan="2">Total</td>';
     // Mannschaft: Anzahl der "Ich nehme teil"
@@ -227,8 +220,8 @@ function buildFragebogenTableForPDF($year, $conn)
     }
     $totalRow .= '</tr>';
     $html .= $totalRow;
-    
-    $html .= '</table>';
+
+    $html .= '</tbody></table>';
     
     return $html;
 }

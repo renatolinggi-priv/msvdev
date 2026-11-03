@@ -1,5 +1,5 @@
 <?php
-// create_pdf.php – Wichtige Termine eines Jahres als PDF (zentrales PDF-Theme).
+// create_pdf.php – Wichtige Termine eines Jahres als PDF (Ranglisten-Layout wie die übrigen Listen).
 // Enthaelt zusaetzlich die Standbelegungs-Termine mit Kalender-Markierung (InKalender = 1);
 // diese sind im PDF als "Standbelegung" gekennzeichnet, weil die Admin-Tabelle sie nicht zeigt.
 
@@ -58,7 +58,7 @@ $rows = '';
 foreach ($termine as $t) {
     $ts = strtotime($t['date']);
     $datum = $ts ? $wochentage[(int)date('w', $ts)] . ' ' . date('d.m.Y', $ts) : htmlspecialchars($t['date']);
-    $quelle = $t['quelle'] !== '' ? ' <span class="quelle">(' . htmlspecialchars($t['quelle']) . ')</span>' : '';
+    $quelle = $t['quelle'] !== '' ? ' <span class="muted">(' . htmlspecialchars($t['quelle']) . ')</span>' : '';
     $rows .= '<tr>'
            . '<td class="datum">' . $datum . '</td>'
            . '<td>' . htmlspecialchars($t['name']) . $quelle . '</td>'
@@ -66,45 +66,26 @@ foreach ($termine as $t) {
            . '</tr>';
 }
 if ($rows === '') {
-    $rows = '<tr><td colspan="3" class="text-center text-muted">Keine Termine für ' . $year . ' erfasst.</td></tr>';
+    $rows = '<tr><td colspan="3" class="muted">Keine Termine für ' . $year . ' erfasst.</td></tr>';
 }
 
 $hinweis = $anzStandbelegung > 0
-    ? '<p class="text-muted hinweis">Enthält zusätzlich ' . $anzStandbelegung . ' Termin(e) aus der Standbelegung mit Kalender-Markierung, gekennzeichnet mit „(Standbelegung)".</p>'
+    ? '<p class="rl-hinweis">Enthält zusätzlich ' . $anzStandbelegung . ' Termin(e) aus der Standbelegung mit Kalender-Markierung, gekennzeichnet mit «(Standbelegung)».</p>'
     : '';
 
-$html = '<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <title>Wichtige Termine ' . $year . '</title>
-  <style>
-    @page { margin: 20px 20px 50px 20px; }
-    ' . pdf_theme_css() . '
-    /* Terminliste: einfache Tabelle ohne Rang-/Total-Hervorhebung des Themes */
-    .table td:first-child { text-align: left; font-weight: normal; white-space: nowrap; }
-    .table td:last-child  { text-align: left; font-weight: normal; background-color: transparent; color: inherit; white-space: nowrap; }
-    .table td.datum { width: 22%; }
-    .table td.zeit  { width: 20%; }
-    .quelle { color: #64748b; font-size: 9px; }
-    .hinweis { font-size: 9px; margin: 0 10px 8px 10px; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <img class="logo" src="' . pdf_logo_src() . '" alt="Logo">
-    <div class="header-text"><h1>Wichtige Termine ' . $year . '</h1></div>
-  </div>
-  <div class="container">
-    ' . $hinweis . '
-    <table class="table">
-      <thead><tr><th>Datum</th><th>Termin</th><th>Uhrzeit</th></tr></thead>
-      <tbody>' . $rows . '</tbody>
-    </table>
-  </div>
-  ' . pdf_footer_html('MSV Wilen · erstellt am ' . date('d.m.Y')) . '
-</body>
-</html>';
+// Ranglisten-Layout (Logo links, Titel, Fusszeile mit Seitenzahl nach dem Rendern)
+$titel = 'Wichtige Termine ' . $year;
+$css = '
+    .table td.datum { width: 30mm; white-space: nowrap; }
+    .table td.zeit  { width: 28mm; white-space: nowrap; }
+    .table td:last-child { text-align: left; }
+';
+$html = pdf_rangliste_anfang($titel, 'Jahresübersicht', $css)
+    . '<div class="container">'
+    . '<table class="table"><thead><tr><th>Datum</th><th>Termin</th><th>Uhrzeit</th></tr></thead>'
+    . '<tbody>' . $rows . '</tbody></table>'
+    . $hinweis
+    . '</div></body></html>';
 
 $options = new Options();
 $options->set('isRemoteEnabled', false); // Logo ist als Data-URI eingebettet
@@ -114,6 +95,7 @@ $dompdf = new Dompdf($options);
 $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
+pdf_seitenfuss($dompdf, $titel);
 
 $filename   = 'Wichtige_Termine_' . $year . '_' . date('Y-m-d_H-i-s') . '.pdf';
 $outputPath = __DIR__ . '/dat/' . $filename;

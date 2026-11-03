@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.44",
+    "datum": "2026-11-03",
+    "aenderungen": [
+      {
+        "titel": "Weitere PDFs im Ranglisten-Layout",
+        "beschreibung": "Auch diese Ausdrucke sehen jetzt aus wie die Ranglisten: Logo links mit Titel, schwarz auf weiss ohne Rahmen und Farbflächen, Zahlen rechtsbündig, Totalzeilen mit Linie und eine Fusszeile mit Stand und Seitenzahl. Betroffen sind die Wanderpreise (Jahresbericht, JM-Preise, Mitglieder-Info, Gravur-Aufträge Schnitzerei und Akura, Gewinner, Historie), Endschiessen lösen, Munitionsverkauf, Zielscheiben, Wichtige Termine, JSK-Termine, Helferabrechnung Schlossturm, Helferstunden Jungschützenkurs und die Fragebogen-Auswertung. Bei den Gravur-Aufträgen steht der Abgabetermin fett gleich unter dem Kopf. Endschiessen lösen zeigt den Gedankenstrich wieder richtig (vorher «â€“»). Inhalte, Zahlen und Beträge bleiben unverändert. Farben aus der «PDF-Vorlage» wirken auf diese Ausdrucke nicht mehr.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.43",
     "datum": "2026-11-03",
     "aenderungen": [

@@ -21,7 +21,11 @@ class PDFGenerator {
     protected $dompdf;  
     protected $logoBase64;  
     protected $useConfigPdf = false;
-    
+
+    // Ranglisten-Layout wie im Absendenbuch (ranglisteHeader): Fusszeile mit Seitenzahl nach dem Rendern
+    protected $ranglisteLayout = false;
+    protected $fussText = '';
+
     // Layout-Overrides der Basisklasse (Farben/Tabellen/Footer kommen aus pdf_theme.php)
     private $defaultStyles = '
         body { font-size: 10px; }
@@ -106,6 +110,17 @@ class PDFGenerator {
             </div>';
     }
     
+    /**
+     * HTML-Kopf im Layout der Ranglisten und des Absendenbuchs: Logo links, Titel, grauer Untertitel,
+     * schwarz auf weiss. $zusatzCss nur für Spaltenbreiten u. ä., keine Farben/Schriften.
+     * Die Fusszeile (Verein · Dokument · Stand, Seite x von y) zeichnet generatePDF().
+     */
+    protected function ranglisteHeader($titel, $untertitel = '', $zusatzCss = '') {
+        $this->ranglisteLayout = true;
+        $this->fussText = $titel;
+        return pdf_rangliste_anfang($titel, $untertitel, $zusatzCss) . '<div class="container">';
+    }
+
     /**
      * Erstellt den HTML-Footer
      */
@@ -192,7 +207,10 @@ class PDFGenerator {
         $this->dompdf->loadHtml($html);
         $this->dompdf->setPaper('A4', $orientation);
         $this->dompdf->render();
-        
+        if ($this->ranglisteLayout) {
+            pdf_seitenfuss($this->dompdf, $this->fussText);
+        }
+
         $pdfOutput = $this->dompdf->output();
         $date = new DateTime();
         $pdfFilePath = wanderpreise_safe_path($filename . '_' . $date->format('Y-m-d_H-i-s') . '.pdf');

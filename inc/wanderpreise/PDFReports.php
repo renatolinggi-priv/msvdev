@@ -9,7 +9,16 @@ require_once 'PDFGenerator.php';
  * Zeigt alle Wanderpreise mit aktuellen Gewinnern und Statistiken
  */
 class WanderpreiseJahresReport extends PDFGenerator {
-    
+
+    /** Gravur-Aufträge (Schnitzerei, Akura): Abgabetermin gross, etwas mehr Zeilenabstand zum Abhaken */
+    const GRAVUR_CSS = '
+        .rl-frist { font-size: 12pt; font-weight: bold; margin: 0 0 5mm 0; }
+        .table { font-size: 10.5pt; }
+        .table td { padding-top: 2.2mm; padding-bottom: 2.2mm; }
+        .table td:last-child { text-align: left; }
+        .rl-adresse { line-height: 1.45; margin: 0; }
+    ';
+
     private $hersteller_filter = null;
     
     public function __construct($conn, $year = null, $hersteller = null) {
@@ -32,13 +41,10 @@ class WanderpreiseJahresReport extends PDFGenerator {
             return;
         }
         
-        // Custom CSS für Akura-ähnlichen Stil
-        $customStyles = $this->getCustomStyles();
-        
-        $html = $this->createHTMLHeader($title, $customStyles, 11);
-        $html .= '<h1>' . $title . '</h1>';
-        $html .= '<h2>MSV Wilen</h2>';
-        
+        // Ranglisten-Layout (Logo links, Titel, Fusszeile mit Seitenzahl)
+        $untertitel = 'Jahresbericht' . ($this->hersteller_filter ? ' · ' . $this->hersteller_filter : '');
+        $html = $this->ranglisteHeader('Wanderpreise ' . $this->selectedYear, $untertitel, $this->getCustomStyles());
+
         // Alle Wanderpreise mit Gewinnerdaten holen
         $wanderpreiseData = $this->getWanderpreiseOverview();
         
@@ -50,18 +56,13 @@ class WanderpreiseJahresReport extends PDFGenerator {
         
         // Hinweis falls Filter aktiv
         if ($this->hersteller_filter) {
-            $html .= '<div class="hinweis-box">';
-            $html .= '<strong>Hinweis:</strong> Diese Aufstellung zeigt nur Wanderpreise vom Hersteller "' . htmlspecialchars($this->hersteller_filter) . '".';
-            $html .= '</div>';
+            $html .= '<p class="rl-hinweis">Diese Aufstellung zeigt nur Wanderpreise von ' . htmlspecialchars($this->hersteller_filter) . '.</p>';
         }
-        
-        // Legende hinzufügen
-        $html .= '<div class="legende-box">';
-        $html .= '<p><strong>Legende:</strong></p>';
-        $html .= '<p>• <strong>Seine Gewinne:</strong> Anzahl Siege des aktuellen Gewinners für diesen Wanderpreis</p>';
-        $html .= '<p>• <strong>Gesamt Gewinner:</strong> Anzahl verschiedener Personen / Anzahl Jahre mit Gewinner</p>';
-        $html .= '<p>• <strong>Definitiv:</strong> Wanderpreis gehört dem Gewinner nach X Siegen definitiv</p>';
-        $html .= '</div>';
+
+        // Legende
+        $html .= '<p class="rl-hinweis"><strong>Seine Gewinne:</strong> Siege des aktuellen Gewinners für diesen Wanderpreis, von so vielen, bis er ihm definitiv gehört. '
+               . '<strong>Gesamt:</strong> verschiedene Personen und Jahre mit Gewinner. '
+               . '<strong>Definitiv:</strong> Der Wanderpreis gehört dem Gewinner.</p>';
         
         $html .= $this->createHTMLFooter();
         
@@ -98,91 +99,28 @@ class WanderpreiseJahresReport extends PDFGenerator {
         $stmt->execute();
         $result = $stmt->get_result();
         
-        // Custom CSS für Akura-ähnlichen Stil
-        $customStyles = '
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 18pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #3b5998;
-                font-size: 16pt;
-                margin: 5px 0;
-                text-align: center;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: left;
-                font-weight: bold;
-            }
-            .table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #ddd;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .wanderpreis-name {
-                font-weight: bold;
-                color: #3b5998;
-            }
-            .gravur-info {
-                color: #666;
-            }
-            .no-winner {
-                color: #999;
-                font-style: italic;
-            }
-        ';
-        
-        // HTML erstellen
-        $html = $this->createHTMLHeader('Schnitzerei Wanderpreise bis: ' . $datum, $customStyles, 11);
-        
-        $html .= '<h1>Schnitzerei Wanderpreise bis: ' . $datum . '</h1>';
-        $html .= '<h2>MSV Wilen</h2>';
-        
+        // HTML erstellen (Ranglisten-Layout, Abgabetermin gleich unter dem Kopf)
+        $html = $this->ranglisteHeader('Gravur-Auftrag ' . $this->selectedYear, 'Schnitzerei Heinz Schild · Wanderpreise MSV Wilen', self::GRAVUR_CSS);
+        $html .= '<p class="rl-frist">Bitte gravieren bis ' . htmlspecialchars($datum) . '</p>';
+
         $html .= '<table class="table">';
-        $html .= '<thead><tr>';
-        $html .= '<th style="width: 40%;">Wanderpreis</th>';
-        $html .= '<th style="width: 60%;">Information</th>';
-        $html .= '</tr></thead><tbody>';
-        
+        $html .= '<thead><tr><th style="width: 48%;">Wanderpreis</th><th>Gravur</th></tr></thead><tbody>';
+
         $count = 0;
         while ($row = $result->fetch_assoc()) {
             $count++;
-            $info_text = '';
-            
             if ($row['gewinner_name'] && $row['jahr']) {
-                $info_text = '<span class="gravur-info">' . 
-                              $row['jahr'] . ' ' . htmlspecialchars($row['gewinner_name']);
+                $info_text = $row['jahr'] . ' ' . htmlspecialchars($row['gewinner_name']);
             } else {
-                $info_text = '<span class="no-winner">Noch kein Gewinner für ' . $this->selectedYear . '</span>';
+                $info_text = '<span class="muted">noch kein Gewinner für ' . $this->selectedYear . '</span>';
             }
-            
-            $html .= '<tr>';
-            $html .= '<td class="wanderpreis-name">' . htmlspecialchars($row['bezeichnung']) . '</td>';
-            $html .= '<td>' . $info_text . '</td>';
-            $html .= '</tr>';
+            $html .= '<tr><td><strong>' . htmlspecialchars($row['bezeichnung']) . '</strong></td><td>' . $info_text . '</td></tr>';
         }
-        
+
         if ($count == 0) {
-            $html .= '<tr>';
-            $html .= '<td colspan="2" style="text-align: center; padding: 20px; color: #999;">';
-            $html .= 'Keine Wanderpreise von Schnitzerei Heinz Schild gefunden';
-            $html .= '</td></tr>';
+            $html .= '<tr><td colspan="2" class="muted">Keine Wanderpreise von Schnitzerei Heinz Schild gefunden.</td></tr>';
         }
-        
+
         $html .= '</tbody></table>';
         
         $html .= $this->createHTMLFooter();
@@ -307,106 +245,83 @@ class WanderpreiseJahresReport extends PDFGenerator {
         $html = '<table class="table">';
         $html .= '<thead>
                     <tr>
-                        <th style="width: 20%;">Wanderpreis</th>
-                        <th style="width: 15%;">Hersteller</th>
-                        <th style="width: 20%;">Aktueller Gewinner ' . $this->selectedYear . '</th>
-                        <th style="width: 15%;">Rang/Resultat</th>
-                        <th style="width: 10%;">Seine Gewinne</th>
-                        <th style="width: 10%;">Gesamt Gewinner</th>
-                        <th style="width: 10%;">Status</th>
+                        <th>Wanderpreis</th>
+                        <th style="width: 24mm;">Hersteller</th>
+                        <th style="width: 28mm;">Gewinner ' . $this->selectedYear . '</th>
+                        <th class="z" style="width: 12mm;">Rang/Res.</th>
+                        <th class="z" style="width: 16mm;">Seine Gewinne</th>
+                        <th class="z" style="width: 20mm;">Gesamt</th>
+                        <th style="width: 20mm;">Status</th>
                     </tr>
                   </thead>
                   <tbody>';
-        
+
         foreach ($data as $row) {
             $html .= '<tr>';
-            
-            // Wanderpreis Name + Beschreibung
-            $html .= '<td class="wanderpreis-name">';
-            $html .= '<strong>' . htmlspecialchars($row['bezeichnung']) . '</strong>';
+
+            // Wanderpreis Name + Beschreibung + Anschaffung
+            $html .= '<td><strong>' . htmlspecialchars($row['bezeichnung']) . '</strong>';
+            $zusatz = [];
             if (!empty($row['beschreibung'])) {
-                $html .= '<br><small>' . htmlspecialchars($row['beschreibung']) . '</small>';
+                $zusatz[] = htmlspecialchars($row['beschreibung']);
             }
-            $html .= '<br><small>Seit ' . $row['beschaffung_datum'] . '</small>';
-            $html .= '</td>';
-            
+            $zusatz[] = 'seit ' . htmlspecialchars((string)$row['beschaffung_datum']);
+            $html .= '<br><span class="muted">' . implode(' · ', $zusatz) . '</span></td>';
+
             // Hersteller
-            $html .= '<td>';
-            if (!empty($row['hersteller'])) {
-                $html .= '<strong>' . htmlspecialchars($row['hersteller']) . '</strong>';
-            } else {
-                $html .= '<em>Nicht angegeben</em>';
-            }
-            $html .= '</td>';
-            
+            $html .= '<td>' . (!empty($row['hersteller']) ? htmlspecialchars($row['hersteller']) : '<span class="muted">nicht angegeben</span>') . '</td>';
+
             // Aktueller Gewinner
-            $html .= '<td>';
-            if (!empty($row['aktueller_gewinner_name'])) {
-                $html .= htmlspecialchars($row['aktueller_gewinner_name']);
-            } else {
-                $html .= '<em>Kein Gewinner ' . $this->selectedYear . '</em>';
-            }
-            $html .= '</td>';
-            
+            $html .= '<td>' . (!empty($row['aktueller_gewinner_name'])
+                ? htmlspecialchars($row['aktueller_gewinner_name'])
+                : '<span class="muted">kein Gewinner</span>') . '</td>';
+
             // Rang/Resultat
-            $html .= '<td class="text-center">';
             if (!empty($row['aktueller_rang'])) {
-                $html .= htmlspecialchars($row['aktueller_rang']);
+                $rangResultat = htmlspecialchars($row['aktueller_rang']);
             } elseif (!empty($row['aktuelles_resultat'])) {
-                $html .= htmlspecialchars($row['aktuelles_resultat']);
+                $rangResultat = htmlspecialchars($row['aktuelles_resultat']);
             } else {
-                $html .= '-';
+                $rangResultat = '–';
             }
-            $html .= '</td>';
-            
-            // Anzahl Gewinne des aktuellen Gewinners
-            $html .= '<td class="text-center">';
+            $html .= '<td class="z">' . $rangResultat . '</td>';
+
+            // Anzahl Gewinne des aktuellen Gewinners (von min_anzahl_gewinne)
+            $gewinne = '–';
             if (!empty($row['aktuelle_anzahl_gewinne'])) {
-                $html .= $row['aktuelle_anzahl_gewinne'] . 'x';
-                
-                // Zeige min_anzahl_gewinne für Kontext
+                $gewinne = $row['aktuelle_anzahl_gewinne'] . '×';
                 if ($row['min_anzahl_gewinne'] > 0) {
-                    $html .= '<br><small>von ' . $row['min_anzahl_gewinne'] . '</small>';
+                    $gewinne .= ' von ' . $row['min_anzahl_gewinne'];
                 }
-            } else {
-                $html .= '-';
             }
-            $html .= '</td>';
-            
-            // Gesamtstatistiken
-            $html .= '<td class="text-center">';
-            $html .= $row['anzahl_verschiedene_gewinner'] . ' Pers.';
-            $html .= '<br><small>' . $row['anzahl_gewinne_total'] . ' Jahre</small>';
-            
-            // Zeitraum wenn verfügbar
+            $html .= '<td class="z">' . $gewinne . '</td>';
+
+            // Gesamtstatistiken: Personen, Jahre, Zeitraum
+            $html .= '<td class="z">' . $row['anzahl_verschiedene_gewinner'] . ' Pers. · ' . $row['anzahl_gewinne_total'] . ' J.';
             if (!empty($row['erstes_jahr']) && !empty($row['letztes_jahr'])) {
-                if ($row['erstes_jahr'] == $row['letztes_jahr']) {
-                    $html .= '<br><small>(' . $row['erstes_jahr'] . ')</small>';
-                } else {
-                    $html .= '<br><small>(' . $row['erstes_jahr'] . '-' . $row['letztes_jahr'] . ')</small>';
-                }
+                $zeitraum = $row['erstes_jahr'] == $row['letztes_jahr']
+                    ? $row['erstes_jahr']
+                    : $row['erstes_jahr'] . '–' . $row['letztes_jahr'];
+                $html .= '<br><span class="muted">' . $zeitraum . '</span>';
             }
             $html .= '</td>';
-            
+
             // Status
-            $html .= '<td class="text-center">';
+            $html .= '<td>';
             if (!empty($row['aktueller_gewinner_id'])) {
                 if ($row['ist_definitiv']) {
-                    $html .= '<strong class="status-definitiv">Definitiv</strong>';
+                    $html .= '<strong>Definitiv</strong>';
                 } else {
-                    $html .= '<span class="status-wandernd">Wandert noch</span>';
-                    
-                    // Zeige Fortschritt
+                    $html .= 'Wandert noch';
                     if ($row['min_anzahl_gewinne'] > 0 && $row['aktuelle_anzahl_gewinne'] > 0) {
-                        $progress = $row['aktuelle_anzahl_gewinne'] . '/' . $row['min_anzahl_gewinne'];
-                        $html .= '<br><small>(' . $progress . ')</small>';
+                        $html .= '<br><span class="muted">' . $row['aktuelle_anzahl_gewinne'] . '/' . $row['min_anzahl_gewinne'] . '</span>';
                     }
                 }
             } else {
-                $html .= '-';
+                $html .= '–';
             }
             $html .= '</td>';
-            
+
             $html .= '</tr>';
         }
         
@@ -416,80 +331,15 @@ class WanderpreiseJahresReport extends PDFGenerator {
     }
     
     /**
-     * Gibt das benutzerdefinierte CSS für den Akura-ähnlichen Stil zurück
+     * Layout-Ergänzungen zum Ranglisten-Stil: Zellen oben ausgerichtet (mehrzeilig), Zusatzzeilen klein
      */
     private function getCustomStyles() {
         return '
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 18pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #3b5998;
-                font-size: 16pt;
-                margin: 5px 0;
-                text-align: center;
-            }
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: left;
-                font-weight: bold;
-            }
-            .table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #ddd;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .wanderpreis-name {
-                font-weight: bold;
-                color: #3b5998;
-            }
-            .text-center {
-                text-align: center;
-            }
-            .status-definitiv {
-                color: green;
-                font-weight: bold;
-            }
-            .status-wandernd {
-                color: orange;
-                font-weight: bold;
-            }
-            .hinweis-box {
-                margin-top: 15px;
-                padding: 10px;
-                background-color: #e7f3ff;
-                border-left: 4px solid #94a3b8;
-                font-size: 10px;
-            }
-            .legende-box {
-                margin-top: 15px;
-                padding: 10px;
-                background-color: #f0f0f0;
-                border-left: 4px solid #3b5998;
-                font-size: 9px;
-            }
-            .legende-box p {
-                margin: 2px 0;
-            }
+            .table { font-size: 9pt; }
+            .table td { vertical-align: top; padding-top: 1.6mm; padding-bottom: 1.6mm; }
+            .table th { vertical-align: bottom; }
+            .table .muted { font-size: 7.5pt; }
+            .table td:last-child { text-align: left; }
         ';
     }
 }
@@ -515,20 +365,15 @@ class WanderpreisHistorieReport extends PDFGenerator {
             return;
         }
         
-        // Custom CSS für Akura-ähnlichen Stil
-        $customStyles = $this->getCustomStyles();
-        
-        $html = $this->createHTMLHeader('Wanderpreis Historie: ' . $wanderpreisInfo['bezeichnung'], $customStyles, 11);
-        $html .= '<h1>Wanderpreis Historie: ' . htmlspecialchars($wanderpreisInfo['bezeichnung']) . '</h1>';
-        $html .= '<h2>MSV Wilen</h2>';
-        
+        $html = $this->ranglisteHeader($wanderpreisInfo['bezeichnung'], 'Wanderpreis · Gewinner-Historie', $this->getCustomStyles());
+
         // Wanderpreis-Details
         $html .= $this->createWanderpreisInfoBox($wanderpreisInfo);
-        
+
         // Historie-Tabelle
         $historieData = $this->getWanderpreisHistorie();
         if (!empty($historieData)) {
-            $html .= '<h3>Gewinner-Historie</h3>';
+            $html .= '<h2 class="rl-abschnitt">Gewinner</h2>';
             $html .= $this->createHistorieTable($historieData);
         } else {
             $html .= '<p>Keine Gewinner-Historie gefunden.</p>';
@@ -583,88 +428,57 @@ class WanderpreisHistorieReport extends PDFGenerator {
     }
     
     private function createWanderpreisInfoBox($info) {
-        $html = '<div class="wanderpreis-info-box">';
-        $html .= '<h4>' . htmlspecialchars($info['bezeichnung']) . '</h4>';
-        
+        // Steckbrief als schlichte zweispaltige Liste (Begriff | Wert)
+        $zeilen = [];
         if (!empty($info['beschreibung'])) {
-            $html .= '<p><strong>Beschreibung:</strong> ' . htmlspecialchars($info['beschreibung']) . '</p>';
+            $zeilen['Beschreibung'] = htmlspecialchars($info['beschreibung']);
         }
-        
-        $html .= '<p><strong>Anschaffung:</strong> ' . $info['beschaffung_datum'] . '</p>';
-        
+        $zeilen['Anschaffung'] = htmlspecialchars((string)$info['beschaffung_datum']);
         if ($info['min_anzahl_gewinne'] > 0) {
-            $html .= '<p><strong>Definitiv nach:</strong> ' . $info['min_anzahl_gewinne'] . ' Gewinnen</p>';
+            $zeilen['Definitiv nach'] = (int)$info['min_anzahl_gewinne'] . ' Gewinnen';
         }
-        
         if ($info['auto_verknuepfung']) {
-            $html .= '<p><strong>Automatische Verknüpfung:</strong> Ja';
-            if (!empty($info['verknuepfung_regel'])) {
-                $html .= ' (Regel: ' . htmlspecialchars($info['verknuepfung_regel']) . ')';
-            }
-            $html .= '</p>';
+            $zeilen['Automatische Verknüpfung'] = 'Ja' . (!empty($info['verknuepfung_regel'])
+                ? ' (Regel: ' . htmlspecialchars($info['verknuepfung_regel']) . ')' : '');
         }
-        
-        $html .= '</div>';
-        
-        return $html;
+
+        $html = '<table class="rl-steckbrief">';
+        foreach ($zeilen as $begriff => $wert) {
+            $html .= '<tr><td class="rl-begriff">' . $begriff . '</td><td>' . $wert . '</td></tr>';
+        }
+        return $html . '</table>';
     }
     
     private function createHistorieTable($data) {
         $html = '<table class="table">';
         $html .= '<thead>
                     <tr>
-                        <th>Jahr</th>
+                        <th style="width: 14mm;">Jahr</th>
                         <th>Gewinner</th>
-                        <th>Rang/Resultat</th>
-                        <th>Gewinne</th>
-                        <th>Status</th>
+                        <th class="z" style="width: 24mm;">Rang/Resultat</th>
+                        <th class="z" style="width: 18mm;">Gewinne</th>
+                        <th style="width: 22mm;">Status</th>
                         <th>Bemerkung</th>
                     </tr>
                   </thead>
                   <tbody>';
-        
+
         foreach ($data as $row) {
-            $html .= '<tr>';
-            
-            // Jahr
-            $html .= '<td class="text-center">' . $row['jahr'] . '</td>';
-            
-            // Gewinner
-            $html .= '<td>' . htmlspecialchars($row['gewinner_name']) . '</td>';
-            
-            // Rang/Resultat
-            $html .= '<td class="text-center">';
             if (!empty($row['rang'])) {
-                $html .= htmlspecialchars($row['rang']);
+                $rangResultat = htmlspecialchars($row['rang']);
             } elseif (!empty($row['resultat'])) {
-                $html .= htmlspecialchars($row['resultat']);
+                $rangResultat = htmlspecialchars($row['resultat']);
             } else {
-                $html .= '-';
+                $rangResultat = '–';
             }
-            $html .= '</td>';
-            
-            // Anzahl Gewinne
-            $html .= '<td class="text-center">' . $row['anzahl_gewinne'] . 'x</td>';
-            
-            // Status
-            $html .= '<td class="text-center">';
-            if ($row['ist_definitiv']) {
-                $html .= '<strong class="status-definitiv">Definitiv</strong>';
-            } else {
-                $html .= '<span class="status-wandernd">Wandernd</span>';
-            }
-            $html .= '</td>';
-            
-            // Bemerkung
-            $html .= '<td>';
-            if (!empty($row['bemerkung'])) {
-                $html .= htmlspecialchars($row['bemerkung']);
-            } else {
-                $html .= '-';
-            }
-            $html .= '</td>';
-            
-            $html .= '</tr>';
+            $html .= '<tr>'
+                . '<td>' . $row['jahr'] . '</td>'
+                . '<td>' . htmlspecialchars((string)$row['gewinner_name']) . '</td>'
+                . '<td class="z">' . $rangResultat . '</td>'
+                . '<td class="z">' . $row['anzahl_gewinne'] . '×</td>'
+                . '<td>' . ($row['ist_definitiv'] ? '<strong>Definitiv</strong>' : 'Wandernd') . '</td>'
+                . '<td>' . (!empty($row['bemerkung']) ? htmlspecialchars($row['bemerkung']) : '–') . '</td>'
+                . '</tr>';
         }
         
         $html .= '</tbody></table>';
@@ -673,74 +487,14 @@ class WanderpreisHistorieReport extends PDFGenerator {
     }
     
     /**
-     * Gibt das benutzerdefinierte CSS für den Akura-ähnlichen Stil zurück
+     * Layout-Ergänzungen: Steckbrief (Begriff | Wert) ohne Rahmen, Status-Spalte links
      */
     private function getCustomStyles() {
         return '
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 18pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #3b5998;
-                font-size: 16pt;
-                margin: 5px 0;
-                text-align: center;
-            }
-            h3 {
-                color: #3b5998;
-                font-size: 14pt;
-                margin: 15px 0 5px 0;
-            }
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: left;
-                font-weight: bold;
-            }
-            .table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #ddd;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .wanderpreis-info-box {
-                background-color: #f8f9fa;
-                padding: 15px;
-                border: 1px solid #dee2e6;
-                margin: 15px 0;
-            }
-            .wanderpreis-info-box h4 {
-                color: #3b5998;
-                margin-top: 0;
-            }
-            .text-center {
-                text-align: center;
-            }
-            .status-definitiv {
-                color: green;
-                font-weight: bold;
-            }
-            .status-wandernd {
-                color: orange;
-                font-weight: bold;
-            }
+            table.rl-steckbrief { border-collapse: collapse; margin: 0 0 2mm 0; }
+            table.rl-steckbrief td { border: none; padding: 0.8mm 4mm 0.8mm 0; vertical-align: top; text-align: left; }
+            td.rl-begriff { font-weight: bold; }
+            .table td:last-child { text-align: left; }
         ';
     }
 }
@@ -772,55 +526,32 @@ class WanderpreisReport extends PDFGenerator {
 
         $data = $this->executeQuery($sql);
 
-        // Custom CSS für Akura-ähnlichen Stil
-        $customStyles = $this->getCustomStyles();
-        
-        // Create HTML header
-        $html = $this->createHTMLHeader('Wanderpreis Gewinner ' . $this->selectedYear, $customStyles, 11);
-        $html .= '<h1>Wanderpreis Gewinner ' . $this->selectedYear . '</h1>';
-        $html .= '<h2>MSV Wilen</h2>';
+        $html = $this->ranglisteHeader('Wanderpreis-Gewinner ' . $this->selectedYear, 'Wanderpreise', $this->getCustomStyles());
 
-        // Create table for hiking prize winners
+        // Tabelle, gruppiert nach Wanderpreis (Gruppentitel, eingerückte Gewinner)
         if (!empty($data)) {
             $html .= '<table class="table">';
             $html .= '<thead><tr>
-                        <th>Wanderpreis</th>
                         <th>Gewinner</th>
-                        <th>Rang/Resultat</th>
-                        <th>Anzahl Gewinne</th>
-                        <th>Status</th>
+                        <th class="z" style="width: 26mm;">Rang/Resultat</th>
+                        <th class="z" style="width: 26mm;">Anzahl Gewinne</th>
+                        <th style="width: 36mm;">Status</th>
                       </tr></thead><tbody>';
 
             $current_wanderpreis = '';
             foreach ($data as $row) {
-                // Group by hiking prize
                 if ($current_wanderpreis !== $row['wanderpreis_bezeichnung']) {
-                    if ($current_wanderpreis !== '') {
-                        $html .= '<tr><td colspan="5"></td></tr>'; // Add spacing between prizes
-                    }
-                    $html .= '<tr><td colspan="5" class="wanderpreis-name"><strong>' . htmlspecialchars($row['wanderpreis_bezeichnung']) . '</strong></td></tr>';
+                    $html .= '<tr class="rl-gruppe"><td colspan="4">' . htmlspecialchars($row['wanderpreis_bezeichnung']) . '</td></tr>';
                     $current_wanderpreis = $row['wanderpreis_bezeichnung'];
                 }
 
-                $html .= '<tr>';
-                $html .= '<td></td>'; // Empty cell for grouping
-                $html .= '<td>' . htmlspecialchars($row['gewinner_name']) . '</td>';
-                
-                if (!empty($row['rang'])) {
-                    $html .= '<td>' . htmlspecialchars($row['rang']) . '</td>';
-                } else {
-                    $html .= '<td>' . htmlspecialchars($row['resultat']) . '</td>';
-                }
-                
-                $html .= '<td class="text-center">' . $row['anzahl_gewinne'] . 'x</td>';
-                
-                if ($row['ist_definitiv']) {
-                    $html .= '<td class="status-definitiv">Definitiv</td>';
-                } else {
-                    $html .= '<td class="status-wandernd">Noch nicht definitiv</td>';
-                }
-                
-                $html .= '</tr>';
+                $rangResultat = !empty($row['rang']) ? $row['rang'] : $row['resultat'];
+                $html .= '<tr>'
+                    . '<td class="rl-einzug">' . htmlspecialchars((string)$row['gewinner_name']) . '</td>'
+                    . '<td class="z">' . htmlspecialchars((string)$rangResultat) . '</td>'
+                    . '<td class="z">' . $row['anzahl_gewinne'] . '×</td>'
+                    . '<td>' . ($row['ist_definitiv'] ? '<strong>Definitiv</strong>' : 'Noch nicht definitiv') . '</td>'
+                    . '</tr>';
             }
 
             $html .= '</tbody></table>';
@@ -834,65 +565,13 @@ class WanderpreisReport extends PDFGenerator {
         $pdfPath = $this->generatePDF($html, 'WanderpreisGewinner');
         $this->outputDownloadLink($pdfPath);
     }
-    
+
     /**
-     * Gibt das benutzerdefinierte CSS für den Akura-ähnlichen Stil zurück
+     * Layout-Ergänzung: Status-Spalte links (Theme richtet die letzte Spalte rechts aus)
      */
     private function getCustomStyles() {
         return '
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 18pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #3b5998;
-                font-size: 16pt;
-                margin: 5px 0;
-                text-align: center;
-            }
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: left;
-                font-weight: bold;
-            }
-            .table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #ddd;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .wanderpreis-name {
-                font-weight: bold;
-                color: #3b5998;
-            }
-            .text-center {
-                text-align: center;
-            }
-            .status-definitiv {
-                color: green;
-                font-weight: bold;
-            }
-            .status-wandernd {
-                color: orange;
-                font-weight: bold;
-            }
+            .table td:last-child { text-align: left; }
         ';
     }
 }
@@ -981,118 +660,33 @@ class AkuraGravurReport extends PDFGenerator {
         $stmt->execute();
         $result = $stmt->get_result();
         
-        // Custom CSS für Akura-Report
-        $customStyles = '
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 18pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #3b5998;
-                font-size: 16pt;
-                margin: 5px 0;
-                text-align: center;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: left;
-                font-weight: bold;
-            }
-            .table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #ddd;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .wanderpreis-name {
-                font-weight: bold;
-                color: #3b5998;
-            }
-            .gravur-info {
-                color: #666;
-            }
-            .no-winner {
-                color: #999;
-                font-style: italic;
-            }
-            .rechnung-box {
-                background-color: #f0f0f0;
-                padding: 15px;
-                border-left: 4px solid #3b5998;
-                margin-top: 30px;
-            }
-            .rechnung-titel {
-                font-weight: bold;
-                font-size: 12pt;
-                color: #3b5998;
-                margin-bottom: 10px;
-            }
-            .rechnung-adresse {
-                line-height: 1.4;
-            }
-        ';
-        
-        // HTML erstellen
-        $html = $this->createHTMLHeader('Akura Gravur-Auftrag ' . $this->selectedYear, $customStyles, 11);
-        
-        $html .= '<h1>Wanderpreise gravieren bis: Freitag, ' . $this->gravurDatum . '</h1>';
-        $html .= '<h2>MSV Wilen</h2>';
-        
+        // HTML erstellen (Ranglisten-Layout, Abgabetermin gleich unter dem Kopf)
+        $html = $this->ranglisteHeader('Gravur-Auftrag ' . $this->selectedYear, 'Akura Einsiedeln · Wanderpreise MSV Wilen', WanderpreiseJahresReport::GRAVUR_CSS);
+        $html .= '<p class="rl-frist">Bitte gravieren bis Freitag, ' . htmlspecialchars($this->gravurDatum) . '</p>';
+
         $html .= '<table class="table">';
-        $html .= '<thead><tr>';
-        $html .= '<th style="width: 40%;">Wanderpreis</th>';
-        $html .= '<th style="width: 60%;">Gravur-Information</th>';
-        $html .= '</tr></thead><tbody>';
-        
+        $html .= '<thead><tr><th style="width: 48%;">Wanderpreis</th><th>Gravur</th></tr></thead><tbody>';
+
         $count = 0;
         while ($row = $result->fetch_assoc()) {
             $count++;
-            $gravur_text = '';
-            
             if ($row['gewinner_name'] && $row['jahr']) {
-                $gravur_text = '<span class="gravur-info">gravieren: </span>' . 
-                              $row['jahr'] . ' ' . htmlspecialchars($row['gewinner_name']);
+                $gravur_text = $row['jahr'] . ' ' . htmlspecialchars($row['gewinner_name']);
             } else {
-                $gravur_text = '<span class="no-winner">Noch kein Gewinner für ' . $this->selectedYear . '</span>';
+                $gravur_text = '<span class="muted">noch kein Gewinner für ' . $this->selectedYear . '</span>';
             }
-            
-            $html .= '<tr>';
-            $html .= '<td class="wanderpreis-name">' . htmlspecialchars($row['bezeichnung']) . '</td>';
-            $html .= '<td>' . $gravur_text . '</td>';
-            $html .= '</tr>';
+            $html .= '<tr><td><strong>' . htmlspecialchars($row['bezeichnung']) . '</strong></td><td>' . $gravur_text . '</td></tr>';
         }
-        
+
         if ($count == 0) {
-            $html .= '<tr>';
-            $html .= '<td colspan="2" style="text-align: center; padding: 20px; color: #999;">';
-            $html .= 'Keine Wanderpreise von Akura Einsiedeln gefunden';
-            $html .= '</td></tr>';
+            $html .= '<tr><td colspan="2" class="muted">Keine Wanderpreise von Akura Einsiedeln gefunden.</td></tr>';
         }
-        
+
         $html .= '</tbody></table>';
-        
-        // Rechnung-Box
-        $html .= '<div class="rechnung-box">';
-        $html .= '<div class="rechnung-titel">Rechnung senden an:</div>';
-        $html .= '<div class="rechnung-adresse">';
-        $html .= '<strong>Schober Marco</strong><br>';
-        $html .= 'Sihlboden 2<br>';
-        $html .= '8847 Egg<br>';
-        $html .= 'Tel. 079 519 11 88';
-        $html .= '</div>';
-        $html .= '</div>';
+
+        // Rechnungsadresse
+        $html .= '<h2 class="rl-abschnitt">Rechnung senden an</h2>';
+        $html .= '<p class="rl-adresse"><strong>Schober Marco</strong><br>Sihlboden 2<br>8847 Egg<br>Tel. 079 519 11 88</p>';
         
         $html .= $this->createHTMLFooter();
         
@@ -1118,14 +712,7 @@ class MitgliederInfoReport extends PDFGenerator {
      * Generiert den Mitglieder-Info Report
      */
     public function generate() {
-        $title = 'MSV Wilen - Wanderpreisgewinner '. $this->selectedYear;
-        
-        // Custom CSS für einen sauberen, übersichtlichen Stil
-        $customStyles = $this->getCustomStyles();
-        
-        $html = $this->createHTMLHeader($title, $customStyles, 11);
-        $html .= '<h1>' . $title . '</h1>';
-        $html .= '<h2> </h2>';
+        $html = $this->ranglisteHeader('Wanderpreisgewinner ' . $this->selectedYear, 'Wanderpreise · Information für Mitglieder', $this->getCustomStyles());
         
         // Alle Wanderpreise mit Gewinnerdaten holen
         $wanderpreiseData = $this->getWanderpreiseOverview();
@@ -1191,9 +778,8 @@ class MitgliederInfoReport extends PDFGenerator {
      * Erstellt die Info-Box mit dem Endstich-Datum aus der JMDefinition
      */
     private function createMitgliederInfoBox() {
-        $html = '<div class="info-box">';
-        $html .= '<p><strong>Information für Mitglieder:</strong></p>';
-        
+        $html = '<div class="rl-info">';
+
         try {
             // Hole das Endstich-Datum aus JMDefinition
             $year = date('Y');
@@ -1259,10 +845,10 @@ class MitgliederInfoReport extends PDFGenerator {
             $html .= '<tr>';
             
             // Wanderpreis Name
-            $html .= '<td class="wanderpreis-name">';
+            $html .= '<td>';
             $html .= '<strong>' . htmlspecialchars($row['bezeichnung']) . '</strong>';
             if ($row['ist_definitiv']) {
-                $html .= '<br><span class="badge-definitiv">✓ Definitiv gewonnen</span>';
+                $html .= '<br>Definitiv gewonnen';
             }
             $html .= '</td>';
             
@@ -1272,12 +858,12 @@ class MitgliederInfoReport extends PDFGenerator {
                 $beschreibung = trim($row['beschreibung']);
                 // Wenn die Beschreibung nur aus einer Zahl besteht, zeige stattdessen einen Strich
                 if (preg_match('/^\d+$/', $beschreibung)) {
-                    $html .= '<em>-</em>';
+                    $html .= '<span class="muted">–</span>';
                 } else {
                     $html .= htmlspecialchars($beschreibung, ENT_QUOTES, 'UTF-8');
                 }
             } else {
-                $html .= '<em>-</em>';
+                $html .= '<span class="muted">–</span>';
             }
             $html .= '</td>';
             
@@ -1289,7 +875,7 @@ class MitgliederInfoReport extends PDFGenerator {
                 $html .= '<strong>' . htmlspecialchars($gewinner_name, ENT_QUOTES, 'UTF-8') . '</strong>';
                 // Rang und Resultat NICHT mehr anzeigen
             } else {
-                $html .= '<em>Kein Gewinner eingetragen</em>';
+                $html .= '<span class="muted">kein Gewinner eingetragen</span>';
             }
             $html .= '</td>';
             
@@ -1306,78 +892,12 @@ class MitgliederInfoReport extends PDFGenerator {
      */
     private function getCustomStyles() {
         return '
-            body {
-                font-family: Arial, sans-serif;
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 20pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #666;
-                font-size: 14pt;
-                margin: 5px 0;
-                text-align: center;
-                font-weight: normal;
-            }
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 12px;
-                text-align: left;
-                font-weight: bold;
-                font-size: 11pt;
-            }
-            .table td {
-                padding: 10px 12px;
-                border-bottom: 1px solid #ddd;
-                vertical-align: top;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .wanderpreis-name {
-                font-weight: bold;
-                color: #3b5998;
-            }
-            .badge-definitiv {
-                display: inline-block;
-                background-color: #2f855a;
-                color: white;
-                padding: 2px 6px;
-                border-radius: 3px;
-                font-size: 9pt;
-                font-weight: normal;
-                margin-top: 3px;
-            }
-            .info-box {
-                margin-top: 30px;
-                padding: 15px;
-                background-color: #e7f3ff;
-                border-left: 4px solid #94a3b8;
-                font-size: 10pt;
-            }
-            .info-box p {
-                margin: 5px 0;
-            }
-            em {
-                color: #999;
-                font-style: italic;
-            }
+            .table { font-size: 10pt; }
+            .table td { vertical-align: top; padding-top: 1.8mm; padding-bottom: 1.8mm; }
+            .table th { vertical-align: bottom; }
+            .table td:last-child { text-align: left; }
+            .rl-info { margin-top: 6mm; font-size: 10pt; }
+            .rl-info p { margin: 0 0 1.5mm 0; }
         ';
     }
 }
@@ -1388,74 +908,21 @@ class MitgliederInfoReport extends PDFGenerator {
  */
 class Top3SchuetzenReport extends PDFGenerator {
     public function generate() {
-        // Custom CSS für Akura-ähnlichen Stil
+        // Ranglisten-Layout; Preisliste etwas grösser (wird beim Einkauf abgehakt)
         $customStyles = '
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #3b5998;
-                padding-bottom: 15px;
-            }
-            h1 {
-                color: #3b5998;
-                font-size: 18pt;
-                margin: 10px 0;
-                font-weight: bold;
-            }
-            h2 {
-                color: #3b5998;
-                font-size: 16pt;
-                margin: 5px 0;
-                text-align: center;
-            }
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            .table th {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: left;
-                font-weight: bold;
-            }
-            .table td {
-                padding: 8px 10px;
-                border-bottom: 1px solid #ddd;
-            }
-            .table tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .category-header {
-                background-color: #eef2f7;
-                color: #2d3748;
-                border-bottom: 2px solid #cbd5e0;
-                padding: 10px;
-                text-align: center;
-                font-weight: bold;
-                margin: 20px 0 10px 0;
-            }
-            .rank-number {
-                font-weight: bold;
-                font-size: 14pt;
-                text-align: center;
-            }
+            .table { font-size: 11pt; }
+            .table td { padding-top: 2mm; padding-bottom: 2mm; }
+            .table td:last-child { text-align: left; }
         ';
-        
-        // Create HTML header
-        $html = $this->createHTMLHeader('Top 3 Schützen ' . $this->selectedYear, $customStyles, 11);
-        $html .= '<h1>Top 3 Schützen ' . $this->selectedYear . '</h1>';
-        $html .= '<h2>MSV Wilen</h2>';
-        
+        $html = $this->ranglisteHeader('JM-Preise ' . $this->selectedYear, 'Jahresmeisterschaft · Top 3 je Kategorie', $customStyles);
+
         // Hole die Top 3 Schützen für Kat. A
-        $html .= '<div class="category-header">Kategorie A</div>';
+        $html .= '<h2 class="rl-abschnitt">Kategorie A</h2>';
         $topA = $this->getTopSchuetzen('Kat. A');
         $html .= $this->createTopSchuetzenTable($topA);
-        
+
         // Hole die Top 3 Schützen für Kat. B
-        $html .= '<div class="category-header">Kategorie B</div>';
+        $html .= '<h2 class="rl-abschnitt">Kategorie B</h2>';
         $topB = $this->getTopSchuetzen('Kat. B');
         $html .= $this->createTopSchuetzenTable($topB);
         
@@ -1674,16 +1141,16 @@ class Top3SchuetzenReport extends PDFGenerator {
     private function createTopSchuetzenTable($schuetzen) {
         $html = '<table class="table">';
         $html .= '<thead><tr>
-                    <th style="width: 10%;">Rang</th>
-                    <th style="width: 90%;">Waffe</th>
+                    <th class="r" style="width: 14mm;">Rang</th>
+                    <th>Waffe</th>
                   </tr></thead><tbody>';
-        
+
         if (empty($schuetzen)) {
-            $html .= '<tr><td colspan="2" style="text-align: center;">Keine Schützen gefunden</td></tr>';
+            $html .= '<tr><td colspan="2" class="muted">Keine Schützen gefunden.</td></tr>';
         } else {
             foreach ($schuetzen as $schuetze) {
-                $html .= '<tr>';
-                $html .= '<td class="rank-number">' . $schuetze['Rang'] . '.</td>';
+                $html .= pdf_rangliste_zeile((int)$schuetze['Rang']);
+                $html .= '<td class="rang">' . $schuetze['Rang'] . '.</td>';
                 
                 // Add "(Gross)" for first rank, "(Klein)" for others
                 $waffe_text = htmlspecialchars($schuetze['Waffe']);
@@ -1693,7 +1160,7 @@ class Top3SchuetzenReport extends PDFGenerator {
                     $waffe_text .= ' (Klein)';
                 }
                 
-                $html .= '<td class="rank-number">' . $waffe_text . '</td>';
+                $html .= '<td>' . $waffe_text . '</td>';
                 $html .= '</tr>';
             }
         }

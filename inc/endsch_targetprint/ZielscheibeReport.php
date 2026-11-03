@@ -16,6 +16,8 @@ class ZielscheibeReport extends PDFGenerator {
     private $customPdfDir = null;
     /** Programmnummer => ['stich' => ..., 'restable' => ...], aus interne_stichdefinition */
     private $stichMeta = [];
+    /** Dokumentname in der Fusszeile (Verein · Dokument · Stand, Seite x von y) */
+    private $fussText = '';
 
     public function __construct($conn, $year = null, array $alleStiche = [], $schuetzenName = null) {
         parent::__construct($conn, $year);
@@ -41,14 +43,10 @@ class ZielscheibeReport extends PDFGenerator {
             throw new Exception('Keine Schüsse in den Stichen vorhanden');
         }
 
-        $html = $this->createCustomHTMLHeader($this->selectedYear, $this->getCustomStyles());
-
-        $titel = 'Zielscheibe';
-        if ($this->schuetzenName) {
-            $titel .= ' - ' . htmlspecialchars($this->schuetzenName, ENT_QUOTES, 'UTF-8');
-        }
-        $titel .= ' ' . (int) $this->selectedYear;
-        $html .= '<h2>' . $titel . '</h2>';
+        // Ranglisten-Layout: Logo links, Titel, Name als Untertitel; Fusszeile in generatePDFToCustomDir()
+        $this->fussText = 'Zielscheibe ' . (int) $this->selectedYear . ($this->schuetzenName ? ' · ' . $this->schuetzenName : '');
+        $html = pdf_rangliste_anfang('Zielscheibe ' . (int) $this->selectedYear, (string) $this->schuetzenName, $this->getCustomStyles())
+              . '<div class="container">';
 
         $gezeichnet = 0;
         foreach ($this->alleStiche as $stichIndex => $stich) {
@@ -86,26 +84,26 @@ class ZielscheibeReport extends PDFGenerator {
 
             $bildBase64 = 'data:' . $result['mime'] . ';base64,' . base64_encode($result['blob']);
 
-            $html .= '<table style="width: 100%; border: none; border-collapse: collapse; margin: 10px 0;"><tr>';
-            $html .= '<td style="width: 40%; vertical-align: top; border: none; padding-right: 15px;">';
+            // Block: links Stichname + Schüsse, rechts das Trefferbild (eine Zeile, wird nie geteilt)
+            $html .= '<table class="rl-scheibe' . ($gezeichnet > 1 ? ' rl-scheibe-folge' : '') . '"><tr>';
+            $html .= '<td class="rl-scheibe-text">';
 
             if ($stichName !== '') {
                 $vollstichName = htmlspecialchars($stichName, ENT_QUOTES, 'UTF-8');
                 $passe = (int) ($stich['passe'] ?? 0);
                 if ($passe > 0) {
-                    $vollstichName .= ' - ' . $passe . '. Passe';
+                    $vollstichName .= ' · ' . $passe . '. Passe';
                 }
-                $html .= '<h4 style="color: #007bff; margin: 0 0 8px 0; padding: 0; font-size: 13px; font-weight: bold; text-align: left;">' . $vollstichName . '</h4>';
+                $html .= '<h2 class="rl-abschnitt">' . $vollstichName . '</h2>';
             }
 
             $html .= $this->createStatistikTable($treffer);
             $html .= '</td>';
 
             $bildStyle = $istKeilerStich ? 'width: 500px; height: auto;' : 'width: 400px; height: 400px;';
-            $html .= '<td style="width: 60%; vertical-align: top; border: none; text-align: center;">';
+            $html .= '<td class="rl-scheibe-bild">';
             $html .= '<img src="' . $bildBase64 . '" style="' . $bildStyle . '" alt="Zielscheibe">';
             $html .= '</td></tr></table>';
-            $html .= '<hr style="border: none; border-top: 2px solid #333; margin: 20px 0;">';
         }
 
         if ($gezeichnet === 0) {
@@ -148,34 +146,6 @@ class ZielscheibeReport extends PDFGenerator {
         $res->free();
     }
 
-    private function createCustomHTMLHeader($year, $customStyles) {
-        $styles = $this->getParentDefaultStyles() . $customStyles;
-
-        return '<!DOCTYPE html>
-        <html lang="de">
-        <head>
-            <meta charset="UTF-8">
-            <style>' . $styles . '</style>
-            <title>Zielscheibe ' . (int) $year . '</title>
-        </head>
-        <body>
-        <div class="container">
-            <div class="header">
-                <img src="' . $this->logoBase64 . '" alt="Logo" style="width:60px; height:auto;">
-            </div>';
-    }
-
-    private function getParentDefaultStyles() {
-        return '
-        body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
-        .container { margin: 0; padding: 0; }
-        .footer {
-            position: fixed; bottom: 0; left: 0; right: 0; height: 30px;
-            text-align: center; font-size: 9px; border-top: 1px; background-color: #ffffff;
-        }
-        .footer hr { border: none; border-top: 1px solid #cbd5e0; margin: 0; }';
-    }
-
     protected function generatePDFToCustomDir($html, $filename, $orientation, $customDir) {
         $pdfFilename = $filename . '_' . date('Y-m-d_H-i-s') . '.pdf';
         $pdfPath     = rtrim($customDir, '/\\') . '/' . $pdfFilename;
@@ -188,6 +158,7 @@ class ZielscheibeReport extends PDFGenerator {
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', $orientation);
         $dompdf->render();
+        pdf_seitenfuss($dompdf, $this->fussText);
 
         if (file_put_contents($pdfPath, $dompdf->output()) === false) {
             throw new Exception('PDF konnte nicht gespeichert werden');
@@ -196,24 +167,23 @@ class ZielscheibeReport extends PDFGenerator {
         return 'inc/endsch_targetprint/dat/' . $pdfFilename;
     }
 
+    /** Ergänzungen zum Ranglisten-Stil: Block Text | Trefferbild, dünne Linie zwischen den Stichen */
     private function getCustomStyles() {
         return '
-            @page { margin: 8mm 8mm; }
-            h2 { text-align: center; color: #333; margin: 2px 0 5px 0; font-size: 11px; }
-            .stats-table { width: 100%; border-collapse: collapse; font-size: 9px; }
-            .stats-table th, .stats-table td { padding: 3px 4px; border: 1px solid #ddd; text-align: center; }
-            .stats-table th {
-                background-color: #eef2f7; color: #2d3748; border-bottom: 2px solid #cbd5e0;
-                font-weight: bold; font-size: 9px;
-            }
-            .stats-table tr:nth-child(even) { background-color: #f9f9f9; }
-            .total-row { font-weight: bold; background-color: #e8f4f8 !important; }
+            table.rl-scheibe { width: 100%; border-collapse: collapse; margin: 0 0 4mm 0; page-break-inside: avoid; }
+            table.rl-scheibe-folge { border-top: 0.5pt solid #999; padding-top: 4mm; }
+            table.rl-scheibe-folge td.rl-scheibe-text, table.rl-scheibe-folge td.rl-scheibe-bild { padding-top: 4mm; }
+            td.rl-scheibe-text { width: 38%; vertical-align: top; padding-right: 6mm; }
+            td.rl-scheibe-bild { width: 62%; vertical-align: top; text-align: center; }
+            td.rl-scheibe-text .rl-abschnitt { margin-top: 0; }
+            .stats-table { font-size: 9pt; }
+            .stats-table th, .stats-table td { padding: 0.9mm 1.4mm; }
         ';
     }
 
     private function createStatistikTable(array $treffer) {
-        $html = '<table class="stats-table"><thead><tr>';
-        $html .= '<th>Schuss Nr.</th><th>Wertung</th><th>100er</th>';
+        $html = '<table class="table stats-table"><thead><tr>';
+        $html .= '<th class="r">Schuss</th><th class="r">Wertung</th><th class="r">100er</th>';
         $html .= '</tr></thead><tbody>';
 
         $totalWertung = 0;
@@ -227,10 +197,10 @@ class ZielscheibeReport extends PDFGenerator {
             $totalWertung += $wert;
             $max100er = max($max100er, $hunderter);
 
-            $html .= '<tr><td>' . ($nr > 0 ? $nr : '?') . '</td><td>' . $wert . '</td><td>' . $hunderter . '</td></tr>';
+            $html .= '<tr><td class="r">' . ($nr > 0 ? $nr : '?') . '</td><td class="r">' . $wert . '</td><td class="r">' . $hunderter . '</td></tr>';
         }
 
-        $html .= '<tr class="total-row"><td>Total</td><td>' . $totalWertung . '</td><td>' . $max100er . '</td></tr>';
+        $html .= '<tr class="rl-total"><td>Total</td><td class="r">' . $totalWertung . '</td><td class="r">' . $max100er . '</td></tr>';
         $html .= '</tbody></table>';
 
         return $html;

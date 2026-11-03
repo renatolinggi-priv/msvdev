@@ -38,15 +38,8 @@ class EndschloesenReport extends PDFGenerator
      */
     public function generate()
     {
-        $title = 'Endschiessen Auswertung ' . $this->selectedYear;
-
-        // Custom CSS für Querformat-Tabelle
-        $customStyles = $this->getCustomStyles();
-
-        // HTML Header (DOMPDF) â€“ wir lassen die Schrift klein & schlicht
-        $html = $this->createHTMLHeader($title, $customStyles, 10);
-        $html .= '<h1>' . $title . '</h1>';
-        //$html .= '<h1>MSV Wilen</h1>';
+        // Ranglisten-Layout (Logo links, Titel, Fusszeile mit Seitenzahl), Querformat
+        $html = $this->ranglisteHeader('Endschiessen ' . $this->selectedYear, 'Gelöste Stiche und Munition', $this->getCustomStyles());
 
         // Hole Stich-Definitionen
         $stiche = $this->getStichDefinitionen();
@@ -61,13 +54,9 @@ class EndschloesenReport extends PDFGenerator
             $html .= $this->createMainTable($stiche, $data);
 
             // Legende
-            $html .= '<div style="margin: 10px 0; font-size: 9pt;">';
-            $html .= '<strong>Legende:</strong> ';
-            $html .= '<span style="color: #2f855a; font-weight: bold;">X</span> = Stich gelöst | ';
-            $html .= '<span style="color: #3b5998; font-weight: bold; background-color: #f1f5f9; padding: 2px 4px;">P</span> = Partner-Stich (Zabig mit Partner, CHF 10.00) | ';
-            $html .= '<span style="color: #6c757d; font-weight: 600;">(Gast)</span> = Gast | ';
-            $html .= '<span style="color: #3b5998; font-weight: 600;">(JS)</span> = JungschützeIn';
-            $html .= '</div>';
+            $html .= '<p class="rl-hinweis"><strong>X</strong> = Stich gelöst · <strong>P</strong> = Partner-Stich (Zabig mit Partner, CHF 10.00) · '
+                   . '(Gast) = Gast · (JS) = Jungschützin/Jungschütze · '
+                   . 'P (erste Spalte) = Probe · Z. = Zusatzverkauf</p>';
 
             // Zusammenfassung (links Stiche / rechts Munition)
             $html .= $this->createStatisticsBox($stiche, $data);
@@ -369,7 +358,7 @@ class EndschloesenReport extends PDFGenerator
             $stichById[(int) $s['id']] = $s;
         }
 
-        $html = '<table class="table main-table">';
+        $html = '<table class="table main-table rl-zebra">';
         $html .= '<thead><tr>';
         $html .= '<th class="name-col">Mitglied</th>';
 
@@ -397,12 +386,12 @@ class EndschloesenReport extends PDFGenerator
             $displayName = htmlspecialchars($entry['name']);
             if ($entry['typ'] === 'gast') {
                 if (!empty($entry['geburtsdatum'])) {
-                    $displayName .= ' <span style="color:#3b5998; font-weight:600;">(JS)</span>';
+                    $displayName .= ' <span class="muted">(JS)</span>';
                 } else {
-                    $displayName .= ' <span style="color:#6c757d; font-weight:600;">(Gast)</span>';
+                    $displayName .= ' <span class="muted">(Gast)</span>';
                 }
             }
-            $html .= '<td class="name-cell" style="font-family: Arial, Helvetica, sans-serif; font-weight:700;">' . $displayName . '</td>';
+            $html .= '<td class="name-cell">' . $displayName . '</td>';
 
             // Häkchen je Stich (mit P für Partner-Zabig)
             $stichIds = isset($entry['stiche']) && is_array($entry['stiche']) ? $entry['stiche'] : [];
@@ -414,12 +403,9 @@ class EndschloesenReport extends PDFGenerator
                 $isPartner = in_array($sid, $partnerIds, true) && strtoupper((string) ($stichById[$sid]['code'] ?? '')) === 'ZABIG';
 
                 if ($has) {
-                    $badge = $isPartner
-                        ? '<span style="color:#3b5998; font-weight:bold; background:#f1f5f9; padding:2px 4px;">P</span>'
-                        : '<span style="color:#2f855a; font-weight:bold;">X</span>';
-                    $html .= '<td class="stich-cell" style="text-align:center;">' . $badge . '</td>';
+                    $html .= '<td class="z"><strong>' . ($isPartner ? 'P' : 'X') . '</strong></td>';
                 } else {
-                    $html .= '<td class="stich-cell" style="text-align:center;"><span style="color:#bbb;">â€“</span></td>';
+                    $html .= '<td class="z muted">–</td>';
                 }
             }
 
@@ -435,19 +421,20 @@ class EndschloesenReport extends PDFGenerator
             $zusatz_gp90 = (int) ($entry['zusatz_gp90'] ?? 0);
             $mun_preis_cents = (int) ($entry['munition_preis'] ?? 0);
 
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($stich_gp11 > 0 ? $stich_gp11 : 'â€“') . '</td>';
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($stich_gp90 > 0 ? $stich_gp90 : 'â€“') . '</td>';
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($zusatz_gp11 > 0 ? $zusatz_gp11 : 'â€“') . '</td>';
-            $html .= '<td class="munition-cell" style="text-align:center;">' . ($zusatz_gp90 > 0 ? $zusatz_gp90 : 'â€“') . '</td>';
-            
+            $zahl = fn(int $n) => $n > 0 ? (string) $n : '<span class="muted">–</span>';
+            $html .= '<td class="r">' . $zahl($stich_gp11) . '</td>';
+            $html .= '<td class="r">' . $zahl($stich_gp90) . '</td>';
+            $html .= '<td class="r">' . $zahl($zusatz_gp11) . '</td>';
+            $html .= '<td class="r">' . $zahl($zusatz_gp90) . '</td>';
+
             // Gesamt-Munition
             $total_munition = $stich_gp11 + $stich_gp90 + $zusatz_gp11 + $zusatz_gp90;
-            $html .= '<td class="munition-cell" style="text-align:center; font-weight:700; background:#f0f8ff;">' . ($total_munition > 0 ? $total_munition : 'â€“') . '</td>';
-            
-            $html .= '<td class="total-cell">' . number_format($mun_preis_cents / 100, 2, '.', '') . '</td>';
+            $html .= '<td class="r"><strong>' . $zahl($total_munition) . '</strong></td>';
+
+            $html .= '<td class="r">' . number_format($mun_preis_cents / 100, 2, '.', '') . '</td>';
 
             // Total
-            $html .= '<td class="total-cell">' . number_format(((int) ($entry['total_price'] ?? 0)) / 100, 2, '.', '') . '</td>';
+            $html .= '<td class="r"><strong>' . number_format(((int) ($entry['total_price'] ?? 0)) / 100, 2, '.', '') . '</strong></td>';
 
             $html .= '</tr>';
         }
@@ -472,15 +459,15 @@ class EndschloesenReport extends PDFGenerator
         $total_munition_gesamt = $total_stich_gp11 + $total_stich_gp90 + $total_zusatz_gp11 + $total_zusatz_gp90;
         
         // Total-Zeile
-        $html .= '<tr style="background:#e9ecef; font-weight:700; border-top: 2px solid #333;">';
-        $html .= '<td class="name-cell" colspan="' . (count($sticheFiltered) + 2) . '" style="text-align:right; padding-right:10px;"><strong>TOTAL</strong></td>';
-        $html .= '<td class="munition-cell" style="text-align:center;"><strong>' . $total_stich_gp11 . '</strong></td>';
-        $html .= '<td class="munition-cell" style="text-align:center;"><strong>' . $total_stich_gp90 . '</strong></td>';
-        $html .= '<td class="munition-cell" style="text-align:center;"><strong>' . $total_zusatz_gp11 . '</strong></td>';
-        $html .= '<td class="munition-cell" style="text-align:center;"><strong>' . $total_zusatz_gp90 . '</strong></td>';
-        $html .= '<td class="munition-cell" style="text-align:center; background:#d4e8ff;"><strong>' . $total_munition_gesamt . '</strong></td>';
-        $html .= '<td class="total-cell"><strong>' . number_format($total_munition_preis / 100, 2, '.', '') . '</strong></td>';
-        $html .= '<td class="total-cell"><strong>' . number_format($total_gesamt_preis / 100, 2, '.', '') . '</strong></td>';
+        $html .= '<tr class="rl-total">';
+        $html .= '<td colspan="' . (count($sticheFiltered) + 2) . '">Total</td>';
+        $html .= '<td class="r">' . $total_stich_gp11 . '</td>';
+        $html .= '<td class="r">' . $total_stich_gp90 . '</td>';
+        $html .= '<td class="r">' . $total_zusatz_gp11 . '</td>';
+        $html .= '<td class="r">' . $total_zusatz_gp90 . '</td>';
+        $html .= '<td class="r">' . $total_munition_gesamt . '</td>';
+        $html .= '<td class="r">' . number_format($total_munition_preis / 100, 2, '.', '') . '</td>';
+        $html .= '<td class="r">' . number_format($total_gesamt_preis / 100, 2, '.', '') . '</td>';
         $html .= '</tr>';
 
         $html .= '</tbody></table>';
@@ -603,22 +590,15 @@ class EndschloesenReport extends PDFGenerator
         $left .= '</tr></tfoot></table>';
 */
         // ---- rechte Spalte: Munition kompakt (Tabelle)
-        $ammo = '<div class="h3" style="margin:0 0 6px 0;">Munition â€“ Zusammenfassung</div>';
-        $ammo .= '<table class="ammo-table"><thead><tr>';
-        $ammo .= '<th></th><th>GP11</th><th>GP90</th>';
-        $ammo .= '</tr></thead><tbody>';
-        $ammo .= '<tr><td>Endschiessen</td><td>' . number_format($stich_gp11, 0, ',', '\'') . '</td><td>' . number_format($stich_gp90, 0, ',', '\'') . '</td></tr>';
-        $ammo .= '<tr><td>Zusatzverkauf</td><td>' . number_format($zusatz_gp11, 0, ',', '\'') . '</td><td>' . number_format($zusatz_gp90, 0, ',', '\'') . '</td></tr>';
-        $ammo .= '<tr class="total"><td>Total</td><td><strong>' . number_format($stich_gp11 + $zusatz_gp11, 0, ',', '\'') . '</strong></td><td><strong>' . number_format($stich_gp90 + $zusatz_gp90, 0, ',', '\'') . '</strong></td></tr>';
-        $ammo .= '<tr style="border-top: 2px solid #ddd;"><td colspan="3" style="text-align:center; padding:8px; font-weight:700; background:#f0f8ff;">Gesamt-Schuss: ' . number_format($gesamtSchuss, 0, ',', '\'') . '</td></tr>';
-        $ammo .= '</tbody></table>';
-
-        // Nebeneinander & top aligned
-       // $html = $teilnehmerBox; // Teilnehmer-Box zuerst
-        $html = '<table class="two-col"><tr>';
-        //$html .= '<td class="two-col-left" valign="top">' . $left . '</td>';
-        $html .= '<td class="two-col-right" valign="top">' . $ammo . '</td>';
-        $html .= '</tr></table>';
+        $fmt = fn(int $n) => number_format($n, 0, ',', '\'');
+        $html = '<h2 class="rl-abschnitt">Munition</h2>';
+        $html .= '<table class="table ammo-table"><thead><tr>';
+        $html .= '<th></th><th class="r">GP11</th><th class="r">GP90</th><th class="r">Total</th>';
+        $html .= '</tr></thead><tbody>';
+        $html .= '<tr><td>Endschiessen</td><td class="r">' . $fmt($stich_gp11) . '</td><td class="r">' . $fmt($stich_gp90) . '</td><td class="r">' . $fmt($stich_gp11 + $stich_gp90) . '</td></tr>';
+        $html .= '<tr><td>Zusatzverkauf</td><td class="r">' . $fmt($zusatz_gp11) . '</td><td class="r">' . $fmt($zusatz_gp90) . '</td><td class="r">' . $fmt($zusatz_gp11 + $zusatz_gp90) . '</td></tr>';
+        $html .= '<tr class="rl-total"><td>Total Schuss</td><td class="r">' . $fmt($stich_gp11 + $zusatz_gp11) . '</td><td class="r">' . $fmt($stich_gp90 + $zusatz_gp90) . '</td><td class="r">' . $fmt($gesamtSchuss) . '</td></tr>';
+        $html .= '</tbody></table>';
 
         return $html;
     }
@@ -681,7 +661,7 @@ class EndschloesenReport extends PDFGenerator
             return number_format((int) $n, 0, ',', '\''); };
 
         $html = '<div class="ammo-summary">';
-        $html .= '<div class="h4">Munition â€“ Zusammenfassung</div>';
+        $html .= '<div class="h4">Munition – Zusammenfassung</div>';
 
         // GP11
         $html .= '<div><strong>GP11</strong></div>';
@@ -707,90 +687,18 @@ class EndschloesenReport extends PDFGenerator
      */
     private function getCustomStyles()
 {
+    // Ergänzungen zum Ranglisten-Stil (pdf_rangliste_css): breite Querformat-Tabelle kompakt,
+    // leichte Zebrastreifen zum Lesen über 18 Spalten, Stich-Spalten zentriert
     return '
-        @page { size: A4 landscape; margin: 10mm; }
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; }
-h1, h2, h3, h4, h5, h6,
-table, thead, tbody, tfoot, tr, th, td,
-p, li, span, div {
-  font-family: Arial, Helvetica, sans-serif !important;
-}
-        /* Seitentitel (Elemente, nicht Klassen!) */
-        h1 { 
-            color:#1f3b63; 
-            font-size:19pt; 
-            font-weight:700; 
-            letter-spacing:.2px; 
-            margin:10px 0 2px; 
-            text-align:center; 
-        }
-        h2 { 
-            color:#5c6b80; 
-            font-size:11pt; 
-            font-weight:600; 
-            letter-spacing:.2px; 
-            margin:0 0 16px; 
-            text-align:center; 
-        }
-
-        .h3 { font-size:12pt; font-weight:700; margin:8px 0 6px; }
-        .h4 { font-size:10pt; font-weight:700; margin:6px 0 6px; }
-
-        /* Haupttabelle â€“ Header modern, einmalig definiert */
-        .main-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:8pt; }
-        .main-table th {
-            background:#f3f6fb;
-            color:#2a3340;
-            padding:6px 4px;
-            text-align:center;
-            font-weight:700;
-            text-transform:uppercase;
-            letter-spacing:.35px;
-            font-size:7.6pt;
-            border:1px solid #e1e7ef;
-            border-bottom:2px solid #d4deea;
-        }
-        .main-table td { padding:3px; border:1px solid #eaeaea; }
-
-        .name-col  { width:20%; text-align:left !important; }
-        .name-cell { text-align:left; font-weight:600; padding-left:5px !important; }
-
-        /* Stich-Header: nie umbrechen + kompakt */
-        .stich-col { width:6%; font-size:7pt; white-space:nowrap; }
-
-        .waffe-col   { width:12%; }
-        .munition-col{ width:5%; }
-        .total-col   { width:8%; }
-        .total-cell  { text-align:right; padding-right:5px !important; font-weight:700; background:#fff7e6; }
-
-        /* Zwei Spalten für Zusammenfassung â€“ final 58 / 42 */
-        .two-col { width:100%; border-collapse:separate; border-spacing:0; }
-        .two-col td { vertical-align:top; padding-top:0; }
-        .two-col-left  { width:58%; padding-right:10px; }
-        .two-col-right { width:42%; padding-left:10px; }
-
-        /* Stiche- und Munitionstabellen */
-        .stat-table, .ammo-table { border-collapse:collapse; margin:0 0 10px 0; }
-        .stat-table  { width:85%; } /* schmaler als 100% */
-        .ammo-table  { width:100%; }
-
-        .stat-table th, .ammo-table th { background:#f6f8fb; color:#333; padding:5px; text-align:left; border:1px solid #e6e6e6; }
-        .stat-table td, .ammo-table td { padding:5px; border:1px solid #eeeeee; }
-        .stat-table tfoot td { border-top:2px solid #ddd; font-weight:700; }
-
-        .ammo-table th:nth-child(2), .ammo-table th:nth-child(3),
-        .ammo-table td:nth-child(2), .ammo-table td:nth-child(3) { text-align:right; }
-        .ammo-table tr.total td { font-weight:700; border-top:2px solid #ddd; }
-
-        .pagebreak { page-break-before: always; }
-
-        /* Erzwinge Arial (Fallback: Helvetica) für alle Tabelleninhalte */
-        .main-table, .main-table td, .main-table th,
-        .stat-table, .stat-table td, .stat-table th,
-        .ammo-table, .ammo-table td, .ammo-table th,
-        .name-cell {
-          font-family: Arial, Helvetica, sans-serif !important;
-        }
+        .main-table { font-size: 8pt; }
+        .main-table th, .main-table td { padding: 0.7mm 1mm; }
+        .main-table th { text-align: center; font-size: 7.5pt; white-space: nowrap; }
+        .main-table th.name-col { text-align: left; }
+        .main-table th.waffe-col { text-align: left; }
+        .main-table th.munition-col, .main-table th.total-col { text-align: right; }
+        .main-table .name-col { width: 17%; }
+        .main-table .waffe-col { width: 10%; }
+        .ammo-table { width: 110mm; font-size: 9.5pt; }
     ';
 }
 

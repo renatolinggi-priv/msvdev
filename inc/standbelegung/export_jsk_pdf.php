@@ -97,17 +97,17 @@ try {
         return '-';
     }
 
-    // Funktion zum Erstellen einer Tabelle
-    function createTerminTable($data, $title, $icon = '') {
+    // Funktion zum Erstellen einer Tabelle ($zeilenKlasse z. B. 'bold' für die Wettschiessen)
+    function createTerminTable($data, $title, $leerText = 'Keine Termine gefunden.', $zeilenKlasse = '') {
         if (empty($data)) {
-            return '<div class="container">
-                        <h2>' . $icon . ' ' . htmlspecialchars($title) . '</h2>
-                        <p class="no-data">Keine Termine gefunden.</p>
+            return '<div class="block">
+                        <h2 class="rl-abschnitt">' . htmlspecialchars($title) . '</h2>
+                        <p class="muted">' . htmlspecialchars($leerText) . '</p>
                     </div>';
         }
-        
-        $html = '<div class="container">
-                    <h2>' . $icon . ' ' . htmlspecialchars($title) . '</h2>
+
+        $html = '<div class="block">
+                    <h2 class="rl-abschnitt">' . htmlspecialchars($title) . '</h2>
                     <table class="table">
                         <thead>
                             <tr>
@@ -120,98 +120,35 @@ try {
                         <tbody>';
         
         foreach ($data as $t) {
-            $html .= '<tr>
+            $html .= '<tr' . ($zeilenKlasse !== '' ? ' class="' . $zeilenKlasse . '"' : '') . '>
                         <td class="datum">' . formatDatum($t['Datum']) . '</td>
                         <td class="tag">' . formatWochentag($t['Wochentag']) . '</td>
                         <td class="zeit">' . formatZeit($t['StartZeit'], $t['EndZeit']) . '</td>
                         <td class="bezeichnung">' . htmlspecialchars($t['Bezeichnung']) . '</td>
                     </tr>';
         }
-        
+
         $html .= '</tbody></table></div>';
         return $html;
     }
 
-    // Zentrales Logo eingebettet (fixt veralteten Remote-Domain-Link)
-    $logoSrc = pdf_logo_src();
-
-    // JSK-spezifische Layout-Overrides (Farben/Typo kommen aus dem Theme)
+    // Ergänzungen zum Ranglisten-Stil (Logo links, Titel, Fusszeile mit Seitenzahl nach dem Rendern)
     $jskOverrides = '
-        @page { margin: 1.5cm 1.5cm 0.8cm 1.5cm; }
-        /* Generische Tabelle: Rang-/Total-Spalten-Styling des Themes neutralisieren */
-        .table td:first-child, .table td:last-child { text-align: left; font-weight: normal; background-color: transparent; color: inherit; }
-        /* Kopf: absolut positioniertes Logo + zentrierter Titel */
-        .header { position: relative; margin-bottom: 40px; min-height: 100px; display: block; }
-        .logo { position: absolute; top: 0; left: 0; width: 100px; height: auto; margin: 0; }
-        h1 { text-align: center; font-size: 20px; margin: 0; padding-top: 20px; }
-        .subtitle { text-align: center; font-size: 14px; margin-top: 5px; }
-        .container { margin-bottom: 25px; page-break-inside: avoid; clear: both; }
-        h2 { font-size: 14px; margin-bottom: 10px; padding-bottom: 5px; }
-        .datum { width: 90px; } .tag { width: 80px; } .zeit { width: 120px; } .bezeichnung { width: auto; }
-        .no-data { font-style: italic; padding: 10px; }
-        .highlight td { background-color: #fff3cd !important; }
+        .table td:last-child { text-align: left; }
+        .block { margin-bottom: 4mm; page-break-inside: avoid; }
+        .datum { width: 24mm; } .tag { width: 24mm; } .zeit { width: 34mm; } .bezeichnung { width: auto; }
     ';
 
     // HTML generieren
-    $html = '<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <style>' . pdf_theme_css() . $jskOverrides . '</style>
-    <title>JSK-Termine ' . $year . '</title>
-</head>
-<body>
-    <div class="header">
-        <img src="' . $logoSrc . '" class="logo" alt="MSV Wilen Logo">
-        <h1>Jungschützenkurs Gewehr 300m</h1>
-        <p class="subtitle">Termine ' . $year . '</p>
-    </div>
-';
+    $titel = 'Jungschützenkurs ' . $year;
+    $html = pdf_rangliste_anfang($titel, 'Gewehr 300 m · Termine', $jskOverrides) . '<div class="container">';
 
-    // Einschreiben
-    $html .= createTerminTable($einschreiben, 'Einschreiben', '');
-    
-    // Kurstage
-    $html .= createTerminTable($kursTage, 'Kurstage', '');
-    
-    // Wettschiessen (hervorgehoben)
-    if (!empty($wettschiessen)) {
-        $html .= '<div class="container">
-                    <h2>Wettschiessen</h2>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th class="datum">Datum</th>
-                                <th class="tag">Tag</th>
-                                <th class="zeit">Zeit</th>
-                                <th class="bezeichnung">Bezeichnung</th>
-                            </tr>
-                        </thead>
-                        <tbody>';
-        
-        foreach ($wettschiessen as $t) {
-            $html .= '<tr class="highlight">
-                        <td class="datum">' . formatDatum($t['Datum']) . '</td>
-                        <td class="tag">' . formatWochentag($t['Wochentag']) . '</td>
-                        <td class="zeit">' . formatZeit($t['StartZeit'], $t['EndZeit']) . '</td>
-                        <td class="bezeichnung">' . htmlspecialchars($t['Bezeichnung']) . '</td>
-                    </tr>';
-        }
-        
-        $html .= '</tbody></table></div>';
-    } else {
-        $html .= '<div class="container">
-                    <h2>Wettschiessen</h2>
-                    <p class="no-data">Keine Wettschiessen-Termine gefunden.</p>
-                  </div>';
-    }
-    
-    // Footer
-    $html .= '<div class="footer">
-                <p>MSV Wilen | ' . date('d.m.Y \u\m H:i') . ' Uhr</p>
-              </div>
-</body>
-</html>';
+    // Einschreiben, Kurstage, Wettschiessen (Wettschiessen fett hervorgehoben)
+    $html .= createTerminTable($einschreiben, 'Einschreiben');
+    $html .= createTerminTable($kursTage, 'Kurstage');
+    $html .= createTerminTable($wettschiessen, 'Wettschiessen', 'Keine Wettschiessen-Termine gefunden.', 'bold');
+
+    $html .= '</div></body></html>';
 
     // PDF generieren
     $options = new \Dompdf\Options();
@@ -223,6 +160,7 @@ try {
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
+    pdf_seitenfuss($dompdf, 'JSK-Termine ' . $year);
 
     // Ausgabepuffer leeren
     ob_end_clean();

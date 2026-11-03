@@ -6,22 +6,13 @@ require_once __DIR__ . '/../pdf/pdf_theme.php';
 // Zentrales Logo (pdf_theme.php), unabhaengig vom Arbeitsverzeichnis
 $logoBase64 = pdf_logo_src();
 
-// Datei-spezifische Layout-Overrides (NACH dem Theme). Nur Layout, keine Farben:
-// kompakte Breittabelle + rotierte Spaltenüberschriften wie in load_jm.php.
+// Ergänzungen zum Ranglisten-Stil (pdf_rangliste_anfang in generate_pdf.php): kompakte Breittabelle
+// im Querformat, leichte Zebrastreifen zum Lesen über viele Spalten. Nur Layout, keine Farben.
 $fragebogenOverrides = '
-    body { font-size: 8px; }
-    .table th, .table td { padding: 2px; font-size: 8px; }
-    td.zwischenzeile { font-size: 3px; }
-    .small-input { width: 60px; }
-    /* Rotierte Spaltenüberschriften (Dompdf unterstützt writing-mode kaum -> Rotation) */
-    .vertical-header {
-        transform: rotate(270deg);
-        transform-origin: left top 0;
-        white-space: nowrap;
-        text-align: left;
-    }
-    th.vertical-bottom { transform: none; vertical-align: bottom; }
-    th.vertical-top { transform: none; vertical-align: top; }
+    .table { font-size: 8pt; }
+    .table th, .table td { padding: 0.9mm 1.2mm; vertical-align: top; }
+    .table th { vertical-align: bottom; }
+    .table td:last-child { text-align: left; }
 ';
 
 // HTML-Header (CSS usw.) — Spaltenbreiten frei, kein table-layout: fixed

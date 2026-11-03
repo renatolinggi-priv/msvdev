@@ -38,6 +38,7 @@ try {
     $dompdf->loadHtml(ha_pdf_html($a, $orientation));
     $dompdf->setPaper('A4', $orientation);   // zusätzlich zu @page im CSS (Dompdf: CSS gewinnt)
     $dompdf->render();
+    pdf_seitenfuss($dompdf, 'Helferstunden ' . (string)$plan['titel']);
 
     $datDir = __DIR__ . '/dat';
     if (!is_dir($datDir) && !mkdir($datDir, 0775, true)) throw new RuntimeException('Verzeichnis dat/ konnte nicht angelegt werden');
