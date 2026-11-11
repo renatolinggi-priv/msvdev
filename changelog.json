@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.68.60",
+    "datum": "2026-11-10",
+    "aenderungen": [
+      {
+        "titel": "Einsatzplanung: Feinschliff",
+        "beschreibung": "Eingeklappte Funktionszeilen zeigen im Raster wieder je Schicht, wie viele Personen eingeteilt und wie viele Positionen offen sind; vorher blieben die Zellen leer und der Plan sah unbesetzt aus. Schichten ohne Position zeigen einen Strich statt «0 Personen». Die Schrittleiste passt auf einem breiten Bildschirm in eine Zeile, der Knopf zum nächsten Schritt rückt bei Bedarf darunter. Auf dem Handy bleiben die Knöpfe in der Karte und der Text steht mittig. In den Dialogen Termine und Funktionen stehen Beispieltexte nur noch in der leeren Zeile für neue Einträge. In der Abrechnung fallen die grossen Lücken unter den Tabellen weg.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.56",
+    "datum": "2026-11-04",
+    "aenderungen": [
+      {
+        "titel": "Einsatzplanung: Ablauf im Kopf, Löschen abgesichert, klare Farben",
+        "beschreibung": "Im Plan zeigt eine Schrittleiste oben die Reihenfolge der Saison mit dem Stand jedes Schritts (Termine und Funktionen, Verfügbarkeiten, Positionen besetzen, Freigeben, Anwesenheit, Abrechnung); der blaue Knopf führt zum nächsten Schritt. Einen Plan löschen geht nur noch als Entwurf ohne erfasste Anwesenheit oder Abrechnungszeilen; die Rückfrage nennt, was mit gelöscht wird, und die Datenbank wird vorher gesichert. Beim Löschen eines Termins gilt dasselbe. Offene Positionen sind bernsteinfarben statt rot, Vorschläge der Einteilung grau gestrichelt mit Zauberstab statt blau; so verwechselt man sie nicht mehr mit MSV Wilen oder SV Freienbach. In den Dialogen Termine, Funktionen und Verfügbarkeiten sind geänderte Zeilen hinterlegt, «Änderungen speichern» sichert alle auf einmal, und Schliessen mit offenen Änderungen fragt nach. Das Panel zeigt «Gespeichert um …», und Funktionen speichern ohne Neuladen. Die Werkzeugleiste ist schlanker (Plan einrichten als ein Menü), die Wahl der Umfrage steht jetzt bei den Verfügbarkeiten, der Freigabe-Dialog nennt, wie viele Mitglieder benachrichtigt werden und was noch offen ist. Funktionszeilen lassen sich mit der Tastatur aufklappen, und neue Hilfetexte stehen bei Einteilung, Verfügbarkeiten, Rückmeldung und OK-Mitgliedern (nach der Datenbank-Aktualisierung, Migration 132).",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.55",
     "datum": "2026-11-04",
     "aenderungen": [

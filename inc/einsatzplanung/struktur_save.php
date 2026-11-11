@@ -63,15 +63,37 @@ try {
             ep_projizieren_wenn_freigegeben($db, $planId);
             ep_json(['success' => true, 'id' => $id, 'message' => 'Termin gespeichert']);
 
+        case 'termin_pruefen':
         case 'termin_delete':
+            // Löschen nur ohne erfasste Anwesenheit; mit besetzten Positionen vorher sichern (seit 1.68.56)
+            $tSlots = array_values(array_filter($plan['slots'], fn($s) => (int)$s['termin_id'] === $id));
+            $tBesetzt = array_values(array_filter($tSlots, 'ep_slot_besetzt'));
+            $tAnw = count(array_filter($tSlots, fn($s) => $s['anwesend'] !== null));
+            $tPersonen = [];
+            foreach ($tBesetzt as $s) if (($s['verein'] ?? 'msv') === 'msv' && (int)$s['mitglied_id'] > 0 && (int)($s['vorschlag'] ?? 0) === 0) $tPersonen[(int)$s['mitglied_id']] = true;
+            $tInfo = ['positionen' => count($tBesetzt), 'anwesenheit' => $tAnw, 'mitglieder_portal' => $plan['status'] !== 'entwurf' ? count($tPersonen) : 0,
+                      'gesperrt' => $tAnw > 0];
+            if ($action === 'termin_pruefen') ep_json(['success' => true] + $tInfo);
+            if ($tAnw > 0) ep_json(['success' => false, 'message' => "Für diesen Termin ist bei $tAnw Position(en) die Anwesenheit erfasst. Er bleibt als Nachweis erhalten."] + $tInfo, 409);
+            $sicherung = null;
+            if ($tBesetzt) {
+                require_once __DIR__ . '/../backup_dump.inc.php';
+                $sicherung = msvBackupVorher('einsatztermin-loeschen-' . $id);
+                if (!$sicherung['ok']) {
+                    error_log('[einsatzplanung/struktur_save] Sicherung fehlgeschlagen: ' . $sicherung['meldung']);
+                    ep_json(['success' => false, 'message' => 'Die Sicherung vor dem Löschen ist fehlgeschlagen. Es wurde nichts gelöscht; bitte später nochmals versuchen.'], 500);
+                }
+            }
             $db->beginTransaction();
             $db->prepare("DELETE z FROM einsatz_zuweisungen z JOIN einsatz_plan_slots s ON s.id = z.slot_id WHERE s.plan_id = ? AND s.termin_id = ?")->execute([$planId, $id]);
             $db->prepare("DELETE FROM einsatz_plan_slots WHERE plan_id = ? AND termin_id = ?")->execute([$planId, $id]);
+            try { $db->prepare("DELETE FROM einsatz_plan_soll WHERE plan_id = ? AND termin_id = ?")->execute([$planId, $id]); }
+            catch (Throwable $e) { if (!str_contains($e->getMessage(), '42S02') && !str_contains($e->getMessage(), '42S22')) throw $e; }
             $st = $db->prepare("DELETE FROM einsatz_plan_termine WHERE id = ? AND plan_id = ?");
             $st->execute([$id, $planId]);
             $db->commit();
-            if ($st->rowCount() === 0) ep_json(['success' => false, 'message' => 'Termin nicht gefunden'], 404);
-            ep_json(['success' => true, 'message' => 'Termin gelöscht']);
+            if ($st->rowCount() === 0) ep_json(['success' => false, 'message' => 'Der Termin wurde nicht gefunden. Bitte die Seite neu laden.'], 404);
+            ep_json(['success' => true, 'message' => 'Termin gelöscht' . ($sicherung ? ' (Sicherung: ' . basename((string)$sicherung['datei']) . ')' : '')]);
 
         case 'termine_aus_jm':
             $vorhanden = array_map(fn($t) => $t['datum'] . '|' . substr((string)$t['zeit_von'], 0, 5), $plan['termine']);

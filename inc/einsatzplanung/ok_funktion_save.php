@@ -42,5 +42,5 @@ try {
              'funktionen' => $funktionen, 'slots' => $slots]);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/ok_funktion_save] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Speichern fehlgeschlagen (Migrationen 053/058 ausgeführt?)'], 500);
+    ep_json(['success' => false, 'message' => 'Die Definition konnte nicht gespeichert werden. Bitte unter «Datenbank aktualisieren» prüfen, ob alle Aktualisierungen ausgeführt sind.'], 500);
 }

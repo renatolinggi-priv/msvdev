@@ -62,5 +62,5 @@ try {
     ep_json(['success' => true, 'message' => ucfirst(implode(', ', $meldung)), 'ok' => $ok, 'dauerhaft' => $dauerhaft, 'slot_ids' => $ids]);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/ok_person_save] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Speichern fehlgeschlagen (Migrationen 058/060 ausgeführt?)'], 500);
+    ep_json(['success' => false, 'message' => 'Das OK-Kennzeichen konnte nicht gespeichert werden. Bitte unter «Datenbank aktualisieren» prüfen, ob alle Aktualisierungen ausgeführt sind.'], 500);
 }

@@ -12,7 +12,7 @@ $vereine = array_keys(EP_VEREINE);
 
 <div class="table-wrapper">
   <h5 class="table-title"><span><i class="bi bi-calculator me-2"></i>Gesamtabrechnung pro Verein</span>
-    <span class="badge <?= $okMit ? 'bg-warning text-dark' : 'bg-secondary' ?>"><?= $okMit ? 'OK-Einsätze mitgezählt' : 'ohne OK-Einsätze' ?></span></h5>
+    <span class="ui-chip<?= $okMit ? ' ha-chip-ok' : '' ?>"><?= $okMit ? 'OK-Einsätze mitgezählt' : 'ohne OK-Einsätze' ?></span></h5>
   <div class="table-responsive">
     <table class="hybrid-table ha-matrix">
       <thead><tr><th>Position</th><?php foreach ($vereine as $v): ?><th class="text-end"><?= $h(EP_VEREINE[$v]) ?></th><?php endforeach; ?><th class="text-end">Total</th></tr></thead>
@@ -40,7 +40,7 @@ $vereine = array_keys(EP_VEREINE);
 </div>
 
 <div class="table-wrapper">
-  <h5 class="table-title"><span><i class="bi bi-clock-history me-2"></i>Helferstunden je Schicht und Verein</span><span class="badge bg-secondary"><?= count($m['termine']) ?> Schichten</span></h5>
+  <h5 class="table-title"><span><i class="bi bi-clock-history me-2"></i>Helferstunden je Schicht und Verein</span><span class="ui-chip"><?= count($m['termine']) ?> Schichten</span></h5>
   <div class="table-responsive">
     <table class="hybrid-table ha-matrix">
       <thead><tr><th>Schicht</th><?php foreach ($vereine as $v): ?><th class="text-end"><?= $h(EP_VEREINE[$v]) ?></th><?php endforeach; ?><th class="text-end">Total</th></tr></thead>

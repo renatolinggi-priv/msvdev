@@ -11,7 +11,7 @@ $titel = ['vorarbeit' => ['Vor- & Nacharbeiten', 'bi-tools'], 'ok_funktion' => [
 </div>
 <?php foreach ($gruppen as $kat => $zeilen): [$lbl, $icon] = $titel[$kat]; $sum = array_sum(array_column($zeilen, 'stunden')); ?>
 <div class="table-wrapper">
-  <h5 class="table-title"><span><i class="bi <?= $icon ?> me-2"></i><?= $h($lbl) ?></span><span class="badge bg-secondary"><?= count($zeilen) ?> · <?= $h(ha_fmt($sum)) ?> h</span></h5>
+  <h5 class="table-title"><span><i class="bi <?= $icon ?> me-2"></i><?= $h($lbl) ?></span><span class="ui-chip"><?= count($zeilen) ?> · <?= $h(ha_fmt($sum)) ?> h</span></h5>
   <div class="table-responsive">
     <table class="hybrid-table ha-zeilen">
       <thead><tr><th>Tätigkeit</th><th>Person</th><th>Verein</th><th class="text-end" style="width:90px">Stunden</th><th>Bemerkung</th><th style="width:40px"></th></tr></thead>

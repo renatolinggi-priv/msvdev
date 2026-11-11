@@ -51,5 +51,5 @@ try {
     ep_json(['success' => true, 'jahr' => $jahr, 'plaene' => $plaene, 'vereine' => $vereine, 'personen' => $personen]);
 } catch (Throwable $e) {
     error_log('[einsatzplanung/anwesenheit_auswertung] ' . $e->getMessage());
-    ep_json(['success' => false, 'message' => 'Auswertung fehlgeschlagen (Migration 054 ausgeführt?)'], 500);
+    ep_json(['success' => false, 'message' => 'Die Auswertung konnte nicht geladen werden. Bitte unter «Datenbank aktualisieren» prüfen, ob alle Aktualisierungen ausgeführt sind.'], 500);
 }

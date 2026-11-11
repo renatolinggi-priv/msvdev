@@ -33,9 +33,9 @@
 
   <ul class="nav nav-tabs" role="tablist">
     <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAbrechnung" type="button"><i class="bi bi-calculator me-1"></i>Abrechnung</button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAnsaetze" type="button"><i class="bi bi-sliders me-1"></i>Ansätze <span class="badge bg-secondary ms-1"><?= count($plan['termine']) ?></span></button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabZeilen" type="button"><i class="bi bi-list-check me-1"></i>Manuelle Zeilen <span class="badge bg-secondary ms-1"><?= count($a['manuell']) ?></span></button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabDetail" type="button"><i class="bi bi-table me-1"></i>Detail <span class="badge bg-secondary ms-1"><?= count($a['zuteilungen']) ?></span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAnsaetze" type="button"><i class="bi bi-sliders me-1"></i>Ansätze <span class="ui-chip ms-1"><?= count($plan['termine']) ?></span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabZeilen" type="button"><i class="bi bi-list-check me-1"></i>Manuelle Zeilen <span class="ui-chip ms-1"><?= count($a['manuell']) ?></span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabDetail" type="button"><i class="bi bi-table me-1"></i>Detail <span class="ui-chip ms-1"><?= count($a['zuteilungen']) ?></span></button></li>
   </ul>
 
   <div class="tab-content">
