@@ -9,12 +9,18 @@
  *  - ungespeicherte Zeilen sind markiert, «Speichern» ist der eine Hauptknopf, Verlassen warnt
  *  - Gruppen und Knöpfe per Tastatur erreichbar, jedes Feld beschriftet
  *  - Einrichtung eines anderen Arbeitsplatzes (anderer Browser, gelöschte Browserdaten) übernehmen
+ * Einstieg 1.68.58 (impeccable onboard):
+ *  - Schrittleiste in der Kopf-Card: Verbindung → Drucker → Dokumente → Testseite, der nächste Schritt als Knopf
+ *  - «Alle Dokumente einrichten»: ein Drucker für alle Dokumente ohne Drucker, danach ausdrücklich «Speichern»
+ *  - ohne Drucker keine leere Profilliste, sondern ein Leerzustand; Leerzustände sagen, was als Nächstes kommt
  */
 (function ($) {
   'use strict';
 
   const KATALOG = window.MsvDruckDokumente;
   const ZU_SCHLUESSEL = 'msv_druckprofile_zu'; // zugeklappte Gruppen (Standard: alle offen)
+  const SCHNELL_AUS = 'msv_druckprofile_schnell_aus'; // «übrige Dokumente einrichten» ausgeblendet (dieser Browser)
+  const ABSCHNITT = { verbindung: 'drVerbindungTitel', drucker: 'drDruckerTitel', dokumente: 'drProfileTitel', test: 'drProfileTitel' };
   const PAPIER = { A3: [297, 420], A4: [210, 297], A5: [148, 210], LETTER: [216, 279] };
   const esc = s => msvEsc(s == null ? '' : String(s));
   const csrf = () => (document.querySelector('[name="csrf_token"]') || {}).value || '';
@@ -22,6 +28,8 @@
   const Druck = {
     pm: null,
     verbunden: false,
+    pruefend: true,    // erster Verbindungsversuch läuft noch
+    log: null,         // letzte Druckaufträge dieses Browsers (null = noch nicht geladen)
     drucker: [],       // Drucker dieses Browsers (printers)
     profile: [],       // Profile dieses Browsers (print_profiles)
     system: [],        // Drucker des Computers (live von QZ Tray)
@@ -30,7 +38,7 @@
     // =================================================================== Start
     init() {
       this.pm = new PrintManager();
-      this.pm.onStatusChange = (c) => { this.verbunden = !!c; this.zeigeStatus(); this.renderMatrix(true); };
+      this.pm.onStatusChange = (c) => { this.verbunden = !!c; this.renderDrucker(); this.zeigeStatus(); this.renderMatrix(true); };
 
       const chip = document.getElementById('drArbeitsplatz');
       if (chip && typeof getMachineId === 'function') {
@@ -52,6 +60,15 @@
       $m.on('click', '.dr-test', (e) => this.testdruck(e.currentTarget.dataset.doc));
       $m.on('click', '.dr-uebertragen', (e) => this.uebertrage(e.currentTarget.dataset.doc, e.shiftKey));
       $m.on('change input', '[data-feld]', (e) => this.markiere($(e.target).closest('.dr-zeile')[0]));
+      $('#drAblauf').on('click', '.dr-schritt', (e) => this.geheZu(e.currentTarget.dataset.schritt));
+      $('#drWeiter').on('click', '[data-weiter]', (e) => this.weiter(e.currentTarget));
+      $('#drSchnell').on('click', '#drSchnellKnopf', () => this.schnellEinrichten());
+      $('#drSchnell').on('click', '#drSchnellAus', () => {
+        try { localStorage.setItem(SCHNELL_AUS, '1'); } catch (e) { /* privat: egal */ }
+        this.zeigeSchnell();
+        document.getElementById('drProfileTitel').focus();
+      });
+      $('#druckerListe').on('click', '.dr-neu', () => this.oeffnePanel(null));
       $('#druckerListe').on('click', '.dr-bearbeiten', (e) => this.oeffnePanel(Number(e.currentTarget.dataset.id)));
       $('#druckerListe').on('click', '.dr-loeschen', (e) => this.loescheDrucker(Number(e.currentTarget.dataset.id)));
       $(window).on('beforeunload', (e) => {
@@ -72,6 +89,8 @@
       $('#btnConnect').prop('disabled', true);
       $('#qzStatusText').text('Verbinde mit QZ Tray …');
       $('#qzStatus').attr('class', 'ui-status aus');
+      this.pruefend = true;
+      this.zeigeAblauf();
       try {
         await this.pm.connect();
         this.verbunden = true;
@@ -83,7 +102,9 @@
         this.zeigeHinweis(err && err.message ? err.message : String(err));
         if (manuell) msvToast('Keine Verbindung zu QZ Tray', 'warning');
       } finally {
+        this.pruefend = false;
         $('#btnConnect').prop('disabled', false);
+        this.renderDrucker();
         this.zeigeStatus();
         this.renderMatrix(true);
       }
@@ -95,11 +116,91 @@
       $('#qzStatusText').text(v ? 'Mit QZ Tray verbunden' : 'Nicht mit QZ Tray verbunden');
       $('#btnConnect').prop('hidden', v);
       $('#drSetupZeile').prop('hidden', !v || !this.setup); // ohne Verbindung steht das Setup schon im Hinweis
+      this.zeigeAblauf();
+    },
+
+    // =================================================================== Einrichtung (Schrittleiste)
+    /** Stand der vier Schritte und der nächste Schritt; erledigt ist, was für den Direktdruck schon reicht. */
+    schritte() {
       const aktiv = this.drucker.filter(d => Number(d.aktiv) === 1).length;
-      const mitDrucker = this.profile.filter(p => p.printer_id).length;
-      $('#drSchritte').html(
-        '<span class="ui-chip"><i class="bi bi-printer" aria-hidden="true"></i><b>' + aktiv + '</b> ' + (aktiv === 1 ? 'Drucker' : 'Drucker') + '</span>'
-        + '<span class="ui-chip"><i class="bi bi-list-check" aria-hidden="true"></i><b>' + mitDrucker + '</b> von ' + this.alleDokumente().length + ' Dokumenten eingerichtet</span>');
+      const mit = this.profile.filter(p => p.printer_id).length;
+      const gedruckt = (this.log || []).find(j => j.status !== 'fehler');
+      const am = gedruckt ? new Date(String(gedruckt.erstellt_am).replace(' ', 'T')).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+      return [
+        { key: 'verbindung', fertig: this.verbunden, stand: this.verbunden ? 'QZ Tray verbunden' : (this.pruefend ? 'wird geprüft …' : 'QZ Tray fehlt') },
+        { key: 'drucker', fertig: aktiv > 0, stand: aktiv ? aktiv + ' Drucker' : 'noch keiner' },
+        { key: 'dokumente', fertig: mit > 0, stand: mit + ' von ' + this.alleDokumente().length + ' eingerichtet' },
+        { key: 'test', fertig: !!gedruckt, stand: gedruckt ? 'gedruckt am ' + am : (this.log === null ? '…' : 'noch keine') },
+      ];
+    },
+
+    zeigeAblauf() {
+      const schritte = this.schritte();
+      // solange die erste Verbindung geprüft wird, ist noch nichts «jetzt» (sonst springt die Leiste beim Laden)
+      const jetzt = this.pruefend && !this.verbunden ? null : (schritte.find(s => !s.fertig) || null);
+      schritte.forEach((s, i) => {
+        const b = document.querySelector('#drAblauf .dr-schritt[data-schritt="' + s.key + '"]');
+        if (!b) return;
+        const istJetzt = !!jetzt && jetzt.key === s.key;
+        b.classList.toggle('ist-fertig', s.fertig);
+        b.classList.toggle('ist-jetzt', istJetzt);
+        if (istJetzt) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+        b.querySelector('.dr-schritt-nr').innerHTML = s.fertig ? '<i class="bi bi-check-lg"></i>' : String(i + 1);
+        const name = b.querySelector('.dr-schritt-name');
+        name.innerHTML = esc(name.textContent.replace(' (erledigt)', '')) + (s.fertig ? '<span class="visually-hidden"> (erledigt)</span>' : '');
+        b.querySelector('.dr-schritt-stand').textContent = s.stand;
+      });
+
+      let weiter = '';
+      if (!jetzt) {
+        if (!this.pruefend) weiter = '<span class="ui-status ok"><span class="ui-punkt" aria-hidden="true"></span>Direktdruck bereit</span>';
+      } else if (jetzt.key === 'drucker' && this.verbunden) {
+        weiter = '<button type="button" class="btn btn-primary btn-sm" data-weiter="drucker"><i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i>Drucker übernehmen</button>';
+      } else if (jetzt.key === 'dokumente') {
+        weiter = '<button type="button" class="btn btn-primary btn-sm" data-weiter="dokumente"><i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i>Dokumente einrichten</button>';
+      } else if (jetzt.key === 'test' && this.verbunden) {
+        const ziel = this.testZiel();
+        if (ziel) {
+          const p = this.profilVon(ziel.doc_type);
+          const d = this.drucker.find(x => Number(x.id) === Number(p.printer_id));
+          weiter = '<button type="button" class="btn btn-primary btn-sm" data-weiter="test" data-doc="' + esc(ziel.doc_type) + '" data-tooltip="'
+            + esc('Eine Seite mit Rahmen und Massband: «' + ziel.label + '» auf ' + this.druckerName(d)) + '">'
+            + '<i class="bi bi-printer me-1" aria-hidden="true"></i>Testseite drucken</button>';
+        }
+      }
+      // Verbindung: die Anleitung mit «Neu verbinden» steht direkt darunter in der Karte, kein dritter Knopf
+      $('#drWeiter').html(weiter);
+    },
+
+    /** Für die Testseite: ein eingerichtetes Dokument auf einem aktiven Drucker, lieber ein einfaches Blatt als ein Faltblatt. */
+    testZiel() {
+      const mit = this.alleDokumente().filter(def => {
+        const p = this.profilVon(def.doc_type);
+        return p && p.printer_id && this.drucker.some(d => Number(d.id) === Number(p.printer_id) && Number(d.aktiv) === 1);
+      });
+      return mit.find(def => !def.broschuere) || mit[0] || null;
+    },
+
+    /** Schritt anklicken: zum Abschnitt scrollen und den Titel fokussieren (Tastatur und Screenreader landen dort). */
+    geheZu(key) {
+      const h = document.getElementById(ABSCHNITT[key]);
+      if (!h) return;
+      const ruhig = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      h.closest('section').scrollIntoView({ behavior: ruhig ? 'auto' : 'smooth', block: 'start' });
+      h.focus({ preventScroll: true });
+    },
+
+    weiter(knopf) {
+      const was = knopf.dataset.weiter;
+      if (was === 'drucker') this.oeffnePanel(null);
+      else if (was === 'dokumente') {
+        this.geheZu('dokumente');
+        const k = document.getElementById('drSchnellKnopf');
+        if (k) k.focus({ preventScroll: true });
+      } else if (was === 'test') {
+        knopf.disabled = true;
+        this.testdruck(knopf.dataset.doc).finally(() => { knopf.disabled = false; });
+      }
     },
 
     /** Hinweis mit dem nächsten Schritt statt der technischen Meldung (die steht in der Konsole). */
@@ -205,9 +306,26 @@
 
     renderDrucker() {
       const $b = $('#druckerListe');
+      // ohne Drucker steht der Knopf im Leerzustand, nicht doppelt im Kartenkopf
+      $('#btnDruckerNeu, #drDruckerKopf').prop('hidden', !this.drucker.length);
       if (!this.drucker.length) {
-        $b.html('<div class="dr-leer" role="row"><span role="cell"><i class="bi bi-printer" aria-hidden="true"></i>'
-          + '<p><strong>Noch kein Drucker übernommen.</strong></p><p>Zuerst einen Drucker dieses Computers übernehmen; danach lassen sich die Profile einrichten.</p></span></div>');
+        let inhalt;
+        if (this.pruefend && !this.verbunden) {
+          inhalt = '<p>Drucker werden gesucht …</p>';
+        } else if (!this.verbunden) {
+          inhalt = '<i class="bi bi-plug" aria-hidden="true"></i><p><strong>Noch kein Drucker.</strong></p>'
+            + '<p>Die Drucker kommen über QZ Tray vom Computer. Sobald oben die Verbindung steht, wählst du hier einen aus.</p>';
+        } else if (!(this.system || []).length) {
+          inhalt = '<i class="bi bi-printer" aria-hidden="true"></i><p><strong>QZ Tray findet auf diesem Computer keinen Drucker.</strong></p>'
+            + '<p>Den Drucker zuerst in Windows einrichten (Einstellungen › Drucker und Scanner), dann oben «Neu verbinden».</p>';
+        } else {
+          const n = this.system.length;
+          inhalt = '<i class="bi bi-printer" aria-hidden="true"></i><p><strong>Noch kein Drucker übernommen.</strong> '
+            + 'QZ Tray sieht ' + (n === 1 ? 'einen Drucker' : n + ' Drucker') + ' auf diesem Computer.</p>'
+            + '<button type="button" class="btn btn-outline-success btn-sm dr-neu"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Drucker übernehmen</button>'
+            + '<p class="small">Geht auch ohne diese Seite: Beim ersten Klick auf ein Drucker-Symbol neben einem PDF fragt die App nach dem Drucker.</p>';
+        }
+        $b.html('<div class="dr-leer" role="row"><div role="cell">' + inhalt + '</div></div>');
         return;
       }
       $b.html(this.drucker.map(d => {
@@ -335,9 +453,17 @@
         + '<span role="columnheader">Kopien</span><span role="columnheader">Beidseitig</span><span role="columnheader">Farbe</span>'
         + '<span role="columnheader"><span class="visually-hidden">Aktionen</span></span></div></div>';
 
-      if (!this.drucker.length) {
-        html += '<div class="dr-leer"><i class="bi bi-arrow-up-circle" aria-hidden="true"></i><p>Zuerst oben unter «Drucker» einen Drucker übernehmen.</p>'
-          + '<p class="small">Oder direkt auf einer Seite das Drucker-Symbol klicken: Beim ersten Druck wird nach dem Drucker gefragt.</p></div>';
+      // ohne Drucker keine Liste mit 18 leeren Zeilen: nur sagen, was hier entsteht
+      const ohneDrucker = !this.drucker.length;
+      $('#drProfilFuss').prop('hidden', ohneDrucker);
+      $m.attr('aria-describedby', ohneDrucker ? null : 'drProfilFussText');
+      if (ohneDrucker) {
+        $m.html('<div class="dr-leer" role="row"><div role="cell"><i class="bi bi-list-check" aria-hidden="true"></i>'
+          + '<p><strong>Hier legst du fest, welches Dokument auf welchem Drucker herauskommt.</strong></p>'
+          + '<p>Sobald oben ein Drucker übernommen ist, richtest du alle ' + this.alleDokumente().length + ' Dokumente mit einem Klick ein.</p></div></div>');
+        this.geaendert.clear();
+        this.zeigeAenderungen();
+        return;
       }
 
       KATALOG.gruppen.forEach((g, gi) => {
@@ -450,6 +576,61 @@
       $('#drProfilFussText').text(n
         ? n + (n === 1 ? ' Änderung' : ' Änderungen') + ' noch nicht gespeichert.'
         : fertig + ' von ' + this.alleDokumente().length + ' Dokumenten haben einen Drucker.');
+      this.zeigeSchnell();
+    },
+
+    /**
+     * «Alle Dokumente einrichten»: steht über der Liste, solange Dokumente ohne Drucker sind und nichts ungespeichert ist.
+     * Beim ersten Einrichten immer, danach («übrige») lässt es sich für diesen Browser ausblenden.
+     */
+    zeigeSchnell() {
+      const $s = $('#drSchnell');
+      const aktive = this.drucker.filter(d => Number(d.aktiv) === 1);
+      const alle = this.alleDokumente();
+      const offen = alle.filter(def => { const p = this.profilVon(def.doc_type); return !(p && p.printer_id); }).length;
+      const erstes = offen === alle.length;
+      let aus = false;
+      try { aus = localStorage.getItem(SCHNELL_AUS) === '1'; } catch (e) { /* privat: egal */ }
+      if (!aktive.length || !offen || this.geaendert.size || (!erstes && aus)) { $s.prop('hidden', true).empty(); return; }
+
+      const wahl = aktive.length === 1
+        ? '<span class="dr-schnell-drucker"><i class="bi bi-printer me-1" aria-hidden="true"></i>' + esc(this.druckerName(aktive[0])) + '</span>'
+          + '<input type="hidden" id="drSchnellDrucker" value="' + esc(aktive[0].id) + '">'
+        : '<select id="drSchnellDrucker" class="form-select form-select-sm" aria-label="Drucker für alle Dokumente ohne Drucker">'
+          + aktive.map(d => '<option value="' + esc(d.id) + '">' + esc(this.druckerName(d)) + '</option>').join('') + '</select>';
+      const text = erstes
+        ? '<strong>Alle ' + alle.length + ' Dokumente auf einen Drucker legen</strong>'
+          + 'Mit den üblichen Werten: 1 Kopie, Schwarzweiss, Faltblätter automatisch beidseitig. Einzelne Zeilen passt du danach an.'
+        : '<strong>' + offen + (offen === 1 ? ' Dokument hat' : ' Dokumente haben') + ' noch keinen Drucker</strong>'
+          + 'Auf einen Drucker legen, mit den üblichen Werten. Eingerichtete Zeilen bleiben, wie sie sind.';
+      $s.html('<div class="dr-schnell-text">' + text + '</div><div class="dr-schnell-aktion">' + wahl
+        + '<button type="button" class="btn btn-outline-primary btn-sm" id="drSchnellKnopf"><i class="bi bi-check2-all me-1" aria-hidden="true"></i>'
+        + (erstes ? 'Alle einrichten' : 'Übrige einrichten') + '</button>'
+        + (erstes ? '' : '<button type="button" class="btn btn-outline-secondary btn-sm" id="drSchnellAus" aria-label="Hinweis ausblenden" data-tooltip="Ausblenden: die übrigen Dokumente bleiben ohne Drucker"><i class="bi bi-x-lg" aria-hidden="true"></i></button>')
+        + '</div>').prop('hidden', false);
+    },
+
+    /** Drucker in alle Zeilen ohne Drucker setzen; gespeichert wird wie immer erst mit «Speichern». */
+    schnellEinrichten() {
+      const id = String($('#drSchnellDrucker').val() || '');
+      const d = this.drucker.find(x => String(x.id) === id);
+      if (!d) return;
+      const $leer = $('#profileMatrix .dr-zeile').filter((_, z) => !$(z).find('[data-feld="printer_id"]').val());
+      if (!$leer.length) return;
+      $leer.each((_, z) => {
+        $(z).find('[data-feld="printer_id"]').val(id);
+        z.classList.add('dr-kopiert');
+        this.markiere(z, true);
+      });
+      // zugeklappte Gruppen mit neuen Zeilen öffnen: sichtbar, was sich ändert
+      $leer.closest('[id^="drGruppe"]').each((_, g) => {
+        const k = g.hidden ? document.querySelector('#profileMatrix .dr-gruppe-knopf[aria-controls="' + g.id + '"]') : null;
+        if (k) this.klappe(k);
+      });
+      this.zeigeAenderungen();
+      setTimeout(() => $('#profileMatrix .dr-kopiert').removeClass('dr-kopiert'), 1200);
+      msvToast($leer.length + (($leer.length === 1) ? ' Dokument' : ' Dokumente') + ' auf «' + this.druckerName(d) + '» vorbereitet. Prüfen und «Speichern».', 'success');
+      document.getElementById('btnSpeichern').focus();
     },
 
     klappe(knopf) {
@@ -503,12 +684,15 @@
         if (!r.isConfirmed) return;
       }
       const $k = $('#btnSpeichern').prop('disabled', true).attr('aria-busy', 'true');
+      const erstesMal = !this.profile.some(p => p.printer_id) && !(this.log || []).some(j => j.status !== 'fehler');
       try {
         const r = await this.sende('drucksteuerung/profiles_api.php', { action: 'save_all', profiles: speichern, delete_ids: entfernen.map(e => e.id) });
         const teile = [];
         if (r.saved) teile.push(r.saved + ' gespeichert');
         if (r.deleted) teile.push(r.deleted + ' entfernt');
-        msvToast('Druckprofile: ' + (teile.join(', ') || 'gespeichert'), 'success');
+        // beim ersten Einrichten gleich zeigen, wie man es ausprobiert (der Knopf steht danach in der Schrittleiste)
+        const probe = erstesMal && this.verbunden && speichern.length ? '. Ausprobieren: «Testseite drucken» oben oder das Drucker-Symbol einer Zeile.' : '';
+        msvToast('Druckprofile: ' + (teile.join(', ') || 'gespeichert') + probe, 'success');
         this.geaendert.clear();
         await this.ladeAlles();
       } catch (err) {
@@ -598,7 +782,13 @@
       msvGet('drucksteuerung/print_log_api.php?limit=20', (res) => {
         const $b = $('#printLogBody');
         const liste = (res && res.data) || [];
-        if (!liste.length) { $b.html('<div class="dr-leer"><p>Noch keine Druckaufträge.</p></div>'); return; }
+        this.log = liste;
+        this.zeigeAblauf();
+        if (!liste.length) {
+          $b.html('<div class="dr-leer"><i class="bi bi-clock-history" aria-hidden="true"></i><p><strong>Noch keine Druckaufträge aus diesem Browser.</strong></p>'
+            + '<p>Hier stehen danach die letzten Direktdrucke und Testseiten, bei einem Fehler mit der Ursache.</p></div>');
+          return;
+        }
         $b.html(liste.map(j => {
           const zeit = new Date(String(j.erstellt_am).replace(' ', 'T')).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
           const fehler = j.status === 'fehler';
@@ -615,7 +805,13 @@
             + (fehler && j.fehler_text ? '<span class="dr-log-fehler">' + esc(j.fehler_text) + '</span>' : '')
             + '</div>';
         }).join(''));
-      }, { failMsg: 'Das Druckprotokoll konnte nicht geladen werden.' });
+      }, {
+        failMsg: 'Das Druckprotokoll konnte nicht geladen werden.',
+        fail: () => {
+          if (this.log === null) { this.log = []; this.zeigeAblauf(); }
+          if ($('#printLogBody .dr-log-zeile').length === 0) $('#printLogBody').html('<div class="dr-leer text-danger">Das Druckprotokoll konnte nicht geladen werden.</div>');
+        },
+      });
     },
   };
 

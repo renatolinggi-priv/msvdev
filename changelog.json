@@ -24,6 +24,18 @@
     ]
   },
   {
+    "version": "1.68.58",
+    "datum": "2026-11-10",
+    "aenderungen": [
+      {
+        "titel": "Drucksteuerung: Einrichtung Schritt für Schritt",
+        "beschreibung": "Oben auf der Seite stehen jetzt die vier Schritte der Einrichtung: Verbindung, Drucker, Dokumente, Testseite. Der nächste Schritt ist blau, daneben steht der passende Knopf («Drucker übernehmen», «Dokumente einrichten», «Testseite drucken»); sind alle erledigt, steht dort «Direktdruck bereit». Über den Druckprofilen legt «Alle einrichten» alle Dokumente mit einem Klick auf einen Drucker, mit den üblichen Werten; danach wie gewohnt «Speichern». Ohne Drucker zeigt die Seite statt 19 leerer Zeilen, was als Nächstes kommt, und die leeren Listen sagen, ob zuerst QZ Tray fehlt oder ob Windows keinen Drucker kennt. Die Hilfetexte stehen nach der Datenbank-Aktualisierung (Migration 136) bereit.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.57",
     "datum": "2026-11-04",
     "aenderungen": [

@@ -2,18 +2,43 @@
 // drucksteuerung.php – Drucksteuerung: Verbindung zu QZ Tray, Drucker dieses Browsers, Druckprofile, Protokoll.
 // Seit 1.68.52 in der Reihenfolge der Einrichtung (Verbindung → Drucker → Profile), Drucker im Slide-Panel,
 // Dokumentkatalog gemeinsam mit dem Direktdruck (js/msv-druck-dokumente.js). Logik: js/app-drucksteuerung.js.
+// Seit 1.68.58 Einstieg für Erstnutzer: Schrittleiste in der Kopf-Card (Verbindung → Drucker → Dokumente → Testseite)
+// mit dem nächsten Schritt als Knopf, «Alle Dokumente einrichten» in einem Zug, Leerzustände je Verbindungsstand.
 
 $page_specific_css = <<<'CSS'
 .dr-stapel { display: flex; flex-direction: column; gap: 14px; }
 .dr-kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dr-innen { padding: 14px var(--ui-pad); }
+.dr-stapel h2[tabindex="-1"]:focus { outline: none; }
+
+/* Einrichtung: Schrittleiste in der Kopf-Card (Muster der Einsatzplanung, 1.68.56) */
+.dr-ablauf-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; flex: 1 1 100%; width: 100%; }
+.dr-ablauf { display: flex; flex-wrap: wrap; align-items: center; row-gap: 6px; margin: 0; padding: 0; list-style: none; flex: 1 1 0; min-width: 0; }
+.dr-ablauf > li { display: flex; align-items: center; }
+.dr-ablauf > li + li::before { content: ""; width: 10px; height: 1px; margin: 0 3px; flex-shrink: 0; background: var(--ui-feldrand); }
+.dr-schritt { display: flex; align-items: flex-start; gap: 8px; padding: 4px 8px 4px 4px; border: 1px solid transparent; border-radius: 8px; background: transparent; text-align: left; color: var(--ui-text); transition: background-color .15s, border-color .15s; }
+.dr-schritt:hover { background: var(--ui-flaeche-2); border-color: var(--ui-rand); }
+.dr-schritt-nr { flex: 0 0 22px; height: 22px; margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  border: 1px solid var(--ui-feldrand); background: var(--ui-flaeche); color: var(--ui-text-2); font-size: .75rem; font-weight: 700; }
+.dr-schritt.ist-fertig .dr-schritt-nr { background: var(--ui-ok-bg); border-color: var(--ui-ok-rand); color: var(--ui-ok-fg); }
+.dr-schritt.ist-jetzt .dr-schritt-nr { background: var(--ui-akzent-dunkel); border-color: var(--ui-akzent-dunkel); color: var(--ui-flaeche); }
+.dr-schritt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.dr-schritt-name { font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.dr-schritt.ist-jetzt .dr-schritt-name { color: var(--ui-akzent-dunkel); }
+.dr-schritt-stand { font-size: .8rem; color: var(--ui-text-2); white-space: nowrap; }
+.dr-ablauf-weiter { margin-left: auto; display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.dr-ablauf-weiter .ui-status { font-size: .85rem; }
+@media (max-width: 767.98px) {
+  .dr-ablauf { flex: 1 1 100%; flex-direction: column; align-items: flex-start; row-gap: 2px; }
+  .dr-ablauf > li + li::before { display: none; }
+  .dr-ablauf-weiter { margin-left: 0; }
+}
 
 /* Verbindung */
 .ui-status.fehler { color: var(--ui-fehler); } .ui-status.fehler .ui-punkt { background: var(--ui-fehler); }
 .ui-status.aus { color: var(--ui-text-2); } .ui-status.aus .ui-punkt { background: var(--ui-leer); }
 .dr-verbindung { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
 .dr-verbindung .ui-status { font-size: 0.9rem; }
-.dr-schritte { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .dr-hinweis { margin: 12px 0 0; font-size: 0.85rem; }
 .dr-hinweis p { margin: 0 0 6px; } .dr-hinweis p:last-child { margin-bottom: 0; }
 .dr-hinweis .btn { margin-top: 4px; }
@@ -59,8 +84,18 @@ $page_specific_css = <<<'CSS'
 .dr-zeile .form-select-sm, .dr-zeile .form-control-sm { font-size: 0.8rem; }
 .dr-zeile .dr-aktionen { display: flex; gap: 4px; justify-content: flex-end; }
 .dr-leer { padding: 1.5rem var(--ui-pad); text-align: center; color: var(--ui-text-2); }
-.dr-leer > .bi { display: block; margin-bottom: 0.4rem; font-size: 1.6rem; color: var(--ui-text-3); }
-.dr-leer p { margin: 0 0 8px; }
+.dr-leer > .bi, .dr-leer > [role="cell"] > .bi { display: block; margin-bottom: 0.4rem; font-size: 1.6rem; color: var(--ui-text-3); }
+.dr-leer p { margin: 0 0 8px; } .dr-leer p:last-child { margin-bottom: 0; }
+.dr-leer strong { color: var(--ui-text); }
+.dr-leer .btn { margin: 4px 0 10px; }
+
+/* Alle Dokumente in einem Zug einrichten (über der Profilliste) */
+.dr-schnell { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px var(--ui-pad); border-bottom: 1px solid var(--ui-linie); background: var(--ui-akzent-hell); }
+.dr-schnell-text { flex: 1 1 22rem; min-width: 0; font-size: 0.85rem; color: var(--ui-akzent-tief); }
+.dr-schnell-text strong { display: block; font-size: 0.9rem; }
+.dr-schnell-aktion { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dr-schnell-aktion .form-select { width: auto; max-width: 16rem; font-size: 0.8rem; }
+.dr-schnell-drucker { font-size: 0.85rem; font-weight: 600; color: var(--ui-akzent-tief); }
 .dr-fuss {
     position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
     padding: 10px var(--ui-pad); background: var(--ui-flaeche); border-top: 1px solid var(--ui-linie);
@@ -90,7 +125,6 @@ $page_specific_css = <<<'CSS'
     .dr-drucker-zeile { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 12px; }
     .dr-drucker-zeile > :nth-child(3) { display: none; }
     .dr-drucker-zeile .dr-aktionen { grid-column: 2; grid-row: 1 / span 2; }
-    .dr-schritte { margin-left: 0; }
     .dr-log-datei { display: none; }
 }
 CSS;
@@ -110,14 +144,29 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
   <div class="row">
     <div class="col-12 ps-0">
       <div class="main-content-wrapper content-width-default">
-        <?php $page_title = 'Drucksteuerung'; $page_actions = '<button type="button" class="btn-help" data-help="drucksteuerung.uebersicht" aria-label="Hilfe"></button>'; include 'partials/page_header.inc.php'; ?>
+        <?php
+        // Schrittleiste: Stand und nächster Schritt setzt js/app-drucksteuerung.js (zeigeAblauf); hier nur das Gerüst ohne Sprung beim Laden
+        $drSchritte = ['verbindung' => 'Verbindung', 'drucker' => 'Drucker', 'dokumente' => 'Dokumente', 'test' => 'Testseite'];
+        $page_extra = '<div class="dr-ablauf-zeile"><ol class="dr-ablauf" id="drAblauf" aria-label="Einrichtung des Direktdrucks">';
+        $drNr = 0;
+        foreach ($drSchritte as $key => $name) {
+            $page_extra .= '<li><button type="button" class="dr-schritt" data-schritt="' . $key . '">'
+                . '<span class="dr-schritt-nr" aria-hidden="true">' . (++$drNr) . '</span>'
+                . '<span class="dr-schritt-text"><span class="dr-schritt-name">' . $name . '</span><span class="dr-schritt-stand">…</span></span></button></li>';
+        }
+        $page_extra .= '</ol><div class="dr-ablauf-weiter" id="drWeiter"></div></div>';
+        $page_show_mobile = true; // die Schrittleiste gehört auch auf dem Handy dazu
+        $page_title = 'Drucksteuerung';
+        $page_actions = '<button type="button" class="btn-help" data-help="drucksteuerung.uebersicht" aria-label="Hilfe"></button>';
+        include 'partials/page_header.inc.php';
+        ?>
 
         <div class="dr-stapel">
 
           <!-- Verbindung zu QZ Tray -->
           <section class="ui-karte" aria-labelledby="drVerbindungTitel">
             <div class="ui-tab-kopf">
-              <h2 class="ui-tab-titel mb-0" id="drVerbindungTitel">Verbindung <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe zur Verbindung"></button></h2>
+              <h2 class="ui-tab-titel mb-0" tabindex="-1" id="drVerbindungTitel">Verbindung <button type="button" class="btn-help" data-help="drucksteuerung.qz" aria-label="Hilfe zur Verbindung"></button></h2>
               <div class="dr-kopf-rechts">
                 <span class="ui-chip" id="drArbeitsplatz" tabindex="0" data-tooltip="Drucker und Profile gelten für diesen Browser."><i class="bi bi-laptop" aria-hidden="true"></i>Gilt für diesen Browser</span>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnConnect" hidden><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Neu verbinden</button>
@@ -126,7 +175,6 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
             <div class="dr-innen">
               <div class="dr-verbindung">
                 <span class="ui-status aus" id="qzStatus" role="status" aria-live="polite"><span class="ui-punkt" aria-hidden="true"></span><span id="qzStatusText">Verbinde mit QZ Tray …</span></span>
-                <div class="dr-schritte" id="drSchritte" aria-label="Stand der Einrichtung"></div>
               </div>
               <div class="alert alert-warning dr-hinweis" id="qzHinweis" role="status" hidden></div>
               <p class="small text-muted mt-2 mb-0" id="drSetupZeile" hidden></p>
@@ -137,13 +185,13 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
           <!-- Drucker dieses Browsers -->
           <section class="ui-karte" aria-labelledby="drDruckerTitel">
             <div class="ui-tab-kopf">
-              <h2 class="ui-tab-titel mb-0" id="drDruckerTitel">Drucker <button type="button" class="btn-help" data-help="drucksteuerung.drucker" aria-label="Hilfe zu den Druckern"></button></h2>
+              <h2 class="ui-tab-titel mb-0" tabindex="-1" id="drDruckerTitel">Drucker <button type="button" class="btn-help" data-help="drucksteuerung.drucker" aria-label="Hilfe zu den Druckern"></button></h2>
               <div class="dr-kopf-rechts">
                 <button type="button" class="btn btn-outline-success btn-sm" id="btnDruckerNeu"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Drucker übernehmen</button>
               </div>
             </div>
             <div role="table" aria-labelledby="drDruckerTitel">
-              <div role="rowgroup"><div class="dr-matrix-kopf dr-drucker-zeile" role="row">
+              <div role="rowgroup" id="drDruckerKopf"><div class="dr-matrix-kopf dr-drucker-zeile" role="row">
                 <span role="columnheader">Drucker</span><span role="columnheader">Status</span><span role="columnheader">Genutzt von</span><span role="columnheader"><span class="visually-hidden">Aktionen</span></span>
               </div></div>
               <div role="rowgroup" id="druckerListe"><div class="dr-leer">Drucker werden geladen …</div></div>
@@ -153,13 +201,14 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
           <!-- Druckprofile -->
           <section class="ui-karte" aria-labelledby="drProfileTitel">
             <div class="ui-tab-kopf">
-              <h2 class="ui-tab-titel mb-0" id="drProfileTitel">Druckprofile <button type="button" class="btn-help" data-help="drucksteuerung.profile" aria-label="Hilfe zu den Druckprofilen"></button></h2>
+              <h2 class="ui-tab-titel mb-0" tabindex="-1" id="drProfileTitel">Druckprofile <button type="button" class="btn-help" data-help="drucksteuerung.profile" aria-label="Hilfe zu den Druckprofilen"></button></h2>
               <div class="dr-kopf-rechts">
                 <span class="ui-chip msv-ungespeichert" id="drUngespeichert" hidden><span class="ui-punkt" aria-hidden="true"></span><span id="drUngespeichertText">Nicht gespeichert</span></span>
               </div>
             </div>
+            <div class="dr-schnell" id="drSchnell" hidden></div>
             <div id="profileMatrix" role="table" aria-labelledby="drProfileTitel" aria-describedby="drProfilFussText"></div>
-            <div class="dr-fuss">
+            <div class="dr-fuss" id="drProfilFuss">
               <span class="dr-fuss-text" id="drProfilFussText">Profile werden geladen …</span>
               <button type="button" class="btn btn-outline-secondary btn-sm" id="btnVerwerfen" hidden>Änderungen verwerfen</button>
               <button type="button" class="btn btn-primary btn-sm" id="btnSpeichern"><i class="bi bi-save me-1" aria-hidden="true"></i>Speichern</button>
@@ -169,7 +218,7 @@ if (!in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'])) {
           <!-- Druckprotokoll -->
           <section class="ui-karte" aria-labelledby="drLogTitel">
             <div class="ui-tab-kopf">
-              <h2 class="ui-tab-titel mb-0" id="drLogTitel">Druckprotokoll</h2>
+              <h2 class="ui-tab-titel mb-0" tabindex="-1" id="drLogTitel">Druckprotokoll</h2>
               <div class="dr-kopf-rechts">
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLogNeu" aria-label="Druckprotokoll aktualisieren" data-tooltip="Aktualisieren"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
               </div>
