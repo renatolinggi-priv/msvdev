@@ -54,7 +54,8 @@ class EndschloesenReport extends PDFGenerator
             $html .= $this->createMainTable($stiche, $data);
 
             // Legende
-            $html .= '<p class="rl-hinweis"><strong>X</strong> = Stich gelöst · <strong>P</strong> = Partner-Stich (Zabig mit Partner, CHF 10.00) · '
+            $partnerPreis = number_format(((int)(endschLadeSpezialpreise($this->conn)['partner_zabig'] ?? 0)) / 100, 2, '.', "'");
+            $html .= '<p class="rl-hinweis"><strong>X</strong> = Stich gelöst · <strong>P</strong> = Partner-Stich (Zabig mit Partner, CHF ' . $partnerPreis . ') · '
                    . '(Gast) = Gast · (JS) = Jungschützin/Jungschütze · '
                    . 'P (erste Spalte) = Probe · Z. = Zusatzverkauf</p>';
 
@@ -101,6 +102,9 @@ class EndschloesenReport extends PDFGenerator
 
         $jsPaketPreis = $this->getJsPaketPreis();
         $partnerZabigPreis = (int)endschLadeSpezialpreise($this->conn)['partner_zabig'];
+        // Zahlungsweg reiner Munitionskäufe (Spalte ab Migration 130)
+        $zr = $this->conn->query("SHOW COLUMNS FROM endstich_zusatz_schuss LIKE 'zahlungsmethode'");
+        $hatZusatzZahlung = $zr && $zr->num_rows > 0;
         // Mitglieder mit Waffe
         $sqlMit = "SELECT DISTINCT 
                     m.ID as mitglied_id,
@@ -139,7 +143,7 @@ class EndschloesenReport extends PDFGenerator
                 'zusatz_schuesse' => [],
                 'total_shots' => 0,
                 'total_price' => 0,
-                'zahlungsmethode' => 'bar',
+                'zahlungsmethode' => null, // null = nicht erfasst
                 'stich_gp11' => 0,
                 'stich_gp90' => 0,
                 'zusatz_gp11' => 0,
@@ -187,7 +191,7 @@ class EndschloesenReport extends PDFGenerator
                 'zusatz_schuesse' => [],
                 'total_shots' => 0,
                 'total_price' => 0,
-                'zahlungsmethode' => 'bar',
+                'zahlungsmethode' => null, // null = nicht erfasst
                 'stich_gp11' => 0,
                 'stich_gp90' => 0,
                 'zusatz_gp11' => 0,
@@ -287,16 +291,17 @@ class EndschloesenReport extends PDFGenerator
                     }
                 }
 
-                if (!empty($row['zahlungsmethode']))
+                if (in_array($row['zahlungsmethode'] ?? null, ['bar', 'karte'], true))
                     $entry['zahlungsmethode'] = $row['zahlungsmethode'];
             }
 
-            // Zusatzschüsse
+            // Zusatzschüsse (seit Migration 130 mit eigenem Zahlungsweg für reine Munitionskäufe)
+            $zahlCol = $hatZusatzZahlung ? 'zahlungsmethode' : 'NULL AS zahlungsmethode';
             if ($isMitglied) {
-                $stmt = $this->conn->prepare("SELECT typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE mitglied_id = ? AND jahr = ?");
+                $stmt = $this->conn->prepare("SELECT typ, anzahl, preis_cents, $zahlCol FROM endstich_zusatz_schuss WHERE mitglied_id = ? AND jahr = ?");
                 $stmt->bind_param("ii", $entry['entity_id'], $jahr);
             } else {
-                $stmt = $this->conn->prepare("SELECT typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE gast_id = ? AND jahr = ?");
+                $stmt = $this->conn->prepare("SELECT typ, anzahl, preis_cents, $zahlCol FROM endstich_zusatz_schuss WHERE gast_id = ? AND jahr = ?");
                 $stmt->bind_param("ii", $entry['entity_id'], $jahr);
             }
             $stmt->execute();
@@ -310,6 +315,8 @@ class EndschloesenReport extends PDFGenerator
                 $entry['munition_schuss'] += (int) $row['anzahl'];
                 $entry['munition_preis'] += (int) $row['preis_cents'];
                 $entry['total_price'] += (int) $row['preis_cents'];
+                if ($entry['zahlungsmethode'] === null && in_array($row['zahlungsmethode'] ?? null, ['bar', 'karte'], true))
+                    $entry['zahlungsmethode'] = $row['zahlungsmethode'];
 
                 // Split nach Typ
                 $typNorm = strtoupper(str_replace(['-', '_', ' '], '', (string) $row['typ']));
@@ -598,6 +605,26 @@ class EndschloesenReport extends PDFGenerator
         $html .= '<tr><td>Endschiessen</td><td class="r">' . $fmt($stich_gp11) . '</td><td class="r">' . $fmt($stich_gp90) . '</td><td class="r">' . $fmt($stich_gp11 + $stich_gp90) . '</td></tr>';
         $html .= '<tr><td>Zusatzverkauf</td><td class="r">' . $fmt($zusatz_gp11) . '</td><td class="r">' . $fmt($zusatz_gp90) . '</td><td class="r">' . $fmt($zusatz_gp11 + $zusatz_gp90) . '</td></tr>';
         $html .= '<tr class="rl-total"><td>Total Schuss</td><td class="r">' . $fmt($stich_gp11 + $zusatz_gp11) . '</td><td class="r">' . $fmt($stich_gp90 + $zusatz_gp90) . '</td><td class="r">' . $fmt($gesamtSchuss) . '</td></tr>';
+        $html .= '</tbody></table>';
+
+        // Einnahmen nach Zahlungsweg: zum Abgleich von Kasse und Kartenterminal
+        $ein = ['bar' => [0, 0], 'karte' => [0, 0], 'offen' => [0, 0]];
+        foreach ($data as $r) {
+            $betrag = (int) ($r['total_price'] ?? 0);
+            if ($betrag <= 0) continue;
+            $k = in_array($r['zahlungsmethode'] ?? null, ['bar', 'karte'], true) ? $r['zahlungsmethode'] : 'offen';
+            $ein[$k][0]++;
+            $ein[$k][1] += $betrag;
+        }
+        $chf = fn(int $c) => number_format($c / 100, 2, '.', "'");
+        $html .= '<h2 class="rl-abschnitt">Einnahmen</h2>';
+        $html .= '<table class="table ammo-table"><thead><tr><th></th><th class="r">Personen</th><th class="r">CHF</th></tr></thead><tbody>';
+        $html .= '<tr><td>Bar</td><td class="r">' . $fmt($ein['bar'][0]) . '</td><td class="r">' . $chf($ein['bar'][1]) . '</td></tr>';
+        $html .= '<tr><td>Karte</td><td class="r">' . $fmt($ein['karte'][0]) . '</td><td class="r">' . $chf($ein['karte'][1]) . '</td></tr>';
+        if ($ein['offen'][0] > 0) {
+            $html .= '<tr><td>Zahlungsweg nicht erfasst</td><td class="r">' . $fmt($ein['offen'][0]) . '</td><td class="r">' . $chf($ein['offen'][1]) . '</td></tr>';
+        }
+        $html .= '<tr class="rl-total"><td>Total</td><td class="r">' . $fmt($ein['bar'][0] + $ein['karte'][0] + $ein['offen'][0]) . '</td><td class="r">' . $chf($ein['bar'][1] + $ein['karte'][1] + $ein['offen'][1]) . '</td></tr>';
         $html .= '</tbody></table>';
 
         return $html;

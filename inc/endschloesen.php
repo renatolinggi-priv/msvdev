@@ -44,7 +44,11 @@ $page_specific_css = "
 /* Umschalter (Teilnehmer, Zahlung) als Segment-Schalter wie .ui-filter */
 #stichForm .typ-switch { display: inline-flex; gap: 2px; padding: 2px; background: var(--ui-linie-zart); border-radius: 8px; }
 #stichForm .typ-switch > .btn { margin: 0 !important; padding: 5px 12px; border: 0 !important; border-radius: 6px !important; background: transparent; color: var(--ui-text); font-size: .82rem; font-weight: 600; box-shadow: none; }
-#stichForm .typ-switch > .btn:hover { background: rgba(255, 255, 255, .65); color: var(--ui-text); }
+#stichForm .typ-switch > .btn:hover { background: var(--ui-flaeche); color: var(--ui-text); }
+/* Zahlung ohne Vorwahl: solange nichts gewählt ist und etwas zu bezahlen ist, gestrichelter Rahmen */
+#zahlungSwitch.es-offen { outline: 1px dashed var(--ui-feldrand); outline-offset: 2px; }
+#zahlungSwitch[aria-invalid='true'] { outline: 2px solid var(--ui-fehler); outline-offset: 2px; }
+#zahlungHint:empty { display: none; }
 #stichForm .typ-switch > .btn-check:checked + .btn { background: var(--ui-flaeche); color: var(--ui-text); box-shadow: 0 1px 2px rgba(16, 24, 40, .12); }
 #stichForm .typ-switch > .btn-check:focus-visible + .btn { outline: 2px solid var(--ui-akzent); outline-offset: 1px; }
 #stichForm .typ-switch .btn i { font-size: .85em; color: var(--ui-text-2); }
@@ -97,9 +101,25 @@ $page_specific_css = "
 .total-kpi small { font-size: .72rem; font-weight: 600; color: var(--ui-text-2); }
 .total-kpi strong { font-size: 1rem; color: var(--ui-text); font-variant-numeric: tabular-nums; }
 .total-price-block { margin-left: auto; text-align: right; }
-.total-amount { font-size: 1.45rem; font-weight: 700; line-height: 1.2; white-space: nowrap; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+.total-amount { font-size: 1.35rem; font-weight: 700; line-height: 1.1; white-space: nowrap; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+/* Aufschlüsselung des Gesamtbetrags: woraus sich die Zahl zusammensetzt */
+.es-posten { margin: 0; padding: 8px 0 0; list-style: none; border-top: 1px solid var(--ui-linie); font-size: .8rem; color: var(--ui-text-2); }
+.es-posten:empty { display: none; }
+.es-posten li { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
+.es-posten li span:last-child { white-space: nowrap; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+/* Stand nach dem Speichern: bleibt stehen, bis die nächste Person kommt */
+.es-status { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--ui-ok-rand); border-radius: var(--ui-rad); background: var(--ui-ok-bg); color: var(--ui-ok-fg); font-size: .85rem; font-weight: 600; }
+.es-status[hidden] { display: none; }
+.es-status .bi { font-size: 1rem; }
+.es-status span { font-variant-numeric: tabular-nums; }
+.es-hinweis { font-size: .8rem; color: var(--ui-text-2); }
+.es-hinweis:empty { display: none; }
 .action-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 #btnSave { margin-left: auto; min-width: 8rem; font-weight: 600; }
+.es-tasten { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .75rem; color: var(--ui-text-2); }
+/* Mitgliedersuche: wer schon gelöst hat, steht mit Betrag in der Liste */
+.es-geloest { margin-left: 8px; padding: 1px 6px; border-radius: 6px; background: var(--ui-ok-bg); color: var(--ui-ok-fg); font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.select2-results__option--highlighted .es-geloest { background: var(--ui-flaeche); }
 
 /* Übersicht (Tabellen-Card) */
 .es-tabelle { overflow: hidden; }
@@ -122,6 +142,9 @@ $page_specific_css = "
 #erfassteTabelle td.muni-cell { white-space: nowrap; font-size: .75rem; color: var(--ui-text-2); }
 #erfassteTabelle td.muni-cell .muni-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 6px; background: var(--ui-linie-zart); }
 #erfassteTabelle td.total-cell { text-align: right; white-space: nowrap; font-weight: 700; color: var(--ui-text); font-variant-numeric: tabular-nums; }
+#erfassteTabelle td.zahl-cell { white-space: nowrap; font-size: .75rem; color: var(--ui-text-2); }
+#erfassteTabelle td.zahl-cell .offen { color: var(--ui-warn-fg); font-weight: 600; }
+#erfassteTabelle tbody tr.hybrid-row { cursor: pointer; }
 #erfassteTabelle .dropdown-toggle::after { display: none; }
 #erfassteTabelle .dropdown-menu { font-size: .85rem; }
 
@@ -144,7 +167,9 @@ $page_specific_css = "
     #stichForm .typ-switch { display: flex; width: 100%; }
     #stichForm .typ-switch > .btn { display: flex; flex: 1 1 0; align-items: center; justify-content: center; min-height: 2.75rem; padding: 6px; }
     #stichForm .typ-switch .btn i { display: none; }
-    #stichForm .total-actions-row { position: sticky; bottom: .5rem; bottom: max(.5rem, env(safe-area-inset-bottom)); z-index: 10; box-shadow: 0 4px 18px rgba(26, 35, 50, .12); }
+    /* Klebt über dem Inhalt: Schatten nach oben, Werte wie «Menü» aus DESIGN.md */
+    #stichForm .total-actions-row { position: sticky; bottom: .5rem; bottom: max(.5rem, env(safe-area-inset-bottom)); z-index: 10; box-shadow: 0 -8px 24px rgba(26, 35, 50, .12); }
+    .es-tasten { display: none; }
     .total-bar { gap: 12px; }
     .total-amount { font-size: 1.25rem; }
     .action-buttons .btn { min-height: 2.75rem; }
@@ -171,8 +196,9 @@ $csrf = csrf_token();
 // Definitionen und Preise dürfen Admin und Vorstand pflegen (gleiche Regel wie adminApiGuard)
 $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], true);
 ?>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+<?php // Select2 selbst gehostet (wie Bootstrap/jQuery unter css/lib bzw. js/lib), Cache-Busting über filemtime ?>
+<link href="../css/lib/select2-4.1.0-rc.0.min.css?v=<?= @filemtime(__DIR__ . '/../css/lib/select2-4.1.0-rc.0.min.css') ?: '1' ?>" rel="stylesheet">
+<link href="../css/lib/select2-bootstrap-5-theme-1.3.0.min.css?v=<?= @filemtime(__DIR__ . '/../css/lib/select2-bootstrap-5-theme-1.3.0.min.css') ?: '1' ?>" rel="stylesheet">
 
 <div class="container-fluid">
 <div class="row">
@@ -187,7 +213,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
         . '<button type="button" id="btnGeneratePDF" class="btn btn-outline-info" data-tooltip="Abrechnung des Jahres als PDF"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Abrechnung</span></button>'
         . '<button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschiessen_abrechnung" data-druck-label="Endschiessen Abrechnung" aria-label="Abrechnung direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>'
         . '</div>'
-        . ($kannDefinieren ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="btnAdminSettings" data-tooltip="Stiche und Preise definieren"><i class="bi bi-gear me-1"></i>Definition</button>' : '');
+        . ($kannDefinieren ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="btnAdminSettings" data-tooltip="Stiche und Preise definieren"><i class="bi bi-gear me-1" aria-hidden="true"></i>Definition</button>' : '');
     $page_extra = '<div class="ui-fortschritt" aria-live="polite"><span class="ui-zahl" id="progressText">–</span></div>'
         . '<div class="ui-chips" id="progressChips"></div>';
     $page_show_mobile = true;
@@ -206,19 +232,20 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <!-- Teilnehmer -->
           <div class="shot-section shot-first">
             <div class="shot-section-head">
-              <span class="shot-section-title"><i class="bi bi-person"></i>Teilnehmer <button type="button" class="btn-help" data-help="endschloesen.teilnehmer" aria-label="Hilfe"></button></span>
+              <span class="shot-section-title" role="heading" aria-level="2"><i class="bi bi-person" aria-hidden="true"></i>Teilnehmer <button type="button" class="btn-help" data-help="endschloesen.teilnehmer" aria-label="Hilfe"></button></span>
             </div>
             <div class="shot-section-body">
               <div class="btn-group btn-group-sm typ-switch mb-3" role="group" aria-label="Teilnehmertyp">
                 <input type="radio" class="btn-check" name="typ" id="typMitglied" value="mitglied" checked>
-                <label class="btn btn-outline-primary" for="typMitglied"><i class="bi bi-person-badge me-1"></i>Mitglied</label>
+                <label class="btn btn-outline-primary" for="typMitglied"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>Mitglied</label>
                 <input type="radio" class="btn-check" name="typ" id="typGast" value="gast">
-                <label class="btn btn-outline-primary" for="typGast"><i class="bi bi-person-plus me-1"></i>Gast</label>
+                <label class="btn btn-outline-primary" for="typGast"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Gast</label>
                 <input type="radio" class="btn-check" name="typ" id="typJs" value="js">
-                <label class="btn btn-outline-primary" for="typJs"><i class="bi bi-mortarboard me-1"></i>Jungschütze/-in</label>
+                <label class="btn btn-outline-primary" for="typJs"><i class="bi bi-mortarboard me-1" aria-hidden="true"></i>Jungschütze/-in</label>
               </div>
 
               <div id="mitgliedWrap">
+                <label for="mitgliedSelect" class="visually-hidden">Mitglied</label>
                 <select id="mitgliedSelect" class="form-select form-select-sm">
                   <option value="">– Mitglied suchen –</option>
                 </select>
@@ -230,7 +257,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
                   <div class="col-12 col-md-6">
                     <label for="gastName" class="panel-label">Name</label>
                     <input type="text" class="form-control form-control-sm" id="gastName" placeholder="Nachname Vorname">
-                    <div class="shot-hint mt-1" id="gastHint" hidden></div>
+                    <div class="shot-hint mt-1" id="gastHint" aria-live="polite" hidden></div>
                   </div>
                   <div class="col-6 col-md-3" id="geburtsdatumWrap" hidden>
                     <label for="gastGeburtsdatum" class="panel-label">Geburtsdatum</label>
@@ -253,28 +280,30 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <!-- Stiche -->
           <div class="shot-section">
             <div class="shot-section-head">
-              <span class="shot-section-title"><i class="bi bi-bullseye"></i>Stiche <span class="shot-hint" id="stichHint"></span> <button type="button" class="btn-help" data-help="endschloesen.stiche" aria-label="Hilfe"></button></span>
+              <span class="shot-section-title" role="heading" aria-level="2"><i class="bi bi-bullseye" aria-hidden="true"></i>Stiche <button type="button" class="btn-help" data-help="endschloesen.stiche" aria-label="Hilfe"></button></span>
               <button type="button" id="btnSelectAll" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-check2-square me-1"></i>Alle
+                <i class="bi bi-check2-square me-1" aria-hidden="true"></i>Alle
               </button>
             </div>
             <div class="shot-section-body">
               <div class="stich-grid" id="stichList"></div>
+              <div class="shot-hint mt-2" id="stichHint"></div>
             </div>
           </div>
 
-          <!-- Zahlung -->
+          <!-- Zahlung: bewusst ohne Vorwahl (Entscheid nach Critique 04.11.2026) -->
           <div class="shot-section">
             <div class="shot-section-head">
-              <span class="shot-section-title"><i class="bi bi-wallet2"></i>Zahlung</span>
+              <span class="shot-section-title" role="heading" aria-level="2" id="zahlungTitel"><i class="bi bi-wallet2" aria-hidden="true"></i>Zahlung</span>
             </div>
-            <div class="shot-section-body">
-              <div class="btn-group btn-group-sm typ-switch" role="group" aria-label="Zahlungsmethode">
-                <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_karte" value="karte" checked>
-                <label class="btn btn-outline-primary" for="zahlung_karte"><i class="bi bi-credit-card-2-back me-1"></i>Karte</label>
-                <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_bar" value="bar">
-                <label class="btn btn-outline-primary" for="zahlung_bar"><i class="bi bi-cash me-1"></i>Bar</label>
+            <div class="shot-section-body d-flex align-items-center flex-wrap gap-2">
+              <div class="btn-group btn-group-sm typ-switch" id="zahlungSwitch" role="radiogroup" aria-labelledby="zahlungTitel" aria-describedby="zahlungHint">
+                <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_bar" value="bar" aria-label="Bar">
+                <label class="btn btn-outline-primary" for="zahlung_bar"><i class="bi bi-cash me-1" aria-hidden="true"></i>Bar</label>
+                <input type="radio" class="btn-check" name="zahlungsmethode" id="zahlung_karte" value="karte" aria-label="Karte">
+                <label class="btn btn-outline-primary" for="zahlung_karte"><i class="bi bi-credit-card-2-back me-1" aria-hidden="true"></i>Karte</label>
               </div>
+              <span class="es-hinweis" id="zahlungHint"></span>
             </div>
           </div>
 
@@ -282,37 +311,38 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <div class="shot-section">
             <button type="button" class="shot-section-head munition-toggle" data-bs-toggle="collapse" data-bs-target="#munitionCollapse" aria-expanded="false" aria-controls="munitionCollapse">
               <span class="shot-section-title">
-                <i class="bi bi-chevron-right" id="munitionChevron"></i>Zusätzliche Munition
+                <i class="bi bi-chevron-right" id="munitionChevron" aria-hidden="true"></i>Zusätzliche Munition
                 <span class="shot-hint" id="munitionProSchussText"></span>
               </span>
               <span class="shot-total" id="munitionBadge" hidden>0</span>
             </button>
             <div class="collapse" id="munitionCollapse">
               <div class="shot-section-body">
-                <div class="muni-row">
+                <div class="muni-row" data-ammo="GP11">
                   <div class="form-check">
                     <input class="form-check-input zusatz-check" type="checkbox" id="zusatz_gp11_60" data-typ="GP11_60" data-anzahl="60">
                     <label class="form-check-label" for="zusatz_gp11_60"><strong>60 Schuss GP11</strong> <span class="text-muted">Standard-Paket</span></label>
                   </div>
                   <span class="muni-price" id="preis_gp11_60"></span>
                 </div>
-                <div class="muni-row">
+                <div class="muni-row" data-ammo="GP90">
                   <div class="form-check">
                     <input class="form-check-input zusatz-check" type="checkbox" id="zusatz_gp90_50" data-typ="GP90_50" data-anzahl="50">
                     <label class="form-check-label" for="zusatz_gp90_50"><strong>50 Schuss GP90</strong> <span class="text-muted">Standard-Paket</span></label>
                   </div>
                   <span class="muni-price" id="preis_gp90_50"></span>
                 </div>
-                <div class="muni-row">
+                <div class="muni-row" data-ammo="GP11">
                   <label class="muni-label" for="zusatz_gp11_custom"><strong>GP11</strong> <span class="text-muted">individuelle Anzahl</span></label>
-                  <input type="number" class="form-control form-control-sm muni-input zusatz-custom" id="zusatz_gp11_custom" data-typ="GP11_CUSTOM" min="0" max="500" step="1" placeholder="0">
+                  <input type="number" class="form-control form-control-sm muni-input zusatz-custom" id="zusatz_gp11_custom" data-typ="GP11_CUSTOM" min="0" max="500" step="1" placeholder="0" aria-label="GP11 Anzahl Schuss">
                   <span class="muni-price" id="preis_gp11_custom"></span>
                 </div>
-                <div class="muni-row">
+                <div class="muni-row" data-ammo="GP90">
                   <label class="muni-label" for="zusatz_gp90_custom"><strong>GP90</strong> <span class="text-muted">individuelle Anzahl</span></label>
-                  <input type="number" class="form-control form-control-sm muni-input zusatz-custom" id="zusatz_gp90_custom" data-typ="GP90_CUSTOM" min="0" max="500" step="1" placeholder="0">
+                  <input type="number" class="form-control form-control-sm muni-input zusatz-custom" id="zusatz_gp90_custom" data-typ="GP90_CUSTOM" min="0" max="500" step="1" placeholder="0" aria-label="GP90 Anzahl Schuss">
                   <span class="muni-price" id="preis_gp90_custom"></span>
                 </div>
+                <div class="shot-hint pt-1" id="muniHint"></div>
               </div>
             </div>
           </div>
@@ -322,26 +352,35 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
             <div class="total-bar">
               <div class="total-kpi"><small>Stiche</small><strong id="totalCount">0</strong></div>
               <div class="total-kpi"><small>Schuss</small><strong id="totalShots">0</strong></div>
-              <div class="total-kpi"><small>Zusatz</small><strong id="totalZusatzShots">0</strong></div>
+              <div class="total-kpi"><small>Zusatzschuss</small><strong id="totalZusatzShots">0</strong></div>
               <div class="total-kpi total-price-block"><small>Gesamtbetrag</small><span class="total-amount" id="totalPrice" aria-live="polite" aria-atomic="true">CHF 0.00</span></div>
             </div>
+            <ul class="es-posten" id="preisPosten" aria-label="Aufschlüsselung des Gesamtbetrags"></ul>
+            <div class="es-status" id="esStatus" role="status" hidden></div>
+            <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler mb-0" id="losenFehler" role="alert" hidden></div>
             <div class="action-buttons">
               <div class="btn-group btn-group-sm" role="group" aria-label="Standblatt">
-                <button type="button" id="btnStandblatt" class="btn btn-outline-info" disabled data-tooltip="Standblatt (PDF, A4 quer) für diesen Teilnehmer">
+                <button type="button" id="btnStandblatt" class="btn btn-outline-info" disabled aria-describedby="standblattHint">
                   <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span class="ms-1">Standblatt</span>
                 </button>
                 <button type="button" id="btnStandblattDruck" class="btn btn-outline-info" disabled hidden data-druck-eigen data-tooltip="QZ Tray nicht verbunden" aria-label="Standblatt direkt drucken">
                   <i class="bi bi-printer" aria-hidden="true"></i>
                 </button>
               </div>
-              <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm" data-tooltip="Formular zurücksetzen" aria-label="Formular zurücksetzen">
-                <i class="bi bi-arrow-counterclockwise"></i>
+              <button type="button" id="btnNaechste" class="btn btn-outline-secondary btn-sm" data-tooltip="Formular leeren und die nächste Person wählen">
+                <i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i>Nächste Person
               </button>
               <button type="submit" id="btnSave" class="btn btn-primary btn-sm">
-                <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpinner"></span>
-                <i class="bi bi-save me-1"></i>Speichern
+                <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpinner" aria-hidden="true"></span>
+                <i class="bi bi-save me-1" aria-hidden="true"></i>Speichern
               </button>
             </div>
+            <div class="es-hinweis" id="standblattHint"></div>
+            <div class="es-tasten" aria-hidden="true">
+              <span><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">S</kbd> speichern</span>
+              <span><kbd class="ui-kbd">Ctrl</kbd>+<kbd class="ui-kbd">Enter</kbd> speichern und nächste Person</span>
+            </div>
+            <span class="visually-hidden" id="losenAnsage" aria-live="polite"></span>
           </div>
         </form>
       </section>
@@ -360,17 +399,18 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           </div>
 
           <div class="desktop-table-container">
-            <div class="table-responsive">
-              <table class="table table-hover mb-0" id="erfassteTabelle">
+            <!-- Pfeiltasten + Enter über msv-panel-a11y.js ([data-zeilen-tastatur], Muster «Endschiessen erfassen») -->
+            <div class="table-responsive" tabindex="0" data-zeilen-tastatur aria-label="Erfasste Teilnehmer. Mit den Pfeiltasten wählen, Enter öffnet die Lösung im Formular.">
+              <table class="table table-hover hybrid-table mb-0" id="erfassteTabelle">
                 <thead>
                   <tr id="erfassteTableHeader">
                     <th>Teilnehmer</th>
                     <th class="text-end">Total</th>
-                    <th></th>
+                    <th><span class="visually-hidden">Aktionen</span></th>
                   </tr>
                 </thead>
                 <tbody id="erfassteTableBody">
-                  <tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Lade Daten …</td></tr>
+                  <tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2" aria-hidden="true"></div>Lade Daten …</td></tr>
                 </tbody>
               </table>
             </div>
@@ -379,8 +419,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <div class="mobile-cards-container" id="mobileCardsEndsch">
             <div class="mobile-search">
               <div class="position-relative">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" class="form-control" placeholder="Suchen..." oninput="filterMobileEndsch(this)">
+                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                <input type="search" class="form-control" id="esSucheMobil" placeholder="Teilnehmer suchen…" aria-label="Teilnehmer suchen" autocomplete="off">
               </div>
             </div>
             <div class="mobile-cards-scroll"></div>
@@ -394,19 +434,13 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 </div>
 </div>
 <?php if ($kannDefinieren): ?>
-<!-- Admin-Panel: Stich-Definitionen + Spezialpreise (Slide-Panel statt Modal) -->
-<div class="panel-overlay" id="adminOverlay"></div>
-<div class="hybrid-edit-panel" id="adminPanel" style="--panel-width: 620px;">
-  <div class="panel-header">
-    <h6 class="mb-0">Endschiessen Definition</h6>
-    <button type="button" class="btn btn-sm btn-outline-secondary" id="adminClose" data-tooltip="Schliessen (Esc)" aria-label="Schliessen (Esc)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
-  </div>
-  <div class="panel-body">
+<?php ob_start(); ?>
     <div class="shot-section shot-first">
       <div class="shot-section-head">
-        <span class="shot-section-title"><i class="bi bi-card-list"></i>Stiche <button type="button" class="btn-help" data-help="endschloesen.definition" aria-label="Hilfe"></button></span>
-        <button type="button" class="btn btn-outline-success btn-sm" id="btnAddNewStich"><i class="bi bi-plus-lg me-1"></i>Neuer Stich</button>
+        <span class="shot-section-title" role="heading" aria-level="3"><i class="bi bi-card-list" aria-hidden="true"></i>Stiche <button type="button" class="btn-help" data-help="endschloesen.definition" aria-label="Hilfe"></button></span>
+        <button type="button" class="btn btn-outline-success btn-sm" id="btnAddNewStich"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Neuer Stich</button>
       </div>
+      <p class="shot-hint mb-2">Preise gelten für alle Jahre: Die Mitglieder-Totale früherer Jahre rechnen nach einer Preisänderung ebenfalls mit dem neuen Preis. Gäste behalten den Preis, der beim Lösen galt.</p>
       <div class="shot-section-body">
         <div class="def-edit mb-3" id="defEdit" hidden>
           <div class="row g-2">
@@ -426,6 +460,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
               <label class="panel-label" for="editStichPrice">Preis CHF</label>
               <input type="number" class="form-control form-control-sm" id="editStichPrice" min="0" max="1000" step="0.05">
             </div>
+            <div class="col-12"><div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler mb-0" id="defFehler" role="alert" hidden></div></div>
             <div class="col-4">
               <label class="panel-label" for="editStichSort">Sortierung</label>
               <input type="number" class="form-control form-control-sm" id="editStichSort" min="0" max="999">
@@ -456,23 +491,27 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
     <div class="shot-section">
       <div class="shot-section-head">
-        <span class="shot-section-title"><i class="bi bi-currency-exchange"></i>Spezialpreise <button type="button" class="btn-help" data-help="endschloesen.spezialpreise" aria-label="Hilfe"></button></span>
+        <span class="shot-section-title" role="heading" aria-level="3"><i class="bi bi-currency-exchange" aria-hidden="true"></i>Spezialpreise <button type="button" class="btn-help" data-help="endschloesen.spezialpreise" aria-label="Hilfe"></button></span>
       </div>
       <div class="shot-section-body" id="spezialpreiseContainer"></div>
+      <div class="alert alert-danger small py-2 px-3 msv-eingabe-fehler mt-2 mb-0" id="spezialFehler" role="alert" hidden></div>
     </div>
-  </div>
-  <div class="panel-footer">
-    <div class="d-flex gap-2 w-100 justify-content-end">
-      <button type="button" class="btn btn-primary btn-sm" id="btnSaveSpezialpreise">
-        <span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpezialpreiseSpinner"></span>
-        <i class="bi bi-save me-1"></i>Spezialpreise speichern
-      </button>
-    </div>
-  </div>
-</div>
+<?php
+$panel_body = ob_get_clean();
+$panel_id = 'adminPanel';
+$panel_overlay_id = 'adminOverlay';
+$panel_close_id = 'adminClose';
+$panel_title = 'Endschiessen Definition';
+$panel_width = '620px';
+$panel_footer = '<div class="d-flex align-items-center gap-2 w-100 justify-content-end" id="adminFooter">'
+    . '<button type="button" class="btn btn-primary btn-sm" id="btnSaveSpezialpreise">'
+    . '<span class="spinner-border spinner-border-sm me-1 d-none" id="saveSpezialpreiseSpinner" aria-hidden="true"></span>'
+    . '<i class="bi bi-save me-1" aria-hidden="true"></i>Spezialpreise speichern</button></div>';
+include 'partials/side_panel.inc.php';
+?>
 <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="js/lib/select2-4.1.0-rc.0.min.js?v=<?= @filemtime(__DIR__ . '/js/lib/select2-4.1.0-rc.0.min.js') ?: '1' ?>"></script>
 <?php include 'partials/direktdruck_scripts.inc.php'; ?>
 <script>
 (function () {
@@ -498,8 +537,9 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     spezial: { ...PREIS_DEFAULTS },
     waffen: [],
     mitgliedWaffe: new Map(), // Mitglied-ID -> WaffenID aus den Stammdaten (Vorbelegung des Waffen-Dropdowns)
+    aktiveMitglieder: new Set(), // Status 1 (nicht ausgetreten): nur sie zählen für «noch nichts gelöst»
     uebersicht: [],           // Zeilen der Jahresübersicht
-    erfassteMitglieder: new Set(), // Mitglieder-IDs, die im Jahr schon gelöst haben (im Select2 ausgeblendet)
+    erfassteMitglieder: new Map(), // Mitglied-ID -> Zeile der Übersicht (in der Suche als «bereits gelöst» markiert)
     aktuelleEntity: null,     // { typ, id } für Zeilenmarkierung
     gastLookupTimer: null,
     canAdmin: <?= $kannDefinieren ? 'true' : 'false' ?>
@@ -507,8 +547,9 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
 
   const $id = (id) => document.getElementById(id);
   const fmtCHF = (cents) => 'CHF ' + ((Number(cents) || 0) / 100).toFixed(2);
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = msvEsc; // zentraler Helfer aus msv-toast.js
   const preis = (typ) => Number(state.spezial[typ] ?? PREIS_DEFAULTS[typ] ?? 0);
+  const ZAHLUNG_TEXT = { bar: 'Bar', karte: 'Karte' };
 
   async function api(action, opts = {}) {
     const url = `${API}?action=${encodeURIComponent(action)}` + (opts.query ? '&' + new URLSearchParams(opts.query).toString() : '');
@@ -518,37 +559,58 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const r = await fetch(url, init);
     let j = null;
     try { j = await r.json(); } catch (e) { /* kein JSON */ }
-    if (r.status === 401) { msvToast('Sitzung abgelaufen – bitte neu anmelden', 'warning'); }
+    if (r.status === 401) {
+      // Eine Meldung genügt: die Aufrufer melden danach keinen «Netzwerkfehler» mehr (fehlerMelden)
+      msvToast('Die Anmeldung ist abgelaufen. Bitte neu anmelden; nicht Gespeichertes vorher notieren.', 'warning');
+      const err = new Error('Sitzung abgelaufen'); err.sitzung = true; throw err;
+    }
     if (!j) throw new Error('Ungültige Antwort (' + r.status + ')');
     return j;
+  }
+
+  /** Fehler aus api() melden – ausser bei abgelaufener Sitzung, die schon gemeldet ist. */
+  function fehlerMelden(e, text) {
+    if (!(e && e.sitzung)) msvToast(text, 'error');
   }
 
   // =========================================================================
   //  Preislogik (Anzeige)
   // =========================================================================
-  function calcStichPreis(codes, typ, zabigPartner) {
-    const preisVon = (code) => { const s = state.stiche.find(x => x.code === code); return s ? Number(s.price_cents) || 0 : 0; };
+  /**
+   * Posten des Stich-Preises: [{ text, cents }]. Die Summe ist der Stich-Preis; dieselben Posten
+   * erscheinen als Aufschlüsselung unter dem Gesamtbetrag. Regeln wie preislogik.inc.php (Server verbindlich).
+   */
+  function stichPosten(codes, typ, zabigPartner) {
+    const def = (code) => state.stiche.find(x => x.code === code);
+    const preisVon = (code) => { const s = def(code); return s ? Number(s.price_cents) || 0 : 0; };
+    const name = (code) => { const s = def(code); return s ? s.name : code; };
+    const posten = [];
     if (typ === 'js') {
-      return codes.some(c => JS_PAKET_CODES.includes(c)) ? preis('js_paket_preis') : 0;
+      if (codes.some(c => JS_PAKET_CODES.includes(c))) posten.push({ text: 'Jungschützen-Paket', cents: preis('js_paket_preis') });
+      return posten;
     }
     if (typ === 'gast') {
-      // Pauschale, wenn alle lösbaren Stiche gewählt sind (0 = Pauschale aus) – Server: preislogik.inc.php
-      if (preis('gast_alle') > 0 && gastAlleGeloest(codes)) return preis('gast_alle');
+      // Pauschale, wenn alle lösbaren Stiche gewählt sind (0 = Pauschale aus)
+      if (preis('gast_alle') > 0 && gastAlleGeloest(codes)) return [{ text: 'Alle Stiche (Pauschale)', cents: preis('gast_alle') }];
       const kombi = codes.filter(c => GAST_KOMBI_CODES.includes(c));
-      let p = 0;
-      if (kombi.length === 1) p = preisVon(kombi[0]);
-      else if (kombi.length === 2) p = preis('gast_kombi_2');
-      else if (kombi.length >= 3) p = preis('gast_kombi_3');
-      if (codes.includes('SIEUNDER')) p += preis('gast_sie_und_er');
-      // optional dazugelöste Stiche zum Einzelpreis (Server: preislogik.inc.php)
-      codes.forEach(c => { if (!GAST_ERLAUBT.includes(c) && !GAST_GESPERRT.includes(c)) p += preisVon(c); });
-      return p;
+      if (kombi.length === 1) posten.push({ text: name(kombi[0]), cents: preisVon(kombi[0]) });
+      else if (kombi.length === 2) posten.push({ text: 'Kombi 2 Stiche (' + kombi.map(name).join(', ') + ')', cents: preis('gast_kombi_2') });
+      else if (kombi.length >= 3) posten.push({ text: 'Kombi ' + kombi.length + ' Stiche (' + kombi.map(name).join(', ') + ')', cents: preis('gast_kombi_3') });
+      if (codes.includes('SIEUNDER')) posten.push({ text: name('SIEUNDER'), cents: preis('gast_sie_und_er') });
+      // optional dazugelöste Stiche zum Einzelpreis
+      codes.forEach(c => { if (!GAST_ERLAUBT.includes(c) && !GAST_GESPERRT.includes(c)) posten.push({ text: name(c), cents: preisVon(c) }); });
+      return posten;
     }
-    return codes.reduce((sum, c) => {
-      if (c === 'PROBE') return sum;
-      if (c === 'ZABIG' && zabigPartner) return sum + preis('partner_zabig');
-      return sum + preisVon(c);
-    }, 0);
+    codes.forEach(c => {
+      if (c === 'PROBE') return;
+      if (c === 'ZABIG' && zabigPartner) posten.push({ text: name(c) + ' mit Partner', cents: preis('partner_zabig') });
+      else posten.push({ text: name(c), cents: preisVon(c) });
+    });
+    return posten;
+  }
+
+  function calcStichPreis(codes, typ, zabigPartner) {
+    return stichPosten(codes, typ, zabigPartner).reduce((s, p) => s + p.cents, 0);
   }
 
   function erlaubteCodes(typ) {
@@ -578,6 +640,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   // =========================================================================
   function setTyp(typ, { keepSelection = false } = {}) {
     state.typ = typ;
+    typVorher = typ;
     $id('typ' + typ.charAt(0).toUpperCase() + typ.slice(1)).checked = true;
     $id('mitgliedWrap').hidden = typ !== 'mitglied';
     $id('gastWrap').hidden = typ === 'mitglied';
@@ -594,6 +657,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       if (!keepSelection) setDefaultWaffe();
     }
     updateWaffeHint();
+    updateMuniFilter();
     renderStiche(keepSelection);
     recalcTotals();
   }
@@ -618,6 +682,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     } else if (!sel.value) { setDefaultWaffe(); }
     if (sel.value !== '' && sel.selectedIndex < 0) sel.value = ''; // unbekannte ID
     updateWaffeHint();
+    updateMuniFilter();
   }
 
   function updateWaffeHint() {
@@ -632,9 +697,34 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     else hint.textContent = '';
   }
 
-  $id('waffeSelect').addEventListener('change', () => { updateWaffeHint(); recalcTotals(); });
+  /**
+   * Zusatzmunition passend zur Waffe: bei bekannter Munitionsart (GP11/GP90) nur diese Zeilen zeigen.
+   * Eine Zeile mit Wert bleibt immer sichtbar, damit nichts Gespeichertes verschwindet.
+   */
+  function updateMuniFilter() {
+    const w = state.waffen.find(x => String(x.ID) === $id('waffeSelect').value);
+    const ammo = w && w.ammo ? w.ammo : null;
+    let versteckt = 0;
+    document.querySelectorAll('.muni-row[data-ammo]').forEach(row => {
+      const hatWert = !!row.querySelector('.zusatz-check:checked') || (parseInt((row.querySelector('.zusatz-custom') || {}).value, 10) || 0) > 0;
+      const aus = !!ammo && row.dataset.ammo !== ammo && !hatWert;
+      row.hidden = aus;
+      if (aus) versteckt++;
+    });
+    $id('muniHint').textContent = versteckt ? 'Passend zur Waffe nur ' + ammo + '. Für ' + (ammo === 'GP11' ? 'GP90' : 'GP11') + ' zuerst die Waffe ändern.' : '';
+  }
 
-  document.querySelectorAll('input[name="typ"]').forEach(r => r.addEventListener('change', () => {
+  $id('waffeSelect').addEventListener('change', () => { updateWaffeHint(); updateMuniFilter(); recalcTotals(); });
+
+  // Typ-Wechsel leert die Auswahl: vorher wie bei jedem Wechsel nachfragen
+  let typVorher = 'mitglied';
+  document.querySelectorAll('input[name="typ"]').forEach(r => r.addEventListener('change', async () => {
+    if (losenGeaendert()) {
+      $id('typ' + typVorher.charAt(0).toUpperCase() + typVorher.slice(1)).checked = true; // erst zurück, dann fragen
+      if (!(await losenSchutz())) return;
+      r.checked = true;
+    }
+    typVorher = r.value;
     setTyp(r.value);
     if (r.value === 'js') {
       // JS-Paket vorbelegen
@@ -663,17 +753,35 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     // Gast: Standard-Stiche zuerst, optionale Stiche dahinter
     if (state.typ === 'gast') stiche.sort((a, b) => Number(istGastOptional(a.code)) - Number(istGastOptional(b.code)));
 
-    $id('stichHint').textContent = state.typ === 'js' ? 'Paketpreis ' + (preis('js_paket_preis') > 0 ? fmtCHF(preis('js_paket_preis')) : 'gratis')
-      : state.typ === 'gast' ? 'Kombi-Preise: 2 Stiche ' + fmtCHF(preis('gast_kombi_2')) + ', ab 3 ' + fmtCHF(preis('gast_kombi_3'))
-          + ' · weitere Stiche optional zum Einzelpreis'
-          + (preis('gast_alle') > 0 ? ' · alle Stiche ' + fmtCHF(preis('gast_alle')) : '')
+    // Preisregel unter dem Raster (nicht im Titel): ein Satz pro Typ
+    $id('stichHint').textContent = state.typ === 'js' ? 'Paketpreis ' + (preis('js_paket_preis') > 0 ? fmtCHF(preis('js_paket_preis')) : 'gratis') + ', egal wie viele Paket-Stiche.'
+      : state.typ === 'gast' ? 'Endstich und Schwini zusammen: 2 Stiche ' + fmtCHF(preis('gast_kombi_2')) + ', 3 Stiche ' + fmtCHF(preis('gast_kombi_3'))
+          + '. Gestrichelte Stiche kommen zum Einzelpreis dazu.'
+          + (preis('gast_alle') > 0 ? ' Alle Stiche zusammen ' + fmtCHF(preis('gast_alle')) + '.' : '')
       : '';
+
+    if (!stiche.length) {
+      list.innerHTML = '<div class="ui-leerzustand" style="grid-column: 1 / -1;"><i class="bi bi-bullseye" aria-hidden="true"></i>'
+        + '<p>Für das Endschiessen sind noch keine aktiven Stiche definiert.</p>'
+        + (state.canAdmin ? '<button type="button" class="btn btn-outline-success btn-sm mt-2" id="btnLeerDefinition"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Stiche definieren</button>' : '<p>Bitte den Admin oder Vorstand fragen.</p>')
+        + '</div>';
+      const b = $id('btnLeerDefinition');
+      if (b) b.addEventListener('click', () => $id('btnAdminSettings').click());
+      updateTiles();
+      return;
+    }
 
     stiche.forEach(s => {
       const shots = Number(s.shots) || 0;
       let preisText = fmtCHF(s.price_cents);
+      let preisTipp = '';
       if (state.typ === 'js') preisText = 'im Paket';
       if (state.typ === 'gast' && s.code === 'SIEUNDER') preisText = fmtCHF(preis('gast_sie_und_er'));
+      if (state.typ === 'gast' && GAST_KOMBI_CODES.includes(s.code)) {
+        // Der Einzelpreis gilt nur, wenn genau dieser eine Kombi-Stich gelöst wird
+        preisText = 'in Kombi';
+        preisTipp = 'Allein ' + fmtCHF(s.price_cents) + '; mit weiteren Stichen aus Endstich und Schwini gilt der Kombi-Preis';
+      }
       if (s.code === 'PROBE' && state.typ !== 'js') preisText = 'gratis';
       const optional = istGastOptional(s.code);
 
@@ -688,8 +796,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       tile.innerHTML = `
         <label class="stich-tile-main" for="stich_${s.id}">
           <input class="form-check-input stich-check" type="checkbox" value="${s.id}" id="stich_${s.id}" data-code="${esc(s.code)}" data-shots="${shots}" ${vorher.has(String(s.id)) ? 'checked' : ''}>
-          <span class="stich-tile-head"><span class="stich-tile-name">${esc(s.name)}</span>${optional ? '<i class="bi bi-plus-circle stich-tile-badge" data-tooltip="Optional: zählt nicht zum Kombi-Preis, wird zum Einzelpreis dazugelöst" aria-label="Optionaler Stich"></i>' : ''}</span>
-          <span class="stich-tile-meta"><span>${shots} Schuss</span><span class="stich-price" id="price_${s.id}">${preisText}</span></span>
+          <span class="stich-tile-head"><span class="stich-tile-name">${esc(s.name)}</span>${optional ? '<i class="bi bi-plus-circle stich-tile-badge" data-tooltip="Optional: zählt nicht zum Kombi-Preis, wird zum Einzelpreis dazugelöst" aria-hidden="true"></i><span class="visually-hidden">(optional, Einzelpreis)</span>' : ''}</span>
+          <span class="stich-tile-meta"><span>${shots} Schuss</span><span class="stich-price" id="price_${s.id}"${preisTipp ? ` data-tooltip="${esc(preisTipp)}"` : ''}>${preisText}</span></span>
         </label>${partner}`;
       list.appendChild(tile);
     });
@@ -704,7 +812,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     // «Alle» bezieht sich bei Gaesten nur auf die Standard-Stiche (optionale bleiben Handarbeit)
     const alle = standardChecks();
     const alleAn = alle.length > 0 && alle.every(cb => cb.checked);
-    $id('btnSelectAll').innerHTML = alleAn ? '<i class="bi bi-square me-1"></i>Keine' : '<i class="bi bi-check2-square me-1"></i>Alle';
+    $id('btnSelectAll').innerHTML = alleAn ? '<i class="bi bi-square me-1" aria-hidden="true"></i>Keine' : '<i class="bi bi-check2-square me-1" aria-hidden="true"></i>Alle';
+    $id('btnSelectAll').disabled = alle.length === 0;
   }
 
   function gewaehlteCodes() {
@@ -754,15 +863,40 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       zusatzListe(), $id('waffeSelect').value
     ]);
   }
-  function losenGeaendert() { return losenStand !== null && losenSchluessel() !== losenStand; }
-  function losenAnzeigen() { msvPanelUngespeichert($id('btnSave').parentElement, losenGeaendert()); }
-  function losenMerken() { losenStand = losenSchluessel(); losenAnzeigen(); }
+  function losenGeaendert() {
+    if (losenStand === null || losenSchluessel() === losenStand) return false;
+    // Leeres Formular (keine Person, kein Stich, keine Munition): nichts, was verloren gehen könnte
+    return personName() !== '' || !!document.querySelector('.stich-check:checked') || zusatzListe().length > 0;
+  }
+  var losenAngesagt = null;
+  function losenAnzeigen() {
+    const offen = losenGeaendert();
+    msvPanelUngespeichert($id('btnSave').parentElement, offen);
+    // Screenreader: nur den Wechsel ansagen, nicht jede Änderung
+    if (offen !== losenAngesagt) { $id('losenAnsage').textContent = offen ? 'Nicht gespeichert' : ''; losenAngesagt = offen; }
+  }
+  // Stand merken und alles nachführen, was davon abhängt (Chip, Standblatt, «Gespeichert»)
+  function losenMerken() { losenStand = losenSchluessel(); losenAnzeigen(); recalcTotals(); }
+
+  /** Zeile der Jahresübersicht zur Person im Formular (null = für dieses Jahr noch nicht gespeichert). */
+  function gespeicherteZeile() {
+    if (state.typ === 'mitglied') {
+      const mid = Number($id('mitgliedSelect').value);
+      return mid ? (state.erfassteMitglieder.get(mid) || null) : null;
+    }
+    const gid = Number($id('gastId').value);
+    return gid ? (state.uebersicht.find(e => e.typ === 'gast' && Number(e.entity_id) === gid) || null) : null;
+  }
+
+  function personName() {
+    if (state.typ === 'mitglied') { const o = $id('mitgliedSelect').selectedOptions[0]; return o && o.value ? o.textContent.trim() : ''; }
+    return $id('gastName').value.trim();
+  }
   // Vor dem Wechsel zu einem anderen Eintrag. true = weitermachen (gespeichert oder verworfen)
   async function losenSchutz() {
     if (!losenGeaendert()) return true;
-    const wer = state.typ === 'mitglied' ? $('#mitgliedSelect option:selected').text().trim() : $id('gastName').value.trim();
-    const wahl = await msvUngespeichert({ wer });
-    if (wahl === 'speichern') return await speichern({ danachOeffnen: false });
+    const wahl = await msvUngespeichert({ wer: personName() });
+    if (wahl === 'speichern') return await speichern();
     return wahl === 'verwerfen';
   }
 
@@ -778,11 +912,25 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const zusatz = zusatzListe();
     const zusatzSchuss = zusatz.reduce((s, z) => s + z.anzahl, 0);
     const zusatzPreis = zusatzSchuss * proSchuss;
+    const total = stichPreis + zusatzPreis;
 
     $id('totalCount').textContent = String(checked.length);
     $id('totalShots').textContent = String(shots);
     $id('totalZusatzShots').textContent = String(zusatzSchuss);
-    $id('totalPrice').textContent = fmtCHF(stichPreis + zusatzPreis);
+    $id('totalPrice').textContent = fmtCHF(total);
+
+    // Aufschlüsselung: woraus sich der Gesamtbetrag zusammensetzt
+    const posten = stichPosten(codes, state.typ, zabigPartner);
+    if (zusatzSchuss > 0) posten.push({ text: 'Zusatzmunition ' + zusatzSchuss + ' Schuss', cents: zusatzPreis });
+    $id('preisPosten').innerHTML = posten.length > 0 && (posten.length > 1 || state.typ !== 'mitglied' || zusatzSchuss > 0)
+      ? posten.map(p => `<li><span>${esc(p.text)}</span><span>${p.cents > 0 ? fmtCHF(p.cents) : 'gratis'}</span></li>`).join('')
+      : '';
+
+    // Zahlung: ohne Vorwahl; bei einem Betrag muss Bar oder Karte gewählt sein
+    const zahlung = (document.querySelector('input[name="zahlungsmethode"]:checked') || {}).value || '';
+    $id('zahlungSwitch').classList.toggle('es-offen', total > 0 && !zahlung);
+    if (zahlung) $id('zahlungSwitch').removeAttribute('aria-invalid');
+    $id('zahlungHint').textContent = total > 0 && !zahlung ? 'Bitte wählen' : (total === 0 && checked.length ? 'Nichts zu bezahlen' : '');
 
     $id('preis_gp11_60').textContent = fmtCHF(60 * proSchuss);
     $id('preis_gp90_50').textContent = fmtCHF(50 * proSchuss);
@@ -792,15 +940,34 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     $id('munitionBadge').hidden = zusatzSchuss === 0;
     $id('munitionBadge').textContent = zusatzSchuss + ' Schuss · ' + fmtCHF(zusatzPreis);
 
-    const hatPerson = state.typ === 'mitglied' ? !!$id('mitgliedSelect').value : $id('gastName').value.trim() !== '';
+    // Standblatt nur für eine GESPEICHERTE Lösung: was auf dem Blatt steht, steht auch in der Abrechnung
+    const hatPerson = personName() !== '';
     const hatWaffe = !!$id('waffeSelect').value;
-    const standblattMoeglich = hatPerson && hatWaffe && checked.length > 0;
+    const zeile = gespeicherteZeile();
+    const geaendert = losenGeaendert();
+    const standblattMoeglich = hatPerson && hatWaffe && checked.length > 0 && !!zeile && !geaendert;
     $id('btnStandblatt').disabled = !standblattMoeglich;
     $id('btnStandblattDruck').disabled = !(standblattMoeglich && printReady());
+    $id('standblattHint').textContent = hatPerson && checked.length > 0 && !standblattMoeglich && (geaendert || !zeile)
+      ? 'Standblatt nach dem Speichern.' : '';
+
+    // Stand «gespeichert»: Betrag und Zahlung aus der Übersicht (Server), bleibt bis zur nächsten Person
+    const status = $id('esStatus');
+    if (zeile && !geaendert && hatPerson) {
+      const z = zeile.zahlungsmethode ? ' · ' + ZAHLUNG_TEXT[zeile.zahlungsmethode] : (Number(zeile.total_price) > 0 ? ' · Zahlung nicht erfasst' : '');
+      status.innerHTML = `<i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Gespeichert: ${esc(personName())} · ${fmtCHF(zeile.total_price)}${esc(z)}</span>`;
+      status.hidden = false;
+    } else {
+      status.hidden = true;
+    }
   }
 
   document.querySelectorAll('.zusatz-check').forEach(cb => cb.addEventListener('change', recalcTotals));
-  document.querySelectorAll('.zusatz-custom').forEach(inp => inp.addEventListener('input', recalcTotals));
+  document.querySelectorAll('.zusatz-custom').forEach(inp => inp.addEventListener('input', () => {
+    if (inp.getAttribute('aria-invalid')) msvPruefeZahl(inp);
+    recalcTotals();
+  }));
+  document.querySelectorAll('input[name="zahlungsmethode"]').forEach(r => r.addEventListener('change', recalcTotals));
   $id('munitionCollapse').addEventListener('shown.bs.collapse', () => { $id('munitionChevron').className = 'bi bi-chevron-down'; });
   $id('munitionCollapse').addEventListener('hidden.bs.collapse', () => { $id('munitionChevron').className = 'bi bi-chevron-right'; });
 
@@ -819,7 +986,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     $id('gastId').value = '';
     $id('waffeSelect').value = '';
     $id('gastHint').hidden = true;
-    $id('zahlung_karte').checked = true;
+    zahlungLeeren();
+    msvEingabeFehler('#losenFehler', []);
     resetZusatz();
     state.aktuelleEntity = null;
     markRow(null);
@@ -827,13 +995,21 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     losenMerken();
   }
 
+  function zahlungLeeren() {
+    document.querySelectorAll('input[name="zahlungsmethode"]').forEach(r => { r.checked = false; });
+    $id('zahlungSwitch').removeAttribute('aria-invalid');
+  }
+
   function applySelection(j) {
     document.querySelectorAll('.stich-check').forEach(cb => { cb.checked = false; });
     if ($id('partner_zabig')) $id('partner_zabig').checked = false;
     resetZusatz();
+    zahlungLeeren();
+    msvEingabeFehler('#losenFehler', []);
     if (j && j.success) {
       (j.data || []).forEach(sid => { const el = $id('stich_' + sid); if (el) el.checked = true; });
-      $id(j.zahlungsmethode === 'bar' ? 'zahlung_bar' : 'zahlung_karte').checked = true;
+      // gespeicherter Zahlungsweg; null = nicht erfasst, dann bleibt die Wahl offen
+      if (j.zahlungsmethode === 'bar' || j.zahlungsmethode === 'karte') $id('zahlung_' + j.zahlungsmethode).checked = true;
       if (j.zabig_partner && $id('partner_zabig')) $id('partner_zabig').checked = true;
       (j.zusatz || []).forEach(z => {
         if (z.typ === 'GP11_60') $id('zusatz_gp11_60').checked = true;
@@ -855,7 +1031,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     markRow(state.aktuelleEntity);
     try {
       applySelection(await api('get_selection', { query: { mitglied_id: mid, jahr: $id('yearSelect').value } }));
-    } catch (e) { applySelection(null); msvToast('Auswahl konnte nicht geladen werden', 'error'); }
+    } catch (e) { applySelection(null); fehlerMelden(e, 'Die gespeicherte Auswahl konnte nicht geladen werden. Bitte das Mitglied nochmals wählen.'); }
   }
 
   async function loadGastSelection({ byId = null } = {}) {
@@ -869,18 +1045,28 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
         $id('gastHint').textContent = 'Neuer Gast – wird beim Speichern angelegt';
         $id('gastHint').hidden = false;
         state.aktuelleEntity = null; markRow(null);
+        recalcTotals();
+        return;
+      }
+      // Beim Tippen eines Namens nie still überschreiben, was im Formular schon angeklickt ist
+      if (!byId && losenGeaendert()) {
+        $id('gastId').value = j.gast_id;
+        $id('gastHint').innerHTML = `${esc(j.gast_name)} ist ${esc($id('yearSelect').value)} schon erfasst. Speichern ersetzt die gespeicherte Auswahl. `
+          + '<a href="#" id="gastLaden">Gespeicherte Auswahl laden</a>';
+        $id('gastHint').hidden = false;
+        $id('gastLaden').addEventListener('click', (ev) => { ev.preventDefault(); losenStand = null; loadGastSelection({ byId: j.gast_id }); });
         return;
       }
       $id('gastId').value = j.gast_id;
       $id('gastName').value = j.gast_name;
       if (j.typ !== state.typ) setTyp(j.typ, { keepSelection: true });
       $id('gastGeburtsdatum').value = j.geburtsdatum || '';
-      $id('gastHint').textContent = 'Bereits erfasst – Änderungen überschreiben die Auswahl';
+      $id('gastHint').textContent = 'Bereits erfasst – Änderungen ersetzen die gespeicherte Auswahl';
       $id('gastHint').hidden = false;
       state.aktuelleEntity = { typ: 'gast', id: Number(j.gast_id) };
       markRow(state.aktuelleEntity);
       applySelection(j);
-    } catch (e) { /* still */ }
+    } catch (e) { fehlerMelden(e, 'Die Gästeliste konnte nicht geprüft werden. Bitte den Namen nochmals eingeben.'); }
   }
 
   $('#mitgliedSelect').on('select2:selecting', async function(e) {
@@ -889,6 +1075,12 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const neu = e.params.args.data.id;
     $('#mitgliedSelect').select2('close');
     if (await losenSchutz()) $('#mitgliedSelect').val(neu).trigger('change');
+  });
+  // Auswahl mit dem Kreuz leeren: ebenfalls nicht still verwerfen
+  $('#mitgliedSelect').on('select2:clearing', async function(e) {
+    if (!losenGeaendert()) return;
+    e.preventDefault();
+    if (await losenSchutz()) $('#mitgliedSelect').val('').trigger('change');
   });
   $('#mitgliedSelect').on('change', () => { if (state.typ === 'mitglied') loadMitgliedSelection(); });
   $id('gastName').addEventListener('input', () => {
@@ -908,60 +1100,105 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     if (state.typ === 'mitglied') loadMitgliedSelection(); else loadGastSelection({ byId: null });
     loadUebersicht();
   });
-  $id('btnReset').addEventListener('click', async () => {
+  /** Formular leeren und die Suche für die nächste Person öffnen (fragt bei ungespeicherten Änderungen). */
+  async function naechstePerson() {
     if (losenGeaendert()) {
-      const wahl = await msvUngespeichert({});
+      const wahl = await msvUngespeichert({ wer: personName() });
       if (wahl === 'zurueck') return;
-      if (wahl === 'speichern') { await speichern(); return; }
+      if (wahl === 'speichern' && !(await speichern())) return;
     }
-    resetForm();
-  });
+    resetForm({ keepTyp: true });
+    if (state.typ === 'mitglied') $('#mitgliedSelect').select2('open'); else $id('gastName').focus();
+  }
+  $id('btnNaechste').addEventListener('click', naechstePerson);
   window.addEventListener('beforeunload', (e) => { if (losenGeaendert()) { e.preventDefault(); e.returnValue = ''; } });
 
   $id('stichForm').addEventListener('submit', (ev) => { ev.preventDefault(); speichern(); });
 
-  // Speichert die Auswahl; true bei Erfolg. danachOeffnen=false beim Wechsel (dann keine Mitgliederauswahl aufklappen)
-  async function speichern({ danachOeffnen = true } = {}) {
+  // Tastatur: Ctrl+S speichert, Ctrl+Enter speichert und geht zur nächsten Person (wie «Endschiessen erfassen»)
+  document.addEventListener('keydown', async (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    if (document.querySelector('.swal2-container')) return;
+    if ($id('adminPanel') && $id('adminPanel').classList.contains('open')) {
+      if (e.key === 's' || e.key === 'S') e.preventDefault(); // kein Browser-Dialog; im Panel speichern die Knöpfe
+      return;
+    }
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); speichern(); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (await speichern()) naechstePerson(); }
+  });
+
+  /** Eingaben prüfen: [{ el, name, wert, fehler }] für msvEingabeFehler (leer = alles gut). */
+  function pruefeLoesung(body, total) {
+    const liste = [];
+    document.querySelectorAll('#stichForm [aria-invalid="true"]').forEach(el => el.removeAttribute('aria-invalid'));
+    if (state.typ === 'mitglied' && !body.mitglied_id) {
+      const sel2 = document.querySelector('#mitgliedWrap .select2-selection');
+      liste.push({ el: sel2 || $id('mitgliedSelect'), name: 'Mitglied', wert: '', fehler: 'bitte aus der Liste wählen' });
+    }
+    if (state.typ !== 'mitglied' && !body.gast_name) liste.push({ el: $id('gastName'), name: 'Name', wert: '', fehler: 'bitte eingeben' });
+    if (state.typ === 'js' && !body.gast_geburtsdatum) liste.push({ el: $id('gastGeburtsdatum'), name: 'Geburtsdatum', wert: '', fehler: 'bitte eingeben' });
+    if (body.stiche.length && !body.waffen_id) liste.push({ el: $id('waffeSelect'), name: 'Waffe', wert: '', fehler: 'bitte wählen (steht auf dem Standblatt)' });
+    if (total > 0 && !body.zahlungsmethode) {
+      $id('zahlungSwitch').setAttribute('aria-invalid', 'true');
+      liste.push({ el: $id('zahlung_bar'), name: 'Zahlung', wert: '', fehler: 'Bar oder Karte wählen' });
+    }
+    msvPruefeFelder('#munitionCollapse').forEach(x => liste.push(x));
+    liste.forEach(x => { if (x.el && x.el.setAttribute && x.el.type !== 'radio') x.el.setAttribute('aria-invalid', 'true'); });
+    return liste;
+  }
+
+  // Speichert die Auswahl; true bei Erfolg. Das Formular bleibt danach mit der Person stehen
+  // (Stand «Gespeichert», Standblatt frei) bis «Nächste Person».
+  async function speichern() {
+    if (state.speichertGerade) return false;
     const typ = state.typ;
     const body = {
       typ,
       jahr: $id('yearSelect').value,
       stiche: [...document.querySelectorAll('.stich-check:checked')].map(cb => cb.value),
-      zahlungsmethode: document.querySelector('input[name="zahlungsmethode"]:checked').value,
+      zahlungsmethode: (document.querySelector('input[name="zahlungsmethode"]:checked') || {}).value || '',
       zabig_partner: !!($id('partner_zabig') && $id('partner_zabig').checked),
       zusatz_schuesse: zusatzListe(),
       waffen_id: $id('waffeSelect').value || undefined
     };
     if (typ === 'mitglied') {
       body.mitglied_id = $id('mitgliedSelect').value;
-      if (!body.mitglied_id) { msvToast('Bitte ein Mitglied wählen', 'warning'); $('#mitgliedSelect').select2('open'); return false; }
     } else {
       body.gast_name = $id('gastName').value.trim();
       body.gast_id = $id('gastId').value || undefined;
       body.gast_geburtsdatum = typ === 'js' ? $id('gastGeburtsdatum').value : '';
-      if (!body.gast_name) { msvToast('Bitte den Namen eingeben', 'warning'); $id('gastName').focus(); return false; }
-      if (typ === 'js' && !body.gast_geburtsdatum) { msvToast('Bitte das Geburtsdatum eingeben', 'warning'); $id('gastGeburtsdatum').focus(); return false; }
     }
-    if (body.stiche.length && !body.waffen_id) { msvToast('Bitte die Waffe wählen', 'warning'); $id('waffeSelect').focus(); return false; }
+    const codes = gewaehlteCodes();
+    const zabigPartner = body.zabig_partner;
+    const total = calcStichPreis(codes, typ, zabigPartner) + body.zusatz_schuesse.reduce((s, z) => s + z.anzahl, 0) * preis('munition_pro_schuss');
+    if (msvEingabeFehler('#losenFehler', pruefeLoesung(body, total))) return false;
+
     if (!body.stiche.length && !body.zusatz_schuesse.length) {
-      const r = await msvConfirm('Es ist kein Stich gewählt. Bestehende Auswahl dieses Teilnehmers wird geleert.', 'Auswahl leeren', 'Ja, leeren');
+      if (!gespeicherteZeile()) { msvToast('Es ist noch nichts gewählt.', 'info'); return false; }
+      const r = await msvConfirm('Es ist weder ein Stich noch Munition gewählt. Die gespeicherte Lösung von <strong>' + esc(personName()) + '</strong> wird geleert.', 'Lösung leeren?', 'Ja, leeren');
       if (!r.isConfirmed) return false;
     }
 
     const btn = $id('btnSave'), spin = $id('saveSpinner');
+    state.speichertGerade = true;
     btn.disabled = true; spin.classList.remove('d-none');
     let ok = false;
     try {
       const j = await api('save_selection', { body });
-      if (!j.success) { msvToast(j.message || 'Fehler beim Speichern', 'error'); return false; }
+      if (!j.success) { msvToast(j.message || 'Speichern hat nicht geklappt. Bitte nochmals versuchen.', 'error'); return false; }
       ok = true;
-      msvToast((j.message || 'Gespeichert') + ' – ' + fmtCHF((j.data && j.data.preis_cents) || 0) + ' Stiche', 'success');
+      const d = j.data || {};
+      if (typ !== 'mitglied' && d.entity_id) { $id('gastId').value = d.entity_id; $id('gastHint').hidden = true; }
+      state.aktuelleEntity = { typ: typ === 'mitglied' ? 'mitglied' : 'gast', id: Number(d.entity_id) };
       await loadUebersicht();
-      resetForm({ keepTyp: true });
-      if (danachOeffnen) { if (state.typ === 'mitglied') $('#mitgliedSelect').select2('open'); else $id('gastName').focus(); }
+      losenMerken(); // Stand «Gespeichert», Standblatt frei
+      const z = d.zahlungsmethode ? ' · ' + ZAHLUNG_TEXT[d.zahlungsmethode] : '';
+      msvToast(j.message === 'Auswahl geleert' ? personName() + ': Lösung geleert' : personName() + ': gespeichert · ' + fmtCHF(d.total_cents) + z, 'success');
+      if (!$id('btnStandblatt').disabled) $id('btnStandblatt').focus();
     } catch (e) {
-      msvToast('Netzwerkfehler beim Speichern', 'error');
+      fehlerMelden(e, 'Speichern hat nicht geklappt (keine Verbindung?). Die Eingaben sind noch da, bitte nochmals speichern.');
     } finally {
+      state.speichertGerade = false;
       btn.disabled = false; spin.classList.add('d-none');
     }
     return ok;
@@ -981,16 +1218,20 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     try {
       const j = await api('get_year_details', { query: { jahr } });
       state.uebersicht = j.success ? (j.data || []) : [];
-    } catch (e) { state.uebersicht = []; msvToast('Übersicht konnte nicht geladen werden', 'error'); }
-    state.erfassteMitglieder = new Set(state.uebersicht.filter(e => e.typ === 'mitglied').map(e => Number(e.entity_id)));
+    } catch (e) { state.uebersicht = []; fehlerMelden(e, 'Die Übersicht konnte nicht geladen werden. Bitte die Seite neu laden.'); }
+    state.erfassteMitglieder = new Map(state.uebersicht.filter(e => e.typ === 'mitglied').map(e => [Number(e.entity_id), e]));
     updateMitgliedHint();
     renderUebersicht();
+    recalcTotals(); // Stand «Gespeichert» und Standblatt hängen an der Übersicht
   }
 
   function updateMitgliedHint() {
-    const total = $id('mitgliedSelect').options.length - 1;
-    const offen = total - state.erfassteMitglieder.size;
-    $id('mitgliedHint').textContent = total > 0 ? `${offen} von ${total} Mitgliedern haben ${$id('yearSelect').value} noch nichts gelöst` : '';
+    const aktiv = state.aktiveMitglieder.size;
+    let offen = 0;
+    state.aktiveMitglieder.forEach(id => { if (!state.erfassteMitglieder.has(id)) offen++; });
+    $id('mitgliedHint').textContent = aktiv > 0
+      ? `${offen} von ${aktiv} Mitgliedern haben ${$id('yearSelect').value} noch nichts gelöst. Wer schon gelöst hat, ist in der Liste markiert.`
+      : '';
   }
 
   function waffeText(e) {
@@ -1003,14 +1244,15 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const head = $id('erfassteTableHeader');
     head.innerHTML = '<th>Teilnehmer</th>'
       + stiche.map(s => `<th class="stich-header" data-tooltip="${esc(s.name)} · ${s.shots} Schuss · ${fmtCHF(s.price_cents)}">${esc(s.name)}</th>`).join('')
-      + '<th>Waffe</th><th>Munition</th><th class="text-center" data-tooltip="Zahlung"><i class="bi bi-wallet2"></i></th><th class="text-end">Total</th><th></th>';
+      + '<th>Waffe</th><th>Munition</th><th>Zahlung</th><th class="text-end">Total</th><th><span class="visually-hidden">Aktionen</span></th>';
 
     const tbody = $id('erfassteTableBody');
     const rows = state.uebersicht;
     $id('erfasstCount').textContent = rows.length;
     kopfZahlen(rows);
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="${stiche.length + 6}" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Für ${esc($id('yearSelect').value)} ist noch niemand erfasst</td></tr>`;
+      // gleiche Darstellung wie msv_empty_row() (partials/empty_state.inc.php)
+      tbody.innerHTML = `<tr class="msv-empty-row"><td colspan="${stiche.length + 6}" class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:1.6rem;opacity:.5;" aria-hidden="true"></i>Für ${esc($id('yearSelect').value)} hat noch niemand gelöst</td></tr>`;
       buildMobileEndschCards();
       return;
     }
@@ -1022,7 +1264,9 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       const cells = stiche.map(s => {
         const hat = (e.stiche || []).includes(Number(s.id));
         const partner = (e.partner_stiche || []).includes(Number(s.id));
-        return `<td class="check-cell">${hat ? '<i class="bi bi-check-lg"></i>' + (partner ? '<span class="partner-mark" data-tooltip="Partner">P</span>' : '') : '<span class="empty">·</span>'}</td>`;
+        return `<td class="check-cell">${hat
+          ? '<i class="bi bi-check-lg" aria-hidden="true"></i><span class="visually-hidden">' + esc(s.name) + ' gelöst</span>' + (partner ? '<span class="partner-mark" data-tooltip="Partner">P</span><span class="visually-hidden"> mit Partner</span>' : '')
+          : '<span class="empty" aria-hidden="true">·</span>'}</td>`;
       }).join('');
       const muni = [];
       const stichM = [];
@@ -1033,27 +1277,28 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       if (e.zusatz_gp11 > 0) zusM.push('GP11 ' + e.zusatz_gp11);
       if (e.zusatz_gp90 > 0) zusM.push('GP90 ' + e.zusatz_gp90);
       if (zusM.length) muni.push(`<span class="muni-tag" data-tooltip="Zusätzliche Munition">+ ${zusM.join(' · ')}</span>`);
-      const zahlung = e.zahlungsmethode === 'bar'
-        ? '<i class="bi bi-cash text-success" data-tooltip="Bar"></i>'
-        : '<i class="bi bi-credit-card-2-back text-primary" data-tooltip="Karte"></i>';
+      // Zahlungsweg als Wort (nicht nur Symbol/Farbe); «offen», wenn etwas zu bezahlen ist und nichts erfasst wurde
+      const zahlung = e.zahlungsmethode ? ZAHLUNG_TEXT[e.zahlungsmethode]
+        : (Number(e.total_price) > 0 ? '<span class="offen" data-tooltip="Zahlungsweg nicht erfasst – Zeile öffnen und Bar oder Karte wählen">offen</span>' : '–');
       const codes = (e.stiche || []).map(sid => { const s = stiche.find(x => Number(x.id) === Number(sid)); return s ? s.code : ''; }).filter(Boolean).join(',');
+      const attr = `data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"`;
       return `
-        <tr data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}">
+        <tr class="hybrid-row" ${attr}>
           <td class="name-cell">${esc(e.name)}${badge}</td>
           ${cells}
           <td class="waffe-cell" data-tooltip="${esc(e.waffe_kat || '')}">${esc(e.waffe_bez || '–')}</td>
           <td class="muni-cell">${muni.join('') || '<span class="text-muted">–</span>'}</td>
-          <td class="text-center">${zahlung}</td>
+          <td class="zahl-cell">${zahlung}</td>
           <td class="total-cell">${fmtCHF(e.total_price)}</td>
           <td class="text-end">
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="Aktionen" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'><i class="bi bi-three-dots"></i></button>
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Aktionen für ${esc(e.name)}" data-tooltip="Standblatt, Löschen" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'><i class="bi bi-three-dots" aria-hidden="true"></i></button>
               <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item act-edit" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-pencil me-2"></i>Bearbeiten</a></li>
-                <li><a class="dropdown-item act-standblatt" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Standblatt</a></li>
-                ${druckSichtbar() ? `<li><a class="dropdown-item act-print${printReady() ? '' : ' disabled'}" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}" data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}" data-tooltip="${printReady() ? 'Direktdruck über QZ Tray' : 'Kein Druckprofil «Endschiessen Standblatt» (Drucksteuerung)'}"><i class="bi bi-printer me-2"></i>Standblatt drucken</a></li>` : ''}
+                <li><a class="dropdown-item act-edit" href="#" ${attr}><i class="bi bi-pencil me-2" aria-hidden="true"></i>Bearbeiten</a></li>
+                <li><a class="dropdown-item act-standblatt" href="#" ${attr} data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}"><i class="bi bi-file-earmark-pdf me-2" aria-hidden="true"></i>Standblatt</a></li>
+                ${druckSichtbar() ? `<li><a class="dropdown-item act-print${printReady() ? '' : ' disabled'}" href="#" ${attr} data-stiche="${esc(codes)}" data-waffe-id="${e.waffe_id || ''}" data-tooltip="${printReady() ? 'Direktdruck über QZ Tray' : 'Kein Druckprofil «Endschiessen Standblatt» (Drucksteuerung)'}"><i class="bi bi-printer me-2" aria-hidden="true"></i>Standblatt drucken</a></li>` : ''}
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item act-delete text-danger" href="#" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-trash me-2"></i>Löschen</a></li>
+                <li><a class="dropdown-item act-delete text-danger" href="#" ${attr}><i class="bi bi-trash me-2" aria-hidden="true"></i>Löschen</a></li>
               </ul>
             </div>
           </td>
@@ -1065,13 +1310,27 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   }
 
   // Kopf-Card: Teilnehmer nach Typ und Summe des Jahres
+  // Kopf-Card: Teilnehmer nach Typ, Summe des Jahres und Einnahmen nach Zahlungsweg (Kasse zählen)
   function kopfZahlen(rows) {
     const n = { mitglied: 0, gast: 0, js: 0 };
-    let summe = 0;
-    rows.forEach(e => { n[e.teilnehmer_typ] = (n[e.teilnehmer_typ] || 0) + 1; summe += Number(e.total_price) || 0; });
+    const geld = { bar: 0, karte: 0, offen: 0 };
+    let summe = 0, offenN = 0;
+    rows.forEach(e => {
+      const betrag = Number(e.total_price) || 0;
+      n[e.teilnehmer_typ] = (n[e.teilnehmer_typ] || 0) + 1;
+      summe += betrag;
+      if (betrag > 0) {
+        if (e.zahlungsmethode) geld[e.zahlungsmethode] += betrag;
+        else { geld.offen += betrag; offenN++; }
+      }
+    });
     $id('progressText').innerHTML = rows.length + ' <span>Teilnehmer · ' + esc(fmtCHF(summe)) + '</span>';
     const chip = (zahl, eins, mehr) => zahl ? `<span class="ui-chip"><b>${zahl}</b> ${zahl === 1 ? eins : mehr}</span>` : '';
-    $id('progressChips').innerHTML = chip(n.mitglied, 'Mitglied', 'Mitglieder') + chip(n.gast, 'Gast', 'Gäste') + chip(n.js, 'Jungschütze/-in', 'Jungschützen');
+    const geldChip = (cents, text, tipp) => cents ? `<span class="ui-chip" data-tooltip="${esc(tipp)}">${text} <b>${esc(fmtCHF(cents))}</b></span>` : '';
+    $id('progressChips').innerHTML = chip(n.mitglied, 'Mitglied', 'Mitglieder') + chip(n.gast, 'Gast', 'Gäste') + chip(n.js, 'Jungschütze/-in', 'Jungschützen')
+      + geldChip(geld.bar, 'Bar', 'Summe aller bar bezahlten Lösungen – zum Zählen der Kasse')
+      + geldChip(geld.karte, 'Karte', 'Summe aller mit Karte bezahlten Lösungen – zum Abgleich mit dem Terminal')
+      + geldChip(geld.offen, 'Zahlung offen', offenN + (offenN === 1 ? ' Lösung' : ' Lösungen') + ' ohne erfassten Zahlungsweg (in der Tabelle «offen»)');
   }
 
   // Suche in der Übersicht (nach Name)
@@ -1085,7 +1344,10 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   $id('esSuche').addEventListener('input', filterUebersicht);
 
   document.addEventListener('click', async (e) => {
-    const edit = e.target.closest('.act-edit');
+    // Klick auf die Zeile (ausser auf das Menü) = Bearbeiten; Enter auf einer markierten Zeile löst denselben Klick aus
+    const zeile = e.target.closest('#erfassteTableBody tr.hybrid-row');
+    const zeileEdit = zeile && !e.target.closest('.dropdown') ? zeile : null;
+    const edit = e.target.closest('.act-edit') || zeileEdit;
     const stand = e.target.closest('.act-standblatt');
     const prt = e.target.closest('.act-print');
     const del = e.target.closest('.act-delete');
@@ -1101,6 +1363,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     }
 
     if (edit) {
+      if (state.aktuelleEntity && state.aktuelleEntity.typ === typ && state.aktuelleEntity.id === Number(entityId) && !losenGeaendert()) return; // schon offen
       if (!(await losenSchutz())) return;
       if (typ === 'mitglied') {
         setTyp('mitglied');
@@ -1110,20 +1373,39 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
         setTyp('gast');
         await loadGastSelection({ byId: entityId });
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Formular nur dann hochholen, wenn es nicht sichtbar ist (unter 1400 px steht es über der Tabelle)
+      const form = $id('stichForm');
+      if (form.getBoundingClientRect().top < 0) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     if (stand) { await downloadStandblatt(stand, { typ, entityId, name, stiche: a.dataset.stiche || '', waffenId: a.dataset.waffeId || '' }); return; }
     if (del) {
-      const r = await msvConfirmDelete(name);
+      const jahr = $id('yearSelect').value;
+      const z = state.uebersicht.find(x => x.typ === typ && Number(x.entity_id) === Number(entityId)) || {};
+      const nStiche = (z.stiche || []).length;
+      const teile = [];
+      if (nStiche) teile.push(nStiche + (nStiche === 1 ? ' Stich' : ' Stiche'));
+      if (z.munition_schuss) teile.push(z.munition_schuss + ' Schuss Zusatzmunition');
+      const r = await msvConfirmDelete(name, {
+        title: 'Lösung löschen?',
+        html: `Die Lösung ${esc(jahr)} von <strong>${esc(name)}</strong> wird gelöscht`
+          + (teile.length ? ': ' + esc(teile.join(', ')) + ', ' + esc(fmtCHF(z.total_price)) : '') + '.'
+          + (typ !== 'mitglied' ? '<br>Der Gast wird dabei ebenfalls entfernt.' : '')
+          + '<br><span class="small text-muted">Die Datenbank wird vorher gesichert.</span>',
+        confirmText: 'Ja, Lösung löschen'
+      });
       if (!r.isConfirmed) return;
       try {
-        const j = await api('delete_selection', { body: { entity_id: entityId, typ, jahr: $id('yearSelect').value } });
-        if (!j.success) { msvToast(j.message || 'Fehler beim Löschen', 'error'); return; }
-        msvToast(`${name} entfernt`, 'success');
+        const j = await api('delete_selection', { body: { entity_id: entityId, typ, jahr } });
+        if (!j.success) {
+          if (j.gesperrt) await msvLoeschenGesperrt({ text: esc(j.message) });
+          else msvToast(j.message || 'Löschen hat nicht geklappt. Bitte nochmals versuchen.', 'error');
+          return;
+        }
+        msvToast(`Lösung von ${name} gelöscht`, 'success');
         if (state.aktuelleEntity && state.aktuelleEntity.typ === typ && state.aktuelleEntity.id === Number(entityId)) resetForm({ keepTyp: true });
         loadUebersicht();
-      } catch (err) { msvToast('Netzwerkfehler beim Löschen', 'error'); }
+      } catch (err) { fehlerMelden(err, 'Löschen hat nicht geklappt (keine Verbindung?). Es wurde nichts gelöscht.'); }
     }
   });
 
@@ -1258,21 +1540,48 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
   ];
 
   if (state.canAdmin) {
+    // Stand der Eingaben im Panel beim Öffnen bzw. Speichern; Abweichung = ungespeichert
+    let spezialStand = '[]', stichStand = '';
+    const spezialSchluessel = () => JSON.stringify([...document.querySelectorAll('.spezialpreis-input')].map(i => i.value));
+    const stichSchluessel = () => $id('defEdit').hidden ? '' : JSON.stringify(['editStichCode', 'editStichName', 'editStichShots', 'editStichPrice', 'editStichSort'].map(k => $id(k).value).concat($id('editStichActive').checked));
+    const spezialGeaendert = () => spezialSchluessel() !== spezialStand;
+    const stichGeaendert = () => !$id('defEdit').hidden && stichSchluessel() !== stichStand;
+    const adminAnzeigen = () => msvPanelUngespeichert($id('adminFooter'), spezialGeaendert() || stichGeaendert());
+    $id('adminPanel').addEventListener('input', adminAnzeigen);
+    $id('adminPanel').addEventListener('change', adminAnzeigen);
+
     const openAdmin = async () => {
       await Promise.all([loadAllStiche(), loadSpezialpreise()]);
       renderSpezialpreise();
       $id('defEdit').hidden = true;
+      msvEingabeFehler('#defFehler', []); msvEingabeFehler('#spezialFehler', []);
+      stichStand = '';
+      adminAnzeigen();
       $id('adminPanel').classList.add('open');
       $id('adminOverlay').classList.add('show');
     };
-    const closeAdmin = () => { $id('adminPanel').classList.remove('open'); $id('adminOverlay').classList.remove('show'); };
+    // Schliessen fragt bei offenen Eingaben nach: Speichern, Verwerfen oder Zurück (nie still verwerfen)
+    const closeAdmin = async () => {
+      if (spezialGeaendert() || stichGeaendert()) {
+        const wahl = await msvUngespeichert({ wer: stichGeaendert() ? 'den Stich' : 'die Spezialpreise' });
+        if (wahl === 'zurueck') return;
+        if (wahl === 'speichern') {
+          if (stichGeaendert() && !(await speichernStich())) return;
+          if (spezialGeaendert() && !(await speichernSpezial())) return;
+        }
+      }
+      $id('adminPanel').classList.remove('open'); $id('adminOverlay').classList.remove('show');
+      msvPanelUngespeichert($id('adminFooter'), false);
+    };
     $id('btnAdminSettings').addEventListener('click', openAdmin);
     $id('adminClose').addEventListener('click', closeAdmin);
     $id('adminOverlay').addEventListener('click', closeAdmin);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $id('adminPanel').classList.contains('open')) closeAdmin(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && $id('adminPanel').classList.contains('open') && !document.querySelector('.swal2-container')) closeAdmin();
+    });
 
     async function loadAllStiche() {
-      try { const j = await api('get_stich_definitions'); if (j.success) { state.alleStiche = j.data || []; renderAdminTable(); } else msvToast(j.message || 'Stiche konnten nicht geladen werden', 'error'); } catch (e) { msvToast('Stiche konnten nicht geladen werden', 'error'); }
+      try { const j = await api('get_stich_definitions'); if (j.success) { state.alleStiche = j.data || []; renderAdminTable(); } else msvToast(j.message || 'Die Stiche konnten nicht geladen werden.', 'error'); } catch (e) { fehlerMelden(e, 'Die Stiche konnten nicht geladen werden. Bitte die Seite neu laden.'); }
     }
 
     function renderAdminTable() {
@@ -1282,8 +1591,8 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
           <td><strong>${esc(s.name)}</strong><br><code>${esc(s.code)}</code></td>
           <td class="text-center">${s.shots}</td>
           <td class="text-end">${fmtCHF(s.price_cents)}</td>
-          <td class="text-center">${Number(s.active) === 1 ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-dash-circle text-muted"></i>'}</td>
-          <td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary act-edit-def" data-id="${s.id}" data-tooltip="Bearbeiten"><i class="bi bi-pencil"></i></button></td>
+          <td class="text-center">${Number(s.active) === 1 ? 'aktiv' : '<span class="text-muted">inaktiv</span>'}</td>
+          <td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary act-edit-def" data-id="${s.id}" data-tooltip="Bearbeiten" aria-label="${esc(s.name)} bearbeiten"><i class="bi bi-pencil" aria-hidden="true"></i></button></td>
         </tr>`).join('');
     }
 
@@ -1298,15 +1607,28 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       $id('editStichSort').value = s ? s.sort_order : 100;
       $id('editStichActive').checked = s ? Number(s.active) === 1 : true;
       $id('defEdit').hidden = false;
+      msvEingabeFehler('#defFehler', []);
+      stichStand = stichSchluessel();
+      adminAnzeigen();
       (s ? $id('editStichName') : $id('editStichCode')).focus();
     }
 
-    $id('adminTableBody').addEventListener('click', (e) => { const b = e.target.closest('.act-edit-def'); if (b) openEditStich(b.dataset.id); });
+    // Stich bearbeiten: offene Änderungen am gerade bearbeiteten Stich nicht still überschreiben
+    $id('adminTableBody').addEventListener('click', async (e) => {
+      const b = e.target.closest('.act-edit-def'); if (!b) return;
+      if (stichGeaendert()) {
+        const wahl = await msvUngespeichert({ wer: 'den Stich' });
+        if (wahl === 'zurueck' || (wahl === 'speichern' && !(await speichernStich()))) return;
+      }
+      openEditStich(b.dataset.id);
+    });
     $id('btnAddNewStich').addEventListener('click', () => openEditStich(null));
-    $id('btnCancelStich').addEventListener('click', () => { $id('defEdit').hidden = true; });
-    $id('btnSaveStich').addEventListener('click', async () => {
+    $id('btnCancelStich').addEventListener('click', () => { $id('defEdit').hidden = true; msvEingabeFehler('#defFehler', []); adminAnzeigen(); });
+
+    async function speichernStich() {
+      const id = Number($id('editStichId').value) || 0;
       const body = {
-        id: $id('editStichId').value || 0,
+        id,
         code: $id('editStichCode').value.trim().toUpperCase(),
         name: $id('editStichName').value.trim(),
         shots: parseInt($id('editStichShots').value, 10) || 0,
@@ -1314,18 +1636,38 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
         sort_order: parseInt($id('editStichSort').value, 10) || 100,
         active: $id('editStichActive').checked ? 1 : 0
       };
-      if (!body.name || (!body.id && !body.code)) { msvToast('Code und Name sind erforderlich', 'warning'); return; }
+      const liste = msvPruefeFelder('#defEdit');
+      if (!id && !body.code) liste.unshift({ el: $id('editStichCode'), name: 'Code', wert: '', fehler: 'bitte eingeben (z.B. END)' });
+      if (!body.name) liste.unshift({ el: $id('editStichName'), name: 'Name', wert: '', fehler: 'bitte eingeben' });
+      if (msvEingabeFehler('#defFehler', liste)) return false;
+
+      // Preis und Aktiv wirken über alle Jahre: vorher deutlich sagen, was das heisst
+      const alt = id ? state.alleStiche.find(x => Number(x.id) === id) : null;
+      if (alt && Number(alt.price_cents) !== body.price_cents) {
+        const r = await msvConfirm(`Der neue Preis gilt für <strong>alle Jahre</strong>: Die Mitglieder-Totale früherer Jahre (Übersicht und Abrechnung) rechnen danach mit ${esc(fmtCHF(body.price_cents))} statt ${esc(fmtCHF(alt.price_cents))}. Gäste behalten den Preis, der beim Lösen galt.`,
+          'Preis für alle Jahre ändern?', 'Ja, Preis ändern');
+        if (!r.isConfirmed) return false;
+      }
+      if (alt && Number(alt.active) === 1 && !body.active) {
+        const r = await msvConfirm(`<strong>${esc(alt.name)}</strong> verschwindet aus dem Formular. Wer ihn schon gelöst hat, behält ihn; neu lösen lässt er sich erst wieder, wenn er aktiv ist.`,
+          'Stich ausblenden?', 'Ja, ausblenden');
+        if (!r.isConfirmed) return false;
+      }
       const spin = $id('editStichSpinner'); spin.classList.remove('d-none');
       try {
         const j = await api('update_stich_definition', { body });
-        if (!j.success) { msvToast(j.message || 'Fehler', 'error'); return; }
+        if (!j.success) { msvToast(j.message || 'Der Stich konnte nicht gespeichert werden.', 'error'); return false; }
         msvToast(j.message || 'Gespeichert', 'success');
         $id('defEdit').hidden = true;
+        stichStand = '';
+        adminAnzeigen();
         await Promise.all([loadAllStiche(), loadStiche()]);
         renderStiche(true); recalcTotals(); renderUebersicht();
-      } catch (e) { msvToast('Netzwerkfehler', 'error'); }
+        return true;
+      } catch (e) { fehlerMelden(e, 'Der Stich konnte nicht gespeichert werden (keine Verbindung?). Bitte nochmals versuchen.'); return false; }
       finally { spin.classList.add('d-none'); }
-    });
+    }
+    $id('btnSaveStich').addEventListener('click', speichernStich);
 
     function renderSpezialpreise() {
       $id('spezialpreiseContainer').innerHTML = PREIS_CONFIG.map(c => {
@@ -1336,28 +1678,35 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
             <div class="preis-label">${esc(c.label)}<small>${esc(c.hint)}</small></div>
             <div class="input-group input-group-sm">
               <span class="input-group-text">${c.rp ? 'Rp.' : 'CHF'}</span>
-              <input type="number" class="form-control text-end spezialpreis-input" data-typ="${c.typ}" data-rp="${c.rp ? 1 : 0}" value="${value}" step="${c.rp ? 1 : 0.05}" min="0">
+              <input type="number" class="form-control text-end spezialpreis-input" data-typ="${c.typ}" data-rp="${c.rp ? 1 : 0}" value="${value}" step="${c.rp ? 1 : 0.05}" min="0" max="1000" aria-label="${esc(c.label)}">
             </div>
           </div>`;
       }).join('');
+      spezialStand = spezialSchluessel();
     }
 
-    $id('btnSaveSpezialpreise').addEventListener('click', async function () {
-      const spin = $id('saveSpezialpreiseSpinner'); spin.classList.remove('d-none'); this.disabled = true;
-      const updates = [...document.querySelectorAll('.spezialpreis-input')].map(inp => {
-        const v = parseFloat(inp.value) || 0;
+    // Alle Spezialpreise in EINEM Aufruf (Server: eine Transaktion – alle oder keiner)
+    async function speichernSpezial() {
+      if (msvEingabeFehler('#spezialFehler', msvPruefeFelder('#spezialpreiseContainer'))) return false;
+      const btn = $id('btnSaveSpezialpreise');
+      const spin = $id('saveSpezialpreiseSpinner'); spin.classList.remove('d-none'); btn.disabled = true;
+      const preise = [...document.querySelectorAll('.spezialpreis-input')].map(inp => {
+        const v = parseFloat(String(inp.value).replace(',', '.')) || 0;
         return { typ: inp.dataset.typ, price_cents: inp.dataset.rp === '1' ? Math.round(v) : Math.round(v * 100) };
       });
       try {
-        const results = await Promise.all(updates.map(u => api('update_spezialpreis', { body: u })));
-        const fehler = results.filter(r => !r.success);
-        if (fehler.length) msvToast(fehler[0].message || 'Fehler beim Speichern', 'error');
-        else msvToast('Spezialpreise gespeichert', 'success');
+        const j = await api('update_spezialpreise', { body: { preise } });
+        if (!j.success) { msvToast(j.message || 'Die Spezialpreise konnten nicht gespeichert werden.', 'error'); return false; }
+        msvToast(j.message || 'Spezialpreise gespeichert', 'success');
         await loadSpezialpreise();
+        renderSpezialpreise(); // setzt spezialStand neu
+        adminAnzeigen();
         renderStiche(true); recalcTotals(); renderUebersicht();
-      } catch (e) { msvToast('Netzwerkfehler', 'error'); }
-      finally { spin.classList.add('d-none'); this.disabled = false; }
-    });
+        return true;
+      } catch (e) { fehlerMelden(e, 'Die Spezialpreise konnten nicht gespeichert werden (keine Verbindung?). Bitte nochmals versuchen.'); return false; }
+      finally { spin.classList.add('d-none'); btn.disabled = false; }
+    }
+    $id('btnSaveSpezialpreise').addEventListener('click', speichernSpezial);
   }
 
   // =========================================================================
@@ -1368,7 +1717,7 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
     const container = document.querySelector('#mobileCardsEndsch .mobile-cards-scroll');
     if (!container) return;
     if (!state.uebersicht.length) {
-      container.innerHTML = '<div class="mobile-cards-empty"><i class="bi bi-inbox"></i><div>Niemand erfasst</div></div>';
+      container.innerHTML = `<div class="mobile-cards-empty"><i class="bi bi-inbox" aria-hidden="true"></i><div>Für ${esc($id('yearSelect').value)} hat noch niemand gelöst</div></div>`;
       return;
     }
     const byId = Object.fromEntries(state.stiche.map(s => [Number(s.id), s.name]));
@@ -1385,14 +1734,15 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
             <div class="mobile-card-detail-row"><span class="mobile-card-detail-label">Stiche</span><span class="mobile-card-detail-value">${esc(names.join(', ') || '–')}</span></div>
             <div class="mobile-card-detail-row"><span class="mobile-card-detail-label">Waffe</span><span class="mobile-card-detail-value">${esc(waffeText(e))}</span></div>
             <div class="mobile-card-detail-row"><span class="mobile-card-detail-label">Zusatzmunition</span><span class="mobile-card-detail-value">${e.munition_schuss || 0} Schuss</span></div>
-            <div class="mobile-card-detail-row"><span class="mobile-card-detail-label">Zahlung</span><span class="mobile-card-detail-value">${e.zahlungsmethode === 'bar' ? 'Bar' : 'Karte'}</span></div>
-            <a href="#" class="btn btn-outline-primary btn-sm w-100 mt-3 act-edit" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-pencil me-2"></i>Bearbeiten</a>
+            <div class="mobile-card-detail-row"><span class="mobile-card-detail-label">Zahlung</span><span class="mobile-card-detail-value">${e.zahlungsmethode ? ZAHLUNG_TEXT[e.zahlungsmethode] : (Number(e.total_price) > 0 ? 'offen' : '–')}</span></div>
+            <a href="#" class="btn btn-outline-primary btn-sm w-100 mt-3 act-edit" data-typ="${esc(e.typ)}" data-entity-id="${e.entity_id}" data-name="${esc(e.name)}"><i class="bi bi-pencil me-2" aria-hidden="true"></i>Bearbeiten</a>
           </div>
         </div>`;
     }).join('');
   }
 
-  window.filterMobileEndsch = function (input) {
+  $id('esSucheMobil').addEventListener('input', function () { filterMobileEndsch(this); });
+  function filterMobileEndsch(input) {
     const q = input.value.toLowerCase();
     const container = document.querySelector('#mobileCardsEndsch .mobile-cards-scroll');
     let visible = 0;
@@ -1402,9 +1752,9 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       if (show) visible++;
     });
     const empty = container.querySelector('.mobile-cards-empty');
-    if (visible === 0 && !empty) container.insertAdjacentHTML('beforeend', '<div class="mobile-cards-empty"><i class="bi bi-search"></i><div>Keine Treffer</div></div>');
+    if (visible === 0 && !empty) container.insertAdjacentHTML('beforeend', '<div class="mobile-cards-empty"><i class="bi bi-search" aria-hidden="true"></i><div>Keine Teilnehmer gefunden</div></div>');
     else if (visible > 0 && empty) empty.remove();
-  };
+  }
 
   let wasDesktop = window.matchMedia('(min-width: 768px)').matches;
   window.addEventListener('resize', () => {
@@ -1427,15 +1777,17 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       (j.data || []).forEach(m => {
         sel.add(new Option(`${(m.Nachname || '').trim()} ${(m.Vorname || '').trim()}`.trim(), m.id));
         state.mitgliedWaffe.set(Number(m.id), m.waffe_id ? Number(m.waffe_id) : null);
+        if (Number(m.aktiv) === 1) state.aktiveMitglieder.add(Number(m.id));
       });
-    } catch (e) { msvToast('Mitglieder konnten nicht geladen werden', 'error'); }
-    // Bereits erfasste Mitglieder ausblenden – ausser dem gerade gewählten (Bearbeiten aus der Tabelle)
-    const defaultMatcher = $.fn.select2.defaults.defaults.matcher;
-    const matcher = (params, data) => {
-      if (data.id && state.erfassteMitglieder.has(Number(data.id)) && String(data.id) !== sel.value) return null;
-      return defaultMatcher(params, data);
+    } catch (e) { fehlerMelden(e, 'Die Mitgliederliste konnte nicht geladen werden. Bitte die Seite neu laden.'); }
+    // Alle Mitglieder bleiben in der Suche; wer schon gelöst hat, ist markiert. Auswählen lädt die gespeicherte Lösung.
+    const vorlage = (data) => {
+      if (!data.id) return data.text;
+      const z = state.erfassteMitglieder.get(Number(data.id));
+      if (!z) return data.text;
+      return $('<span>').text(data.text).append($('<span class="es-geloest">').text('bereits gelöst · ' + fmtCHF(z.total_price)));
     };
-    $(sel).select2({ theme: 'bootstrap-5', placeholder: 'Mitglied suchen…', allowClear: true, width: '100%', matcher })
+    $(sel).select2({ theme: 'bootstrap-5', placeholder: 'Mitglied suchen…', allowClear: true, width: '100%', templateResult: vorlage })
       .on('select2:open', () => { const f = document.querySelector('.select2-search__field'); if (f) f.focus(); });
   }
 
@@ -1445,27 +1797,26 @@ $kannDefinieren = in_array($_SESSION['user_role'] ?? '', ['admin', 'vorstand'], 
       state.waffen = j.data || [];
       const sel = $id('waffeSelect');
       state.waffen.forEach(w => sel.add(new Option(`${w.Bezeichnung} (${w.Kategorie})`, w.ID)));
-    } catch (e) { msvToast('Waffenliste konnte nicht geladen werden', 'error'); }
+    } catch (e) { fehlerMelden(e, 'Die Waffenliste konnte nicht geladen werden. Bitte die Seite neu laden.'); }
   }
 
   async function loadSpezialpreise() {
     try {
       const j = await api('get_spezialpreise');
       if (j.success && j.data) Object.keys(j.data).forEach(t => { state.spezial[t] = Number(j.data[t].price_cents) || 0; });
-    } catch (e) { msvToast('Spezialpreise konnten nicht geladen werden – es werden Standardpreise angezeigt', 'warning'); }
+    } catch (e) { if (!e.sitzung) msvToast('Die Spezialpreise konnten nicht geladen werden; angezeigt werden Standardpreise. Gespeichert wird trotzdem mit den richtigen Preisen.', 'warning'); }
   }
 
   async function loadStiche() {
     try {
       const j = await api('list_stiche');
       state.stiche = j.success ? (j.data || []) : [];
-    } catch (e) { state.stiche = []; msvToast('Stiche konnten nicht geladen werden', 'error'); }
+    } catch (e) { state.stiche = []; fehlerMelden(e, 'Die Stiche konnten nicht geladen werden. Bitte die Seite neu laden.'); }
   }
 
   (async function init() {
     populateYearSelect();
     await Promise.all([loadMitglieder(), loadWaffen(), loadSpezialpreise(), loadStiche()]);
-    if (!state.stiche.length) msvToast('Keine aktiven Stiche definiert', 'warning');
     setTyp('mitglied');
     losenMerken();
     losenJahr = $id('yearSelect').value;

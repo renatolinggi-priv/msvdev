@@ -138,6 +138,29 @@ function endschHatWaffeSpalte(mysqli $conn): bool
     return $hat;
 }
 
+/**
+ * Spalte endstich_zusatz_schuss.zahlungsmethode vorhanden? (Migration 130)
+ * Damit hat auch eine Person, die nur Munition kauft, einen Zahlungsweg.
+ */
+function endschHatZusatzZahlung(mysqli $conn): bool
+{
+    static $hat = null;
+    if ($hat === null) {
+        $res = $conn->query("SHOW COLUMNS FROM endstich_zusatz_schuss LIKE 'zahlungsmethode'");
+        $hat = $res ? $res->num_rows > 0 : false;
+    }
+    return $hat;
+}
+
+/** Zahlungsweg normalisieren: 'bar' | 'karte' | null (nicht erfasst). */
+function endschZahlung($wert): ?string
+{
+    return in_array($wert, ['bar', 'karte'], true) ? $wert : null;
+}
+
+/** Ergebnistabellen des Endschiessens (Resultate hängen über MitgliedID bzw. GastID an der Person). */
+const ENDSCH_RESULTAT_TABELLEN = ['endstich', 'schwini', 'kunst', 'glueck', 'zabig', 'endstich_sieunder'];
+
 /** Waffen-Stammdaten als Map ID => ['bezeichnung' => …, 'kategorie' => …]. */
 function endschWaffenMap(mysqli $conn): array
 {
@@ -164,13 +187,20 @@ try {
             jsonResponse(true, $r);
 
         case 'list_mitglieder':
-            $r = rows(q($conn, "SELECT m.ID AS id, m.Name AS Nachname, m.Vorname, m.WaffenID AS waffe_id, w.Bezeichnung AS waffe_bez, w.Kategorie AS waffe_kat
+            // aktiv = Status 1 (Mitglied, nicht ausgetreten); die Seite zählt nur diese als «noch nichts gelöst»
+            $r = rows(q($conn, "SELECT m.ID AS id, m.Name AS Nachname, m.Vorname, m.WaffenID AS waffe_id, w.Bezeichnung AS waffe_bez, w.Kategorie AS waffe_kat,
+                                       CASE WHEN COALESCE(m.Status, 0) = 1 THEN 1 ELSE 0 END AS aktiv
                                 FROM mitglieder m LEFT JOIN Waffen w ON w.ID = m.WaffenID
                                 WHERE COALESCE(m.Verstorben, 0) != 1 ORDER BY m.Name, m.Vorname"));
             jsonResponse(true, $r);
 
         case 'list_waffen':
+            // ammo: GP11 / GP90 / null – die Seite bietet damit nur die passende Zusatzmunition an
             $r = rows(q($conn, "SELECT id AS ID, bezeichnung AS Bezeichnung, kategorie AS Kategorie FROM Waffen ORDER BY kategorie, bezeichnung"));
+            foreach ($r as &$w) {
+                $w['ammo'] = endschAmmoPref((int)$w['ID'], $w['Bezeichnung'], $w['Kategorie']);
+            }
+            unset($w);
             jsonResponse(true, $r);
 
         case 'get_spezialpreise':
@@ -192,6 +222,39 @@ try {
             q($conn, "INSERT INTO endstich_spezialpreise (typ, price_cents, sort_order, active) VALUES (?, ?, 100, 1)
                       ON DUPLICATE KEY UPDATE price_cents = VALUES(price_cents)", 'si', [$typ, $cents]);
             jsonResponse(true, ['typ' => $typ, 'price_cents' => $cents], 'Preis aktualisiert');
+
+        case 'update_spezialpreise':
+            // Alle Spezialpreise in EINER Transaktion: entweder alle oder keiner
+            checkCSRF();
+            $in = requestInput();
+            $liste = is_array($in['preise'] ?? null) ? $in['preise'] : [];
+            $neu = [];
+            foreach ($liste as $p) {
+                $typ = trim((string)($p['typ'] ?? ''));
+                $cents = (int)($p['price_cents'] ?? -1);
+                if (!array_key_exists($typ, ENDSCH_PREIS_DEFAULTS)) {
+                    jsonResponse(false, null, 'Unbekannter Preistyp «' . $typ . '». Bitte die Seite neu laden.');
+                }
+                if ($cents < 0 || $cents > 100000) {
+                    jsonResponse(false, null, 'Ein Preis liegt ausserhalb von 0 bis 1000 Franken. Bitte prüfen.');
+                }
+                $neu[$typ] = $cents;
+            }
+            if (!$neu) {
+                jsonResponse(false, null, 'Keine Preise übermittelt.');
+            }
+            $conn->begin_transaction();
+            try {
+                foreach ($neu as $typ => $cents) {
+                    q($conn, "INSERT INTO endstich_spezialpreise (typ, price_cents, sort_order, active) VALUES (?, ?, 100, 1)
+                              ON DUPLICATE KEY UPDATE price_cents = VALUES(price_cents)", 'si', [$typ, $cents]);
+                }
+                $conn->commit();
+            } catch (Throwable $e) {
+                $conn->rollback();
+                throw $e;
+            }
+            jsonResponse(true, $neu, 'Spezialpreise gespeichert');
 
         case 'update_stich_definition':
             checkCSRF();
@@ -257,6 +320,13 @@ try {
             if ($action === 'get_zusatz_schuesse') {
                 jsonResponse(true, $zusatz);
             }
+            // Zahlungsweg einer reinen Munitionsbestellung (Migration 130)
+            $zahlungZusatz = null;
+            if ($zusatz && endschHatZusatzZahlung($conn)) {
+                foreach (rows(q($conn, "SELECT zahlungsmethode FROM endstich_zusatz_schuss WHERE $spalte = ? AND jahr = ? AND zahlungsmethode IS NOT NULL LIMIT 1", 'ii', [$id, $jahr])) as $z) {
+                    $zahlungZusatz = endschZahlung($z['zahlungsmethode']);
+                }
+            }
 
             $waffeCol = endschHatWaffeSpalte($conn) ? 'es.waffen_id' : 'NULL AS waffen_id';
             $sel = rows(q($conn, "SELECT es.stich_id, es.zahlungsmethode, es.sie_und_er, $waffeCol, ed.code
@@ -268,7 +338,7 @@ try {
             $selWaffe = null;
             foreach ($sel as $s) {
                 $ids[] = (int)$s['stich_id'];
-                if (!empty($s['zahlungsmethode'])) {
+                if (endschZahlung($s['zahlungsmethode'] ?? null)) {
                     $zahlung = $s['zahlungsmethode'];
                 }
                 if ($s['code'] === 'ZABIG' && (int)$s['sie_und_er'] === 1) {
@@ -283,7 +353,8 @@ try {
             $extra['waffen_id'] = $selWaffe ?? ($extra['waffen_id'] ?? null);
             $extra += [
                 'gefunden'        => true,
-                'zahlungsmethode' => $zahlung ?? 'karte',
+                // null = nicht erfasst; die Seite wählt dann nichts vor
+                'zahlungsmethode' => $zahlung ?? $zahlungZusatz,
                 'zabig_partner'   => $zabigPartner,
                 'is_js'           => ($extra['typ'] ?? '') === 'js',
                 'zusatz'          => $zusatz,
@@ -303,7 +374,8 @@ try {
             $waffenId   = isset($in['waffen_id']) && (int)$in['waffen_id'] > 0 ? (int)$in['waffen_id'] : null;
             $jahr       = (int)($in['jahr'] ?? date('Y'));
             $stichIds   = array_values(array_unique(array_filter(array_map('intval', (array)($in['stiche'] ?? [])))));
-            $zahlung    = in_array($in['zahlungsmethode'] ?? '', ['bar', 'karte'], true) ? $in['zahlungsmethode'] : 'karte';
+            // Kein Vorgabewert mehr: wer etwas bezahlt, muss Bar oder Karte bewusst wählen
+            $zahlung    = endschZahlung($in['zahlungsmethode'] ?? null);
             $zabigPartner = !empty($in['zabig_partner']);
             $zusatzIn   = is_array($in['zusatz_schuesse'] ?? null) ? $in['zusatz_schuesse'] : [];
 
@@ -358,8 +430,22 @@ try {
                 jsonResponse(false, null, 'Keine Waffe gewählt');
             }
             $preis    = endschBerechnePreis(array_values($codes), $typ, $zabigPartner, $stiche, $spezial, array_keys($stiche));
+            $erlaubteTypen = ['GP11_60', 'GP90_50', 'GP11_CUSTOM', 'GP90_CUSTOM'];
+            $zusatzSumme = 0;
+            $zusatzGespeichert = 0;
+            foreach ($zusatzIn as $z) {
+                if (in_array((string)($z['typ'] ?? ''), $erlaubteTypen, true)) {
+                    $zusatzSumme += endschZusatzPreis(max(0, (int)($z['anzahl'] ?? 0)), $spezial);
+                }
+            }
+            if ($zahlung === null && $preis + $zusatzSumme > 0) {
+                jsonResponse(false, null, 'Bitte wählen, ob bar oder mit Karte bezahlt wurde.');
+            }
             $createdBy = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'system';
             $hatWaffeSpalte = endschHatWaffeSpalte($conn);
+            $hatZusatzZahlung = endschHatZusatzZahlung($conn);
+            // Inaktive Stiche zeigt das Formular nicht an; eine früher gelöste Zeile bleibt darum beim Speichern erhalten
+            $inaktiv = array_map(fn($r) => (int)$r['id'], rows(q($conn, "SELECT id FROM endstich_definition WHERE active = 0")));
 
             $conn->begin_transaction();
             try {
@@ -399,7 +485,7 @@ try {
                 // Bestehende Auswahl ermitteln
                 $bestehend = array_map(fn($r) => (int)$r['stich_id'],
                     rows(q($conn, "SELECT stich_id FROM endstich_selection WHERE $spalte = ? AND jahr = ?", 'ii', [$id, $jahr])));
-                $loeschen  = array_values(array_diff($bestehend, $stichIds));
+                $loeschen  = array_values(array_diff($bestehend, $stichIds, $inaktiv));
                 $anlegen   = array_values(array_diff($stichIds, $bestehend));
                 $behalten  = array_values(array_intersect($bestehend, $stichIds));
 
@@ -408,16 +494,18 @@ try {
                     q($conn, "DELETE FROM endstich_selection WHERE $spalte = ? AND jahr = ? AND stich_id IN ($ph)",
                         'ii' . str_repeat('i', count($loeschen)), array_merge([$id, $jahr], $loeschen));
                 }
+                // Zahlungsweg als SQL NULLIF (kein NULL-Binding): '' = nicht erfasst (z.B. Jungschützen gratis)
+                $zahlungDb = $zahlung ?? '';
                 foreach ($anlegen as $sid) {
-                    q($conn, "INSERT INTO endstich_selection ($spalte, jahr, stich_id, zahlungsmethode, created_by) VALUES (?, ?, ?, ?, ?)",
-                        'iiiss', [$id, $jahr, $sid, $zahlung, $createdBy]);
+                    q($conn, "INSERT INTO endstich_selection ($spalte, jahr, stich_id, zahlungsmethode, created_by) VALUES (?, ?, ?, NULLIF(?, ''), ?)",
+                        'iiiss', [$id, $jahr, $sid, $zahlungDb, $createdBy]);
                 }
                 // Zahlungsart, Waffe, Partner-Flag und Gast-Gesamtpreis auf allen Zeilen konsistent setzen:
                 // Partner-Flag nur am ZABIG, Gast-Spezialpreis genau EINMAL (kleinste stich_id).
                 // waffen_id als geprüfter Integer direkt im SQL (kein NULL-Binding, Spalte erst ab Migration 047).
                 $waffeSet = ($hatWaffeSpalte && $waffenId !== null) ? ', waffen_id = ' . (int)$waffenId : '';
-                q($conn, "UPDATE endstich_selection SET zahlungsmethode = ?, sie_und_er = 0, gast_spezialpreis = NULL$waffeSet WHERE $spalte = ? AND jahr = ?",
-                    'sii', [$zahlung, $id, $jahr]);
+                q($conn, "UPDATE endstich_selection SET zahlungsmethode = NULLIF(?, ''), sie_und_er = 0, gast_spezialpreis = NULL$waffeSet WHERE $spalte = ? AND jahr = ?",
+                    'sii', [$zahlungDb, $id, $jahr]);
                 if ($typ === 'mitglied' && $zabigPartner && isset($stiche['ZABIG'])) {
                     q($conn, "UPDATE endstich_selection SET sie_und_er = 1 WHERE mitglied_id = ? AND jahr = ? AND stich_id = ?",
                         'iii', [$id, $jahr, $stiche['ZABIG']['id']]);
@@ -429,15 +517,20 @@ try {
 
                 // Zusatzmunition komplett neu schreiben (Preis serverseitig)
                 q($conn, "DELETE FROM endstich_zusatz_schuss WHERE $spalte = ? AND jahr = ?", 'ii', [$id, $jahr]);
-                $erlaubteTypen = ['GP11_60', 'GP90_50', 'GP11_CUSTOM', 'GP90_CUSTOM'];
                 foreach ($zusatzIn as $z) {
                     $ztyp = (string)($z['typ'] ?? '');
                     $anz  = (int)($z['anzahl'] ?? 0);
                     if (!in_array($ztyp, $erlaubteTypen, true) || $anz <= 0) {
                         continue;
                     }
-                    q($conn, "INSERT INTO endstich_zusatz_schuss ($spalte, jahr, typ, anzahl, preis_cents, created_by) VALUES (?, ?, ?, ?, ?, ?)",
-                        'iisiis', [$id, $jahr, $ztyp, $anz, endschZusatzPreis($anz, $spezial), $createdBy]);
+                    if ($hatZusatzZahlung) {
+                        q($conn, "INSERT INTO endstich_zusatz_schuss ($spalte, jahr, typ, anzahl, preis_cents, zahlungsmethode, created_by) VALUES (?, ?, ?, ?, ?, NULLIF(?, ''), ?)",
+                            'iisiiss', [$id, $jahr, $ztyp, $anz, endschZusatzPreis($anz, $spezial), $zahlungDb, $createdBy]);
+                    } else {
+                        q($conn, "INSERT INTO endstich_zusatz_schuss ($spalte, jahr, typ, anzahl, preis_cents, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+                            'iisiis', [$id, $jahr, $ztyp, $anz, endschZusatzPreis($anz, $spezial), $createdBy]);
+                    }
+                    $zusatzGespeichert++;
                 }
 
                 $conn->commit();
@@ -446,14 +539,17 @@ try {
                 throw $e;
             }
 
+            $leer = !$stichIds && $zusatzGespeichert === 0;
             jsonResponse(true, [
                 'typ'         => $typ,
                 'entity_id'   => $id,
                 'stiche'      => $stichIds,
                 'preis_cents' => $preis,
-                'zusatz_gespeichert' => count($zusatzIn),
+                'total_cents' => $preis + $zusatzSumme,
+                'zahlungsmethode' => $zahlung,
+                'zusatz_gespeichert' => $zusatzGespeichert,
                 'zusatzmunition_pro_schuss' => $spezial['munition_pro_schuss'],
-            ], count($stichIds) ? 'Gespeichert' : 'Auswahl geleert');
+            ], $leer ? 'Auswahl geleert' : 'Gespeichert');
 
         // -------------------------------------------------------------- Löschen
         case 'delete_selection':
@@ -466,15 +562,22 @@ try {
                 jsonResponse(false, null, 'Fehlende Parameter');
             }
             $spalte = $typ === 'mitglied' ? 'mitglied_id' : 'gast_id';
-            // Gäste und Jungschützen mit Resultaten bleiben (Migration 094: Resultate hängen über GastID am Gast)
-            if ($spalte === 'gast_id') {
-                $mitResultaten = 0;
-                foreach (['endstich', 'schwini', 'kunst', 'glueck', 'zabig', 'endstich_sieunder'] as $tab) {
-                    $mitResultaten += (int)(rows(q($conn, "SELECT COUNT(*) AS n FROM `$tab` WHERE GastID = ? AND Jahr = ?", 'ii', [$entityId, $jahr]))[0]['n'] ?? 0);
-                }
-                if ($mitResultaten > 0) {
-                    jsonResponse(false, null, 'Für diese Person sind schon Resultate erfasst. Zuerst unter «Endschiessen Resultate erfassen» die Resultate löschen, dann hier.');
-                }
+            // Wer schon Resultate hat, behält seine Lösung (Löschen nur ohne Geschichte). Gilt für Mitglieder
+            // (MitgliedID) und Gäste/Jungschützen (GastID, Migration 094) gleich.
+            $resSpalte = $typ === 'mitglied' ? 'MitgliedID' : 'GastID';
+            $mitResultaten = 0;
+            foreach (ENDSCH_RESULTAT_TABELLEN as $tab) {
+                $mitResultaten += (int)(rows(q($conn, "SELECT COUNT(*) AS n FROM `$tab` WHERE $resSpalte = ? AND Jahr = ?", 'ii', [$entityId, $jahr]))[0]['n'] ?? 0);
+            }
+            if ($mitResultaten > 0) {
+                jsonResponse(false, null, 'Für diese Person sind ' . $jahr . ' schon Resultate erfasst. Zuerst unter «Endschiessen Resultate erfassen» die Resultate löschen, dann hier die Lösung.', ['gesperrt' => true]);
+            }
+            // Sicherung vor dem Löschen (wie beim Löschen von Resultaten)
+            require_once __DIR__ . '/../backup_dump.inc.php';
+            $sicherung = msvBackupVorher('endschiessen-loesung-loeschen-' . $jahr);
+            if (!$sicherung['ok']) {
+                error_log('[endschloesen_api] Sicherung vor dem Löschen fehlgeschlagen: ' . $sicherung['meldung']);
+                jsonResponse(false, null, 'Die Sicherung vor dem Löschen hat nicht geklappt. Es wurde nichts gelöscht; bitte später nochmals versuchen.');
             }
             $conn->begin_transaction();
             try {
@@ -520,7 +623,8 @@ try {
                                                   ed.code, ed.shots, ed.price_cents
                                            FROM endstich_selection es JOIN endstich_definition ed ON ed.id = es.stich_id
                                            WHERE es.jahr = ? ORDER BY es.stich_id", 'i', [$jahr]));
-            $zusaetze = rows(q($conn, "SELECT mitglied_id, gast_id, typ, anzahl, preis_cents FROM endstich_zusatz_schuss WHERE jahr = ?", 'i', [$jahr]));
+            $zusZahlCol = endschHatZusatzZahlung($conn) ? 'zahlungsmethode' : 'NULL AS zahlungsmethode';
+            $zusaetze = rows(q($conn, "SELECT mitglied_id, gast_id, typ, anzahl, preis_cents, $zusZahlCol FROM endstich_zusatz_schuss WHERE jahr = ?", 'i', [$jahr]));
 
             $key = fn(string $typ, int $id) => ($typ === 'mitglied' ? 'm' : 'g') . $id;
             $selByKey = $zusByKey = [];
@@ -582,7 +686,7 @@ try {
                     $e['total_shots'] += (int)$s['shots'];
                     if ($ammo === 'GP11') { $e['stich_gp11'] += (int)$s['shots']; }
                     if ($ammo === 'GP90') { $e['stich_gp90'] += (int)$s['shots']; }
-                    if (!empty($s['zahlungsmethode'])) { $e['zahlungsmethode'] = $s['zahlungsmethode']; }
+                    if (endschZahlung($s['zahlungsmethode'] ?? null)) { $e['zahlungsmethode'] = $s['zahlungsmethode']; }
                     if ($s['code'] === 'ZABIG' && (int)$s['sie_und_er'] === 1) {
                         $zabigPartner = true;
                         $e['partner_stiche'][] = (int)$s['stich_id'];
@@ -616,17 +720,19 @@ try {
                     $e['munition_schuss'] += (int)$z['anzahl'];
                     $e['munition_preis']  += (int)$z['preis_cents'];
                     $e['total_price']     += (int)$z['preis_cents'];
+                    if ($e['zahlungsmethode'] === null && endschZahlung($z['zahlungsmethode'] ?? null)) {
+                        $e['zahlungsmethode'] = $z['zahlungsmethode'];
+                    }
                 }
-                $e['zahlungsmethode'] = $e['zahlungsmethode'] ?? 'karte';
+                // null bleibt null: «nicht erfasst» statt eines erfundenen Zahlungswegs
                 $details[] = $e;
             }
             jsonResponse(true, $details);
 
         default:
-            jsonResponse(false, null, 'Unbekannte Action: ' . $action);
+            jsonResponse(false, null, 'Unbekannte Aktion. Bitte die Seite neu laden.');
     }
 } catch (Throwable $e) {
-    error_log('[endschloesen_api] ' . $action . ': ' . $e->getMessage());
     http_response_code(500);
-    jsonResponse(false, null, 'Fehler: ' . $e->getMessage());
+    jsonResponse(false, null, msvFehler('Das hat nicht geklappt, es wurde nichts geändert. Bitte nochmals versuchen; wenn es wieder scheitert, die Seite neu laden.', $e));
 }

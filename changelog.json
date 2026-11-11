@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.55",
+    "datum": "2026-11-04",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen Stiche lösen: Betrag nachvollziehbar, Zahlung bewusst wählen, Standblatt erst nach dem Speichern",
+        "beschreibung": "Unter dem Gesamtbetrag steht neu, woraus er sich zusammensetzt (Einzelstiche, Kombi-Preis der Gäste, Sie und Er, Zusatzmunition); die Gast-Kacheln zeigen bei Endstich und Schwini «in Kombi». Bar oder Karte ist nicht mehr vorgewählt und muss gewählt werden, sobald etwas zu bezahlen ist; auch wer nur Munition kauft, hat jetzt einen Zahlungsweg. Nach dem Speichern bleibt die Person mit «Gespeichert, Betrag, Zahlungsweg» stehen, das Standblatt gibt es nur noch für gespeicherte Lösungen, «Nächste Person» leert das Formular. Mitglieder, die schon gelöst haben, bleiben in der Suche (markiert mit Betrag) und lassen sich so direkt öffnen; die Zeile in der Übersicht anklicken oder mit Pfeiltasten und Enter wählen geht auch. Kopf und Abrechnung zeigen die Einnahmen nach Bar und Karte. Fehlende Angaben erscheinen als Liste über den Knöpfen, Ctrl+S speichert, Ctrl+Enter speichert und geht weiter. Die Zusatzmunition passt sich der Waffe an. Löschen nennt Jahr und Betrag, sichert vorher die Datenbank und ist gesperrt, solange Resultate erfasst sind. In der Definition fragen Preisänderungen nach, weil sie für alle Jahre gelten, und die Spezialpreise werden in einem Schritt gespeichert. Nach der Datenbank-Aktualisierung (Migrationen 130 und 131) sind der Zahlungsweg der Munition und die neuen Hilfetexte aktiv.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.54",
     "datum": "2026-11-04",
     "aenderungen": [
