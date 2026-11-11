@@ -12,6 +12,30 @@
     ]
   },
   {
+    "version": "1.68.59",
+    "datum": "2026-11-10",
+    "aenderungen": [
+      {
+        "titel": "Mitgliederverwaltung: Feinschliff",
+        "beschreibung": "Jedes Mitglied steht auf einer Zeile; Telefonnummern brechen nicht mehr um. Auf schmaleren Laptops treten Ort, Geburtsdatum, Waffe und Mobile schrittweise zurück, die Spalte Mitgliedschaft bleibt immer sichtbar (alles Weitere steht im Panel). Die Lizenznummer im Panel ist als fest erkennbar. Fehlermeldungen beim Hinzufügen stehen in der Reihenfolge der Felder. Im Import rückt das Ergebnis direkt unter die Dateiwahl, der Knopf «Übernehmen» bleibt in Sicht. Auf dem Handy sind alle vier Filter sichtbar.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
+    "version": "1.68.57",
+    "datum": "2026-11-04",
+    "aenderungen": [
+      {
+        "titel": "Mitgliederverwaltung: Mitgliedschaft lesbar, Import mit Prüflauf",
+        "beschreibung": "Die Liste zeigt die Mitgliedschaft in Worten statt mit vier Punkten (zum Beispiel «Ehrenmitglied», «Ausgetreten 2024», «Verstorben») und filtert oben nach Mitglieder, Ausgetreten, Verstorben oder Alle; standardmässig stehen nur Mitglieder in der Liste. Spalten lassen sich per Klick sortieren, die Suche findet auch Telefon, Adresse und Waffe. Im Panel gibt es neu den Abschnitt Mitgliedschaft mit Stand, Mitgliedsart (Aktiv, Passiv, Frei, Ehren), Eintritt und Austritt, dazu Pfeile für voriges und nächstes Mitglied. Fehlt etwas oder passt ein Format nicht, zeigt das Panel das Feld an, statt nur eine Meldung einzublenden; ausländische Telefonnummern mit Vorwahl sind erlaubt. Der Import liest die Datei jetzt richtig (Anführungszeichen, Umlaute aus Excel), ändert nur die Spalten, die in der Datei stehen, zeigt zuerst alle Änderungen (alt → neu) und sichert die Datenbank, bevor er sie übernimmt. Neue Mitglieder: Pflichtfelder zuerst, Adresse und Kontakt aufklappbar, Hinweis bei möglichem Doppel, danach springt die Liste zum neuen Mitglied. Passiv, Frei und Austrittsjahr stehen nach der Datenbank-Aktualisierung (Migration 134) bereit.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.56",
     "datum": "2026-11-04",
     "aenderungen": [

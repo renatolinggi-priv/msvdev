@@ -4,7 +4,8 @@
 // POST id, aktion:
 //   pruefen  → {success, name, aktiv, bezuege{Bezeichnung: Anzahl}, gesperrt}
 //   loeschen → nur ohne Bezüge, nach Sicherung der Datenbank → {success, sicherung}
-//   inaktiv  → Status = 0 (fällt aus den aktuellen Listen, Resultate bleiben) → {success}
+//   inaktiv  → als ausgetreten markieren: Status = 0, Austrittsjahr = dieses Jahr, falls leer
+//              (fällt aus den aktuellen Listen, Resultate bleiben) → {success}
 // Früher: DELETE ohne Rückfrage nach Bezügen und ohne Sicherung; Resultate blieben verwaist und das
 // Mitglied verschwand aus allen früheren Ranglisten.
 require_once __DIR__ . '/../admin_api_guard.inc.php';
@@ -13,7 +14,8 @@ require_once '../config.php';
 require_once __DIR__ . '/../csrf.inc.php';
 require_once __DIR__ . '/../loesch_sperre.inc.php';
 require_once __DIR__ . '/../backup_dump.inc.php';
-csrf_require();
+require_once __DIR__ . '/mitglied.inc.php';
+csrf_require(true);
 
 $id = (int)($_POST['id'] ?? 0);
 $aktion = (string)($_POST['aktion'] ?? 'pruefen');
@@ -28,12 +30,15 @@ if (!$m) msvLoeschAntwort(['success' => false, 'message' => 'Mitglied nicht gefu
 $name = trim($m['Vorname'] . ' ' . $m['Name']);
 
 if ($aktion === 'inaktiv') {
-    $u = $conn->prepare('UPDATE mitglieder SET Status = 0 WHERE ID = ?');
+    $u = $conn->prepare(mvHatMitgliedschaft($conn)
+        ? 'UPDATE mitglieder SET Status = 0, Austrittsjahr = COALESCE(Austrittsjahr, YEAR(CURDATE())) WHERE ID = ?'
+        : 'UPDATE mitglieder SET Status = 0 WHERE ID = ?');
     $u->bind_param('i', $id);
     $ok = $u->execute();
+    if (!$ok) error_log('[delete_mitglied] ' . $u->error);
     $u->close();
-    msvLoeschAntwort($ok ? ['success' => true, 'message' => "$name ist jetzt inaktiv"]
-                         : ['success' => false, 'message' => 'Konnte nicht auf inaktiv gesetzt werden'], $ok ? 200 : 500);
+    msvLoeschAntwort($ok ? ['success' => true, 'message' => "$name ist jetzt als ausgetreten markiert"]
+                         : ['success' => false, 'message' => 'Das Mitglied konnte nicht als ausgetreten markiert werden. Bitte nochmals versuchen.'], $ok ? 200 : 500);
 }
 
 // Alles, was auf das Mitglied zeigt; das Änderungsprotokoll zählt nicht (sonst wäre jeder Fehleintrag gesperrt)
@@ -60,13 +65,13 @@ if ($aktion !== 'loeschen') msvLoeschAntwort(['success' => false, 'message' => '
 
 if ($bezuege) {
     msvLoeschAntwort(['success' => false, 'gesperrt' => true, 'bezuege' => (object)$bezuege,
-                      'message' => "$name hat Daten im Verein und wird darum nicht gelöscht. Auf inaktiv setzen statt löschen."], 409);
+                      'message' => "$name hat Daten im Verein und wird darum nicht gelöscht. Als ausgetreten markieren statt löschen."], 409);
 }
 
 $sicherung = msvBackupVorher('mitglied-loeschen-' . $id);
 if (!$sicherung['ok']) {
     error_log('[delete_mitglied] Sicherung fehlgeschlagen: ' . $sicherung['meldung']);
-    msvLoeschAntwort(['success' => false, 'message' => 'Die Sicherung vor dem Löschen ist fehlgeschlagen (' . $sicherung['meldung'] . '). Es wurde nichts gelöscht.'], 500);
+    msvLoeschAntwort(['success' => false, 'message' => 'Die Sicherung vor dem Löschen hat nicht geklappt. Es wurde nichts gelöscht. Bitte später nochmals versuchen.'], 500);
 }
 
 $d = $conn->prepare('DELETE FROM mitglieder WHERE ID = ?');

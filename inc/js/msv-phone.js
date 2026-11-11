@@ -10,6 +10,7 @@ function formatSwissPhone(value) {
 
     // Normalize prefixes: 079... → +4179..., 0041... → +41...
     if (raw.startsWith('0041')) raw = '+41' + raw.slice(4);
+    else if (raw.startsWith('00')) return '+' + value.trim().replace(/^00/, ''); // Ausland (0049 …) → +49 …, sonst unverändert
     else if (raw.startsWith('0')) raw = '+41' + raw.slice(1);
     else if (!raw.startsWith('+')) raw = '+41' + raw;
 

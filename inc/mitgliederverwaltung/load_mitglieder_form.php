@@ -1,113 +1,73 @@
 <?php
-// load_mitglieder_form.php - Hybrid-Version (Read-only Tabelle + Slide-Panel)
+// load_mitglieder_form.php – Zeilen der Mitgliederliste (Read-only-Tabelle + Slide-Panel).
+// Alle Werte stehen als data-* an der Zeile; die Spalte «Mitgliedschaft» füllt die Seite per JS
+// (mvZelleMitgliedschaft), damit Anzeige und Live-Änderung aus derselben Funktion kommen.
+// LEFT JOIN: Ein Mitglied mit unbekannter Waffe bleibt sichtbar (vorher fiel es still aus der Liste).
 include '../config.php';
 require_once __DIR__ . '/../admin_api_guard.inc.php';
 adminApiGuard('html');
 require_once __DIR__ . '/../partials/empty_state.inc.php';
+require_once __DIR__ . '/mitglied.inc.php';
 
-$sql = "SELECT m.id, m.Anrede, m.vorname, m.name, m.waffenid, m.status, w.bezeichnung AS waffe,
-        m.Geburtsdatum, m.Ehrenmitglied, m.Strasse, m.PLZ, m.Ort, m.Email,
-        m.Telefon, m.Mobile, m.Notizen, m.Verstorben, m.Vereinsaufnahme, m.Kommunikation, m.ist_jsk_leiter
+$mitMitgliedschaft = mvHatMitgliedschaft($conn);
+$result = $conn->query("SELECT m.*, w.Bezeichnung AS waffe
         FROM mitglieder m
-        INNER JOIN Waffen w ON m.waffenid = w.id
-        ORDER BY m.name ASC, m.vorname ASC";
-$result = $conn->query($sql);
+        LEFT JOIN Waffen w ON m.WaffenID = w.ID
+        ORDER BY m.Name ASC, m.Vorname ASC");
 
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $id   = intval($row['id']);
-        $esc  = function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); };
+if (!$result) {
+    msvFehler('Mitglieder laden', $conn->error);
+    http_response_code(500);
+    echo 'Die Mitglieder konnten nicht geladen werden.';
+    exit;
+}
 
-        $statusVal  = intval($row['status']);
-        $ehreVal    = intval($row['Ehrenmitglied']);
-        $verstVal   = intval($row['Verstorben']);
-        $leiterVal  = intval($row['ist_jsk_leiter'] ?? 0);
+$esc = static fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
 
-        // Geburtsdatum formatieren für Anzeige
-        $gebDisplay = '';
-        if (!empty($row['Geburtsdatum'])) {
-            $ts = strtotime($row['Geburtsdatum']);
-            if ($ts) $gebDisplay = date('d.m.Y', $ts);
-        }
+if ($result->num_rows === 0) {
+    echo msv_empty_row(9, 'Noch keine Mitglieder erfasst');
+}
 
-        $rowClass = $verstVal ? ' style="opacity:0.5;"' : '';
+while ($row = $result->fetch_assoc()) {
+    $id = (int)$row['ID'];
+    $ehre = (int)$row['Ehrenmitglied'];
+    $art = $mitMitgliedschaft ? (string)($row['Mitgliedsart'] ?? 'Aktiv') : ($ehre ? 'Ehren' : 'Aktiv');
 
-        echo '<tr class="hybrid-row" id="row' . $id . '"'
-            . ' data-id="' . $id . '"'
-            . ' data-anrede="' . $esc($row['Anrede']) . '"'
-            . ' data-name="' . $esc($row['name']) . '"'
-            . ' data-vorname="' . $esc($row['vorname']) . '"'
-            . ' data-geburtsdatum="' . $esc($row['Geburtsdatum']) . '"'
-            . ' data-waffenid="' . intval($row['waffenid']) . '"'
-            . ' data-waffe="' . $esc($row['waffe']) . '"'
-            . ' data-strasse="' . $esc($row['Strasse']) . '"'
-            . ' data-plz="' . $esc($row['PLZ']) . '"'
-            . ' data-ort="' . $esc($row['Ort']) . '"'
-            . ' data-email="' . $esc($row['Email']) . '"'
-            . ' data-telefon="' . $esc($row['Telefon']) . '"'
-            . ' data-mobile="' . $esc($row['Mobile']) . '"'
-            . ' data-notizen="' . $esc($row['Notizen']) . '"'
-            . ' data-status="' . $statusVal . '"'
-            . ' data-ehrenmitglied="' . $ehreVal . '"'
-            . ' data-verstorben="' . $verstVal . '"'
-            . ' data-vereinsaufnahme="' . $esc($row['Vereinsaufnahme']) . '"'
-            . ' data-kommunikation="' . $esc($row['Kommunikation']) . '"'
-            . ' data-ist_jsk_leiter="' . $leiterVal . '"'
-            . $rowClass . '>';
-
-        // Lizenznr.
-        echo '<td class="h-nr">' . $id . '</td>';
-        // Name
-        echo '<td class="h-name">' . $esc($row['name']) . '</td>';
-        // Vorname
-        echo '<td>' . $esc($row['vorname']) . '</td>';
-        // Geburtsdatum
-        echo '<td class="h-date">' . $gebDisplay . '</td>';
-        // Waffe
-        echo '<td class="h-sub">' . $esc($row['waffe']) . '</td>';
-        // Ort
-        echo '<td class="h-sub">' . $esc($row['Ort']) . '</td>';
-        // Email
-        echo '<td class="h-email">' . $esc($row['Email']) . '</td>';
-        // Mobile
-        echo '<td class="h-sub">' . $esc($row['Mobile']) . '</td>';
-        // Flag-Dots
-        echo '<td>';
-        echo '<div class="flag-dots">';
-        // Farben der Merkmale im Seiten-CSS (inc/mitgliederverwaltung.php), damit sie dem Umschalten folgen
-        echo '<div class="flag-dot ok ' . ($statusVal ? 'on' : 'off') . '" data-flag="status" data-tooltip="Aktiv"><i class="bi bi-check-lg"></i></div>';
-        echo '<div class="flag-dot ' . ($ehreVal ? 'on' : 'off') . '" data-flag="ehrenmitglied" data-tooltip="Ehrenmitglied"><i class="bi bi-award"></i></div>';
-        echo '<div class="flag-dot ' . ($verstVal ? 'on' : 'off') . '" data-flag="verstorben" data-tooltip="Verstorben"><i class="bi bi-dash-circle"></i></div>';
-        echo '<div class="flag-dot ' . ($leiterVal ? 'on' : 'off') . '" data-flag="ist_jsk_leiter" data-tooltip="Jungschützenleiter"><i class="bi bi-person-badge"></i></div>';
-        echo '</div>';
-        echo '</td>';
-
-        // Hidden inputs for form submit
-        echo '<input type="hidden" name="id[' . $id . ']" value="' . $id . '">';
-        echo '<input type="hidden" name="anrede[' . $id . ']" value="' . $esc($row['Anrede']) . '">';
-        echo '<input type="hidden" name="name[' . $id . ']" value="' . $esc($row['name']) . '">';
-        echo '<input type="hidden" name="vorname[' . $id . ']" value="' . $esc($row['vorname']) . '">';
-        echo '<input type="hidden" name="geburtsdatum[' . $id . ']" value="' . $esc($row['Geburtsdatum']) . '">';
-        echo '<input type="hidden" name="waffenid[' . $id . ']" value="' . intval($row['waffenid']) . '">';
-        echo '<input type="hidden" name="strasse[' . $id . ']" value="' . $esc($row['Strasse']) . '">';
-        echo '<input type="hidden" name="plz[' . $id . ']" value="' . $esc($row['PLZ']) . '">';
-        echo '<input type="hidden" name="ort[' . $id . ']" value="' . $esc($row['Ort']) . '">';
-        echo '<input type="hidden" name="email[' . $id . ']" value="' . $esc($row['Email']) . '">';
-        echo '<input type="hidden" name="telefon[' . $id . ']" value="' . $esc($row['Telefon']) . '">';
-        echo '<input type="hidden" name="mobile[' . $id . ']" value="' . $esc($row['Mobile']) . '">';
-        echo '<input type="hidden" name="notizen[' . $id . ']" value="' . $esc($row['Notizen']) . '">';
-        echo '<input type="hidden" name="vereinsaufnahme[' . $id . ']" value="' . $esc($row['Vereinsaufnahme']) . '">';
-        echo '<input type="hidden" name="kommunikation[' . $id . ']" value="' . $esc($row['Kommunikation']) . '">';
-        if ($statusVal) echo '<input type="hidden" name="status[' . $id . ']" value="1" class="flag-input" data-flag="status">';
-        if ($ehreVal)   echo '<input type="hidden" name="ehrenmitglied[' . $id . ']" value="1" class="flag-input" data-flag="ehrenmitglied">';
-        if ($verstVal)  echo '<input type="hidden" name="verstorben[' . $id . ']" value="1" class="flag-input" data-flag="verstorben">';
-        if ($leiterVal) echo '<input type="hidden" name="ist_jsk_leiter[' . $id . ']" value="1" class="flag-input" data-flag="ist_jsk_leiter">';
-
-        echo '</tr>';
+    $geb = '';
+    if (!empty($row['Geburtsdatum']) && $row['Geburtsdatum'] !== '0000-00-00') {
+        $ts = strtotime($row['Geburtsdatum']);
+        if ($ts) $geb = date('d.m.Y', $ts);
     }
-} else {
-    echo msv_empty_row(9, 'Keine Mitglieder gefunden');
+    $waffe = $row['waffe'] === null
+        ? '<span class="mv-fehlt">Waffe fehlt</span>'
+        : $esc($row['waffe']);
+
+    $data = [
+        'id' => $id, 'anrede' => $row['Anrede'], 'name' => $row['Name'], 'vorname' => $row['Vorname'],
+        'geburtsdatum' => $row['Geburtsdatum'], 'waffenid' => (int)$row['WaffenID'], 'waffe' => $row['waffe'] ?? '',
+        'strasse' => $row['Strasse'], 'plz' => $row['PLZ'], 'ort' => $row['Ort'], 'email' => $row['Email'],
+        'telefon' => $row['Telefon'], 'mobile' => $row['Mobile'], 'notizen' => $row['Notizen'],
+        'status' => (int)$row['Status'], 'ehrenmitglied' => $ehre, 'verstorben' => (int)$row['Verstorben'],
+        'mitgliedsart' => $art, 'vereinsaufnahme' => $row['Vereinsaufnahme'],
+        'austrittsjahr' => $mitMitgliedschaft ? ($row['Austrittsjahr'] ?? '') : '',
+        'kommunikation' => $row['Kommunikation'], 'ist_jsk_leiter' => (int)($row['ist_jsk_leiter'] ?? 0),
+    ];
+    $attrs = '';
+    foreach ($data as $k => $v) {
+        $attrs .= ' data-' . $k . '="' . $esc($v) . '"';
+    }
+
+    echo '<tr class="hybrid-row" id="row' . $id . '"' . $attrs . '>'
+        . '<td class="h-nr">' . $id . '</td>'
+        . '<td class="h-name">' . $esc($row['Name']) . '</td>'
+        . '<td class="h-vorname">' . $esc($row['Vorname']) . '</td>'
+        . '<td class="h-date">' . $geb . '</td>'
+        . '<td class="h-sub h-waffe">' . $waffe . '</td>'
+        . '<td class="h-sub h-ort">' . $esc($row['Ort']) . '</td>'
+        . '<td class="h-email">' . $esc($row['Email']) . '</td>'
+        . '<td class="h-sub h-mobile">' . $esc($row['Mobile']) . '</td>'
+        . '<td class="h-mitgliedschaft"></td>'
+        . '</tr>';
 }
 
 $conn->close();
-?>
