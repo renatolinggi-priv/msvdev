@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.62",
+    "datum": "2026-11-14",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: Sammelrangliste zum Vorlesen am Absenden",
+        "beschreibung": "Unter «Fürs Absenden» erstellt der Knopf «Sammelrangliste» alle Ranglisten in einem PDF, A4 und nicht als Heft: Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup und Jahresmeisterschaft. Jede Rangliste ist dieselbe wie beim einzelnen Knopf; was noch keine Resultate hat, fällt weg und wird in der Meldung genannt.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.61",
     "datum": "2026-11-11",
     "aenderungen": [

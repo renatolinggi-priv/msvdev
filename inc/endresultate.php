@@ -183,6 +183,9 @@ $csrf = csrf_token();
                                     <button type="button" class="btn btn-outline-info ges-btn"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i><span>Gesamtrangliste</span></button>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Sammelrangliste">
+                                    <button type="button" class="btn btn-outline-info sammel-btn" data-tooltip="Alle Ranglisten zum Vorlesen in einem PDF (A4, kein Heft): Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup und Jahresmeisterschaft. Dauert etwa eine halbe Minute."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Sammelrangliste</span></button>
+                                </div>
                             </div>
                             <!-- Stand des zuletzt erstellten Absendenbuchs (aus endschrang/absenden_bereit.php: buchstand) -->
                             <section class="es-buchstand" id="absBuchstand" aria-labelledby="absBuchstandTitel" hidden>
@@ -1447,6 +1450,112 @@ $(document).ready(function () {
     generatePDF('anm-btn', 'generate_pdf_anmeldung.php', 'Anmeldungen');
     generatePDF('part-btn', 'generate_pdf_partner.php', 'Rangliste Partner');
     generatePDF('sieer-btn', 'generate_pdf_sieer.php', 'Rangliste Sie und Er');
+
+    // ===== Sammelrangliste: alle Ranglisten zum Vorlesen am Absenden in einem PDF (A4, kein Heft) =====
+    // Jeder Teil kommt von seinem gewohnten Generator (dieselben PDFs wie die einzelnen Knöpfe), in der Reihenfolge
+    // zum Vorlesen; endschrang/sammelrangliste.php hängt sie zusammen. Ranglisten ohne Resultate fallen weg.
+    const SAMMEL_TEILE = [
+        { name: 'Sektionsrangierungen', url: 'sektionsrangierungen/export_rankings_pdf.php', post: true },
+        { name: 'Einzelrangierungen', url: 'einzelrangierung/export_rankings_pdf.php', post: true },
+        { name: 'Endstich', url: 'endschrang/generate_pdf_end.php', prefix: 'endschrang/' },
+        { name: 'Schwini', url: 'endschrang/generate_pdf_schwini.php', prefix: 'endschrang/' },
+        { name: 'Kunst', url: 'endschrang/generate_pdf_kunst.php', prefix: 'endschrang/' },
+        { name: 'Glück', url: 'endschrang/generate_pdf_glueck.php', prefix: 'endschrang/' },
+        { name: 'Zwischenrangliste', url: 'endschrang/generate_pdf_zwischenrangliste.php', prefix: 'endschrang/' },
+        { name: 'Differenzler', url: 'endschrang/generate_pdf_diff.php', prefix: 'endschrang/' },
+        { name: 'Zabig', url: 'endschrang/generate_pdf_zabig.php', prefix: 'endschrang/' },
+        { name: 'Endschiessen gesamt', url: 'endschrang/generate_pdf_gesamt.php', prefix: 'endschrang/' },
+        { name: 'Heimmeisterschaft', url: 'heimrang/generate_pdf.php' },
+        { name: 'Kantonalstich', url: 'kantirang/generate_pdf.php' },
+        { name: 'Cup', url: 'cuprang/generate_cup_pdf.php' },
+        { name: 'Jahresmeisterschaft', url: 'jmrang/generate_pdf_jm.php' }
+    ];
+
+    // Link einer Generator-Antwort als Pfad relativ zu inc/ («dat/…» aus endschrang, «/inc/cuprang/dat/…» vom Cup)
+    function sammelPfad(link, prefix) {
+        let l = String(link || '').split('?')[0].replace(/^(https?:)?\/\/[^/]+/i, '');
+        const i = l.indexOf('/inc/');
+        if (i >= 0) l = l.slice(i + 5);
+        else if (l.indexOf('inc/') === 0) l = l.slice(4);
+        if (prefix && l.indexOf('dat/') === 0) l = prefix + l;
+        return l;
+    }
+
+    // Einen Teil erzeugen: { pfad } | { leer: true } | { fehler: 'Text' }
+    async function sammelTeil(t, jahr, token) {
+        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        const init = { credentials: 'same-origin', headers: headers };
+        let url = t.url;
+        if (t.post) {
+            headers['X-CSRF-TOKEN'] = token;
+            init.method = 'POST';
+            init.body = new URLSearchParams({ year: jahr, csrf_token: token });
+        } else {
+            url += '?' + new URLSearchParams({ year: jahr }).toString();
+        }
+        const res = await fetch(url, init);
+        let j = null;
+        try { j = JSON.parse(await res.text()); } catch (e) { j = null; }
+        const link = j && (j.pdf_link || j.pdf_url);
+        if (res.ok && link && j.success !== false) return { pfad: sammelPfad(link, t.prefix) };
+        // leer:true (msvAusgabeLeer) bzw. «Keine … gefunden» (Sektions-/Einzelrangierungen)
+        if (j && (j.leer || /^Keine /.test(j.message || ''))) return { leer: true };
+        return { fehler: (j && (j.message || j.error)) || ('Antwort ' + res.status) };
+    }
+
+    $(document).on('click', '.sammel-btn', async function (e) {
+        e.preventDefault();
+        const btn = this;
+        if (btn.__sammel) return;
+        const jahr = $('#yearSelect').val();
+        const label = btn.querySelector('span');
+        const labelText = label.textContent;
+        const token = msvCsrfToken();
+        const pfade = [], leer = [], fehler = [];
+        btn.__sammel = true;
+        msvAusgabeLaden(btn, true);
+        try {
+            for (let i = 0; i < SAMMEL_TEILE.length; i++) {
+                const t = SAMMEL_TEILE[i];
+                label.textContent = labelText + ' ' + (i + 1) + '/' + SAMMEL_TEILE.length;
+                let r;
+                try { r = await sammelTeil(t, jahr, token); } catch (err) { r = { fehler: 'keine Verbindung' }; }
+                if (r.pfad) pfade.push(r.pfad);
+                else if (r.leer) leer.push(t.name);
+                else { fehler.push(t.name); console.error('[Sammelrangliste]', t.name, r.fehler); }
+            }
+            if (!pfade.length) {
+                msvToast(fehler.length ? 'Die Ranglisten konnten nicht erstellt werden. Bitte nochmals versuchen.'
+                    : 'Für ' + jahr + ' gibt es noch keine Ranglisten.', fehler.length ? 'error' : 'warning');
+                return;
+            }
+            label.textContent = labelText + ' …';
+            const body = new URLSearchParams({ year: jahr, csrf_token: token });
+            pfade.forEach(p => body.append('teile[]', p));
+            await msvAusgabe(btn, {
+                url: 'endschrang/sammelrangliste.php',
+                method: 'POST',
+                csrf: token,
+                body: body,
+                titel: 'Sammelrangliste ' + jahr,
+                name: 'Sammelrangliste_' + jahr,
+                fehler: 'Die Sammelrangliste konnte nicht erstellt werden. Bitte nochmals versuchen.',
+                erfolg: function (j) {
+                    const text = 'Sammelrangliste ' + jahr + ' heruntergeladen'
+                        + (j && j.seiten ? ' (' + j.seiten + ' Seiten)' : '') + '.'
+                        + (leer.length ? ' Ohne Resultate weggelassen: ' + leer.join(', ') + '.' : '');
+                    if (!fehler.length) return text;
+                    return { dialog: { icon: 'warning', title: 'Nicht alles drin',
+                        html: msvEsc(text) + '<br><br><strong>Fehlt wegen eines Fehlers:</strong> ' + msvEsc(fehler.join(', '))
+                            + '<br>Diese bitte einzeln herunterladen.' } };
+                }
+            });
+        } finally {
+            label.textContent = labelText;
+            msvAusgabeLaden(btn, false);
+            btn.__sammel = false;
+        }
+    });
 
     // ===== Absenden vorbereiten: Prüfliste =====
     // Offene Stiche und Sie-und-Er-Paare zählt sie aus dem Lader der Tabelle (dieselbe Regel: «offen», solange ein
