@@ -184,7 +184,7 @@ $csrf = csrf_token();
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Sammelrangliste">
-                                    <button type="button" class="btn btn-outline-info sammel-btn" data-tooltip="Alle Ranglisten zum Vorlesen in einem PDF (A4, kein Heft): Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup und Jahresmeisterschaft. Dauert etwa eine halbe Minute."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Sammelrangliste</span></button>
+                                    <button type="button" class="btn btn-outline-info sammel-btn" data-tooltip="Alle Ranglisten zum Vorlesen in einem PDF (A4, kein Heft): Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup, Jahresmeisterschaft und am Schluss alle Sieger wie im Absendenbuch. Dauert etwa eine halbe Minute."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Sammelrangliste</span></button>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-sammel="1" data-druck-job="Sammelrangliste" aria-label="Sammelrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                             </div>
@@ -1469,7 +1469,8 @@ $(document).ready(function () {
         { name: 'Heimmeisterschaft', url: 'heimrang/generate_pdf.php' },
         { name: 'Kantonalstich', url: 'kantirang/generate_pdf.php' },
         { name: 'Cup', url: 'cuprang/generate_cup_pdf.php' },
-        { name: 'Jahresmeisterschaft', url: 'jmrang/generate_pdf_jm.php' }
+        { name: 'Jahresmeisterschaft', url: 'jmrang/generate_pdf_jm.php' },
+        { name: 'Sieger', url: 'absenden/generate_pdf_sieger.php' } // Seite «Sieger <Jahr>» wie im Absendenbuch
     ];
 
     // Link einer Generator-Antwort als Pfad relativ zu inc/ («dat/…» aus endschrang, «/inc/cuprang/dat/…» vom Cup)

@@ -26,7 +26,7 @@ if (!is_array($teile) || !$teile || count($teile) > 30) {
 
 // Nur erzeugte Ranglisten aus den bekannten Modulen (Signatur mit Zeitstempel wie in dat_cleanup.inc.php)
 $incDir = realpath(__DIR__ . '/..');
-$muster = '~^(endschrang|heimrang|kantirang|cuprang|jmrang|einzelrangierung|sektionsrangierungen)/dat/'
+$muster = '~^(endschrang|heimrang|kantirang|cuprang|jmrang|einzelrangierung|sektionsrangierungen|absenden)/dat/'
         . '[A-Za-z0-9_-]+_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.pdf$~';
 $dateien = [];
 foreach ($teile as $teil) {

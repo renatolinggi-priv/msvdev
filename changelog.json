@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.64",
+    "datum": "2026-11-14",
+    "aenderungen": [
+      {
+        "titel": "Sammelrangliste: am Schluss alle Sieger",
+        "beschreibung": "Die Sammelrangliste endet jetzt mit der Seite «Sieger» wie im Absendenbuch: oben die beiden Jahresmeister, darunter der Sieger jedes Wettkampfs mit Resultat. Die Sieger stammen aus derselben Rechnung wie im Absendenbuch; die Spalte «Seite» fällt weg, weil die Seitenzahlen nur im Buch gelten.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.63",
     "datum": "2026-11-14",
     "aenderungen": [
