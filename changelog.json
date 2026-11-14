@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.65",
+    "datum": "2026-11-14",
+    "aenderungen": [
+      {
+        "titel": "Sammelrangliste: Partner vor dem Endschiessen gesamt",
+        "beschreibung": "Die Partner-Rangliste gehört jetzt auch zur Sammelrangliste. Sie steht nach Zabig und vor «Endschiessen gesamt», wie beim Vorlesen am Absenden.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.64",
     "datum": "2026-11-14",
     "aenderungen": [

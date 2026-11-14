@@ -184,7 +184,7 @@ $csrf = csrf_token();
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-script="generate_pdf_gesamt.php" data-druck-job="Endschiessen Gesamtrangliste" aria-label="Gesamtrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Sammelrangliste">
-                                    <button type="button" class="btn btn-outline-info sammel-btn" data-tooltip="Alle Ranglisten zum Vorlesen in einem PDF (A4, kein Heft): Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup, Jahresmeisterschaft und am Schluss alle Sieger wie im Absendenbuch. Dauert etwa eine halbe Minute."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Sammelrangliste</span></button>
+                                    <button type="button" class="btn btn-outline-info sammel-btn" data-tooltip="Alle Ranglisten zum Vorlesen in einem PDF (A4, kein Heft): Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Partner, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup, Jahresmeisterschaft und am Schluss alle Sieger wie im Absendenbuch. Dauert etwa eine halbe Minute."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Sammelrangliste</span></button>
                                     <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-sammel="1" data-druck-job="Sammelrangliste" aria-label="Sammelrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                             </div>
@@ -1465,6 +1465,7 @@ $(document).ready(function () {
         { name: 'Zwischenrangliste', url: 'endschrang/generate_pdf_zwischenrangliste.php', prefix: 'endschrang/' },
         { name: 'Differenzler', url: 'endschrang/generate_pdf_diff.php', prefix: 'endschrang/' },
         { name: 'Zabig', url: 'endschrang/generate_pdf_zabig.php', prefix: 'endschrang/' },
+        { name: 'Partner', url: 'endschrang/generate_pdf_partner.php', prefix: 'endschrang/' },
         { name: 'Endschiessen gesamt', url: 'endschrang/generate_pdf_gesamt.php', prefix: 'endschrang/' },
         { name: 'Heimmeisterschaft', url: 'heimrang/generate_pdf.php' },
         { name: 'Kantonalstich', url: 'kantirang/generate_pdf.php' },
