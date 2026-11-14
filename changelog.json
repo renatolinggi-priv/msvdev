@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.63",
+    "datum": "2026-11-14",
+    "aenderungen": [
+      {
+        "titel": "Endschiessen: Sammelrangliste direkt drucken",
+        "beschreibung": "Neben «Sammelrangliste» steht jetzt das Drucker-Symbol. Es sammelt alle Ranglisten wie der PDF-Knopf (der Knopf daneben zählt mit) und schickt sie mit dem Druckprofil «Endschiessen Ranglisten» an den Drucker. Querseiten wie Heimmeisterschaft und Jahresmeisterschaft kommen richtig heraus. Fehlt eine Rangliste wegen eines Fehlers, fragt die App vor dem Druck nach.",
+        "typ": "neu",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.62",
     "datum": "2026-11-14",
     "aenderungen": [

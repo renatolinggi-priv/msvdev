@@ -185,6 +185,7 @@ $csrf = csrf_token();
                                 </div>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Sammelrangliste">
                                     <button type="button" class="btn btn-outline-info sammel-btn" data-tooltip="Alle Ranglisten zum Vorlesen in einem PDF (A4, kein Heft): Sektions- und Einzelrangierungen, Endstich, Schwini, Kunst, Glück, Zwischenrangliste, Differenzler, Zabig, Endschiessen gesamt, Heimmeisterschaft, Kantonalstich, Cup und Jahresmeisterschaft. Dauert etwa eine halbe Minute."><i class="bi bi-files me-1" aria-hidden="true"></i><span>Sammelrangliste</span></button>
+                                    <button type="button" class="btn btn-outline-info msv-druck" data-druck-doctype="endschrang" data-druck-label="Endschiessen Ranglisten" data-druck-sammel="1" data-druck-job="Sammelrangliste" aria-label="Sammelrangliste direkt drucken"><i class="bi bi-printer" aria-hidden="true"></i></button>
                                 </div>
                             </div>
                             <!-- Stand des zuletzt erstellten Absendenbuchs (aus endschrang/absenden_bereit.php: buchstand) -->
@@ -1503,6 +1504,22 @@ $(document).ready(function () {
         return { fehler: (j && (j.message || j.error)) || ('Antwort ' + res.status) };
     }
 
+    // Alle Teile nacheinander erzeugen; fortschritt(i, n) für die Anzeige. Auch für den Direktdruck (Resolver unten).
+    async function sammelTeileHolen(jahr, token, fortschritt) {
+        const pfade = [], leer = [], fehler = [];
+        for (let i = 0; i < SAMMEL_TEILE.length; i++) {
+            const t = SAMMEL_TEILE[i];
+            if (fortschritt) fortschritt(i + 1, SAMMEL_TEILE.length);
+            let r;
+            try { r = await sammelTeil(t, jahr, token); } catch (err) { r = { fehler: 'keine Verbindung' }; }
+            if (r.pfad) pfade.push(r.pfad);
+            else if (r.leer) leer.push(t.name);
+            else { fehler.push(t.name); console.error('[Sammelrangliste]', t.name, r.fehler); }
+        }
+        return { pfade: pfade, leer: leer, fehler: fehler };
+    }
+    window.msvSammelTeileHolen = sammelTeileHolen;
+
     $(document).on('click', '.sammel-btn', async function (e) {
         e.preventDefault();
         const btn = this;
@@ -1511,19 +1528,11 @@ $(document).ready(function () {
         const label = btn.querySelector('span');
         const labelText = label.textContent;
         const token = msvCsrfToken();
-        const pfade = [], leer = [], fehler = [];
         btn.__sammel = true;
         msvAusgabeLaden(btn, true);
         try {
-            for (let i = 0; i < SAMMEL_TEILE.length; i++) {
-                const t = SAMMEL_TEILE[i];
-                label.textContent = labelText + ' ' + (i + 1) + '/' + SAMMEL_TEILE.length;
-                let r;
-                try { r = await sammelTeil(t, jahr, token); } catch (err) { r = { fehler: 'keine Verbindung' }; }
-                if (r.pfad) pfade.push(r.pfad);
-                else if (r.leer) leer.push(t.name);
-                else { fehler.push(t.name); console.error('[Sammelrangliste]', t.name, r.fehler); }
-            }
+            const { pfade, leer, fehler } = await sammelTeileHolen(jahr, token,
+                (i, n) => { label.textContent = labelText + ' ' + i + '/' + n; });
             if (!pfade.length) {
                 msvToast(fehler.length ? 'Die Ranglisten konnten nicht erstellt werden. Bitte nochmals versuchen.'
                     : 'Für ' + jahr + ' gibt es noch keine Ranglisten.', fehler.length ? 'error' : 'warning');
@@ -1750,8 +1759,56 @@ $(document).ready(function () {
 <script>
 // Direktdruck (QZ Tray): ein Profil «Endschiessen Ranglisten» für alle PDFs der Ansicht «Rangliste».
 // Die Generatoren liefern JSON {pdf_link: 'dat/…'} relativ zum Modul → linkPrefix.
+// Sammelrangliste (data-druck-sammel): zuerst alle Teile erzeugen (Fortschritt im Label des PDF-Knopfs daneben),
+// dann druckt MsvDruck die zusammengefügte Datei aus endschrang/sammelrangliste.php (POST, CSRF im Header).
+// Hoch und quer gemischt ist kein Problem: QZ Tray erkennt die Ausrichtung pro Seite.
+async function sammelDruckZiel(btn, jahr) {
+    if (typeof window.msvSammelTeileHolen !== 'function') return null;
+    const pdfKnopf = btn.parentElement && btn.parentElement.querySelector('.sammel-btn');
+    const label = pdfKnopf && pdfKnopf.querySelector('span');
+    const labelText = label ? label.textContent : '';
+    const druckHtml = btn.innerHTML;
+    const token = msvCsrfToken();
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span class="visually-hidden">Ranglisten werden gesammelt …</span>';
+    if (pdfKnopf) pdfKnopf.disabled = true;
+    let erg;
+    try {
+        erg = await window.msvSammelTeileHolen(jahr, token, (i, n) => { if (label) label.textContent = labelText + ' ' + i + '/' + n; });
+    } finally {
+        if (label) label.textContent = labelText;
+        if (pdfKnopf) pdfKnopf.disabled = false;
+        btn.innerHTML = druckHtml; // vor der Rückgabe zurück: MsvDruck merkt sich das Markup für nach dem Druck
+        btn.removeAttribute('aria-busy');
+        btn.disabled = false;
+    }
+    if (!erg.pfade.length) {
+        msvToast(erg.fehler.length ? 'Die Ranglisten konnten nicht erstellt werden. Bitte nochmals versuchen.'
+            : 'Für ' + jahr + ' gibt es noch keine Ranglisten.', erg.fehler.length ? 'error' : 'warning');
+        return null;
+    }
+    if (erg.fehler.length) {
+        const antwort = await msvConfirm('Wegen eines Fehlers fehlen: ' + msvEsc(erg.fehler.join(', '))
+            + '. Diese danach einzeln drucken.', 'Trotzdem drucken?', 'Ja, drucken', 'Nicht drucken');
+        if (!antwort.isConfirmed) return null;
+    }
+    if (erg.leer.length) msvToast('Ohne Resultate weggelassen: ' + erg.leer.join(', ') + '.', 'info');
+    const body = new URLSearchParams({ year: jahr, csrf_token: token });
+    erg.pfade.forEach(p => body.append('teile[]', p));
+    return {
+        url: 'endschrang/sammelrangliste.php',
+        method: 'POST',
+        body: body,
+        headers: { 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' },
+        jobName: 'Sammelrangliste ' + jahr,
+        linkPrefix: ''
+    };
+}
+
 MsvDruck.resolve('endschrang', (btn) => {
     const jahr = document.getElementById('yearSelect').value;
+    if (btn.dataset.druckSammel) return sammelDruckZiel(btn, jahr);
     return {
         url: 'endschrang/' + btn.dataset.druckScript + '?year=' + encodeURIComponent(jahr)
             + '&orientation=' + MsvDruck.orientierung('endschrang', 'portrait'),
