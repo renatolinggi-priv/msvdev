@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.68.61",
+    "datum": "2026-11-11",
+    "aenderungen": [
+      {
+        "titel": "Drucksteuerung: Rückfrage beim Verlassen im gewohnten Dialog",
+        "beschreibung": "Wer mit ungespeicherten Druckprofilen über das Menü, einen anderen Link, «Abmelden» oder per F5/Ctrl+R die Seite verlässt oder neu lädt, bekommt jetzt den gewohnten Dialog «Noch nicht gespeichert» mit Speichern, Verwerfen und Zurück statt der Meldung des Browsers. Nur beim Knopf «Neu laden» im Browser, beim Zurück-Knopf und beim Schliessen des Tabs warnt weiterhin der Browser selbst.",
+        "typ": "verbesserung",
+        "admin_only": true
+      }
+    ]
+  },
+  {
     "version": "1.68.60",
     "datum": "2026-11-10",
     "aenderungen": [

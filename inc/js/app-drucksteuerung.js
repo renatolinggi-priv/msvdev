@@ -71,8 +71,12 @@
       $('#druckerListe').on('click', '.dr-neu', () => this.oeffnePanel(null));
       $('#druckerListe').on('click', '.dr-bearbeiten', (e) => this.oeffnePanel(Number(e.currentTarget.dataset.id)));
       $('#druckerListe').on('click', '.dr-loeschen', (e) => this.loescheDrucker(Number(e.currentTarget.dataset.id)));
+      // Wegklicken über einen Link (Menü, Kopf): eigener Dialog statt der Browser-Meldung.
+      // Neu laden / Tab schliessen bleibt beim Browser-Dialog (beforeunload lässt sich nicht ersetzen).
+      document.addEventListener('click', (e) => this.vorVerlassen(e), true);
+      document.addEventListener('keydown', (e) => this.vorNeuLaden(e), true);
       $(window).on('beforeunload', (e) => {
-        if (!this.geaendert.size) return undefined;
+        if (!this.geaendert.size || this.verlassenOk) return undefined;
         e.preventDefault();
         return 'Die Druckprofile sind noch nicht gespeichert.';
       });
@@ -639,6 +643,55 @@
       document.getElementById(knopf.getAttribute('aria-controls')).hidden = offen;
       const zu = $('#profileMatrix .dr-gruppe-knopf[aria-expanded="false"]').map((_, b) => b.dataset.gruppe).get();
       try { localStorage.setItem(ZU_SCHLUESSEL, JSON.stringify(zu)); } catch (e) { /* privat: egal */ }
+    },
+
+    /** Klick auf einen Link, der die Seite verlässt, während Profile ungespeichert sind: Speichern / Verwerfen / Zurück. */
+    async vorVerlassen(e) {
+      if (!this.geaendert.size || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      const abmelden = e.target.closest && e.target.closest('[data-msv-logout]'); // Abmelden schickt ein Formular (header.inc.php)
+      let ziel = null;
+      if (!abmelden) {
+        const a = e.target.closest && e.target.closest('a[href]');
+        if (!a || a.hasAttribute('download') || (a.target && a.target !== '_self')) return;
+        const href = a.getAttribute('href');
+        if (!href || href.charAt(0) === '#' || /^(javascript|mailto|tel):/i.test(href)) return;
+        ziel = new URL(a.href, location.href);
+        // nur ein Sprung zu einem Anker bleibt auf der Seite; derselbe Link ohne Anker (Menü «Drucksteuerung») lädt neu
+        if (ziel.hash && ziel.pathname === location.pathname && ziel.search === location.search) return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      const form = abmelden && document.getElementById('msvLogoutForm');
+      await this.fragVerlassen(() => { if (form) form.submit(); else if (ziel) location.href = ziel.href; });
+    },
+
+    /** Neu laden per Taste (F5, Ctrl+R, Ctrl+Shift+R, Cmd+R): eigener Dialog. Den Knopf im Browser erreicht keine Seite. */
+    vorNeuLaden(e) {
+      if (!this.geaendert.size) return;
+      const taste = e.key === 'F5' || ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'r' || e.key === 'R'));
+      if (!taste) return;
+      e.preventDefault();
+      if (this.fragtVerlassen) return; // Taste gedrückt gehalten oder Dialog schon offen
+      this.fragVerlassen(() => location.reload());
+    },
+
+    /** Speichern / Verwerfen / Zurück; danach weiter() nur, wenn nichts mehr ungespeichert ist oder verworfen wurde. */
+    async fragVerlassen(weiter) {
+      if (this.fragtVerlassen) return;
+      this.fragtVerlassen = true;
+      const n = this.geaendert.size;
+      try {
+        const wahl = await msvUngespeichert({ wer: n === 1 ? '1 Druckprofil' : n + ' Druckprofile' });
+        if (wahl === 'zurueck') return;
+        if (wahl === 'speichern') {
+          await this.speichern();
+          if (this.geaendert.size) return; // nicht gespeichert (Fehler oder Rückfrage abgebrochen): auf der Seite bleiben
+        }
+      } finally {
+        this.fragtVerlassen = false;
+      }
+      this.verlassenOk = true;
+      weiter();
     },
 
     verwerfen() {
